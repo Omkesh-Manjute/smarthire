@@ -245,7 +245,7 @@ async function parseJobWithGroq(rawDescription, jobTitle) {
   const userPrompt = `Parse the following Job Description:\nJob Title Hint: ${jobTitle}\n\n${rawDescription}`;
 
   const body = JSON.stringify({
-    model: 'llama-3.1-8b-instant',
+    model: 'llama-3.3-70b-versatile',
     messages: [
       { role: 'system', content: GROQ_SYSTEM_PROMPT },
       { role: 'user', content: userPrompt },

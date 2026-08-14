@@ -807,7 +807,7 @@ function BrandingCenter() {
                         >
                           <option value="mock">Mock Generator (Local Template)</option>
                           <option value="gemini">Google Gemini (gemini-1.5-flash)</option>
-                          <option value="groq">Groq (llama-3.1-8b-instant)</option>
+                          <option value="groq">Groq (llama-3.3-70b-versatile)</option>
                           <option value="sarvam">Sarvam AI (sarvam-2b)</option>
                         </select>
                       </div>

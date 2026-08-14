@@ -1,7 +1,7 @@
 const GROQ_STORAGE_KEY = "ats_groq_api_key";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
-const MODELS = ["llama-3.1-8b-instant", "llama3-8b-8192", "gemma2-9b-it", "llama-3.3-70b-versatile"];
+const MODELS = ["llama-3.3-70b-versatile", "gpt-oss-20b", "llama3-8b-8192", "gemma2-9b-it"];
 
 function cleanKey(value) {
   if (typeof value !== "string") return "";
