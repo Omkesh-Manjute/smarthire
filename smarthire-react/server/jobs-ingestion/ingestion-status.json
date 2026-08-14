@@ -1,0 +1,13 @@
+{
+  "run_start": "2026-06-22T18:18:19.468Z",
+  "status": "error",
+  "mode": "http",
+  "jobs_found": 0,
+  "jobs_added": 0,
+  "duplicates_skipped": 0,
+  "rebid_filtered": 0,
+  "failed_jobs": 0,
+  "error": "Cannot find package 'playwright' imported from F:\\App Projects\\Fake candidate app\\verifyhire-react\\server\\jobs-ingestion\\playwright-scraper.js",
+  "last_run": "2026-06-22T18:18:23.728Z",
+  "run_end": "2026-06-22T18:18:23.728Z"
+}

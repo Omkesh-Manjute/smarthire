@@ -1,0 +1,9 @@
+{
+  "ignore": [
+    "verifyhire-react/src/**/*",
+    "verifyhire-react/public/**/*",
+    "**/*.json",
+    "verifyhire-react/server/**/*.json",
+    "verifyhire-react/server/uploads/**/*"
+  ]
+}

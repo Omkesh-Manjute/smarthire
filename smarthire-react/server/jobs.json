@@ -1,0 +1,437 @@
+[
+  {
+    "id": "J-1783375025983",
+    "title": "Primavera Unifier Developer",
+    "client": "DFA",
+    "skills": [
+      "Oracle Primavera Unifier",
+      ".NET Framework 4.0.0",
+      "ASP.NET (VB.NET)"
+    ],
+    "budget": "TBD",
+    "experience": "7+ years",
+    "location": "100% Remote",
+    "type": "Contract",
+    "status": "Posted"
+  },
+  {
+    "id": "J-1783347101114",
+    "title": "Sr. Project Manager",
+    "client": "DBHDS",
+    "skills": [
+      "Project Management",
+      "Vendor Management",
+      "Budgeting"
+    ],
+    "budget": "TBD",
+    "experience": "7+ years",
+    "location": "Hybrid (Richmond, VA)",
+    "type": "Contract",
+    "status": "Posted"
+  },
+  {
+    "id": "J-1782916154641",
+    "title": "Senior Angular Developer",
+    "client": "Central Procurement",
+    "skills": [
+      "Angular",
+      ".NET technologies",
+      "Azure DevOps"
+    ],
+    "budget": "TBD",
+    "experience": "6+ years",
+    "location": "Lansing, MI 48933 (Hybrid work schedule)",
+    "type": "Contract",
+    "status": "Posted"
+  },
+  {
+    "id": "J-1782916078692",
+    "title": "Enterprise Application Integration Engineer",
+    "client": "Florida Agency",
+    "skills": [
+      "MuleSoft Anypoint Platform",
+      "DataWeave",
+      "API Design",
+      "Cloud Infrastructure (AWS/Azure)"
+    ],
+    "budget": "TBD",
+    "experience": "4+ years",
+    "location": "Tallahassee, FL 32399",
+    "type": "Contract",
+    "status": "Posted"
+  },
+  {
+    "id": "J-1782915965714",
+    "title": "Microsoft Dynamics 365 Developer",
+    "client": "MDA",
+    "skills": [
+      "Microsoft Dynamics 365",
+      "Power Platform",
+      "C#",
+      ".NET"
+    ],
+    "budget": "TBD",
+    "experience": "5+ years of professional experience developing Microsoft Dynamics 365 solutions",
+    "location": "100% Remote",
+    "type": "Contract",
+    "status": "Posted"
+  },
+  {
+    "id": "J-1782846660291",
+    "title": "Agile Project Coordinator",
+    "client": "VDOT",
+    "skills": [
+      "Agile",
+      "Project Management",
+      "Scrum"
+    ],
+    "budget": "TBD",
+    "experience": "2-5 years",
+    "location": "Remote",
+    "type": "Contract",
+    "status": "Posted"
+  },
+  {
+    "id": "J-1782827947762",
+    "title": "Project Manager",
+    "client": "VDOT",
+    "skills": [
+      "Agile methodologies",
+      "Scrum",
+      "Azure DevOps",
+      "Microsoft Office",
+      "SharePoint",
+      "Teams"
+    ],
+    "budget": "TBD",
+    "experience": "2-5 years",
+    "location": "Mechanicsville, VA",
+    "type": "Full-time",
+    "status": "Posted"
+  },
+  {
+    "id": "J-1782827885310",
+    "title": "Security Analyst II",
+    "client": "DOC",
+    "skills": [
+      "Identity and Access Management (IAM)",
+      "Microsoft 365",
+      "Exchange"
+    ],
+    "budget": "TBD",
+    "experience": "7+ years",
+    "location": "Madison, WI 53704",
+    "type": "Contract",
+    "status": "Posted"
+  },
+  {
+    "id": "J-1782827786009",
+    "title": "Business Subject-Matter Expert (SME)",
+    "client": "Florida Department of Transportation",
+    "skills": [
+      "Financial Management",
+      "Federal Aid Program Administration",
+      "Transportation Work Program Management"
+    ],
+    "budget": "TBD",
+    "experience": "15+ years",
+    "location": "Tallahassee, FL 32399",
+    "type": "Contract",
+    "status": "Posted"
+  },
+  {
+    "id": "J-1782743247472",
+    "title": "Senior Cloud and AI Architect",
+    "client": "GTA",
+    "skills": [
+      "Machine Learning",
+      "Deep Learning",
+      "Natural Language Processing"
+    ],
+    "budget": "TBD",
+    "experience": "10+ years",
+    "location": "Atlanta, Metro Area",
+    "type": "Full-time",
+    "status": "Posted"
+  },
+  {
+    "id": "J-1782743015315",
+    "title": "AI Engineer",
+    "client": "General Client",
+    "skills": [
+      "Agile (Scrum)",
+      "Restful API Design",
+      "Python"
+    ],
+    "budget": "TBD",
+    "experience": "Any",
+    "location": "Louisville, KY",
+    "type": "Full-time",
+    "status": "Posted"
+  },
+  {
+    "id": "J-1782741497274",
+    "title": "Full Stack Developer",
+    "client": "DCF",
+    "skills": [
+      ".NET MVC",
+      "JavaScript",
+      "C#"
+    ],
+    "budget": "TBD",
+    "experience": "8+ years",
+    "location": "Madison, WI",
+    "type": "Full-time",
+    "status": "Posted"
+  },
+  {
+    "id": "J-1782485558421",
+    "title": "IT Project Manager",
+    "client": "NCDHHS-PMO",
+    "skills": [
+      "Leadership",
+      "Negotiation",
+      "Time Management",
+      "Facilitation",
+      "Organizational Skills"
+    ],
+    "budget": "TBD",
+    "experience": "7+ years",
+    "location": "Raleigh, NC",
+    "type": "Contract",
+    "status": "Posted"
+  },
+  {
+    "id": "J-1781645166510",
+    "title": "Java Developer",
+    "client": "CO Judicial",
+    "skills": [
+      "Java",
+      "Spring",
+      "AWS"
+    ],
+    "budget": "TBD",
+    "experience": "Strong professional experience developing applications with Java. 5+ years",
+    "location": "Hybrid (Denver, CO), with in-person presence on Tuesdays",
+    "type": "Contract",
+    "status": "Active"
+  },
+  {
+    "id": "J-1781646225217",
+    "title": "SQL Developer",
+    "client": "MDE",
+    "skills": [
+      "Microsoft SQL Server",
+      ".NET (C# and/or VB)",
+      "SQL"
+    ],
+    "budget": "TBD",
+    "experience": "3+ years",
+    "location": "Hybrid",
+    "type": "Contract",
+    "status": "Active"
+  },
+  {
+    "id": "J-1781646914703",
+    "title": "Software Test Analyst 5",
+    "client": "DHHS",
+    "skills": [
+      "Java",
+      "Selenium",
+      "Cypress"
+    ],
+    "budget": "TBD",
+    "experience": "5+ years",
+    "location": "Downtown Lansing 2 days a week, remote",
+    "type": "Contract",
+    "status": "Active"
+  },
+  {
+    "id": "J-1781792442890",
+    "title": "Microsoft Power Platform Developer",
+    "client": "NCDHHS-PH",
+    "skills": [
+      "Power Apps",
+      "Power Automate",
+      "SQL Server"
+    ],
+    "budget": "TBD",
+    "experience": "7+ years",
+    "location": "Hybrid",
+    "type": "Hybrid",
+    "status": "Active"
+  },
+  {
+    "id": "J-1782137454703",
+    "title": "Network Administrator",
+    "client": "State of South Carolina Department of Public Health",
+    "skills": [
+      "Network Administration",
+      "Identity Services",
+      "SD-WAN",
+      "PKI"
+    ],
+    "budget": "$80-$95/hr",
+    "experience": "7+ years",
+    "location": "Fully Onsite in SC, with potential for travel within the state. Candidate must be a resident within the Eastern Time Zone and relocate to SC prior to their start.",
+    "type": "Contract, 12 months with possibility for extension, hybrid onsite and remote",
+    "status": "Active"
+  },
+  {
+    "id": "J-1782137703379",
+    "title": "IT Security Analyst",
+    "client": "VDOT",
+    "skills": [
+      "IT Security",
+      "Cybersecurity",
+      "Information Security"
+    ],
+    "budget": "TBD",
+    "experience": "Any",
+    "location": "Richmond, VA",
+    "type": "Contract",
+    "status": "Active"
+  },
+  {
+    "id": "J-1782137853962",
+    "title": "Salesforce Programmer Analyst",
+    "client": "DSS",
+    "skills": [
+      "Apex",
+      "Lightning Components(LWC)",
+      "Copado CI/CD"
+    ],
+    "budget": "TBD",
+    "experience": "Any",
+    "location": "Glen Allen, VA 23060 (Hybrid)",
+    "type": "Contract",
+    "status": "Active"
+  },
+  {
+    "id": "J-1782138902844",
+    "title": "Microsoft Power Platform Developer",
+    "client": "NCDHHS-PH",
+    "skills": [
+      "Power Apps",
+      "Power Automate",
+      "SQL Server"
+    ],
+    "budget": "TBD",
+    "experience": "7+ years",
+    "location": "Raleigh, NC 27601",
+    "type": "Hybrid",
+    "status": "Active"
+  },
+  {
+    "id": "J-1782138974272",
+    "title": "Senior Project Manager",
+    "client": "VDOT",
+    "skills": [
+      "Project Management",
+      "Technical Leadership",
+      "Vendor Management",
+      "Communication"
+    ],
+    "budget": "TBD",
+    "experience": "7+ years",
+    "location": "Mechanicsville, VA",
+    "type": "Hybrid",
+    "status": "Active"
+  },
+  {
+    "id": "J-1782224551104",
+    "title": "System Software Programmer - Intermediate",
+    "client": "DSS",
+    "skills": [
+      "Visual Studio 2022/2019",
+      ".NET",
+      "MS SQL Server 2016 enterprise server"
+    ],
+    "budget": "TBD",
+    "experience": "7+ years",
+    "location": "Hybrid (3 days onsite per week, SC or willing to relocate)",
+    "type": "Contract",
+    "status": "Active"
+  },
+  {
+    "id": "J-1782224987107",
+    "title": "Project Manager",
+    "client": "FCDC",
+    "skills": [
+      "Project Management",
+      "Leadership",
+      "Communication"
+    ],
+    "budget": "TBD",
+    "experience": "7+ years",
+    "location": "Columbus, OH 43215",
+    "type": "Onsite",
+    "status": "Active"
+  },
+  {
+    "id": "J-1782311099444",
+    "title": "Applications Development Analyst",
+    "client": "Florida Department of Transportation",
+    "skills": [
+      "Classic ASP",
+      "ASP.NET",
+      "Angular",
+      "React",
+      "SQL Server",
+      "Oracle",
+      "Azure"
+    ],
+    "budget": "TBD",
+    "experience": "5+ years",
+    "location": "Tallahassee, FL",
+    "type": "Full-time",
+    "status": "Active"
+  },
+  {
+    "id": "J-1782312115927",
+    "title": "Senior Data Developer (SQL)",
+    "client": "DPH",
+    "skills": [
+      "SQL",
+      "ETL",
+      "SSIS",
+      "Power BI"
+    ],
+    "budget": "TBD",
+    "experience": "7+ years",
+    "location": "Remote (Nationwide)",
+    "type": "Contract",
+    "status": "Active"
+  },
+  {
+    "id": "J-1782398802976",
+    "title": "Quality Assurance Engineer",
+    "client": "CO Judicial",
+    "skills": [
+      "Automated Testing",
+      "Test Cases",
+      "Quality Assurance Standards"
+    ],
+    "budget": "TBD",
+    "experience": "3+ years",
+    "location": "Denver, CO",
+    "type": "Full-time",
+    "status": "Active"
+  },
+  {
+    "id": "J-1782399160067",
+    "title": "Senior Business Analyst",
+    "client": "NCDHHS-AM",
+    "skills": [
+      "Business Analysis",
+      "Jira",
+      "Confluence",
+      "Project Management"
+    ],
+    "budget": "TBD",
+    "experience": "TBD",
+    "location": "Raleigh, NC 27607",
+    "type": "Contract",
+    "status": "Posted"
+  }
+]

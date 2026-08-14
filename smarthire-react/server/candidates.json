@@ -1,0 +1,1693 @@
+[
+  {
+    "candidate_id": "C-1780605439247",
+    "job_id": "J-DEFAULT",
+    "source": "docker_node_test",
+    "status": "New",
+    "received_at": "2026-06-04T20:37:19.247Z",
+    "file": {
+      "original_name": "test_resume.docx",
+      "stored_name": "1780605438650_test_resume.docx",
+      "size_bytes": 89973,
+      "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "local_path": "/uploads/1780605438650_test_resume.docx"
+    },
+    "email_context": {
+      "sender_email": "test_from_docker@example.com",
+      "subject": "Docker Resume Test",
+      "cc_email": "",
+      "body": ""
+    },
+    "extracted_profile": {
+      "name": "Chinnareddy",
+      "email": "test_from_docker@example.com",
+      "phone": "+1(223) 356-3459",
+      "skills": [
+        "JavaScript",
+        "Python",
+        "Java",
+        "Scala",
+        "HTML",
+        "CSS",
+        "SQL",
+        "Bootstrap",
+        "JQuery",
+        "ASP.NET",
+        "MySQL",
+        "PostgreSQL",
+        "DynamoDB",
+        "AWS",
+        "Azure",
+        "Terraform",
+        "CI/CD",
+        "Git",
+        "GitHub",
+        "SAP",
+        "Spark",
+        "Airflow",
+        "Kafka",
+        "ETL",
+        "Agile",
+        "Scrum",
+        "Power BI",
+        "Databricks",
+        "Synapse",
+        "Data Factory",
+        "Azure Data Factory",
+        "Redshift",
+        "Snowflake",
+        "Delta Lake",
+        "Lakehouse",
+        "PySpark",
+        "Data Lake",
+        "U-SQL",
+        "SSIS",
+        "SSRS",
+        "T-SQL",
+        "PolyBase"
+      ],
+      "experience_years": 15,
+      "location": "Unknown"
+    },
+    "jd_match": {
+      "match_score": 98,
+      "matching_skills": [
+        "JavaScript",
+        "Python",
+        "Java",
+        "Scala",
+        "HTML"
+      ],
+      "missing_skills": [],
+      "risk_factors": [],
+      "candidate_summary": "Parsed candidate Chinnareddy via docker_node_test. Extracted 42 skills and 15 years of experience."
+    }
+  },
+  {
+    "candidate_id": "C-1780606745094",
+    "job_id": "J-DEFAULT",
+    "source": " yahoo_n8n",
+    "status": "New",
+    "received_at": "2026-06-04T20:59:05.094Z",
+    "file": {
+      "original_name": "MSPWisconsinSubVendorUsageRequestForm_Submission_1404468204.pdf",
+      "stored_name": "1780606740301_MSPWisconsinSubVendorUsageRequestForm_Submission_1404468204.pdf",
+      "size_bytes": 37456,
+      "mime_type": "application/pdf",
+      "local_path": "/uploads/1780606740301_MSPWisconsinSubVendorUsageRequestForm_Submission_1404468204.pdf"
+    },
+    "email_context": {
+      "sender_email": "noreply+798aafe2a20322b2@formstack.com",
+      "subject": "MSP - Wisconsin Sub-Vendor Usage Request Form Confirmation",
+      "cc_email": "",
+      "body": "Intellistack Submission For: MSP - Wisconsin Sub-Vendor Usage Request Form\n\nSubmitted at 11/19/25 12:55 PM\n\n\ndotStaff Posting ID#:: 151294\nSupplier Name:: COOLSOFT LLC\nResource Name:: Kenneth  Peck\nDirect Employer of Resource:: AKCS Inc\nUnder the Direct Employer, the above Resource is:: A W2 Employee\nSubvendor Level: I understand Knowledge Services limits sub-vendor usage to only one level and I certify only one level of sub-vendor will be used for this engagement should the resource be selected\nDebarred: I certify this sub-vendor/Independent Contractor (1099) has not been debarred in the State of Wisconsin\nSupplier Representative Name: Omkesh Manjute\nSupplier Representative Email: omkesh@coolsofttech.com\n\n\n\n\n\n&copy; 2025 Intellistack (formerly Formstack). All rights reserved.\nThis is a customer service email.\nIntellistack, 50 South Steele Street, Suite 500\nDenver, CO 80209\n\n"
+    },
+    "extracted_profile": {
+      "name": "Mspwisconsinsubvendorusagerequestform Submission",
+      "email": "Emailomkesh@coolsofttech.com",
+      "phone": "1404468204",
+      "skills": [],
+      "experience_years": 0,
+      "location": ""
+    },
+    "jd_match": {
+      "match_score": 50,
+      "matching_skills": [],
+      "missing_skills": [
+        "No skills detected — manual review needed"
+      ],
+      "risk_factors": [
+        "No years of experience found in resume text"
+      ],
+      "candidate_summary": "Parsed candidate Mspwisconsinsubvendorusagerequestform Submission via  yahoo_n8n. Extracted 0 skills and 0 years of experience."
+    }
+  },
+  {
+    "candidate_id": "C-1780606746311",
+    "job_id": "J-DEFAULT",
+    "source": " yahoo_n8n",
+    "status": "New",
+    "received_at": "2026-06-04T20:59:06.311Z",
+    "file": {
+      "original_name": "mmizuno-resume-2025.pdf",
+      "stored_name": "1780606742193_mmizuno-resume-2025.pdf",
+      "size_bytes": 145783,
+      "mime_type": "application/pdf",
+      "local_path": "/uploads/1780606742193_mmizuno-resume-2025.pdf"
+    },
+    "email_context": {
+      "sender_email": "applicant@dice.com",
+      "subject": "Urgent Direct End Client -Cloud DevOps Administrator Expert (100% Remote work) - Michael Mizuno has applied on Dice. Job ID - 8325305",
+      "cc_email": "",
+      "body": "<style type=\"text/css\">.tab { margin-left: 40px; } </style> \n<div style=\"color:transparent;visibility:hidden;opacity:0;font-size:0px;border:0;max-height:1px;width:1px;margin:0px;padding:0px;border-width:0px!important;display:none!important;line-height:0px!important;\"><img border=\"0\" width=\"1\" height=\"1\" src=\"http://click.dice.com/q/ZoBjWg9iWvX9PoraH4Io6Q~~/AAAAARA~/O2Ci7P0v6mG6t_ENJfFItIB3ck7doMgqviKsjj7p1q2gW6-D2Ija_OVWX2IAM9_CuX5DT4YrmoSOe3pXIpR1lQ~~\" alt=\"\"/></div>\nAnother candidate brought to you by Dice.<br> <p class=\"tab\"> <a href=\"http://click.dice.com/f/a/FAEhzPpPk23dC_2gnA2lwg~~/AAAAARA~/6084Gd7BbZslZohzbJSwBOhI7jC65MBLOMzRjmzaCJXgA8dTkWrpRE6wYxSDLIW9V78B9KwnhihTlXi20bsSFbnnWAFhxTB8eDO0K8GHxS1BmGTWrZxbiZnKfDUmDBG6HYqg3Ij8MO2Gmz8G-02jdeXFfHQ6-TLfiiMC288vsJMEjA10VMdHhqcI-fNzTZuVCmsCwx0F2uIbWgcX6sbY9pWzHAsAzdT4iAVNh9xvBG_pqHByeHz7H4c2D7z6J_h4LluKTGPUN1KaSUgVZ3kMv87Wvvwwupun76XkI_fEC6RrEv031lqNgjKrdk1dcWN2i3_IanIeUsNozBFKGd-X_FKFL6HXRQYOmoqX56odpvjI7F7TnZTVr1OxSWaw4fEu\" target='_blank'> Michael Mizuno's Application </a><br> Email - <a href=\"mailto:m.a.mizuno84@gmail.com\">m.a.mizuno84@gmail.com</a><br> Phone Number - (858) 722-8132<br> Work Authorization - US Citizen<br> Self-represented<br> Location - San Diego, CA<br> <a href=\"http://click.dice.com/f/a/6_IS3YyYoI7PxdsUNh90pg~~/AAAAARA~/slZlCnZjYym7XnOxCuT4-Uf890efqRVIP7SxOAzxbv2ueflsDP4iHkCN4Q3WHowRMvQbCqgxqu6QmEFcilSBuXL5eLdPiHuzKMH2h6S7-e6vJuMfZ9YwmJYZD2DSF6wWKNH8QEJWCBxKEJKZU3IHqBbhxKptcSsz2XJ9s4tqVQSyIRaQpT3VpWbimuDF8Fhu1CfqThUyNfqMnisB0L5UT2LedSVnOIeFpy_NDtmwp3PC34KngirZs-RropfZ9mGi8IaJDmDAqrkzMMB8aLSQocBlEOrsJxrhN7xPc1HDm6Wx47Zs3OvIjSzWPIrkKzjS9tQS2IlsPkacRYeo9zieeX2md7qFw_CwicljwpJxK3mRymWnJdouilq1L5XtJAiN\" target='_blank'> Fair Match </a><br> <br>No Cover Letter submitted<br> </p> <a href=\"http://click.dice.com/f/a/OuJWp_QhAjvvGYbEkvBWJQ~~/AAAAARA~/dhBUpvUco9VZl9YptD4E-Eu8Iks5bFyZ7lAXziWWnEgJSd554n37Ev2gnyL-cxTo35wIPatYjQ2gpgcTEdD3Yl31G30o1xG98aR4Epy-ksF-JW9Ur5szcHGSHBdOSN4vyMrg88a8P9kVi4BFwQzQkS3jFg1Ws1kskQvisvLysaHiqfbgtHyY6bRvVPBvmLc8JTKtbmLLQAfkvB70-UqhA3uAYm-itfyniz7UBDl1M_WlntqbMplNuAVX_FB8NiAd8SB3oDQHqOZ3cMabEpQP1GoBOZu_W6VTEBZhEG88VsiVQzGeCUnX1S1M5UTEDXJy-fRxv-X7PVYDILBJPFIwB1QJXezfGV83rDUttqDeGgqT5JBx5v9O02J3qC891FtCOtHHak72-qfFLGZ3kDvKffW2lmujSAhqzYvQpI0FPnE~\" target='_blank'>Report this candidate</a><br>\n<img border=\"0\" width=\"1\" height=\"1\" alt=\"\" src=\"http://click.dice.com/q/xJSCi-0Eeq_MBPuw-h-nsg~~/AAAAARA~/P8mggNSs1n2Vs86f4l420-_X4be83fONegD93RSSqb4gMC3FPD1TiGKj57rS4S74rsR1wvoAPBN_6-PYLvtvYg~~\">\n"
+    },
+    "extracted_profile": {
+      "name": "Michael Mizuno",
+      "email": "m.a.mizuno84@gmail.com",
+      "phone": "858-722-8132",
+      "skills": [
+        "JavaScript",
+        "TypeScript",
+        "Python",
+        "Java",
+        "Go",
+        "PHP",
+        "HTML",
+        "CSS",
+        "SQL",
+        "Angular",
+        "Bootstrap",
+        "Node.js",
+        "Flask",
+        "REST API",
+        "MySQL",
+        "PostgreSQL",
+        "MongoDB",
+        "Redis",
+        "DynamoDB",
+        "Firebase",
+        "AWS",
+        "Azure",
+        "GCP",
+        "Docker",
+        "Kubernetes",
+        "Terraform",
+        "Ansible",
+        "Jenkins",
+        "CI/CD",
+        "Linux",
+        "Git",
+        "GitHub",
+        "Kafka",
+        "Agile",
+        "Microservices",
+        "Jira"
+      ],
+      "experience_years": 0,
+      "location": "Unknown"
+    },
+    "jd_match": {
+      "match_score": 98,
+      "matching_skills": [
+        "JavaScript",
+        "TypeScript",
+        "Python",
+        "Java",
+        "Go"
+      ],
+      "missing_skills": [],
+      "risk_factors": [
+        "No years of experience found in resume text"
+      ],
+      "candidate_summary": "Parsed candidate Michael Mizuno via  yahoo_n8n. Extracted 36 skills and 0 years of experience."
+    }
+  },
+  {
+    "candidate_id": "C-1780606747135",
+    "job_id": "J-DEFAULT",
+    "source": " yahoo_n8n",
+    "status": "New",
+    "received_at": "2026-06-04T20:59:07.135Z",
+    "file": {
+      "original_name": "AqibAli 10 years_DevOps SRE Experience (1).pdf",
+      "stored_name": "1780606745187_AqibAli_10_years_DevOps_SRE_Experience__1_.pdf",
+      "size_bytes": 181608,
+      "mime_type": "application/pdf",
+      "local_path": "/uploads/1780606745187_AqibAli_10_years_DevOps_SRE_Experience__1_.pdf"
+    },
+    "email_context": {
+      "sender_email": "applicant@dice.com",
+      "subject": "Urgent Direct End Client -Cloud DevOps Administrator Expert (100% Remote work) - AQIB ALI has applied on Dice. Job ID - 8325305",
+      "cc_email": "",
+      "body": "<style type=\"text/css\">.tab { margin-left: 40px; } </style> \n<div style=\"color:transparent;visibility:hidden;opacity:0;font-size:0px;border:0;max-height:1px;width:1px;margin:0px;padding:0px;border-width:0px!important;display:none!important;line-height:0px!important;\"><img border=\"0\" width=\"1\" height=\"1\" src=\"http://click.dice.com/q/8a6wd6qER6SDH3lO-EN0ww~~/AAAAARA~/sfxvbHoZmDzlYZ6valOwHrSyqTX_W3_qjczfuc2zZFT-bqjWhF2OEy6AdDCe3noMuOMqmMruSON5t328pDnXCw~~\" alt=\"\"/></div>\nAnother candidate brought to you by Dice.<br> <p class=\"tab\"> <a href=\"http://click.dice.com/f/a/URIUYeJ5FfPE8gD8zs8EJQ~~/AAAAARA~/i0DaM5fAwgJlXrLJ6RpmQVUn3liZtu7YcN6LO0cYlrMo15Ul07o-FCwAP4XSGv7D29aFTvsxS2XFsYBz9SfCAoffAXZ_QNY19vjMfSyp1VN3G5JhZuk421hhhUB3i10EZhhTHUyrFqjidt2yNSgnUJzTkE9b2jzl47SpqbZQcVpHiEEN59eIc0_0MwIUwg4cRt_7PY452K8XPNSx5JV8Sb_WftwxBKxmh-lm7MhIC2pOIgdFP94bKRLVYEVqt-i65hRhJoQuXeBF_GEuVqetfCBJBtt1IBliNRTqvewl_WVhuXgwW5wvvJH9wrE5-Zri48ZiufGqCRY1VhG2GrbwINjobh1jGj6sl2l-ALR7p0ky1tn9OUTzxDajKMnriJ0x\" target='_blank'> AQIB ALI's Application </a><br> Email - <a href=\"mailto:aqiba1417@gmail.com\">aqiba1417@gmail.com</a><br> Phone Number - (929) 266-9489<br> Work Authorization - US Citizen<br> Self-represented<br> Location - Falls Church, VA<br> <a href=\"http://click.dice.com/f/a/Cf1K0rnMhSq7Wo6LAZ4Azw~~/AAAAARA~/910AKvb_y7R9H_-UBDbVFVhnp0vwyASlBqnWPOzl_iZrJjble42ISpandJJryYqPj_NAAYWqRXTNJvMhWlT6xuDm_5xKeqI8fjgpucTAXyfEf1i91zshkHjFeCwQNW2qOdhiU_-luym9Nad5ZYfsExLcf_TzmYls44RskU1_H2AZLno-Pw8uITNgLpktpixsJ6r0YgR-P26YGMDVyNljwVVMCf0O8hg9YnugFPSd_y47hv0GBWs_MpNVhK8aX4684_hhwBKvHT0X_Df22ctLOd5sMuc6V9W9Qb-ajuw2rROfvaBL3r5axUDusP4RyKAOi4rcBGgVExNvjRtwmz_p7ABKlWEwpipC3mewJYGOi2YMCjm6P557kEFaRgfWxk9V\" target='_blank'> Good Match </a><br> <br>No Cover Letter submitted<br> </p> <a href=\"http://click.dice.com/f/a/Q3SMaKN_pH6ZoDpbFfY2fw~~/AAAAARA~/krvNIS1GeojatEswhTxPzR803PbIniptBFj3XtCZQvfDflUl5EJg-iX2TkAFTMWcwuRCLuQCLMHRXUPOIzSWGokg066ETfHTmVo8G0_CCMrvJhR4fevasBo0tVWTh_sVsdQPNbgbuU2QyshsXnAaMrNm9hUbuxVD1F3-T8ZBsaRt69OCd29csj-VLPssVC0qjAkZyxKuJC-JjooSmnLr6wnVLNxJyMdHT35IGt0xtuu_SS_AhZcAnBGB8L9KCxhNjfCMwB4nRNyxzBOn2i3HuNLz2swswBiFdnZhZZgxmNi-IaojxcHerJQJZvaqrJbiFzHzi_HD6p4xxFYN_40XLJJLwBUNhIniFo5Uczeq_a981WCAhNFzJWyTWMPa4VH1OBU2uAvkBjRGjo4VSHwWP0cncJnQKENmBbAdBA39ZJM~\" target='_blank'>Report this candidate</a><br>\n<img border=\"0\" width=\"1\" height=\"1\" alt=\"\" src=\"http://click.dice.com/q/IyHxMef8NNDvmV6qe_uDWQ~~/AAAAARA~/yym5JwEXP3qkwou0JXkcjU7Fs1SKcqO8ioqN91zS24WuKjV-xKjWwKzCeU4Ga9Tb3h0ZNL3MA7u1QDCHEWg7dw~~\">\n"
+    },
+    "extracted_profile": {
+      "name": "Aqibali 10",
+      "email": "Aqiba1417@gmail.com",
+      "phone": "929 266 9489",
+      "skills": [
+        "JavaScript",
+        "Python",
+        "Java",
+        "Ruby",
+        "HTML",
+        "SQL",
+        "MongoDB",
+        "Oracle",
+        "DynamoDB",
+        "AWS",
+        "Azure",
+        "GCP",
+        "Docker",
+        "Kubernetes",
+        "Terraform",
+        "Ansible",
+        "Jenkins",
+        "CI/CD",
+        "Linux",
+        "Git",
+        "GitHub",
+        "Airflow",
+        "Kafka",
+        "ETL",
+        "Agile",
+        "Scrum",
+        "Microservices",
+        "Jira"
+      ],
+      "experience_years": 9,
+      "location": "analysis"
+    },
+    "jd_match": {
+      "match_score": 98,
+      "matching_skills": [
+        "JavaScript",
+        "Python",
+        "Java",
+        "Ruby",
+        "HTML"
+      ],
+      "missing_skills": [],
+      "risk_factors": [],
+      "candidate_summary": "Parsed candidate Aqibali 10 via  yahoo_n8n. Extracted 28 skills and 9 years of experience."
+    }
+  },
+  {
+    "candidate_id": "C-1780606748524",
+    "job_id": "J-DEFAULT",
+    "source": " yahoo_n8n",
+    "status": "New",
+    "received_at": "2026-06-04T20:59:08.524Z",
+    "file": {
+      "original_name": "Abeedur_Rahman_Khan_PMP_H1b v10 _ Jul 15 - Gen AI - Program Manager - Health Pharma.docx",
+      "stored_name": "1780606745176_Abeedur_Rahman_Khan_PMP_H1b_v10___Jul_15_-_Gen_AI_-_Program_Manager_-_Health_Pharma.docx",
+      "size_bytes": 21538,
+      "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "local_path": "/uploads/1780606745176_Abeedur_Rahman_Khan_PMP_H1b_v10___Jul_15_-_Gen_AI_-_Program_Manager_-_Health_Pharma.docx"
+    },
+    "email_context": {
+      "sender_email": "parachuriprasanthi05@gmail.com",
+      "subject": "Resume of project manager",
+      "cc_email": "",
+      "body": "Hi folks\nGreetings for the day\nHope you are doing well.\nHere is the perfect match for your requirement\nPlease have a look at the resume and let me know if you have any queries.\n\nVisa H1B\nLocation Georgia\n\n\n\n*Regards*\n*Prasanthi Paruchuri*\n*Talent Acquisition Specialist*\n*Email @ Prasanthi@avsllc.us <Prasanthi@avsllc.us>*\n*Reach me @ +1470-470-3021 or EXT 202.*\n\n-- \nIf you wanna join our google group, please follow the link: https://groups.google.com/g/vikas112277/members\n--- \nYou received this message because you are subscribed to the Google Groups \"Staffing and Consulting\" group.\nTo unsubscribe from this group and stop receiving emails from it, send an email to vikas112277+unsubscribe@googlegroups.com.\nTo view this discussion, visit https://groups.google.com/d/msgid/vikas112277/CAEXeDQzTKuL5gTHWHvm1y7R57DvajFK3sJ_deOn8HR8erj_aCg%40mail.gmail.com.\n"
+    },
+    "extracted_profile": {
+      "name": "Abeedur Rahman",
+      "email": "khan_abeed@yahoo.com",
+      "phone": "+1 (470) 469 0482",
+      "skills": [
+        "Azure",
+        "SAP",
+        "Agile",
+        "Scrum",
+        "Jira",
+        "Power BI"
+      ],
+      "experience_years": 18,
+      "location": "to optimize delivery efficiency"
+    },
+    "jd_match": {
+      "match_score": 78,
+      "matching_skills": [
+        "Azure",
+        "SAP",
+        "Agile",
+        "Scrum",
+        "Jira"
+      ],
+      "missing_skills": [],
+      "risk_factors": [],
+      "candidate_summary": "Parsed candidate Abeedur Rahman via  yahoo_n8n. Extracted 6 skills and 18 years of experience."
+    }
+  },
+  {
+    "candidate_id": "C-1780606748615",
+    "job_id": "J-DEFAULT",
+    "source": " yahoo_n8n",
+    "status": "New",
+    "received_at": "2026-06-04T20:59:08.615Z",
+    "file": {
+      "original_name": "Tulasi Resume-UI.docx",
+      "stored_name": "1780606745147_Tulasi_Resume-UI.docx",
+      "size_bytes": 21833,
+      "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "local_path": "/uploads/1780606745147_Tulasi_Resume-UI.docx"
+    },
+    "email_context": {
+      "sender_email": "salesdhanush5@gmail.com",
+      "subject": "Resume for lead ui react developer",
+      "cc_email": "",
+      "body": "Hi buddy\n\nHope you doing great\n\n*Here is the perfect match for the requirement*\n\nFeel free to call me for further details\n\n-- \n\n*Thanks & Regards ,*\n\n*Dhanush V*\n\n*KTEK soft*\n\n*Sales recruiter*\n\n*T : +1(501) 205 2701*\n\n*Whatsapp : +91 9133812714*\n\n*E :  sales1@kteksoft.com <sales1@kteksoft.com> *\n\n*Gmail : salesdhanush5@gmail.com <salesdhanush5@gmail.com>*\n\n*(202 north walton Blvd.,suite 32, Bentonville AR-72712**)*\n\n-- \nIf you wanna join our google group, please follow the link: https://groups.google.com/g/vikas112277/members\n--- \nYou received this message because you are subscribed to the Google Groups \"Staffing and Consulting\" group.\nTo unsubscribe from this group and stop receiving emails from it, send an email to vikas112277+unsubscribe@googlegroups.com.\nTo view this discussion, visit https://groups.google.com/d/msgid/vikas112277/CALyWY75BcMCq67wUQT%3D5XvKeW7Lhs7gf1bcYJHWQiAhAOvBp0A%40mail.gmail.com.\n"
+    },
+    "extracted_profile": {
+      "name": "Tulasi Kakumanu",
+      "email": "sales1@kteksoft.com",
+      "phone": "(501)-205-2701",
+      "skills": [
+        "JavaScript",
+        "TypeScript",
+        "Java",
+        "PHP",
+        "HTML",
+        "CSS",
+        "React",
+        "Angular",
+        "AngularJS",
+        "Next.js",
+        "Bootstrap",
+        "JQuery",
+        "Node.js",
+        "Express",
+        "Spring Boot",
+        "Spring",
+        "GraphQL",
+        "MySQL",
+        "MongoDB",
+        "Oracle",
+        "AWS",
+        "Azure",
+        "Docker",
+        "Jenkins",
+        "CI/CD",
+        "Git",
+        "Jest",
+        "SAP",
+        "Agile",
+        "Scrum",
+        "Microservices",
+        "Jira"
+      ],
+      "experience_years": 0,
+      "location": "Unknown"
+    },
+    "jd_match": {
+      "match_score": 98,
+      "matching_skills": [
+        "JavaScript",
+        "TypeScript",
+        "Java",
+        "PHP",
+        "HTML"
+      ],
+      "missing_skills": [],
+      "risk_factors": [
+        "No years of experience found in resume text"
+      ],
+      "candidate_summary": "Parsed candidate Tulasi Kakumanu via  yahoo_n8n. Extracted 32 skills and 0 years of experience."
+    }
+  },
+  {
+    "candidate_id": "C-1780606748965",
+    "job_id": "J-DEFAULT",
+    "source": " yahoo_n8n",
+    "status": "New",
+    "received_at": "2026-06-04T20:59:08.965Z",
+    "file": {
+      "original_name": "Resume Word.docx",
+      "stored_name": "1780606745230_Resume_Word.docx",
+      "size_bytes": 14440,
+      "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "local_path": "/uploads/1780606745230_Resume_Word.docx"
+    },
+    "email_context": {
+      "sender_email": "applicant@dice.com",
+      "subject": "Direct Client:  Data Warehouse Quality Assurance Analyst (Remote Work) - Nodira Mardoni has applied on Dice. Job ID - 8716045",
+      "cc_email": "",
+      "body": "<style type=\"text/css\">.tab { margin-left: 40px; } </style> \n<div style=\"color:transparent;visibility:hidden;opacity:0;font-size:0px;border:0;max-height:1px;width:1px;margin:0px;padding:0px;border-width:0px!important;display:none!important;line-height:0px!important;\"><img border=\"0\" width=\"1\" height=\"1\" src=\"http://click.dice.com/q/uSKgIweRhG0xza35YUCJLA~~/AAAAARA~/EHeRVqsERsOIxdvW2rxYK5HXChkIe8ljT9ciNUSfJzPKFQyzsUBYsdBOXnXA0LTw52QqPmvA59bkWcxWD5Xbpw~~\" alt=\"\"/></div>\nAnother candidate brought to you by Dice.<br> <p class=\"tab\"> <a href=\"http://click.dice.com/f/a/z4jjSnFCcehXw3YJRrDs3Q~~/AAAAARA~/5fTwT3sM-6X3GGazRAIGW-o5iLm8S770lzVovodVnXUmwBBew-4TmU818C93fpvKFEQjzfja5ll4kYhCbrZVNa3mHd0DGMoGCQX2SkGANYCgE6eOf8O_OmdCIdXYmKYlOYG1aceKmkaCgBm0IgqyE7or-Ocg4M052UNWdp59_qTEltE0oarkP01XBVTnaH_mDb7Y5DpqAK7OC7mxOaxzBixjSvauy6FrIR6jO69tSUHMXYY3BQcZSulhwx73rdPdooXIlVX1viyRPkD2Vd4IEnH33ovkz2uCwwz1IuSbuUkWW1SldhbseyhYnHUicfEfgYV2g35gImwHrw_g2JXEYX3_mLzln78mL6iftGJliX4rfiD-QR1tLManYQnuue8e\" target='_blank'> Nodira Mardoni's Application </a><br> Email - <a href=\"mailto:nodimardoni@gmail.com\">nodimardoni@gmail.com</a><br> Phone Number - (631) 480-6330<br> Work Authorization - US Citizen<br> Self-represented<br> Location - Brooklyn, NY<br> <a href=\"http://click.dice.com/f/a/wiC5AwOqZAGEMpf4ElGcSQ~~/AAAAARA~/Nq_NFTIwe33d_XM2vphqrb0gc9fwvUKYsQf0SxxADs5IJoTBcKWjddHMf1v9wVaNbvcwXEbVn5iOFscBYveJGyKXHa9YIMQ_ejb4adTfkfZ0hf4ar47aqx4pHqUyNJNmDAEmaq0GHSqVKgJFWqZLoA7aM7Tg1dCNf1A9ehdKAMvwq13MLhl92gk2oc6sbt6nYsi7wFtYrpKBY4vQLUCVuDuG3JJGVanmHjz-arseUs8c3Asc4BlzsNMwbR86O1-FiZ0iuxsaaLQmR4i3bv-dkQM0BcPsH8TV0BJeo5FVWu2tXYJm6VKM9SFjFJOY0drpv6b1WYpq4KBvRIvtVTF4qkg9vtgz4rUhKmBbK_xASgn3RtLlv2FHGoLvKYEtM9dR\" target='_blank'> Good Match </a><br> <br>No Cover Letter submitted<br> </p> <a href=\"http://click.dice.com/f/a/xLWpsRQQe4M3cn12rXN2qQ~~/AAAAARA~/Fnj0bWymFd5iDPy1vzufp4c8CC30C9rQ8_IPjDo4vfFr-E6aZSPQhwcHubzdjeQPZQcMySFSHX7PCQM96RzhFY1uwA5KX5zglle8gCIAsfy-9ySunZKASfQeddm065vG2j-tXqMahlryfLujDMoq9q8cjZiF9JHgJAhQKgNcb-iQE56mHqErP4VBs3jPdAxgi1u4Ooj0QL-ZcsC4C008XaMrsNBKYIo0pbWLRsDoYcxFLoD8Kj4bB4ZYFrA9LuzGAbcNkU5QaWpEtr8RfXlc5mQ-CO4X7g2YxEaittL4DZiRj5OswtAA4kb7xzaVN8YdWJ49z5_3ubmNXHMhEsoCQjqkMgzKaQuhJNqbBO6X8td9FgFOZ55wX20vTtehIFM4GbiP9LyJHph3PS4RUohjpIe5SKQLbtBBpAsgiJ8IiX4~\" target='_blank'>Report this candidate</a><br>\n<img border=\"0\" width=\"1\" height=\"1\" alt=\"\" src=\"http://click.dice.com/q/BwWSMgAIoskfo5hXvcyO1Q~~/AAAAARA~/cMvedccF1ZFCLP_zn69cEctoL7wISWr0i0cR5_NgX-8ZXNEk1yT58cbpULU9ii5Bapab6YqJvxr1Hp5y6euolg~~\">\n"
+    },
+    "extracted_profile": {
+      "name": "Nodira Mardoni",
+      "email": "nodimardoni@gmail.com",
+      "phone": "631 480 6330",
+      "skills": [
+        "JavaScript",
+        "Java",
+        "HTML",
+        "CSS",
+        "SQL",
+        "MySQL",
+        "Jenkins",
+        "Linux",
+        "GitHub",
+        "Selenium",
+        "Agile",
+        "Scrum",
+        "Jira"
+      ],
+      "experience_years": 0,
+      "location": "Unknown"
+    },
+    "jd_match": {
+      "match_score": 98,
+      "matching_skills": [
+        "JavaScript",
+        "Java",
+        "HTML",
+        "CSS",
+        "SQL"
+      ],
+      "missing_skills": [],
+      "risk_factors": [
+        "No years of experience found in resume text"
+      ],
+      "candidate_summary": "Parsed candidate Nodira Mardoni via  yahoo_n8n. Extracted 13 skills and 0 years of experience."
+    }
+  },
+  {
+    "candidate_id": "C-1780606749155",
+    "job_id": "J-DEFAULT",
+    "source": " yahoo_n8n",
+    "status": "New",
+    "received_at": "2026-06-04T20:59:09.155Z",
+    "file": {
+      "original_name": "UI dev praneeth reddy.docx",
+      "stored_name": "1780606740157_UI_dev_praneeth_reddy.docx",
+      "size_bytes": 58578,
+      "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "local_path": "/uploads/1780606740157_UI_dev_praneeth_reddy.docx"
+    },
+    "email_context": {
+      "sender_email": "resource.mounika@gmail.com",
+      "subject": "Resume of Ui Lead Developers",
+      "cc_email": "",
+      "body": "*Thanks & Regards *,\n*Mounika*\n*Bench Sale Recruiter*\n*Whatsapp Num :**+91 83744 78511*\n\n-- \nIf you wanna join our google group, please follow the link: https://groups.google.com/g/vikas112277/members\n--- \nYou received this message because you are subscribed to the Google Groups \"Staffing and Consulting\" group.\nTo unsubscribe from this group and stop receiving emails from it, send an email to vikas112277+unsubscribe@googlegroups.com.\nTo view this discussion, visit https://groups.google.com/d/msgid/vikas112277/CADVwEBnc6pjPGbrdKxyedpGeroHVmaExbiH882%3DgvthXRstPHQ%40mail.gmail.com.\n"
+    },
+    "extracted_profile": {
+      "name": "PRANEETH REDDY CHAVVA",
+      "email": "Mounikachikkala97@gmail.com",
+      "phone": "",
+      "skills": [
+        "JavaScript",
+        "TypeScript",
+        "Python",
+        "Java",
+        "PHP",
+        "Kotlin",
+        "HTML",
+        "CSS",
+        "SQL",
+        "React",
+        "Angular",
+        "AngularJS",
+        "Vue",
+        "Next.js",
+        "Gatsby",
+        "Remix",
+        "Tailwind",
+        "Bootstrap",
+        "JQuery",
+        "Node.js",
+        "Express",
+        "Spring Boot",
+        "Spring",
+        "ASP.NET",
+        "REST API",
+        "GraphQL",
+        "MySQL",
+        "PostgreSQL",
+        "MongoDB",
+        "Redis",
+        "Oracle",
+        "Firebase",
+        "NoSQL",
+        "AWS",
+        "Azure",
+        "GCP",
+        "Docker",
+        "Kubernetes",
+        "Jenkins",
+        "CI/CD",
+        "Git",
+        "GitHub",
+        "GitLab",
+        "React Native",
+        "Flutter",
+        "iOS",
+        "Android",
+        "Jest",
+        "Cypress",
+        "Selenium",
+        "Mocha",
+        "Chai",
+        "Agile",
+        "Scrum",
+        "Jira",
+        "Figma",
+        "System Design",
+        "Snowflake"
+      ],
+      "experience_years": 10,
+      "location": "search on the webpage"
+    },
+    "jd_match": {
+      "match_score": 98,
+      "matching_skills": [
+        "JavaScript",
+        "TypeScript",
+        "Python",
+        "Java",
+        "PHP"
+      ],
+      "missing_skills": [],
+      "risk_factors": [],
+      "candidate_summary": "Parsed candidate PRANEETH REDDY CHAVVA via  yahoo_n8n. Extracted 58 skills and 10 years of experience."
+    }
+  },
+  {
+    "candidate_id": "C-1780606749167",
+    "job_id": "J-DEFAULT",
+    "source": " yahoo_n8n",
+    "status": "New",
+    "received_at": "2026-06-04T20:59:09.167Z",
+    "file": {
+      "original_name": "Akhil_DE .docx",
+      "stored_name": "1780606745219_Akhil_DE_.docx",
+      "size_bytes": 38995,
+      "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "local_path": "/uploads/1780606745219_Akhil_DE_.docx"
+    },
+    "email_context": {
+      "sender_email": "sharathitv1@gmail.com",
+      "subject": "Data Engineer Consultant available || Open to relocate || C2C ||",
+      "cc_email": "",
+      "body": "\n\nHi,\n\nHope you’re doing well !!! \n\nPlease find my consultant Akhilesh  profile for the role Data Engineer.\n\n Please find the details below\n\nName : Akhilesh\n\nEmail : *nagakoorma@gmail.com* <nagakoorma@gmail.com>\n\nVisa : GC\n\nLocation : Jersey City, NJ\n\nRelocation : Open to Relocate\n\n\n*Thanks & Regards*\n\n*Chris Conner *\n\n*Sales Manager *\n\n*SRL **SOFT **LLC*\n\n*Email**: Chris.c@srlsoft.com <Chris.c@srlsoft.com> *\n\n*Phone**: (410) 368 0706 EXT : 102*\n\n-- \nYou received this message because you are subscribed to the Google Groups \"HOTLIST\" group.\nTo unsubscribe from this group and stop receiving emails from it, send an email to active-benchsales-consultant-itv1+unsubscribe@googlegroups.com.\nTo view this discussion, visit https://groups.google.com/d/msgid/active-benchsales-consultant-itv1/5fad4adb-10a6-4b2a-94f5-33359218412en%40googlegroups.com.\n"
+    },
+    "extracted_profile": {
+      "name": "Akhil De",
+      "email": "nagakoorma@gmail.com",
+      "phone": "+1 959 223 5659",
+      "skills": [
+        "Python",
+        "Java",
+        "Scala",
+        "SQL",
+        "Node.js",
+        "MySQL",
+        "PostgreSQL",
+        "MongoDB",
+        "Cassandra",
+        "Oracle",
+        "DynamoDB",
+        "AWS",
+        "Azure",
+        "Docker",
+        "Kubernetes",
+        "Terraform",
+        "Jenkins",
+        "CI/CD",
+        "Git",
+        "GitHub",
+        "Spark",
+        "Airflow",
+        "Hadoop",
+        "Kafka",
+        "ETL",
+        "Agile",
+        "Scrum",
+        "Microservices",
+        "Jira",
+        "Power BI",
+        "Databricks",
+        "Synapse",
+        "Data Factory",
+        "Azure Data Factory",
+        "Redshift",
+        "Snowflake",
+        "Delta Lake",
+        "PySpark",
+        "Data Lake",
+        "SSIS",
+        "SSRS",
+        "T-SQL"
+      ],
+      "experience_years": 12,
+      "location": "Unknown"
+    },
+    "jd_match": {
+      "match_score": 98,
+      "matching_skills": [
+        "Python",
+        "Java",
+        "Scala",
+        "SQL",
+        "Node.js"
+      ],
+      "missing_skills": [],
+      "risk_factors": [],
+      "candidate_summary": "Parsed candidate Akhil De via  yahoo_n8n. Extracted 42 skills and 12 years of experience."
+    }
+  },
+  {
+    "candidate_id": "C-1780606749468",
+    "job_id": "J-DEFAULT",
+    "source": " yahoo_n8n",
+    "status": "New",
+    "received_at": "2026-06-04T20:59:09.468Z",
+    "file": {
+      "original_name": "Saidabi_SE.docx",
+      "stored_name": "1780606745235_Saidabi_SE.docx",
+      "size_bytes": 118785,
+      "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "local_path": "/uploads/1780606745235_Saidabi_SE.docx"
+    },
+    "email_context": {
+      "sender_email": "applicant@dice.com",
+      "subject": "Direct Client: IBM DB2 Warehouse Administrator  AWS (100% Remote Work) - Saidabi Karumanchi has applied on Dice. Job ID - 8716041",
+      "cc_email": "",
+      "body": "<style type=\"text/css\">.tab { margin-left: 40px; } </style> \n<div style=\"color:transparent;visibility:hidden;opacity:0;font-size:0px;border:0;max-height:1px;width:1px;margin:0px;padding:0px;border-width:0px!important;display:none!important;line-height:0px!important;\"><img border=\"0\" width=\"1\" height=\"1\" src=\"http://click.dice.com/q/JvypatVXC-SLW3kHQlzfpg~~/AAAAARA~/BG6TTv0kQkD1lW6g_-8s9JGac5Vt1jr-EndOS03R50uEJ7o3ewHhlovEzPNrZjaTPZnpeiEejvDK3DmLfAAEBw~~\" alt=\"\"/></div>\nAnother candidate brought to you by Dice.<br> <p class=\"tab\"> <a href=\"http://click.dice.com/f/a/BEv6FmlsD0R0mL1FfRe7Xg~~/AAAAARA~/HZdU6UsSk4r_bjJLD2rk7OULPvFFuXD4qHEvuHAMAtx4AT48w5oP_7fMqy58iTP1dZffat28miph7khCtay5M3xDpOj3stVhy_BVIQ5J8-x53ShmYUkBfE1SToJcQa8SupSJFSUrCYGCsN10fZIkix5p3m0kOfD3OCJvto4aaf0EaT1sjZR7wUNC_c8Lj5aCYrw37skWKsXzHD8IdTpMdWzIp4ujxy6R47CyOCycc5pBXhF-7pI-ZRuOjm_1A3PPDrOfNmZHcrSfQRVlV6leR515ydO7o4_mu0lhsY6MXQ5fXP0GvvD5rynAMpW--gOH07cMIoYp2LB_FvpVlKLCe8RbHJhGAyxlSadtPyPVCEVrLGVBz2eCQVNAbwNQUoy3\" target='_blank'> Saidabi Karumanchi's Application </a><br> Email - <a href=\"mailto:saidabikarumanchi4@gmail.com\">saidabikarumanchi4@gmail.com</a><br> Phone Number - (646) 801-4241<br> Work Authorization - Employment Auth. Document<br> Self-represented<br> Location - Milton, GA<br> <a href=\"http://click.dice.com/f/a/Z3_J_CzXelXQw0DcwY_SMQ~~/AAAAARA~/KOMP-w1FaxilQPuYmm5k8gE-p2xBDqdiccaurbLfRoS-b3cb29TysPRrulObycmZMY0KZo-OiyPmKFM3s8zNe-PpYMfrJpmqqxFKzLb352UEOnC1WdgxxXWFO34kSI7F7PhrE-kexmaeYrg64k4wQPh-GkYjDziRl5DaKoXN8OD6g9OP2bdVlBQr_DARAycSTm5XelSBJkyOPdpVSU0P5YOCLu3EvnbRaqnaGNAjTrRzd1I2thnB2J4AeXZ4ppFdeZCoePCm_JWucypdFVovMqFL1HOEcsgt7pir0sDr-UlDrBDr8aD4ugFdP7HM8ks9uaA1qbe8UxiMAqH-tVKwUOi36N5BGgW-JDiYDmwQkpDSEa2vU5ULb7jN2sw7wmB9\" target='_blank'> Good Match </a><br> <br>No Cover Letter submitted<br> </p> <a href=\"http://click.dice.com/f/a/tsFCx7YEDIZkKUx4YcB86Q~~/AAAAARA~/Wcj9mQE_h-Xwy5v107Z6OBqqCu5CJHEgrNlqDCkFw2-9bJYS6bfhmUHFMU8Ap6phWzPVzUmlI5_3R1vsKvohlhaRl7c1phrxRadpNflCBJpehKoym5IKyrrvAC_UQkV6G5t7ELc-DiUMi3SENoqiCL1t1zkf7j0RzNTWbXJW0HYTehfSpb1KXw0hHTv87BErMKlbxS7IawQi7qSfK6E82acdSi8rRFTk59AXFNZmGL4h5dQ7u-Hw9JzDHKeDrSZ5JVwjHpZDiYCkRaPDO0x3aqBySZuBpJWw9Z62-n-RerpovqOyP9OBY4Wd4QJN4HQJREKovw6N8KHi-nbUCLxXOPqeCTq4KDUeYQr4822zKney6MIALEGN8fTKDcjhajCjcZ6Rrbo6LoZQ8ZETBD7gt3X96vT-2xWI6GUBOBLX8Ug~\" target='_blank'>Report this candidate</a><br>\n<img border=\"0\" width=\"1\" height=\"1\" alt=\"\" src=\"http://click.dice.com/q/w7F6r0DvkIBQHDUWCLKMfg~~/AAAAARA~/LjP-1P3c3-w_YnGWnsO0xSF5w4RNE8rWWawqfOz4iPO3B7r2HEn6wG1wgRWIzGSdEfgE18ioyctT2S3HFfgyOA~~\">\n"
+    },
+    "extracted_profile": {
+      "name": "Saidabi K",
+      "email": "saidabikarumanchi4@gmail.com",
+      "phone": "+1646-801-4241",
+      "skills": [
+        "Python",
+        "Java",
+        "Scala",
+        "SQL",
+        "Bootstrap",
+        "Flask",
+        "FastAPI",
+        "Spring Boot",
+        "Spring",
+        "MySQL",
+        "PostgreSQL",
+        "MongoDB",
+        "Redis",
+        "Oracle",
+        "AWS",
+        "Azure",
+        "GCP",
+        "Docker",
+        "Kubernetes",
+        "Terraform",
+        "Jenkins",
+        "CI/CD",
+        "Linux",
+        "Git",
+        "GitHub",
+        "GitLab",
+        "Spark",
+        "Airflow",
+        "Hadoop",
+        "Kafka",
+        "ETL",
+        "Microservices",
+        "Power BI",
+        "Databricks",
+        "Synapse",
+        "Redshift",
+        "Delta Lake",
+        "Lakehouse",
+        "PySpark"
+      ],
+      "experience_years": 8,
+      "location": "and job dependencies"
+    },
+    "jd_match": {
+      "match_score": 98,
+      "matching_skills": [
+        "Python",
+        "Java",
+        "Scala",
+        "SQL",
+        "Bootstrap"
+      ],
+      "missing_skills": [],
+      "risk_factors": [],
+      "candidate_summary": "Parsed candidate Saidabi K via  yahoo_n8n. Extracted 39 skills and 8 years of experience."
+    }
+  },
+  {
+    "candidate_id": "C-1780606749762",
+    "job_id": "J-DEFAULT",
+    "source": " yahoo_n8n",
+    "status": "New",
+    "received_at": "2026-06-04T20:59:09.763Z",
+    "file": {
+      "original_name": "Prashanth Dot Net Full Stack Developer__Resume_ (1) (1) (1).docx",
+      "stored_name": "1780606740353_Prashanth_Dot_Net_Full_Stack_Developer__Resume___1___1___1_.docx",
+      "size_bytes": 64755,
+      "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "local_path": "/uploads/1780606740353_Prashanth_Dot_Net_Full_Stack_Developer__Resume___1___1___1_.docx"
+    },
+    "email_context": {
+      "sender_email": "shivacapitalsoft@gmail.com",
+      "subject": ".NET DEVELOPER",
+      "cc_email": "",
+      "body": "\n\nHello,\n\nI am writing to introduce you to Prashanth, a highly skilled IT consultant \nwho is currently available for placement on your projects. Prashanth has \nover 10+ years of experience and is open to relocating from day one for an \nonsite position.\n\nHis contact details are as follows:\n\n* Phone: 7327247886\n\n* Email: prashanthr1954@gmail.com\n                                                          \n\nWe believe that Prashanth's skills would be a valuable asset to your team. \nIf you are interested in exploring this opportunity further or would like \nmore information, please don't hesitate to contact us at \nShivacapitalsoft@gmail.com / shiva@veerasllc.com or +1 4692700233\n\nThanks & Regards\n\nShiva K |Bench Sales Recruiter\n\nVeeras LLC\n\n+1 4692700233 \n\nLinkedIn:linkedin.com/in/shiva-katikala-49a060226\n\nMail: shiva@veerasllc.com \n\n-- \nYou received this message because you are subscribed to the Google Groups \"HOTLIST\" group.\nTo unsubscribe from this group and stop receiving emails from it, send an email to hot-listusa+unsubscribe@googlegroups.com.\nTo view this discussion visit https://groups.google.com/d/msgid/hot-listusa/3e7f04cb-aca5-4b05-832c-aec48fdf8b94n%40googlegroups.com.\nFor more options, visit https://groups.google.com/d/optout.\n"
+    },
+    "extracted_profile": {
+      "name": "Prashanth Dot",
+      "email": "prashanthr1954@gmail.com",
+      "phone": "7327247886",
+      "skills": [
+        "JavaScript",
+        "TypeScript",
+        "Python",
+        "CSS",
+        "SQL",
+        "React",
+        "Angular",
+        "AngularJS",
+        "Vue",
+        "Tailwind",
+        "Bootstrap",
+        "JQuery",
+        "ASP.NET",
+        "REST API",
+        "Websockets",
+        "PostgreSQL",
+        "MongoDB",
+        "Oracle",
+        "DynamoDB",
+        "Firebase",
+        "NoSQL",
+        "AWS",
+        "Azure",
+        "GCP",
+        "Docker",
+        "Kubernetes",
+        "Terraform",
+        "Jenkins",
+        "CI/CD",
+        "Linux",
+        "Git",
+        "GitHub",
+        "iOS",
+        "Android",
+        "Kafka",
+        "ETL",
+        "Agile",
+        "Scrum",
+        "Microservices",
+        "Power BI",
+        "Snowflake",
+        "SSIS",
+        "SSRS",
+        "T-SQL"
+      ],
+      "experience_years": 11,
+      "location": "Unknown"
+    },
+    "jd_match": {
+      "match_score": 98,
+      "matching_skills": [
+        "JavaScript",
+        "TypeScript",
+        "Python",
+        "CSS",
+        "SQL"
+      ],
+      "missing_skills": [],
+      "risk_factors": [],
+      "candidate_summary": "Parsed candidate Prashanth Dot via  yahoo_n8n. Extracted 44 skills and 11 years of experience."
+    }
+  },
+  {
+    "candidate_id": "C-1780606749823",
+    "job_id": "J-DEFAULT",
+    "source": " yahoo_n8n",
+    "status": "New",
+    "received_at": "2026-06-04T20:59:09.823Z",
+    "file": {
+      "original_name": "Vamsee_Azure Data Architect.docx",
+      "stored_name": "1780606745224_Vamsee_Azure_Data_Architect.docx",
+      "size_bytes": 132897,
+      "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "local_path": "/uploads/1780606745224_Vamsee_Azure_Data_Architect.docx"
+    },
+    "email_context": {
+      "sender_email": "teja@derextech.com",
+      "subject": "Resume for Azure Data Architect - Remote only",
+      "cc_email": "",
+      "body": "Hi Recruiters,\nGreetings!\n\nPlease find the attached resume of my consultant Vamsee and let me know your thoughts.\nConsultant Name     : Vamsee\nWork Authorization : USC\nExp                              :20+ Years\nCurrent Location      : NC\nRelocation                 : NO\nAvailability                : Immediately\n\n\nRegards,\n\nTeja\n\nDEREX TECHNOLOGIES INC.\nEXT: 973-350-1200 X 107\nDirect: (973) 847-5222\nFax: 1-877-396-3373\nhttps://www.linkedin.com/in/saiteja-kandikatla-7b4b00184/\n\n-- \nIf you wanna join our google group, please follow the link: https://groups.google.com/g/vikas112277/members\n--- \nYou received this message because you are subscribed to the Google Groups \"Staffing and Consulting\" group.\nTo unsubscribe from this group and stop receiving emails from it, send an email to vikas112277+unsubscribe@googlegroups.com.\nTo view this discussion, visit https://groups.google.com/d/msgid/vikas112277/PSAPR06MB47919A85418A84686C4D6B85F7D7A%40PSAPR06MB4791.apcprd06.prod.outlook.com.\n"
+    },
+    "extracted_profile": {
+      "name": "VAMSEE KARANAM",
+      "email": "teja@derextech.com",
+      "phone": "",
+      "skills": [
+        "Python",
+        "Java",
+        "SQL",
+        "React",
+        "Express",
+        "Spring",
+        "MongoDB",
+        "Redis",
+        "Oracle",
+        "DynamoDB",
+        "NoSQL",
+        "AWS",
+        "Azure",
+        "Linux",
+        "Spark",
+        "Hadoop",
+        "Kafka",
+        "ETL",
+        "Microservices",
+        "Power BI",
+        "Databricks",
+        "Synapse",
+        "Data Factory",
+        "Azure Data Factory",
+        "Snowflake",
+        "PySpark",
+        "Data Lake"
+      ],
+      "experience_years": 7,
+      "location": "Unknown"
+    },
+    "jd_match": {
+      "match_score": 98,
+      "matching_skills": [
+        "Python",
+        "Java",
+        "SQL",
+        "React",
+        "Express"
+      ],
+      "missing_skills": [],
+      "risk_factors": [],
+      "candidate_summary": "Parsed candidate VAMSEE KARANAM via  yahoo_n8n. Extracted 27 skills and 7 years of experience."
+    }
+  },
+  {
+    "candidate_id": "C-1780606749832",
+    "job_id": "J-DEFAULT",
+    "source": " yahoo_n8n",
+    "status": "New",
+    "received_at": "2026-06-04T20:59:09.832Z",
+    "file": {
+      "original_name": "Reddy Data Engineer.docx",
+      "stored_name": "1780606745227_Reddy_Data_Engineer.docx",
+      "size_bytes": 93363,
+      "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "local_path": "/uploads/1780606745227_Reddy_Data_Engineer.docx"
+    },
+    "email_context": {
+      "sender_email": "stacyhold035@gmail.com",
+      "subject": "RE: Azure Data Engineer",
+      "cc_email": "",
+      "body": "Hi Recruiters.\nPlease Find the Below Attached Profile of My Consultants *Reddy*\nName: *  Reddy*\nVisa: H1B\nCurrent Location: TX\nRelocation: Anywhere in USA\n\n*_________*\n\n*Thanks & Regards*\n\n*Sireesha*\n\n* Bench **Sales recruiter*\n\n*Email*: sireesha@epitomsoft.com\n\n*Desk: **+1(223) 356-3459*\n\n* https://epitomsoft.com/ <https://epitomsoft.com/>*\n\n* LinkedIn: *linkedin.com/in/b-sireesha-590675266\n<https://www.linkedin.com/in/b-sireesha-590675266>\n\n[image: image.png]\n\n3016 Polar Ln Ste 208 Cedar Park, TX 78613\n\n[image: E-Verify® Logo]\n\n-- \nIf you wanna join our google group, please follow the link: https://groups.google.com/g/vikas112277/members\n--- \nYou received this message because you are subscribed to the Google Groups \"Staffing and Consulting\" group.\nTo unsubscribe from this group and stop receiving emails from it, send an email to vikas112277+unsubscribe@googlegroups.com.\nTo view this discussion, visit https://groups.google.com/d/msgid/vikas112277/CADNPef5UwMNrowNU-ufypA%3DAqqOTeG8S9e5wgxmWt7Hgrjf-Qw%40mail.gmail.com.\n"
+    },
+    "extracted_profile": {
+      "name": "Reddy",
+      "email": "stacyhold035@gmail.com",
+      "phone": "223 356 3459",
+      "skills": [
+        "JavaScript",
+        "Python",
+        "Java",
+        "Scala",
+        "HTML",
+        "CSS",
+        "SQL",
+        "Bootstrap",
+        "JQuery",
+        "ASP.NET",
+        "MySQL",
+        "PostgreSQL",
+        "DynamoDB",
+        "AWS",
+        "Azure",
+        "CI/CD",
+        "Git",
+        "GitHub",
+        "SAP",
+        "Spark",
+        "Airflow",
+        "Kafka",
+        "ETL",
+        "Agile",
+        "Scrum",
+        "Power BI",
+        "Databricks",
+        "Synapse",
+        "Data Factory",
+        "Azure Data Factory",
+        "Redshift",
+        "Snowflake",
+        "Delta Lake",
+        "Lakehouse",
+        "PySpark",
+        "Data Lake",
+        "U-SQL",
+        "SSIS",
+        "SSRS",
+        "T-SQL",
+        "PolyBase"
+      ],
+      "experience_years": 12,
+      "location": "Unknown"
+    },
+    "jd_match": {
+      "match_score": 98,
+      "matching_skills": [
+        "JavaScript",
+        "Python",
+        "Java",
+        "Scala",
+        "HTML"
+      ],
+      "missing_skills": [],
+      "risk_factors": [],
+      "candidate_summary": "Parsed candidate Reddy via  yahoo_n8n. Extracted 41 skills and 12 years of experience."
+    }
+  },
+  {
+    "candidate_id": "C-1780589107548.092",
+    "job_id": "J-DEFAULT",
+    "source": "upload_sync",
+    "status": "New",
+    "received_at": "2026-06-04T16:05:07.548Z",
+    "file": {
+      "original_name": "Chinna  Azure Data CloudArchitect .docx",
+      "stored_name": "1780589107475_Chinna__Azure_Data_CloudArchitect_.docx",
+      "size_bytes": 89973,
+      "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "local_path": "/uploads/1780589107475_Chinna__Azure_Data_CloudArchitect_.docx"
+    },
+    "email_context": {
+      "sender_email": "",
+      "subject": "",
+      "cc_email": "",
+      "body": ""
+    },
+    "extracted_profile": {
+      "name": "Chinnareddy",
+      "email": "",
+      "phone": "+1(223) 356-3459",
+      "skills": [
+        "JavaScript",
+        "Python",
+        "Java",
+        "Scala",
+        "HTML",
+        "CSS",
+        "SQL",
+        "Bootstrap",
+        "JQuery",
+        "ASP.NET",
+        "MySQL",
+        "PostgreSQL",
+        "DynamoDB",
+        "AWS",
+        "Azure",
+        "Terraform",
+        "CI/CD",
+        "Git",
+        "GitHub",
+        "SAP",
+        "Spark",
+        "Airflow",
+        "Kafka",
+        "ETL",
+        "Agile",
+        "Scrum",
+        "Power BI",
+        "Databricks",
+        "Synapse",
+        "Data Factory",
+        "Azure Data Factory",
+        "Redshift",
+        "Snowflake",
+        "Delta Lake",
+        "Lakehouse",
+        "PySpark",
+        "Data Lake",
+        "U-SQL",
+        "SSIS",
+        "SSRS",
+        "T-SQL",
+        "PolyBase"
+      ],
+      "experience_years": 15,
+      "location": "Unknown"
+    },
+    "resume_text": "\n\n\n\nChinnareddy\t\t\t\t\t\t\t\t+1(223) 356-3459\n\n \n\n               \n\n\n\nProfessional Summary\n\n Azure Data Platform Architect with over 15 years of experience in designing, developing, and governing end-to-end data modernization and analytics ecosystems across Microsoft Azure and hybrid environments. Adept at combining architecture vision with deep hands-on engineering to deliver scalable, secure, and business-aligned cloud data platforms\n\nSpecialized in building secure, high-performance data platforms using Azure Synapse Analytics, Azure Data Factory, Azure Databricks, and Data Lake Storage Gen2, enabling enterprise-grade data ingestion, transformation, and analytics.\n\nExpert in Lakehouse and Delta Lake architecture, delivering ACID-compliant, scalable, and cost-optimized solutions for both batch and real-time workloads.\n\nArchitected multi-zone (Bronze–Silver–Gold) data lake patterns, integrating with Event Hubs, Logic Apps, and Power BI for unified analytics and real-time insights.\n\nLed several legacy warehouse modernization and cloud migration programs, transitioning on-prem SQL and ETL systems to Azure Synapse and Databricks with zero data loss and minimal downtime.\n\nDesigned and optimized PySpark/Spark SQL transformations with partitioning, caching, and broadcast joins for efficient large-scale processing.\n\nDeveloped automated ELT frameworks using ADF pipelines and Synapse orchestration, incorporating robust error handling, logging, and alerting for operational reliability.\n\nEstablished CI/CD pipelines through Azure DevOps, integrating Databricks Repos, Git, and Terraform for consistent and version-controlled deployments.\n\nDelivered semantic data models and BI layers leveraging Power BI and Synapse views, supporting executive dashboards and self-service analytics.\n\nImplemented data governance, security, and compliance frameworks using Microsoft Purview, Key Vault, and RBAC policies, ensuring full data protection and regulatory alignment.\n\nDefined scalable architecture blueprints for data ingestion, storage, and compute layers, enabling cost efficiency, high availability, and future scalability.\n\nExperienced in real-time analytics and streaming data pipelines using Databricks Structured Streaming and Event Hubs for low-latency insights.\n\nStrong background in data modeling (Star, Snowflake, Data Vault), metadata management, and performance tuning using Synapse workload optimization and monitoring tools.\n\nHands-on leadership in Agile and DevOps environments, mentoring engineering teams and driving architecture excellence through innovation and automation.\n\nRecognized for bridging the gap between business strategy and technical implementation, delivering high-impact Azure data solutions aligned with enterprise vision.\n\nDesigned and optimized PySpark/Spark SQL transformations, employing techniques such as broadcast joins, Z-ordering, caching, partition pruning, and Adaptive Query Execution (AQE) to achieve significant performance improvements.\n\nEngaged in cost-performance benchmarking, optimizing cluster configurations, storage tiers, and query workloads across Databricks, Synapse, and Snowflake environments.\n\nMentored and led engineering teams, promoting reusable design patterns, automation, and coding best practices across the data platform.\n\nWorked in Agile/Scrum environments, managing backlogs, leading sprint reviews, and ensuring continuous delivery of incremental, high-value data capabilities.\n\n\n\nTechnical Skills\n\n\n\nCategory\n\nSkills / Tools / Technologies\n\nData Engineering & ETL\n\nAzure Data Factory, ADF Data Flows, PySpark, Apache Spark, ADB, Spark SQL Mapping Data Flows, Spark UDFs, Glue Crawlers.\n\nProgramming Languages\n\nPython, Scala, SQL, Java, C#, ASP.NET, JavaScript, HTML, CSS\n\nData Pipelines & Orchestration\n\nAzure Data Factory (Triggers & Pipelines), Apache Airflow, AWS Lambda, Event-driven workflows, Scheduling, DAGs, Error handling\n\nData Storage & Warehousing\n\nAzure Synapse Analytics, Azure Data Lake Storage Gen2, HDFS, Redshift, Amazon S3, MS SQL Server, MySQL, PostgreSQL and Azure SQL Database, Snowflake, HBase, Cosmos DB, Glue Data Catalog, Purview,\n\nStreaming & Real-Time Processing\n\nSpark Streaming, Azure Event Hub, Windowing, Watermarking, Kafka, HBase, Event-driven Lambda/EventHub processing, IoT pipelines\n\nDevOps, CI/CD & Automation\n\nGitHub Actions, Azure DevOps, CloudFormation, CI/CD Pipelines\n\nProfessional Experience\n\nAzure Cloud Architect, Sep 2024 -Current\n\nIntuit Irving,\t \n\nKey Responsibilities:\n\nPartnered with business stakeholders, product owners, and analytics teams to understand business objectives, gather technical requirements, and translate them into scalable, secure Azure-based data architectures.\n\nArchitected cloud data platforms using Azure Synapse Analytics, Azure Databricks, Azure Data Factory (ADF), and Data Lake Storage Gen2, enabling seamless data integration, transformation, and analytics across hybrid environments.\n\nLed end-to-end design and implementation of ETL/ELT pipelines using ADF and Databricks, integrating data from SQL Server, SAP, APIs, flat files, and other enterprise systems into Azure Data Lake and Snowflake.\n\nDesigned future-state data platform architectures emphasizing scalability, resilience, and cost efficiency, including data lake zoning (Bronze, Silver, Gold) and Delta Lake optimization strategies.\n\nImplemented complex data transformation logic using PySpark, Spark SQL, and ADF Mapping Data Flows for data cleansing, deduplication, and enrichment to meet analytical and reporting needs.\n\nDeveloped dimensional and semantic data models (Star and Snowflake schemas) and implemented SCD Type 1 & 2 frameworks to preserve historical accuracy in analytical reporting.\n\nEnabled real-time and near-real-time analytics through Azure Event Hubs, Kafka, and Databricks Structured Streaming for telemetry and IoT-based use cases.\n\nOptimized Databricks jobs and Synapse queries using Adaptive Query Execution (AQE), broadcast joins, partition pruning, caching, and clustering for high-volume data workloads.\n\nDesigned and published Power BI dashboards and Synapse views, providing business stakeholders with actionable insights and key performance metrics.\n\nEstablished CI/CD automation using Azure DevOps and Git integration for ADF pipelines, Databricks notebooks, and SQL objects, ensuring consistency and traceability across environments.\n\nImplemented enterprise-grade security and governance frameworks using RBAC, Key Vault, encryption, and Purview to ensure compliance with corporate and regulatory standards.\n\nAutomated data workflows with ADF triggers and Apache Airflow DAGs, integrating monitoring and alerting via Azure Monitor, Log Analytics, and Application Insights.\n\nConducted performance tuning, data reconciliation, and quality validation to ensure accuracy, reliability, and optimal platform performance.\n\nCreated and maintained architecture documentation, data lineage diagrams, and operational runbooks, supporting maintainability and knowledge transfer.\n\nCollaborated closely with DevOps, QA, and security teams to align architecture decisions, automate deployment processes, and strengthen platform reliability.\n\nDrove cost optimization initiatives across Synapse, Databricks, and Snowflake workloads, balancing performance with resource efficiency.\n\nMentored and guided data engineering teams, establishing best practices for coding, data modeling, and operational excellence in Azure environments.\n\nChampioned continuous improvement and innovation, introducing automation, monitoring, and modern data architecture patterns to enhance delivery speed and platform stability.\n\nEnvironment: Azure Data Factory, Azure Synapse Analytics, Azure Data Lake Storage Gen2, Azure Databricks, PySpark, SQL, Azure Event Hub, Snowflake, Power BI, Azure DevOps, Apache Airflow, Azure Monitor, Azure SQL Database, Delta Lake, REST APIs, Azure Purview\t\n\nData Engineer,\t   July 2022 – Sep 2024\n\nCentene Corporation(Hospital) \n\nKey Responsibilities:\n\nDesigned and delivered a secure Azure-based enterprise data platform transaction analytics, ensuring scalability, reliability, and regulatory compliance.\n\nImplemented ELT pipelines using Azure Data Factory to ingest data from REST APIs, on-prem SQL Server, and SFTP into Data Lake Gen2.\n\nDeveloped reusable, parameterized pipelines with centralized error handling, logging frameworks, and Azure Key Vault integration for automated credential lifecycle management.\n\nEngineered multi-zone Data Lake Gen2 architecture (Bronze–Silver–Gold) with schema enforcement, partitioning, and lifecycle policies for traceable, high-performance analytics.\n\nBuilt PySpark notebooks in Azure Databricks for large-scale cleansing, transformation, enrichment, and risk scoring using Delta Lake optimization.\n\nOrchestrated unified workflows via Databricks Jobs API and Azure Data Factory, applying Z-ordering, broadcast joins, and partition pruning for efficiency.\n\nDesigned dimensional models in Azure Synapse Analytics with optimized distribution keys, indexing, and materialized views supporting Power BI-driven dashboards.\n\nEnforced enterprise security through RBAC, encryption, tokenized API access, and row-level security aligned with SOX, PCI-DSS, and GDPR.\n\nEstablished continuous monitoring using Azure Monitor and Log Analytics, optimizing compute utilization and proactively identifying pipeline latency anomalies.\n\nPartnered with Data Science, BI, and Product teams under Agile Scrum to translate analytical objectives into scalable, governed data solutions.\n\nArchitected AWS data pipelines using Glue, Lambda, and Step Functions, implementing multi-zone S3 data lakes with partitioning and lifecycle rules.\n\nDeveloped large-scale ETL logic with PySpark and Glue ETL Jobs, integrating Amazon RDS, DynamoDB, and on-prem SQL into centralized S3.\n\nModeled and optimized Redshift warehouses with refined sort keys, distribution strategies, and compression settings supporting QuickSight executive analytics.\n\nImplemented Apache Hudi and Delta Lake on S3 to enable incremental ingestion, version control, and time-travel queries for data accuracy.\n\nEnabled near-real-time analytics using Kinesis Data Streams and Glue Streaming Jobs, improving decision latency and operational responsiveness.\n\nStrengthened AWS security with IAM roles, Secrets Manager, and KMS encryption, enforcing least-privilege and proactive cost governance using CloudWatch.\n\nProduced comprehensive architecture documentation, lineage diagrams, and deployment runbooks to standardize operational maintenance and knowledge transfer.\n\nLed a Microsoft Fabric proof-of-concept integrating OneLake, Dataflows Gen2, and Synapse Engineering to validate unified data processing performance.\n\nAutomated ingestion and transformation workflows in Fabric Data Factory, connecting hybrid sources and validating orchestration reliability and throughput.\n\nMentored data engineers, promoting automation, DevOps integration, and best practices for scalable, cost-efficient, multi-cloud data engineering delivery.\n\nMentored engineers, driving DevOps practices, automation, and continuous improvement across Azure and AWS environments.\n\nEnvironment: Azure Data Factory, Azure Synapse, Databricks, Delta Lake, Data Lake Gen2, Power BI, Azure Key Vault, AWS Glue, Lambda, Step Functions, Redshift, S3, Kinesis, QuickSight, PySpark, Microsoft Fabric\n\n\n\nAWS Data Engineer, Dec 2019 – May 2022\t \t\t\n\nOld Mutual Insure\t\n\nKey Responsibilities:\n\nDeveloped scalable and resilient ETL pipelines using PySpark on AWS Glue to process transaction data and real-time currency rates from diverse global sources.\n\nCreated and optimized SQL queries and transformation logic to support high-performance data loads into Amazon Redshift for real-time financial dashboards.\n\nImplemented automated ingestion workflows via AWS Glue Crawlers and Jobs for schema inference, metadata cataloging, and structured/semi-structured data processing.\n\nOrchestrated complex ETL pipelines using Apache Airflow, ensuring data dependencies, job retries, and SLA-based execution across multiple currencies and regions.\n\nIntegrated AWS Lambda functions for event-driven pipeline execution and workflow triggers based on file arrivals or API responses.\n\nDesigned a data lake on Amazon S3, partitioned by currency, country, and date, and configured Redshift Spectrum for federated querying from S3 to Redshift.\n\nBuilt custom PySpark transformations to normalize, enrich, and validate multi-currency transaction data and ensure consistency across systems.\n\nConfigured distribution/sort keys in Redshift to optimize performance for cross-region financial reporting and currency-based aggregations.\n\nDeveloped modular UDFs and PySpark libraries to apply exchange rates dynamically, handle rounding precision, and enforce compliance checks.\n\nIntegrated AWS Databricks for advanced analytics, supporting ML workflows such as fraud detection and predictive currency fluctuation models.\n\nEstablished CI/CD pipelines using AWS CloudFormation and Git, automating infrastructure provisioning and Glue job deployments.\n\nEnabled real-time data validation and monitoring through CloudWatch Logs, Lambda alerts, and Airflow failure handling strategies.\n\nImplemented Change Data Capture (CDC) to track exchange rate updates and transaction modifications with minimal latency.\n\nEnsured data governance and compliance by managing secrets with AWS Secrets Manager, tracking lineage, and documenting metadata across services.\n\nEnvironment:AWS Glue, Amazon Redshift, PySpark, Databricks, Apache Airflow, AWS Lambda, Amazon S3, RDS, REST APIs, AWS Secrets Manager, CloudFormation\n\n\n\nAzure Data Engineer,     Feb 2017 – May 2019\n\nWoolworths (Finance & Retail) \n\nKey Responsibilities:\n\nArchitected and deployed secure Azure Data Factory v2 pipelines to ingest fixed-width VSAM datasets from mainframe systems via SFTP and batch interfaces into Azure Data Lake Store Gen1.\n\nDeveloped complex U-SQL scripts in Azure Data Lake Analytics to parse, cleanse, and transform COBOL-based records into normalized structures suitable for analytical processing.\n\nEngineered modular, parameter-driven ADF pipelines incorporating linked services, datasets, and activities with robust error handling, retries, and dependency control.\n\nModeled normalized and dimensional data structures in Azure SQL Data Warehouse using PolyBase external tables and CTAS for high-volume, parallelized data ingestion.\n\nDesigned scalable T-SQL frameworks leveraging stored procedures, partitioned tables, and materialized views to support incremental loading and SCD Type 1 and Type 2 logic.\n\nImplemented metadata-driven pipeline orchestration using control tables and ADF dynamic content expressions to automate ingestion and transformation workflows.\n\nSecured credentials, SAS tokens, and secrets through Azure Key Vault integration, ensuring identity-based access control across ADF and data services.\n\nEstablished proactive monitoring and alerting with Azure Monitor, Activity Logs, and Log Analytics to track pipeline health, data drift, and operational anomalies.\n\nDesigned Power BI data models, DAX measures, and visual dashboards providing real-time insights into transformed datasets for executive and operational reporting.\n\nAuthored comprehensive technical documentation covering data lineage, schema evolution, mapping rules, and governance policies to ensure compliance and audit readiness.\n\nEnvironment: Azure Data Lake Store Gen1, Azure SQL Database, Azure SQL Data Warehouse, Azure Key Vault, Azure Monitor, Azure Log Analytics, Azure Functions, Azure Blob Storage, Azure Event Grid\n\n\n\nETL, SQL Developer, Feb 2014 – Jan 2017\n\nStandard Bank(Finance) \n\nKey Responsibilities:\n\nDesigned and developed ASP.NET MVC applications to manage inventory operations, waste tracking, and promotional discount workflows across enterprise retail systems.\n\nUtilized C# with .NET Framework 4.5 to build modular backend components, controllers, and reusable data access layers supporting service-oriented architecture.\n\nDeveloped and deployed SSIS packages to perform scheduled ETL operations, extracting transactional data and loading it into consolidated SQL Server repositories.\n\nEmployed ADO.NET and Entity Framework to implement robust data manipulation layers, ensuring reliable communication between application and database tiers.\n\nAuthored optimized T-SQL stored procedures, triggers, and views to automate data processing, enforce validation, and support critical business reporting.\n\nCreated Windows Services to execute scheduled background jobs such as detecting near-expiry items and dynamically applying discount rules in real time.\n\nIntegrated RESTful APIs for bi-directional data exchange between POS systems, web applications, and SQL databases to maintain synchronization and consistency.\n\nDesigned responsive UI interfaces using Razor, jQuery, and Bootstrap, enabling intuitive and device-friendly navigation for warehouse and retail operations.\n\nApplied LINQ queries within C# business layers to efficiently filter, aggregate, and retrieve datasets, improving performance and maintainability of application logic.\n\nManaged version control and task management through Team Foundation Server (TFS), streamlining build workflows, release tracking, and collaborative development.\n\nParticipated in requirement analysis, sprint planning, and client review meetings to align technical design with evolving business objectives and process workflows.\n\nCoordinated with QA teams for comprehensive unit, regression, and integration testing, ensuring adherence to business rules and quality standards.\n\nDocumented detailed technical specifications, ETL workflows, and deployment procedures to facilitate smooth post-release support and knowledge transfer.\n\nEnvironment: SQL Server 2012/2014, SSIS, T-SQL, ASP.NET MVC 5, .NET Framework 4.5, C#, ADO.NET, Entity Framework, Razor, jQuery, Bootstrap, TFS\n\n\n\n.NET Developer, August 2010 – Feb 2014\n\nAccenture, Pune\n\nKey Responsibilities:\n\nDesigned and developed ASP.NET MVC web applications to manage inventory, order tracking, vendor billing, and promotional discount workflows across multiple retail branches.\n\nBuilt modular and reusable components using C# and .NET Framework 4.0, focusing on performance, maintainability, and clean architecture principles.\n\nDeveloped stored procedures, triggers, and T-SQL queries in SQL Server 2008 R2 for transactional processing, reporting, and data validation.\n\nIntegrated ADO.NET for data access and Entity Framework for ORM-based operations, optimizing data retrieval and reducing boilerplate SQL code.\n\nCreated SSRS reports and dashboards for sales trends, stock levels, and customer purchase analytics, enabling management to make data-driven decisions.\n\nImplemented Windows Services to automate background jobs such as price synchronization, stock updates, and discount recalculations.\n\nEnhanced system usability through responsive UI design, dynamic JavaScript/jQuery components, and user-friendly error handling.\n\nCollaborated with QA and Business Analysts to translate business requirements into technical specifications and ensure successful feature delivery.\n\nParticipated in end-to-end SDLC activities including design, coding, unit testing, deployment, and maintenance in both Agile and Waterfall environments.\n\nWorked closely with DBAs to optimize stored procedures, tune indexes, and improve database performance under high transaction volumes.\n\nProvided production support and issue resolution, ensuring high application uptime and customer satisfaction.\n\nMaintained version control and deployment pipelines using TFS, ensuring code quality, traceability, and stable release management\n\nEnvironment: ASP.NET MVC, C#, .NET Framework 4.0/4.5, ADO.NET, SQL Server 2008 R2, JavaScript, jQuery, HTML/CSS, SSRS, IIS\n\n",
+    "jd_match": {
+      "match_score": 98,
+      "matching_skills": [
+        "JavaScript",
+        "Python",
+        "Java",
+        "Scala",
+        "HTML"
+      ],
+      "missing_skills": [],
+      "risk_factors": [],
+      "candidate_summary": "Auto-synced candidate Chinnareddy from uploaded file. Extracted 42 skills and 15 years of experience."
+    }
+  },
+  {
+    "candidate_id": "C-1780589247242.782",
+    "job_id": "J-DEFAULT",
+    "source": "upload_sync",
+    "status": "New",
+    "received_at": "2026-06-04T16:07:27.243Z",
+    "file": {
+      "original_name": "Chinna  Azure Data CloudArchitect .docx",
+      "stored_name": "1780589247231_Chinna__Azure_Data_CloudArchitect_.docx",
+      "size_bytes": 89973,
+      "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "local_path": "/uploads/1780589247231_Chinna__Azure_Data_CloudArchitect_.docx"
+    },
+    "email_context": {
+      "sender_email": "",
+      "subject": "",
+      "cc_email": "",
+      "body": ""
+    },
+    "extracted_profile": {
+      "name": "Chinnareddy",
+      "email": "",
+      "phone": "+1(223) 356-3459",
+      "skills": [
+        "JavaScript",
+        "Python",
+        "Java",
+        "Scala",
+        "HTML",
+        "CSS",
+        "SQL",
+        "Bootstrap",
+        "JQuery",
+        "ASP.NET",
+        "MySQL",
+        "PostgreSQL",
+        "DynamoDB",
+        "AWS",
+        "Azure",
+        "Terraform",
+        "CI/CD",
+        "Git",
+        "GitHub",
+        "SAP",
+        "Spark",
+        "Airflow",
+        "Kafka",
+        "ETL",
+        "Agile",
+        "Scrum",
+        "Power BI",
+        "Databricks",
+        "Synapse",
+        "Data Factory",
+        "Azure Data Factory",
+        "Redshift",
+        "Snowflake",
+        "Delta Lake",
+        "Lakehouse",
+        "PySpark",
+        "Data Lake",
+        "U-SQL",
+        "SSIS",
+        "SSRS",
+        "T-SQL",
+        "PolyBase"
+      ],
+      "experience_years": 15,
+      "location": "Unknown"
+    },
+    "resume_text": "\n\n\n\nChinnareddy\t\t\t\t\t\t\t\t+1(223) 356-3459\n\n \n\n               \n\n\n\nProfessional Summary\n\n Azure Data Platform Architect with over 15 years of experience in designing, developing, and governing end-to-end data modernization and analytics ecosystems across Microsoft Azure and hybrid environments. Adept at combining architecture vision with deep hands-on engineering to deliver scalable, secure, and business-aligned cloud data platforms\n\nSpecialized in building secure, high-performance data platforms using Azure Synapse Analytics, Azure Data Factory, Azure Databricks, and Data Lake Storage Gen2, enabling enterprise-grade data ingestion, transformation, and analytics.\n\nExpert in Lakehouse and Delta Lake architecture, delivering ACID-compliant, scalable, and cost-optimized solutions for both batch and real-time workloads.\n\nArchitected multi-zone (Bronze–Silver–Gold) data lake patterns, integrating with Event Hubs, Logic Apps, and Power BI for unified analytics and real-time insights.\n\nLed several legacy warehouse modernization and cloud migration programs, transitioning on-prem SQL and ETL systems to Azure Synapse and Databricks with zero data loss and minimal downtime.\n\nDesigned and optimized PySpark/Spark SQL transformations with partitioning, caching, and broadcast joins for efficient large-scale processing.\n\nDeveloped automated ELT frameworks using ADF pipelines and Synapse orchestration, incorporating robust error handling, logging, and alerting for operational reliability.\n\nEstablished CI/CD pipelines through Azure DevOps, integrating Databricks Repos, Git, and Terraform for consistent and version-controlled deployments.\n\nDelivered semantic data models and BI layers leveraging Power BI and Synapse views, supporting executive dashboards and self-service analytics.\n\nImplemented data governance, security, and compliance frameworks using Microsoft Purview, Key Vault, and RBAC policies, ensuring full data protection and regulatory alignment.\n\nDefined scalable architecture blueprints for data ingestion, storage, and compute layers, enabling cost efficiency, high availability, and future scalability.\n\nExperienced in real-time analytics and streaming data pipelines using Databricks Structured Streaming and Event Hubs for low-latency insights.\n\nStrong background in data modeling (Star, Snowflake, Data Vault), metadata management, and performance tuning using Synapse workload optimization and monitoring tools.\n\nHands-on leadership in Agile and DevOps environments, mentoring engineering teams and driving architecture excellence through innovation and automation.\n\nRecognized for bridging the gap between business strategy and technical implementation, delivering high-impact Azure data solutions aligned with enterprise vision.\n\nDesigned and optimized PySpark/Spark SQL transformations, employing techniques such as broadcast joins, Z-ordering, caching, partition pruning, and Adaptive Query Execution (AQE) to achieve significant performance improvements.\n\nEngaged in cost-performance benchmarking, optimizing cluster configurations, storage tiers, and query workloads across Databricks, Synapse, and Snowflake environments.\n\nMentored and led engineering teams, promoting reusable design patterns, automation, and coding best practices across the data platform.\n\nWorked in Agile/Scrum environments, managing backlogs, leading sprint reviews, and ensuring continuous delivery of incremental, high-value data capabilities.\n\n\n\nTechnical Skills\n\n\n\nCategory\n\nSkills / Tools / Technologies\n\nData Engineering & ETL\n\nAzure Data Factory, ADF Data Flows, PySpark, Apache Spark, ADB, Spark SQL Mapping Data Flows, Spark UDFs, Glue Crawlers.\n\nProgramming Languages\n\nPython, Scala, SQL, Java, C#, ASP.NET, JavaScript, HTML, CSS\n\nData Pipelines & Orchestration\n\nAzure Data Factory (Triggers & Pipelines), Apache Airflow, AWS Lambda, Event-driven workflows, Scheduling, DAGs, Error handling\n\nData Storage & Warehousing\n\nAzure Synapse Analytics, Azure Data Lake Storage Gen2, HDFS, Redshift, Amazon S3, MS SQL Server, MySQL, PostgreSQL and Azure SQL Database, Snowflake, HBase, Cosmos DB, Glue Data Catalog, Purview,\n\nStreaming & Real-Time Processing\n\nSpark Streaming, Azure Event Hub, Windowing, Watermarking, Kafka, HBase, Event-driven Lambda/EventHub processing, IoT pipelines\n\nDevOps, CI/CD & Automation\n\nGitHub Actions, Azure DevOps, CloudFormation, CI/CD Pipelines\n\nProfessional Experience\n\nAzure Cloud Architect, Sep 2024 -Current\n\nIntuit Irving,\t \n\nKey Responsibilities:\n\nPartnered with business stakeholders, product owners, and analytics teams to understand business objectives, gather technical requirements, and translate them into scalable, secure Azure-based data architectures.\n\nArchitected cloud data platforms using Azure Synapse Analytics, Azure Databricks, Azure Data Factory (ADF), and Data Lake Storage Gen2, enabling seamless data integration, transformation, and analytics across hybrid environments.\n\nLed end-to-end design and implementation of ETL/ELT pipelines using ADF and Databricks, integrating data from SQL Server, SAP, APIs, flat files, and other enterprise systems into Azure Data Lake and Snowflake.\n\nDesigned future-state data platform architectures emphasizing scalability, resilience, and cost efficiency, including data lake zoning (Bronze, Silver, Gold) and Delta Lake optimization strategies.\n\nImplemented complex data transformation logic using PySpark, Spark SQL, and ADF Mapping Data Flows for data cleansing, deduplication, and enrichment to meet analytical and reporting needs.\n\nDeveloped dimensional and semantic data models (Star and Snowflake schemas) and implemented SCD Type 1 & 2 frameworks to preserve historical accuracy in analytical reporting.\n\nEnabled real-time and near-real-time analytics through Azure Event Hubs, Kafka, and Databricks Structured Streaming for telemetry and IoT-based use cases.\n\nOptimized Databricks jobs and Synapse queries using Adaptive Query Execution (AQE), broadcast joins, partition pruning, caching, and clustering for high-volume data workloads.\n\nDesigned and published Power BI dashboards and Synapse views, providing business stakeholders with actionable insights and key performance metrics.\n\nEstablished CI/CD automation using Azure DevOps and Git integration for ADF pipelines, Databricks notebooks, and SQL objects, ensuring consistency and traceability across environments.\n\nImplemented enterprise-grade security and governance frameworks using RBAC, Key Vault, encryption, and Purview to ensure compliance with corporate and regulatory standards.\n\nAutomated data workflows with ADF triggers and Apache Airflow DAGs, integrating monitoring and alerting via Azure Monitor, Log Analytics, and Application Insights.\n\nConducted performance tuning, data reconciliation, and quality validation to ensure accuracy, reliability, and optimal platform performance.\n\nCreated and maintained architecture documentation, data lineage diagrams, and operational runbooks, supporting maintainability and knowledge transfer.\n\nCollaborated closely with DevOps, QA, and security teams to align architecture decisions, automate deployment processes, and strengthen platform reliability.\n\nDrove cost optimization initiatives across Synapse, Databricks, and Snowflake workloads, balancing performance with resource efficiency.\n\nMentored and guided data engineering teams, establishing best practices for coding, data modeling, and operational excellence in Azure environments.\n\nChampioned continuous improvement and innovation, introducing automation, monitoring, and modern data architecture patterns to enhance delivery speed and platform stability.\n\nEnvironment: Azure Data Factory, Azure Synapse Analytics, Azure Data Lake Storage Gen2, Azure Databricks, PySpark, SQL, Azure Event Hub, Snowflake, Power BI, Azure DevOps, Apache Airflow, Azure Monitor, Azure SQL Database, Delta Lake, REST APIs, Azure Purview\t\n\nData Engineer,\t   July 2022 – Sep 2024\n\nCentene Corporation(Hospital) \n\nKey Responsibilities:\n\nDesigned and delivered a secure Azure-based enterprise data platform transaction analytics, ensuring scalability, reliability, and regulatory compliance.\n\nImplemented ELT pipelines using Azure Data Factory to ingest data from REST APIs, on-prem SQL Server, and SFTP into Data Lake Gen2.\n\nDeveloped reusable, parameterized pipelines with centralized error handling, logging frameworks, and Azure Key Vault integration for automated credential lifecycle management.\n\nEngineered multi-zone Data Lake Gen2 architecture (Bronze–Silver–Gold) with schema enforcement, partitioning, and lifecycle policies for traceable, high-performance analytics.\n\nBuilt PySpark notebooks in Azure Databricks for large-scale cleansing, transformation, enrichment, and risk scoring using Delta Lake optimization.\n\nOrchestrated unified workflows via Databricks Jobs API and Azure Data Factory, applying Z-ordering, broadcast joins, and partition pruning for efficiency.\n\nDesigned dimensional models in Azure Synapse Analytics with optimized distribution keys, indexing, and materialized views supporting Power BI-driven dashboards.\n\nEnforced enterprise security through RBAC, encryption, tokenized API access, and row-level security aligned with SOX, PCI-DSS, and GDPR.\n\nEstablished continuous monitoring using Azure Monitor and Log Analytics, optimizing compute utilization and proactively identifying pipeline latency anomalies.\n\nPartnered with Data Science, BI, and Product teams under Agile Scrum to translate analytical objectives into scalable, governed data solutions.\n\nArchitected AWS data pipelines using Glue, Lambda, and Step Functions, implementing multi-zone S3 data lakes with partitioning and lifecycle rules.\n\nDeveloped large-scale ETL logic with PySpark and Glue ETL Jobs, integrating Amazon RDS, DynamoDB, and on-prem SQL into centralized S3.\n\nModeled and optimized Redshift warehouses with refined sort keys, distribution strategies, and compression settings supporting QuickSight executive analytics.\n\nImplemented Apache Hudi and Delta Lake on S3 to enable incremental ingestion, version control, and time-travel queries for data accuracy.\n\nEnabled near-real-time analytics using Kinesis Data Streams and Glue Streaming Jobs, improving decision latency and operational responsiveness.\n\nStrengthened AWS security with IAM roles, Secrets Manager, and KMS encryption, enforcing least-privilege and proactive cost governance using CloudWatch.\n\nProduced comprehensive architecture documentation, lineage diagrams, and deployment runbooks to standardize operational maintenance and knowledge transfer.\n\nLed a Microsoft Fabric proof-of-concept integrating OneLake, Dataflows Gen2, and Synapse Engineering to validate unified data processing performance.\n\nAutomated ingestion and transformation workflows in Fabric Data Factory, connecting hybrid sources and validating orchestration reliability and throughput.\n\nMentored data engineers, promoting automation, DevOps integration, and best practices for scalable, cost-efficient, multi-cloud data engineering delivery.\n\nMentored engineers, driving DevOps practices, automation, and continuous improvement across Azure and AWS environments.\n\nEnvironment: Azure Data Factory, Azure Synapse, Databricks, Delta Lake, Data Lake Gen2, Power BI, Azure Key Vault, AWS Glue, Lambda, Step Functions, Redshift, S3, Kinesis, QuickSight, PySpark, Microsoft Fabric\n\n\n\nAWS Data Engineer, Dec 2019 – May 2022\t \t\t\n\nOld Mutual Insure\t\n\nKey Responsibilities:\n\nDeveloped scalable and resilient ETL pipelines using PySpark on AWS Glue to process transaction data and real-time currency rates from diverse global sources.\n\nCreated and optimized SQL queries and transformation logic to support high-performance data loads into Amazon Redshift for real-time financial dashboards.\n\nImplemented automated ingestion workflows via AWS Glue Crawlers and Jobs for schema inference, metadata cataloging, and structured/semi-structured data processing.\n\nOrchestrated complex ETL pipelines using Apache Airflow, ensuring data dependencies, job retries, and SLA-based execution across multiple currencies and regions.\n\nIntegrated AWS Lambda functions for event-driven pipeline execution and workflow triggers based on file arrivals or API responses.\n\nDesigned a data lake on Amazon S3, partitioned by currency, country, and date, and configured Redshift Spectrum for federated querying from S3 to Redshift.\n\nBuilt custom PySpark transformations to normalize, enrich, and validate multi-currency transaction data and ensure consistency across systems.\n\nConfigured distribution/sort keys in Redshift to optimize performance for cross-region financial reporting and currency-based aggregations.\n\nDeveloped modular UDFs and PySpark libraries to apply exchange rates dynamically, handle rounding precision, and enforce compliance checks.\n\nIntegrated AWS Databricks for advanced analytics, supporting ML workflows such as fraud detection and predictive currency fluctuation models.\n\nEstablished CI/CD pipelines using AWS CloudFormation and Git, automating infrastructure provisioning and Glue job deployments.\n\nEnabled real-time data validation and monitoring through CloudWatch Logs, Lambda alerts, and Airflow failure handling strategies.\n\nImplemented Change Data Capture (CDC) to track exchange rate updates and transaction modifications with minimal latency.\n\nEnsured data governance and compliance by managing secrets with AWS Secrets Manager, tracking lineage, and documenting metadata across services.\n\nEnvironment:AWS Glue, Amazon Redshift, PySpark, Databricks, Apache Airflow, AWS Lambda, Amazon S3, RDS, REST APIs, AWS Secrets Manager, CloudFormation\n\n\n\nAzure Data Engineer,     Feb 2017 – May 2019\n\nWoolworths (Finance & Retail) \n\nKey Responsibilities:\n\nArchitected and deployed secure Azure Data Factory v2 pipelines to ingest fixed-width VSAM datasets from mainframe systems via SFTP and batch interfaces into Azure Data Lake Store Gen1.\n\nDeveloped complex U-SQL scripts in Azure Data Lake Analytics to parse, cleanse, and transform COBOL-based records into normalized structures suitable for analytical processing.\n\nEngineered modular, parameter-driven ADF pipelines incorporating linked services, datasets, and activities with robust error handling, retries, and dependency control.\n\nModeled normalized and dimensional data structures in Azure SQL Data Warehouse using PolyBase external tables and CTAS for high-volume, parallelized data ingestion.\n\nDesigned scalable T-SQL frameworks leveraging stored procedures, partitioned tables, and materialized views to support incremental loading and SCD Type 1 and Type 2 logic.\n\nImplemented metadata-driven pipeline orchestration using control tables and ADF dynamic content expressions to automate ingestion and transformation workflows.\n\nSecured credentials, SAS tokens, and secrets through Azure Key Vault integration, ensuring identity-based access control across ADF and data services.\n\nEstablished proactive monitoring and alerting with Azure Monitor, Activity Logs, and Log Analytics to track pipeline health, data drift, and operational anomalies.\n\nDesigned Power BI data models, DAX measures, and visual dashboards providing real-time insights into transformed datasets for executive and operational reporting.\n\nAuthored comprehensive technical documentation covering data lineage, schema evolution, mapping rules, and governance policies to ensure compliance and audit readiness.\n\nEnvironment: Azure Data Lake Store Gen1, Azure SQL Database, Azure SQL Data Warehouse, Azure Key Vault, Azure Monitor, Azure Log Analytics, Azure Functions, Azure Blob Storage, Azure Event Grid\n\n\n\nETL, SQL Developer, Feb 2014 – Jan 2017\n\nStandard Bank(Finance) \n\nKey Responsibilities:\n\nDesigned and developed ASP.NET MVC applications to manage inventory operations, waste tracking, and promotional discount workflows across enterprise retail systems.\n\nUtilized C# with .NET Framework 4.5 to build modular backend components, controllers, and reusable data access layers supporting service-oriented architecture.\n\nDeveloped and deployed SSIS packages to perform scheduled ETL operations, extracting transactional data and loading it into consolidated SQL Server repositories.\n\nEmployed ADO.NET and Entity Framework to implement robust data manipulation layers, ensuring reliable communication between application and database tiers.\n\nAuthored optimized T-SQL stored procedures, triggers, and views to automate data processing, enforce validation, and support critical business reporting.\n\nCreated Windows Services to execute scheduled background jobs such as detecting near-expiry items and dynamically applying discount rules in real time.\n\nIntegrated RESTful APIs for bi-directional data exchange between POS systems, web applications, and SQL databases to maintain synchronization and consistency.\n\nDesigned responsive UI interfaces using Razor, jQuery, and Bootstrap, enabling intuitive and device-friendly navigation for warehouse and retail operations.\n\nApplied LINQ queries within C# business layers to efficiently filter, aggregate, and retrieve datasets, improving performance and maintainability of application logic.\n\nManaged version control and task management through Team Foundation Server (TFS), streamlining build workflows, release tracking, and collaborative development.\n\nParticipated in requirement analysis, sprint planning, and client review meetings to align technical design with evolving business objectives and process workflows.\n\nCoordinated with QA teams for comprehensive unit, regression, and integration testing, ensuring adherence to business rules and quality standards.\n\nDocumented detailed technical specifications, ETL workflows, and deployment procedures to facilitate smooth post-release support and knowledge transfer.\n\nEnvironment: SQL Server 2012/2014, SSIS, T-SQL, ASP.NET MVC 5, .NET Framework 4.5, C#, ADO.NET, Entity Framework, Razor, jQuery, Bootstrap, TFS\n\n\n\n.NET Developer, August 2010 – Feb 2014\n\nAccenture, Pune\n\nKey Responsibilities:\n\nDesigned and developed ASP.NET MVC web applications to manage inventory, order tracking, vendor billing, and promotional discount workflows across multiple retail branches.\n\nBuilt modular and reusable components using C# and .NET Framework 4.0, focusing on performance, maintainability, and clean architecture principles.\n\nDeveloped stored procedures, triggers, and T-SQL queries in SQL Server 2008 R2 for transactional processing, reporting, and data validation.\n\nIntegrated ADO.NET for data access and Entity Framework for ORM-based operations, optimizing data retrieval and reducing boilerplate SQL code.\n\nCreated SSRS reports and dashboards for sales trends, stock levels, and customer purchase analytics, enabling management to make data-driven decisions.\n\nImplemented Windows Services to automate background jobs such as price synchronization, stock updates, and discount recalculations.\n\nEnhanced system usability through responsive UI design, dynamic JavaScript/jQuery components, and user-friendly error handling.\n\nCollaborated with QA and Business Analysts to translate business requirements into technical specifications and ensure successful feature delivery.\n\nParticipated in end-to-end SDLC activities including design, coding, unit testing, deployment, and maintenance in both Agile and Waterfall environments.\n\nWorked closely with DBAs to optimize stored procedures, tune indexes, and improve database performance under high transaction volumes.\n\nProvided production support and issue resolution, ensuring high application uptime and customer satisfaction.\n\nMaintained version control and deployment pipelines using TFS, ensuring code quality, traceability, and stable release management\n\nEnvironment: ASP.NET MVC, C#, .NET Framework 4.0/4.5, ADO.NET, SQL Server 2008 R2, JavaScript, jQuery, HTML/CSS, SSRS, IIS\n\n",
+    "jd_match": {
+      "match_score": 98,
+      "matching_skills": [
+        "JavaScript",
+        "Python",
+        "Java",
+        "Scala",
+        "HTML"
+      ],
+      "missing_skills": [],
+      "risk_factors": [],
+      "candidate_summary": "Auto-synced candidate Chinnareddy from uploaded file. Extracted 42 skills and 15 years of experience."
+    }
+  },
+  {
+    "candidate_id": "C-1780589367780.9963",
+    "job_id": "J-DEFAULT",
+    "source": "upload_sync",
+    "status": "New",
+    "received_at": "2026-06-04T16:09:27.781Z",
+    "file": {
+      "original_name": "Chinna  Azure Data CloudArchitect .docx",
+      "stored_name": "1780589367768_Chinna__Azure_Data_CloudArchitect_.docx",
+      "size_bytes": 89973,
+      "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "local_path": "/uploads/1780589367768_Chinna__Azure_Data_CloudArchitect_.docx"
+    },
+    "email_context": {
+      "sender_email": "",
+      "subject": "",
+      "cc_email": "",
+      "body": ""
+    },
+    "extracted_profile": {
+      "name": "Chinnareddy",
+      "email": "",
+      "phone": "+1(223) 356-3459",
+      "skills": [
+        "JavaScript",
+        "Python",
+        "Java",
+        "Scala",
+        "HTML",
+        "CSS",
+        "SQL",
+        "Bootstrap",
+        "JQuery",
+        "ASP.NET",
+        "MySQL",
+        "PostgreSQL",
+        "DynamoDB",
+        "AWS",
+        "Azure",
+        "Terraform",
+        "CI/CD",
+        "Git",
+        "GitHub",
+        "SAP",
+        "Spark",
+        "Airflow",
+        "Kafka",
+        "ETL",
+        "Agile",
+        "Scrum",
+        "Power BI",
+        "Databricks",
+        "Synapse",
+        "Data Factory",
+        "Azure Data Factory",
+        "Redshift",
+        "Snowflake",
+        "Delta Lake",
+        "Lakehouse",
+        "PySpark",
+        "Data Lake",
+        "U-SQL",
+        "SSIS",
+        "SSRS",
+        "T-SQL",
+        "PolyBase"
+      ],
+      "experience_years": 15,
+      "location": "Unknown"
+    },
+    "resume_text": "\n\n\n\nChinnareddy\t\t\t\t\t\t\t\t+1(223) 356-3459\n\n \n\n               \n\n\n\nProfessional Summary\n\n Azure Data Platform Architect with over 15 years of experience in designing, developing, and governing end-to-end data modernization and analytics ecosystems across Microsoft Azure and hybrid environments. Adept at combining architecture vision with deep hands-on engineering to deliver scalable, secure, and business-aligned cloud data platforms\n\nSpecialized in building secure, high-performance data platforms using Azure Synapse Analytics, Azure Data Factory, Azure Databricks, and Data Lake Storage Gen2, enabling enterprise-grade data ingestion, transformation, and analytics.\n\nExpert in Lakehouse and Delta Lake architecture, delivering ACID-compliant, scalable, and cost-optimized solutions for both batch and real-time workloads.\n\nArchitected multi-zone (Bronze–Silver–Gold) data lake patterns, integrating with Event Hubs, Logic Apps, and Power BI for unified analytics and real-time insights.\n\nLed several legacy warehouse modernization and cloud migration programs, transitioning on-prem SQL and ETL systems to Azure Synapse and Databricks with zero data loss and minimal downtime.\n\nDesigned and optimized PySpark/Spark SQL transformations with partitioning, caching, and broadcast joins for efficient large-scale processing.\n\nDeveloped automated ELT frameworks using ADF pipelines and Synapse orchestration, incorporating robust error handling, logging, and alerting for operational reliability.\n\nEstablished CI/CD pipelines through Azure DevOps, integrating Databricks Repos, Git, and Terraform for consistent and version-controlled deployments.\n\nDelivered semantic data models and BI layers leveraging Power BI and Synapse views, supporting executive dashboards and self-service analytics.\n\nImplemented data governance, security, and compliance frameworks using Microsoft Purview, Key Vault, and RBAC policies, ensuring full data protection and regulatory alignment.\n\nDefined scalable architecture blueprints for data ingestion, storage, and compute layers, enabling cost efficiency, high availability, and future scalability.\n\nExperienced in real-time analytics and streaming data pipelines using Databricks Structured Streaming and Event Hubs for low-latency insights.\n\nStrong background in data modeling (Star, Snowflake, Data Vault), metadata management, and performance tuning using Synapse workload optimization and monitoring tools.\n\nHands-on leadership in Agile and DevOps environments, mentoring engineering teams and driving architecture excellence through innovation and automation.\n\nRecognized for bridging the gap between business strategy and technical implementation, delivering high-impact Azure data solutions aligned with enterprise vision.\n\nDesigned and optimized PySpark/Spark SQL transformations, employing techniques such as broadcast joins, Z-ordering, caching, partition pruning, and Adaptive Query Execution (AQE) to achieve significant performance improvements.\n\nEngaged in cost-performance benchmarking, optimizing cluster configurations, storage tiers, and query workloads across Databricks, Synapse, and Snowflake environments.\n\nMentored and led engineering teams, promoting reusable design patterns, automation, and coding best practices across the data platform.\n\nWorked in Agile/Scrum environments, managing backlogs, leading sprint reviews, and ensuring continuous delivery of incremental, high-value data capabilities.\n\n\n\nTechnical Skills\n\n\n\nCategory\n\nSkills / Tools / Technologies\n\nData Engineering & ETL\n\nAzure Data Factory, ADF Data Flows, PySpark, Apache Spark, ADB, Spark SQL Mapping Data Flows, Spark UDFs, Glue Crawlers.\n\nProgramming Languages\n\nPython, Scala, SQL, Java, C#, ASP.NET, JavaScript, HTML, CSS\n\nData Pipelines & Orchestration\n\nAzure Data Factory (Triggers & Pipelines), Apache Airflow, AWS Lambda, Event-driven workflows, Scheduling, DAGs, Error handling\n\nData Storage & Warehousing\n\nAzure Synapse Analytics, Azure Data Lake Storage Gen2, HDFS, Redshift, Amazon S3, MS SQL Server, MySQL, PostgreSQL and Azure SQL Database, Snowflake, HBase, Cosmos DB, Glue Data Catalog, Purview,\n\nStreaming & Real-Time Processing\n\nSpark Streaming, Azure Event Hub, Windowing, Watermarking, Kafka, HBase, Event-driven Lambda/EventHub processing, IoT pipelines\n\nDevOps, CI/CD & Automation\n\nGitHub Actions, Azure DevOps, CloudFormation, CI/CD Pipelines\n\nProfessional Experience\n\nAzure Cloud Architect, Sep 2024 -Current\n\nIntuit Irving,\t \n\nKey Responsibilities:\n\nPartnered with business stakeholders, product owners, and analytics teams to understand business objectives, gather technical requirements, and translate them into scalable, secure Azure-based data architectures.\n\nArchitected cloud data platforms using Azure Synapse Analytics, Azure Databricks, Azure Data Factory (ADF), and Data Lake Storage Gen2, enabling seamless data integration, transformation, and analytics across hybrid environments.\n\nLed end-to-end design and implementation of ETL/ELT pipelines using ADF and Databricks, integrating data from SQL Server, SAP, APIs, flat files, and other enterprise systems into Azure Data Lake and Snowflake.\n\nDesigned future-state data platform architectures emphasizing scalability, resilience, and cost efficiency, including data lake zoning (Bronze, Silver, Gold) and Delta Lake optimization strategies.\n\nImplemented complex data transformation logic using PySpark, Spark SQL, and ADF Mapping Data Flows for data cleansing, deduplication, and enrichment to meet analytical and reporting needs.\n\nDeveloped dimensional and semantic data models (Star and Snowflake schemas) and implemented SCD Type 1 & 2 frameworks to preserve historical accuracy in analytical reporting.\n\nEnabled real-time and near-real-time analytics through Azure Event Hubs, Kafka, and Databricks Structured Streaming for telemetry and IoT-based use cases.\n\nOptimized Databricks jobs and Synapse queries using Adaptive Query Execution (AQE), broadcast joins, partition pruning, caching, and clustering for high-volume data workloads.\n\nDesigned and published Power BI dashboards and Synapse views, providing business stakeholders with actionable insights and key performance metrics.\n\nEstablished CI/CD automation using Azure DevOps and Git integration for ADF pipelines, Databricks notebooks, and SQL objects, ensuring consistency and traceability across environments.\n\nImplemented enterprise-grade security and governance frameworks using RBAC, Key Vault, encryption, and Purview to ensure compliance with corporate and regulatory standards.\n\nAutomated data workflows with ADF triggers and Apache Airflow DAGs, integrating monitoring and alerting via Azure Monitor, Log Analytics, and Application Insights.\n\nConducted performance tuning, data reconciliation, and quality validation to ensure accuracy, reliability, and optimal platform performance.\n\nCreated and maintained architecture documentation, data lineage diagrams, and operational runbooks, supporting maintainability and knowledge transfer.\n\nCollaborated closely with DevOps, QA, and security teams to align architecture decisions, automate deployment processes, and strengthen platform reliability.\n\nDrove cost optimization initiatives across Synapse, Databricks, and Snowflake workloads, balancing performance with resource efficiency.\n\nMentored and guided data engineering teams, establishing best practices for coding, data modeling, and operational excellence in Azure environments.\n\nChampioned continuous improvement and innovation, introducing automation, monitoring, and modern data architecture patterns to enhance delivery speed and platform stability.\n\nEnvironment: Azure Data Factory, Azure Synapse Analytics, Azure Data Lake Storage Gen2, Azure Databricks, PySpark, SQL, Azure Event Hub, Snowflake, Power BI, Azure DevOps, Apache Airflow, Azure Monitor, Azure SQL Database, Delta Lake, REST APIs, Azure Purview\t\n\nData Engineer,\t   July 2022 – Sep 2024\n\nCentene Corporation(Hospital) \n\nKey Responsibilities:\n\nDesigned and delivered a secure Azure-based enterprise data platform transaction analytics, ensuring scalability, reliability, and regulatory compliance.\n\nImplemented ELT pipelines using Azure Data Factory to ingest data from REST APIs, on-prem SQL Server, and SFTP into Data Lake Gen2.\n\nDeveloped reusable, parameterized pipelines with centralized error handling, logging frameworks, and Azure Key Vault integration for automated credential lifecycle management.\n\nEngineered multi-zone Data Lake Gen2 architecture (Bronze–Silver–Gold) with schema enforcement, partitioning, and lifecycle policies for traceable, high-performance analytics.\n\nBuilt PySpark notebooks in Azure Databricks for large-scale cleansing, transformation, enrichment, and risk scoring using Delta Lake optimization.\n\nOrchestrated unified workflows via Databricks Jobs API and Azure Data Factory, applying Z-ordering, broadcast joins, and partition pruning for efficiency.\n\nDesigned dimensional models in Azure Synapse Analytics with optimized distribution keys, indexing, and materialized views supporting Power BI-driven dashboards.\n\nEnforced enterprise security through RBAC, encryption, tokenized API access, and row-level security aligned with SOX, PCI-DSS, and GDPR.\n\nEstablished continuous monitoring using Azure Monitor and Log Analytics, optimizing compute utilization and proactively identifying pipeline latency anomalies.\n\nPartnered with Data Science, BI, and Product teams under Agile Scrum to translate analytical objectives into scalable, governed data solutions.\n\nArchitected AWS data pipelines using Glue, Lambda, and Step Functions, implementing multi-zone S3 data lakes with partitioning and lifecycle rules.\n\nDeveloped large-scale ETL logic with PySpark and Glue ETL Jobs, integrating Amazon RDS, DynamoDB, and on-prem SQL into centralized S3.\n\nModeled and optimized Redshift warehouses with refined sort keys, distribution strategies, and compression settings supporting QuickSight executive analytics.\n\nImplemented Apache Hudi and Delta Lake on S3 to enable incremental ingestion, version control, and time-travel queries for data accuracy.\n\nEnabled near-real-time analytics using Kinesis Data Streams and Glue Streaming Jobs, improving decision latency and operational responsiveness.\n\nStrengthened AWS security with IAM roles, Secrets Manager, and KMS encryption, enforcing least-privilege and proactive cost governance using CloudWatch.\n\nProduced comprehensive architecture documentation, lineage diagrams, and deployment runbooks to standardize operational maintenance and knowledge transfer.\n\nLed a Microsoft Fabric proof-of-concept integrating OneLake, Dataflows Gen2, and Synapse Engineering to validate unified data processing performance.\n\nAutomated ingestion and transformation workflows in Fabric Data Factory, connecting hybrid sources and validating orchestration reliability and throughput.\n\nMentored data engineers, promoting automation, DevOps integration, and best practices for scalable, cost-efficient, multi-cloud data engineering delivery.\n\nMentored engineers, driving DevOps practices, automation, and continuous improvement across Azure and AWS environments.\n\nEnvironment: Azure Data Factory, Azure Synapse, Databricks, Delta Lake, Data Lake Gen2, Power BI, Azure Key Vault, AWS Glue, Lambda, Step Functions, Redshift, S3, Kinesis, QuickSight, PySpark, Microsoft Fabric\n\n\n\nAWS Data Engineer, Dec 2019 – May 2022\t \t\t\n\nOld Mutual Insure\t\n\nKey Responsibilities:\n\nDeveloped scalable and resilient ETL pipelines using PySpark on AWS Glue to process transaction data and real-time currency rates from diverse global sources.\n\nCreated and optimized SQL queries and transformation logic to support high-performance data loads into Amazon Redshift for real-time financial dashboards.\n\nImplemented automated ingestion workflows via AWS Glue Crawlers and Jobs for schema inference, metadata cataloging, and structured/semi-structured data processing.\n\nOrchestrated complex ETL pipelines using Apache Airflow, ensuring data dependencies, job retries, and SLA-based execution across multiple currencies and regions.\n\nIntegrated AWS Lambda functions for event-driven pipeline execution and workflow triggers based on file arrivals or API responses.\n\nDesigned a data lake on Amazon S3, partitioned by currency, country, and date, and configured Redshift Spectrum for federated querying from S3 to Redshift.\n\nBuilt custom PySpark transformations to normalize, enrich, and validate multi-currency transaction data and ensure consistency across systems.\n\nConfigured distribution/sort keys in Redshift to optimize performance for cross-region financial reporting and currency-based aggregations.\n\nDeveloped modular UDFs and PySpark libraries to apply exchange rates dynamically, handle rounding precision, and enforce compliance checks.\n\nIntegrated AWS Databricks for advanced analytics, supporting ML workflows such as fraud detection and predictive currency fluctuation models.\n\nEstablished CI/CD pipelines using AWS CloudFormation and Git, automating infrastructure provisioning and Glue job deployments.\n\nEnabled real-time data validation and monitoring through CloudWatch Logs, Lambda alerts, and Airflow failure handling strategies.\n\nImplemented Change Data Capture (CDC) to track exchange rate updates and transaction modifications with minimal latency.\n\nEnsured data governance and compliance by managing secrets with AWS Secrets Manager, tracking lineage, and documenting metadata across services.\n\nEnvironment:AWS Glue, Amazon Redshift, PySpark, Databricks, Apache Airflow, AWS Lambda, Amazon S3, RDS, REST APIs, AWS Secrets Manager, CloudFormation\n\n\n\nAzure Data Engineer,     Feb 2017 – May 2019\n\nWoolworths (Finance & Retail) \n\nKey Responsibilities:\n\nArchitected and deployed secure Azure Data Factory v2 pipelines to ingest fixed-width VSAM datasets from mainframe systems via SFTP and batch interfaces into Azure Data Lake Store Gen1.\n\nDeveloped complex U-SQL scripts in Azure Data Lake Analytics to parse, cleanse, and transform COBOL-based records into normalized structures suitable for analytical processing.\n\nEngineered modular, parameter-driven ADF pipelines incorporating linked services, datasets, and activities with robust error handling, retries, and dependency control.\n\nModeled normalized and dimensional data structures in Azure SQL Data Warehouse using PolyBase external tables and CTAS for high-volume, parallelized data ingestion.\n\nDesigned scalable T-SQL frameworks leveraging stored procedures, partitioned tables, and materialized views to support incremental loading and SCD Type 1 and Type 2 logic.\n\nImplemented metadata-driven pipeline orchestration using control tables and ADF dynamic content expressions to automate ingestion and transformation workflows.\n\nSecured credentials, SAS tokens, and secrets through Azure Key Vault integration, ensuring identity-based access control across ADF and data services.\n\nEstablished proactive monitoring and alerting with Azure Monitor, Activity Logs, and Log Analytics to track pipeline health, data drift, and operational anomalies.\n\nDesigned Power BI data models, DAX measures, and visual dashboards providing real-time insights into transformed datasets for executive and operational reporting.\n\nAuthored comprehensive technical documentation covering data lineage, schema evolution, mapping rules, and governance policies to ensure compliance and audit readiness.\n\nEnvironment: Azure Data Lake Store Gen1, Azure SQL Database, Azure SQL Data Warehouse, Azure Key Vault, Azure Monitor, Azure Log Analytics, Azure Functions, Azure Blob Storage, Azure Event Grid\n\n\n\nETL, SQL Developer, Feb 2014 – Jan 2017\n\nStandard Bank(Finance) \n\nKey Responsibilities:\n\nDesigned and developed ASP.NET MVC applications to manage inventory operations, waste tracking, and promotional discount workflows across enterprise retail systems.\n\nUtilized C# with .NET Framework 4.5 to build modular backend components, controllers, and reusable data access layers supporting service-oriented architecture.\n\nDeveloped and deployed SSIS packages to perform scheduled ETL operations, extracting transactional data and loading it into consolidated SQL Server repositories.\n\nEmployed ADO.NET and Entity Framework to implement robust data manipulation layers, ensuring reliable communication between application and database tiers.\n\nAuthored optimized T-SQL stored procedures, triggers, and views to automate data processing, enforce validation, and support critical business reporting.\n\nCreated Windows Services to execute scheduled background jobs such as detecting near-expiry items and dynamically applying discount rules in real time.\n\nIntegrated RESTful APIs for bi-directional data exchange between POS systems, web applications, and SQL databases to maintain synchronization and consistency.\n\nDesigned responsive UI interfaces using Razor, jQuery, and Bootstrap, enabling intuitive and device-friendly navigation for warehouse and retail operations.\n\nApplied LINQ queries within C# business layers to efficiently filter, aggregate, and retrieve datasets, improving performance and maintainability of application logic.\n\nManaged version control and task management through Team Foundation Server (TFS), streamlining build workflows, release tracking, and collaborative development.\n\nParticipated in requirement analysis, sprint planning, and client review meetings to align technical design with evolving business objectives and process workflows.\n\nCoordinated with QA teams for comprehensive unit, regression, and integration testing, ensuring adherence to business rules and quality standards.\n\nDocumented detailed technical specifications, ETL workflows, and deployment procedures to facilitate smooth post-release support and knowledge transfer.\n\nEnvironment: SQL Server 2012/2014, SSIS, T-SQL, ASP.NET MVC 5, .NET Framework 4.5, C#, ADO.NET, Entity Framework, Razor, jQuery, Bootstrap, TFS\n\n\n\n.NET Developer, August 2010 – Feb 2014\n\nAccenture, Pune\n\nKey Responsibilities:\n\nDesigned and developed ASP.NET MVC web applications to manage inventory, order tracking, vendor billing, and promotional discount workflows across multiple retail branches.\n\nBuilt modular and reusable components using C# and .NET Framework 4.0, focusing on performance, maintainability, and clean architecture principles.\n\nDeveloped stored procedures, triggers, and T-SQL queries in SQL Server 2008 R2 for transactional processing, reporting, and data validation.\n\nIntegrated ADO.NET for data access and Entity Framework for ORM-based operations, optimizing data retrieval and reducing boilerplate SQL code.\n\nCreated SSRS reports and dashboards for sales trends, stock levels, and customer purchase analytics, enabling management to make data-driven decisions.\n\nImplemented Windows Services to automate background jobs such as price synchronization, stock updates, and discount recalculations.\n\nEnhanced system usability through responsive UI design, dynamic JavaScript/jQuery components, and user-friendly error handling.\n\nCollaborated with QA and Business Analysts to translate business requirements into technical specifications and ensure successful feature delivery.\n\nParticipated in end-to-end SDLC activities including design, coding, unit testing, deployment, and maintenance in both Agile and Waterfall environments.\n\nWorked closely with DBAs to optimize stored procedures, tune indexes, and improve database performance under high transaction volumes.\n\nProvided production support and issue resolution, ensuring high application uptime and customer satisfaction.\n\nMaintained version control and deployment pipelines using TFS, ensuring code quality, traceability, and stable release management\n\nEnvironment: ASP.NET MVC, C#, .NET Framework 4.0/4.5, ADO.NET, SQL Server 2008 R2, JavaScript, jQuery, HTML/CSS, SSRS, IIS\n\n",
+    "jd_match": {
+      "match_score": 98,
+      "matching_skills": [
+        "JavaScript",
+        "Python",
+        "Java",
+        "Scala",
+        "HTML"
+      ],
+      "missing_skills": [],
+      "risk_factors": [],
+      "candidate_summary": "Auto-synced candidate Chinnareddy from uploaded file. Extracted 42 skills and 15 years of experience."
+    }
+  },
+  {
+    "candidate_id": "C-1780606745209.8408",
+    "job_id": "J-DEFAULT",
+    "source": "upload_sync",
+    "status": "New",
+    "received_at": "2026-06-04T20:59:05.210Z",
+    "file": {
+      "original_name": "AqibAli 10 years DevOps SRE Experience  1 .pdf",
+      "stored_name": "1780606745205_AqibAli_10_years_DevOps_SRE_Experience__1_.pdf",
+      "size_bytes": 181608,
+      "mime_type": "application/pdf",
+      "local_path": "/uploads/1780606745205_AqibAli_10_years_DevOps_SRE_Experience__1_.pdf"
+    },
+    "email_context": {
+      "sender_email": "",
+      "subject": "",
+      "cc_email": "",
+      "body": ""
+    },
+    "extracted_profile": {
+      "name": "Aqibali 10",
+      "email": "Aqiba1417@gmail.com",
+      "phone": "929 266 9489",
+      "skills": [
+        "JavaScript",
+        "Python",
+        "Java",
+        "Ruby",
+        "HTML",
+        "SQL",
+        "MongoDB",
+        "Oracle",
+        "DynamoDB",
+        "AWS",
+        "Azure",
+        "GCP",
+        "Docker",
+        "Kubernetes",
+        "Terraform",
+        "Ansible",
+        "Jenkins",
+        "CI/CD",
+        "Linux",
+        "Git",
+        "GitHub",
+        "Airflow",
+        "Kafka",
+        "ETL",
+        "Agile",
+        "Scrum",
+        "Microservices",
+        "Jira"
+      ],
+      "experience_years": 9,
+      "location": "analysis"
+    },
+    "resume_text": "\n\n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \nPROFESSIONAL SUMMARY \n \n \n• Over 9+ years of experience in IT industry within Configuration Management, \nChange/Release/Build Management, System Administration, Support/Maintenance \nenvironments like Red Hat Enterprise Linux, CentOS and expertise in automating builds \nand deployment process using Python and Shellscripts with focus on DevOps tools and \nGCP and Azure Cloud Architecture. \n• Highly accomplished GCP Engineer and Senior DevOps/SRE Specialist with experience \nsupporting enterprise-scale environments through ticket-based ServiceNow operations, \ncloud IAM, and DevOps automation. \n• Strong experience on DevOps essential tools like Chef, Puppet, Ansible, Docker, \nKubernetes, Subversion (SVN), GIT, Hudson, Jenkins, Ant, Maven and migrated \nVMWARE VMs to AWS and Managed Services like EC2, S3, Route53, ELB, EBS. \n• Experienced principles and best practices of Software Configuration Management \n(SCM) in Agile, scrum, and Waterfall methodologies. \n• Strong experience in AWS, creating, importing and launching volumes, EC2, RDS, \nLambda, security groups, auto-scaling, load balancers (ELBs), NACL in the defined VPC \nto design cost effective, fault tolerant and highly available systems. \n• Experience in developing Splunk queries and dashboards targeted at understanding \napplication performance and capacity analysis. \n• Experienced in administration/maintenance of source control management (SCM)systems, \nsuch as sub version (SVN), GIT and knowledge of Perforce and ClearCase. \n• I have experienced maintaining CI environment with build automation tools like Jenkins, \nBamboo and TFS and extensively used Jenkins to streamline CI/CD process, automated \nMaster-Slave configurations using temporary slaves. \n• Created infrastructure in a coded manner (infrastructure as code) using Puppet, Chef \nand Ansible for configuration management of virtual environments, and Vagrant for virtual \nmachine and resource control. \n• Proven track record in Google Workspace administration, GCP IAM roles, BigQuery \ndataset access, and storage bucket permissions. Skilled in scripting with PowerShell, \nBash, and JAMF to automate user provisioning and access management, with \nTerraform expertise for Infrastructure as Code.  \n• Recognized for blending technical depth with excellent communication and soft \nskills, enabling high-quality service delivery in high-pressure environments. \n• Experienced in deploying and configuring Chef Server including bootstrapping of Chef \nClient nodes for provisioning. Created roles, recipes, cookbooks and databags for server \nconfiguration. \nAqib Ali \nExperienced  and  motivated SRE  DevOps specialist  with  a  background  in  Linux  System \nAdministration  and  Engineering,  spanning  6  years.  Eager  to  embrace  new  challenges  and \nconstantly  learn  about  the  latest  technologies.  Highly  organized  with  a  proactive  problem- \nsolving  approach  and  excellent  communication  skills.  Thrives  both  in  collaborative  team \nenvironments and when working independently. Seeking opportunities to contribute expertise \nand drive innovation in the world of Site Reliability Engineering. \n929 266 9489 \nAqiba1417@gmail.com \n\n• Expertise in designing and managing scalable microservices architectures and cloud- \nnative applications. \n• Strong background in security best practices, ensuring secure infrastructure and \napplication deployments. \n• Extensive experience in log aggregation, monitoring, and alerting using tools like ELK \nstack and Prometheus. \n• Successfully reduced deployment times and increased reliability through Blue-Green \nand Canary Deployment strategies. \n \n \nTECHNICAL SKILLS \n \n \n \nSkill Category Description \nCloud Services AWS (EC2, S3, RDS, MSK, Route53), GCP (IAM, BigQuery, Buckets), Azure \nContainerization Docker, OpenShift , PodMan \nDatabases Postgres, MongoDB, Oracle, SQL Server, DB2 \nSystem Updates OS maintenance , AIX & Linux System Administratio \nVirtualization VMware, vCAC, vCenter \nScripting Terraform, Bash, Python, PowerShell, JAMF scripting \nData Migration Tools \nAWS DMS, ETL Pipelines, Snapshot/Restore, Schema Validation, Data \nReplication \nIdentity & Access \nGCP IAM (Groups, Roles, Permissions, BigQuery access), Terraform (policy \nautomation), PowerShell scripting \nHardware HP ProLiant, Dell Power Edge \nAutomation Terraform, Ansible, Puppet, Chef, CloudFormation \nDevops Tools Azure DevOps (Boards, Repos, Pipelines), Jenkins, Jira \nClusters VCS, Redhat Cluster, HA \nIncident \nManagement Tools \nJira, ServiceNow, RT \nPerformance \nManagement \nPerformance tools, Dynatrace, Splunk, AppDynamics \nMonitoring and \nAnalysis Tools \nCloudWatch, Nagios, Hobbit \nConfiguration \nManagement Tools \nAnsible, Chef, Puppet, ANT, Maven, Make \nProgramming \nLanguages \nC, Java/J2EE, .NET, Xml, Korn Shell, Perl, Ruby, Python, Groovy, \nPowerShell, SQL, Boto, Fabric, JavaScript, HTML \nOperating Systems UNIX (Solaris 8,9,10), Linux 5/6, Ubuntu, AIX, Windows 2008,2012 \nSCM/Version Control \nTools \nTFVC, Git, GitHub, Git LFS, git-tfs, TFS4JIRA \nWeb Service Tools \nJBoss, Apache Tomcat 5.x, IntelliJ IDEA, Oracle WebLogic 10.x/11.x, IBM \nWebSphere 5.x,6.x,7.0, IIS Server, JBoss \nCI Tools Jenkins/Hudson, Bamboo, U Deploy, X Deploy, Anthill Pro \nSDLC Agile, Waterfall Methodologies \nDatabase Systems \nSQL Server 2008/2012, Oracle 9i/10g, PL/SQL, MS Access, DB2, Postgres, \nSybase. \nTicketing/Bug \nTracking \nJira, Remedy, ServiceNow, Junit, PMD, Red Mine, and Bugzilla. \n \n  \n\n \nEXPERIENCE \n \nREDFORT TECH (PNC Bank) RESTON, VA APR 2021 – Present \nDESIGNATION: Infra Configuration Engineer \n \nRESPONSIBILITIES: \n• Designed and executed data migration strategies for Postgres, MongoDB, Elasticsearch, and S3, \nensuring zero data loss, validated schema consistency, and performance optimization. \n• Built migration automation tooling with Python and Terraform, integrating verification steps for data \ncompleteness, throughput monitoring, and rollback safety. \n• Established Kafka (MSK) clusters and data pipelines supporting real-time streaming and replication \nworkloads. \n• Automated configuration and deployment workflows through Terraform, Ansible, and Jenkins, \nincreasing reliability and reproducibility of migration and provisioning tasks. \n• Designed and maintained multi-AZ AWS infrastructure, including EC2, EKS, ECS, and MSK, \nensuring HA and disaster recovery compliance. \n• Implemented configuration and development tasks following established coding, testing, and \ndebugging standards. \n• Supported the migration of TFS and Azure DevOps environments to Jira and Git, ensuring smooth \nconversion and repository integrity. \n• Utilized git-tfs and TFS4JIRA tools for mapping TFVC branches, preserving history, and \nmaintaining work item traceability. \n• Conducted post-migration validation and testing, verifying successful issue and commit \nsynchronization. \n• Managed Azure DevOps Boards including Work Items, Backlogs, and Queries for ongoing project \ntracking. \n• Coordinated with multiple development teams to ensure repository consistency and issue \nresolution. \n• Provided regular progress and completion reports to project leads. \n• Configured and maintained GCP IAM roles and permissions, managing user groups, BigQuery \naccess control, and bucket policies. \n• Designed, deployed, and managed scalable cloud infrastructures using Google Cloud Platform \n(GCP) services including Compute Engine, Kubernetes Engine (GKE), Cloud Storage, and \nBigQuery. \n• Automated infrastructure provisioning and configuration through Terraform, Helm Charts, and \nPython/Bash scripting, improving deployment efficiency and reducing manual errors. \n• Implemented monitoring, logging, and alerting systems using GCP Monitoring and Cloud Logging, \nensuring high availability and rapid incident response. \n• Developed and maintained CI/CD pipelines leveraging Jenkins, GitHub, Airflow, and Docker, \nsupporting seamless build and deployment workflows. \n• Configured networking components such as VPCs, firewalls, load balancers, and VPNs, ensuring \nsecure and optimized connectivity. \n• Managed database services including Cloud SQL and BigQuery, optimizing query performance \nand data reliability. \n• Collaborate with DevOps and security teams to enforce best practices for cloud governance, IAM \npolicies, and cost optimization. \n• Supported cloud migration projects, application modernization, and scalability initiatives across \nmulti-environment setups (dev, staging, prod). \n• Performed log management and system monitoring via Splunk and AppDynamics dashboards. \n• Supported patching, kernel upgrades, and migration validation during enterprise platform \nrefreshes. \n  \n\n \nREDFORT TECH (AT&T LABS) BEDMINSTER, NJ JULY 2016- FEB 2021 \nDESIGNATION: DEVOPS ENGINEER \n \nRESPONSIBILITIES: \n• Built and optimized CI/CD pipelines for cloud-hosted applications using Jenkins, GitHub \nActions, and Terraform. \n• Designed data migration and backup pipelines between hybrid cloud platforms (AWS, \nGCP, and VMware). \n• Managed large-scale Kafka (MSK) and Elasticsearch clusters, focusing on high \navailability and replication reliability. \n• Created repeatable IaC templates to migrate compute and storage workloads to AWS, \nusing Terraform and Ansible. \n• Led development of automation tooling that reduced manual intervention in environment \nprovisioning by 60%. \n• Performed schema validation and integrity testing for database migrations and ETL \nworkloads. \n• Configured GCP services including Compute Engine, Cloud SQL, and Load Balancing \nfor production-grade workloads. \n• Supported container orchestration using GKE, Kubernetes, and Helm, building self-\nservice deployment patterns. \n• Integrated CyberArk PAM with AD and Kubernetes clusters for privileged access \nmanagement. \n• Conducted regression testing and post-migration performance benchmarking, reducing \nlatency by 22%. \n• Designed monitoring dashboards in Splunk and Grafana for data synchronization and \ncluster health. \n• Collaborated with developers to enhance CI/CD pipelines and promote automation-\ndriven deployment practices. \n• Built infrastructure automation pipelines using Ansible, Terraform, and GitHub Actions to \nenable Infrastructure-as-Code (IaC) and repeatable deployments. \n• Led Active Directory management — domain controller upgrades, OU design, Group \nPolicy optimization, and RBAC alignment. \n• Designed and implemented observability stack — Splunk, Azure Monitor, Grafana — \nenabling proactive monitoring of Kubernetes and legacy platforms. \n• Collaborated with DevOps and Security teams to ensure HIPAA and PCI compliance \nacross the hybrid infrastructure footprint. \n• Participated in 24/7 on-call rotations — resolved critical incidents and improved platform \nreliability through root cause analysis and corrective actions. \n• Provided expert-level Linux (RHEL / centos) support and managed Domain Servers like \nExchange, SMS, Active Directory, VMware, and printer servers. \n• Resolved login, performance, virus removal, domain addition, permissions, and group policy \nissues on Windows servers. \n• Architected and deployed secure, scalable AWS environments utilizing VPC, EC2, S3, RDS, \nDynamoDB, IAM, EBS, Route 53, SNS, SQS, CloudWatch, CloudTrail, Security Groups, \nAutoscaling, and RDS via CloudFormation templates. \n• Supported enterprise middleware modernization across OpenStack and Linux environments \nhosting Java/J2EE workloads. \n• Developed and executed scripts to migrate application configurations, environment \nvariables, and services between AIX and Linux-based nodes. \n• Managed JBoss clusters and implemented load balancing, session persistence, and \n\nconnection pool tuning for optimal performance. \n• Built and deployed CI/CD pipelines using Jenkins and GitHub Actions for automated \npackage delivery and validation. \n• Conducted regression testing and post-migration performance benchmarking, reducing \nlatency by 22%. \n \nREDFORT TECH (IBM) NEW YORK, NY MAY2015-APR 2016 \nDESIGNATION: LINUX ADMINISTRATOR \n \nRESPONSIBILITIES: \n• Played key role in upgrading Oracle 11g to 12c database and provided direct support to \nDirectors, DB Administrators, and Developers. \n• Wrote scripts to automate tasks, managed Symantec VCS Cluster and Storage Foundation, and \nsupported soft applications with participation in DR recovery drills. \n• Installed, patched, and maintained all Oracle software, implemented Oracle RMAN backup and \nrecovery system, and data guard failover recovery. \n• Performed Oracle database performance tuning and managed users and security through Oracle \nEnterprise Manager (OEM). \n• Implemented Smart I/O to boost oracle database performance and monitored performance for \nfast responses to front-end users. \n• Participated in infrastructure planning and growth on AWS, managing full application stacks on \nAmazon cloud-based computing environment. \n• Acted as main point of contact for CA Workload Automation, installing, configuring, and \nmaintaining the automation tool, scheduling various automated jobs. \n• Managed an Active-Passive VCS Cluster with periodic failovers, upgraded the cluster with \nminimal downtime, and responded quickly to cluster and system alerts. \n• Responsible for backups and restores using NetBackup 7.7, managing tape rotations, and \nupgrading NetBackup from 7.1 to 7.7. \n• Supported and automated database migrations from Oracle 11g to 12c, implementing \nRMAN and Data Guard replication. \n• Developed Ansible and Bash scripts for automated deployments, upgrades, and \nenvironment setup. \n• Conducted schema analysis, dependency mapping, and data validation pre- and post-\nmigration. \n• Employed containerization (Docker) for environment isolation and repeatable migration \ntesting. \n• Monitored and tuned Oracle performance, optimizing queries and I/O configurations post-\nupgrade. \n• Participated in cloud migration planning on AWS, managing full application stacks for \nLinux-based workloads. \n• Managed VCS Clusters, automating failover scenarios with minimal downtime. \n• Configured automated job scheduling and system patching via Ansible and CA Workload \nAutomation. \n• Implemented robust backup and restore strategies using NetBackup and AWS S3 \nsnapshots. \n \n \n \nEDUCATION & TRAINING \n \nBachelor of Science \nInformation Technology, New York City College of Technology  ",
+    "jd_match": {
+      "match_score": 98,
+      "matching_skills": [
+        "JavaScript",
+        "Python",
+        "Java",
+        "Ruby",
+        "HTML"
+      ],
+      "missing_skills": [],
+      "risk_factors": [],
+      "candidate_summary": "Auto-synced candidate Aqibali 10 from uploaded file. Extracted 28 skills and 9 years of experience."
+    }
+  },
+  {
+    "candidate_id": "C-1782832183507.0054",
+    "job_id": "J-DEFAULT",
+    "source": "upload_sync",
+    "status": "New",
+    "received_at": "2026-06-30T15:09:43.507Z",
+    "file": {
+      "original_name": "ZAMAN ADWANI PROJECT  MANAGER  Resume.docx",
+      "stored_name": "1782832183498_ZAMAN_ADWANI_PROJECT__MANAGER__Resume.docx",
+      "size_bytes": 176588,
+      "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "local_path": "/uploads/1782832183498_ZAMAN_ADWANI_PROJECT__MANAGER__Resume.docx"
+    },
+    "email_context": {
+      "sender_email": "",
+      "subject": "",
+      "cc_email": "",
+      "body": ""
+    },
+    "extracted_profile": {
+      "name": "Zaman Adwani",
+      "email": "zaman.adwani@gmail.com",
+      "phone": "281-801-0073",
+      "skills": [
+        "Go",
+        "Swift",
+        "Azure",
+        "Payroll",
+        "Agile",
+        "Scrum",
+        "Jira"
+      ],
+      "experience_years": 0,
+      "location": "any non"
+    },
+    "resume_text": "\n\n\n\nZaman Adwani\n\nE-Mail: zaman.adwani@gmail.com Cell: 281-801-0073\n\n\n\nPROFESSIONAL SUMMARY:\n\nTwenty–two plus (22+) years of experience, in which Fourteen plus (14+) years’ of experience in Strategic Leadership, Enterprise Portfolio Management, Program and Project Management, Lead Center of Excellence Teams, Integrate PMI Standards to PMO Offices,  Enterprise Change Management, Training, Product Management, Agile Frameworks (Scrum & Kanban) & Agile Transformation, SAFe Agile Coaching, SDLC Methodologies, and Eight plus (8+) years’ of strategic analysis, lead change initiatives for Agile transformation & center of excellence teams, implement Governance Framework for cross–functional team, Business Analysis and Process Mapping, Enterprise Risk Management, Quality Management, Operation Management, Business Management (Marketing, B2B/B2C/C2C), Business Intelligence, Market Research. Lead Cross–Functional teams to deliver high–value solutions to clients within different domains such as: Banking, Financial Services, Engineering, Retail Energy/Utilities, Healthcare, Government, Manufacturing, Supply Chain, Retail.\n\nStrong leadership and data-driven decision-making capabilities within fast-paced environment to take decisive action, particularly in uncertain or ambiguous situations with tight deadlines, shifting priorities, change requirements, change market needs, change stakeholders, and align change efforts with overall organizational strategy and objectives, and provide insightful analysis of the impact of change on business outcomes.\n\nThorough understanding of change management methodologies, tools and best practices, lead Enterprise Change initiatives and influence cross-functional teams.\n\nExceptional communication and interpersonal skills, thorough problem solving and conflict resolution skills, collaborate effectively with diverse teams and build strong working relationships.\n\ncapable to collaborate with both technical & non-technical stakeholders to translate business requirements into actionable product features that add benefits & incremental delivery for business & customer goals, align company’s vision with market needs.\n\n\n\nCERTIFICATIONS:\n\nCERTIFICATE NAME\n\nACRONYM\n\nYEAR\n\n\n\nCERTIFICATE NAME\n\nACRONYM\n\nYEAR\n\nCertified Scrum Professional Product Owner\n\nCSP – PO\n\n2025\n\nPMO Certified Practitioner\n\nPMO CP\n\n2022\n\nProject Management Professional\n\nPMP\n\n2024\n\n\n\nSix Sigma Yellow Belt\n\n6 Sigma\n\n2024\n\nScaled Agile Foundation SAFe – Training\n\nSAFe\n\n2024\n\n\n\nRisk Management Professional–Training\n\nRMP\n\n2023\n\nPortfolio Programme Project Offices\n\nP3O\n\n2024\n\nITIL V4 Foundation – Training\n\nITIL\n\n2024\n\nCertified Scrum Master\n\nCSM\n\n2021\n\n\n\n\n\n\n\nTECHNICAL SKILLS:\n\nCATEGORY\n\nDESCRIPTION\n\nTechnical Tools\n\nAgile Methodology, JIRA, Confluence, SharePoint, Azure Dev Ops (ADO)\n\nAnalytical Skills\n\nRisk Management, Cost-Benefit Analysis, GAP/Impact/SWOT/Strategy Analysis, CAATS ACL Data Analytics,\n\nReporting Tools\n\nMS Project, Gantt Chart, Smartsheet, Planview, PowerBI, Kanban Board, Workfront, Leankit, MS Visio, Trello,\n\nACADEMIC QUALIFICATIONS:\n\nDEGREE\n\nEMPHASIS\n\nINSTITUTE NAME\n\nYEAR COMPLETED\n\nExecutive Master of Business Administration (MBA)\n\nProject Management\n\nUniversity of Strathclyde, UK\n\n2018\n\nBachelor of Computer Science (BSc)\n\nInformation Systems\n\nBaghdad University, Iraq\n\n2001\n\n\n\nPROFESSIONAL EXPERIENCE:\n\nCLIENT: KEURIG DRPEPPER – KDP\t(TX, USA – onsite, full time)\tJAN 2023 – RECENT TEAM LEAD SR. PROJECT MANAGER FOR CENTER OF EXCELLENCE TEAM – CoE | PRODUCT OWNER\n\nRESPONSIBILITIES:\n\nEnsure integration of Enterprise Portfolio Office visions and goals with PMO office efforts, while leading Agile Center of Excellence team, with Six portfolio towers, throughout delivering timely, thorough support, strategic leadership, effective communication, resources management, training and guidance.\n\n\n\nAct as subject matter expert SME to lead PMO effort for Agile Transformation for CoE team, coach and guide team members from different levels through change & transition, deliver timely & thorough support, leadership, effective & collaborative communication (using Integrated Business Planning (IBP) approach) to analyze business/processes, develop artifacts, manage resource and time estimation, provide insights and guidance for all stakeholders to develop clear understanding on current state, challenges, risks & constraints, & how business as usual will be maintained & how desired state will be reached, to ensure technical excellence.\n\nReview change requests for consistency and details, meet with change owners to understand their objectives, and pain points and validate the need of change.\n\nSet governance framework, collaborate with cross-functional teams to enhance compliance processes and ensure alignment with organizational goals.\n\nManage projects from end-to-end to, ensuring successful delivery within scope, time, and budget. Facilitate regular status meetings, provide updates on milestones, risks, and issues.\n\nProduct Owner: Define product vision & strategy, liaise between stakeholders & development team, ensure clear communication of requirements. Conduct market research & competitive analysis, identify customer needs & industry trends.\n\nContribute to the development of the product roadmap, ensuring alignment with business goals, customer needs, and market opportunities. Use insights from competitor analysis to help prioritize features, improvements, and enhancements. Gather and translate customer needs and business requirements into clear product features, user stories, and acceptance criteria, while ensuring that the solutions align seamlessly with our service offering to deliver value to our clients.\n\nChampion data-driven decision-making to inform product decisions, prioritize features, and measure impact of changes and document and track present demos and showcasing product updates to stakeholders using Jira.\n\nCommunicate product strategy, priorities, and progress effectively to internal stakeholders, ensuring alignment across the business. Advocate for customer needs and ensure that product decisions reflect market demands.\n\nParticipate in Agile ceremonies, include sprint planning, daily stand-ups, and sprint retrospectives, develop test cases and oversee user acceptance testing (UAT) to ensure the product meets quality standards.\n\n\n\nCLIENT: FIRST MERCHANTS BANK\t(Indianapolis, USA – remote, full time)\tOCT 2021 – JAN 2023\n\nENTERPRISE PORTFOLIO MANAGER | PROJECT MANAGER\n\nRESPONSIBILITIES:\n\nLead Enterprise Application Portfolio Management (EAPM) program to summarize and rationalize applications inventory of 400+ applications, develop investment roadmap, rationalize applications, use one platform to store all applications, included shadow IT, then categorize applications using T-Shirt sizing data analysis approach, then rationalize applications based on return on investment ration ROI.\n\nIntegration EAPM vision and goals with PMO office throughout overseeing enterprise risk management, identify critical paths, major milestones, centralize projects approval, standardize artifacts for PMO, improve project planning for (scoping, estimation of budget and schedule, resources management).\n\nSet governance structure within organization, create cross functional modular with effective and collaborative communication, gather data & feedback, set benchmarks & KPIs, monitor performance and team’s progress, train teams for best practices and technical excellence, resolve conflicts and remove impediments.\n\nImplement Governance Risk and Compliance GRC on enterprise level (for IT and Business) ensuring deliverables are comply with FMB change management standards.\n\nDevelop comprehensive OCM plans and materials that align with the project's objectives and ensure successful adoption of changes. Integrates OCM principles seamlessly into project activities, working collaboratively with cross-functional team members to drive cohesive and effective change management strategies.\n\nExecutes comprehensive change management strategies that align with organizational goals and support the successful adoption of new initiates, processes and technologies.\n\nPlan and coordinate deliverables and dependencies across six business unites to drive on-time budgeting and approvals for new initiatives and projects to improve the overall process and implemented rollout plans.\n\nProduct Manager for eKYC solution, work with Scrum team to develop, integrate and lead implement of the solution with CORE bank, develop and articulate product vision and strategy for the product, ensuring alignment with the evolving needs of banking customers.\n\nContribute to the development of the product roadmap, ensuring alignment with business goals, customer needs, and market opportunities. Use insights from competitor analysis to help prioritize features, improvements, and enhancements. Gather and translate customer needs and business requirements into clear\n\n\n\nproduct features, user stories, and acceptance criteria, while ensuring that the solutions align seamlessly with our service offering to deliver value to our clients.\n\nMonitor and assess the performance of products post-launch, using data-driven metrics and KPIs to evaluate success and identify areas for improvement. Provide regular updates to senior leadership on product performance, roadmap progress, and competitive landscape.\n\nCommunicate product strategy, priorities, and progress effectively to internal stakeholders, ensuring alignment across the business. Advocate for customer needs and ensure that product decisions reflect market demands.\n\nParticipate in Agile ceremonies, include sprint planning, daily stand-ups, and sprint retrospectives, develop test cases and oversee user acceptance testing (UAT) to ensure the product meets quality standards.\n\nInteract with internal & external users to understand business needs, analyze product functions & processes built around it, implement GAP analysis, use prototypes to identify pain points & best product for customer.\n\n\n\nCLIENT: CENTRA HEALTH\t(Virginia, USA – remote, 18 months contract)\tMAR 2020 – OCT 2021\n\nPROJECT MANAGER | SCRUM MASTER\n\nRESPONSIBILITIES:\n\nManage project from start to end, ensure projects milestones are delivered within scope, budget and schedule, ensure quality control measures are implemented, and compliant with standards and guidelines.\n\nReport project’s status, include critical path, risks, milestones for leadership, using earned value, CPI and SPI.\n\nActively engaged with stakeholders, gather feedback to generate clear vision on new high value improvements.\n\nReview and analyze client reporting procedures, business, and process flow to understand all components involved, derive dependency process model to demonstrate how business processes will be executed. Track and monitor issues and changes during product implementation, ensure timely solution to business needs.\n\nFacilitate JAD sessions with product owners, SMEs and end users to gather information and elicit functional requirements, identify responsibilities and resolve issues in fashionable manner.\n\nFacilitate definition of personas, understand needs, identify user stories, acceptance criteria, and facilitate UAT testing. Design & document test cases scenarios for new & existing product functionality & business processes.\n\nPromote effective communication & across organizations to support deliverables completion and timeline\n\nConducted release readiness reviews, milestone reviews, business Go/No-Go reviews. communicate release details and schedules to the business as required\n\nFacilitated Scrum framework and daily stand-up, sprint planning, sprint reviews, sprint retrospectives, backlog refinement with the development team and product owner, ensuring project are on track.\n\nCollaborated with product owners, business managers and development team to develop and maintain quality product backlogs. Remove impediments and resolve conflicts.\n\nCLIENT: CAPITAL ONE BANK\t(Virginia, USA – remote, 10 months contract)\tMAY 2019 – FEB 2020\n\nPROJECT MANAGER | BUSINESS ANALYST\n\nRESPONSIBILITIES:\n\nFunction as primary liaison between business line, operations, and technical areas throughout project cycle. Worked closely with business owners to gather financial needs, create use cases through extensive requirements gathering sessions & JAD sessions, and to develop in-depth understanding of business processes modeling, data flow modeling, workflow analysis, and create use case specifications, so developers and other stakeholders can understand business process according to their perspective with possible alternate scenarios.\n\nManage Commercial card Issuing project (Debit/Credit), ensure integration with Core banking, IT, IS, HR, Marketing, bank’s HQ, Operations, Branch Issuing, Card Bank Payment policy.\n\nIntegrate Anti Money Laundry AML system with core banking to monitor money transfers (SWIFT, Wire Transfer, MoneyGram, PayPal, Apple Pay, Card Payments).\n\nEnsure PCI & DSS standards are compliant by all bank departments.\n\nParticipate in developing prototyping and design for cards with cards issuing department.\n\nInteract with internal & external users to understand business needs, analyze product functions & processes built around it, implement GAP analysis, use prototypes to identify pain points & best product for customer.\n\nWork extensively with QA team to design Test Plan and Test Cases for the User Acceptance testing (UAT).\n\nManage project from start to end, ensure projects milestones are delivered within scope, budget and schedule, ensure quality control measures are implemented, and compliant with standards and guidelines.\n\nReport project’s status, include critical path, risks, milestones for leadership, using earned value, CPI and SPI.\n\nActively engaged with stakeholders, gather feedback to generate clear vision on new high value improvements.\n\n\n\nCLIENT: OMAN SUPREME COUNCIL OF PLANNING\t(MUSCAT, OMAN – ONSITE)\tAPR 2016 – FEB 2019\n\nPROGRAM PROJECT MANAGER | STRATEGIC CONSULTANT\n\nRESPONSIBILITIES:\n\nSpearhead to integrate regulation throughout working with subject matter experts SMEs from execution side of Omani Ministries to clarify pain points and remove blockers for decision making, identify requirements in clear format that can be reviewed and understood by business and technical stakeholders in the project.\n\nDefine scope, schedule, budget and major milestones for the project, and communicate expectations to all stakeholders, integrate effective and collaborative communication between all business unites and cross– functional teams, align efforts and ensure deliverables comply with change management standards.\n\nCoordinate and facilitate project’s routines to support delivery, and monitor performance: set KPIs, OKR, EVM, CPI, SPI, Critical Path and Dependency to measure progress and regularly report progress to top management.\n\nMonitor project plans, risk management, resource management, business and process analysis, quality assurance, GAP analysis, and Sensitivity analysis, set benchmark and lead change initiatives.\n\nSet governance structure within organization, create cross functional modular with effective and collaborative communication, gather data & feedback from operations, sales and finance, mentor and advise team members to enhance decision making, set benchmarks & KPIs, monitor performance and team’s progress, train teams for best practices and technical excellence, resolve conflicts and remove impediments.\n\n\n\nCLIENT: VOLTAMP ENERGY SAOC\t(MUSCAT, OMAN – ONSITE)\tFEB 2013 – MAY 2016\n\nPROGRAM PROJECT MANAGER | STRATEGIC CONSULTANT\n\nRESPONSIBILITIES:\n\nAssigned by Chairman to lead strategy analysis and corporate innovation and entrepreneurship, and drive change initiatives to improve performance and productivity in the organization, throughout working directly with stakeholder and key decision maker of clients to develop business solutions, and set new standards.\n\nDevelop comprehensive transition plans to outline key milestones, objectives, and timelines for transitioning from incumbent to market leader. Lead project from inception to final business acceptance & implementation.\n\nCreate Cross–Functional modular with effective and collaborative communication, teams, gather data & feedback from operations, sales and finance to build high–performing teams, enhance decision making and maximize profit, set benchmarks & KPIs, train teams, resolve conflicts and remove impediments.\n\nReestablish and maintain strong work relationships with MENA officials, local and domestic Government partners and decision makers, subcontractors, to re promote company’s products.\n\nImplement Enterprise Risk Management ERM, Process Mapping to assess productivity, Strategic Analysis, SWOT analysis to identify threats of competitors, and align Business Planning with the Financial Performance.\n\nPerform Market Intelligence to understand and identify business opportunities, Risks, market needs, customer behavior, and identify competitors; Initiate Business Development division and lead re–branding efforts to promote company within GCC and MENA area, throughout value focused marketing campaigns including (events, seminars, exhibitions, etc.).\n\nFacilitate regular progress reports for performance metrics between corporate management and Chairman, ensure compliance with GCC & MENA regulations & policies, and address any non-compliance issues promptly.\n\nMonitors project plans, assignments, milestones, and work efforts on a daily basis. Ensures resource needs are assigned appropriately and escalates functional, quality, timeline issues.\n\nIntegrate War-Room (Daily Stand) between business owners, product manager, and cross–functional teams to report blockers, discuss & solve issue, and track progress.\n\nManage merging and acquisition for Nizwa Tanks Co. to Voltamp Energy, to reduce production cost by 15%.\n\nLead ERP & CRM integration, ISO and LEAN implementation to efficiency, maximize productivity, reduce waste.\n\nLead Digital Transformation for customer service department for after–sale services.\n\n\n\nCLIENT:\tHART SECURITY, LAND SEAD, AIR\t(BAGHDAD, IRAQ – ONSITE)\tAUG 2010 – DEC 2012\n\nBUSINESS DEVELOPMENT MANAGER | FINANCE MANAGER\n\nRESPONSIBILITIES:\n\nPerform market intelligence to understand and identify business opportunities, risks and competitors.\n\nWork directly with clients to develop the business, as well as project management. Highly credible negotiation, analytical, and leadership skills.\n\nLead  branding  campaign  for  the  company,  throughout  building  strong  long-term  relationships  with  Key customers and decision makers to align business planning with the financial performance.\n\n\n\nImprovement action plan for tendering and payable cycle, increasing cash flow.\n\nBudget management, include estimate annual marketing budget.\n\nManaged cash activities (payroll, invoices, audit expenses), and control all cash transactions.\n\nCentralize all financial activities to minimize cash movements.\n\n\n\nCLIENT: RECOLO RECRUITMENT\t(AMSTERDAM, NETHERLANDS – ONSITE)\tJUN 2008 – JUL 2010\n\nSALES AND MARKETING SPECIALIST\n\nRESPONSIBILITIES:\n\nPerform market research to generate sales leads.\n\nPrepare contracts and Memorandum of Understanding, MOU, for all new clients.\n\nManaged customer account, solve and document problems, and ensure customer satisfaction.\n\nEnhance cross–function communication between customers business units to speed up process.\n\nMarketing Planning and market segmentation as per company strategy.\n\nBuild strong long-term relationships with Key Customers and Decision Makers to improve the business.\n\nPerform Market Intelligence to understand and identify Business Opportunities, Risks and Competitors.\n\n\n\nCLIENT: BECHTEL CORPORATION INC. USAID  (BAGHDAD, IRAQ – ONSITE)\tJUN 2003 – JUL 2006\n\nACCOUNTANT\n\nRESPONSIBILITIES:\n\nManage Payroll, daily ledger, and reconcile all expenses.\n\nAudit expenses, invoices and monthly payments reimbursement.\n\nManage on-shore and off-shore money transactions.\n\nManage budget, cash flow and cash allocation.\n\nCentralize all financial activities to minimize cash movements.\n\n",
+    "jd_match": {
+      "match_score": 81,
+      "matching_skills": [
+        "Go",
+        "Swift",
+        "Azure",
+        "Payroll",
+        "Agile"
+      ],
+      "missing_skills": [],
+      "risk_factors": [
+        "No years of experience found in resume text"
+      ],
+      "candidate_summary": "Auto-synced candidate Zaman Adwani from uploaded file. Extracted 7 skills and 0 years of experience."
+    }
+  },
+  {
+    "candidate_id": "C-1782832648950",
+    "job_id": "J-1782827947762",
+    "source": "AI-Screening",
+    "status": "New",
+    "received_at": "2026-06-30T15:17:28.950Z",
+    "file": {
+      "original_name": "ZAMAN_ADWANI_PROJECT__MANAGER__Resume.docx",
+      "stored_name": "1782832381351_ZAMAN_ADWANI_PROJECT__MANAGER__Resume.docx",
+      "size_bytes": 100000,
+      "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "local_path": "/uploads/1782832381351_ZAMAN_ADWANI_PROJECT__MANAGER__Resume.docx"
+    },
+    "email_context": {
+      "sender_email": "zaman.adwani@gmail.com",
+      "subject": "AI Screening completed: Project Manager",
+      "cc_email": "",
+      "body": "This profile was generated automatically by the VerifyHire AI Screening Chatbot session SCR-1782832135672-339."
+    },
+    "extracted_profile": {
+      "name": "Zaman Adwani",
+      "email": "zaman.adwani@gmail.com",
+      "phone": "281-801-0073",
+      "skills": [
+        "Agile Methodology",
+        "JIRA",
+        "Confluence",
+        "SharePoint",
+        "Azure Dev Ops (ADO)",
+        "Risk Management",
+        "Cost-Benefit Analysis",
+        "GAP/Impact/SWOT/Strategy Analysis",
+        "CAATS ACL Data Analytics",
+        "MS Project",
+        "Gantt Chart",
+        "Smartsheet",
+        "Planview",
+        "PowerBI",
+        "Kanban Board",
+        "Workfront",
+        "Leankit",
+        "MS Visio",
+        "Trello"
+      ],
+      "experience_years": 22,
+      "location": "TX, USA",
+      "education": "Executive Master of Business Administration (MBA), University of Strathclyde, UK",
+      "current_title": "TEAM LEAD SR. PROJECT MANAGER FOR CENTER OF EXCELLENCE TEAM",
+      "visa_status": "Not specified"
+    },
+    "jd_match": {
+      "match_score": 60,
+      "matching_skills": [
+        "Agile Methodology",
+        "Azure Dev Ops (ADO)",
+        "SharePoint"
+      ],
+      "missing_skills": [
+        "Scrum",
+        "Microsoft Office",
+        "Teams"
+      ],
+      "risk_factors": [
+        "Too high experience (22 years vs 2-5 years required)",
+        "Location mismatch (TX, USA vs Mechanicsville, VA)"
+      ],
+      "candidate_summary": "Zaman Adwani is an experienced project management professional with 22 years of experience, holding an Executive MBA degree, and currently working as a Team Lead Sr. Project Manager. He has a strong background in Agile methodologies, risk management, and project analysis. However, his location and experience level may not perfectly match the job requirements.",
+      "recommended_questions": [
+        "Can you describe your experience with Scrum framework and how you've applied it in your previous projects?",
+        "What are your expectations regarding salary for this role, considering the job requirements and your current experience level?",
+        "Are you authorized to work in the United States, and if so, what is your current visa status?",
+        "What is your availability to relocate to Mechanicsville, VA, and what would be your expected timeline for doing so?",
+        "How do you think your Agile Methodology skills, combined with your experience in Azure DevOps and SharePoint, would contribute to the success of this Project Manager role?"
+      ]
+    }
+  },
+  {
+    "candidate_id": "C-1782836420191",
+    "job_id": "J-1782827947762",
+    "source": "AI-Screening",
+    "status": "New",
+    "received_at": "2026-06-30T16:20:20.191Z",
+    "file": {
+      "original_name": "ZAMAN_ADWANI_PROJECT__MANAGER__Resume.docx",
+      "stored_name": "1782836305061_ZAMAN_ADWANI_PROJECT__MANAGER__Resume.docx",
+      "size_bytes": 100000,
+      "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "local_path": "/uploads/1782836305061_ZAMAN_ADWANI_PROJECT__MANAGER__Resume.docx"
+    },
+    "email_context": {
+      "sender_email": "zaman.adwani@gmail.com",
+      "subject": "AI Screening completed: Project Manager",
+      "cc_email": "",
+      "body": "This profile was generated automatically by the VerifyHire AI Screening Chatbot session SCR-1782836283774-419."
+    },
+    "extracted_profile": {
+      "name": "Zaman Adwani",
+      "email": "zaman.adwani@gmail.com",
+      "phone": "281-801-0073",
+      "skills": [
+        "Agile Methodology",
+        "JIRA",
+        "Confluence",
+        "SharePoint",
+        "Azure Dev Ops (ADO)",
+        "Risk Management",
+        "Cost-Benefit Analysis",
+        "GAP/Impact/SWOT/Strategy Analysis",
+        "CAATS ACL Data Analytics",
+        "MS Project",
+        "Gantt Chart",
+        "Smartsheet",
+        "Planview",
+        "PowerBI",
+        "Kanban Board",
+        "Workfront",
+        "Leankit",
+        "MS Visio",
+        "Trello"
+      ],
+      "experience_years": 22,
+      "location": "TX, USA",
+      "education": "Executive Master of Business Administration (MBA), University of Strathclyde, UK",
+      "current_title": "TEAM LEAD SR. PROJECT MANAGER FOR CENTER OF EXCELLENCE TEAM – CoE | PRODUCT OWNER",
+      "visa_status": "Not specified"
+    },
+    "jd_match": {
+      "match_score": 60,
+      "matching_skills": [
+        "Agile Methodology",
+        "Azure Dev Ops (ADO)",
+        "SharePoint"
+      ],
+      "missing_skills": [
+        "Scrum",
+        "Microsoft Office",
+        "Teams"
+      ],
+      "risk_factors": [
+        "Too high experience (22 years, required 2-5 years)",
+        "Location mismatch (TX, USA vs Mechanicsville, VA)"
+      ],
+      "candidate_summary": "Highly experienced project manager with 22 years of experience, holding an Executive Master of Business Administration (MBA) degree and skilled in agile methodologies, Azure DevOps, and SharePoint. Currently working as a Team Lead Sr. Project Manager for Center of Excellence Team. Strong background in project management tools and technologies.",
+      "recommended_questions": [
+        "Can you explain how you would adapt to working with a team in Mechanicsville, VA, given your current location in TX, USA?",
+        "How do you think your extensive experience will help or hinder your ability to work within our organization, given the 2-5 year experience requirement for this role?",
+        "Are you willing to obtain the necessary work authorization to work in the US, if not already authorized?",
+        "What is your expected salary range for this position, and how does it align with our budget?",
+        "Can you provide an example of a time when you implemented agile methodologies in a project, and how you measured its success?"
+      ]
+    }
+  },
+  {
+    "candidate_id": "C-1782842690870",
+    "job_id": "J-1782485558421",
+    "source": "AI-Screening",
+    "status": "New",
+    "received_at": "2026-06-30T18:04:50.870Z",
+    "file": {
+      "original_name": "Sangeetha_Program_Manager_n.pdf",
+      "stored_name": "1782842449288_Sangeetha_Program_Manager_n.pdf",
+      "size_bytes": 100000,
+      "mime_type": "application/pdf",
+      "local_path": "/uploads/1782842449288_Sangeetha_Program_Manager_n.pdf"
+    },
+    "email_context": {
+      "sender_email": "sangeethakanamarlapudi@gmail.com",
+      "subject": "AI Screening completed: IT Project Manager",
+      "cc_email": "",
+      "body": "This profile was generated automatically by the VerifyHire AI Screening Chatbot session SCR-1782842422961-173."
+    },
+    "extracted_profile": {
+      "name": "SANGEETHA KANAMARLAPUDI",
+      "email": "sangeethakanamarlapudi@gmail.com",
+      "phone": "737-757-6305",
+      "skills": [
+        "Network Telemetry",
+        "Stream Data Ecosystems",
+        "AI-driven Operational Intelligence",
+        "Real-time Monitoring",
+        "Streaming Data",
+        "Time-series Data",
+        "SQL-based Analytics",
+        "Splunk",
+        "ELK",
+        "Apache Kafka",
+        "Snowflake",
+        "DB2",
+        "Python",
+        "Automation",
+        "Machine Learning"
+      ],
+      "experience_years": 18,
+      "location": "Irvine, CA",
+      "education": "Unknown",
+      "current_title": "Senior Program Manager – Data, Network & AI Platforms",
+      "visa_status": "Not specified",
+      "dl_number": "DL-31437914"
+    },
+    "jd_match": {
+      "match_score": 60,
+      "matching_skills": [],
+      "missing_skills": [
+        "Leadership",
+        "Negotiation",
+        "Time Management",
+        "Facilitation",
+        "Organizational Skills"
+      ],
+      "risk_factors": [
+        "Location mismatch: candidate is in Irvine, CA, job is in Raleigh, NC",
+        "No direct match of candidate's technical skills to job requirements"
+      ],
+      "candidate_summary": "SANGEETHA KANAMARLAPUDI is a seasoned professional with 18 years of experience, currently holding the title of Senior Program Manager – Data, Network & AI Platforms. Her background is in technical areas such as Network Telemetry, AI-driven Operational Intelligence, and SQL-based Analytics. However, her skills and experience may not directly align with the IT Project Manager role.",
+      "recommended_questions": [
+        "Can you provide examples of your experience in leadership and team management?",
+        "How do you handle project timelines and negotiate with stakeholders?",
+        "Are you willing to relocate to Raleigh, NC for this position?",
+        "What is your current salary expectation, and how does it align with our budget for this role?",
+        "Can you walk us through your process for facilitating meetings and ensuring organizational skills are applied in project management?"
+      ]
+    }
+  },
+  {
+    "candidate_id": "C-1782842618428.7053",
+    "job_id": "J-DEFAULT",
+    "source": "upload_sync",
+    "status": "New",
+    "received_at": "2026-06-30T18:03:38.429Z",
+    "file": {
+      "original_name": "LCN.pdf",
+      "stored_name": "1782842618426_LCN.pdf",
+      "size_bytes": 88412,
+      "mime_type": "application/pdf",
+      "local_path": "/uploads/1782842618426_LCN.pdf"
+    },
+    "email_context": {
+      "sender_email": "",
+      "subject": "",
+      "cc_email": "",
+      "body": ""
+    },
+    "extracted_profile": {
+      "name": "Lcn",
+      "email": "",
+      "phone": "",
+      "skills": [],
+      "experience_years": 0,
+      "location": "Unknown"
+    },
+    "resume_text": "\n\n",
+    "jd_match": {
+      "match_score": 50,
+      "matching_skills": [],
+      "missing_skills": [
+        "No skills detected — manual review needed"
+      ],
+      "risk_factors": [
+        "No years of experience found in resume text"
+      ],
+      "candidate_summary": "Auto-synced candidate Lcn from uploaded file. Extracted 0 skills and 0 years of experience."
+    }
+  },
+  {
+    "candidate_id": "C-1782842638322.3364",
+    "job_id": "J-DEFAULT",
+    "source": "upload_sync",
+    "status": "New",
+    "received_at": "2026-06-30T18:03:58.322Z",
+    "file": {
+      "original_name": "GC.pdf",
+      "stored_name": "1782842638320_GC.pdf",
+      "size_bytes": 29153,
+      "mime_type": "application/pdf",
+      "local_path": "/uploads/1782842638320_GC.pdf"
+    },
+    "email_context": {
+      "sender_email": "",
+      "subject": "",
+      "cc_email": "",
+      "body": ""
+    },
+    "extracted_profile": {
+      "name": "Gc",
+      "email": "",
+      "phone": "",
+      "skills": [],
+      "experience_years": 0,
+      "location": "Unknown"
+    },
+    "resume_text": "\n\n",
+    "jd_match": {
+      "match_score": 50,
+      "matching_skills": [],
+      "missing_skills": [
+        "No skills detected — manual review needed"
+      ],
+      "risk_factors": [
+        "No years of experience found in resume text"
+      ],
+      "candidate_summary": "Auto-synced candidate Gc from uploaded file. Extracted 0 skills and 0 years of experience."
+    }
+  },
+  {
+    "candidate_id": "C-1782842792460.0293",
+    "job_id": "J-DEFAULT",
+    "source": "upload_sync",
+    "status": "New",
+    "received_at": "2026-06-30T18:06:32.460Z",
+    "file": {
+      "original_name": "Asifa cheema.docx",
+      "stored_name": "1782842792459_Asifa_cheema.docx",
+      "size_bytes": 35925,
+      "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "local_path": "/uploads/1782842792459_Asifa_cheema.docx"
+    },
+    "email_context": {
+      "sender_email": "",
+      "subject": "",
+      "cc_email": "",
+      "body": ""
+    },
+    "extracted_profile": {
+      "name": "Senior Healthcare Business Analyst",
+      "email": "Cheemaasifa0781@gmail.com",
+      "phone": "(469) 850-0168",
+      "skills": [
+        "SQL",
+        "Oracle",
+        "Azure",
+        "Agile",
+        "Scrum",
+        "Jira",
+        "Power BI",
+        "SSRS"
+      ],
+      "experience_years": 0,
+      "location": "Unknown"
+    },
+    "resume_text": "ASIFA CHEEMA\n\nSenior Healthcare Business Analyst \n\nDallas, TX | Cheemaasifa0781@gmail.com | (469) 850-0168 \n\n Career Summary\n\n\n\n\n\nSenior Healthcare Business Analyst with 8+ years of progressive experience across provider health systems, Medicaid managed care, and payer operations in the Texas and Michigan healthcare markets, with deep expertise in claims adjudication, member enrollment, benefits configuration, denial management, and prior authorization workflows.\n\nLed requirements workshops, authored BRDs/FRDs, facilitated JAD sessions, and served as the primary liaison between business stakeholders and IT development teams for claims system implementations on Facets, Epic, and state Medicaid platforms across Medicaid, Medicare, and commercial product lines.\n\nHands-on experience with EDI transaction processing and configuration (837P/I, 835, 834, 270/271, 276/277), CARC/RARC denial analytics, HIPAA 5010 compliance, and HL7 interface support for claims, enrollment, and eligibility operations.\n\nStrong technical foundation in SQL-based claims data analysis, process modeling (BPMN, UML), UAT coordination, and stakeholder management using JIRA, Azure DevOps, MS Visio, and Confluence within Agile/Scrum and Waterfall delivery models.\n\nCertified Scrum Master (CSM) with demonstrated ability to manage sprint backlogs, facilitate Agile ceremonies, and drive cross-functional alignment across claims operations, clinical informatics, provider relations, and compliance teams.\n\ntechnical SKILLS \n\n\n\nHealthcare Domain\n\nClaims Adjudication, Member Enrollment, Benefits Configuration, Provider Data Management, Prior Authorization, COB, Utilization Management, Denial Management, Medical Coding (ICD-10, CPT, HCPCS), Grievance & Appeals\n\nEDI Transactions\n\n837P/I, 835, 834, 270/271, 276/277, 278, ANSI X12, HIPAA 5010, HL7/FHIR Interfaces, CARC/RARC Analysis\n\nRegulatory / Compliance\n\nHIPAA, CMS Guidelines, ACA, Texas HHSC Medicaid, Medicare (Parts A, B, C, D), NCQA, HEDIS, PHI/PII Data Governance\n\nBA Methodology\n\nRequirements Elicitation, BRD/FRD, User Stories, Gap Analysis, BPMN/UML Process Modeling, RTM, UAT Planning & Execution, JAD Sessions, SWOT Analysis, Root-Cause Analysis\n\nHealthcare Systems\n\nFacets, Epic (Resolute/Clarity), MMIS, Change Healthcare, Availity, HL7 Interface Engine\n\nData & Reporting\n\nSQL Server, Oracle, Advanced Excel (Pivot Tables, VLOOKUP, Power Pivot), Power BI (Basic), SSRS\n\nTools & Platforms\n\nJIRA, Confluence, MS Visio, SharePoint, Azure DevOps, HP ALM, ServiceNow, MS Project, Rational Rose, ClearQuest\n\nMethodologies\n\nAgile/Scrum (CSM Certified), Waterfall, RUP, SAFe, SDLC, ITIL, Change Management, Release Management\n\nEXPERIENCE \n\n\n\n\n\nSenior Healthcare Business Analyst / Project Lead                                               \t        September 2023 - Present\n\nBlue Cross Blue Shield of Michigan | Remote\n\nLeading the legacy-to-modern platform assessment and claims system modernization initiative at BCBSM, Michigan's largest health insurer serving 4.4 million members. Conducting discovery workshops across 10+ business areas to document current-state processes, legacy system dependencies, and future-state requirements for the enterprise claims and enrollment platform replacement program. Reported to the VP of Enterprise Systems Transformation.\n\n\n\nLed discovery workshops across 10+ business areas (Sales, Provider Management, Claims Enrollment, Claims Processing, Profitability & Cost Management, Senior Health Services, Marketing) to capture current-state processes, system dependencies, and high-level requirements for the legacy platform replacement initiative.\n\nDocumented 50+ business process flows using MS Visio covering end-to-end workflows for claims intake, adjudication, enrollment processing, provider credentialing, and benefits configuration, mapping each workflow to underlying legacy system components.\n\nAuthored the pre-BRD assessment document consolidating findings from all discovery workshops, presenting current-state pain points, future-state recommendations, and estimated budget/FTE requirements for the data management and reporting modernization.\n\nManaged the RAID log tracking 80+ items across workstreams and facilitated weekly status reviews with the architecture team and project management office.\n\nWorked with the architecture team to evaluate future-state platform options, mapping current Facets claims processing and enrollment capabilities against modern platform alternatives and documenting functional gap assessments.\n\nCoordinated with the QA billing team to validate claims processing accuracy during parallel testing, developing comparison test scenarios for 5 major claim types (professional, institutional, dental, pharmacy, behavioural health).\n\n\n\nHealthcare Business Analyst\t                                                                                                      July 2021 - August 2023\n\nTexas Health Resources | Arlington, TX | Hybrid\n\nSupported the prior authorization and patient access optimization initiative at Texas Health Resources, the largest health system in North Texas with 29 hospitals and 350+ access points serving 7 million+ residents across the DFW metroplex. Worked with patient access, utilization management, revenue cycle, and IT teams to streamline the prior authorization submission workflow, improve real-time eligibility verification, and reduce authorization-related claim denials. Reported to the Senior Manager of Patient Access Systems.\n\n\n\nGathered and documented business requirements for the prior authorization workflow redesign, facilitating 15+ JAD sessions with utilization management nurses, patient access coordinators, revenue cycle analysts, and payer contracting teams to define system requirements for automated auth submission, status tracking, and determination routing.\n\nDefined 278 prior authorization transaction processing requirements for real-time auth submission to 8 major Texas payers, documenting submission rules, clinical data attachment requirements, and response handling logic for inpatient admissions, outpatient surgical procedures, and advanced imaging services.\n\nAnalyzed authorization-related claim denial data across commercial and Medicare Advantage product lines, identifying that 35% of preventable denials were caused by missing or expired authorizations, incorrect procedure-to-auth matching, and retroactive auth gaps, and recommended workflow changes that reduced auth-related denials by 24%.\n\nDefined 270/271 real-time eligibility verification requirements for the patient scheduling and registration workflow, establishing automated benefits check, prior auth status validation, and out-of-network flagging rules to reduce eligibility-related registration errors by 20%.\n\nMapped As-Is and To-Be BPMN process flows for the authorization lifecycle from initial clinical review request through payer determination, documenting 8 manual handoff points between clinical, UM, patient access, and billing teams targeted for automation.\n\nBuilt SQL queries against the Epic Clarity database to track authorization turnaround times, approval/denial rates by payer and procedure type, and aged pending authorization volumes, delivering weekly status dashboards in Power BI for UM leadership.\n\nCoordinated UAT across 3 phased releases covering auth workflow automation, eligibility verification enhancements, and payer response integration, developing 140+ test scenarios and managing 30 defects through resolution in JIRA.\n\n\n\nHealthcare Business Analyst\t                                                                                                      March 2019 - June 2021\n\nUT Southwestern Medical Center | Dallas, TX\n\nSupported the claims billing and revenue cycle operations team at UT Southwestern Medical Center, a $4.5B academic medical center in Dallas. Worked with revenue cycle, coding, enrollment, and compliance teams on Facets claims configuration, EDI transaction processing, and Medicare/Medicaid compliance reporting. Reported to the Director of Revenue Cycle Systems.\n\n\n\nAnalyzed claims billing and enrollment data using SQL queries against Oracle and SQL Server source systems to identify processing errors, enrollment discrepancies, and billing exceptions across Medicare (Parts A, B, C, D), Medicaid, and commercial payer product lines.\n\nWorked with Facets application groups (Claims Processing, Benefits Configuration, Provider, Subscriber/Member, Utilization Management) to document business rules for claims adjudication, eligibility verification, and annual benefits plan loading.\n\nPerformed daily validation of batch enrollment, billing, and 834/837 EDI transaction files, identifying and documenting errors in coordination with internal enrollment teams and external payer trading partners to maintain 99%+ file acceptance rates.\n\nAssisted in the development and support of HL7 interfaces for clinical applications, working with data analysts and HIM teams to create data mapping documents and maintain interface specifications across 3 major integration projects.\n\nDefined reporting specifications for Medicare Advantage federal regulatory submissions, coordinating with compliance and actuarial teams to validate data accuracy before quarterly CMS submissions.\n\nCoordinated UAT for 4 quarterly system releases covering claims configuration updates and enrollment processing enhancements, managing 100+ test scenarios and 22 defects through resolution in JIRA with full RTM traceability.\n\n\n\nAssociate Healthcare Business Analyst\t                                                                    August 2016 - February 2019\n\nParkland Health & Hospital System | Dallas, TX\n\nSupported the claims processing and enrollment operations team at Parkland Health, Dallas County's public safety-net hospital system serving 1 million+ patient visits annually. Worked on 837 claims processing, 834 enrollment transactions, and benefits configuration validation for Medicaid, CHIP, and uncompensated care populations. Reported to the Manager of Claims and Billing Systems.\n\n\n\nGathered business requirements from claims supervisors, enrollment coordinators, and IT stakeholders for claims processing and enrollment system enhancements, converting requirements into detailed BRDs with acceptance criteria for the development team.\n\nWorked on 837 claims and 834 enrollment EDI transactions, validating transaction accuracy for Medicaid and CHIP populations by running SQL queries to compare submitted claims against eligibility records and flagging discrepancies for resolution.\n\nPerformed gap analysis on benefits configuration rules by comparing Texas HHSC Medicaid contract requirements against system settings, identifying 25+ configuration discrepancies across copay schedules, covered service categories, and prior authorization requirements.\n\nBuilt SQL queries against the claims data warehouse to audit test claims for correct processing, validating adjudication outcomes against expected results for 5 major payer categories and documenting exceptions for the configuration team.\n\nCreated and maintained the Requirements Traceability Matrix (RTM) linking business requirements to design documents, test plans, and test cases, ensuring full traceability across 3 concurrent projects.\n\nAssisted the QA team in developing UAT test cases and scripts, supported SMEs in UAT execution, and documented user feedback from claims, enrollment, and billing stakeholders for sprint backlog prioritization.\n\neDUCATION\n\n\n\nBachelor of Education \n\nPunjab University, India (2000)\n\ncertificatios\n\n\n\nCertified Scrum Master (CSM) - Scrum Alliance\n\n\n\n\n\n\n\n",
+    "jd_match": {
+      "match_score": 84,
+      "matching_skills": [
+        "SQL",
+        "Oracle",
+        "Azure",
+        "Agile",
+        "Scrum"
+      ],
+      "missing_skills": [],
+      "risk_factors": [
+        "No years of experience found in resume text"
+      ],
+      "candidate_summary": "Auto-synced candidate Senior Healthcare Business Analyst from uploaded file. Extracted 8 skills and 0 years of experience."
+    }
+  }
+]

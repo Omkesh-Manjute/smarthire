@@ -1,0 +1,382 @@
+.smart-ats-app {
+  --bg-950: #030712;
+  --bg-900: #111827;
+  --bg-800: #1f2937;
+  --bg-700: #374151;
+  --bg-600: #4b5563;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-300: #d1d5db;
+  --orange-400: #fb923c;
+  --orange-500: #f97316;
+  --orange-600: #ea580c;
+  --red-400: #f87171;
+  --red-500: #ef4444;
+  --red-600: #dc2626;
+  --green-400: #4ade80;
+  --green-500: #22c55e;
+  --green-600: #16a34a;
+  --blue-400: #60a5fa;
+  --blue-500: #3b82f6;
+  --blue-600: #2563eb;
+  --purple-400: #c084fc;
+  --purple-500: #a855f7;
+  --purple-600: #9333ea;
+  --pink-600: #db2777;
+  --pink-500: #ec4899;
+  --cyan-400: #22d3ee;
+  --cyan-500: #06b6d4;
+  --cyan-600: #0891b2;
+  --amber-400: #fbbf24;
+  --amber-500: #f59e0b;
+  --emerald-400: #34d399;
+  --emerald-600: #059669;
+  --sky-400: #38bdf8;
+  --sky-600: #0284c7;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
+  --violet-600: #7c3aed;
+  --violet-700: #6d28d9;
+  --rose-400: #fb7185;
+  --yellow-300: #fcd34d;
+  --yellow-400: #facc15;
+  --yellow-500: #eab308;
+  --yellow-700: #a16207;
+  --smart-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.smart-ats-app { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.smart-ats-app .flex { display: flex; }
+.smart-ats-app .flex-1 { flex: 1 1 0%; }
+.smart-ats-app .flex-col { flex-direction: column; }
+.smart-ats-app .flex-shrink-0 { flex-shrink: 0; }
+.smart-ats-app .flex-wrap { flex-wrap: wrap; }
+.smart-ats-app .items-center { align-items: center; }
+.smart-ats-app .items-start { align-items: flex-start; }
+.smart-ats-app .items-end { align-items: flex-end; }
+.smart-ats-app .justify-center { justify-content: center; }
+.smart-ats-app .justify-between { justify-content: space-between; }
+.smart-ats-app .justify-end { justify-content: flex-end; }
+.smart-ats-app .gap-1 { gap: 4px; }
+.smart-ats-app .gap-2 { gap: 8px; }
+.smart-ats-app .gap-3 { gap: 12px; }
+.smart-ats-app .gap-4 { gap: 16px; }
+.smart-ats-app .gap-5 { gap: 20px; }
+.smart-ats-app .gap-6 { gap: 24px; }
+.smart-ats-app .h-screen { height: 100vh; }
+.smart-ats-app .h-full { height: 100%; }
+.smart-ats-app .h-1 { height: 4px; }
+.smart-ats-app .h-2 { height: 8px; }
+.smart-ats-app .h-3 { height: 12px; }
+.smart-ats-app .h-4 { height: 16px; }
+.smart-ats-app .h-5 { height: 20px; }
+.smart-ats-app .h-8 { height: 32px; }
+.smart-ats-app .h-9 { height: 36px; }
+.smart-ats-app .h-10 { height: 40px; }
+.smart-ats-app .h-16 { height: 64px; }
+.smart-ats-app .h-20 { height: 80px; }
+.smart-ats-app .h-px { height: 1px; }
+.smart-ats-app .max-h-20 { max-height: 80px; }
+.smart-ats-app .max-h-48 { max-height: 192px; }
+.smart-ats-app .max-h-64 { max-height: 256px; }
+.smart-ats-app .max-h-90vh { max-height: 90vh; }
+.smart-ats-app .min-h-0 { min-height: 0; }
+.smart-ats-app .w-80 { width: 320px; }
+.smart-ats-app .w-full { width: 100%; }
+.smart-ats-app .w-2 { width: 8px; }
+.smart-ats-app .w-3 { width: 12px; }
+.smart-ats-app .w-4 { width: 16px; }
+.smart-ats-app .w-5 { width: 20px; }
+.smart-ats-app .w-8 { width: 32px; }
+.smart-ats-app .w-9 { width: 36px; }
+.smart-ats-app .w-10 { width: 40px; }
+.smart-ats-app .w-16 { width: 64px; }
+.smart-ats-app .w-20 { width: 80px; }
+.smart-ats-app .min-w-0 { min-width: 0; }
+.smart-ats-app .max-w-lg { max-width: 512px; }
+.smart-ats-app .max-w-2xl { max-width: 672px; }
+.smart-ats-app .max-w-3xl { max-width: 768px; }
+.smart-ats-app .overflow-hidden { overflow: hidden; }
+.smart-ats-app .overflow-y-auto { overflow-y: auto; }
+.smart-ats-app .overflow-x-auto { overflow-x: auto; }
+.smart-ats-app .bg-gray-950 { background-color: #030712; }
+.smart-ats-app .bg-gray-900 { background-color: #111827; }
+.smart-ats-app .bg-gray-800 { background-color: #1f2937; }
+.smart-ats-app .bg-gray-700 { background-color: #374151; }
+.smart-ats-app .bg-gray-600 { background-color: #4b5563; }
+.smart-ats-app .bg-white { background-color: #fff; }
+.smart-ats-app .bg-amber-50 { background-color: #fffbeb; }
+.smart-ats-app .bg-slate-200 { background-color: #e2e8f0; }
+.smart-ats-app .bg-slate-100 { background-color: #f1f5f9; }
+.smart-ats-app .text-white { color: #fff; }
+.smart-ats-app .text-gray-300 { color: #d1d5db; }
+.smart-ats-app .text-gray-400 { color: #9ca3af; }
+.smart-ats-app .text-gray-500 { color: #6b7280; }
+.smart-ats-app .text-gray-600 { color: #4b5563; }
+.smart-ats-app .text-orange-400 { color: #fb923c; }
+.smart-ats-app .text-orange-500 { color: #f97316; }
+.smart-ats-app .text-orange-600 { color: #ea580c; }
+.smart-ats-app .text-orange-700 { color: #c2410c; }
+.smart-ats-app .text-red-400 { color: #f87171; }
+.smart-ats-app .text-red-300 { color: #fca5a5; }
+.smart-ats-app .text-green-400 { color: #4ade80; }
+.smart-ats-app .text-green-300 { color: #86efac; }
+.smart-ats-app .text-blue-400 { color: #60a5fa; }
+.smart-ats-app .text-blue-300 { color: #93c5fd; }
+.smart-ats-app .text-purple-400 { color: #c084fc; }
+.smart-ats-app .text-cyan-400 { color: #22d3ee; }
+.smart-ats-app .text-amber-500 { color: #f59e0b; }
+.smart-ats-app .text-amber-800 { color: #92400e; }
+.smart-ats-app .text-sky-700 { color: #0369a1; }
+.smart-ats-app .text-violet-700 { color: #6d28d9; }
+.smart-ats-app .text-emerald-700 { color: #047857; }
+.smart-ats-app .text-yellow-400 { color: #facc15; }
+.smart-ats-app .text-amber-400 { color: #fbbf24; }
+.smart-ats-app .text-indigo-400 { color: #818cf8; }
+.smart-ats-app .text-transparent { color: transparent; }
+.smart-ats-app .text-slate-700 { color: #334155; }
+.smart-ats-app .text-slate-600 { color: #475569; }
+.smart-ats-app .text-slate-800 { color: #1e293b; }
+.smart-ats-app .text-slate-900 { color: #0f172a; }
+.smart-ats-app .text-slate-300 { color: #cbd5e1; }
+.smart-ats-app .text-xs { font-size: 12px; }
+.smart-ats-app .text-sm { font-size: 14px; }
+.smart-ats-app .text-base { font-size: 16px; }
+.smart-ats-app .text-lg { font-size: 18px; }
+.smart-ats-app .text-xl { font-size: 20px; }
+.smart-ats-app .text-2xl { font-size: 24px; }
+.smart-ats-app .text-4xl { font-size: 36px; }
+.smart-ats-app .text-5xl { font-size: 48px; }
+.smart-ats-app .text-6xl { font-size: 60px; }
+.smart-ats-app .font-medium { font-weight: 500; }
+.smart-ats-app .font-semibold { font-weight: 600; }
+.smart-ats-app .font-bold { font-weight: 700; }
+.smart-ats-app .font-black { font-weight: 900; }
+.smart-ats-app .font-mono { font-family: 'SF Mono', Monaco, Consolas, monospace; }
+.smart-ats-app .p-1 { padding: 4px; }
+.smart-ats-app .p-2 { padding: 8px; }
+.smart-ats-app .p-3 { padding: 12px; }
+.smart-ats-app .p-4 { padding: 16px; }
+.smart-ats-app .p-5 { padding: 20px; }
+.smart-ats-app .p-6 { padding: 24px; }
+.smart-ats-app .px-1 { padding-left: 4px; padding-right: 4px; }
+.smart-ats-app .px-2 { padding-left: 8px; padding-right: 8px; }
+.smart-ats-app .px-3 { padding-left: 12px; padding-right: 12px; }
+.smart-ats-app .px-4 { padding-left: 16px; padding-right: 16px; }
+.smart-ats-app .px-5 { padding-left: 20px; padding-right: 20px; }
+.smart-ats-app .px-6 { padding-left: 24px; padding-right: 24px; }
+.smart-ats-app .py-1 { padding-top: 4px; padding-bottom: 4px; }
+.smart-ats-app .py-2 { padding-top: 8px; padding-bottom: 8px; }
+.smart-ats-app .py-3 { padding-top: 12px; padding-bottom: 12px; }
+.smart-ats-app .py-4 { padding-top: 16px; padding-bottom: 16px; }
+.smart-ats-app .py-5 { padding-top: 20px; padding-bottom: 20px; }
+.smart-ats-app .py-6 { padding-top: 24px; padding-bottom: 24px; }
+.smart-ats-app .pt-2 { padding-top: 8px; }
+.smart-ats-app .pt-3 { padding-top: 12px; }
+.smart-ats-app .pt-4 { padding-top: 16px; }
+.smart-ats-app .pb-3 { padding-bottom: 12px; }
+.smart-ats-app .pb-16 { padding-bottom: 64px; }
+.smart-ats-app .pl-5 { padding-left: 20px; }
+.smart-ats-app .mx-4 { margin-left: 16px; margin-right: 16px; }
+.smart-ats-app .mx-6 { margin-left: 24px; margin-right: 24px; }
+.smart-ats-app .mx-auto { margin-left: auto; margin-right: auto; }
+.smart-ats-app .ml-auto { margin-left: auto; }
+.smart-ats-app .ml-2 { margin-left: 8px; }
+.smart-ats-app .ml-5 { margin-left: 20px; }
+.smart-ats-app .mt-1 { margin-top: 4px; }
+.smart-ats-app .mt-2 { margin-top: 8px; }
+.smart-ats-app .mt-3 { margin-top: 12px; }
+.smart-ats-app .mt-4 { margin-top: 16px; }
+.smart-ats-app .mt-5 { margin-top: 20px; }
+.smart-ats-app .mt-6 { margin-top: 24px; }
+.smart-ats-app .mt-8 { margin-top: 32px; }
+.smart-ats-app .mb-1 { margin-bottom: 4px; }
+.smart-ats-app .mb-2 { margin-bottom: 8px; }
+.smart-ats-app .mb-3 { margin-bottom: 12px; }
+.smart-ats-app .mb-4 { margin-bottom: 16px; }
+.smart-ats-app .mb-5 { margin-bottom: 20px; }
+.smart-ats-app .mb-6 { margin-bottom: 24px; }
+.smart-ats-app .mb-8 { margin-bottom: 32px; }
+.smart-ats-app .border { border: 1px solid; }
+.smart-ats-app .border-0 { border: 0; }
+.smart-ats-app .border-t { border-top: 1px solid; }
+.smart-ats-app .border-b { border-bottom: 1px solid; }
+.smart-ats-app .border-r { border-right: 1px solid; }
+.smart-ats-app .border-l-2 { border-left-width: 2px; }
+.smart-ats-app .border-l-orange-500 { border-left-color: #f97316; }
+.smart-ats-app .border-gray-700 { border-color: #374151; }
+.smart-ats-app .border-gray-800 { border-color: #1f2937; }
+.smart-ats-app .border-gray-600 { border-color: #4b5563; }
+.smart-ats-app .border-slate-200 { border-color: #e2e8f0; }
+.smart-ats-app .border-slate-300 { border-color: #cbd5e1; }
+.smart-ats-app .border-amber-300 { border-color: #d97706; }
+.smart-ats-app .rounded { border-radius: 4px; }
+.smart-ats-app .rounded-lg { border-radius: 8px; }
+.smart-ats-app .rounded-xl { border-radius: 12px; }
+.smart-ats-app .rounded-2xl { border-radius: 16px; }
+.smart-ats-app .rounded-full { border-radius: 9999px; }
+.smart-ats-app .rounded-md { border-radius: 6px; }
+.smart-ats-app .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.smart-ats-app .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1); }
+.smart-ats-app .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+.smart-ats-app .fixed { position: fixed; }
+.smart-ats-app .absolute { position: absolute; }
+.smart-ats-app .relative { position: relative; }
+.smart-ats-app .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+.smart-ats-app .top-4 { top: 16px; }
+.smart-ats-app .right-4 { right: 16px; }
+.smart-ats-app .z-50 { z-index: 50; }
+.smart-ats-app .z-100 { z-index: 100; }
+.smart-ats-app .cursor-pointer { cursor: pointer; }
+.smart-ats-app .cursor-wait { cursor: wait; }
+.smart-ats-app .cursor-not-allowed { cursor: not-allowed; }
+.smart-ats-app .transition { transition: all 0.15s ease; }
+.smart-ats-app .transition-all { transition: all 0.3s ease; }
+.smart-ats-app .duration-300 { transition-duration: 0.3s; }
+.smart-ats-app .duration-500 { transition-duration: 0.5s; }
+.smart-ats-app .backdrop-blur-sm { backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.smart-ats-app .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.smart-ats-app .whitespace-pre-wrap { white-space: pre-wrap; }
+.smart-ats-app .whitespace-pre { white-space: pre; }
+.smart-ats-app .break-words { word-break: break-word; }
+.smart-ats-app .leading-relaxed { line-height: 1.625; }
+.smart-ats-app .tracking-wide { letter-spacing: 0.025em; }
+.smart-ats-app .tracking-widest { letter-spacing: 0.1em; }
+.smart-ats-app .uppercase { text-transform: uppercase; }
+.smart-ats-app .text-center { text-align: center; }
+.smart-ats-app .text-left { text-align: left; }
+.smart-ats-app .underline { text-decoration: underline; }
+.smart-ats-app .accent-orange-500 { accent-color: #f97316; }
+.smart-ats-app .hidden { display: none; }
+.smart-ats-app .grid { display: grid; }
+.smart-ats-app .grid-cols-1 { grid-template-columns: repeat(1, 1fr); }
+.smart-ats-app .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+.smart-ats-app .space-y-1 > * + * { margin-top: 4px; }
+.smart-ats-app .space-y-2 > * + * { margin-top: 8px; }
+.smart-ats-app .space-y-3 > * + * { margin-top: 12px; }
+.smart-ats-app .space-y-4 > * + * { margin-top: 16px; }
+.smart-ats-app .space-y-5 > * + * { margin-top: 20px; }
+.smart-ats-app .space-y-6 > * + * { margin-top: 24px; }
+.smart-ats-app .list-inside { list-style-position: inside; }
+.smart-ats-app .list-decimal { list-style-type: decimal; }
+.smart-ats-app .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.smart-ats-app .resize-none { resize: none; }
+.smart-ats-app .opacity-0 { opacity: 0; }
+.smart-ats-app .opacity-30 { opacity: 0.3; }
+.smart-ats-app .opacity-80 { opacity: 0.8; }
+
+.smart-ats-app .first-mt-0:first-child { margin-top: 0; }
+.smart-ats-app .hover-bg-gray-800:hover { background-color: #1f2937; }
+.smart-ats-app .hover-bg-gray-700:hover { background-color: #374151; }
+.smart-ats-app .hover-bg-red-600-20:hover { background-color: rgba(220,38,38,0.2); }
+.smart-ats-app .hover-bg-blue-600:hover { background-color: #2563eb; }
+.smart-ats-app .hover-bg-green-600:hover { background-color: #16a34a; }
+.smart-ats-app .hover-bg-purple-600:hover { background-color: #9333ea; }
+.smart-ats-app .hover-bg-purple-700:hover { background-color: #7e22ce; }
+.smart-ats-app .hover-bg-orange-600:hover { background-color: #ea580c; }
+.smart-ats-app .hover-bg-gray-900:hover { background-color: #111827; }
+.smart-ats-app .hover-bg-green-500-20:hover { background-color: rgba(34,197,94,0.2); }
+.smart-ats-app .hover-text-white:hover { color: #fff; }
+.smart-ats-app .hover-text-gray-300:hover { color: #d1d5db; }
+.smart-ats-app .hover-text-orange-400:hover { color: #fb923c; }
+.smart-ats-app .hover-text-red-300:hover { color: #fca5a5; }
+.smart-ats-app .hover-text-slate-900:hover { color: #0f172a; }
+.smart-ats-app .hover-border-gray-700:hover { border-color: #374151; }
+.smart-ats-app .focus-outline-none:focus { outline: none; }
+.smart-ats-app .focus-ring-orange:focus { box-shadow: 0 0 0 2px #f97316; }
+.smart-ats-app .focus-ring-purple:focus { box-shadow: 0 0 0 2px #a855f7; }
+.smart-ats-app .focus-border-transparent:focus { border-color: transparent; }
+.smart-ats-app .group:hover .group-hover-opacity-100 { opacity: 1; }
+.smart-ats-app .disabled-opacity-50:disabled { opacity: 0.5; }
+.smart-ats-app .bg-gray-900-80 { background-color: rgba(17,24,39,0.8); }
+.smart-ats-app .bg-gray-900-50 { background-color: rgba(17,24,39,0.5); }
+.smart-ats-app .bg-gray-800-50 { background-color: rgba(31,41,55,0.5); }
+.smart-ats-app .bg-gray-800-70 { background-color: rgba(31,41,55,0.7); }
+.smart-ats-app .bg-orange-500-5 { background-color: rgba(249,115,22,0.05); }
+.smart-ats-app .border-gray-800-50 { border-color: rgba(31,41,55,0.5); }
+.smart-ats-app .border-purple-500-30 { border-color: rgba(168,85,247,0.3); }
+.smart-ats-app .border-orange-500-30 { border-color: rgba(249,115,22,0.3); }
+.smart-ats-app .border-green-500-20 { border-color: rgba(34,197,94,0.2); }
+.smart-ats-app .border-green-500-30 { border-color: rgba(34,197,94,0.3); }
+.smart-ats-app .border-blue-500-30 { border-color: rgba(59,130,246,0.3); }
+.smart-ats-app .bg-green-500-10 { background-color: rgba(34,197,94,0.1); }
+.smart-ats-app .bg-yellow-500-10 { background-color: rgba(234,179,8,0.1); }
+.smart-ats-app .bg-red-500-10 { background-color: rgba(239,68,68,0.1); }
+.smart-ats-app .bg-purple-500-20 { background-color: rgba(168,85,247,0.2); }
+.smart-ats-app .bg-orange-500-20 { background-color: rgba(249,115,22,0.2); }
+.smart-ats-app .bg-blue-500-20 { background-color: rgba(59,130,246,0.2); }
+.smart-ats-app .bg-orange-500-5 { background-color: rgba(249,115,22,0.05); }
+.smart-ats-app .score-green-badge { color: #4ade80; background: rgba(34,197,94,0.2); border-color: rgba(34,197,94,0.3); }
+.smart-ats-app .score-yellow-badge { color: #facc15; background: rgba(234,179,8,0.2); border-color: rgba(234,179,8,0.3); }
+.smart-ats-app .score-orange-badge { color: #fb923c; background: rgba(249,115,22,0.2); border-color: rgba(249,115,22,0.3); }
+.smart-ats-app .score-red-badge { color: #f87171; background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.3); }
+.smart-ats-app .airec-green-badge { color: #4ade80; background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.3); }
+.smart-ats-app .airec-yellow-badge { color: #facc15; background: rgba(234,179,8,0.15); border-color: rgba(234,179,8,0.3); }
+.smart-ats-app .airec-orange-badge { color: #fb923c; background: rgba(249,115,22,0.15); border-color: rgba(249,115,22,0.3); }
+.smart-ats-app .airec-red-badge { color: #f87171; background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.3); }
+.smart-ats-app .score-green-bg { border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.2); color: #4ade80; }
+.smart-ats-app .score-yellow-bg { border-color: rgba(234,179,8,0.3); background: rgba(234,179,8,0.2); color: #facc15; }
+.smart-ats-app .score-orange-bg { border-color: rgba(249,115,22,0.3); background: rgba(249,115,22,0.2); color: #fb923c; }
+.smart-ats-app .score-red-bg { border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.2); color: #f87171; }
+.smart-ats-app .extract-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 16px; border-radius: 12px; font-size: 14px; font-weight: 700; border: 0; cursor: pointer; }
+.smart-ats-app .extract-btn:hover { opacity: 0.9; }
+.smart-ats-app .email-action-btn { padding: 10px 20px; border-radius: 12px; font-size: 14px; font-weight: 700; color: #fff; border: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.smart-ats-app .email-action-btn:hover { opacity: 0.9; }
+.smart-ats-app .matched-skill { background: rgba(34,197,94,0.15); color: #4ade80; border-color: rgba(34,197,94,0.2); }
+.smart-ats-app .unmatched-skill { background: rgba(249,115,22,0.15); color: #fb923c; border-color: rgba(249,115,22,0.2); }
+.smart-ats-app .resume-header-gradient { background: linear-gradient(to right, #ffedd5, #fffbeb, #fff); }
+
+@keyframes smartSlideIn {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes smartPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+@keyframes smartSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.smart-ats-app .animate-slideIn { animation: smartSlideIn 0.2s ease-out; }
+.smart-ats-app .animate-pulse { animation: smartPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+.smart-ats-app .animate-spin { animation: smartSpin 1s linear infinite; }
+
+.smart-ats-app .bg-gradient-to-r { background-image: linear-gradient(to right, var(--g-from, transparent), var(--g-to, transparent)); }
+.smart-ats-app .bg-gradient-to-br { background-image: linear-gradient(to bottom right, var(--g-from, transparent), var(--g-to, transparent)); }
+.smart-ats-app .bg-clip-text { -webkit-background-clip: text; background-clip: text; }
+.smart-ats-app .from-orange-500 { --g-from: #f97316; }
+.smart-ats-app .from-orange-400 { --g-from: #fb923c; }
+.smart-ats-app .from-green-500 { --g-from: #22c55e; }
+.smart-ats-app .from-yellow-500 { --g-from: #eab308; }
+.smart-ats-app .from-red-500 { --g-from: #ef4444; }
+.smart-ats-app .from-purple-500 { --g-from: #a855f7; }
+.smart-ats-app .from-cyan-500 { --g-from: #06b6d4; }
+.smart-ats-app .from-blue-500 { --g-from: #3b82f6; }
+.smart-ats-app .to-red-600 { --g-to: #dc2626; }
+.smart-ats-app .to-red-500 { --g-to: #ef4444; }
+.smart-ats-app .to-emerald-400 { --g-to: #34d399; }
+.smart-ats-app .to-amber-400 { --g-to: #fbbf24; }
+.smart-ats-app .to-amber-500 { --g-to: #f59e0b; }
+.smart-ats-app .to-rose-400 { --g-to: #fb7185; }
+.smart-ats-app .to-pink-600 { --g-to: #db2777; }
+.smart-ats-app .to-emerald-600 { --g-to: #059669; }
+.smart-ats-app .to-purple-600 { --g-to: #9333ea; }
+.smart-ats-app .to-blue-600 { --g-to: #2563eb; }
+.smart-ats-app .to-white { --g-to: #fff; }
+.smart-ats-app .to-transparent { --g-to: transparent; }
+
+@media (min-width: 640px) {
+  .smart-ats-app .sm-d-flex { display: flex; }
+  .smart-ats-app .sm-d-none { display: none; }
+  .smart-ats-app .sm-w-400px { width: 400px; }
+  .smart-ats-app .sm-grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .smart-ats-app .sm-grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .smart-ats-app .sm-px-6 { padding-left: 24px; padding-right: 24px; }
+  .smart-ats-app .sm-text-xl { font-size: 20px; }
+}

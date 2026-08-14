@@ -1,0 +1,427 @@
+[
+  {
+    "sessionId": "SCR-1783370355580-389",
+    "jobId": "J-1783347101114",
+    "jobTitle": "Sr. Project Manager",
+    "jobSkills": [
+      "Project Management",
+      "Vendor Management",
+      "Budgeting"
+    ],
+    "jobExperience": "7+ years",
+    "jobLocation": "Hybrid (Richmond, VA)",
+    "jobClient": "DBHDS",
+    "candidateName": null,
+    "candidateEmail": null,
+    "status": "pending",
+    "createdAt": "2026-07-06T20:39:15.583Z",
+    "resumePath": null,
+    "resumeText": null,
+    "extractedProfile": null,
+    "jdMatch": null,
+    "chatHistory": [],
+    "screeningComplete": false,
+    "verificationConfirmed": false,
+    "consentGiven": false,
+    "submittedAt": null
+  },
+  {
+    "sessionId": "SCR-1782842752517-638",
+    "jobId": "J-1782743015315",
+    "jobTitle": "AI Engineer",
+    "jobSkills": [
+      "Agile (Scrum)",
+      "Restful API Design",
+      "Python"
+    ],
+    "jobExperience": "Any",
+    "jobLocation": "Louisville, KY",
+    "jobClient": "General Client",
+    "candidateName": "Asifa Cheema",
+    "candidateEmail": "Cheemaasifa0781@gmail.com",
+    "status": "rejected",
+    "createdAt": "2026-06-30T18:05:52.517Z",
+    "resumePath": "/uploads/1782842792459_Asifa_cheema.docx",
+    "resumeText": "ASIFA CHEEMA\n\nSenior Healthcare Business Analyst \n\nDallas, TX | Cheemaasifa0781@gmail.com | (469) 850-0168 \n\n Career Summary\n\n\n\n\n\nSenior Healthcare Business Analyst with 8+ years of progressive experience across provider health systems, Medicaid managed care, and payer operations in the Texas and Michigan healthcare markets, with deep expertise in claims adjudication, member enrollment, benefits configuration, denial management, and prior authorization workflows.\n\nLed requirements workshops, authored BRDs/FRDs, facilitated JAD sessions, and served as the primary liaison between business stakeholders and IT development teams for claims system implementations on Facets, Epic, and state Medicaid platforms across Medicaid, Medicare, and commercial product lines.\n\nHands-on experience with EDI transaction processing and configuration (837P/I, 835, 834, 270/271, 276/277), CARC/RARC denial analytics, HIPAA 5010 compliance, and HL7 interface support for claims, enrollment, and eligibility operations.\n\nStrong technical foundation in SQL-based claims data analysis, process modeling (BPMN, UML), UAT coordination, and stakeholder management using JIRA, Azure DevOps, MS Visio, and Confluence within Agile/Scrum and Waterfall delivery models.\n\nCertified Scrum Master (CSM) with demonstrated ability to manage sprint backlogs, facilitate Agile ceremonies, and drive cross-functional alignment across claims operations, clinical informatics, provider relations, and compliance teams.\n\ntechnical SKILLS \n\n\n\nHealthcare Domain\n\nClaims Adjudication, Member Enrollment, Benefits Configuration, Provider Data Management, Prior Authorization, COB, Utilization Management, Denial Management, Medical Coding (ICD-10, CPT, HCPCS), Grievance & Appeals\n\nEDI Transactions\n\n837P/I, 835, 834, 270/271, 276/277, 278, ANSI X12, HIPAA 5010, HL7/FHIR Interfaces, CARC/RARC Analysis\n\nRegulatory / Compliance\n\nHIPAA, CMS Guidelines, ACA, Texas HHSC Medicaid, Medicare (Parts A, B, C, D), NCQA, HEDIS, PHI/PII Data Governance\n\nBA Methodology\n\nRequirements Elicitation, BRD/FRD, User Stories, Gap Analysis, BPMN/UML Process Modeling, RTM, UAT Planning & Execution, JAD Sessions, SWOT Analysis, Root-Cause Analysis\n\nHealthcare Systems\n\nFacets, Epic (Resolute/Clarity), MMIS, Change Healthcare, Availity, HL7 Interface Engine\n\nData & Reporting\n\nSQL Server, Oracle, Advanced Excel (Pivot Tables, VLOOKUP, Power Pivot), Power BI (Basic), SSRS\n\nTools & Platforms\n\nJIRA, Confluence, MS Visio, SharePoint, Azure DevOps, HP ALM, ServiceNow, MS Project, Rational Rose, ClearQuest\n\nMethodologies\n\nAgile/Scrum (CSM Certified), Waterfall, RUP, SAFe, SDLC, ITIL, Change Management, Release Management\n\nEXPERIENCE \n\n\n\n\n\nSenior Healthcare Business Analyst / Project Lead                                               \t        September 2023 - Present\n\nBlue Cross Blue Shield of Michigan | Remote\n\nLeading the legacy-to-modern platform assessment and claims system modernization initiative at BCBSM, Michigan's largest health insurer serving 4.4 million members. Conducting discovery workshops across 10+ business areas to document current-state processes, legacy system dependencies, and future-state requirements for the enterprise claims and enrollment platform replacement program. Reported to the VP of Enterprise Systems Transformation.\n\n\n\nLed discovery workshops across 10+ business areas (Sales, Provider Management, Claims Enrollment, Claims Processing, Profitability & Cost Management, Senior Health Services, Marketing) to capture current-state processes, system dependencies, and high-level requirements for the legacy platform replacement initiative.\n\nDocumented 50+ business process flows using MS Visio covering end-to-end workflows for claims intake, adjudication, enrollment processing, provider credentialing, and benefits configuration, mapping each workflow to underlying legacy system components.\n\nAuthored the pre-BRD assessment document consolidating findings from all discovery workshops, presenting current-state pain points, future-state recommendations, and estimated budget/FTE requirements for the data management and reporting modernization.\n\nManaged the RAID log tracking 80+ items across workstreams and facilitated weekly status reviews with the architecture team and project management office.\n\nWorked with the architecture team to evaluate future-state platform options, mapping current Facets claims processing and enrollment capabilities against modern platform alternatives and documenting functional gap assessments.\n\nCoordinated with the QA billing team to validate claims processing accuracy during parallel testing, developing comparison test scenarios for 5 major claim types (professional, institutional, dental, pharmacy, behavioural health).\n\n\n\nHealthcare Business Analyst\t                                                                                                      July 2021 - August 2023\n\nTexas Health Resources | Arlington, TX | Hybrid\n\nSupported the prior authorization and patient access optimization initiative at Texas Health Resources, the largest health system in North Texas with 29 hospitals and 350+ access points serving 7 million+ residents across the DFW metroplex. Worked with patient access, utilization management, revenue cycle, and IT teams to streamline the prior authorization submission workflow, improve real-time eligibility verification, and reduce authorization-related claim denials. Reported to the Senior Manager of Patient Access Systems.\n\n\n\nGathered and documented business requirements for the prior authorization workflow redesign, facilitating 15+ JAD sessions with utilization management nurses, patient access coordinators, revenue cycle analysts, and payer contracting teams to define system requirements for automated auth submission, status tracking, and determination routing.\n\nDefined 278 prior authorization transaction processing requirements for real-time auth submission to 8 major Texas payers, documenting submission rules, clinical data attachment requirements, and response handling logic for inpatient admissions, outpatient surgical procedures, and advanced imaging services.\n\nAnalyzed authorization-related claim denial data across commercial and Medicare Advantage product lines, identifying that 35% of preventable denials were caused by missing or expired authorizations, incorrect procedure-to-auth matching, and retroactive auth gaps, and recommended workflow changes that reduced auth-related denials by 24%.\n\nDefined 270/271 real-time eligibility verification requirements for the patient scheduling and registration workflow, establishing automated benefits check, prior auth status validation, and out-of-network flagging rules to reduce eligibility-related registration errors by 20%.\n\nMapped As-Is and To-Be BPMN process flows for the authorization lifecycle from initial clinical review request through payer determination, documenting 8 manual handoff points between clinical, UM, patient access, and billing teams targeted for automation.\n\nBuilt SQL queries against the Epic Clarity database to track authorization turnaround times, approval/denial rates by payer and procedure type, and aged pending authorization volumes, delivering weekly status dashboards in Power BI for UM leadership.\n\nCoordinated UAT across 3 phased releases covering auth workflow automation, eligibility verification enhancements, and payer response integration, developing 140+ test scenarios and managing 30 defects through resolution in JIRA.\n\n\n\nHealthcare Business Analyst\t                                                                                                      March 2019 - June 2021\n\nUT Southwestern Medical Center | Dallas, TX\n\nSupported the claims billing and revenue cycle operations team at UT Southwestern Medical Center, a $4.5B academic medical center in Dallas. Worked with revenue cycle, coding, enrollment, and compliance teams on Facets claims configuration, EDI transaction processing, and Medicare/Medicaid compliance reporting. Reported to the Director of Revenue Cycle Systems.\n\n\n\nAnalyzed claims billing and enrollment data using SQL queries against Oracle and SQL Server source systems to identify processing errors, enrollment discrepancies, and billing exceptions across Medicare (Parts A, B, C, D), Medicaid, and commercial payer product lines.\n\nWorked with Facets application groups (Claims Processing, Benefits Configuration, Provider, Subscriber/Member, Utilization Management) to document business rules for claims adjudication, eligibility verification, and annual benefits plan loading.\n\nPerformed daily validation of batch enrollment, billing, and 834/837 EDI transaction files, identifying and documenting errors in coordination with internal enrollment teams and external payer trading partners to maintain 99%+ file acceptance rates.\n\nAssisted in the development and support of HL7 interfaces for clinical applications, working with data analysts and HIM teams to create data mapping documents and maintain interface specifications across 3 major integration projects.\n\nDefined reporting specifications for Medicare Advantage federal regulatory submissions, coordinating with compliance and actuarial teams to validate data accuracy before quarterly CMS submissions.\n\nCoordinated UAT for 4 quarterly system releases covering claims configuration updates and enrollment processing enhancements, managing 100+ test scenarios and 22 defects through resolution in JIRA with full RTM traceability.\n\n\n\nAssociate Healthcare Business Analyst\t                                                                    August 2016 - February 2019\n\nParkland Health & Hospital System | Dallas, TX\n\nSupported the claims processing and enrollment operations team at Parkland Health, Dallas County's public safety-net hospital system serving 1 million+ patient visits annually. Worked on 837 claims processing, 834 enrollment transactions, and benefits configuration validation for Medicaid, CHIP, and uncompensa",
+    "extractedProfile": {
+      "name": "Asifa Cheema",
+      "email": "Cheemaasifa0781@gmail.com",
+      "phone": "(469) 850-0168",
+      "skills": [
+        "Claims Adjudication",
+        "Member Enrollment",
+        "Benefits Configuration",
+        "Provider Data Management",
+        "Prior Authorization",
+        "COB",
+        "Utilization Management",
+        "Denial Management",
+        "Medical Coding (ICD-10, CPT, HCPCS)",
+        "Grievance & Appeals",
+        "EDI Transactions",
+        "HIPAA 5010",
+        "HL7/FHIR Interfaces",
+        "CARC/RARC Analysis",
+        "SQL Server",
+        "Oracle",
+        "Advanced Excel",
+        "Power BI",
+        "JIRA",
+        "Confluence",
+        "MS Visio",
+        "SharePoint",
+        "Azure DevOps",
+        "HP ALM",
+        "ServiceNow",
+        "MS Project",
+        "Rational Rose",
+        "ClearQuest",
+        "Agile/Scrum",
+        "Waterfall",
+        "RUP",
+        "SAFe",
+        "SDLC",
+        "ITIL",
+        "Change Management",
+        "Release Management"
+      ],
+      "experience_years": 8,
+      "location": "Dallas, TX",
+      "education": "Unknown",
+      "current_title": "Senior Healthcare Business Analyst",
+      "visa_status": "Not specified"
+    },
+    "jdMatch": {
+      "match_score": 20,
+      "matching_skills": [
+        "Agile/Scrum"
+      ],
+      "missing_skills": [
+        "Restful API Design",
+        "Python"
+      ],
+      "risk_factors": [
+        "Location mismatch",
+        "Lack of relevant technical skills"
+      ],
+      "candidate_summary": "Asifa Cheema is a Senior Healthcare Business Analyst with 8 years of experience, skilled in business analysis and IT service management, but lacks the required technical skills for an AI Engineer role. She is currently located in Dallas, TX, which does not match the job location. Her experience is rooted in healthcare business analysis rather than AI engineering.",
+      "recommended_questions": [
+        "Can you explain your understanding of Agile/Scrum methodology and how you've applied it in previous roles?",
+        "How do you think your current salary expectations align with the market rate for an AI Engineer in Louisville, KY?",
+        "What is your current work authorization status, and are you willing to relocate to Louisville, KY?",
+        "What are your availability and notice period to join a new organization?",
+        "How would you approach learning the required technical skills for this role, such as Restful API Design and Python, given your current skill set?"
+      ]
+    },
+    "chatHistory": [
+      {
+        "role": "assistant",
+        "content": "Hi Asifa Cheema, thank you for uploading your resume. I've analyzed your profile against our requirements for the AI Engineer position.\n\nCurrently, there is a mismatch in required key skills or experience. We will not be proceeding with the next steps of the screening at this time. However, we'll keep your resume in our database for future matches. Thank you again and wish you all the best in your search!"
+      }
+    ],
+    "screeningComplete": false,
+    "verificationConfirmed": false,
+    "consentGiven": false,
+    "submittedAt": null
+  },
+  {
+    "sessionId": "SCR-1782842422961-173",
+    "jobId": "J-1782485558421",
+    "jobTitle": "IT Project Manager",
+    "jobSkills": [
+      "Leadership",
+      "Negotiation",
+      "Time Management",
+      "Facilitation",
+      "Organizational Skills"
+    ],
+    "jobExperience": "7+ years",
+    "jobLocation": "Raleigh, NC",
+    "jobClient": "NCDHHS-PMO",
+    "candidateName": "SANGEETHA KANAMARLAPUDI",
+    "candidateEmail": "sangeethakanamarlapudi@gmail.com",
+    "status": "submitted",
+    "createdAt": "2026-06-30T18:00:22.961Z",
+    "resumePath": "/uploads/1782842449288_Sangeetha_Program_Manager_n.pdf",
+    "resumeText": "\n\n \nSANGEETHA KANAMARLAPUDI \n737-757-6305 | sangeethakanamarlapudi@gmail.com \nLinkedIn: linkedin.com/in/sangeetha-kanamarlapudi\nPROFESSIONAL SUMMARY \nSenior Network & Data Platform Program Manager with 18+ years of experience leading large-scale network \nobservability, telemetry analytics, and AI-driven operational intelligence programs across enterprise environments. \nProven expertise delivering real-time monitoring platforms, streaming data ecosystems, and production-grade \nalerting frameworks for wired and wireless infrastructures. \nStrong background in network instrumentation, event-driven architectures, incident response leadership, and \nreliability engineering. Experienced in translating telemetry data into actionable dashboards, intelligent alerting \nstrategies, and measurable improvements in uptime, MTTR, and operational efficiency. \n \nCORE TECHNICAL EXPERTISE \nNetwork & Telemetry Systems \n● Network telemetry architecture and instrumentation \n● SNMP-based monitoring and device event collection \n● Network/Element Management system integrations \n● Layer 2 / Layer 3 switching, routing, VLANs, RF optimization \n● Infrastructure health metrics and operational analytics \nStreaming & Data Platforms \n● Real-time streaming ingestion (Apache Kafka ecosystem) \n● Event-driven data pipelines \n● Time-series data platforms and performance metrics \n● SQL-based analytics and data validation \n● Snowflake, DB2 modernization programs \nObservability & Monitoring \n● Splunk and ELK-based log analytics and search optimization \n● Dashboard development and executive reporting \n● Alert correlation logic and noise reduction \n● Incident triage and production troubleshooting \n● Root Cause Analysis (RCA) and runbook improvements \nAI / Automation \n● Anomaly detection models for infrastructure monitoring \n● Predictive diagnostics and performance baselining \n● ML lifecycle governance and KPI tracking \n● Python-based automation and scripting \n● Auto-remediation workflows \n \nPROFESSIONAL EXPERIENCE \nVENTURA FOODS | Irvine, CA | Senior Program Manager – Data, Network & AI Platforms August 2024 – Present \n\n● Led $3.5M enterprise modernization initiative migrating legacy DB2 systems to Snowflake while enabling \nreal-time operational analytics. \n● Established telemetry-driven monitoring framework connecting infrastructure data, business metrics, and \nexecutive dashboards. \n● Designed data validation and quality controls for high-volume streaming ingestion pipelines. \n● Built executive observability dashboards integrating performance KPIs, infrastructure metrics, and risk \nindicators. \n● Partnered with operations teams to streamline production troubleshooting workflows, improving incident \nresponse coordination. \n● Delivered 25% improvement in data accuracy and reduced duplicate system overhead. \n● Led enterprise wired and wireless network modernization initiatives including switching upgrades, AP \ndeployments, and infrastructure optimization. \n● Facilitated outage triage coordination during network disruptions, driving faster resolution and structured \npost-incident analysis. \n \nINTEL CORPORATION | Engineering Program Manager – Predictive Telemetry & AI Analytics   Oct 2021 – July 2024 \n● Directed large-scale device health telemetry platform supporting real-time ingestion and analytics across \ndistributed ChromeOS devices. \n● Partnered with engineering to implement streaming pipelines and operational dashboards enabling \nproactive failure detection. \n● Reduced manual device triage time by 30% through predictive diagnostics and anomaly detection models. \n● Improved device reliability metrics by 15% through telemetry-based monitoring strategies. \n● Led cross-functional coordination between engineering, SRE, and operations during production incident \nresolution. \n● Established model governance including drift monitoring, validation reviews, and measurable reliability \nKPIs. \n● Connected telemetry outputs to executive-level reporting to quantify operational savings ($800K \nannually). \n \nCISCO SYSTEMS | Technical Program Manager – Self-Optimizing Network (SON) Platform     May 2019 – Sept 2021 \nLed development of a Self-Optimizing Network (SON) web application focused on RF performance optimization, \nautomated configuration tuning, and enterprise network health monitoring. \n● Directed end-to-end delivery of RF optimization software improving signal quality, coverage efficiency, and \nthroughput performance across enterprise deployments. \n● Led architectural transformation of legacy monolithic application into a scalable microservices-based \nplatform, improving deployment agility and service resilience. \n● Coordinated backend service decomposition, API gateway implementation, containerization strategy, and \nCI/CD enablement. \n● Enabled real-time telemetry ingestion from network devices to support performance baselining and \nautomated optimization logic. \n● Partnered with engineering teams to implement event-driven communication between services for \nscalable alert processing. \n \n\n● Established observability standards including centralized logging, health checks, service monitoring, and \nperformance dashboards. \n● Collaborated with operations teams to improve incident diagnostics through improved service visibility \nand telemetry instrumentation. \n● Improved system scalability and reduced production defects through modular service isolation and \nautomated regression validation. \n● Supported RF planning, VLAN segmentation, and wireless performance optimization across enterprise \ncustomers. \n \nPOLYCOM (HP) |  Technical Program Manager –VoIP & Embedded Communication Systems Nov 2016 – April 2019 \nLed development and integration of VoIP software platforms for enterprise IP phones and conferencing devices, \nsupporting real-time voice communication and unified collaboration systems. \n● Managed end-to-end delivery of VoIP software stack integration including SIP signaling, RTP media \nhandling, codec management, and call control workflows. \n● Coordinated firmware, hardware, and software teams to enable seamless integration across IP desk \nphones and conferencing endpoints. \n● Directed cross-functional integration of Polycom VoxBox voice collaboration platform, ensuring \ninteroperability with enterprise VoIP infrastructure. \n● Led system-level validation of call setup, session management, and voice quality metrics (latency, jitter, \npacket loss). \n● Partnered with QA and network engineering teams to troubleshoot production VoIP issues impacting call \nstability and device registration. \n● Oversaw REST/SOAP API integrations enabling device provisioning, remote configuration, and monitoring. \n● Improved validation efficiency by 25% through automation frameworks for regression testing of VoIP call \nflows and firmware releases. \n● Ensured interoperability with enterprise call managers and unified communications platforms. \n● Facilitated root cause analysis of signaling failures, codec mismatches, and network performance-related \ncall drops. \n● Drove release governance for VoIP firmware updates, ensuring high availability and minimal production \ndisruption. \n \nCISCO SYSTEMS | Project Lead –  RMS Web Application (4G/5G Call Processing) Aug 2013 – Nov 2016 \nManaged development of RMS (Resource Management System) web application supporting 4G and 5G mobile \ndevice call processing workflows and telecom infrastructure operations. \n● Led cross-functional teams delivering web-based system handling high-volume mobile call session \nprocessing and device state management. \n● Coordinated integration with telecom network components supporting LTE and early 5G infrastructure \nenvironments. \n● Supported real-time event handling and session lifecycle management across distributed services. \n● Partnered with engineering teams to ensure performance optimization for high-throughput mobile traffic \nscenarios. \n \n● Facilitated production issue triage impacting mobile device call handling and service reliability. \n\n● Drove improvements in system performance, reducing latency in call state transitions and resource \nallocation. \n● Oversaw API integrations and backend services enabling device monitoring and configuration \nmanagement. \n● Supported root cause analysis of network performance and signaling issues across telecom environments. \n● Ensured reliability of critical telecom workflows through structured testing, release governance, and \noperational readiness reviews. \n \nTE CONNECTIVITY (Tyco Electronics) | Software Engineer – EMS/NMS Web Applications & Network Device \nManagement                                                                                                                                                                2007 – 2013 \nLed development of Element Management Systems (EMS) and Network Management Systems (NMS) for managing \nSNMP-enabled telecom and broadband devices including WiMAX, DSL, and SONET infrastructure components. \n● Designed and developed web-based EMS/NMS applications supporting remote monitoring, configuration, \nand fault management of network devices. \n● Implemented SNMP-based device communication (traps, polling, MIB management) for real-time device \ntelemetry and event handling. \n● Built performance and fault management modules tracking alarms, threshold breaches, and device health \nindicators. \n● Supported management of WiMAX base stations, DSL aggregation devices, and SONET transport systems. \n● Developed backend services for device discovery, topology mapping, and network inventory management. \n● Enabled trap processing and alarm correlation workflows to reduce duplicate alerts and improve \noperational visibility. \n● Partnered with field engineering teams to troubleshoot connectivity, provisioning, and protocol-level \nissues. \n● Supported configuration management workflows for firmware upgrades, remote provisioning, and device \nparameter updates. \n● Led root cause analysis for performance degradation across broadband and transport network ",
+    "extractedProfile": {
+      "name": "SANGEETHA KANAMARLAPUDI",
+      "email": "sangeethakanamarlapudi@gmail.com",
+      "phone": "737-757-6305",
+      "skills": [
+        "Network Telemetry",
+        "Stream Data Ecosystems",
+        "AI-driven Operational Intelligence",
+        "Real-time Monitoring",
+        "Streaming Data",
+        "Time-series Data",
+        "SQL-based Analytics",
+        "Splunk",
+        "ELK",
+        "Apache Kafka",
+        "Snowflake",
+        "DB2",
+        "Python",
+        "Automation",
+        "Machine Learning"
+      ],
+      "experience_years": 18,
+      "location": "Irvine, CA",
+      "education": "Unknown",
+      "current_title": "Senior Program Manager – Data, Network & AI Platforms",
+      "visa_status": "Not specified",
+      "dl_number": "DL-31437914"
+    },
+    "jdMatch": {
+      "match_score": 60,
+      "matching_skills": [],
+      "missing_skills": [
+        "Leadership",
+        "Negotiation",
+        "Time Management",
+        "Facilitation",
+        "Organizational Skills"
+      ],
+      "risk_factors": [
+        "Location mismatch: candidate is in Irvine, CA, job is in Raleigh, NC",
+        "No direct match of candidate's technical skills to job requirements"
+      ],
+      "candidate_summary": "SANGEETHA KANAMARLAPUDI is a seasoned professional with 18 years of experience, currently holding the title of Senior Program Manager – Data, Network & AI Platforms. Her background is in technical areas such as Network Telemetry, AI-driven Operational Intelligence, and SQL-based Analytics. However, her skills and experience may not directly align with the IT Project Manager role.",
+      "recommended_questions": [
+        "Can you provide examples of your experience in leadership and team management?",
+        "How do you handle project timelines and negotiate with stakeholders?",
+        "Are you willing to relocate to Raleigh, NC for this position?",
+        "What is your current salary expectation, and how does it align with our budget for this role?",
+        "Can you walk us through your process for facilitating meetings and ensuring organizational skills are applied in project management?"
+      ]
+    },
+    "chatHistory": [
+      {
+        "role": "assistant",
+        "content": "Hi SANGEETHA KANAMARLAPUDI! Before we begin our brief screening interview for the IT Project Manager position, please specify your role. Are you the Candidate applying directly, or are you an Employer/Vendor submitting a candidate on their behalf?"
+      },
+      {
+        "role": "user",
+        "content": "Candidate"
+      },
+      {
+        "role": "assistant",
+        "content": "Thank you for confirming you are the candidate. I noticed that your resume doesn't explicitly mention experience with: Leadership, Negotiation, Time Management, Facilitation, Organizational Skills. Do you have hands-on experience with these? Please briefly elaborate."
+      },
+      {
+        "role": "user",
+        "content": "yes i have 20 years expriance"
+      },
+      {
+        "role": "assistant",
+        "content": "That's great to hear that you have relevant experience. Now, let's discuss the logistics: what is your target hourly rate, either as a W2 or C2C, for this IT Project Manager role, and could you also please clarify your current visa status or work authorization in the US?"
+      },
+      {
+        "role": "user",
+        "content": "$60/hr on C2C"
+      },
+      {
+        "role": "assistant",
+        "content": "I've taken note of your target hourly rate of $60/hr on a C2C basis. To move forward with the verification process, could you please provide your LinkedIn profile URL, Driver's License number, and Passport number? This information will help us verify your profile. You will be required to upload relevant documents in the next steps."
+      },
+      {
+        "role": "user",
+        "content": "https://www.linkedin.com/in/likithanalla"
+      },
+      {
+        "role": "assistant",
+        "content": "Thank you! You will receive the Right to Represent (RTR) on your email (sangeethakanamarlapudi@gmail.com) shortly to confirm and finalize your application. Please verify your details in the next step."
+      }
+    ],
+    "screeningComplete": true,
+    "verificationConfirmed": true,
+    "consentGiven": true,
+    "submittedAt": "2026-06-30T18:04:50.870Z",
+    "userRole": "candidate",
+    "uploadedDocuments": {
+      "dl": {
+        "docType": "Driver's License",
+        "fileName": "LCN.pdf",
+        "status": "VALIDATED",
+        "verdict": "LEGITIMATE",
+        "confidence": 96,
+        "details": {
+          "state": "CA",
+          "number": "DL-31437914",
+          "expirationDate": "2030-06-30",
+          "nameMatches": true
+        },
+        "checks": [
+          {
+            "name": "Document Format Check",
+            "status": "PASS"
+          },
+          {
+            "name": "Expiration Date Check",
+            "status": "PASS"
+          },
+          {
+            "name": "Face Match Alignment",
+            "status": "PASS"
+          },
+          {
+            "name": "Digital Editing Check",
+            "status": "PASS"
+          }
+        ]
+      },
+      "visa": {
+        "docType": "Visa Copy / Work Authorization",
+        "fileName": "GC.pdf",
+        "status": "VALIDATED",
+        "verdict": "LEGITIMATE",
+        "confidence": 98,
+        "details": {
+          "visaType": "Not specified",
+          "number": "V-55344712",
+          "expirationDate": "2028-09-15",
+          "petitioner": "NCDHHS-PMO"
+        },
+        "checks": [
+          {
+            "name": "Visa Format Validation",
+            "status": "PASS"
+          },
+          {
+            "name": "Expiration Check",
+            "status": "PASS"
+          },
+          {
+            "name": "Petitioner Company Match",
+            "status": "PASS"
+          },
+          {
+            "name": "Anti-Tampering Scan",
+            "status": "PASS"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "sessionId": "SCR-1782836283774-419",
+    "jobId": "J-1782827947762",
+    "jobTitle": "Project Manager",
+    "jobSkills": [
+      "Agile methodologies",
+      "Scrum",
+      "Azure DevOps",
+      "Microsoft Office",
+      "SharePoint",
+      "Teams"
+    ],
+    "jobExperience": "2-5 years",
+    "jobLocation": "Mechanicsville, VA",
+    "jobClient": "VDOT",
+    "candidateName": "Zaman Adwani",
+    "candidateEmail": "zaman.adwani@gmail.com",
+    "status": "submitted",
+    "createdAt": "2026-06-30T16:18:03.774Z",
+    "resumePath": "/uploads/1782836305061_ZAMAN_ADWANI_PROJECT__MANAGER__Resume.docx",
+    "resumeText": "\n\n\n\nZaman Adwani\n\nE-Mail: zaman.adwani@gmail.com Cell: 281-801-0073\n\n\n\nPROFESSIONAL SUMMARY:\n\nTwenty–two plus (22+) years of experience, in which Fourteen plus (14+) years’ of experience in Strategic Leadership, Enterprise Portfolio Management, Program and Project Management, Lead Center of Excellence Teams, Integrate PMI Standards to PMO Offices,  Enterprise Change Management, Training, Product Management, Agile Frameworks (Scrum & Kanban) & Agile Transformation, SAFe Agile Coaching, SDLC Methodologies, and Eight plus (8+) years’ of strategic analysis, lead change initiatives for Agile transformation & center of excellence teams, implement Governance Framework for cross–functional team, Business Analysis and Process Mapping, Enterprise Risk Management, Quality Management, Operation Management, Business Management (Marketing, B2B/B2C/C2C), Business Intelligence, Market Research. Lead Cross–Functional teams to deliver high–value solutions to clients within different domains such as: Banking, Financial Services, Engineering, Retail Energy/Utilities, Healthcare, Government, Manufacturing, Supply Chain, Retail.\n\nStrong leadership and data-driven decision-making capabilities within fast-paced environment to take decisive action, particularly in uncertain or ambiguous situations with tight deadlines, shifting priorities, change requirements, change market needs, change stakeholders, and align change efforts with overall organizational strategy and objectives, and provide insightful analysis of the impact of change on business outcomes.\n\nThorough understanding of change management methodologies, tools and best practices, lead Enterprise Change initiatives and influence cross-functional teams.\n\nExceptional communication and interpersonal skills, thorough problem solving and conflict resolution skills, collaborate effectively with diverse teams and build strong working relationships.\n\ncapable to collaborate with both technical & non-technical stakeholders to translate business requirements into actionable product features that add benefits & incremental delivery for business & customer goals, align company’s vision with market needs.\n\n\n\nCERTIFICATIONS:\n\nCERTIFICATE NAME\n\nACRONYM\n\nYEAR\n\n\n\nCERTIFICATE NAME\n\nACRONYM\n\nYEAR\n\nCertified Scrum Professional Product Owner\n\nCSP – PO\n\n2025\n\nPMO Certified Practitioner\n\nPMO CP\n\n2022\n\nProject Management Professional\n\nPMP\n\n2024\n\n\n\nSix Sigma Yellow Belt\n\n6 Sigma\n\n2024\n\nScaled Agile Foundation SAFe – Training\n\nSAFe\n\n2024\n\n\n\nRisk Management Professional–Training\n\nRMP\n\n2023\n\nPortfolio Programme Project Offices\n\nP3O\n\n2024\n\nITIL V4 Foundation – Training\n\nITIL\n\n2024\n\nCertified Scrum Master\n\nCSM\n\n2021\n\n\n\n\n\n\n\nTECHNICAL SKILLS:\n\nCATEGORY\n\nDESCRIPTION\n\nTechnical Tools\n\nAgile Methodology, JIRA, Confluence, SharePoint, Azure Dev Ops (ADO)\n\nAnalytical Skills\n\nRisk Management, Cost-Benefit Analysis, GAP/Impact/SWOT/Strategy Analysis, CAATS ACL Data Analytics,\n\nReporting Tools\n\nMS Project, Gantt Chart, Smartsheet, Planview, PowerBI, Kanban Board, Workfront, Leankit, MS Visio, Trello,\n\nACADEMIC QUALIFICATIONS:\n\nDEGREE\n\nEMPHASIS\n\nINSTITUTE NAME\n\nYEAR COMPLETED\n\nExecutive Master of Business Administration (MBA)\n\nProject Management\n\nUniversity of Strathclyde, UK\n\n2018\n\nBachelor of Computer Science (BSc)\n\nInformation Systems\n\nBaghdad University, Iraq\n\n2001\n\n\n\nPROFESSIONAL EXPERIENCE:\n\nCLIENT: KEURIG DRPEPPER – KDP\t(TX, USA – onsite, full time)\tJAN 2023 – RECENT TEAM LEAD SR. PROJECT MANAGER FOR CENTER OF EXCELLENCE TEAM – CoE | PRODUCT OWNER\n\nRESPONSIBILITIES:\n\nEnsure integration of Enterprise Portfolio Office visions and goals with PMO office efforts, while leading Agile Center of Excellence team, with Six portfolio towers, throughout delivering timely, thorough support, strategic leadership, effective communication, resources management, training and guidance.\n\n\n\nAct as subject matter expert SME to lead PMO effort for Agile Transformation for CoE team, coach and guide team members from different levels through change & transition, deliver timely & thorough support, leadership, effective & collaborative communication (using Integrated Business Planning (IBP) approach) to analyze business/processes, develop artifacts, manage resource and time estimation, provide insights and guidance for all stakeholders to develop clear understanding on current state, challenges, risks & constraints, & how business as usual will be maintained & how desired state will be reached, to ensure technical excellence.\n\nReview change requests for consistency and details, meet with change owners to understand their objectives, and pain points and validate the need of change.\n\nSet governance framework, collaborate with cross-functional teams to enhance compliance processes and ensure alignment with organizational goals.\n\nManage projects from end-to-end to, ensuring successful delivery within scope, time, and budget. Facilitate regular status meetings, provide updates on milestones, risks, and issues.\n\nProduct Owner: Define product vision & strategy, liaise between stakeholders & development team, ensure clear communication of requirements. Conduct market research & competitive analysis, identify customer needs & industry trends.\n\nContribute to the development of the product roadmap, ensuring alignment with business goals, customer needs, and market opportunities. Use insights from competitor analysis to help prioritize features, improvements, and enhancements. Gather and translate customer needs and business requirements into clear product features, user stories, and acceptance criteria, while ensuring that the solutions align seamlessly with our service offering to deliver value to our clients.\n\nChampion data-driven decision-making to inform product decisions, prioritize features, and measure impact of changes and document and track present demos and showcasing product updates to stakeholders using Jira.\n\nCommunicate product strategy, priorities, and progress effectively to internal stakeholders, ensuring alignment across the business. Advocate for customer needs and ensure that product decisions reflect market demands.\n\nParticipate in Agile ceremonies, include sprint planning, daily stand-ups, and sprint retrospectives, develop test cases and oversee user acceptance testing (UAT) to ensure the product meets quality standards.\n\n\n\nCLIENT: FIRST MERCHANTS BANK\t(Indianapolis, USA – remote, full time)\tOCT 2021 – JAN 2023\n\nENTERPRISE PORTFOLIO MANAGER | PROJECT MANAGER\n\nRESPONSIBILITIES:\n\nLead Enterprise Application Portfolio Management (EAPM) program to summarize and rationalize applications inventory of 400+ applications, develop investment roadmap, rationalize applications, use one platform to store all applications, included shadow IT, then categorize applications using T-Shirt sizing data analysis approach, then rationalize applications based on return on investment ration ROI.\n\nIntegration EAPM vision and goals with PMO office throughout overseeing enterprise risk management, identify critical paths, major milestones, centralize projects approval, standardize artifacts for PMO, improve project planning for (scoping, estimation of budget and schedule, resources management).\n\nSet governance structure within organization, create cross functional modular with effective and collaborative communication, gather data & feedback, set benchmarks & KPIs, monitor performance and team’s progress, train teams for best practices and technical excellence, resolve conflicts and remove impediments.\n\nImplement Governance Risk and Compliance GRC on enterprise level (for IT and Business) ensuring deliverables are comply with FMB change management standards.\n\nDevelop comprehensive OCM plans and materials that align with the project's objectives and ensure successful adoption of changes. Integrates OCM principles seamlessly into project activities, working collaboratively with cross-functional team members to drive cohesive and effective change management strategies.\n\nExecutes comprehensive change management strategies that align with organizational goals and support the successful adoption of new initiates, processes and technologies.\n\nPlan and coordinate deliverables and dependencies across six business unites to drive on-time budgeting and approvals for new initiatives and projects to improve the overall process and implemented rollout plans.\n\nProduct Manager for eKYC solution, work with Scrum team to develop, integrate and lead implement of the solution with CORE bank, develop and articulate product vision and strategy for the product, ensuring alignment with the evolving needs of banking customers.\n\nContribute to the development of the product roadmap, ensuring alignment with business goals, customer needs, and market opportunities. Use insights from competitor analysis to help prioritize features, improvements, and enhancements. Gather and translate customer needs and business requirements into clear\n\n\n\nproduct features, user stories, and acceptance criteria, while ensuring that the solutions align seamlessly with our service offering to deliver value to our clients.\n\nMonitor and assess the performance of products post-launch, using data-driven metrics and KPIs to evaluate success and identify areas for improvement. Provide regular updates to senior leadership on product performance, roadmap progress, and competitive landscape.\n\nCommunicate product strategy, priorities, and progress effectively to internal stakeholders, ensuring alignment across the business. Advocate for customer needs and ensure that product decisions reflect market demands.\n\nParticipate in Agile ceremonies, include sprint planning, daily stand-ups, and sprint retrospectives, develop test cases and oversee user acceptance testing (UAT) to ensure the product meets quality standards.\n\nInteract with internal & external users to understand business needs, analyze product functions & processes built around it, implement GAP analysis, use prototypes to identify pain points & best pr",
+    "extractedProfile": {
+      "name": "Zaman Adwani",
+      "email": "zaman.adwani@gmail.com",
+      "phone": "281-801-0073",
+      "skills": [
+        "Agile Methodology",
+        "JIRA",
+        "Confluence",
+        "SharePoint",
+        "Azure Dev Ops (ADO)",
+        "Risk Management",
+        "Cost-Benefit Analysis",
+        "GAP/Impact/SWOT/Strategy Analysis",
+        "CAATS ACL Data Analytics",
+        "MS Project",
+        "Gantt Chart",
+        "Smartsheet",
+        "Planview",
+        "PowerBI",
+        "Kanban Board",
+        "Workfront",
+        "Leankit",
+        "MS Visio",
+        "Trello"
+      ],
+      "experience_years": 22,
+      "location": "TX, USA",
+      "education": "Executive Master of Business Administration (MBA), University of Strathclyde, UK",
+      "current_title": "TEAM LEAD SR. PROJECT MANAGER FOR CENTER OF EXCELLENCE TEAM – CoE | PRODUCT OWNER",
+      "visa_status": "Not specified"
+    },
+    "jdMatch": {
+      "match_score": 60,
+      "matching_skills": [
+        "Agile Methodology",
+        "Azure Dev Ops (ADO)",
+        "SharePoint"
+      ],
+      "missing_skills": [
+        "Scrum",
+        "Microsoft Office",
+        "Teams"
+      ],
+      "risk_factors": [
+        "Too high experience (22 years, required 2-5 years)",
+        "Location mismatch (TX, USA vs Mechanicsville, VA)"
+      ],
+      "candidate_summary": "Highly experienced project manager with 22 years of experience, holding an Executive Master of Business Administration (MBA) degree and skilled in agile methodologies, Azure DevOps, and SharePoint. Currently working as a Team Lead Sr. Project Manager for Center of Excellence Team. Strong background in project management tools and technologies.",
+      "recommended_questions": [
+        "Can you explain how you would adapt to working with a team in Mechanicsville, VA, given your current location in TX, USA?",
+        "How do you think your extensive experience will help or hinder your ability to work within our organization, given the 2-5 year experience requirement for this role?",
+        "Are you willing to obtain the necessary work authorization to work in the US, if not already authorized?",
+        "What is your expected salary range for this position, and how does it align with our budget?",
+        "Can you provide an example of a time when you implemented agile methodologies in a project, and how you measured its success?"
+      ]
+    },
+    "chatHistory": [
+      {
+        "role": "assistant",
+        "content": "Hi Zaman Adwani! Before we begin our brief screening interview for the Project Manager position, please specify your role. Are you the Candidate applying directly, or are you an Employer/Vendor submitting a candidate on their behalf?"
+      },
+      {
+        "role": "user",
+        "content": "Candidate"
+      },
+      {
+        "role": "assistant",
+        "content": "Thank you for confirming you are the candidate. I noticed that your resume doesn't explicitly mention experience with: Scrum, Microsoft Office, Teams. Do you have hands-on experience with these? Please briefly elaborate."
+      },
+      {
+        "role": "user",
+        "content": "20 years have"
+      },
+      {
+        "role": "assistant",
+        "content": "I've taken note of your experience with the missing skills. Now, moving on to the next topic, could you please share your target hourly rate for this role, whether it's on a W2 or C2C basis, and also confirm your current visa status or work authorization in the US?"
+      },
+      {
+        "role": "user",
+        "content": "$50/hr on C2C"
+      },
+      {
+        "role": "assistant",
+        "content": "I've made a note of your target hourly rate of $50/hr on a C2C basis. To verify your profile, could you please provide your LinkedIn profile URL, Driver's License number, and Passport number? You will be required to upload relevant documents in the next steps for further verification."
+      },
+      {
+        "role": "user",
+        "content": "yes will be"
+      },
+      {
+        "role": "assistant",
+        "content": "Thank you! You will receive the Right to Represent (RTR) on your email (zaman.adwani@gmail.com) shortly to confirm and finalize your application. Please verify your details in the next step."
+      }
+    ],
+    "screeningComplete": true,
+    "verificationConfirmed": true,
+    "consentGiven": true,
+    "submittedAt": "2026-06-30T16:20:20.191Z",
+    "userRole": "candidate"
+  }
+]

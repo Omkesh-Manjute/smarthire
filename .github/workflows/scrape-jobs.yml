@@ -1,0 +1,35 @@
+name: JobsInHand Ingestion Scraper
+
+on:
+  schedule:
+    # Run every 15 minutes
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    # Allow manual triggering of this workflow from the GitHub Actions UI
+
+jobs:
+  scrape:
+    name: Run Scraper
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Workspace Dependencies
+        run: npm install
+
+      - name: Install Playwright Chromium with OS dependencies
+        run: npx playwright install --with-deps chromium
+
+      - name: Execute Scraper Script
+        run: node smarthire-react/server/jobs-ingestion/run-ingestion.js
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}

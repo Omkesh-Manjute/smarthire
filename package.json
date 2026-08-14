@@ -1,0 +1,22 @@
+{
+  "name": "verifyhire-root",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "smarthire-react",
+    "smarthire-backend"
+  ],
+  "scripts": {
+    "install:all": "npm install",
+    "build": "node build.js",
+    "start": "node smarthire-react/server/index.js",
+    "dev:frontend": "npm run dev --prefix smarthire-react",
+    "dev:backend": "npm run dev --prefix smarthire-backend",
+    "dev:api": "npm run api:dev --prefix smarthire-react",
+    "dev": "node start-dev.js"
+  },
+  "dependencies": {
+    "framer-motion": "^12.38.0"
+  }
+}

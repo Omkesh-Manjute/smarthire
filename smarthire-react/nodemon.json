@@ -1,0 +1,9 @@
+{
+  "ignore": [
+    "src/**/*",
+    "public/**/*",
+    "**/*.json",
+    "server/**/*.json",
+    "server/uploads/**/*"
+  ]
+}
