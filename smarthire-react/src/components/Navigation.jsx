@@ -73,7 +73,7 @@ function Navigation() {
           </span>
           <div className="brand-text-wrap">
             <span className="brand-text">SmartHire</span>
-            <span className="brand-badge-pro">{isSuperAdmin ? 'ENTERPRISE' : 'RECRUITER TEST'}</span>
+            <span className="brand-badge-pro">{isSuperAdmin ? 'ENTERPRISE' : 'RECRUITER PRO'}</span>
           </div>
         </Link>
 
@@ -81,7 +81,7 @@ function Navigation() {
         {isAuthenticated && (
           <button
             onClick={toggleRoleMode}
-            title="Click to toggle between Admin mode and External Recruiter Tester mode"
+            title="Toggle view between Admin Console and Recruiter Workspace"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -91,13 +91,13 @@ function Navigation() {
               fontSize: '11px',
               fontWeight: '700',
               cursor: 'pointer',
-              border: isSuperAdmin ? '1px solid rgba(245,158,11,0.4)' : '1px solid rgba(59,130,246,0.4)',
-              background: isSuperAdmin ? 'rgba(245,158,11,0.12)' : 'rgba(59,130,246,0.12)',
-              color: isSuperAdmin ? '#f59e0b' : '#60a5fa',
+              border: isSuperAdmin ? '1px solid rgba(245,158,11,0.4)' : '1px solid rgba(99,102,241,0.4)',
+              background: isSuperAdmin ? 'rgba(245,158,11,0.12)' : 'rgba(99,102,241,0.12)',
+              color: isSuperAdmin ? '#f59e0b' : '#6366f1',
               marginRight: '8px'
             }}
           >
-            <span>{isSuperAdmin ? '👑 Admin Mode' : '💼 Recruiter Tester View'}</span>
+            <span>{isSuperAdmin ? '👑 Admin View' : '💼 Recruiter View'}</span>
             <span style={{ opacity: 0.7, fontSize: '10px' }}>(Switch ⇄)</span>
           </button>
         )}

@@ -68,7 +68,7 @@ function App() {
       <Route path="/linkedin-posts" element={<SuperAdminRoute><LinkedInPosts /></SuperAdminRoute>} />
       <Route path="/candidate-chat/:sessionId" element={<CandidateChat />} />
       <Route path="/candidate-chat/job/:jobId" element={<CandidateChat />} />
-      <Route path="/login" element={<Navigate to="/" replace />} />
+      <Route path="/login" element={<Login />} />
       <Route path="/about" element={<About />} />
       <Route path="/contact" element={<Contact />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />

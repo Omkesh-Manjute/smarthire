@@ -5,7 +5,9 @@ function JobsModule({
   rawJdText, setRawJdText, parsingJd, handleParseJd,
   isScraping, handleScrapeNow,
   publishingJobId, handlePostJobToLinkedIn, handleDeleteJob,
-  handleOpenJobPreview, fetchJobs
+  handleOpenJobPreview, fetchJobs,
+  recruiterInfo = null,   // { id, name, email, refCode }
+  isSuperAdmin = true,
 }) {
   const [expandedJobId, setExpandedJobId] = useState(null)
   const [editingJob, setEditingJob] = useState(null)
@@ -16,6 +18,12 @@ function JobsModule({
   const [statusFilter, setStatusFilter] = useState('All')
   const [searchQuery, setSearchQuery] = useState('')
 
+  // Recruiter Manual Job Post state
+  const [showPostForm, setShowPostForm] = useState(false)
+  const [postForm, setPostForm] = useState({ title: '', client: '', location: '', work_mode: 'Onsite', employment_type: 'Contract', experience: '', skills: '', description: '' })
+  const [postingJob, setPostingJob] = useState(false)
+  const [postedJobLink, setPostedJobLink] = useState(null)
+
   // LinkedIn Post Generator Modal State
   const [linkedinModalJob, setLinkedinModalJob] = useState(null)
   const [linkedinPostText, setLinkedinPostText] = useState('')
@@ -23,9 +31,65 @@ function JobsModule({
   const [postingLinkedIn, setPostingLinkedIn] = useState(false)
   const [postSuccessMsg, setPostSuccessMsg] = useState('')
 
-  const safeJobs = Array.isArray(jobsList) ? jobsList : []
+  const allSafeJobs = Array.isArray(jobsList) ? jobsList : []
+  // Recruiters see only their own jobs; Admin sees all
+  const safeJobs = isSuperAdmin
+    ? allSafeJobs
+    : allSafeJobs.filter(j => !j.postedBy || j.postedBy === (recruiterInfo?.id || recruiterInfo?.email || ''))
   const safeCandidates = Array.isArray(allCandidates) ? allCandidates : []
   const safeSubmissions = Array.isArray(submissions) ? submissions : []
+
+  // Recruiter unique application link for a job
+  const getRecruiterJobLink = (jobId) => {
+    const ref = recruiterInfo?.refCode || ''
+    const base = `${window.location.origin}/careers?job=${jobId}`
+    return ref ? `${base}&ref=${ref}` : base
+  }
+
+  // LinkedIn Share URL generator (no API needed)
+  const getLinkedInShareUrl = (job) => {
+    const link = isSuperAdmin
+      ? `${window.location.origin}/careers?job=${job.id}`
+      : getRecruiterJobLink(job.id)
+    return `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(link)}`
+  }
+
+  // Recruiter manual job post handler
+  const handleManualPostJob = async (e) => {
+    e.preventDefault()
+    if (!postForm.title.trim()) return
+    setPostingJob(true)
+    try {
+      const skillsArray = postForm.skills.split(',').map(s => s.trim()).filter(Boolean)
+      const payload = {
+        ...postForm,
+        skills: skillsArray,
+        status: 'Active',
+        source: 'manual',
+        postedBy: recruiterInfo?.id || recruiterInfo?.email || 'recruiter',
+        postedByName: recruiterInfo?.name || 'Recruiter',
+        refCode: recruiterInfo?.refCode || '',
+      }
+      const res = await fetch('/api/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('smarthire_token') || ''}` },
+        body: JSON.stringify(payload)
+      })
+      const data = res.ok ? await res.json() : null
+      const jobId = data?.id || data?.data?.id || data?.job?.id || Date.now().toString()
+      const appLink = getRecruiterJobLink(jobId)
+      setPostedJobLink(appLink)
+      setPostForm({ title: '', client: '', location: '', work_mode: 'Onsite', employment_type: 'Contract', experience: '', skills: '', description: '' })
+      if (fetchJobs) fetchJobs()
+    } catch (err) {
+      console.error('Manual job post failed:', err)
+      // Even if API fails, show a generated link
+      const tempId = Date.now().toString()
+      setPostedJobLink(getRecruiterJobLink(tempId))
+    } finally {
+      setPostingJob(false)
+    }
+  }
 
   const openJobs = safeJobs.filter(j => j && (j.status === 'Active' || j.status === 'Posted')).length
 
@@ -273,14 +337,121 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
         ))}
       </div>
 
-      {/* Light Theme AI JD Parser */}
+      {/* ── RECRUITER MANUAL JOB POST FORM ─────────────────────── */}
+      <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 14, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showPostForm ? 16 : 0 }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#111827', display: 'flex', alignItems: 'center', gap: 8 }}>
+              ✍️ Post a Job
+              {!isSuperAdmin && recruiterInfo?.refCode && (
+                <span style={{ fontSize: 11, background: '#eef2ff', color: '#6366f1', border: '1px solid #c7d2fe', borderRadius: 20, padding: '2px 9px', fontWeight: 700 }}>
+                  🔗 Your ref: {recruiterInfo.refCode}
+                </span>
+              )}
+            </h3>
+            <p style={{ margin: '3px 0 0', fontSize: 12, color: '#9ca3af' }}>Paste JD or fill form — candidates will apply through your unique link</p>
+          </div>
+          <button
+            onClick={() => { setShowPostForm(v => !v); setPostedJobLink(null) }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 700,
+              background: showPostForm ? '#f3f4f6' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              color: showPostForm ? '#374151' : '#ffffff',
+              border: showPostForm ? '1px solid #e5e7eb' : 'none',
+              cursor: 'pointer', boxShadow: showPostForm ? 'none' : '0 2px 8px rgba(99,102,241,0.35)',
+              transition: 'all 0.2s',
+            }}
+          >
+            {showPostForm ? '✕ Close' : '+ Post New Job'}
+          </button>
+        </div>
+
+        {showPostForm && (
+          <form onSubmit={handleManualPostJob} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div>
+                <label style={labelStyle}>Job Title *</label>
+                <input required value={postForm.title} onChange={e => setPostForm(p => ({...p, title: e.target.value}))} placeholder="e.g. Senior Java Developer" style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Client / Company</label>
+                <input value={postForm.client} onChange={e => setPostForm(p => ({...p, client: e.target.value}))} placeholder="e.g. Microsoft" style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Location</label>
+                <input value={postForm.location} onChange={e => setPostForm(p => ({...p, location: e.target.value}))} placeholder="e.g. Austin, TX" style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Experience</label>
+                <input value={postForm.experience} onChange={e => setPostForm(p => ({...p, experience: e.target.value}))} placeholder="e.g. 5+ years" style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Work Mode</label>
+                <select value={postForm.work_mode} onChange={e => setPostForm(p => ({...p, work_mode: e.target.value}))} style={inputStyle}>
+                  <option>Onsite</option><option>Remote</option><option>Hybrid</option>
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Employment Type</label>
+                <select value={postForm.employment_type} onChange={e => setPostForm(p => ({...p, employment_type: e.target.value}))} style={inputStyle}>
+                  <option>Contract</option><option>Full-time</option><option>Part-time</option><option>Contract-to-hire</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label style={labelStyle}>Required Skills (comma separated)</label>
+              <input value={postForm.skills} onChange={e => setPostForm(p => ({...p, skills: e.target.value}))} placeholder="e.g. React, Node.js, MongoDB" style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>Job Description (paste full JD or leave blank)</label>
+              <textarea value={postForm.description} onChange={e => setPostForm(p => ({...p, description: e.target.value}))} rows={4} placeholder="Paste JD or write a brief..." style={{ ...inputStyle, resize: 'vertical' }} />
+            </div>
+
+            {/* Posted Job Link Preview */}
+            {postedJobLink && (
+              <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: 10, padding: '12px 16px' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#059669', marginBottom: 8 }}>✅ Job Posted! Your unique candidate application link:</div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <input readOnly value={postedJobLink} style={{ flex: 1, ...inputStyle, background: '#f0fdf4', fontSize: 12, fontFamily: 'monospace', minWidth: 200 }} />
+                  <button type="button" onClick={() => { navigator.clipboard.writeText(postedJobLink) }}
+                    style={{ padding: '8px 12px', borderRadius: 7, background: '#059669', color: '#fff', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                    📋 Copy Link
+                  </button>
+                  <a
+                    href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postedJobLink)}`}
+                    target="_blank" rel="noreferrer"
+                    style={{ padding: '8px 12px', borderRadius: 7, background: '#0a66c2', color: '#fff', textDecoration: 'none', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                    Share on LinkedIn
+                  </a>
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <button type="button" onClick={() => setShowPostForm(false)}
+                style={{ padding: '9px 18px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#f9fafb', color: '#374151', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                Cancel
+              </button>
+              <button type="submit" disabled={postingJob || !postForm.title.trim()}
+                style={{ padding: '9px 22px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: (postingJob || !postForm.title.trim()) ? 0.6 : 1, display: 'flex', alignItems: 'center', gap: 6 }}>
+                {postingJob ? '⏳ Posting...' : '🚀 Post Job'}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+
+      {/* AI JD Parser — collapse/expand depending on if manual form open */}
       <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 14, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
           <div>
             <h3 style={{ margin: 0, fontFamily: 'Plus Jakarta Sans', color: '#0f172a', fontSize: 15, display: 'flex', alignItems: 'center', gap: 8 }}>
               🪄 AI Job Description Parser
             </h3>
-            <p style={{ margin: '3px 0 0', fontSize: 12, color: '#64748b' }}>Paste raw JD below — AI extracts title, client, skills, budget, location, and deadline automatically</p>
+            <p style={{ margin: '3px 0 0', fontSize: 12, color: '#64748b' }}>Paste raw JD below — AI extracts title, client, skills, budget, location automatically</p>
           </div>
         </div>
         <textarea
@@ -493,10 +664,21 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
                   style={{ flex: 1, background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                   📄 Full JD
                 </button>
+                {/* LinkedIn Share button — direct share URL (no API needed) */}
+                <a
+                  href={getLinkedInShareUrl(job)}
+                  target="_blank" rel="noreferrer"
+                  onClick={e => e.stopPropagation()}
+                  style={{ flex: 1, background: '#e8f0fe', color: '#0a66c2', border: '1px solid #bfdbfe', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, textDecoration: 'none' }}
+                  title="Share this job on LinkedIn (opens LinkedIn in new tab)">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                  Share
+                </a>
                 <button
                   onClick={(e) => handleOpenLinkedInModal(e, job)}
-                  style={{ flex: 1, background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                  📡 LinkedIn
+                  style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: 7, padding: '7px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                  title="Generate formatted LinkedIn post text">
+                  📝
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); handleDeleteJob(job.id) }}

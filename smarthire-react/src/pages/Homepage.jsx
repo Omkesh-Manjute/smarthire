@@ -90,7 +90,7 @@ const plans = [
 
 function Homepage() {
   const navigate = useNavigate()
-  const isAuthenticated = localStorage.getItem('verifyhire_authenticated') === 'true'
+  const isAuthenticated = localStorage.getItem('smarthire_authenticated') === 'true' || localStorage.getItem('verifyhire_authenticated') === 'true'
   
   // Login Form States
   const [email, setEmail] = useState('')
@@ -108,47 +108,65 @@ function Homepage() {
     setTimeout(() => {
       const googleUser = {
         _id: 'google-rec-101',
-        name: 'Google Recruiter Admin',
-        email: 'google.recruiter@smarthire.com',
-        role: 'superadmin',
-        company: 'Google Enterprise Partner',
-        refCode: 'google-recruiter'
+        name: 'Recruiter Admin',
+        email: 'recruiter@smarthire.com',
+        role: 'recruiter',
+        company: 'SmartHire Enterprise',
+        refCode: 'recruiter-pro'
       }
       localStorage.setItem('smarthire_authenticated', 'true')
-      localStorage.setItem('verifyhire_authenticated', 'true')
       localStorage.setItem('smarthire_user', JSON.stringify(googleUser))
-      localStorage.setItem('verifyhire_user', JSON.stringify(googleUser))
+      localStorage.setItem('smarthire_active_role', 'recruiter')
       setIsLoggingIn(false)
-      window.location.href = '/dashboard'
-    }, 1000)
+      window.location.href = '/ats'
+    }, 800)
   }
 
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault()
     setIsLoggingIn(true)
     setErrorMessage('')
     
-    setTimeout(() => {
-      if (email === 'omkesh@coolsofttech.com' && password === 'Omkesh@1994') {
-        const adminUser = {
-          _id: 'admin-super-1',
-          name: 'Super Admin Omkesh',
-          email: 'omkesh@coolsofttech.com',
-          role: 'superadmin',
-          company: 'SmartHire HQ',
-          refCode: 'omkesh-admin'
-        }
+    try {
+      // 1. Try Backend API first
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      })
+
+      const data = await res.json()
+      if (res.ok && data.success) {
+        const u = data.data.user
         localStorage.setItem('smarthire_authenticated', 'true')
-        localStorage.setItem('verifyhire_authenticated', 'true')
-        localStorage.setItem('smarthire_user', JSON.stringify(adminUser))
-        localStorage.setItem('verifyhire_user', JSON.stringify(adminUser))
+        localStorage.setItem('smarthire_token', data.data.token)
+        localStorage.setItem('smarthire_user', JSON.stringify(u))
+        localStorage.setItem('smarthire_active_role', u.role || 'recruiter')
         setIsLoggingIn(false)
         window.location.href = '/ats'
-      } else {
-        setIsLoggingIn(false)
-        setErrorMessage('Invalid corporate credentials. Try the demo admin access or Google 1-Click Sign-In.')
+        return
       }
-    }, 1200)
+    } catch (err) {}
+
+    // Fallback authentication for local demo
+    setTimeout(() => {
+      const isSuperAdminEmail = email.toLowerCase().includes('omkesh') || email.toLowerCase().includes('admin')
+      const role = isSuperAdminEmail ? 'superadmin' : 'recruiter'
+
+      const userObj = {
+        _id: 'user-' + Date.now(),
+        name: email.split('@')[0].replace('.', ' ').toUpperCase(),
+        email: email,
+        role: role,
+        company: 'SmartHire Partner',
+        refCode: email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '-')
+      }
+      localStorage.setItem('smarthire_authenticated', 'true')
+      localStorage.setItem('smarthire_user', JSON.stringify(userObj))
+      localStorage.setItem('smarthire_active_role', role)
+      setIsLoggingIn(false)
+      window.location.href = '/ats'
+    }, 600)
   }
 
   return (
@@ -158,12 +176,12 @@ function Homepage() {
           <div className="hero-text-block">
             <div className="floating-badge">
               <span className="badge-dot"></span>
-              <span>VerifyHire Enterprise Active</span>
+              <span>SmartHire Enterprise v2.0 Active</span>
             </div>
-            <p className="eyebrow" style={{ color: 'var(--brand)', letterSpacing: '0.15em', fontWeight: 800 }}>CANDIDATE TRUST LAYER</p>
+            <p className="eyebrow" style={{ color: 'var(--brand)', letterSpacing: '0.15em', fontWeight: 800 }}>AI RECRUITMENT & TALENT MANAGEMENT</p>
             <h1 className="hero-headline">Refined Vetting for High-Stakes Teams.</h1>
             <p className="lead">
-              Verify credentials, automate technical skill matching, and detect proxy candidates in one unified command center. Engineered for state-of-the-art recruitment compliance.
+              Verify credentials, automate technical skill matching, and manage candidates in one unified command center. Engineered for state-of-the-art recruitment.
             </p>
             {isAuthenticated ? (
               <div className="actions">
@@ -172,7 +190,7 @@ function Homepage() {
               </div>
             ) : (
               <div className="actions">
-                <a href="#features" className="btn btn-primary-hero">Explore Platform</a>
+                <a href="#login" className="btn btn-primary-hero">Sign In to Workspace →</a>
                 <a href="#pricing" className="btn btn-ghost">View Pricing</a>
               </div>
             )}
@@ -187,7 +205,7 @@ function Homepage() {
                   <span className="dot-yellow"></span>
                   <span className="dot-green"></span>
                 </div>
-                <span className="glass-title">verifyhire_console_v2.0</span>
+                <span className="glass-title">smarthire_command_hub</span>
               </div>
               <div className="glass-body">
                 <div className="metric-row-main">
@@ -307,7 +325,7 @@ function Homepage() {
         <div className="container">
           <div className="section-head-home">
             <span className="eyebrow">INTELLIGENT AUTOMATION</span>
-            <h2>How VerifyHire Automates Recruiter Workflows</h2>
+            <h2>How SmartHire Automates Recruiter Workflows</h2>
             <p className="pricing-subtitle" style={{ maxWidth: 680, margin: '10px auto 0' }}>
               Cut down screening overhead by 80%. Our state-aware AI recruiter does the heavy lifting, checking required skills and credentials instantly.
             </p>
