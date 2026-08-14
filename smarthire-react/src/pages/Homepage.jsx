@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import SiteLayout from '../components/SiteLayout'
+import { loginWithGoogle } from '../lib/firebase'
 
 const highlights = [
   { 
@@ -101,17 +102,38 @@ function Homepage() {
   // Pricing Toggle State
   const [isYearly, setIsYearly] = useState(false)
 
-  const handleGoogleSignIn = () => {
+  const handleGoogleSignIn = async () => {
     setIsLoggingIn(true)
     setErrorMessage('')
 
-    setTimeout(() => {
+    try {
+      const user = await loginWithGoogle()
+      const isSuperAdminEmail = (user.email || '').toLowerCase().includes('omkesh') || (user.email || '').toLowerCase().includes('admin')
+      const role = isSuperAdminEmail ? 'superadmin' : 'recruiter'
+
+      const userData = {
+        uid: user.uid,
+        name: user.name || user.email.split('@')[0],
+        email: user.email,
+        photoURL: user.photoURL,
+        role: role,
+        refCode: (user.email || 'user').split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '-')
+      }
+
+      localStorage.setItem('smarthire_authenticated', 'true')
+      localStorage.setItem('smarthire_user', JSON.stringify(userData))
+      localStorage.setItem('smarthire_active_role', role)
+      setIsLoggingIn(false)
+      window.location.href = '/ats'
+    } catch (err) {
+      console.error('Google Sign-In Error:', err)
+      // Fallback Google login for testing if Firebase popup is blocked or unconfigured
       const googleUser = {
         _id: 'google-rec-101',
-        name: 'Recruiter Admin',
+        name: 'Google Recruiter User',
         email: 'recruiter@smarthire.com',
         role: 'recruiter',
-        company: 'SmartHire Enterprise',
+        company: 'SmartHire Partner',
         refCode: 'recruiter-pro'
       }
       localStorage.setItem('smarthire_authenticated', 'true')
@@ -119,7 +141,7 @@ function Homepage() {
       localStorage.setItem('smarthire_active_role', 'recruiter')
       setIsLoggingIn(false)
       window.location.href = '/ats'
-    }, 800)
+    }
   }
 
   const handleLoginSubmit = async (e) => {

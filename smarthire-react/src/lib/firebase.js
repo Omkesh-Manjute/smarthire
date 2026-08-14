@@ -10,17 +10,19 @@ import {
 } from 'firebase/auth'
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || ''
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyA2BwkaHIrKbgNO87CIQc7wSpO_ufdxPXQ",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "smart-hire-54d38.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "smart-hire-54d38",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "smart-hire-54d38.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "464561704549",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:464561704549:web:2d104181a34a52ae47c08c",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-3GTS97S38S"
 }
 
-const app = !getApps().length && firebaseConfig.apiKey ? initializeApp(firebaseConfig) : (getApps().length ? getApp() : null)
-export const auth = app ? getAuth(app) : null
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp()
+export const auth = getAuth(app)
 export const googleProvider = new GoogleAuthProvider()
+googleProvider.setCustomParameters({ prompt: 'select_account' })
 
 /**
  * Sign in using Google OAuth Popup
