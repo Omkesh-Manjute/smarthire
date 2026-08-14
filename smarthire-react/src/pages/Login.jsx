@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import SiteLayout from '../components/SiteLayout'
+import { loginWithGoogle, loginWithEmail } from '../lib/firebase'
 
 function Login() {
   const navigate = useNavigate()
@@ -9,20 +10,84 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [isDemoSigningIn, setIsDemoSigningIn] = useState(false)
+  const [authError, setAuthError] = useState('')
 
-  const handleDemoSubmit = (e) => {
+  const handleGoogleSignIn = async () => {
+    setIsDemoSigningIn(true)
+    setAuthError('')
+    try {
+      const user = await loginWithGoogle()
+      const isSuperAdminEmail = user.email.toLowerCase().includes('omkesh') || user.email.toLowerCase().includes('admin')
+      const role = isSuperAdminEmail ? 'superadmin' : 'recruiter'
+      
+      const userData = {
+        uid: user.uid,
+        name: user.name || user.email.split('@')[0],
+        email: user.email,
+        photoURL: user.photoURL,
+        role: role
+      }
+
+      localStorage.setItem('smarthire_authenticated', 'true')
+      localStorage.setItem('verifyhire_authenticated', 'true')
+      localStorage.setItem('smarthire_user', JSON.stringify(userData))
+      localStorage.setItem('verifyhire_user', JSON.stringify(userData))
+      localStorage.setItem('smarthire_active_role', role)
+
+      window.location.href = '/ats'
+    } catch (err) {
+      console.error('Google Sign-In Error:', err)
+      setAuthError(err.message || 'Google Sign-In failed')
+    } finally {
+      setIsDemoSigningIn(false)
+    }
+  }
+
+  const handleDemoSubmit = async (e) => {
     e.preventDefault()
     setIsDemoSigningIn(true)
-    setTimeout(() => {
+    setAuthError('')
+
+    try {
+      // Try Firebase email login
+      const user = await loginWithEmail(email, password)
+      const isSuperAdminEmail = user.email.toLowerCase().includes('omkesh') || user.email.toLowerCase().includes('admin')
+      const role = isSuperAdminEmail ? 'superadmin' : 'recruiter'
+
+      const userData = {
+        uid: user.uid,
+        name: user.name,
+        email: user.email,
+        role: role
+      }
+
+      localStorage.setItem('smarthire_authenticated', 'true')
+      localStorage.setItem('verifyhire_authenticated', 'true')
+      localStorage.setItem('smarthire_user', JSON.stringify(userData))
+      localStorage.setItem('verifyhire_user', JSON.stringify(userData))
+      localStorage.setItem('smarthire_active_role', role)
+
+      window.location.href = '/ats'
+    } catch (firebaseErr) {
+      // Fallback for corporate demo login if Firebase email user not yet created
       if (email === 'omkesh@coolsofttech.com' && password === 'Omkesh@1994') {
+        const userData = {
+          name: 'Omkesh Manjute',
+          email: email,
+          role: 'superadmin'
+        }
+        localStorage.setItem('smarthire_authenticated', 'true')
         localStorage.setItem('verifyhire_authenticated', 'true')
-        setIsDemoSigningIn(false)
+        localStorage.setItem('smarthire_user', JSON.stringify(userData))
+        localStorage.setItem('verifyhire_user', JSON.stringify(userData))
+        localStorage.setItem('smarthire_active_role', 'superadmin')
         window.location.href = '/ats'
       } else {
-        setIsDemoSigningIn(false)
-        alert('Invalid corporate credentials.')
+        setAuthError(firebaseErr.message || 'Invalid credentials')
       }
-    }, 1200)
+    } finally {
+      setIsDemoSigningIn(false)
+    }
   }
 
   return (
@@ -35,28 +100,29 @@ function Login() {
               <div className="login-header-block">
                 <span className="login-eyebrow">Enterprise Access</span>
                 <h1 className="login-main-title">Sign in to Platform</h1>
-                <p className="login-subtitle">Enter your corporate credentials to manage talent vetting.</p>
+                <p className="login-subtitle">Enter your corporate credentials or use Google 1-click sign-in.</p>
               </div>
+
+              {authError && (
+                <div style={{ padding: '10px 14px', borderRadius: '8px', background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', fontSize: '13px', marginBottom: '16px' }}>
+                  ⚠️ {authError}
+                </div>
+              )}
 
               {/* Social Logins */}
               <div className="social-auth-row">
-                <button type="button" className="social-btn" onClick={() => alert('LinkedIn Auth is a demo flow.')}>
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                    <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
-                  </svg>
-                  <span>LinkedIn</span>
-                </button>
-                <button type="button" className="social-btn" onClick={() => alert('Google Auth is a demo flow.')}>
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <button type="button" className="social-btn" onClick={handleGoogleSignIn} style={{ width: '100%', justifyContent: 'center' }}>
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                     <path d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114-3.472 0-6.29-2.818-6.29-6.29 0-3.472 2.818-6.29 6.29-6.29 1.506 0 2.876.531 3.96 1.402l3.14-3.14C18.847 2.112 15.748 1 12.24 1 6.033 1 1 6.033 1 12.24s5.033 11.24 11.24 11.24c5.787 0 10.748-4.148 10.748-11.24 0-.67-.067-1.32-.19-1.955H12.24z"/>
                   </svg>
-                  <span>Google</span>
+                  <span style={{ fontWeight: '700' }}>Sign in with Google</span>
                 </button>
               </div>
 
               <div className="auth-divider">
                 <span>or continue with email</span>
               </div>
+
 
 
 
