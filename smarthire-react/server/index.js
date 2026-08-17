@@ -729,7 +729,7 @@ async function callGroqAI(systemPrompt, userPrompt, jsonMode = false) {
   if (preferredModel) {
     modelsToTry.push(preferredModel.trim());
   }
-  modelsToTry.push('llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama3-8b-8192');
+  modelsToTry.push('openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'mixtral-8x7b-32768', 'gemma2-9b-it');
   let lastError = null;
 
   for (const modelName of modelsToTry) {
@@ -2120,7 +2120,7 @@ Goal: "${goal}"`;
     if (preferredModel) {
       modelsToTry.push(preferredModel.trim());
     }
-    modelsToTry.push('llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama3-8b-8192');
+    modelsToTry.push('openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'mixtral-8x7b-32768', 'gemma2-9b-it');
     let lastError = null;
 
     for (const modelName of modelsToTry) {
