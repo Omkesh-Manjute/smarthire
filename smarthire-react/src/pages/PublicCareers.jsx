@@ -1353,7 +1353,8 @@ export default function PublicCareers() {
                 <button
                   onClick={() => {
                     const app = submitSuccess.appRecord
-                    closeApplicationModal()
+                    setSelectedJob(null)
+                    setSubmitSuccess(null)
                     if (app) {
                       setActiveChatCandidate({
                         id: app.candidateId || app.sessionId,
@@ -1385,7 +1386,7 @@ export default function PublicCareers() {
                   💬 Message Recruiter Now
                 </button>
                 <button
-                  onClick={closeApplicationModal}
+                  onClick={() => { setSelectedJob(null); setSubmitSuccess(null); }}
                   style={{
                     background: theme.inputBg,
                     color: theme.textPrimary,
