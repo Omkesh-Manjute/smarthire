@@ -18,6 +18,9 @@ const messageSchema = new mongoose.Schema({
   candidateName: {
     type: String
   },
+  senderName: {
+    type: String
+  },
   jobTitle: {
     type: String
   },

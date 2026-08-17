@@ -30,6 +30,7 @@ router.get('/:candidateId', async (req, res) => {
       messages: messages.map(m => ({
         id: m._id || m.id,
         sender: m.sender,
+        senderName: m.senderName,
         text: m.text,
         timestamp: m.timestamp || m.createdAt
       }))
@@ -49,7 +50,7 @@ router.get('/:candidateId', async (req, res) => {
 router.post('/:candidateId', async (req, res) => {
   try {
     const { candidateId } = req.params;
-    const { sender = 'recruiter', text, candidateName, jobTitle } = req.body;
+    const { sender = 'recruiter', text, candidateName, jobTitle, senderName } = req.body;
 
     if (!text || !text.trim()) {
       return res.status(400).json({
@@ -62,6 +63,7 @@ router.post('/:candidateId', async (req, res) => {
       id: 'msg-' + Date.now(),
       candidateId,
       sender,
+      senderName: senderName || (sender === 'recruiter' ? 'Recruiter Team' : ''),
       text: text.trim(),
       candidateName,
       jobTitle,
@@ -79,6 +81,7 @@ router.post('/:candidateId', async (req, res) => {
       await Message.create({
         candidateId,
         sender,
+        senderName: senderName || (sender === 'recruiter' ? 'Recruiter Team' : ''),
         text: text.trim(),
         candidateName,
         jobTitle
@@ -90,6 +93,7 @@ router.post('/:candidateId', async (req, res) => {
         thread: dbThread.map(m => ({
           id: m._id,
           sender: m.sender,
+          senderName: m.senderName,
           text: m.text,
           timestamp: m.timestamp
         }))

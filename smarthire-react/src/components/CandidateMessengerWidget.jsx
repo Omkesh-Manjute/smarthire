@@ -100,7 +100,8 @@ export default function CandidateMessengerWidget({ candidate, role = 'candidate'
           sender: currentSender,
           text: msgText,
           candidateName,
-          jobTitle
+          jobTitle,
+          senderName: currentSender === 'recruiter' ? recruiterName : ''
         })
       })
       const data = await res.json()
@@ -116,8 +117,13 @@ export default function CandidateMessengerWidget({ candidate, role = 'candidate'
   }
   const [showFullDetails, setShowFullDetails] = useState(false)
   const recruiterInfo = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
-  const recruiterName = recruiterInfo.name || 'Recruiter Team'
-  const recruiterRole = recruiterInfo.role || 'Recruiter'
+  
+  // Find last recruiter message to get dynamic recruiter's name on candidate side
+  const recruiterMsg = [...messages].reverse().find(m => m.sender === 'recruiter' && m.senderName)
+  const dynamicRecruiterName = recruiterMsg ? recruiterMsg.senderName : 'Recruiter Team'
+  
+  const recruiterName = role === 'recruiter' ? (recruiterInfo.name || 'Recruiter Team') : dynamicRecruiterName
+  const recruiterRole = role === 'recruiter' ? (recruiterInfo.role || 'Recruiter') : 'Recruiter'
   const recruiterInitials = recruiterName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
 
   const matchScore = candidate?.jd_match?.match_score ?? candidate?.matchScore ?? candidate?.ai_match?.score ?? null
@@ -230,56 +236,58 @@ export default function CandidateMessengerWidget({ candidate, role = 'candidate'
       </div>
 
       {/* Action Header Bar (Set up Interview / Call) */}
-      <div style={{
-        background: '#F8FAFC',
-        borderBottom: '1px solid #E2E8F0',
-        padding: '8px 12px',
-        display: 'flex',
-        gap: 6
-      }}>
-        <button
-          onClick={() => {
-            if (onScheduleInterview) onScheduleInterview(candidate)
-            else handleSendMessage(`🗓️ I would like to schedule an interview with you for ${jobTitle}. Please let me know your available time slots.`)
-          }}
-          style={{
-            flex: 1,
-            background: '#2563EB',
-            color: '#FFF',
-            border: 'none',
-            borderRadius: 6,
-            padding: '6px 0',
-            fontSize: 11,
-            fontWeight: 700,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 4
-          }}
-        >
-          🗓️ Schedule Interview
-        </button>
+      {role === 'recruiter' && (
+        <div style={{
+          background: '#F8FAFC',
+          borderBottom: '1px solid #E2E8F0',
+          padding: '8px 12px',
+          display: 'flex',
+          gap: 6
+        }}>
+          <button
+            onClick={() => {
+              if (onScheduleInterview) onScheduleInterview(candidate)
+              else handleSendMessage(`🗓️ I would like to schedule an interview with you for ${jobTitle}. Please let me know your available time slots.`)
+            }}
+            style={{
+              flex: 1,
+              background: '#2563EB',
+              color: '#FFF',
+              border: 'none',
+              borderRadius: 6,
+              padding: '6px 0',
+              fontSize: 11,
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 4
+            }}
+          >
+            🗓️ Schedule Interview
+          </button>
 
-        <button
-          onClick={() => setShowTemplates(!showTemplates)}
-          style={{
-            background: '#EFF6FF',
-            color: '#1D4ED8',
-            border: '1px solid #BFDBFE',
-            borderRadius: 6,
-            padding: '6px 10px',
-            fontSize: 11,
-            fontWeight: 700,
-            cursor: 'pointer'
-          }}
-        >
-          📑 Templates
-        </button>
-      </div>
+          <button
+            onClick={() => setShowTemplates(!showTemplates)}
+            style={{
+              background: '#EFF6FF',
+              color: '#1D4ED8',
+              border: '1px solid #BFDBFE',
+              borderRadius: 6,
+              padding: '6px 10px',
+              fontSize: 11,
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            📑 Templates
+          </button>
+        </div>
+      )}
 
       {/* Quick Templates Drawer */}
-      {showTemplates && (
+      {role === 'recruiter' && showTemplates && (
         <div style={{
           background: '#EFF6FF',
           borderBottom: '1px solid #BFDBFE',
