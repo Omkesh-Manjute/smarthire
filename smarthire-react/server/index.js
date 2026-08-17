@@ -14,7 +14,42 @@ import { pdfConverter } from 'pdf-image-converter'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+// ─── Candidate Real-time Messaging Persistence Store (Indeed-style) ──────────
+const MESSAGES_FILE = path.join(__dirname, 'messages.json');
+let messagesStore = [];
+try {
+  if (fs.existsSync(MESSAGES_FILE)) {
+    messagesStore = JSON.parse(fs.readFileSync(MESSAGES_FILE, 'utf8'));
+  } else {
+    fs.writeFileSync(MESSAGES_FILE, JSON.stringify([], null, 2));
+  }
+} catch (e) {
+  messagesStore = [];
+}
+
 dotenv.config({ path: path.resolve(__dirname, '../.env') })
+
+function extractNameFromResumeText(text, fallback) {
+  if (!text) return fallback;
+  
+  // Clean indicators and common placeholders to avoid misidentifying them as a name
+  const blacklistRegex = /\b(resume|cv|scrum|master|project|manager|developer|engineer|designer|analyst|administrator|consultant|specialist|lead|architect|candidate|applicant|profile|page|curriculum|vitae|gmail|phone|coppell|dallas|email|yahoo|outlook|hotmail)\b/i;
+  
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  for (const line of lines.slice(0, 5)) {
+    // Skip if contains email or phone numbers
+    if (line.includes('@') || /[0-9]{5,}/.test(line.replace(/[\s-+()]/g, '')) || blacklistRegex.test(line)) continue;
+    
+    const words = line.split(/\s+/).filter(w => w.length > 0);
+    if (words.length >= 2 && words.length <= 4) {
+      if (/^[a-zA-Z\s]+$/.test(line)) {
+        // Title Case conversion
+        return line.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+      }
+    }
+  }
+  return fallback;
+}
 
 // ─── Default Recruiter Settings (Defensive fallback — prevents runtime crashes) ─
 const DEFAULT_RECRUITER_SETTINGS = {
@@ -3801,16 +3836,28 @@ app.post('/api/screening/public-submit', (req, res) => {
     });
   }
 
+  // Extract candidate name from resume text if available, fallback to user name
+  const finalCandidateName = extractNameFromResumeText(resumeText, candidateName.trim());
+
   // Calculate skill match score dynamically
   const jobSkills = job.skills || [];
-  let matchedSkillsCount = 0;
+  const matched_skills = [];
+  const missing_skills = [];
+
   if (resumeText && jobSkills.length > 0) {
     const textLower = resumeText.toLowerCase();
     jobSkills.forEach(s => {
-      if (textLower.includes(s.toLowerCase())) matchedSkillsCount++;
+      if (textLower.includes(s.toLowerCase())) {
+        matched_skills.push(s);
+      } else {
+        missing_skills.push(s);
+      }
     });
+  } else {
+    missing_skills.push(...jobSkills);
   }
-  
+
+  const matchedSkillsCount = matched_skills.length;
   const skillRatio = jobSkills.length > 0 ? (matchedSkillsCount / jobSkills.length) : 0.85;
   const matchScore = Math.min(98, Math.max(65, Math.round(skillRatio * 30 + 68)));
 
@@ -3826,7 +3873,7 @@ app.post('/api/screening/public-submit', (req, res) => {
     jobClient: job.client || 'General Client',
     targetPayRate: job.targetPayRate || null,
     maxPayRate: job.maxPayRate || null,
-    candidateName: candidateName.trim(),
+    candidateName: finalCandidateName,
     candidateEmail: candidateEmail.trim(),
     candidatePhone: candidatePhone || '',
     visaStatus: visaStatus || 'US Citizen',
@@ -3838,9 +3885,9 @@ app.post('/api/screening/public-submit', (req, res) => {
     createdAt: new Date().toISOString(),
     submittedAt: new Date().toISOString(),
     resumeFileName: resumeFileName || 'Candidate_Resume.pdf',
-    resumeText: resumeText || `${candidateName} - ${job.title} Applicant. Skills: ${jobSkills.join(', ')}`,
+    resumeText: resumeText || `${finalCandidateName} - ${job.title} Applicant. Skills: ${jobSkills.join(', ')}`,
     extractedProfile: {
-      name: candidateName,
+      name: finalCandidateName,
       email: candidateEmail,
       phone: candidatePhone,
       visa_status: visaStatus,
@@ -3848,18 +3895,18 @@ app.post('/api/screening/public-submit', (req, res) => {
       location: currentLocation,
       relocate: relocatePref,
       target_rate: expectedRate,
-      extracted_skills: jobSkills
+      extracted_skills: matched_skills
     },
     jdMatch: {
       match_score: matchScore,
-      matched_skills: jobSkills.slice(0, Math.max(1, matchedSkillsCount)),
-      missing_skills: jobSkills.slice(matchedSkillsCount),
+      matched_skills: matched_skills,
+      missing_skills: missing_skills,
       fit_verdict: matchScore >= 75 ? 'Strong Match' : matchScore >= 60 ? 'Moderate Match' : 'Potential Mismatch'
     },
     chatHistory: [
       {
         role: 'assistant',
-        content: `Hi ${candidateName}, thank you for submitting your direct candidate application for ${job.title} at ${job.client || 'our client'}. Your profile and resume have been automatically analyzed by AI.`
+        content: `Hi ${finalCandidateName}, thank you for submitting your direct candidate application for ${job.title} at ${job.client || 'our client'}. Your profile and resume have been automatically analyzed by AI.`
       },
       {
         role: 'user',
@@ -3877,6 +3924,20 @@ app.post('/api/screening/public-submit', (req, res) => {
   screeningStore.unshift(newSession);
   saveScreeningToDisk();
 
+  // Create initial message in messages persistence store so it instantly shows up in Recruiter Inbox
+  const initMsg = {
+    id: 'MSG-' + Date.now(),
+    candidateId: sessionId,
+    sender: 'candidate',
+    text: `Applied for ${job.title}. Please review my profile.`,
+    candidateName: finalCandidateName,
+    jobTitle: job.title,
+    timestamp: new Date().toISOString(),
+    read: false
+  };
+  messagesStore.push(initMsg);
+  try { fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messagesStore, null, 2)); } catch(e) {}
+
   // ALSO sync into candidatesStore (ATS database)
   try {
     const existingIndex = candidatesStore.findIndex(c => c.email && c.email.toLowerCase() === candidateEmail.trim().toLowerCase());
@@ -3886,7 +3947,7 @@ app.post('/api/screening/public-submit', (req, res) => {
       id: candidateId,
       job_id: job.id,
       job_title: job.title,
-      name: candidateName.trim(),
+      name: finalCandidateName,
       email: candidateEmail.trim(),
       phone: candidatePhone || '',
       location: currentLocation || 'US Resident',
@@ -3899,17 +3960,19 @@ app.post('/api/screening/public-submit', (req, res) => {
       updated_at: new Date().toISOString(),
       source: 'public_careers_portal',
       extracted_profile: {
-        name: candidateName.trim(),
+        name: finalCandidateName,
         email: candidateEmail.trim(),
         phone: candidatePhone || '',
         location: currentLocation || '',
         visa_status: visaStatus || '',
         contract_type: contractType || '',
         target_rate: expectedRate || '',
-        skills: jobSkills
+        skills: matched_skills
       },
       jd_match: {
         match_score: matchScore,
+        matched_skills: matched_skills,
+        missing_skills: missing_skills,
         fit_verdict: matchScore >= 75 ? 'Strong Match' : matchScore >= 60 ? 'Moderate Match' : 'Potential Mismatch'
       },
       resume_text: resumeText || ''
@@ -3929,7 +3992,7 @@ app.post('/api/screening/public-submit', (req, res) => {
     success: true,
     sessionId,
     matchScore,
-    candidateName,
+    candidateName: finalCandidateName,
     jobTitle: job.title
   });
 });
@@ -4016,30 +4079,47 @@ app.post('/api/screening/public-submit-file', upload.single('resume'), async (re
     }
 
     const jobSkills = job.skills || [];
-    let matchedSkillsCount = 0;
+    const matched_skills = [];
+    const missing_skills = [];
+
     if (resumeText && jobSkills.length > 0) {
       const textLower = resumeText.toLowerCase();
       jobSkills.forEach(s => {
-        if (textLower.includes(s.toLowerCase())) matchedSkillsCount++;
+        if (textLower.includes(s.toLowerCase())) {
+          matched_skills.push(s);
+        } else {
+          missing_skills.push(s);
+        }
       });
+    } else {
+      missing_skills.push(...jobSkills);
     }
-    
+
+    const matchedSkillsCount = matched_skills.length;
     const skillRatio = jobSkills.length > 0 ? (matchedSkillsCount / jobSkills.length) : 0.85;
     const matchScore = Math.min(98, Math.max(65, Math.round(skillRatio * 30 + 68)));
 
     let finalCandidateName = candidateName ? candidateName.trim() : '';
-    if (!finalCandidateName || finalCandidateName.toUpperCase() === 'PDF' || finalCandidateName.length < 2) {
-      if (req.file && req.file.originalname) {
-        let name = req.file.originalname.replace(/\.(pdf|docx|doc|txt)$/i, '');
-        name = name.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/%20|_|-/g, ' ');
-        name = name.replace(/\b(resume|cv|curriculum|vitae|profile|applicant|candidate|doc|docx|pdf|updated|latest|draft|final|202\d|201\d)\b/gi, '');
-        name = name.replace(/[^a-zA-Z\s]/g, ' ').replace(/\s+/g, ' ').trim();
-        if (name && name.toUpperCase() !== 'PDF') {
-          finalCandidateName = name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+    const blacklistRegex = /\b(resume|cv|scrum|master|project|manager|developer|engineer|designer|analyst|administrator|consultant|specialist|lead|architect|candidate|applicant|profile|page|curriculum|vitae)\b/i;
+    
+    // Check if the provided name is generic, parsed from filename, or missing
+    if (!finalCandidateName || blacklistRegex.test(finalCandidateName) || finalCandidateName.length < 2) {
+      const parsedName = extractNameFromResumeText(resumeText, '');
+      if (parsedName) {
+        finalCandidateName = parsedName;
+      } else if (!finalCandidateName || finalCandidateName.length < 2) {
+        if (req.file && req.file.originalname) {
+          let name = req.file.originalname.replace(/\.(pdf|docx|doc|txt)$/i, '');
+          name = name.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/%20|_|-/g, ' ');
+          name = name.replace(/\b(resume|cv|curriculum|vitae|profile|applicant|candidate|doc|docx|pdf|updated|latest|draft|final|202\d|201\d)\b/gi, '');
+          name = name.replace(/[^a-zA-Z\s]/g, ' ').replace(/\s+/g, ' ').trim();
+          if (name && name.toUpperCase() !== 'PDF') {
+            finalCandidateName = name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+          }
         }
-      }
-      if (!finalCandidateName || finalCandidateName.toUpperCase() === 'PDF') {
-        finalCandidateName = candidateEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        if (!finalCandidateName || finalCandidateName.toUpperCase() === 'PDF') {
+          finalCandidateName = candidateEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        }
       }
     }
 
@@ -4068,9 +4148,9 @@ app.post('/api/screening/public-submit-file', upload.single('resume'), async (re
       submittedAt: new Date().toISOString(),
       resumeFileName,
       resumeFileUrl,
-      resumeText: resumeText || `${candidateName} - ${job.title} Applicant.`,
+      resumeText: resumeText || `${finalCandidateName} - ${job.title} Applicant.`,
       extractedProfile: {
-        name: candidateName,
+        name: finalCandidateName,
         email: candidateEmail,
         phone: candidatePhone,
         visa_status: visaStatus,
@@ -4078,18 +4158,18 @@ app.post('/api/screening/public-submit-file', upload.single('resume'), async (re
         location: currentLocation,
         relocate: relocatePref,
         target_rate: expectedRate,
-        extracted_skills: jobSkills
+        extracted_skills: matched_skills
       },
       jdMatch: {
         match_score: matchScore,
-        matched_skills: jobSkills.slice(0, Math.max(1, matchedSkillsCount)),
-        missing_skills: jobSkills.slice(matchedSkillsCount),
+        matched_skills: matched_skills,
+        missing_skills: missing_skills,
         fit_verdict: matchScore >= 75 ? 'Strong Match' : matchScore >= 60 ? 'Moderate Match' : 'Potential Mismatch'
       },
       chatHistory: [
         {
           role: 'assistant',
-          content: `Hi ${candidateName}, thank you for applying for ${job.title} at ${job.client || 'our client'}. Your profile and resume file have been saved.`
+          content: `Hi ${finalCandidateName}, thank you for applying for ${job.title} at ${job.client || 'our client'}. Your profile and resume file have been saved.`
         }
       ],
       screeningComplete: true,
@@ -4098,6 +4178,20 @@ app.post('/api/screening/public-submit-file', upload.single('resume'), async (re
 
     screeningStore.unshift(newSession);
     saveScreeningToDisk();
+
+    // Create initial message in messages persistence store so it instantly shows up in Recruiter Inbox
+    const initMsg = {
+      id: 'MSG-' + Date.now(),
+      candidateId: sessionId,
+      sender: 'candidate',
+      text: `Applied for ${job.title}. Please review my profile.`,
+      candidateName: finalCandidateName,
+      jobTitle: job.title,
+      timestamp: new Date().toISOString(),
+      read: false
+    };
+    messagesStore.push(initMsg);
+    try { fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messagesStore, null, 2)); } catch(e) {}
 
     // Sync into candidatesStore (ATS database)
     try {
@@ -4108,7 +4202,7 @@ app.post('/api/screening/public-submit-file', upload.single('resume'), async (re
         id: candidateId,
         job_id: job.id,
         job_title: job.title,
-        name: candidateName.trim(),
+        name: finalCandidateName,
         email: candidateEmail.trim(),
         phone: candidatePhone || '',
         location: currentLocation || 'US Resident',
@@ -4121,17 +4215,19 @@ app.post('/api/screening/public-submit-file', upload.single('resume'), async (re
         updated_at: new Date().toISOString(),
         source: 'public_careers_portal',
         extracted_profile: {
-          name: candidateName.trim(),
+          name: finalCandidateName,
           email: candidateEmail.trim(),
           phone: candidatePhone || '',
           location: currentLocation || '',
           visa_status: visaStatus || '',
           contract_type: contractType || '',
           target_rate: expectedRate || '',
-          skills: jobSkills
+          skills: matched_skills
         },
         jd_match: {
           match_score: matchScore,
+          matched_skills: matched_skills,
+          missing_skills: missing_skills,
           fit_verdict: matchScore >= 75 ? 'Strong Match' : matchScore >= 60 ? 'Moderate Match' : 'Potential Mismatch'
         },
         resume_text: resumeText || '',
@@ -4152,7 +4248,7 @@ app.post('/api/screening/public-submit-file', upload.single('resume'), async (re
       success: true,
       sessionId,
       matchScore,
-      candidateName,
+      candidateName: finalCandidateName,
       jobTitle: job.title,
       resumeFileUrl
     });
@@ -5411,14 +5507,6 @@ app.post('/api/admin/settings', (req, res) => {
 });
 
 // ─── Candidate Real-time Messaging Persistence Store (Indeed-style) ──────────
-const MESSAGES_FILE = path.join(__dirname, 'messages.json');
-let messagesStore = [];
-if (fs.existsSync(MESSAGES_FILE)) {
-  try { messagesStore = JSON.parse(fs.readFileSync(MESSAGES_FILE, 'utf8')); }
-  catch(e) { messagesStore = []; }
-} else {
-  try { fs.writeFileSync(MESSAGES_FILE, JSON.stringify([], null, 2)); } catch(e) {}
-}
 
 app.get('/api/messages/:candidateId', (req, res) => {
   const { candidateId } = req.params;
@@ -5448,13 +5536,38 @@ app.get('/api/messages', (req, res) => {
     if (new Date(m.timestamp) >= new Date(threadsMap[m.candidateId].lastMessageTime)) {
       threadsMap[m.candidateId].lastMessage = m.text;
       threadsMap[m.candidateId].lastMessageTime = m.timestamp;
+      if (m.candidateName) threadsMap[m.candidateId].candidateName = m.candidateName;
+      if (m.jobTitle) threadsMap[m.candidateId].jobTitle = m.jobTitle;
     }
     // Count unread candidate messages
     if (m.sender === 'candidate' && !m.read) {
       threadsMap[m.candidateId].unreadCount++;
     }
   });
-  const threads = Object.values(threadsMap).sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
+
+  // Merge in candidates from screeningStore who do not have any message threads yet
+  if (Array.isArray(screeningStore)) {
+    screeningStore.forEach(s => {
+      if (!s || !s.sessionId) return;
+      if (!threadsMap[s.sessionId]) {
+        threadsMap[s.sessionId] = {
+          candidateId: s.sessionId,
+          candidateName: s.candidateName || s.name || 'Candidate',
+          jobTitle: s.jobTitle || '',
+          lastMessage: 'Applied via Careers Portal',
+          lastMessageTime: s.createdAt || s.submittedAt || new Date().toISOString(),
+          unreadCount: 0,
+          messages: []
+        };
+      }
+    });
+  }
+
+  const threads = Object.values(threadsMap).sort((a, b) => {
+    const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
+    const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
+    return timeB - timeA;
+  });
   res.json({ success: true, threads });
 });
 
@@ -5473,7 +5586,7 @@ app.patch('/api/messages/:candidateId/read', (req, res) => {
 
 app.post('/api/messages/:candidateId', (req, res) => {
   const { candidateId } = req.params;
-  const { sender = 'recruiter', text = '', candidateName = '', jobTitle = '' } = req.body;
+  const { sender = 'recruiter', text = '', candidateName = '', jobTitle = '', senderName = '' } = req.body;
   if (!text || !text.trim()) {
     return res.status(400).json({ success: false, message: 'Message text is required.' });
   }
@@ -5482,6 +5595,7 @@ app.post('/api/messages/:candidateId', (req, res) => {
     id: 'MSG-' + Date.now(),
     candidateId,
     sender,
+    senderName: senderName || (sender === 'recruiter' ? 'Recruiter Team' : ''),
     text: text.trim(),
     candidateName,
     jobTitle,

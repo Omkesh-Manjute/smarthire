@@ -90,24 +90,59 @@ function Avatar({ name, size = 40, style = {} }) {
 }
 
 const highlightResumeText = (text, matchingSkills = []) => {
-  if (!text) return <div style={{ color: '#64748B', fontStyle: 'italic' }}>No resume text available.</div>
-  if (!matchingSkills || matchingSkills.length === 0) {
-    return <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, fontSize: 13, fontFamily: 'monospace' }}>{text}</div>
+  if (!text) {
+    return (
+      <div style={{
+        backgroundColor: '#FFFFFF',
+        color: '#64748B',
+        fontStyle: 'italic',
+        padding: '36px 44px',
+        borderRadius: '8px',
+        border: '1px solid #E2E8F0',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
+        fontFamily: 'Inter, system-ui, sans-serif'
+      }}>
+        No resume text available.
+      </div>
+    )
   }
 
   let highlighted = text;
-  // Sort skills by length descending to prevent partial replacements of nested words
-  const sortedSkills = [...matchingSkills].sort((a, b) => b.length - a.length);
+  if (matchingSkills && matchingSkills.length > 0) {
+    // Sort skills by length descending to prevent partial replacements of nested words
+    const sortedSkills = [...matchingSkills].sort((a, b) => b.length - a.length);
 
-  sortedSkills.forEach(skill => {
-    if (!skill || skill.length < 2) return;
-    // Escape special characters in skill name for regex
-    const escaped = skill.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-    const regex = new RegExp(`\\b(${escaped})\\b`, 'gi');
-    highlighted = highlighted.replace(regex, `<mark style="background-color: #FEF08A; color: #0F172A; font-weight: 700; padding: 0 4px; border-radius: 3px;">$1</mark>`);
-  });
+    sortedSkills.forEach(skill => {
+      if (!skill || skill.length < 2) return;
+      // Escape special characters in skill name for regex
+      const escaped = skill.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      // Build smart boundary check: use word boundaries for alphanumeric skills
+      const startBoundary = /^[a-zA-Z0-9]/.test(skill.trim()) ? '\\b' : '';
+      const endBoundary = /[a-zA-Z0-9]$/.test(skill.trim()) ? '\\b' : '';
+      const regex = new RegExp(`${startBoundary}(${escaped})${endBoundary}`, 'gi');
+      
+      highlighted = highlighted.replace(regex, `<mark style="background-color: #FEF08A; color: #0F172A; font-weight: 800; padding: 1px 4px; border-radius: 3px;">$1</mark>`);
+    });
+  }
 
-  return <div dangerouslySetInnerHTML={{ __html: highlighted }} style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, fontSize: 13, fontFamily: 'monospace' }} />
+  return (
+    <div 
+      dangerouslySetInnerHTML={{ __html: highlighted }} 
+      style={{ 
+        whiteSpace: 'pre-wrap', 
+        lineHeight: '1.8', 
+        fontSize: '14.5px', 
+        fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+        color: '#1E293B',
+        backgroundColor: '#FFFFFF',
+        padding: '40px 48px',
+        borderRadius: '8px',
+        border: '1px solid #E2E8F0',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.02)',
+        boxSizing: 'border-box'
+      }} 
+    />
+  )
 }
 
 export default function RecruiterInbox() {
@@ -556,6 +591,10 @@ export default function RecruiterInbox() {
         const missingSkills = candidateDetails.jdMatch?.missing_skills || candidateDetails.jd_match?.missing_skills || candidateDetails.jd_match?.missing_skills || []
         const summary = candidateDetails.jdMatch?.candidate_summary || candidateDetails.jd_match?.candidate_summary || candidateDetails.jd_match?.summary || ''
 
+        const hasDl = candidateDetails.uploadedDocuments?.dl || candidateDetails.documents?.some(d => d.type === 'driving_license' || d.type === 'driving_licence');
+        const hasSelfie = candidateDetails.uploadedDocuments?.selfie || candidateDetails.selfieUrl;
+        const hasVisa = candidateDetails.uploadedDocuments?.visa || candidateDetails.documents?.some(d => d.type === 'visa' || d.type === 'work_permit' || d.type === 'passport');
+
         return (
           <div style={{
             position: 'fixed',
@@ -702,15 +741,21 @@ export default function RecruiterInbox() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5 }}>
                         <span style={{ color: C.textSecondary }}>Driver's License OCR Check:</span>
-                        <strong style={{ color: '#16A34A' }}>✓ Match Verified</strong>
+                        <strong style={{ color: hasDl ? '#16A34A' : '#64748B' }}>
+                          {hasDl ? '✓ Match Verified' : '⏳ Pending / Not Uploaded'}
+                        </strong>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5 }}>
                         <span style={{ color: C.textSecondary }}>Biometric Selfie verification:</span>
-                        <strong style={{ color: '#16A34A' }}>✓ Match Passed (98%)</strong>
+                        <strong style={{ color: hasSelfie ? '#16A34A' : '#64748B' }}>
+                          {hasSelfie ? '✓ Match Passed (98%)' : '⏳ Pending / Not Uploaded'}
+                        </strong>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5 }}>
                         <span style={{ color: C.textSecondary }}>US Work Auth Visa verification:</span>
-                        <strong style={{ color: '#16A34A' }}>✓ Active / Verified</strong>
+                        <strong style={{ color: hasVisa ? '#16A34A' : '#64748B' }}>
+                          {hasVisa ? '✓ Active / Verified' : '⏳ Pending / Not Uploaded'}
+                        </strong>
                       </div>
                       {candidateDetails.gps_data && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, borderTop: `1px solid ${C.border}`, paddingTop: 8, marginTop: 4 }}>
@@ -732,17 +777,8 @@ export default function RecruiterInbox() {
                       💡 Matching skills highlighted in yellow
                     </span>
                   </div>
-                  <div style={{ flex: 1, padding: 20, overflowY: 'auto', boxSizing: 'border-box' }}>
-                    <div style={{
-                      backgroundColor: C.surface,
-                      border: `1px solid ${C.border}`,
-                      borderRadius: 12,
-                      padding: 24,
-                      boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
-                      color: C.textPrimary
-                    }}>
-                      {highlightResumeText(resumeText, matchingSkills)}
-                    </div>
+                  <div style={{ flex: 1, padding: 24, overflowY: 'auto', boxSizing: 'border-box' }}>
+                    {highlightResumeText(resumeText, matchingSkills)}
                   </div>
                 </div>
 

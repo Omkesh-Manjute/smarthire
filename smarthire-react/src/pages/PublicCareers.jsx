@@ -158,6 +158,7 @@ export default function PublicCareers() {
   const [resumeText, setResumeText] = useState('')
   const [isParsingResume, setIsParsingResume] = useState(false)
   const [autoFillSuccess, setAutoFillSuccess] = useState(false)
+  const [detailsVerified, setDetailsVerified] = useState(false)
 
   // Full JD Reader Modal State
   const [fullJdModalJob, setFullJdModalJob] = useState(null)
@@ -306,6 +307,7 @@ export default function PublicCareers() {
     setCandidatePhone('')
     setCurrentLocation('')
     setAutoFillSuccess(false)
+    setDetailsVerified(false)
   }
 
   // Resume Upload Handler with Smart Name & Details Auto-Parsing
@@ -462,12 +464,13 @@ export default function PublicCareers() {
       const data = await res.json()
 
       if (data.success) {
+        const parsedName = data.candidateName || validName;
         const appRecord = {
           sessionId: data.sessionId || 'SCR-' + Date.now(),
           candidateId: data.candidateId || data.sessionId || 'SCR-' + Date.now(),
           jobId: selectedJob.id,
           jobTitle: selectedJob.title,
-          candidateName: validName,
+          candidateName: parsedName,
           candidateEmail: candidateEmail.trim(),
           appliedAt: new Date().toISOString()
         }
@@ -477,7 +480,7 @@ export default function PublicCareers() {
         setAppliedJobs(updated)
         try { localStorage.setItem('smarthire_applied_jobs', JSON.stringify(updated)) } catch(e) {}
 
-        setSubmitSuccess({ ...data, candidateName: validName, appRecord })
+        setSubmitSuccess({ ...data, candidateName: parsedName, appRecord })
       } else {
         setSubmitError(data.message || 'Failed to submit application.')
       }
@@ -1545,8 +1548,32 @@ export default function PublicCareers() {
                     </div>
                   </div>
 
-                  {/* Relocation Preference & Visa Status */}
+                  {/* Location & Relocation Preference */}
                   <div style={{ display: 'flex', gap: 12 }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary, display: 'block', marginBottom: 4 }}>
+                        Current Location *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={currentLocation}
+                        onChange={(e) => setCurrentLocation(e.target.value)}
+                        placeholder="e.g. Dallas, TX"
+                        style={{
+                          width: '100%',
+                          backgroundColor: theme.inputBg,
+                          border: `1px solid ${theme.inputBorder}`,
+                          color: theme.textPrimary,
+                          borderRadius: 8,
+                          padding: '10px 12px',
+                          fontSize: 13,
+                          outline: 'none',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+
                     <div style={{ flex: 1 }}>
                       <label style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary, display: 'block', marginBottom: 4 }}>
                         Ready to Relocate?
@@ -1652,6 +1679,21 @@ export default function PublicCareers() {
                         boxSizing: 'border-box'
                       }}
                     />
+                  </div>
+
+                  {/* Details Verification Checkmark */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 4, marginBottom: 8 }}>
+                    <input
+                      type="checkbox"
+                      id="detailsVerified"
+                      required
+                      checked={detailsVerified}
+                      onChange={(e) => setDetailsVerified(e.target.checked)}
+                      style={{ width: 16, height: 16, cursor: 'pointer', marginTop: 1 }}
+                    />
+                    <label htmlFor="detailsVerified" style={{ fontSize: 12.5, fontWeight: 700, color: theme.textSecondary, cursor: 'pointer', lineHeight: 1.4 }}>
+                      ✓ I confirm that the details parsed from my resume are correct and verified.
+                    </label>
                   </div>
 
                   {/* Submit Action */}
