@@ -723,8 +723,13 @@ async function callGroqAI(systemPrompt, userPrompt, jsonMode = false) {
 
   const url = 'https://api.groq.com/openai/v1/chat/completions';
   
-  // Try llama-3.3-70b-versatile first, then fall back to llama-3.1-8b-instant and llama3-8b-8192
-  const modelsToTry = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama3-8b-8192'];
+  // Read model from env vars (e.g. Render config), or use fallback list
+  const preferredModel = process.env.GROQ_MODEL || process.env.GROQ_MODEL_ID;
+  const modelsToTry = [];
+  if (preferredModel) {
+    modelsToTry.push(preferredModel.trim());
+  }
+  modelsToTry.push('llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama3-8b-8192');
   let lastError = null;
 
   for (const modelName of modelsToTry) {
@@ -2110,7 +2115,12 @@ Goal: "${goal}"`;
 
   if (provider === 'groq') {
     const url = 'https://api.groq.com/openai/v1/chat/completions';
-    const modelsToTry = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama3-8b-8192'];
+    const preferredModel = process.env.GROQ_MODEL || process.env.GROQ_MODEL_ID;
+    const modelsToTry = [];
+    if (preferredModel) {
+      modelsToTry.push(preferredModel.trim());
+    }
+    modelsToTry.push('llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama3-8b-8192');
     let lastError = null;
 
     for (const modelName of modelsToTry) {
