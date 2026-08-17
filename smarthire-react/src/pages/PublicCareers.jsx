@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import CandidateMessengerWidget from '../components/CandidateMessengerWidget'
 import SmartHireBotWidget from '../components/SmartHireBotWidget'
+import { loginWithGoogle } from '../lib/firebase'
 
 export default function PublicCareers() {
   const navigate = useNavigate()
@@ -1542,14 +1543,21 @@ export default function PublicCareers() {
 
             {/* Google 1-Click Sign-In */}
             <button
-              onClick={() => {
-                const sampleGoogleUser = {
-                  name: 'Candidate Applicant',
-                  email: 'candidate.user@gmail.com',
-                  avatar: 'https://lh3.googleusercontent.com/a/default-user',
-                  provider: 'google'
+              onClick={async () => {
+                try {
+                  const user = await loginWithGoogle()
+                  const candidateUserObj = {
+                    uid: user.uid,
+                    name: user.name || user.email.split('@')[0],
+                    email: user.email,
+                    avatar: user.photoURL || 'https://lh3.googleusercontent.com/a/default-user',
+                    provider: 'google'
+                  }
+                  handleCandidateLogin(candidateUserObj)
+                } catch (err) {
+                  console.error('Candidate Google Login Error:', err)
+                  alert('Login failed: ' + err.message)
                 }
-                handleCandidateLogin(sampleGoogleUser)
               }}
               style={{
                 width: '100%',
