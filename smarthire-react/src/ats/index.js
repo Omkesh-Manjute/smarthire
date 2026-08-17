@@ -7,3 +7,5 @@ export { default as ReportsModule } from './ReportsModule'
 export { default as AutomationModule } from './AutomationModule'
 export { default as SettingsModule } from './SettingsModule'
 export { default as ScreeningModule } from './ScreeningModule'
+export { default as UsersModule } from './UsersModule'
+

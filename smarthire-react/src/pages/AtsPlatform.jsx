@@ -12,6 +12,7 @@ import {
   AutomationModule,
   SettingsModule,
   ScreeningModule,
+  UsersModule,
 } from '../ats'
 
 const API_BASE = ''
@@ -32,6 +33,7 @@ const ALL_TABS = [
   { id: 'automation',  label: '⚙️ Automation',    icon: '⚙️', adminOnly: true },
   { id: 'inbox',       label: '💬 Inbox',         icon: '💬', isLink: '/inbox' },
   { id: 'settings',    label: '🛠️ Settings',      icon: '🛠️', adminOnly: true },
+  { id: 'users',       label: '👥 Manage Users',   icon: '👥', adminOnly: true },
 ]
 
 export default function AtsPlatform() {
@@ -45,9 +47,56 @@ export default function AtsPlatform() {
   const activeRole = localStorage.getItem('smarthire_active_role') || defaultRole
   const isSuperAdmin = activeRole === 'superadmin' || activeRole === 'admin'
 
-  const TABS = isSuperAdmin ? ALL_TABS : ALL_TABS.filter(t => !t.adminOnly)
+  const DEFAULT_PERMISSIONS = {
+    superadmin: {
+      dashboard: true,
+      jobs: true,
+      candidates: true,
+      pipeline: true,
+      screening: true,
+      submissions: true,
+      reports: true,
+      automation: true,
+      inbox: true,
+      settings: true,
+      users: true,
+    },
+    recruiter: {
+      dashboard: false,
+      jobs: true,
+      candidates: true,
+      pipeline: false,
+      screening: true,
+      submissions: false,
+      reports: false,
+      automation: false,
+      inbox: true,
+      settings: false,
+      users: false,
+    }
+  }
 
-  const [activeTab, setActiveTab] = useState(() => isSuperAdmin ? 'dashboard' : 'jobs')
+  const [permissions, setPermissions] = useState(() => {
+    try {
+      const saved = localStorage.getItem('smarthire_role_permissions')
+      return saved ? JSON.parse(saved) : DEFAULT_PERMISSIONS
+    } catch(e) {
+      return DEFAULT_PERMISSIONS
+    }
+  })
+
+  const roleKey = isSuperAdmin ? 'superadmin' : 'recruiter'
+  const TABS = ALL_TABS.filter(tab => {
+    if (roleKey === 'superadmin' && (tab.id === 'users' || tab.id === 'settings')) {
+      return true
+    }
+    return !!permissions[roleKey]?.[tab.id]
+  })
+
+  const [activeTab, setActiveTab] = useState(() => {
+    if (roleKey === 'superadmin') return 'dashboard'
+    return TABS[0]?.id || 'jobs'
+  })
   const navigate = useNavigate()
   
   // Layout mode state: 'topbar' or 'sidebar' (saved in localStorage, default sidebar/topbar)
@@ -685,6 +734,14 @@ export default function AtsPlatform() {
 
             {activeTab === 'settings' && (
               <SettingsModule />
+            )}
+
+            {activeTab === 'users' && (
+              <UsersModule
+                allCandidates={safeCandidates}
+                permissions={permissions}
+                setPermissions={setPermissions}
+              />
             )}
 
           </div>
