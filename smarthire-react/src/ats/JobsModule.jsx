@@ -139,7 +139,8 @@ function JobsModule({
     let loc = job.location || 'Remote, US'
     const mode = job.work_mode || job.workMode || 'Onsite'
     const type = job.employment_type || job.employmentType || job.type || 'Contract'
-    const appLink = `${window.location.origin}/jobs?jobId=${job.id}`
+    const appLink = getRecruiterJobLink(job.id)
+    const emailToUse = recruiterEmail
 
     // Clean location string if it duplicates work mode
     if (loc === 'Hybrid' || loc === 'Onsite' || loc === 'Remote') {
@@ -191,8 +192,8 @@ ${mode}
 ${type}
 Only local candidates with a flexible in-office or remote work arrangement are eligible for this position.
 
-🔗 Direct Candidate Application: ${appLink}
-📧 Share the matching candidate resume at omkesh@coolsofttech.com
+🔗 Direct Candidate Application Link: ${appLink}
+📧 Share the matching candidate resume at ${emailToUse}
 
 ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #AgileMethods #DevOps ${skillTags}`
   }
@@ -217,16 +218,12 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
     setPostSuccessMsg('')
     try {
       if (handlePostJobToLinkedIn) {
-        await handlePostJobToLinkedIn(linkedinModalJob.id)
+        await handlePostJobToLinkedIn(linkedinModalJob.id, linkedinPostText)
       }
       setPostSuccessMsg('🎉 Successfully posted to LinkedIn Feed!')
-      // Also open LinkedIn share dialogue as standard fallback
-      const shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`${window.location.origin}/jobs?jobId=${linkedinModalJob.id}`)}`
-      window.open(shareUrl, '_blank', 'width=650,height=650')
     } catch (err) {
       console.error('LinkedIn Direct Post Error:', err)
-      const shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`${window.location.origin}/jobs?jobId=${linkedinModalJob.id}`)}`
-      window.open(shareUrl, '_blank', 'width=650,height=650')
+      setPostSuccessMsg(`❌ LinkedIn posting failed: ${err.message || 'connection error'}`)
     } finally {
       setPostingLinkedIn(false)
     }
@@ -668,12 +665,27 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
                   style={{ flex: 1, background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                   📄 Full JD
                 </button>
-                {/* Apply links trigger button */}
+                {/* Direct LinkedIn Post Button */}
                 <button
-                  onClick={(e) => { e.stopPropagation(); setApplyLinksJob(job); }}
-                  style={{ flex: 1, background: '#e8f0fe', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
-                  title="View Candidate Application and Email Links">
-                  🔗 Apply
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (window.confirm(`Post "${job.title}" directly to LinkedIn?`)) {
+                      showToast(`⏳ Posting "${job.title}" to LinkedIn...`);
+                      try {
+                        const postContent = generateLinkedInPost(job);
+                        await handlePostJobToLinkedIn(job.id, postContent);
+                        showToast(`🎉 Successfully posted "${job.title}" to LinkedIn!`);
+                      } catch (err) {
+                        console.error(err);
+                        alert(`❌ LinkedIn direct posting failed: ${err.message || 'verify credentials'}`);
+                      }
+                    }
+                  }}
+                  style={{ flex: 1, background: '#e8f0fe', color: '#0a66c2', border: '1px solid #bfdbfe', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+                  title="Post this job directly to LinkedIn Feed using connected token"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                  Post LinkedIn
                 </button>
                 <button
                   onClick={(e) => handleOpenLinkedInModal(e, job)}
@@ -757,99 +769,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
         </div>
       )}
 
-      {/* APPLY LINKS MODAL */}
-      {applyLinksJob && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.65)', backdropFilter: 'blur(6px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
-          onClick={() => setApplyLinksJob(null)}>
-          <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 16, width: '100%', maxWidth: 550, padding: 26, boxShadow: '0 20px 50px rgba(0,0,0,0.18)' }}
-            onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-              <div>
-                <span style={{ fontSize: 11, fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  🔗 Candidate Sourcing Links
-                </span>
-                <h3 style={{ margin: '4px 0 0', fontSize: 18, fontFamily: 'Plus Jakarta Sans', color: '#0f172a', fontWeight: 800 }}>
-                  Application Channels for "{applyLinksJob.title}"
-                </h3>
-              </div>
-              <button onClick={() => setApplyLinksJob(null)} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>✕</button>
-            </div>
 
-            <p style={{ fontSize: 13.5, color: '#64748b', lineHeight: 1.5, marginBottom: 20 }}>
-              Use these tracking links to attract candidates. Applications received through these links will be automatically attributed to your recruiter account.
-            </p>
-
-            {/* Link 1: Careers Portal Link */}
-            <div style={{ marginBottom: 18 }}>
-              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#334155', marginBottom: 6 }}>
-                🌐 Careers Portal Application Link:
-              </label>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <a 
-                  href={getRecruiterJobLink(applyLinksJob.id)} 
-                  target="_blank" 
-                  rel="noreferrer"
-                  style={{ flex: 1, padding: '10px 12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, color: '#2563eb', fontSize: 13, textDecoration: 'underline', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                >
-                  {getRecruiterJobLink(applyLinksJob.id)}
-                </a>
-                <button 
-                  onClick={() => {
-                    navigator.clipboard.writeText(getRecruiterJobLink(applyLinksJob.id));
-                    alert('Careers portal link copied to clipboard!');
-                  }}
-                  style={{ padding: '0 14px', background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1d4ed8', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
-                >
-                  📋 Copy
-                </button>
-              </div>
-            </div>
-
-            {/* Link 2: Email Apply Link */}
-            <div style={{ marginBottom: 24 }}>
-              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#334155', marginBottom: 6 }}>
-                📧 Direct Recruiter Email Apply:
-              </label>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <a 
-                  href={`mailto:${recruiterEmail}?subject=Application for ${encodeURIComponent(applyLinksJob.title)}`}
-                  style={{ flex: 1, padding: '10px 12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, color: '#2563eb', fontSize: 13, textDecoration: 'underline', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                >
-                  {recruiterEmail}
-                </a>
-                <button 
-                  onClick={() => {
-                    navigator.clipboard.writeText(recruiterEmail);
-                    alert('Recruiter email copied to clipboard!');
-                  }}
-                  style={{ padding: '0 14px', background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1d4ed8', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
-                >
-                  📋 Copy
-                </button>
-              </div>
-              <span style={{ fontSize: 11.5, color: '#94a3b8', marginTop: 4, display: 'block' }}>
-                💡 Click the email above to automatically open your email app and draft an application.
-              </span>
-            </div>
-
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e2e8f0', paddingTop: 18 }}>
-              {/* LinkedIn Share button inside modal */}
-              <a
-                href={getLinkedInShareUrl(applyLinksJob)}
-                target="_blank" rel="noreferrer"
-                style={{ background: '#e8f0fe', color: '#0a66c2', border: '1px solid #bfdbfe', borderRadius: 8, padding: '10px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-                Share on LinkedIn
-              </a>
-
-              <button onClick={() => setApplyLinksJob(null)} style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: 8, padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* JD FULL VIEW MODAL inside ATS */}
       {jdModalJob && (

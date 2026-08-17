@@ -316,15 +316,25 @@ export default function AtsPlatform() {
     setIsScraping(false)
   }
 
-  const handlePostJobToLinkedIn = async (jobId) => {
+  const handlePostJobToLinkedIn = async (jobId, customContent) => {
     setPublishingJobId(jobId)
     try {
-      await fetch(`${API_BASE}/api/jobs/${jobId}/post-linkedin`, { method: 'POST' })
+      const res = await fetch(`${API_BASE}/api/jobs/${jobId}/linkedin-post`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customContent })
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.message || 'HTTP error ' + res.status)
+      }
       await fetchJobs()
     } catch (err) {
       console.error('LinkedIn post failed:', err)
+      throw err
+    } finally {
+      setPublishingJobId(null)
     }
-    setPublishingJobId(null)
   }
 
   const handleDeleteJob = async (jobId) => {
