@@ -59,21 +59,25 @@ function Login() {
 
     try {
       // 1. Try Backend API first
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      })
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        })
 
-      const data = await res.json()
-      if (res.ok && data.success) {
-        const u = data.data.user
-        localStorage.setItem('smarthire_authenticated', 'true')
-        localStorage.setItem('smarthire_token', data.data.token)
-        localStorage.setItem('smarthire_user', JSON.stringify(u))
-        localStorage.setItem('smarthire_active_role', u.role || 'recruiter')
-        window.location.href = '/ats'
-        return
+        const data = await res.json()
+        if (res.ok && data.success) {
+          const u = data.data.user
+          localStorage.setItem('smarthire_authenticated', 'true')
+          localStorage.setItem('smarthire_token', data.data.token)
+          localStorage.setItem('smarthire_user', JSON.stringify(u))
+          localStorage.setItem('smarthire_active_role', u.role || 'recruiter')
+          window.location.href = '/ats'
+          return
+        }
+      } catch (backendErr) {
+        console.warn('Backend auth failed, proceeding to Firebase/Fallback:', backendErr.message)
       }
 
       // 2. Try Firebase email login
