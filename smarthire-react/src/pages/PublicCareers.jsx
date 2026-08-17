@@ -55,6 +55,7 @@ export default function PublicCareers() {
   const [activeChatCandidate, setActiveChatCandidate] = useState(null)
 
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [clocksExpanded, setClocksExpanded] = useState(false)
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -664,6 +665,108 @@ export default function PublicCareers() {
         }
       `}</style>
 
+      {/* FLOATING COLLAPSIBLE US LIVE CLOCKS (Hangs on Left Side of Page, Below Header) */}
+      <div style={{
+        position: 'fixed',
+        left: 0,
+        top: '110px',
+        zIndex: 2000,
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start'
+      }}>
+        {!clocksExpanded ? (
+          <button
+            onClick={() => setClocksExpanded(true)}
+            style={{
+              backgroundColor: '#2563EB',
+              color: '#FFF',
+              border: 'none',
+              borderRadius: '0 8px 8px 0',
+              padding: '10px 12px',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              boxShadow: '0 4px 15px rgba(37, 99, 235, 0.35)',
+              fontFamily: "'Plus Jakarta Sans', sans-serif"
+            }}
+          >
+            🇺🇸 US Clocks 🕒 ▶
+          </button>
+        ) : (
+          <div style={{
+            backgroundColor: theme.cardBg,
+            border: `1px solid ${theme.border}`,
+            borderLeft: 'none',
+            borderRadius: '0 12px 12px 0',
+            padding: '12px 14px',
+            width: '180px',
+            boxShadow: theme.shadow,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+            animation: 'slideIn 0.2s ease-out'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.border}`, paddingBottom: 6 }}>
+              <span style={{ fontSize: '11px', fontWeight: 800, color: theme.textPrimary, display: 'flex', alignItems: 'center', gap: 4 }}>
+                🇺🇸 US Clocks
+              </span>
+              <button
+                onClick={() => setClocksExpanded(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: theme.textSecondary,
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  padding: '2px 6px',
+                  borderRadius: 4,
+                  backgroundColor: isLight ? '#F1F5F9' : '#0F172A'
+                }}
+              >
+                ◀ Hide
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[
+                { label: 'EDT/EST', name: 'Eastern', tz: 'America/New_York', color: '#eff6ff', textColor: '#1d4ed8', border: '#bfdbfe' },
+                { label: 'CDT/CST', name: 'Central', tz: 'America/Chicago', color: '#f5f3ff', textColor: '#6d28d9', border: '#ddd6fe' },
+                { label: 'MDT/MST', name: 'Mountain', tz: 'America/Denver', color: '#fffbeb', textColor: '#b45309', border: '#fde68a' },
+                { label: 'PDT/PST', name: 'Pacific', tz: 'America/Los_Angeles', color: '#f0fdf4', textColor: '#16a34a', border: '#bbf7d0' }
+              ].map((zone) => {
+                const live = formatLiveTime(zone.tz)
+                return (
+                  <div key={zone.label} style={{
+                    backgroundColor: isLight ? zone.color : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${isLight ? zone.border : theme.border}`,
+                    borderRadius: 6,
+                    padding: '6px 8px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 2
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '10px', fontWeight: 800, color: isLight ? zone.textColor : theme.textPrimary }}>{zone.label}</span>
+                      <span style={{ fontSize: '9px', color: theme.textSecondary }}>{zone.name}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 1 }}>
+                      <span style={{ fontSize: '12.5px', fontWeight: 900, color: theme.textPrimary, fontFamily: 'monospace' }}>{live.time}</span>
+                      <span style={{ fontSize: '9px', color: theme.textSecondary }}>{live.date.split(', ')[1]}</span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Navbar with SmartHire Brand */}
       <header style={{
         backgroundColor: theme.headerBg,
@@ -884,66 +987,11 @@ export default function PublicCareers() {
 
       {/* Main Content: Jobs Grid */}
       <section id="jobs-list" style={{ maxWidth: 1200, margin: '0 auto', padding: '10px 24px 80px' }}>
-        <div style={{ display: 'flex', gap: 24, flexDirection: 'row', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-          
-          {/* Left Column: Live Timezone Widget (Sticky on Desktop) */}
-          <div style={{ 
-            flex: '1 1 250px', 
-            maxWidth: 280, 
-            position: 'sticky', 
-            top: 80, 
-            backgroundColor: theme.cardBg, 
-            border: `1px solid ${theme.border}`, 
-            borderRadius: 12, 
-            padding: 16, 
-            boxShadow: theme.shadow 
-          }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ borderBottom: `1px solid ${theme.border}`, paddingBottom: 8, marginBottom: 4 }}>
-                <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: theme.textPrimary, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  🇺🇸 US Live Clocks
-                </h4>
-                <span style={{ fontSize: 10, color: theme.textSecondary }}>Ticking real-time US zone times</span>
-              </div>
-
-              {[
-                { label: 'EDT / EST', name: 'Eastern Time', tz: 'America/New_York', color: '#eff6ff', textColor: '#1d4ed8', border: '#bfdbfe' },
-                { label: 'CDT / CST', name: 'Central Time', tz: 'America/Chicago', color: '#f5f3ff', textColor: '#6d28d9', border: '#ddd6fe' },
-                { label: 'MDT / MST', name: 'Mountain Time', tz: 'America/Denver', color: '#fffbeb', textColor: '#b45309', border: '#fde68a' },
-                { label: 'PDT / PST', name: 'Pacific Time', tz: 'America/Los_Angeles', color: '#f0fdf4', textColor: '#16a34a', border: '#bbf7d0' }
-              ].map((zone) => {
-                const live = formatLiveTime(zone.tz)
-                return (
-                  <div key={zone.label} style={{
-                    backgroundColor: isLight ? zone.color : 'rgba(255,255,255,0.03)',
-                    border: `1px solid ${isLight ? zone.border : theme.border}`,
-                    borderRadius: 8,
-                    padding: '10px 12px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}>
-                    <div>
-                      <div style={{ fontSize: 11, fontWeight: 800, color: isLight ? zone.textColor : theme.textPrimary }}>{zone.label}</div>
-                      <div style={{ fontSize: 10, color: theme.textSecondary, marginTop: 1 }}>{zone.name}</div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: 14, fontWeight: 900, color: theme.textPrimary, fontFamily: 'monospace' }}>{live.time}</div>
-                      <div style={{ fontSize: 9.5, color: theme.textSecondary, marginTop: 1 }}>{live.date}</div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Right Column: Jobs Display List */}
-          <div style={{ flex: '3 1 600px', minWidth: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h3 style={{ fontSize: 19, fontWeight: 700, margin: 0, color: theme.textPrimary }}>
-                Active Vacancies <span style={{ fontSize: 13, color: theme.textSecondary, fontWeight: 500 }}>({filteredJobs.length} open)</span>
-              </h3>
-            </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <h3 style={{ fontSize: 19, fontWeight: 700, margin: 0, color: theme.textPrimary }}>
+            Active Vacancies <span style={{ fontSize: 13, color: theme.textSecondary, fontWeight: 500 }}>({filteredJobs.length} open)</span>
+          </h3>
+        </div>
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: '60px 0', color: theme.textSecondary }}>
@@ -1191,8 +1239,6 @@ export default function PublicCareers() {
             })}
           </div>
         )}
-        </div>
-      </div>
       </section>
 
       {/* CANDIDATE FULL JD READER MODAL */}
