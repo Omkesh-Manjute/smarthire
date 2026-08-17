@@ -54,6 +54,38 @@ export default function PublicCareers() {
   const [themeMode, setThemeMode] = useState('light')
   const [activeChatCandidate, setActiveChatCandidate] = useState(null)
 
+  const [currentTime, setCurrentTime] = useState(new Date())
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date())
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const formatLiveTime = (tz) => {
+    try {
+      const timeStr = new Intl.DateTimeFormat('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+        timeZone: tz
+      }).format(currentTime)
+
+      const dateStr = new Intl.DateTimeFormat('en-US', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        timeZone: tz
+      }).format(currentTime)
+
+      return { time: timeStr, date: dateStr }
+    } catch (e) {
+      return { time: currentTime.toLocaleTimeString(), date: currentTime.toLocaleDateString() }
+    }
+  }
+
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -852,11 +884,66 @@ export default function PublicCareers() {
 
       {/* Main Content: Jobs Grid */}
       <section id="jobs-list" style={{ maxWidth: 1200, margin: '0 auto', padding: '10px 24px 80px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h3 style={{ fontSize: 19, fontWeight: 700, margin: 0, color: theme.textPrimary }}>
-            Active Vacancies <span style={{ fontSize: 13, color: theme.textSecondary, fontWeight: 500 }}>({filteredJobs.length} open)</span>
-          </h3>
-        </div>
+        <div style={{ display: 'flex', gap: 24, flexDirection: 'row', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          
+          {/* Left Column: Live Timezone Widget (Sticky on Desktop) */}
+          <div style={{ 
+            flex: '1 1 250px', 
+            maxWidth: 280, 
+            position: 'sticky', 
+            top: 80, 
+            backgroundColor: theme.cardBg, 
+            border: `1px solid ${theme.border}`, 
+            borderRadius: 12, 
+            padding: 16, 
+            boxShadow: theme.shadow 
+          }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ borderBottom: `1px solid ${theme.border}`, paddingBottom: 8, marginBottom: 4 }}>
+                <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: theme.textPrimary, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  🇺🇸 US Live Clocks
+                </h4>
+                <span style={{ fontSize: 10, color: theme.textSecondary }}>Ticking real-time US zone times</span>
+              </div>
+
+              {[
+                { label: 'EDT / EST', name: 'Eastern Time', tz: 'America/New_York', color: '#eff6ff', textColor: '#1d4ed8', border: '#bfdbfe' },
+                { label: 'CDT / CST', name: 'Central Time', tz: 'America/Chicago', color: '#f5f3ff', textColor: '#6d28d9', border: '#ddd6fe' },
+                { label: 'MDT / MST', name: 'Mountain Time', tz: 'America/Denver', color: '#fffbeb', textColor: '#b45309', border: '#fde68a' },
+                { label: 'PDT / PST', name: 'Pacific Time', tz: 'America/Los_Angeles', color: '#f0fdf4', textColor: '#16a34a', border: '#bbf7d0' }
+              ].map((zone) => {
+                const live = formatLiveTime(zone.tz)
+                return (
+                  <div key={zone.label} style={{
+                    backgroundColor: isLight ? zone.color : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${isLight ? zone.border : theme.border}`,
+                    borderRadius: 8,
+                    padding: '10px 12px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 800, color: isLight ? zone.textColor : theme.textPrimary }}>{zone.label}</div>
+                      <div style={{ fontSize: 10, color: theme.textSecondary, marginTop: 1 }}>{zone.name}</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 14, fontWeight: 900, color: theme.textPrimary, fontFamily: 'monospace' }}>{live.time}</div>
+                      <div style={{ fontSize: 9.5, color: theme.textSecondary, marginTop: 1 }}>{live.date}</div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Right Column: Jobs Display List */}
+          <div style={{ flex: '3 1 600px', minWidth: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h3 style={{ fontSize: 19, fontWeight: 700, margin: 0, color: theme.textPrimary }}>
+                Active Vacancies <span style={{ fontSize: 13, color: theme.textSecondary, fontWeight: 500 }}>({filteredJobs.length} open)</span>
+              </h3>
+            </div>
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: '60px 0', color: theme.textSecondary }}>
@@ -1104,6 +1191,8 @@ export default function PublicCareers() {
             })}
           </div>
         )}
+        </div>
+      </div>
       </section>
 
       {/* CANDIDATE FULL JD READER MODAL */}
