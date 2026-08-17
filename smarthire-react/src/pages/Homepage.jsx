@@ -129,7 +129,7 @@ function Homepage() {
             company: u.company
           }))
           localStorage.setItem('smarthire_active_role', u.role)
-          localStorage.setItem('smarthire_token', 'mock-token-' + u.id)
+          localStorage.setItem('smarthire_token', data.token || 'mock-token-' + u.id)
           setIsLoggingIn(false)
           window.location.href = '/ats'
           return

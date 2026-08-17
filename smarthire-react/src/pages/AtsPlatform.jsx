@@ -160,7 +160,11 @@ export default function AtsPlatform() {
   // Fetch candidates safely
   const fetchCandidates = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/candidates`)
+      const res = await fetch(`${API_BASE}/api/candidates`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+        }
+      })
       if (res.ok) {
         const data = await res.json()
         const list = Array.isArray(data) ? data : Array.isArray(data.candidates) ? data.candidates : []
@@ -253,7 +257,10 @@ export default function AtsPlatform() {
     try {
       await fetch(`${API_BASE}/api/candidates/${candidateId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+        },
         body: JSON.stringify({ status: newStatus }),
       })
       setAllCandidates(prev =>
@@ -275,7 +282,12 @@ export default function AtsPlatform() {
     if (!window.confirm(`Delete ${selectedIds.length} selected candidates?`)) return
     for (const id of selectedIds) {
       try {
-        await fetch(`${API_BASE}/api/candidates/${id}`, { method: 'DELETE' })
+        await fetch(`${API_BASE}/api/candidates/${id}`, { 
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+          }
+        })
       } catch (err) {
         console.error('Failed to delete candidate:', err)
       }

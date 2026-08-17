@@ -10,6 +10,26 @@ import mammoth from 'mammoth'
 import dotenv from 'dotenv'
 import https from 'https'
 import { pdfConverter } from 'pdf-image-converter'
+import jwt from 'jsonwebtoken'
+
+const JWT_SECRET = process.env.JWT_SECRET || 'smarthire_secure_jwt_secret_key_2026';
+
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ success: false, message: 'Access denied. Authorization token missing.' });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ success: false, message: 'Invalid or expired authorization token.' });
+    }
+    req.user = user;
+    next();
+  });
+}
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -1072,7 +1092,7 @@ app.get('/api/health', (_req, res) => {
 })
 
 // ─── GET /api/candidates — Returns all stored candidates ─────────────────────
-app.get('/api/candidates', (_req, res) => {
+app.get('/api/candidates', authenticateToken, (_req, res) => {
   res.json({
     success: true,
     count: candidatesStore.length,
@@ -1081,7 +1101,7 @@ app.get('/api/candidates', (_req, res) => {
 })
 
 // ─── GET /api/candidates/:id — Returns a single candidate ────────────────────
-app.get('/api/candidates/:id', (req, res) => {
+app.get('/api/candidates/:id', authenticateToken, (req, res) => {
   const candidate = candidatesStore.find(c => c.candidate_id === req.params.id)
   if (!candidate) {
     res.status(404).json({ success: false, message: 'Candidate not found' })
@@ -1091,7 +1111,7 @@ app.get('/api/candidates/:id', (req, res) => {
 })
 
 // ─── DELETE /api/candidates/:id — Remove a candidate ─────────────────────────
-app.delete('/api/candidates/:id', (req, res) => {
+app.delete('/api/candidates/:id', authenticateToken, (req, res) => {
   const index = candidatesStore.findIndex(c => c.candidate_id === req.params.id)
   if (index === -1) {
     res.status(404).json({ success: false, message: 'Candidate not found' })
@@ -4259,7 +4279,7 @@ app.post('/api/screening/public-submit-file', upload.single('resume'), async (re
 });
 
 // Get all screening sessions (recruiter dashboard)
-app.get('/api/screening/sessions', (req, res) => {
+app.get('/api/screening/sessions', authenticateToken, (req, res) => {
   res.json({ success: true, sessions: screeningStore });
 });
 
@@ -5145,8 +5165,14 @@ app.post('/api/auth/login', async (req, res) => {
       }
       user.lastLogin = new Date().toISOString();
       await user.save();
+      const token = jwt.sign(
+        { id: user._id, email: user.email, role: user.role, name: user.name },
+        JWT_SECRET,
+        { expiresIn: '24h' }
+      );
       return res.json({
         success: true,
+        token,
         user: {
           id: user._id,
           name: user.name,
@@ -5166,8 +5192,14 @@ app.post('/api/auth/login', async (req, res) => {
         return res.status(403).json({ success: false, message: 'Your account has been deactivated. Please contact support.' });
       }
       user.lastLogin = new Date().toISOString();
+      const token = jwt.sign(
+        { id: user._id, email: user.email, role: user.role, name: user.name },
+        JWT_SECRET,
+        { expiresIn: '24h' }
+      );
       return res.json({
         success: true,
+        token,
         user: {
           id: user._id,
           name: user.name,
@@ -5515,7 +5547,7 @@ app.get('/api/messages/:candidateId', (req, res) => {
 });
 
 // List all candidate message threads (for Recruiter Inbox)
-app.get('/api/messages', (req, res) => {
+app.get('/api/messages', authenticateToken, (req, res) => {
   // Group messages by candidateId and get the latest message per thread
   const threadsMap = {};
   messagesStore.forEach(m => {
@@ -5572,7 +5604,7 @@ app.get('/api/messages', (req, res) => {
 });
 
 // Mark all messages in a thread as read
-app.patch('/api/messages/:candidateId/read', (req, res) => {
+app.patch('/api/messages/:candidateId/read', authenticateToken, (req, res) => {
   const { candidateId } = req.params;
   messagesStore = messagesStore.map(m => {
     if (m && m.candidateId === candidateId && m.sender === 'candidate') {

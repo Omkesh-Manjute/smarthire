@@ -191,7 +191,11 @@ export default function RecruiterInbox() {
 
   const fetchThreads = useCallback(async () => {
     try {
-      const res = await fetch('/api/messages')
+      const res = await fetch('/api/messages', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+        }
+      })
       const data = await res.json()
       if (data.success && Array.isArray(data.threads)) setThreads(data.threads)
     } catch (e) { console.warn('Thread fetch error:', e) }
@@ -202,7 +206,11 @@ export default function RecruiterInbox() {
     try {
       let res;
       if (candidateId && candidateId.startsWith('SCR-')) {
-        res = await fetch('/api/screening/' + candidateId)
+        res = await fetch('/api/screening/' + candidateId, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+          }
+        })
       } else {
         res = await fetch('/api/candidates/' + candidateId, {
           headers: {
@@ -224,7 +232,11 @@ export default function RecruiterInbox() {
     if (!candidateId) return
     if (!silent) setLoadingMessages(true)
     try {
-      const res = await fetch('/api/messages/' + candidateId)
+      const res = await fetch('/api/messages/' + candidateId, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+        }
+      })
       const data = await res.json()
       if (data.success && Array.isArray(data.messages)) setMessages(data.messages)
     } catch (e) { console.warn('Message fetch error:', e) }
@@ -238,7 +250,12 @@ export default function RecruiterInbox() {
     await fetchMessages(thread.candidateId)
     fetchCandidateDetails(thread.candidateId)
     try {
-      await fetch('/api/messages/' + thread.candidateId + '/read', { method: 'PATCH' })
+      await fetch('/api/messages/' + thread.candidateId + '/read', { 
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+        }
+      })
       setThreads(prev => prev.map(t => t.candidateId === thread.candidateId ? { ...t, unreadCount: 0 } : t))
     } catch (e) {}
   }, [fetchMessages, fetchCandidateDetails])
@@ -258,7 +275,10 @@ export default function RecruiterInbox() {
     try {
       await fetch('/api/messages/' + activeThread.candidateId, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+        },
         body: JSON.stringify({
           sender: 'recruiter',
           text,
