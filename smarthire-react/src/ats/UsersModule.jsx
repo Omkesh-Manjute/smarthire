@@ -3,36 +3,63 @@ import React, { useState, useEffect } from 'react'
 const DEFAULT_RECRUITERS = [
   {
     id: 'rec-1',
-    name: 'Omkesh Manjute',
-    email: 'omkesh@smarthire.com',
+    name: 'Omkesh',
+    email: 'omkesh@coolsofttech.com',
     role: 'superadmin',
     refCode: 'omkesh',
-    company: 'VerifyHire Corp',
+    company: 'Coolsoft LLC',
     isActive: true,
+    password: 'admin',
     lastLogin: '2026-08-17T18:45:00.000Z',
     createdAt: '2026-01-10T10:00:00.000Z'
   },
   {
     id: 'rec-2',
-    name: 'Anjali Sharma',
-    email: 'anjali@praximind.com',
+    name: 'Sukamal Chatterjee',
+    email: 'kamal@coolsofttech.com',
     role: 'recruiter',
-    refCode: 'anjali-sharma',
-    company: 'Praximind Pvt Ltd',
+    refCode: 'sukamal-chatterjee',
+    company: 'Coolsoft LLC',
     isActive: true,
-    lastLogin: '2026-08-17T16:20:00.000Z',
+    password: 'recruiter123',
+    lastLogin: null,
     createdAt: '2026-02-15T11:30:00.000Z'
   },
   {
     id: 'rec-3',
-    name: 'John Doe',
-    email: 'john.doe@verifyhire.com',
+    name: 'Raj',
+    email: 'raj@coolsofttech.com',
     role: 'recruiter',
-    refCode: 'john-doe',
-    company: 'VerifyHire Corp',
-    isActive: false,
-    lastLogin: '2026-08-10T09:15:00.000Z',
+    refCode: 'raj',
+    company: 'Coolsoft LLC',
+    isActive: true,
+    password: 'recruiter123',
+    lastLogin: null,
     createdAt: '2026-03-01T08:00:00.000Z'
+  },
+  {
+    id: 'rec-4',
+    name: 'Vaibhav Bisen',
+    email: 'vaibhav@coolsofttech.com',
+    role: 'recruiter',
+    refCode: 'vaibhav-bisen',
+    company: 'Coolsoft LLC',
+    isActive: true,
+    password: 'recruiter123',
+    lastLogin: null,
+    createdAt: '2026-03-10T09:00:00.000Z'
+  },
+  {
+    id: 'rec-5',
+    name: 'Pankaj',
+    email: 'pankajm@coolsofttech.com',
+    role: 'recruiter',
+    refCode: 'pankaj',
+    company: 'Coolsoft LLC',
+    isActive: true,
+    password: 'recruiter123',
+    lastLogin: null,
+    createdAt: '2026-03-15T08:30:00.000Z'
   }
 ]
 
@@ -47,16 +74,25 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
     }
   })
 
-  // Recruiter form modal state
+  // Add recruiter modal state
   const [showAddModal, setShowAddModal] = useState(false)
   const [newRecName, setNewRecName] = useState('')
   const [newRecEmail, setNewRecEmail] = useState('')
   const [newRecCompany, setNewRecCompany] = useState('')
   const [newRecRef, setNewRecRef] = useState('')
   const [newRecRole, setNewRecRole] = useState('recruiter')
-  const [toastMessage, setToastMessage] = useState('')
+  const [newRecPassword, setNewRecPassword] = useState('')
 
-  // Candidate detail modal state
+  // Edit recruiter modal state
+  const [editRecruiter, setEditRecruiter] = useState(null)
+  const [editRecName, setEditRecName] = useState('')
+  const [editRecEmail, setEditRecEmail] = useState('')
+  const [editRecCompany, setEditRecCompany] = useState('')
+  const [editRecRef, setEditRecRef] = useState('')
+  const [editRecRole, setEditRecRole] = useState('recruiter')
+  const [editRecPassword, setEditRecPassword] = useState('')
+
+  const [toastMessage, setToastMessage] = useState('')
   const [selectedCandidate, setSelectedCandidate] = useState(null)
 
   // Persist recruiters whenever list changes
@@ -71,7 +107,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
     setTimeout(() => setToastMessage(''), 3000)
   }
 
-  // Get sourced candidates count in real time for a recruiter
+  // Get sourced candidates count in real time
   const getSourcedCount = (rec) => {
     if (!allCandidates || !Array.isArray(allCandidates)) return 0
     return allCandidates.filter(c => {
@@ -92,7 +128,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
     setRecruiters(prev => prev.map(r => {
       if (r.id === id) {
         const nextState = !r.isActive
-        showToast(`Recruiter "${r.name}" account ${nextState ? 'activated' : 'deactivated'}.`)
+        showToast(`User "${r.name}" account ${nextState ? 'activated' : 'deactivated'}.`)
         return { ...r, isActive: nextState }
       }
       return r
@@ -101,8 +137,8 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
 
   const handleAddRecruiter = (e) => {
     e.preventDefault()
-    if (!newRecName.trim() || !newRecEmail.trim()) {
-      alert('Please fill out all required fields.')
+    if (!newRecName.trim() || !newRecEmail.trim() || !newRecPassword.trim()) {
+      alert('Name, Email, and Password are required fields.')
       return
     }
 
@@ -110,9 +146,8 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
       ? newRecRef.trim().toLowerCase().replace(/[^a-z0-9]/g, '-')
       : newRecName.trim().toLowerCase().replace(/[^a-z0-9]/g, '-')
 
-    // Check for duplicates
     if (recruiters.some(r => r.email.toLowerCase() === newRecEmail.toLowerCase().trim())) {
-      alert('A recruiter with this email already exists.')
+      alert('A user with this email already exists.')
       return
     }
 
@@ -122,15 +157,16 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
       email: newRecEmail.trim().toLowerCase(),
       role: newRecRole,
       refCode: newRefCode,
-      company: newRecCompany.trim() || 'SmartHire Client',
+      company: newRecCompany.trim() || 'Coolsoft LLC',
       isActive: true,
+      password: newRecPassword.trim(),
       lastLogin: null,
       createdAt: new Date().toISOString()
     }
 
     setRecruiters(prev => [newRec, ...prev])
     setShowAddModal(false)
-    showToast(`Recruiter account created for "${newRec.name}"!`)
+    showToast(`User account created for "${newRec.name}"!`)
 
     // Clear form
     setNewRecName('')
@@ -138,16 +174,57 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
     setNewRecCompany('')
     setNewRecRef('')
     setNewRecRole('recruiter')
+    setNewRecPassword('')
+  }
+
+  // Open Edit Modal
+  const openEditModal = (rec) => {
+    setEditRecruiter(rec)
+    setEditRecName(rec.name)
+    setEditRecEmail(rec.email)
+    setEditRecCompany(rec.company || '')
+    setEditRecRef(rec.refCode || '')
+    setEditRecRole(rec.role)
+    setEditRecPassword(rec.password || '')
+  }
+
+  const handleUpdateRecruiter = (e) => {
+    e.preventDefault()
+    if (!editRecName.trim() || !editRecEmail.trim() || !editRecPassword.trim()) {
+      alert('Name, Email, and Password are required fields.')
+      return
+    }
+
+    const finalRefCode = editRecRef.trim() 
+      ? editRecRef.trim().toLowerCase().replace(/[^a-z0-9]/g, '-')
+      : editRecName.trim().toLowerCase().replace(/[^a-z0-9]/g, '-')
+
+    setRecruiters(prev => prev.map(r => {
+      if (r.id === editRecruiter.id) {
+        return {
+          ...r,
+          name: editRecName.trim(),
+          email: editRecEmail.trim().toLowerCase(),
+          role: editRecRole,
+          refCode: finalRefCode,
+          company: editRecCompany.trim() || 'Coolsoft LLC',
+          password: editRecPassword.trim()
+        }
+      }
+      return r
+    }))
+
+    setEditRecruiter(null)
+    showToast(`User "${editRecName}" updated successfully!`)
   }
 
   const handleDeleteRecruiter = (id, name) => {
-    if (window.confirm(`Are you sure you want to delete recruiter "${name}"?`)) {
+    if (window.confirm(`Are you sure you want to delete user "${name}"?`)) {
       setRecruiters(prev => prev.filter(r => r.id !== id))
-      showToast(`Recruiter "${name}" account deleted.`)
+      showToast(`User "${name}" account deleted.`)
     }
   }
 
-  // Permissions functions
   const handleTogglePermission = (role, pageId) => {
     const updated = {
       ...permissions,
@@ -163,7 +240,6 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
     showToast(`Permissions updated for ${role === 'superadmin' ? 'Super Admin' : 'Recruiter'} role.`)
   }
 
-  // Format date helper
   const formatDate = (isoString) => {
     if (!isoString) return 'Never'
     return new Date(isoString).toLocaleDateString('en-US', {
@@ -291,6 +367,13 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                         <td style={{ textAlign: 'right' }}>
                           <button 
                             className="btn btn-sm btn-ghost" 
+                            style={{ color: 'var(--brand)', border: 'none', marginRight: 8 }}
+                            onClick={() => openEditModal(rec)}
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button 
+                            className="btn btn-sm btn-ghost" 
                             style={{ color: 'var(--danger)', border: 'none' }}
                             onClick={() => handleDeleteRecruiter(rec.id, rec.name)}
                             disabled={rec.id === 'rec-1'} // Don't delete master admin
@@ -383,7 +466,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
           </div>
         )}
 
-        {/* ROLE PERMISSIONS (PAGES ON/OFF) SUB-TAB */}
+        {/* ROLE PERMISSIONS SUB-TAB */}
         {subTab === 'permissions' && (
           <div className="card shadow-sm" style={{ padding: 24 }}>
             <h4 style={{ margin: '0 0 10px', fontSize: 16, fontWeight: 800 }}>🔒 Role-Based Workspace Access (Pages ON/OFF)</h4>
@@ -426,7 +509,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                             checked={!!permissions['superadmin']?.[page.id]} 
                             onChange={() => handleTogglePermission('superadmin', page.id)}
                             style={{ width: 18, height: 18, accentColor: 'var(--brand)', cursor: 'pointer' }}
-                            disabled={page.id === 'users' || page.id === 'settings'} // Master settings always visible for admin
+                            disabled={page.id === 'users' || page.id === 'settings'}
                           />
                         </td>
                         <td style={{ textAlign: 'center' }}>
@@ -495,10 +578,21 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
               </div>
 
               <div className="form-group">
+                <label>Password *</label>
+                <input 
+                  type="password" 
+                  required 
+                  placeholder="Minimum 6 characters" 
+                  value={newRecPassword}
+                  onChange={e => setNewRecPassword(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group">
                 <label>Company</label>
                 <input 
                   type="text" 
-                  placeholder="e.g. Praximind Pvt Ltd" 
+                  placeholder="e.g. Coolsoft LLC" 
                   value={newRecCompany}
                   onChange={e => setNewRecCompany(e.target.value)}
                 />
@@ -528,6 +622,93 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                 </button>
                 <button type="submit" className="btn">
                   💾 Create Account
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT RECRUITER MODAL */}
+      {editRecruiter && (
+        <div className="modal-overlay" onClick={() => setEditRecruiter(null)}>
+          <div className="modal-card" onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>✏️ Edit Team Member Details</h3>
+              <button 
+                onClick={() => setEditRecruiter(null)}
+                style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--ink-soft)' }}
+              >
+                &times;
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdateRecruiter}>
+              <div className="form-group">
+                <label>Full Name *</label>
+                <input 
+                  type="text" 
+                  required 
+                  value={editRecName}
+                  onChange={e => setEditRecName(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Email Address *</label>
+                <input 
+                  type="email" 
+                  required 
+                  value={editRecEmail}
+                  onChange={e => setEditRecEmail(e.target.value)}
+                  disabled={editRecruiter.id === 'rec-1'} // Master admin email lock
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Password *</label>
+                <input 
+                  type="password" 
+                  required 
+                  placeholder="Update account password" 
+                  value={editRecPassword}
+                  onChange={e => setEditRecPassword(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Company</label>
+                <input 
+                  type="text" 
+                  value={editRecCompany}
+                  onChange={e => setEditRecCompany(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Referral Tracking Code</label>
+                <input 
+                  type="text" 
+                  value={editRecRef}
+                  onChange={e => setEditRecRef(e.target.value)}
+                  disabled={editRecruiter.id === 'rec-1'}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>User System Role</label>
+                <select value={editRecRole} onChange={e => setEditRecRole(e.target.value)} disabled={editRecruiter.id === 'rec-1'}>
+                  <option value="recruiter">💼 Recruiter (Subject to Page Permissions)</option>
+                  <option value="superadmin">👑 Super Admin (Full Control)</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24 }}>
+                <button type="button" className="btn btn-ghost" onClick={() => setEditRecruiter(null)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn">
+                  💾 Update Details
                 </button>
               </div>
             </form>
@@ -691,7 +872,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
           font-size: 11px;
           font-weight: 700;
           padding: 2px 8px;
-          borderRadius: 12px;
+          border-radius: 12px;
           display: inline-block;
         }
         .role-pill.superadmin {
@@ -812,7 +993,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
           border: 1px solid var(--line);
           border-radius: 16px;
           width: 100%;
-          maxWidth: 480px;
+          max-width: 480px;
           padding: 24px;
           box-shadow: 0 20px 40px rgba(0,0,0,0.15);
         }

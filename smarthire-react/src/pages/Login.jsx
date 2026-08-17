@@ -12,113 +12,68 @@ function Login() {
   const [isDemoSigningIn, setIsDemoSigningIn] = useState(false)
   const [authError, setAuthError] = useState('')
 
-  const handleGoogleSignIn = async () => {
-    setIsDemoSigningIn(true)
-    setAuthError('')
-    try {
-      const user = await loginWithGoogle()
-      const isSuperAdminEmail = user.email.toLowerCase().includes('omkesh') || user.email.toLowerCase().includes('admin')
-      const role = isSuperAdminEmail ? 'superadmin' : 'recruiter'
-      
-      const userData = {
-        uid: user.uid,
-        name: user.name || user.email.split('@')[0],
-        email: user.email,
-        photoURL: user.photoURL,
-        role: role,
-        refCode: user.email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '-')
-      }
-
-      localStorage.setItem('smarthire_authenticated', 'true')
-      localStorage.setItem('smarthire_user', JSON.stringify(userData))
-      localStorage.setItem('smarthire_active_role', role)
-
-      window.location.href = '/ats'
-    } catch (err) {
-      console.error('Google Sign-In Error:', err)
-      // Fallback Google Sign-In mock
-      const mockUser = {
-        name: 'Recruiter Admin',
-        email: 'recruiter@smarthire.com',
-        role: 'recruiter',
-        refCode: 'recruiter-pro'
-      }
-      localStorage.setItem('smarthire_authenticated', 'true')
-      localStorage.setItem('smarthire_user', JSON.stringify(mockUser))
-      localStorage.setItem('smarthire_active_role', 'recruiter')
-      window.location.href = '/ats'
-    } finally {
-      setIsDemoSigningIn(false)
-    }
-  }
-
   const handleDemoSubmit = async (e) => {
     e.preventDefault()
     setIsDemoSigningIn(true)
     setAuthError('')
 
     try {
-      // 1. Try Backend API first
-      try {
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        })
+      // 1. Load users from localStorage (or fallback to DEFAULT_RECRUITERS if empty)
+      const savedRecruitersRaw = localStorage.getItem('smarthire_recruiters')
+      
+      const defaultRecs = [
+        { id: 'rec-1', name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', company: 'Coolsoft LLC', isActive: true, password: 'admin' },
+        { id: 'rec-2', name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com', role: 'recruiter', refCode: 'sukamal-chatterjee', company: 'Coolsoft LLC', isActive: true, password: 'recruiter123' },
+        { id: 'rec-3', name: 'Raj', email: 'raj@coolsofttech.com', role: 'recruiter', refCode: 'raj', company: 'Coolsoft LLC', isActive: true, password: 'recruiter123' },
+        { id: 'rec-4', name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com', role: 'recruiter', refCode: 'vaibhav-bisen', company: 'Coolsoft LLC', isActive: true, password: 'recruiter123' },
+        { id: 'rec-5', name: 'Pankaj', email: 'pankajm@coolsofttech.com', role: 'recruiter', refCode: 'pankaj', company: 'Coolsoft LLC', isActive: true, password: 'recruiter123' }
+      ]
 
-        const data = await res.json()
-        if (res.ok && data.success) {
-          const u = data.data.user
-          localStorage.setItem('smarthire_authenticated', 'true')
-          localStorage.setItem('smarthire_token', data.data.token)
-          localStorage.setItem('smarthire_user', JSON.stringify(u))
-          localStorage.setItem('smarthire_active_role', u.role || 'recruiter')
-          window.location.href = '/ats'
-          return
-        }
-      } catch (backendErr) {
-        console.warn('Backend auth failed, proceeding to Firebase/Fallback:', backendErr.message)
+      let recruitersList = defaultRecs
+      if (savedRecruitersRaw) {
+        try {
+          recruitersList = JSON.parse(savedRecruitersRaw)
+        } catch (e) {}
+      } else {
+        localStorage.setItem('smarthire_recruiters', JSON.stringify(defaultRecs))
       }
 
-      // 2. Try Firebase email login
-      try {
-        const user = await loginWithEmail(email, password)
-        const isSuperAdminEmail = user.email.toLowerCase().includes('omkesh') || user.email.toLowerCase().includes('admin')
-        const role = isSuperAdminEmail ? 'superadmin' : 'recruiter'
+      // 2. Validate credentials
+      const matchedUser = recruitersList.find(
+        r => r.email.toLowerCase().trim() === email.toLowerCase().trim() && r.password === password
+      )
 
-        const userData = {
-          uid: user.uid,
-          name: user.name || email.split('@')[0],
-          email: user.email,
-          role: role,
-          refCode: email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '-')
-        }
-
-        localStorage.setItem('smarthire_authenticated', 'true')
-        localStorage.setItem('smarthire_user', JSON.stringify(userData))
-        localStorage.setItem('smarthire_active_role', role)
-        window.location.href = '/ats'
+      if (!matchedUser) {
+        setAuthError('Invalid email or password.')
+        setIsDemoSigningIn(false)
         return
-      } catch (fbErr) {
-        // Firebase failed, check credentials locally
       }
 
-      // 3. Fallback logic for any valid email/password
-      const isSuperAdminEmail = email.toLowerCase().includes('omkesh') || email.toLowerCase().includes('admin')
-      const role = isSuperAdminEmail ? 'superadmin' : 'recruiter'
-
-      const userData = {
-        name: email.split('@')[0].replace('.', ' ').toUpperCase(),
-        email: email,
-        role: role,
-        refCode: email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '-')
+      if (!matchedUser.isActive) {
+        setAuthError('Your account has been deactivated. Please contact support.')
+        setIsDemoSigningIn(false)
+        return
       }
 
+      // Update last active login time
+      matchedUser.lastLogin = new Date().toISOString()
+      const updatedRecruiters = recruitersList.map(r => r.id === matchedUser.id ? matchedUser : r)
+      localStorage.setItem('smarthire_recruiters', JSON.stringify(updatedRecruiters))
+
+      // 3. Set session
       localStorage.setItem('smarthire_authenticated', 'true')
-      localStorage.setItem('smarthire_user', JSON.stringify(userData))
-      localStorage.setItem('smarthire_active_role', role)
-      window.location.href = '/ats'
+      localStorage.setItem('smarthire_user', JSON.stringify({
+        uid: matchedUser.id,
+        name: matchedUser.name,
+        email: matchedUser.email,
+        role: matchedUser.role,
+        refCode: matchedUser.refCode,
+        company: matchedUser.company
+      }))
+      localStorage.setItem('smarthire_active_role', matchedUser.role)
+      localStorage.setItem('smarthire_token', 'mock-token-' + matchedUser.id)
 
+      window.location.href = '/ats'
     } catch (err) {
       setAuthError('Login error: ' + err.message)
     } finally {
@@ -136,7 +91,7 @@ function Login() {
               <div className="login-header-block">
                 <span className="login-eyebrow">Enterprise Access</span>
                 <h1 className="login-main-title">Sign in to Platform</h1>
-                <p className="login-subtitle">Enter your corporate credentials or use Google 1-click sign-in.</p>
+                <p className="login-subtitle">Enter your corporate credentials to access your workspace.</p>
               </div>
 
               {authError && (
@@ -144,20 +99,6 @@ function Login() {
                   ⚠️ {authError}
                 </div>
               )}
-
-              {/* Social Logins */}
-              <div className="social-auth-row">
-                <button type="button" className="social-btn" onClick={handleGoogleSignIn} style={{ width: '100%', justifyContent: 'center' }}>
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                    <path d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114-3.472 0-6.29-2.818-6.29-6.29 0-3.472 2.818-6.29 6.29-6.29 1.506 0 2.876.531 3.96 1.402l3.14-3.14C18.847 2.112 15.748 1 12.24 1 6.033 1 1 6.033 1 12.24s5.033 11.24 11.24 11.24c5.787 0 10.748-4.148 10.748-11.24 0-.67-.067-1.32-.19-1.955H12.24z"/>
-                  </svg>
-                  <span style={{ fontWeight: '700' }}>Sign in with Google</span>
-                </button>
-              </div>
-
-              <div className="auth-divider">
-                <span>or continue with email</span>
-              </div>
 
 
 

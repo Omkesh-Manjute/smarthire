@@ -102,93 +102,73 @@ function Homepage() {
   // Pricing Toggle State
   const [isYearly, setIsYearly] = useState(false)
 
-  const handleGoogleSignIn = async () => {
-    setIsLoggingIn(true)
-    setErrorMessage('')
-
-    try {
-      const user = await loginWithGoogle()
-      const isSuperAdminEmail = (user.email || '').toLowerCase().includes('omkesh') || (user.email || '').toLowerCase().includes('admin')
-      const role = isSuperAdminEmail ? 'superadmin' : 'recruiter'
-
-      const userData = {
-        uid: user.uid,
-        name: user.name || user.email.split('@')[0],
-        email: user.email,
-        photoURL: user.photoURL,
-        role: role,
-        refCode: (user.email || 'user').split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '-')
-      }
-
-      localStorage.setItem('smarthire_authenticated', 'true')
-      localStorage.setItem('smarthire_user', JSON.stringify(userData))
-      localStorage.setItem('smarthire_active_role', role)
-      setIsLoggingIn(false)
-      window.location.href = '/ats'
-    } catch (err) {
-      console.error('Google Sign-In Error:', err)
-      // Fallback Google login for testing if Firebase popup is blocked or unconfigured
-      const googleUser = {
-        _id: 'google-rec-101',
-        name: 'Google Recruiter User',
-        email: 'recruiter@smarthire.com',
-        role: 'recruiter',
-        company: 'SmartHire Partner',
-        refCode: 'recruiter-pro'
-      }
-      localStorage.setItem('smarthire_authenticated', 'true')
-      localStorage.setItem('smarthire_user', JSON.stringify(googleUser))
-      localStorage.setItem('smarthire_active_role', 'recruiter')
-      setIsLoggingIn(false)
-      window.location.href = '/ats'
-    }
-  }
-
   const handleLoginSubmit = async (e) => {
     e.preventDefault()
     setIsLoggingIn(true)
     setErrorMessage('')
     
     try {
-      // 1. Try Backend API first
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      })
+      // 1. Load users from localStorage (or fallback to DEFAULT_RECRUITERS if empty)
+      const savedRecruitersRaw = localStorage.getItem('smarthire_recruiters')
+      
+      const defaultRecs = [
+        { id: 'rec-1', name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', company: 'Coolsoft LLC', isActive: true, password: 'admin' },
+        { id: 'rec-2', name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com', role: 'recruiter', refCode: 'sukamal-chatterjee', company: 'Coolsoft LLC', isActive: true, password: 'recruiter123' },
+        { id: 'rec-3', name: 'Raj', email: 'raj@coolsofttech.com', role: 'recruiter', refCode: 'raj', company: 'Coolsoft LLC', isActive: true, password: 'recruiter123' },
+        { id: 'rec-4', name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com', role: 'recruiter', refCode: 'vaibhav-bisen', company: 'Coolsoft LLC', isActive: true, password: 'recruiter123' },
+        { id: 'rec-5', name: 'Pankaj', email: 'pankajm@coolsofttech.com', role: 'recruiter', refCode: 'pankaj', company: 'Coolsoft LLC', isActive: true, password: 'recruiter123' }
+      ]
 
-      const data = await res.json()
-      if (res.ok && data.success) {
-        const u = data.data.user
-        localStorage.setItem('smarthire_authenticated', 'true')
-        localStorage.setItem('smarthire_token', data.data.token)
-        localStorage.setItem('smarthire_user', JSON.stringify(u))
-        localStorage.setItem('smarthire_active_role', u.role || 'recruiter')
+      let recruitersList = defaultRecs
+      if (savedRecruitersRaw) {
+        try {
+          recruitersList = JSON.parse(savedRecruitersRaw)
+        } catch (e) {}
+      } else {
+        localStorage.setItem('smarthire_recruiters', JSON.stringify(defaultRecs))
+      }
+
+      // 2. Validate credentials
+      const matchedUser = recruitersList.find(
+        r => r.email.toLowerCase().trim() === email.toLowerCase().trim() && r.password === password
+      )
+
+      if (!matchedUser) {
+        setErrorMessage('Invalid email or password.')
         setIsLoggingIn(false)
-        window.location.href = '/ats'
         return
       }
-    } catch (err) {}
 
-    // Fallback authentication for local demo
-    setTimeout(() => {
-      const isSuperAdminEmail = email.toLowerCase().includes('omkesh') || email.toLowerCase().includes('admin')
-      const role = isSuperAdminEmail ? 'superadmin' : 'recruiter'
-
-      const userObj = {
-        _id: 'user-' + Date.now(),
-        name: email.split('@')[0].replace('.', ' ').toUpperCase(),
-        email: email,
-        role: role,
-        company: 'SmartHire Partner',
-        refCode: email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '-')
+      if (!matchedUser.isActive) {
+        setErrorMessage('Your account has been deactivated. Please contact support.')
+        setIsLoggingIn(false)
+        return
       }
+
+      // Update last active login time
+      matchedUser.lastLogin = new Date().toISOString()
+      const updatedRecruiters = recruitersList.map(r => r.id === matchedUser.id ? matchedUser : r)
+      localStorage.setItem('smarthire_recruiters', JSON.stringify(updatedRecruiters))
+
+      // 3. Set session
       localStorage.setItem('smarthire_authenticated', 'true')
-      localStorage.setItem('smarthire_user', JSON.stringify(userObj))
-      localStorage.setItem('smarthire_active_role', role)
-      setIsLoggingIn(false)
+      localStorage.setItem('smarthire_user', JSON.stringify({
+        uid: matchedUser.id,
+        name: matchedUser.name,
+        email: matchedUser.email,
+        role: matchedUser.role,
+        refCode: matchedUser.refCode,
+        company: matchedUser.company
+      }))
+      localStorage.setItem('smarthire_active_role', matchedUser.role)
+      localStorage.setItem('smarthire_token', 'mock-token-' + matchedUser.id)
+
       window.location.href = '/ats'
-    }, 600)
+    } catch (err) {
+      setErrorMessage('Login error: ' + err.message)
+    } finally {
+      setIsLoggingIn(false)
+    }
   }
 
   return (
@@ -299,43 +279,7 @@ function Homepage() {
                   {isLoggingIn ? 'Verifying Credentials...' : 'Sign In to ATS Console →'}
                 </button>
 
-                <div style={{ display: 'flex', alignItems: 'center', margin: '16px 0', gap: 10 }}>
-                  <hr style={{ flex: 1, border: 'none', borderTop: '1px solid var(--border)' }} />
-                  <span style={{ fontSize: 11, color: 'var(--ink-soft)', fontWeight: 700 }}>OR</span>
-                  <hr style={{ flex: 1, border: 'none', borderTop: '1px solid var(--border)' }} />
-                </div>
 
-                <button
-                  type="button"
-                  onClick={handleGoogleSignIn}
-                  disabled={isLoggingIn}
-                  className="btn"
-                  style={{
-                    width: '100%',
-                    background: '#fff',
-                    color: '#0F172A',
-                    border: '1px solid #CBD5E1',
-                    borderRadius: 10,
-                    padding: '12px 16px',
-                    fontWeight: 700,
-                    fontSize: 14,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 10,
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                  </svg>
-                  Sign in with Google 🌐
-                </button>
               </form>
             </div>
           )}
