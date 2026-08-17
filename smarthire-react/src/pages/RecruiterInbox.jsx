@@ -89,6 +89,27 @@ function Avatar({ name, size = 40, style = {} }) {
   )
 }
 
+const highlightResumeText = (text, matchingSkills = []) => {
+  if (!text) return <div style={{ color: '#64748B', fontStyle: 'italic' }}>No resume text available.</div>
+  if (!matchingSkills || matchingSkills.length === 0) {
+    return <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, fontSize: 13, fontFamily: 'monospace' }}>{text}</div>
+  }
+
+  let highlighted = text;
+  // Sort skills by length descending to prevent partial replacements of nested words
+  const sortedSkills = [...matchingSkills].sort((a, b) => b.length - a.length);
+
+  sortedSkills.forEach(skill => {
+    if (!skill || skill.length < 2) return;
+    // Escape special characters in skill name for regex
+    const escaped = skill.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const regex = new RegExp(`\\b(${escaped})\\b`, 'gi');
+    highlighted = highlighted.replace(regex, `<mark style="background-color: #FEF08A; color: #0F172A; font-weight: 700; padding: 0 4px; border-radius: 3px;">$1</mark>`);
+  });
+
+  return <div dangerouslySetInnerHTML={{ __html: highlighted }} style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, fontSize: 13, fontFamily: 'monospace' }} />
+}
+
 export default function RecruiterInbox() {
   const navigate = useNavigate()
   const [themeMode, setThemeMode] = useState(() => localStorage.getItem('smarthire_theme') || 'light')
@@ -144,10 +165,23 @@ export default function RecruiterInbox() {
 
   const fetchCandidateDetails = useCallback(async (candidateId) => {
     try {
-      const res = await fetch('/api/candidates/' + candidateId)
+      let res;
+      if (candidateId && candidateId.startsWith('SCR-')) {
+        res = await fetch('/api/screening/' + candidateId)
+      } else {
+        res = await fetch('/api/candidates/' + candidateId, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+          }
+        })
+      }
       const data = await res.json()
-      if (data.success && data.candidate) setCandidateDetails(data.candidate)
-      else setCandidateDetails(null)
+      if (data.success) {
+        const candidateObj = data.session || data.candidate || data.data?.candidate
+        setCandidateDetails(candidateObj)
+      } else {
+        setCandidateDetails(null)
+      }
     } catch (e) { setCandidateDetails(null) }
   }, [])
 
@@ -507,100 +541,114 @@ export default function RecruiterInbox() {
         )}
       </div>
 
-      {/* Candidate Full Profile Drawer (Recruiter Side) */}
-      {showFullProfileModal && activeThread && candidateDetails && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.6)',
-          backdropFilter: 'blur(4px)',
-          zIndex: 4000,
-          display: 'flex',
-          justifyContent: 'flex-end',
-          animation: 'fadeIn 0.2s ease-out'
-        }} onClick={() => setShowFullProfileModal(false)}>
+      {/* Candidate Full Profile Drawer (Recruiter Side - Monster Style) */}
+      {showFullProfileModal && activeThread && candidateDetails && (() => {
+        const candidateName = candidateDetails.candidateName || candidateDetails.name || activeThread.candidateName
+        const email = candidateDetails.candidateEmail || candidateDetails.email || profile?.email || '—'
+        const phone = candidateDetails.candidatePhone || candidateDetails.phone || profile?.phone || '—'
+        const locationVal = typeof candidateDetails.location === 'string' 
+          ? candidateDetails.location 
+          : (candidateDetails.currentLocation || profile?.location || '—')
+        const visaStatusVal = candidateDetails.visaStatus || candidateDetails.visa_status || profile?.visa_status || '—'
+        const resumeText = candidateDetails.resumeText || candidateDetails.resume_text || ''
+        const matchScore = candidateDetails.jdMatch?.match_score || candidateDetails.jd_match?.match_score || candidateDetails.matchScore || candidateDetails.ai_match?.score || null
+        const matchingSkills = candidateDetails.jdMatch?.matched_skills || candidateDetails.jd_match?.matching_skills || candidateDetails.jd_match?.matched_skills || []
+        const missingSkills = candidateDetails.jdMatch?.missing_skills || candidateDetails.jd_match?.missing_skills || candidateDetails.jd_match?.missing_skills || []
+        const summary = candidateDetails.jdMatch?.candidate_summary || candidateDetails.jd_match?.candidate_summary || candidateDetails.jd_match?.summary || ''
+
+        return (
           <div style={{
-            width: '100%',
-            maxWidth: 520,
-            height: '100%',
-            backgroundColor: C.surface,
-            borderLeft: `1px solid ${C.border}`,
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.6)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 4000,
             display: 'flex',
-            flexDirection: 'column',
-            fontFamily: 'inherit'
-          }} onClick={e => e.stopPropagation()}>
-            {/* Header */}
+            justifyContent: 'flex-end',
+            animation: 'fadeIn 0.2s ease-out'
+          }} onClick={() => setShowFullProfileModal(false)}>
             <div style={{
-              padding: '20px 24px',
-              borderBottom: `1px solid ${C.border}`,
+              width: '90%',
+              maxWidth: 1080,
+              height: '100%',
+              backgroundColor: C.surface,
+              borderLeft: `1px solid ${C.border}`,
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              backgroundColor: C.surface
-            }}>
-              <div>
-                <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: C.textPrimary }}>Complete Candidate Profile</h3>
-                <p style={{ margin: '4px 0 0', fontSize: 12, color: '#2563EB', fontWeight: 700 }}>
-                  📝 Applied for {activeThread.jobTitle || 'Job Position'}
-                </p>
-              </div>
-              <button
-                onClick={() => setShowFullProfileModal(false)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: C.textSecondary,
-                  fontSize: 20,
-                  cursor: 'pointer',
-                  padding: 4
-                }}
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Scroll Content */}
-            <div style={{ flex: 1, padding: 24, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
-              {/* Header card */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <Avatar name={candidateName} size={64} />
+              flexDirection: 'column',
+              fontFamily: 'inherit'
+            }} onClick={e => e.stopPropagation()}>
+              {/* Header */}
+              <div style={{
+                padding: '20px 24px',
+                borderBottom: `1px solid ${C.border}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                backgroundColor: C.surface
+              }}>
                 <div>
-                  <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: C.textPrimary }}>{candidateName}</h2>
-                  <span style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    backgroundColor: isLight ? '#EFF6FF' : 'rgba(37,99,235,0.15)',
-                    color: '#2563EB',
-                    padding: '3px 8px',
-                    borderRadius: 12,
-                    display: 'inline-block',
-                    marginTop: 6
-                  }}>
-                    ID: {candidateDetails.id || activeThread.candidateId}
-                  </span>
+                  <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: C.textPrimary }}>Complete Candidate Profile &amp; Resume Analysis</h3>
+                  <p style={{ margin: '4px 0 0', fontSize: 12, color: '#2563EB', fontWeight: 700 }}>
+                    📝 Applied for {activeThread.jobTitle || 'Job Position'}
+                  </p>
                 </div>
+                <button
+                  onClick={() => setShowFullProfileModal(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: C.textSecondary,
+                    fontSize: 22,
+                    cursor: 'pointer',
+                    padding: 4
+                  }}
+                >
+                  ✕
+                </button>
               </div>
 
-              {/* Grid overview */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                {[
-                  { label: 'Email', value: profile.email || '—' },
-                  { label: 'Phone', value: profile.phone || '—' },
-                  { label: 'Location', value: profile.location || '—' },
-                  { label: 'Visa Status', value: profile.visa_status || '—', bold: true }
-                ].map((item, idx) => (
-                  <div key={idx} style={{ backgroundColor: C.inputBg, border: `1px solid ${C.border}`, borderRadius: 10, padding: 12 }}>
-                    <div style={{ fontSize: 10.5, fontWeight: 700, color: C.textSecondary, textTransform: 'uppercase' }}>{item.label}</div>
-                    <div style={{ fontSize: 13, fontWeight: item.bold ? 800 : 600, color: C.textPrimary, marginTop: 4, wordBreak: 'break-all' }}>{item.value}</div>
+              {/* Split Content Area */}
+              <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+                
+                {/* Left Pane: Candidate Overview & AI Matching Report (42%) */}
+                <div style={{ width: '42%', borderRight: `1px solid ${C.border}`, overflowY: 'auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  {/* Header card */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                    <Avatar name={candidateName} size={64} />
+                    <div>
+                      <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: C.textPrimary }}>{candidateName}</h2>
+                      <span style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        backgroundColor: isLight ? '#EFF6FF' : 'rgba(37,99,235,0.15)',
+                        color: '#2563EB',
+                        padding: '3px 8px',
+                        borderRadius: 12,
+                        display: 'inline-block',
+                        marginTop: 6
+                      }}>
+                        ID: {candidateDetails.id || activeThread.candidateId}
+                      </span>
+                    </div>
                   </div>
-                ))}
-              </div>
 
-              {/* AI Evaluation */}
-              {(() => {
-                const matchScore = candidateDetails.jd_match?.match_score ?? candidateDetails.matchScore ?? candidateDetails.ai_match?.score ?? null
-                return (
+                  {/* Grid overview */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    {[
+                      { label: 'Email', value: email },
+                      { label: 'Phone', value: phone },
+                      { label: 'Location', value: locationVal },
+                      { label: 'Visa Status', value: visaStatusVal, bold: true }
+                    ].map((item, idx) => (
+                      <div key={idx} style={{ backgroundColor: C.inputBg, border: `1px solid ${C.border}`, borderRadius: 10, padding: 12 }}>
+                        <div style={{ fontSize: 10.5, fontWeight: 700, color: C.textSecondary, textTransform: 'uppercase' }}>{item.label}</div>
+                        <div style={{ fontSize: 12.5, fontWeight: item.bold ? 800 : 600, color: C.textPrimary, marginTop: 4, wordBreak: 'break-all' }}>{item.value || '—'}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* AI Evaluation */}
                   <div style={{ border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}>
                     <h4 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 800, color: '#7C3AED', display: 'flex', alignItems: 'center', gap: 6 }}>
                       ⚡ AI Recruiter Match Analysis
@@ -613,73 +661,96 @@ export default function RecruiterInbox() {
                       </strong>
                     </div>
 
-                    {candidateDetails.jd_match?.matching_skills && candidateDetails.jd_match.matching_skills.length > 0 && (
+                    {matchingSkills && matchingSkills.length > 0 && (
                       <div style={{ marginBottom: 12 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: '#16A34A', marginBottom: 6 }}>✓ Matching Technical Skills:</div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: '#16A34A', marginBottom: 6 }}>✓ Matching Technical Skills (Highlighted Yellow in Resume):</div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                          {candidateDetails.jd_match.matching_skills.map((s, idx) => (
+                          {matchingSkills.map((s, idx) => (
                             <span key={idx} style={{ fontSize: 10.5, padding: '2px 8px', borderRadius: 4, background: '#DCFCE7', color: '#15803D', fontWeight: 600 }}>{s}</span>
                           ))}
                         </div>
                       </div>
                     )}
 
-                    {candidateDetails.jd_match?.missing_skills && candidateDetails.jd_match.missing_skills.length > 0 && (
+                    {missingSkills && missingSkills.length > 0 && (
                       <div style={{ marginBottom: 12 }}>
                         <div style={{ fontSize: 11, fontWeight: 700, color: '#DC2626', marginBottom: 6 }}>✗ Missing / Gap Skills:</div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                          {candidateDetails.jd_match.missing_skills.map((s, idx) => (
+                          {missingSkills.map((s, idx) => (
                             <span key={idx} style={{ fontSize: 10.5, padding: '2px 8px', borderRadius: 4, background: '#FEE2E2', color: '#B91C1C', fontWeight: 600 }}>{s}</span>
                           ))}
                         </div>
                       </div>
                     )}
 
-                    {candidateDetails.jd_match?.candidate_summary && (
+                    {summary && (
                       <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 12, marginTop: 12 }}>
                         <div style={{ fontSize: 11, fontWeight: 700, color: C.textSecondary, marginBottom: 4 }}>AI Executive Screening Summary:</div>
                         <p style={{ fontSize: 12.5, lineHeight: 1.6, color: C.textPrimary, margin: 0, whiteSpace: 'pre-wrap' }}>
-                          {candidateDetails.jd_match.candidate_summary}
+                          {summary}
                         </p>
                       </div>
                     )}
                   </div>
-                )
-              })()}
 
-              {/* Compliance & Audit */}
-              <div style={{ border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}>
-                <h4 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 800, color: '#0F766E', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  🛡️ Trust Verification &amp; Document Audit
-                </h4>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5 }}>
-                    <span style={{ color: C.textSecondary }}>Driver's License OCR Check:</span>
-                    <strong style={{ color: '#16A34A' }}>✓ Match Verified</strong>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5 }}>
-                    <span style={{ color: C.textSecondary }}>Biometric Selfie verification:</span>
-                    <strong style={{ color: '#16A34A' }}>✓ Match Passed (98%)</strong>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5 }}>
-                    <span style={{ color: C.textSecondary }}>US Work Auth Visa verification:</span>
-                    <strong style={{ color: '#16A34A' }}>✓ Active / Verified</strong>
-                  </div>
-                  {candidateDetails.gps_data && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, borderTop: `1px solid ${C.border}`, paddingTop: 8, marginTop: 4 }}>
-                      <span style={{ color: C.textSecondary }}>GPS Submission Geolocation:</span>
-                      <strong style={{ color: C.textPrimary }}>
-                        📍 {candidateDetails.gps_data.city || 'Dallas'}, {candidateDetails.gps_data.state || 'TX'}
-                      </strong>
+                  {/* Compliance & Audit */}
+                  <div style={{ border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}>
+                    <h4 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 800, color: '#0F766E', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      🛡️ Trust Verification &amp; Document Audit
+                    </h4>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5 }}>
+                        <span style={{ color: C.textSecondary }}>Driver's License OCR Check:</span>
+                        <strong style={{ color: '#16A34A' }}>✓ Match Verified</strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5 }}>
+                        <span style={{ color: C.textSecondary }}>Biometric Selfie verification:</span>
+                        <strong style={{ color: '#16A34A' }}>✓ Match Passed (98%)</strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5 }}>
+                        <span style={{ color: C.textSecondary }}>US Work Auth Visa verification:</span>
+                        <strong style={{ color: '#16A34A' }}>✓ Active / Verified</strong>
+                      </div>
+                      {candidateDetails.gps_data && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, borderTop: `1px solid ${C.border}`, paddingTop: 8, marginTop: 4 }}>
+                          <span style={{ color: C.textSecondary }}>GPS Submission Geolocation:</span>
+                          <strong style={{ color: C.textPrimary }}>
+                            📍 {candidateDetails.gps_data.city || 'Dallas'}, {candidateDetails.gps_data.state || 'TX'}
+                          </strong>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
+
+                {/* Right Pane: Resume Viewer ("Monster Type") (58%) */}
+                <div style={{ width: '58%', display: 'flex', flexDirection: 'column', backgroundColor: isLight ? '#F1F5F9' : '#0B0F17', overflow: 'hidden' }}>
+                  <div style={{ padding: '12px 20px', borderBottom: `1px solid ${C.border}`, backgroundColor: C.surface, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 12.5, fontWeight: 800, color: C.textPrimary }}>📄 Monster-Style Resume Viewer</span>
+                    <span style={{ fontSize: 11, color: '#D97706', backgroundColor: '#FEF3C7', padding: '2px 8px', borderRadius: 4, fontWeight: 700 }}>
+                      💡 Matching skills highlighted in yellow
+                    </span>
+                  </div>
+                  <div style={{ flex: 1, padding: 20, overflowY: 'auto', boxSizing: 'border-box' }}>
+                    <div style={{
+                      backgroundColor: C.surface,
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 12,
+                      padding: 24,
+                      boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+                      color: C.textPrimary
+                    }}>
+                      {highlightResumeText(resumeText, matchingSkills)}
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
     </div>
   )
 }
