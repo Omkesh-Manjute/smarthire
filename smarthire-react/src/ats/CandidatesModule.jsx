@@ -337,6 +337,7 @@ function CandidatesModule({
       {activeChatCandidate && (
         <CandidateMessengerWidget
           candidate={activeChatCandidate}
+          role="recruiter"
           onClose={() => setActiveChatCandidate(null)}
           onScheduleInterview={(c) => {
             updateStatus(c.id, 'Interview Scheduled')

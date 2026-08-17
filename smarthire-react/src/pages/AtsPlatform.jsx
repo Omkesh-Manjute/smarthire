@@ -835,6 +835,7 @@ export default function AtsPlatform() {
       {activeChatCandidate && (
         <CandidateMessengerWidget
           candidate={activeChatCandidate}
+          role="recruiter"
           onClose={() => setActiveChatCandidate(null)}
           onScheduleInterview={(c) => {
             updateCandidateStatus(c.id, 'Interview Scheduled')

@@ -9,6 +9,39 @@ export default function PublicCareers() {
   const [searchParams] = useSearchParams()
   const targetJobId = searchParams.get('jobId')
 
+  const getJobPostTimezones = (job) => {
+    let date = null;
+    if (job.id && job.id.startsWith('J-')) {
+      const ts = parseInt(job.id.replace('J-', ''), 10);
+      if (!isNaN(ts)) {
+        date = new Date(ts);
+      }
+    }
+    if (!date || isNaN(date.getTime())) {
+      date = job.creationDate ? new Date(job.creationDate) : new Date();
+    }
+
+    const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: true };
+    const dateOptions = { month: 'short', day: 'numeric', year: 'numeric' };
+
+    const formatZone = (tz, tzName) => {
+      try {
+        const dStr = new Intl.DateTimeFormat('en-US', { ...dateOptions, timeZone: tz }).format(date);
+        const tStr = new Intl.DateTimeFormat('en-US', { ...timeOptions, timeZone: tz }).format(date);
+        return `${dStr} at ${tStr} ${tzName}`;
+      } catch (e) {
+        return date.toLocaleDateString();
+      }
+    };
+
+    return {
+      EST: formatZone('America/New_York', 'EST'),
+      CST: formatZone('America/Chicago', 'CST'),
+      MST: formatZone('America/Denver', 'MST'),
+      PST: formatZone('America/Los_Angeles', 'PST')
+    };
+  }
+
   // Capture referral parameter from URL (e.g. ?ref=john-doe)
   useEffect(() => {
     const refCode = searchParams.get('ref') || searchParams.get('recruiter') || searchParams.get('recruiterRef')
@@ -921,6 +954,23 @@ export default function PublicCareers() {
                         </span>
                       )}
                     </div>
+
+                    {/* Job Timezone Dates */}
+                    {(() => {
+                      const tzTimes = getJobPostTimezones(job)
+                      return (
+                        <div style={{ marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 4, background: isLight ? '#f8fafc' : '#1e293b', border: `1px solid ${isLight ? '#e2e8f0' : '#334155'}`, borderRadius: 8, padding: '8px 10px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: isLight ? '#475569' : '#cbd5e1' }}>
+                            <span>📅 <strong>EST:</strong> {tzTimes.EST}</span>
+                          </div>
+                          <div style={{ display: 'flex', gap: 6, justifyContent: 'space-between', fontSize: 10, color: isLight ? '#64748b' : '#94a3b8', borderTop: `1px solid ${isLight ? '#e2e8f0' : '#334155'}`, paddingTop: 4, marginTop: 2 }}>
+                            <span title="Central Time">CST: {tzTimes.CST.split(' at ')[1]}</span>
+                            <span title="Mountain Time">MST: {tzTimes.MST.split(' at ')[1]}</span>
+                            <span title="Pacific Time">PST: {tzTimes.PST.split(' at ')[1]}</span>
+                          </div>
+                        </div>
+                      )
+                    })()}
 
                     {/* Job Title */}
                     <h4 className="sh-job-title">
