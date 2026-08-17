@@ -65,14 +65,8 @@ const DEFAULT_RECRUITERS = [
 
 export default function UsersModule({ allCandidates, permissions, setPermissions }) {
   const [subTab, setSubTab] = useState('recruiters')
-  const [recruiters, setRecruiters] = useState(() => {
-    try {
-      const saved = localStorage.getItem('smarthire_recruiters')
-      return saved ? JSON.parse(saved) : DEFAULT_RECRUITERS
-    } catch(e) {
-      return DEFAULT_RECRUITERS
-    }
-  })
+  const [recruiters, setRecruiters] = useState(DEFAULT_RECRUITERS)
+  const [loading, setLoading] = useState(false)
 
   // Add recruiter modal state
   const [showAddModal, setShowAddModal] = useState(false)
@@ -95,12 +89,25 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
   const [toastMessage, setToastMessage] = useState('')
   const [selectedCandidate, setSelectedCandidate] = useState(null)
 
-  // Persist recruiters whenever list changes
-  useEffect(() => {
+  // Fetch recruiters from backend on mount
+  const fetchRecruiters = async () => {
+    setLoading(true)
     try {
-      localStorage.setItem('smarthire_recruiters', JSON.stringify(recruiters))
-    } catch(e) {}
-  }, [recruiters])
+      const res = await fetch('/api/admin/recruiters')
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setRecruiters(data.recruiters)
+      }
+    } catch (err) {
+      console.error('Error fetching recruiters from server:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchRecruiters()
+  }, [])
 
   const showToast = (msg) => {
     setToastMessage(msg)
@@ -124,18 +131,26 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
     }).length
   }
 
-  const handleToggleStatus = (id) => {
-    setRecruiters(prev => prev.map(r => {
-      if (r.id === id) {
-        const nextState = !r.isActive
-        showToast(`User "${r.name}" account ${nextState ? 'activated' : 'deactivated'}.`)
-        return { ...r, isActive: nextState }
+  const handleToggleStatus = async (id, currentName) => {
+    try {
+      const res = await fetch(`/api/admin/recruiters/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setRecruiters(prev => prev.map(r => r.id === id ? { ...r, isActive: data.recruiter.isActive } : r))
+        showToast(`User "${currentName}" account ${data.recruiter.isActive ? 'activated' : 'deactivated'}.`)
+      } else {
+        alert(data.message || 'Failed to update status.')
       }
-      return r
-    }))
+    } catch (err) {
+      console.error('Status toggle failed:', err)
+      alert('Server connection error.')
+    }
   }
 
-  const handleAddRecruiter = (e) => {
+  const handleAddRecruiter = async (e) => {
     e.preventDefault()
     if (!newRecName.trim() || !newRecEmail.trim() || !newRecPassword.trim()) {
       alert('Name, Email, and Password are required fields.')
@@ -146,35 +161,44 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
       ? newRecRef.trim().toLowerCase().replace(/[^a-z0-9]/g, '-')
       : newRecName.trim().toLowerCase().replace(/[^a-z0-9]/g, '-')
 
-    if (recruiters.some(r => r.email.toLowerCase() === newRecEmail.toLowerCase().trim())) {
-      alert('A user with this email already exists.')
-      return
-    }
-
-    const newRec = {
-      id: 'rec-' + Date.now(),
+    const payload = {
       name: newRecName.trim(),
       email: newRecEmail.trim().toLowerCase(),
       role: newRecRole,
       refCode: newRefCode,
       company: newRecCompany.trim() || 'Coolsoft LLC',
-      isActive: true,
-      password: newRecPassword.trim(),
-      lastLogin: null,
-      createdAt: new Date().toISOString()
+      password: newRecPassword.trim()
     }
 
-    setRecruiters(prev => [newRec, ...prev])
-    setShowAddModal(false)
-    showToast(`User account created for "${newRec.name}"!`)
+    try {
+      const res = await fetch('/api/admin/recruiters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setRecruiters(prev => [data.recruiter, ...prev])
+        setShowAddModal(false)
+        showToast(`User account created for "${payload.name}"!`)
 
-    // Clear form
-    setNewRecName('')
-    setNewRecEmail('')
-    setNewRecCompany('')
-    setNewRecRef('')
-    setNewRecRole('recruiter')
-    setNewRecPassword('')
+        // Clear form
+        setNewRecName('')
+        setNewRecEmail('')
+        setNewRecCompany('')
+        setNewRecRef('')
+        setNewRecRole('recruiter')
+        setNewRecPassword('')
+        
+        // Reload list to get proper ids and values
+        fetchRecruiters()
+      } else {
+        alert(data.message || 'Failed to create user.')
+      }
+    } catch (err) {
+      console.error('Add user failed:', err)
+      alert('Server connection error.')
+    }
   }
 
   // Open Edit Modal
@@ -188,7 +212,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
     setEditRecPassword(rec.password || '')
   }
 
-  const handleUpdateRecruiter = (e) => {
+  const handleUpdateRecruiter = async (e) => {
     e.preventDefault()
     if (!editRecName.trim() || !editRecEmail.trim() || !editRecPassword.trim()) {
       alert('Name, Email, and Password are required fields.')
@@ -199,29 +223,53 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
       ? editRecRef.trim().toLowerCase().replace(/[^a-z0-9]/g, '-')
       : editRecName.trim().toLowerCase().replace(/[^a-z0-9]/g, '-')
 
-    setRecruiters(prev => prev.map(r => {
-      if (r.id === editRecruiter.id) {
-        return {
-          ...r,
-          name: editRecName.trim(),
-          email: editRecEmail.trim().toLowerCase(),
-          role: editRecRole,
-          refCode: finalRefCode,
-          company: editRecCompany.trim() || 'Coolsoft LLC',
-          password: editRecPassword.trim()
-        }
-      }
-      return r
-    }))
+    const payload = {
+      name: editRecName.trim(),
+      email: editRecEmail.trim().toLowerCase(),
+      role: editRecRole,
+      refCode: finalRefCode,
+      company: editRecCompany.trim() || 'Coolsoft LLC',
+      password: editRecPassword.trim()
+    }
 
-    setEditRecruiter(null)
-    showToast(`User "${editRecName}" updated successfully!`)
+    try {
+      const res = await fetch(`/api/admin/recruiters/${editRecruiter.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setRecruiters(prev => prev.map(r => r.id === editRecruiter.id ? { ...r, ...data.recruiter } : r))
+        setEditRecruiter(null)
+        showToast(`User "${editRecName}" updated successfully!`)
+        fetchRecruiters()
+      } else {
+        alert(data.message || 'Failed to update user.')
+      }
+    } catch (err) {
+      console.error('Update user failed:', err)
+      alert('Server connection error.')
+    }
   }
 
-  const handleDeleteRecruiter = (id, name) => {
+  const handleDeleteRecruiter = async (id, name) => {
     if (window.confirm(`Are you sure you want to delete user "${name}"?`)) {
-      setRecruiters(prev => prev.filter(r => r.id !== id))
-      showToast(`User "${name}" account deleted.`)
+      try {
+        const res = await fetch(`/api/admin/recruiters/${id}`, {
+          method: 'DELETE'
+        })
+        const data = await res.json()
+        if (res.ok && data.success) {
+          setRecruiters(prev => prev.filter(r => r.id !== id))
+          showToast(`User "${name}" account deleted.`)
+        } else {
+          alert(data.message || 'Failed to delete user.')
+        }
+      } catch (err) {
+        console.error('Delete user failed:', err)
+        alert('Server connection error.')
+      }
     }
   }
 
@@ -304,89 +352,97 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
         {/* RECRUITERS & TEAM SUB-TAB */}
         {subTab === 'recruiters' && (
           <div className="card shadow-sm">
-            <div style={{ overflowX: 'auto' }}>
-              <table className="users-table">
-                <thead>
-                  <tr>
-                    <th>Team Member</th>
-                    <th>Ref Code</th>
-                    <th>Company</th>
-                    <th>Role</th>
-                    <th>Sourced</th>
-                    <th>Account Status</th>
-                    <th>Last Active</th>
-                    <th style={{ textAlign: 'right' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recruiters.map(rec => {
-                    const count = getSourcedCount(rec)
-                    return (
-                      <tr key={rec.id} style={{ opacity: rec.isActive ? 1 : 0.6 }}>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <div className="avatar-circle">
-                              {(rec.name || 'R')[0].toUpperCase()}
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--ink-soft)' }}>
+                <span className="loader-spinner"></span> Loading team members from database...
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table className="users-table">
+                  <thead>
+                    <tr>
+                      <th>Team Member</th>
+                      <th>Ref Code</th>
+                      <th>Company</th>
+                      <th>Role</th>
+                      <th>Sourced</th>
+                      <th>Account Status</th>
+                      <th>Last Active</th>
+                      <th style={{ textAlign: 'right' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recruiters.map(rec => {
+                      const count = getSourcedCount(rec)
+                      const isMaster = rec.email === 'omkesh@coolsofttech.com'
+                      return (
+                        <tr key={rec.id || rec._id} style={{ opacity: rec.isActive ? 1 : 0.6 }}>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                              <div className="avatar-circle">
+                                {(rec.name || 'R')[0].toUpperCase()}
+                              </div>
+                              <div>
+                                <strong style={{ display: 'block', color: 'var(--ink)' }}>{rec.name}</strong>
+                                <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{rec.email}</span>
+                              </div>
                             </div>
-                            <div>
-                              <strong style={{ display: 'block', color: 'var(--ink)' }}>{rec.name}</strong>
-                              <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{rec.email}</span>
-                            </div>
-                          </div>
-                        </td>
-                        <td>
-                          <code className="ref-code-badge">{rec.refCode}</code>
-                        </td>
-                        <td>{rec.company}</td>
-                        <td>
-                          <span className={`role-pill ${rec.role}`}>
-                            {rec.role === 'superadmin' ? '👑 Super Admin' : '💼 Recruiter'}
-                          </span>
-                        </td>
-                        <td>
-                          <span style={{ fontWeight: 800, color: 'var(--brand)' }}>{count}</span>
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <label className="switch">
-                              <input 
-                                type="checkbox" 
-                                checked={rec.isActive} 
-                                onChange={() => handleToggleStatus(rec.id)} 
-                              />
-                              <span className="slider round"></span>
-                            </label>
-                            <span style={{ fontSize: 12, fontWeight: 600, color: rec.isActive ? 'var(--brand)' : 'var(--ink-soft)' }}>
-                              {rec.isActive ? 'Active' : 'Inactive'}
+                          </td>
+                          <td>
+                            <code className="ref-code-badge">{rec.refCode}</code>
+                          </td>
+                          <td>{rec.company}</td>
+                          <td>
+                            <span className={`role-pill ${rec.role}`}>
+                              {rec.role === 'superadmin' ? '👑 Super Admin' : '💼 Recruiter'}
                             </span>
-                          </div>
-                        </td>
-                        <td style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
-                          {formatDate(rec.lastLogin)}
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
-                          <button 
-                            className="btn btn-sm btn-ghost" 
-                            style={{ color: 'var(--brand)', border: 'none', marginRight: 8 }}
-                            onClick={() => openEditModal(rec)}
-                          >
-                            ✏️ Edit
-                          </button>
-                          <button 
-                            className="btn btn-sm btn-ghost" 
-                            style={{ color: 'var(--danger)', border: 'none' }}
-                            onClick={() => handleDeleteRecruiter(rec.id, rec.name)}
-                            disabled={rec.id === 'rec-1'} // Don't delete master admin
-                          >
-                            🗑️ Delete
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          </td>
+                          <td>
+                            <span style={{ fontWeight: 800, color: 'var(--brand)' }}>{count}</span>
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <label className="switch">
+                                <input 
+                                  type="checkbox" 
+                                  checked={rec.isActive} 
+                                  disabled={isMaster}
+                                  onChange={() => handleToggleStatus(rec.id, rec.name)} 
+                                />
+                                <span className="slider round"></span>
+                              </label>
+                              <span style={{ fontSize: 12, fontWeight: 600, color: rec.isActive ? 'var(--brand)' : 'var(--ink-soft)' }}>
+                                {rec.isActive ? 'Active' : 'Inactive'}
+                              </span>
+                            </div>
+                          </td>
+                          <td style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
+                            {formatDate(rec.lastLogin)}
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            <button 
+                              className="btn btn-sm btn-ghost" 
+                              style={{ color: 'var(--brand)', border: 'none', marginRight: 8 }}
+                              onClick={() => openEditModal(rec)}
+                            >
+                              ✏️ Edit
+                            </button>
+                            <button 
+                              className="btn btn-sm btn-ghost" 
+                              style={{ color: 'var(--danger)', border: 'none' }}
+                              onClick={() => handleDeleteRecruiter(rec.id, rec.name)}
+                              disabled={isMaster} 
+                            >
+                              🗑️ Delete
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 
@@ -661,7 +717,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                   required 
                   value={editRecEmail}
                   onChange={e => setEditRecEmail(e.target.value)}
-                  disabled={editRecruiter.id === 'rec-1'} // Master admin email lock
+                  disabled={editRecruiter.email === 'omkesh@coolsofttech.com'} 
                 />
               </div>
 
@@ -691,13 +747,13 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                   type="text" 
                   value={editRecRef}
                   onChange={e => setEditRecRef(e.target.value)}
-                  disabled={editRecruiter.id === 'rec-1'}
+                  disabled={editRecruiter.email === 'omkesh@coolsofttech.com'}
                 />
               </div>
 
               <div className="form-group">
                 <label>User System Role</label>
-                <select value={editRecRole} onChange={e => setEditRecRole(e.target.value)} disabled={editRecruiter.id === 'rec-1'}>
+                <select value={editRecRole} onChange={e => setEditRecRole(e.target.value)} disabled={editRecruiter.email === 'omkesh@coolsofttech.com'}>
                   <option value="recruiter">💼 Recruiter (Subject to Page Permissions)</option>
                   <option value="superadmin">👑 Super Admin (Full Control)</option>
                 </select>
@@ -1044,6 +1100,22 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
         .cand-audit-section p {
           margin: 4px 0;
           color: var(--ink-soft);
+        }
+
+        /* Loading spinner */
+        .loader-spinner {
+          display: inline-block;
+          width: 16px;
+          height: 16px;
+          border: 2px solid var(--line);
+          border-radius: 50%;
+          border-top-color: var(--brand);
+          animation: spin 0.8s linear infinite;
+          margin-right: 6px;
+          vertical-align: middle;
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
         }
 
         /* Toast message styling */

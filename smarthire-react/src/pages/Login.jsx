@@ -18,7 +18,40 @@ function Login() {
     setAuthError('')
 
     try {
-      // 1. Load users from localStorage (or fallback to DEFAULT_RECRUITERS if empty)
+      // 1. Try real backend login endpoint
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        })
+
+        const data = await res.json()
+        if (res.ok && data.success) {
+          const u = data.user
+          localStorage.setItem('smarthire_authenticated', 'true')
+          localStorage.setItem('smarthire_user', JSON.stringify({
+            uid: u.id,
+            name: u.name,
+            email: u.email,
+            role: u.role,
+            refCode: u.refCode,
+            company: u.company
+          }))
+          localStorage.setItem('smarthire_active_role', u.role)
+          localStorage.setItem('smarthire_token', 'mock-token-' + u.id)
+          window.location.href = '/ats'
+          return
+        } else if (res.status === 401 || res.status === 403) {
+          setAuthError(data.message || 'Invalid email or password.')
+          setIsDemoSigningIn(false)
+          return
+        }
+      } catch (backendErr) {
+        console.warn('Backend login connection failed, falling back to local database:', backendErr.message)
+      }
+
+      // 2. Fallback to localStorage (ensures offline robustness)
       const savedRecruitersRaw = localStorage.getItem('smarthire_recruiters')
       
       const defaultRecs = [
@@ -34,11 +67,9 @@ function Login() {
         try {
           recruitersList = JSON.parse(savedRecruitersRaw)
         } catch (e) {}
-      } else {
-        localStorage.setItem('smarthire_recruiters', JSON.stringify(defaultRecs))
       }
 
-      // 2. Validate credentials
+      // Validate credentials
       const matchedUser = recruitersList.find(
         r => r.email.toLowerCase().trim() === email.toLowerCase().trim() && r.password === password
       )
@@ -55,12 +86,12 @@ function Login() {
         return
       }
 
-      // Update last active login time
+      // Update last active login time in localStorage
       matchedUser.lastLogin = new Date().toISOString()
       const updatedRecruiters = recruitersList.map(r => r.id === matchedUser.id ? matchedUser : r)
       localStorage.setItem('smarthire_recruiters', JSON.stringify(updatedRecruiters))
 
-      // 3. Set session
+      // Set session
       localStorage.setItem('smarthire_authenticated', 'true')
       localStorage.setItem('smarthire_user', JSON.stringify({
         uid: matchedUser.id,

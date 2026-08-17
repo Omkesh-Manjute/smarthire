@@ -214,6 +214,44 @@ const SocialPostsDoc = mongoose.models.SocialPostsStore || mongoose.model('Socia
 const JobsDoc = mongoose.models.JobsStore || mongoose.model('JobsStore', new mongoose.Schema({ list: Array }));
 const ScreeningDoc = mongoose.models.ScreeningStore || mongoose.model('ScreeningStore', new mongoose.Schema({ list: Array }));
 
+const RecruiterDoc = mongoose.models.RecruiterStore || mongoose.model('RecruiterStore', new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  role: { type: String, required: true },
+  refCode: { type: String, required: true },
+  company: { type: String, default: 'Coolsoft LLC' },
+  isActive: { type: Boolean, default: true },
+  lastLogin: { type: String, default: null },
+  createdAt: { type: String, default: () => new Date().toISOString() }
+}));
+
+let recruitersMock = [
+  { _id: 'rec-1', name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', company: 'Coolsoft LLC', isActive: true, password: 'admin', lastLogin: '2026-08-17T18:45:00.000Z', createdAt: '2026-01-10T10:00:00.000Z' },
+  { _id: 'rec-2', name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com', role: 'recruiter', refCode: 'sukamal-chatterjee', company: 'Coolsoft LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-02-15T11:30:00.000Z' },
+  { _id: 'rec-3', name: 'Raj', email: 'raj@coolsofttech.com', role: 'recruiter', refCode: 'raj', company: 'Coolsoft LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' },
+  { _id: 'rec-4', name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com', role: 'recruiter', refCode: 'vaibhav-bisen', company: 'Coolsoft LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-10T09:00:00.000Z' },
+  { _id: 'rec-5', name: 'Pankaj', email: 'pankajm@coolsofttech.com', role: 'recruiter', refCode: 'pankaj', company: 'Coolsoft LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-15T08:30:00.000Z' }
+];
+
+async function seedDefaultRecruiters() {
+  if (!isMongoConnected) return;
+  try {
+    const count = await RecruiterDoc.countDocuments();
+    if (count === 0) {
+      console.log('🌱 Seeding default recruiters into MongoDB Atlas...');
+      const toInsert = recruitersMock.map(r => {
+        const { _id, ...rest } = r;
+        return rest; // Let Mongoose auto-generate ObjectId for DB
+      });
+      await RecruiterDoc.insertMany(toInsert);
+      console.log('✅ Default recruiters seeded successfully!');
+    }
+  } catch (err) {
+    console.error('❌ Failed to seed default recruiters:', err.message);
+  }
+}
+
 async function connectMongoDB() {
   const uri = process.env.MONGODB_URI;
   if (!uri) {
@@ -224,6 +262,7 @@ async function connectMongoDB() {
     await mongoose.connect(uri);
     isMongoConnected = true;
     console.log('✅ Connected to MongoDB Atlas successfully.');
+    await seedDefaultRecruiters();
   } catch (err) {
     console.error('❌ Failed to connect to MongoDB Atlas:', err.message);
   }
@@ -4993,6 +5032,243 @@ app.post('/api/screening/:sessionId/upload-document', uploadDoc.single('document
     res.status(500).json({ success: false, message: 'Document analysis failed: ' + err.message });
   }
 });
+// ─── Recruiter User Management API Endpoints ────────────────────────────────────
+app.post('/api/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ success: false, message: 'Email and password are required.' });
+  }
+  try {
+    if (isMongoConnected) {
+      const user = await RecruiterDoc.findOne({ email: email.toLowerCase().trim() });
+      if (!user || user.password !== password) {
+        return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+      }
+      if (!user.isActive) {
+        return res.status(403).json({ success: false, message: 'Your account has been deactivated. Please contact support.' });
+      }
+      user.lastLogin = new Date().toISOString();
+      await user.save();
+      return res.json({
+        success: true,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          refCode: user.refCode,
+          company: user.company,
+          lastLogin: user.lastLogin
+        }
+      });
+    } else {
+      const user = recruitersMock.find(r => r.email.toLowerCase().trim() === email.toLowerCase().trim() && r.password === password);
+      if (!user) {
+        return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+      }
+      if (!user.isActive) {
+        return res.status(403).json({ success: false, message: 'Your account has been deactivated. Please contact support.' });
+      }
+      user.lastLogin = new Date().toISOString();
+      return res.json({
+        success: true,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          refCode: user.refCode,
+          company: user.company,
+          lastLogin: user.lastLogin
+        }
+      });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.get('/api/admin/recruiters', async (req, res) => {
+  try {
+    if (isMongoConnected) {
+      const recruiters = await RecruiterDoc.find().sort({ createdAt: -1 });
+      const list = recruiters.map(r => ({
+        id: r._id,
+        name: r.name,
+        email: r.email,
+        password: r.password,
+        role: r.role,
+        refCode: r.refCode,
+        company: r.company,
+        isActive: r.isActive,
+        lastLogin: r.lastLogin,
+        createdAt: r.createdAt
+      }));
+      res.json({ success: true, recruiters: list });
+    } else {
+      const list = recruitersMock.map(r => ({ ...r, id: r._id }));
+      res.json({ success: true, recruiters: list });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.post('/api/admin/recruiters', async (req, res) => {
+  const { name, email, password, role, refCode, company } = req.body;
+  if (!name || !email || !password || !role || !refCode) {
+    return res.status(400).json({ success: false, message: 'Required fields missing.' });
+  }
+  try {
+    if (isMongoConnected) {
+      const existing = await RecruiterDoc.findOne({ email: email.toLowerCase().trim() });
+      if (existing) {
+        return res.status(400).json({ success: false, message: 'A user with this email already exists.' });
+      }
+      const newRec = await RecruiterDoc.create({
+        name,
+        email: email.toLowerCase().trim(),
+        password,
+        role,
+        refCode,
+        company: company || 'Coolsoft LLC'
+      });
+      res.status(201).json({
+        success: true,
+        recruiter: {
+          id: newRec._id,
+          name: newRec.name,
+          email: newRec.email,
+          role: newRec.role,
+          refCode: newRec.refCode,
+          company: newRec.company,
+          isActive: newRec.isActive
+        }
+      });
+    } else {
+      if (recruitersMock.some(r => r.email.toLowerCase() === email.toLowerCase().trim())) {
+        return res.status(400).json({ success: false, message: 'A user with this email already exists.' });
+      }
+      const newRec = {
+        _id: 'rec-' + Date.now(),
+        name,
+        email: email.toLowerCase().trim(),
+        password,
+        role,
+        refCode,
+        company: company || 'Coolsoft LLC',
+        isActive: true,
+        lastLogin: null,
+        createdAt: new Date().toISOString()
+      };
+      recruitersMock.unshift(newRec);
+      res.status(201).json({ success: true, recruiter: { ...newRec, id: newRec._id } });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.put('/api/admin/recruiters/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, email, password, role, refCode, company } = req.body;
+  try {
+    if (isMongoConnected) {
+      const user = await RecruiterDoc.findById(id);
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+      if (name) user.name = name;
+      if (email && user.email !== 'omkesh@coolsofttech.com') user.email = email.toLowerCase().trim();
+      if (password) user.password = password;
+      if (role && user.email !== 'omkesh@coolsofttech.com') user.role = role;
+      if (refCode && user.email !== 'omkesh@coolsofttech.com') user.refCode = refCode;
+      if (company) user.company = company;
+      await user.save();
+      res.json({
+        success: true,
+        recruiter: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          refCode: user.refCode,
+          company: user.company,
+          isActive: user.isActive
+        }
+      });
+    } else {
+      const user = recruitersMock.find(r => r._id === id);
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+      if (name) user.name = name;
+      if (email && user.email !== 'omkesh@coolsofttech.com') user.email = email.toLowerCase().trim();
+      if (password) user.password = password;
+      if (role && user.email !== 'omkesh@coolsofttech.com') user.role = role;
+      if (refCode && user.email !== 'omkesh@coolsofttech.com') user.refCode = refCode;
+      if (company) user.company = company;
+      res.json({ success: true, recruiter: { ...user, id: user._id } });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.delete('/api/admin/recruiters/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (isMongoConnected) {
+      const user = await RecruiterDoc.findById(id);
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+      if (user.email === 'omkesh@coolsofttech.com') {
+        return res.status(400).json({ success: false, message: 'Cannot delete master admin' });
+      }
+      await RecruiterDoc.findByIdAndDelete(id);
+      res.json({ success: true, message: 'User deleted' });
+    } else {
+      const user = recruitersMock.find(r => r._id === id);
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+      if (user.email === 'omkesh@coolsofttech.com') {
+        return res.status(400).json({ success: false, message: 'Cannot delete master admin' });
+      }
+      recruitersMock = recruitersMock.filter(r => r._id !== id);
+      res.json({ success: true, message: 'User deleted' });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.patch('/api/admin/recruiters/:id/status', async (req, res) => {
+  const { id } = req.params;
+  const { isActive } = req.body;
+  try {
+    if (isMongoConnected) {
+      const user = await RecruiterDoc.findById(id);
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+      user.isActive = (typeof isActive === 'boolean') ? isActive : !user.isActive;
+      await user.save();
+      res.json({ success: true, recruiter: user });
+    } else {
+      const user = recruitersMock.find(r => r._id === id);
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+      user.isActive = (typeof isActive === 'boolean') ? isActive : !user.isActive;
+      res.json({ success: true, recruiter: { ...user, id: user._id } });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // ─── Candidates API Endpoints ──────────────────────────────────────────────────
 app.get('/api/candidates', async (req, res) => {
   await loadCandidatesFromDisk();
