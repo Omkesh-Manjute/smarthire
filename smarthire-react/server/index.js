@@ -723,67 +723,95 @@ async function callGroqAI(systemPrompt, userPrompt, jsonMode = false) {
 
   const url = 'https://api.groq.com/openai/v1/chat/completions';
   
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${groqApiKey}`
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: finalSystemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        ...(jsonMode ? { response_format: { type: 'json_object' } } : {})
-      })
-    });
+  // Try llama-3.3-70b-versatile first, then fall back to llama-3.1-8b-instant and llama3-8b-8192
+  const modelsToTry = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama3-8b-8192'];
+  let lastError = null;
 
-    if (!response.ok) {
-      const errText = await response.text();
-      // If JSON mode failed, throw specific error to trigger fallback retry
-      if (jsonMode && (response.status === 400 || errText.includes('json_validate_failed'))) {
-        throw new Error(`JSON_MODE_FAILED: ${errText}`);
-      }
-      throw new Error(`Groq API error (Status ${response.status}): ${errText}`);
-    }
-
-    const data = await response.json();
-    const text = data.choices?.[0]?.message?.content;
-    if (!text) throw new Error('Empty response from Groq API');
-    return text;
-  } catch (err) {
-    if (jsonMode && err.message.startsWith('JSON_MODE_FAILED')) {
-      console.warn('⚠️ Groq JSON mode validation failed. Retrying in fallback text mode...');
-      // Retry without response_format
-      const retryResponse = await fetch(url, {
+  for (const modelName of modelsToTry) {
+    try {
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${groqApiKey}`
         },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
+          model: modelName,
           messages: [
             { role: 'system', content: finalSystemPrompt },
             { role: 'user', content: userPrompt }
-          ]
+          ],
+          ...(jsonMode ? { response_format: { type: 'json_object' } } : {})
         })
       });
 
-      if (!retryResponse.ok) {
-        const errText = await retryResponse.text();
-        throw new Error(`Groq API fallback error (Status ${retryResponse.status}): ${errText}`);
+      if (!response.ok) {
+        const errText = await response.text();
+        if (response.status === 404 || errText.includes('model_not_found') || response.status === 403 || response.status === 400) {
+          console.warn(`⚠️ Groq model ${modelName} failed (Status ${response.status}). Retrying with next fallback model...`);
+          lastError = new Error(`Groq API error for model ${modelName}: ${errText}`);
+          continue; // Try the next model
+        }
+        if (jsonMode && errText.includes('json_validate_failed')) {
+          throw new Error(`JSON_MODE_FAILED: ${errText}`);
+        }
+        throw new Error(`Groq API error (Status ${response.status}): ${errText}`);
       }
 
-      const data = await retryResponse.json();
+      const data = await response.json();
       const text = data.choices?.[0]?.message?.content;
-      if (!text) throw new Error('Empty response from Groq API in fallback mode');
+      if (!text) throw new Error(`Empty response from Groq API for model ${modelName}`);
       return text;
+    } catch (err) {
+      if (err.message && err.message.includes('JSON_MODE_FAILED')) {
+        throw err; // Forward JSON validation error to retry block below
+      }
+      lastError = err;
+      console.warn(`⚠️ Error calling Groq model ${modelName}: ${err.message}. Retrying with next model...`);
     }
-    throw err;
   }
+
+  // If we reach here, all models in the list failed, but let's check if we need to try JSON validation fallback
+  if (jsonMode && lastError) {
+    console.warn('⚠️ Groq JSON mode validation failed. Retrying in fallback text mode across all models...');
+    for (const modelName of modelsToTry) {
+      try {
+        const retryResponse = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${groqApiKey}`
+          },
+          body: JSON.stringify({
+            model: modelName,
+            messages: [
+              { role: 'system', content: finalSystemPrompt },
+              { role: 'user', content: userPrompt }
+            ]
+          })
+        });
+
+        if (!retryResponse.ok) {
+          const errText = await retryResponse.text();
+          if (retryResponse.status === 404 || errText.includes('model_not_found') || retryResponse.status === 403 || retryResponse.status === 400) {
+            console.warn(`⚠️ Groq JSON fallback model ${modelName} failed. Trying next...`);
+            lastError = new Error(`Groq API error: ${errText}`);
+            continue;
+          }
+          throw new Error(`Groq API fallback error (Status ${retryResponse.status}): ${errText}`);
+        }
+
+        const data = await retryResponse.json();
+        const text = data.choices?.[0]?.message?.content;
+        if (!text) throw new Error('Empty response from Groq API in fallback mode');
+        return text;
+      } catch (retryErr) {
+        lastError = retryErr;
+      }
+    }
+  }
+
+  throw lastError || new Error('All fallback Groq models failed.');
 }
 // ─── Heuristic Candidate Info Extraction ─────────────────────────────────────
 function extractCandidateInfo(text, originalFilename) {
@@ -2082,31 +2110,47 @@ Goal: "${goal}"`;
 
   if (provider === 'groq') {
     const url = 'https://api.groq.com/openai/v1/chat/completions';
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        response_format: { type: 'json_object' }
-      })
-    });
+    const modelsToTry = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama3-8b-8192'];
+    let lastError = null;
 
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Groq API error (Status ${response.status}): ${errText}`);
+    for (const modelName of modelsToTry) {
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: modelName,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt }
+            ],
+            response_format: { type: 'json_object' }
+          })
+        });
+
+        if (!response.ok) {
+          const errText = await response.text();
+          if (response.status === 404 || errText.includes('model_not_found') || response.status === 403 || response.status === 400) {
+            console.warn(`⚠️ Groq model ${modelName} failed in callAiJson (Status ${response.status}). Trying next...`);
+            lastError = new Error(`Groq API error for model ${modelName}: ${errText}`);
+            continue;
+          }
+          throw new Error(`Groq API error (Status ${response.status}): ${errText}`);
+        }
+
+        const data = await response.json();
+        const text = data.choices?.[0]?.message?.content;
+        if (!text) throw new Error('Empty response from Groq API');
+        return JSON.parse(cleanJsonResponseText(text));
+      } catch (err) {
+        lastError = err;
+        console.warn(`⚠️ Error calling Groq model ${modelName} in callAiJson: ${err.message}. Retrying...`);
+      }
     }
-
-    const data = await response.json();
-    const text = data.choices?.[0]?.message?.content;
-    if (!text) throw new Error('Empty response from Groq API');
-    return JSON.parse(cleanJsonResponseText(text));
+    throw lastError || new Error('All fallback Groq models failed in callAiJson.');
   }
 
   if (provider === 'sarvam') {
@@ -3061,29 +3105,7 @@ Type: "${job.type}"
 Experience: "${job.experience}"
 Required Skills: ${JSON.stringify(job.skills)}`;
 
-    const url = 'https://api.groq.com/openai/v1/chat/completions';
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${groqApiKey}`
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ]
-      })
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Groq API error (Status ${response.status}): ${errText}`);
-    }
-
-    const data = await response.json();
-    const postText = data.choices?.[0]?.message?.content?.trim();
+    const postText = await callGroqAI(systemPrompt, userPrompt);
     if (!postText) throw new Error('Empty response from Groq API');
 
     res.json({
@@ -3175,29 +3197,7 @@ Type: "${job.type}"
 Experience: "${job.experience}"
 Required Skills: ${JSON.stringify(job.skills)}`;
 
-      const url = 'https://api.groq.com/openai/v1/chat/completions';
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${groqApiKey}`
-        },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt }
-          ]
-        })
-      });
-
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`Groq API error (Status ${response.status}): ${errText}`);
-      }
-
-      const data = await response.json();
-      postText = data.choices?.[0]?.message?.content?.trim();
+      postText = await callGroqAI(systemPrompt, userPrompt);
       if (!postText) throw new Error('Empty response from Groq API');
     } catch (err) {
       console.error('LinkedIn Job Posting failed:', err);
