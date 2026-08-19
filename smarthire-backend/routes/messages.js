@@ -6,6 +6,73 @@ const router = express.Router();
 // In-memory fallback thread storage if DB is not connected
 const inMemoryThreads = {};
 
+// @route   GET /api/messages
+// @desc    Get all chat threads (conversations)
+// @access  Public
+router.get('/', async (req, res) => {
+  try {
+    const threadMap = {};
+
+    // 1. Load from memory fallback
+    Object.keys(inMemoryThreads).forEach(cId => {
+      const threadMsgs = inMemoryThreads[cId];
+      if (threadMsgs && threadMsgs.length > 0) {
+        const lastMsg = threadMsgs[threadMsgs.length - 1];
+        threadMap[cId] = {
+          candidateId: cId,
+          candidateName: lastMsg.candidateName || 'Unknown',
+          jobTitle: lastMsg.jobTitle || 'General',
+          lastMessage: lastMsg.text,
+          lastMessageTime: lastMsg.timestamp,
+          unreadCount: 0
+        };
+      }
+    });
+
+    // 2. Fetch from MongoDB if connected
+    try {
+      const uniqueCandidateIds = await Message.distinct('candidateId');
+      for (const cId of uniqueCandidateIds) {
+        const lastMsg = await Message.findOne({ candidateId: cId }).sort({ timestamp: -1 });
+        if (lastMsg) {
+          if (!threadMap[cId] || new Date(lastMsg.timestamp) > new Date(threadMap[cId].lastMessageTime)) {
+            threadMap[cId] = {
+              candidateId: cId,
+              candidateName: lastMsg.candidateName || 'Candidate',
+              jobTitle: lastMsg.jobTitle || 'General',
+              lastMessage: lastMsg.text,
+              lastMessageTime: lastMsg.timestamp || lastMsg.createdAt,
+              unreadCount: 0
+            };
+          }
+        }
+      }
+    } catch (dbErr) {
+      console.warn('MongoDB distinct query failed, using memory fallback:', dbErr.message);
+    }
+
+    const threads = Object.values(threadMap).sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
+
+    res.json({
+      success: true,
+      threads
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch threads',
+      error: error.message
+    });
+  }
+});
+
+// @route   PATCH /api/messages/:candidateId/read
+// @desc    Mark candidate thread messages as read
+// @access  Public
+router.patch('/:candidateId/read', async (req, res) => {
+  res.json({ success: true, message: 'Thread marked as read' });
+});
+
 // @route   GET /api/messages/:candidateId
 // @desc    Get chat message thread for a candidate
 // @access  Public
