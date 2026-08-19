@@ -110,16 +110,22 @@ router.get(
   }
 );
 
-// @route   GET /api/candidates/:id
-// @desc    Get single candidate with full details
-// @access  Private
 router.get('/:id', authenticate, async (req, res) => {
   try {
-    const candidate = await Candidate.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-      isActive: true
-    });
+    const isSuperAdmin = req.user.role === 'superadmin' || req.user.role === 'admin';
+    const queryObj = isSuperAdmin
+      ? { _id: req.params.id, isActive: true }
+      : {
+          _id: req.params.id,
+          $or: [
+            { referredByRecruiter: req.user._id },
+            { createdBy: req.user._id },
+            { recruiterRefCode: req.user.refCode }
+          ],
+          isActive: true
+        };
+
+    const candidate = await Candidate.findOne(queryObj);
     
     if (!candidate) {
       return res.status(404).json({
@@ -247,8 +253,21 @@ router.put(
     try {
       const { name, role, location, skills, phone, experience, notes, linkedInUrl } = req.body;
       
+      const isSuperAdmin = req.user.role === 'superadmin' || req.user.role === 'admin';
+      const queryObj = isSuperAdmin
+        ? { _id: req.params.id, isActive: true }
+        : {
+            _id: req.params.id,
+            $or: [
+              { referredByRecruiter: req.user._id },
+              { createdBy: req.user._id },
+              { recruiterRefCode: req.user.refCode }
+            ],
+            isActive: true
+          };
+
       const candidate = await Candidate.findOneAndUpdate(
-        { _id: req.params.id, createdBy: req.user._id, isActive: true },
+        queryObj,
         { name, role, location, skills, phone, experience, notes, linkedInUrl },
         { new: true, runValidators: true }
       );
@@ -281,8 +300,20 @@ router.put(
 // @access  Private
 router.delete('/:id', authenticate, async (req, res) => {
   try {
+    const isSuperAdmin = req.user.role === 'superadmin' || req.user.role === 'admin';
+    const queryObj = isSuperAdmin
+      ? { _id: req.params.id }
+      : {
+          _id: req.params.id,
+          $or: [
+            { referredByRecruiter: req.user._id },
+            { createdBy: req.user._id },
+            { recruiterRefCode: req.user.refCode }
+          ]
+        };
+
     const candidate = await Candidate.findOneAndUpdate(
-      { _id: req.params.id, createdBy: req.user._id },
+      queryObj,
       { isActive: false },
       { new: true }
     );
@@ -313,11 +344,20 @@ router.delete('/:id', authenticate, async (req, res) => {
 // @access  Private
 router.get('/:id/score', authenticate, async (req, res) => {
   try {
-    const candidate = await Candidate.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-      isActive: true
-    });
+    const isSuperAdmin = req.user.role === 'superadmin' || req.user.role === 'admin';
+    const queryObj = isSuperAdmin
+      ? { _id: req.params.id, isActive: true }
+      : {
+          _id: req.params.id,
+          $or: [
+            { referredByRecruiter: req.user._id },
+            { createdBy: req.user._id },
+            { recruiterRefCode: req.user.refCode }
+          ],
+          isActive: true
+        };
+
+    const candidate = await Candidate.findOne(queryObj);
     
     if (!candidate) {
       return res.status(404).json({
@@ -364,11 +404,21 @@ router.get('/:id/score', authenticate, async (req, res) => {
 // @access  Private
 router.get('/stats/overview', authenticate, async (req, res) => {
   try {
-    const recruiterId = req.user._id;
+    const isSuperAdmin = req.user.role === 'superadmin' || req.user.role === 'admin';
+    const matchQuery = isSuperAdmin
+      ? { isActive: true }
+      : {
+          $or: [
+            { referredByRecruiter: req.user._id },
+            { createdBy: req.user._id },
+            { recruiterRefCode: req.user.refCode }
+          ],
+          isActive: true
+        };
     
     // Get counts by status
     const stats = await Candidate.aggregate([
-      { $match: { createdBy: recruiterId, isActive: true } },
+      { $match: matchQuery },
       {
         $group: {
           _id: '$status',
@@ -393,10 +443,7 @@ router.get('/stats/overview', authenticate, async (req, res) => {
     });
     
     // Get recent candidates
-    const recentCandidates = await Candidate.find({
-      createdBy: recruiterId,
-      isActive: true
-    })
+    const recentCandidates = await Candidate.find(matchQuery)
       .sort({ createdAt: -1 })
       .limit(5)
       .select('name role trustScore status createdAt');
