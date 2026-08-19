@@ -1,7 +1,10 @@
 {
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/api/resume/email-upload", "destination": "/api/resume/email-upload" },
+    { "source": "/api/automation/(.*)", "destination": "/api/automation/$1" },
+    { "source": "/api/health", "destination": "/api/health" },
+    { "source": "/api/(.*)", "destination": "https://smarthire-4zqf.onrender.com/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
