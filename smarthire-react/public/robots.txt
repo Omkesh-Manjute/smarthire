@@ -1,0 +1,23 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+Allow: /jobs
+Allow: /careers
+Allow: /about
+Allow: /contact
+Allow: /privacy
+Allow: /terms
+Allow: /login
+
+# Disallow protected recruiter/admin and candidate chat routes
+Disallow: /dashboard
+Disallow: /ats
+Disallow: /reports
+Disallow: /pricing
+Disallow: /branding
+Disallow: /inbox
+Disallow: /linkedin-posts
+Disallow: /candidate-chat/
+
+# Replace the URL below with your actual custom domain if you connect one
+Sitemap: https://smarthire.vercel.app/sitemap.xml

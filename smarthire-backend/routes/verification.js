@@ -1,5 +1,6 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import nodemailer from 'nodemailer';
 import Candidate from '../models/Candidate.js';
 import { authenticate, optionalAuth } from '../middleware/auth.js';
 
@@ -12,11 +13,11 @@ const generateVerificationLink = (token) => {
 };
 
 // @route   POST /api/verification/send-link
-// @desc    Send verification link to candidate
+// @desc    Send verification link or custom email to candidate
 // @access  Private
 router.post('/send-link', authenticate, async (req, res) => {
   try {
-    const { candidateId, email } = req.body;
+    const { candidateId, email, customSubject, customBody } = req.body;
     
     // Find candidate
     const candidate = await Candidate.findOne({
@@ -48,12 +49,61 @@ router.post('/send-link', authenticate, async (req, res) => {
     // Generate link
     const verificationLink = generateVerificationLink(token);
     
-    // In production, send email here using nodemailer
-    // For now, return the link in response
+    // Send email using nodemailer if configured
+    let emailSent = false;
+    let emailError = null;
+
+    const emailHost = process.env.EMAIL_HOST;
+    const emailPort = process.env.EMAIL_PORT;
+    const emailUser = process.env.EMAIL_USER;
+    const emailPass = process.env.EMAIL_PASS;
+    const emailFrom = process.env.EMAIL_FROM || `SmartHire <${emailUser}>`;
+
+    if (emailHost && emailUser && emailPass) {
+      try {
+        const transporter = nodemailer.createTransport({
+          host: emailHost,
+          port: parseInt(emailPort) || 587,
+          secure: parseInt(emailPort) === 465, // true for port 465, false for 587
+          auth: {
+            user: emailUser,
+            pass: emailPass
+          },
+          tls: {
+            rejectUnauthorized: false
+          }
+        });
+
+        const mailSubject = customSubject || `Action Required: Candidate Verification for ${candidate.role || 'VerifyHire'}`;
+        
+        let mailBody = customBody;
+        if (!mailBody) {
+          mailBody = `Dear ${candidate.name},\n\nThank you for applying. Please verify your identity and experience using the link below:\n\n${verificationLink}\n\nThis verification link will expire in 24 hours.\n\nBest regards,\nSmartHire Recruitment Team`;
+        }
+
+        await transporter.sendMail({
+          from: emailFrom,
+          to: email || candidate.email,
+          subject: mailSubject,
+          text: mailBody
+        });
+
+        emailSent = true;
+      } catch (err) {
+        console.error('Nodemailer Error:', err);
+        emailError = err.message;
+      }
+    } else {
+      console.warn('SMTP email credentials not fully configured in env.');
+    }
     
     res.json({
       success: true,
-      message: 'Verification link generated successfully',
+      message: emailSent 
+        ? 'Email sent successfully via SMTP server' 
+        : 'Verification link generated (SMTP not configured or failed)',
+      emailSent,
+      emailError,
       data: {
         verificationLink,
         expiresAt,

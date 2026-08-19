@@ -805,17 +805,33 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
               ))}
             </div>
 
-            {/* Required Skills */}
-            {Array.isArray(jdModalJob.skills) && jdModalJob.skills.length > 0 && (
-              <div style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 11, color: '#64748b', fontWeight: 700, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Required Skills</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {jdModalJob.skills.map(s => (
-                    <span key={s} style={{ padding: '4px 10px', borderRadius: 6, background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', fontSize: 12, fontWeight: 600 }}>{s}</span>
-                  ))}
+            {/* Skills Layout */}
+            <div style={{ display: 'flex', gap: 20, marginBottom: 20, flexWrap: 'wrap' }}>
+              {/* Required Skills */}
+              {Array.isArray(jdModalJob.skills) && jdModalJob.skills.length > 0 && (
+                <div style={{ flex: '1 1 200px' }}>
+                  <div style={{ fontSize: 11, color: '#64748b', fontWeight: 700, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Required Skills</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {jdModalJob.skills.map(s => (
+                      <span key={s} style={{ padding: '4px 10px', borderRadius: 6, background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', fontSize: 12, fontWeight: 600 }}>{s}</span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+
+              {/* Preferred Skills */}
+              {((Array.isArray(jdModalJob.preferredSkills) && jdModalJob.preferredSkills.length > 0) || 
+                (Array.isArray(jdModalJob.preferred_skills) && jdModalJob.preferred_skills.length > 0)) && (
+                <div style={{ flex: '1 1 200px' }}>
+                  <div style={{ fontSize: 11, color: '#64748b', fontWeight: 700, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Preferred Skills</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {(jdModalJob.preferredSkills || jdModalJob.preferred_skills).map(s => (
+                      <span key={s} style={{ padding: '4px 10px', borderRadius: 6, background: '#faf5ff', color: '#7e22ce', border: '1px solid #e9d5ff', fontSize: 12, fontWeight: 600 }}>{s}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Full Formatted JD Text */}
             <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: 20 }}>
