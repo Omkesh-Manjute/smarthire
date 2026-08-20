@@ -204,53 +204,75 @@ export async function autoApplyCandidateToJobsInHand({ reqId, candidate, finalRa
     console.log('📋 Checking for Company Questionnaire (Step 2)...');
     await page.waitForTimeout(2000);
 
-    // Q1: Veteran Status
-    const q1Selector = 'input[type="radio"][value*="not a protected veteran"], input[id*="NotVeteran"], label:has-text("not a protected veteran")';
-    if (await page.$(q1Selector)) {
-      await page.click(q1Selector).catch(() => {});
-    }
+    if (page.url().includes('company_questionair.aspx')) {
+      // Q1: Veteran Status
+      const q1Id = '#ctl00_Contentpage1_QuestionRepeater_ctl00_DynamicRadioButtonList_1';
+      if (await page.$(q1Id)) {
+        await page.click(q1Id).catch(() => {});
+      } else {
+        const q1Fallback = 'input[type="radio"][value*="not a protected veteran"], label:has-text("not a protected veteran")';
+        if (await page.$(q1Fallback)) await page.click(q1Fallback).catch(() => {});
+      }
 
-    // Q2: Disability
-    const q2Selector = 'input[type="radio"][value*="No, I do not have"], label:has-text("do not have a disability")';
-    if (await page.$(q2Selector)) {
-      await page.click(q2Selector).catch(() => {});
-    }
+      // Q2: Disability
+      const q2Id = '#ctl00_Contentpage1_QuestionRepeater_ctl01_DynamicRadioButtonList_1';
+      if (await page.$(q2Id)) {
+        await page.click(q2Id).catch(() => {});
+      } else {
+        const q2Fallback = 'input[type="radio"][value*="No, I do not have"], label:has-text("do not have a disability")';
+        if (await page.$(q2Fallback)) await page.click(q2Fallback).catch(() => {});
+      }
 
-    // Q3: Ethnicity
-    const q3Selector = 'input[type="radio"][value*="Not Hispanic"], label:has-text("Not Hispanic")';
-    if (await page.$(q3Selector)) {
-      await page.click(q3Selector).catch(() => {});
-    }
+      // Q3: Ethnicity
+      const q3Id = '#ctl00_Contentpage1_QuestionRepeater_ctl02_DynamicRadioButtonList_1';
+      if (await page.$(q3Id)) {
+        await page.click(q3Id).catch(() => {});
+      } else {
+        const q3Fallback = 'input[type="radio"][value*="Not Hispanic"], label:has-text("Not Hispanic")';
+        if (await page.$(q3Fallback)) await page.click(q3Fallback).catch(() => {});
+      }
 
-    // Q4: Race
-    const q4Selector = 'input[type="checkbox"][value*="Asian"], label:has-text("Asian")';
-    if (await page.$(q4Selector)) {
-      await page.check(q4Selector).catch(() => page.click(q4Selector)).catch(() => {});
-    }
+      // Q4: Race
+      const q4Id = '#ctl00_Contentpage1_QuestionRepeater_ctl03_DynamicRadioButtonList_1';
+      if (await page.$(q4Id)) {
+        await page.click(q4Id).catch(() => {});
+      } else {
+        const q4Fallback = 'input[type="checkbox"][value*="Asian"], label:has-text("Asian")';
+        if (await page.$(q4Fallback)) await page.check(q4Fallback).catch(() => page.click(q4Fallback)).catch(() => {});
+      }
 
-    // Q5: Gender
-    const genderChoice = (candidate.gender || 'Male').toLowerCase();
-    const q5Selector = genderChoice === 'female'
-      ? 'label:has-text("Female") input, input[value*="Female"]'
-      : 'label:has-text("Male") input, input[value*="Male"]';
-    if (await page.$(q5Selector)) {
-      await page.click(q5Selector).catch(() => {});
-    }
+      // Q5: Gender
+      const genderChoice = (candidate.gender || 'Male').toLowerCase();
+      const q5Id = genderChoice === 'female'
+        ? '#ctl00_Contentpage1_QuestionRepeater_ctl04_DynamicRadioButtonList_1'
+        : '#ctl00_Contentpage1_QuestionRepeater_ctl04_DynamicRadioButtonList_0';
+      if (await page.$(q5Id)) {
+        await page.click(q5Id).catch(() => {});
+      } else {
+        const q5Fallback = genderChoice === 'female'
+          ? 'label:has-text("Female") input, input[value*="Female"]'
+          : 'label:has-text("Male") input, input[value*="Male"]';
+        if (await page.$(q5Fallback)) await page.click(q5Fallback).catch(() => {});
+      }
 
-    // Q6: Directing Org
-    const q6Selector = 'input[type="checkbox"][value*="None"], label:has-text("None of the above")';
-    if (await page.$(q6Selector)) {
-      await page.check(q6Selector).catch(() => page.click(q6Selector)).catch(() => {});
-    }
+      // Q6: Directing Org
+      const q6Id = '#ctl00_Contentpage1_QuestionRepeater_ctl05_DynamicCheckBoxList_6';
+      if (await page.$(q6Id)) {
+        await page.click(q6Id).catch(() => {});
+      } else {
+        const q6Fallback = 'input[type="checkbox"][value*="None"], label:has-text("None of the above")';
+        if (await page.$(q6Fallback)) await page.check(q6Fallback).catch(() => page.click(q6Fallback)).catch(() => {});
+      }
 
-    // Final Questionnaire Submission
-    const finalSubmit = 'input[type="submit"][value*="Submit"], button:has-text("Submit"), #btnSubmit';
-    if (await page.$(finalSubmit)) {
-      console.log('🎉 Submitting Final Questionnaire...');
-      await Promise.all([
-        page.click(finalSubmit).catch(() => {}),
-        page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => {})
-      ]);
+      // Final Questionnaire Submission
+      const finalSubmit = '#ctl00_Contentpage1_btnSubmit, input[type="submit"][value*="Submit"], button:has-text("Submit"), #btnSubmit';
+      if (await page.$(finalSubmit)) {
+        console.log('🎉 Submitting Final Questionnaire...');
+        await Promise.all([
+          page.click(finalSubmit).catch(() => {}),
+          page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => {})
+        ]);
+      }
     }
 
     console.log(`✅ Playwright Auto-Apply Completed for Candidate ${candidate.name} on Req #${cleanReqId}`);
