@@ -51,6 +51,7 @@ function Navigation() {
 
   // Keyboard shortcut for Spotlight (Ctrl+K or Cmd+K)
   useEffect(() => {
+    if (!isSuperAdmin) return
     const handleKeyDown = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault()
@@ -59,7 +60,7 @@ function Navigation() {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [isSuperAdmin])
 
   // Click outside to close dropdowns
   useEffect(() => {
@@ -361,19 +362,21 @@ function Navigation() {
             {isAuthenticated ? (
               <>
                 {/* Global Search Trigger (Ctrl+K) */}
-                <button
-                  className="nav-search-trigger"
-                  onClick={() => setSearchModalOpen(true)}
-                  title="Spotlight Search (Ctrl+K)"
-                  aria-label="Quick Search"
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="11" cy="11" r="8" />
-                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                  </svg>
-                  <span className="search-placeholder-text">Search candidates, jobs...</span>
-                  <kbd className="search-kbd-badge">⌘K</kbd>
-                </button>
+                {isSuperAdmin && (
+                  <button
+                    className="nav-search-trigger"
+                    onClick={() => setSearchModalOpen(true)}
+                    title="Spotlight Search (Ctrl+K)"
+                    aria-label="Quick Search"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="11" cy="11" r="8" />
+                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                    <span className="search-placeholder-text">Search candidates, jobs...</span>
+                    <kbd className="search-kbd-badge">⌘K</kbd>
+                  </button>
+                )}
 
                 {/* Quick Add Button (+) */}
                 <div className="nav-dropdown-wrapper" ref={quickAddRef}>
@@ -675,10 +678,12 @@ function Navigation() {
       </header>
 
       {/* Global Spotlight Search Palette Modal */}
-      <QuickSearchModal
-        isOpen={searchModalOpen}
-        onClose={() => setSearchModalOpen(false)}
-      />
+      {isSuperAdmin && (
+        <QuickSearchModal
+          isOpen={searchModalOpen}
+          onClose={() => setSearchModalOpen(false)}
+        />
+      )}
     </>
   )
 }
