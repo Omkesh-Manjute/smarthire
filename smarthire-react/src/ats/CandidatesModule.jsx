@@ -127,17 +127,30 @@ function CandidatesModule({
   }
 
   const handlePushToJobsInHand = async (candidate) => {
-    setPushingId(candidate.id)
+    const candidateId = candidate.id || candidate.candidate_id || candidate._id
+    setPushingId(candidateId)
     try {
-      const res = await fetch('/api/automation/push-jobsinhand', {
+      const chosenRate = candidate.finalRate || finalRates[candidateId] || '$70/hr'
+      const res = await fetch(`/api/candidates/${candidateId}/push-jobsinhand`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ candidateId: candidate.id }),
+        body: JSON.stringify({
+          candidateId,
+          reqId: candidate.job_id || candidate.jobId,
+          finalRate: chosenRate
+        }),
       })
       const data = await res.json()
-      setPushResults(prev => ({ ...prev, [candidate.id]: data }))
+      setPushResults(prev => ({ ...prev, [candidateId]: data }))
+      if (data.success) {
+        alert(data.message || `🚀 Candidate form filled and submitted to JobsInHand!`)
+        if (fetchCandidates) fetchCandidates()
+      } else {
+        alert(`⚠️ Push note: ${data.message || 'Auto-apply encountered an issue.'}`)
+      }
     } catch (err) {
-      setPushResults(prev => ({ ...prev, [candidate.id]: { success: false, error: err.message } }))
+      setPushResults(prev => ({ ...prev, [candidateId]: { success: false, error: err.message } }))
+      alert(`⚠️ Push error: ${err.message}`)
     } finally {
       setPushingId(null)
     }
