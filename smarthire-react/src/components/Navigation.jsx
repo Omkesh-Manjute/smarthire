@@ -136,13 +136,13 @@ function Navigation() {
 
   const appLauncherItems = [
     { title: 'AI Recruiter ATS', desc: 'Core talent pipeline & screening suite', icon: '💼', path: '/ats', color: '#4f46e5' },
-    { title: 'Executive Console', desc: 'Command center & high-level stats', icon: '📊', path: '/dashboard', color: '#2563eb' },
-    { title: 'Intelligence Reports', desc: 'Conversion charts & hiring velocity', icon: '📑', path: '/reports', color: '#059669' },
+    { title: 'Executive Console', desc: 'Command center & high-level stats', icon: '📊', path: '/dashboard', color: '#2563eb', adminOnly: true },
+    { title: 'Intelligence Reports', desc: 'Conversion charts & hiring velocity', icon: '📑', path: '/reports', color: '#059669', adminOnly: true },
     { title: 'LinkedIn Automation', desc: 'Auto-post openings & talent outreach', icon: '🌐', path: '/linkedin-posts', color: '#0284c7', adminOnly: true },
-    { title: 'AI Branding Studio', desc: 'Social flyers, banners & marketing', icon: '🎨', path: '/branding', color: '#7c3aed' },
+    { title: 'AI Branding Studio', desc: 'Social flyers, banners & marketing', icon: '🎨', path: '/branding', color: '#7c3aed', adminOnly: true },
     { title: 'Recruiter Inbox', desc: 'Direct 1-on-1 candidate messaging', icon: '💬', path: '/inbox', color: '#ea580c' },
     { title: 'Public Job Board', desc: 'Candidate-facing career portal', icon: '🚀', path: '/jobs', color: '#16a34a' },
-    { title: 'Pricing & Plans', desc: 'Enterprise billing & upgrades', icon: '💳', path: '/pricing', color: '#475569' },
+    { title: 'Pricing & Plans', desc: 'Enterprise billing & upgrades', icon: '💳', path: '/pricing', color: '#475569', adminOnly: true },
   ]
 
   return (
@@ -287,13 +287,15 @@ function Navigation() {
                   )}
                 </div>
 
-                <Link
-                  to="/reports"
-                  className={`nav-tab-item ${location.pathname === '/reports' ? 'active' : ''}`}
-                >
-                  <span className="nav-tab-icon">📑</span>
-                  <span>Reports</span>
-                </Link>
+                {isSuperAdmin && (
+                  <Link
+                    to="/reports"
+                    className={`nav-tab-item ${location.pathname === '/reports' ? 'active' : ''}`}
+                  >
+                    <span className="nav-tab-icon">📑</span>
+                    <span>Reports</span>
+                  </Link>
+                )}
 
                 {isSuperAdmin && (
                   <Link
@@ -305,13 +307,15 @@ function Navigation() {
                   </Link>
                 )}
 
-                <Link
-                  to="/branding"
-                  className={`nav-tab-item ${location.pathname === '/branding' ? 'active' : ''}`}
-                >
-                  <span className="nav-tab-icon">🎨</span>
-                  <span>Branding</span>
-                </Link>
+                {isSuperAdmin && (
+                  <Link
+                    to="/branding"
+                    className={`nav-tab-item ${location.pathname === '/branding' ? 'active' : ''}`}
+                  >
+                    <span className="nav-tab-icon">🎨</span>
+                    <span>Branding</span>
+                  </Link>
+                )}
 
                 <Link
                   to="/jobs"
@@ -321,13 +325,15 @@ function Navigation() {
                   <span>Careers</span>
                 </Link>
 
-                <Link
-                  to="/pricing"
-                  className={`nav-tab-item ${location.pathname === '/pricing' ? 'active' : ''}`}
-                >
-                  <span className="nav-tab-icon">💳</span>
-                  <span>Pricing</span>
-                </Link>
+                {isSuperAdmin && (
+                  <Link
+                    to="/pricing"
+                    className={`nav-tab-item ${location.pathname === '/pricing' ? 'active' : ''}`}
+                  >
+                    <span className="nav-tab-icon">💳</span>
+                    <span>Pricing</span>
+                  </Link>
+                )}
               </>
             ) : (
               <>

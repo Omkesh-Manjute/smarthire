@@ -603,10 +603,53 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
               {/* INLINE EXPANDED FULL DESCRIPTION SECTION (WHEN CLICKED) */}
               {isExpanded && (
                 <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 12, marginTop: 4, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: 14, maxHeight: 320, overflowY: 'auto' }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.05em' }}>📝 Formatted Job Description</div>
-                    <div style={{ fontSize: 13, color: '#334155', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
-                      {fullDesc}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                    {/* Left Column: Formatted Job Description */}
+                    <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: 14, maxHeight: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #cbd5e1', paddingBottom: 6 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📝 Formatted Job Description</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigator.clipboard.writeText(fullDesc);
+                            alert('📋 Job Description copied to clipboard!');
+                          }}
+                          style={{
+                            padding: '2px 8px', fontSize: 11, background: '#eff6ff', color: '#1d4ed8',
+                            border: '1px solid #bfdbfe', borderRadius: 5, cursor: 'pointer', fontWeight: 700,
+                            transition: 'all 0.1s'
+                          }}
+                        >
+                          📋 Copy JD
+                        </button>
+                      </div>
+                      <div style={{ fontSize: 13, color: '#334155', lineHeight: 1.7, whiteSpace: 'pre-wrap', fontFamily: "'Inter', sans-serif" }}>
+                        {fullDesc}
+                      </div>
+                    </div>
+
+                    {/* Right Column: LinkedIn Post Format */}
+                    <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: 14, maxHeight: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #a7f3d0', paddingBottom: 6 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#15803d', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🌐 LinkedIn Post Format</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigator.clipboard.writeText(generateLinkedInPost(job));
+                            alert('📋 LinkedIn post format copied to clipboard!');
+                          }}
+                          style={{
+                            padding: '2px 8px', fontSize: 11, background: '#dcfce7', color: '#15803d',
+                            border: '1px solid #bbf7d0', borderRadius: 5, cursor: 'pointer', fontWeight: 700,
+                            transition: 'all 0.1s'
+                          }}
+                        >
+                          📋 Copy Post
+                        </button>
+                      </div>
+                      <div style={{ fontSize: 13, color: '#166534', lineHeight: 1.7, whiteSpace: 'pre-wrap', fontFamily: "'Inter', sans-serif" }}>
+                        {generateLinkedInPost(job)}
+                      </div>
                     </div>
                   </div>
 
@@ -653,51 +696,70 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
 
               {/* Action Buttons */}
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', borderTop: '1px solid #f1f5f9', paddingTop: 12, marginTop: 4 }}>
-                <button onClick={(e) => handleOpenEdit(e, job)}
-                  style={{ flex: 1, background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                  ✏️ Edit
-                </button>
-                <button onClick={(e) => handleReformatJob(e, job)} disabled={isReformatting}
-                  style={{ flex: 1, background: '#f5f3ff', color: '#6d28d9', border: '1px solid #ddd6fe', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                  {isReformatting ? '⏳' : '🪄'} {isReformatting ? 'Formatting...' : 'AI Re-format'}
-                </button>
-                <button onClick={() => setJdModalJob(job)}
-                  style={{ flex: 1, background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                  📄 Full JD
-                </button>
-                {/* Direct LinkedIn Post Button */}
-                <button
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    if (window.confirm(`Post "${job.title}" directly to LinkedIn?`)) {
-                      showToast(`⏳ Posting "${job.title}" to LinkedIn...`);
-                      try {
-                        const postContent = generateLinkedInPost(job);
-                        await handlePostJobToLinkedIn(job.id, postContent);
-                        showToast(`🎉 Successfully posted "${job.title}" to LinkedIn!`);
-                      } catch (err) {
-                        console.error(err);
-                        alert(`❌ LinkedIn direct posting failed: ${err.message || 'verify credentials'}`);
-                      }
-                    }
-                  }}
-                  style={{ flex: 1, background: '#e8f0fe', color: '#0a66c2', border: '1px solid #bfdbfe', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
-                  title="Post this job directly to LinkedIn Feed using connected token"
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-                  Post LinkedIn
-                </button>
-                <button
-                  onClick={(e) => handleOpenLinkedInModal(e, job)}
-                  style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: 7, padding: '7px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
-                  title="Generate formatted LinkedIn post text">
-                  📝
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleDeleteJob(job.id) }}
-                  style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fca5a5', borderRadius: 7, padding: '7px 10px', fontSize: 12, cursor: 'pointer' }}>
-                  🗑️
-                </button>
+                {isSuperAdmin ? (
+                  <>
+                    <button onClick={(e) => handleOpenEdit(e, job)}
+                      style={{ flex: 1, background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                      ✏️ Edit
+                    </button>
+                    <button onClick={(e) => handleReformatJob(e, job)} disabled={isReformatting}
+                      style={{ flex: 1, background: '#f5f3ff', color: '#6d28d9', border: '1px solid #ddd6fe', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                      {isReformatting ? '⏳' : '🪄'} {isReformatting ? 'Formatting...' : 'AI Re-format'}
+                    </button>
+                    <button onClick={() => setJdModalJob(job)}
+                      style={{ flex: 1, background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                      📄 Full JD
+                    </button>
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (window.confirm(`Post "${job.title}" directly to LinkedIn?`)) {
+                          alert(`⏳ Posting "${job.title}" to LinkedIn...`);
+                          try {
+                            const postContent = generateLinkedInPost(job);
+                            await handlePostJobToLinkedIn(job.id, postContent);
+                            alert(`🎉 Successfully posted "${job.title}" to LinkedIn!`);
+                          } catch (err) {
+                            console.error(err);
+                            alert(`❌ LinkedIn direct posting failed: ${err.message || 'verify credentials'}`);
+                          }
+                        }
+                      }}
+                      style={{ flex: 1, background: '#e8f0fe', color: '#0a66c2', border: '1px solid #bfdbfe', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+                      title="Post this job directly to LinkedIn Feed using connected token"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                      Post LinkedIn
+                    </button>
+                    <button
+                      onClick={(e) => handleOpenLinkedInModal(e, job)}
+                      style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: 7, padding: '7px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                      title="Generate formatted LinkedIn post text">
+                      📝
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDeleteJob(job.id) }}
+                      style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fca5a5', borderRadius: 7, padding: '7px 10px', fontSize: 12, cursor: 'pointer' }}>
+                      🗑️
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button onClick={() => setJdModalJob(job)}
+                      style={{ flex: 1, background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                      📄 View Full JD
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(getRecruiterJobLink(job.id));
+                        alert('📋 Recruiter referral application link copied to clipboard!');
+                      }}
+                      style={{ flex: 1, background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                      🔗 Copy Apply Link
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           )

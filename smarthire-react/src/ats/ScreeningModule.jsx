@@ -45,7 +45,11 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
   // Fetch all sessions
   const fetchSessions = useCallback(async () => {
     try {
-      const res = await fetch(`${API}/sessions`)
+      const res = await fetch(`${API}/sessions`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+        }
+      })
       const data = await res.json()
       if (data.success) {
         setSessions(data.sessions || [])
@@ -74,7 +78,10 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
     try {
       const res = await fetch(`${API}/create`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+        },
         body: JSON.stringify({
           jobId: selectedJobId,
           targetPayRate: targetPayRate ? parseFloat(targetPayRate) : undefined,

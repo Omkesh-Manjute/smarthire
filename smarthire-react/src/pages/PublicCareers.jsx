@@ -422,6 +422,7 @@ export default function PublicCareers() {
     setSubmitError('')
 
     try {
+      const recruiterRef = sessionStorage.getItem('smarthire_recruiter_ref') || localStorage.getItem('smarthire_recruiter_ref') || '';
       let res
       if (resumeFile) {
         const formData = new FormData()
@@ -435,6 +436,7 @@ export default function PublicCareers() {
         formData.append('contractType', contractType)
         formData.append('visaStatus', visaStatus)
         formData.append('expectedRate', expectedRate)
+        if (recruiterRef) formData.append('recruiterRef', recruiterRef)
         if (resumeText) formData.append('resumeText', resumeText)
 
         res = await fetch('/api/screening/public-submit-file', {
@@ -455,6 +457,7 @@ export default function PublicCareers() {
             contractType,
             visaStatus,
             expectedRate,
+            recruiterRef,
             resumeFileName: 'Candidate_Resume.pdf',
             resumeText: resumeText || `${validName} - Applied for ${selectedJob.title}`
           })

@@ -87,6 +87,9 @@ export default function AtsPlatform() {
 
   const roleKey = isSuperAdmin ? 'superadmin' : 'recruiter'
   const TABS = ALL_TABS.filter(tab => {
+    if (!isSuperAdmin) {
+      return ['jobs', 'candidates', 'screening', 'inbox'].includes(tab.id)
+    }
     if (roleKey === 'superadmin' && (tab.id === 'users' || tab.id === 'settings')) {
       return true
     }
@@ -252,7 +255,7 @@ export default function AtsPlatform() {
     : rawCandidates.filter(c => {
         if (!c) return false
         const cOwner = (c.createdBy || c.recruiterEmail || c.submittedBy || c.recruiterId || '').toLowerCase()
-        return !cOwner || cOwner === recruiterUserEmail || cOwner === recruiterUserId || c.isSample || c.job_id === 'J-102'
+        return cOwner === recruiterUserEmail || cOwner === recruiterUserId || c.isSample || c.job_id === 'J-102'
       })
 
   // Filtered candidates safely

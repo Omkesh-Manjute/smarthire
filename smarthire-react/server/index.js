@@ -288,8 +288,27 @@ let recruitersMock = [
   { _id: 'rec-2', name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com', role: 'recruiter', refCode: 'sukamal-chatterjee', company: 'Coolsoft LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-02-15T11:30:00.000Z' },
   { _id: 'rec-3', name: 'Raj', email: 'raj@coolsofttech.com', role: 'recruiter', refCode: 'raj', company: 'Coolsoft LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' },
   { _id: 'rec-4', name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com', role: 'recruiter', refCode: 'vaibhav-bisen', company: 'Coolsoft LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-10T09:00:00.000Z' },
-  { _id: 'rec-5', name: 'Pankaj', email: 'pankajm@coolsofttech.com', role: 'recruiter', refCode: 'pankaj', company: 'Coolsoft LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-15T08:30:00.000Z' }
 ];
+
+async function resolveRecruiterEmailFromRefCode(refCode) {
+  if (!refCode) return '';
+  const cleanRef = String(refCode).toLowerCase().trim();
+  
+  if (cleanRef.includes('@')) return cleanRef;
+  
+  if (isMongoConnected) {
+    try {
+      const rec = await RecruiterDoc.findOne({ refCode: cleanRef });
+      if (rec) return rec.email.toLowerCase().trim();
+    } catch (e) {}
+  }
+  
+  const rec = recruitersMock.find(r => r.refCode && r.refCode.toLowerCase() === cleanRef);
+  if (rec) return rec.email.toLowerCase().trim();
+  
+  return cleanRef; // fallback
+}
+
 
 async function seedDefaultRecruiters() {
   if (!isMongoConnected) return;
@@ -1127,7 +1146,7 @@ app.get('/api/health', (_req, res) => {
 })
 
 // ─── GET /api/candidates — Returns all stored candidates ─────────────────────
-app.get('/api/candidates', async (_req, res) => {
+app.get('/api/candidates', authenticateToken, async (req, res) => {
   if (!candidatesStore || candidatesStore.length === 0) {
     await loadCandidatesFromDisk();
   }
@@ -1140,10 +1159,23 @@ app.get('/api/candidates', async (_req, res) => {
     role: c.job_title || c.jobTitle || c.role || c.extracted_profile?.title || 'Applicant',
     status: c.status || 'New',
   }));
+
+  const userRole = req.user?.role || 'superadmin';
+  const userEmail = (req.user?.email || '').toLowerCase().trim();
+
+  let filtered = normalized;
+  if (userRole === 'recruiter') {
+    filtered = normalized.filter(c => {
+      if (!c) return false;
+      const cOwner = (c.createdBy || c.recruiterEmail || c.submittedBy || c.recruiterId || '').toLowerCase().trim();
+      return cOwner === userEmail || c.isSample || c.job_id === 'J-102';
+    });
+  }
+
   res.json({
     success: true,
-    count: normalized.length,
-    candidates: normalized,
+    count: filtered.length,
+    candidates: filtered,
   });
 });
 
@@ -2893,10 +2925,23 @@ app.post('/api/jobs', (req, res) => {
 // ─── Candidates Routes & Auto-Apply ──────────────────────────────────────────
 
 // GET all candidates
-app.get('/api/candidates', (_req, res) => {
+// GET all candidates
+app.get('/api/candidates', authenticateToken, (req, res) => {
+  const userRole = req.user?.role || 'superadmin';
+  const userEmail = (req.user?.email || '').toLowerCase().trim();
+
+  let filtered = candidatesStore;
+  if (userRole === 'recruiter') {
+    filtered = candidatesStore.filter(c => {
+      if (!c) return false;
+      const cOwner = (c.createdBy || c.recruiterEmail || c.submittedBy || c.recruiterId || '').toLowerCase().trim();
+      return cOwner === userEmail || c.isSample || c.job_id === 'J-102';
+    });
+  }
+
   res.json({
     success: true,
-    candidates: candidatesStore
+    candidates: filtered
   });
 });
 
@@ -3883,7 +3928,7 @@ Return ONLY this JSON object. Do not include markdown code block syntax (like \`
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // Create a new screening session
-app.post('/api/screening/create', (req, res) => {
+app.post('/api/screening/create', authenticateToken, (req, res) => {
   const { jobId, targetPayRate, maxPayRate } = req.body;
   if (!jobId) {
     return res.status(400).json({ success: false, message: 'jobId is required' });
@@ -3893,6 +3938,9 @@ app.post('/api/screening/create', (req, res) => {
   if (!job) {
     return res.status(404).json({ success: false, message: 'Job not found' });
   }
+
+  const userEmail = (req.user?.email || '').toLowerCase().trim();
+  const userId = req.user?.id || req.user?._id || '';
 
   const sessionId = 'SCR-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
   const newSession = {
@@ -3910,6 +3958,10 @@ app.post('/api/screening/create', (req, res) => {
     candidateEmail: null,
     status: 'pending', // pending, active, analyzing, screening, verification, submitted, rejected
     createdAt: new Date().toISOString(),
+    createdBy: userEmail || userId,
+    recruiterEmail: userEmail,
+    submittedBy: userEmail || userId,
+    recruiterId: userId,
     resumePath: null,
     resumeText: null,
     extractedProfile: null,
@@ -3933,7 +3985,7 @@ app.post('/api/screening/create', (req, res) => {
 });
 
 // Direct candidate submission endpoint (public careers portal - NO redirection)
-app.post('/api/screening/public-submit', (req, res) => {
+app.post('/api/screening/public-submit', async (req, res) => {
   const {
     jobId,
     candidateName,
@@ -3945,7 +3997,8 @@ app.post('/api/screening/public-submit', (req, res) => {
     relocatePref,
     expectedRate,
     resumeText,
-    resumeFileName
+    resumeFileName,
+    recruiterRef
   } = req.body;
 
   if (!jobId || !candidateName || !candidateEmail) {
@@ -3956,6 +4009,8 @@ app.post('/api/screening/public-submit', (req, res) => {
   if (!job) {
     return res.status(404).json({ success: false, message: 'Target job vacancy not found.' });
   }
+
+  const recruiterEmailResolved = await resolveRecruiterEmailFromRefCode(recruiterRef);
 
   if (isJobExpired(job)) {
     return res.status(400).json({
@@ -4012,6 +4067,10 @@ app.post('/api/screening/public-submit', (req, res) => {
     status: matchScore >= 60 ? 'submitted' : 'rejected',
     createdAt: new Date().toISOString(),
     submittedAt: new Date().toISOString(),
+    createdBy: recruiterEmailResolved || '',
+    recruiterEmail: recruiterEmailResolved || '',
+    referredBy: recruiterEmailResolved || '',
+    submittedBy: recruiterEmailResolved || '',
     resumeFileName: resumeFileName || 'Candidate_Resume.pdf',
     resumeText: resumeText || `${finalCandidateName} - ${job.title} Applicant. Skills: ${jobSkills.join(', ')}`,
     extractedProfile: {
@@ -4086,6 +4145,9 @@ app.post('/api/screening/public-submit', (req, res) => {
       status: matchScore >= 70 ? 'Shortlisted' : 'Applied',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      createdBy: recruiterEmailResolved || '',
+      recruiterEmail: recruiterEmailResolved || '',
+      submittedBy: recruiterEmailResolved || '',
       source: 'public_careers_portal',
       extracted_profile: {
         name: finalCandidateName,
@@ -4170,7 +4232,8 @@ app.post('/api/screening/public-submit-file', upload.single('resume'), async (re
       contractType,
       currentLocation,
       relocatePref,
-      expectedRate
+      expectedRate,
+      recruiterRef
     } = req.body;
 
     if (!jobId || !candidateName || !candidateEmail) {
@@ -4181,6 +4244,8 @@ app.post('/api/screening/public-submit-file', upload.single('resume'), async (re
     if (!job) {
       return res.status(404).json({ success: false, message: 'Target job vacancy not found.' });
     }
+
+    const recruiterEmailResolved = await resolveRecruiterEmailFromRefCode(recruiterRef);
 
     if (isJobExpired(job)) {
       return res.status(400).json({
@@ -4274,6 +4339,10 @@ app.post('/api/screening/public-submit-file', upload.single('resume'), async (re
       status: matchScore >= 60 ? 'submitted' : 'rejected',
       createdAt: new Date().toISOString(),
       submittedAt: new Date().toISOString(),
+      createdBy: recruiterEmailResolved || '',
+      recruiterEmail: recruiterEmailResolved || '',
+      referredBy: recruiterEmailResolved || '',
+      submittedBy: recruiterEmailResolved || '',
       resumeFileName,
       resumeFileUrl,
       resumeText: resumeText || `${finalCandidateName} - ${job.title} Applicant.`,
@@ -4341,6 +4410,9 @@ app.post('/api/screening/public-submit-file', upload.single('resume'), async (re
         status: matchScore >= 70 ? 'Shortlisted' : 'Applied',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        createdBy: recruiterEmailResolved || '',
+        recruiterEmail: recruiterEmailResolved || '',
+        submittedBy: recruiterEmailResolved || '',
         source: 'public_careers_portal',
         extracted_profile: {
           name: finalCandidateName,
@@ -4388,7 +4460,18 @@ app.post('/api/screening/public-submit-file', upload.single('resume'), async (re
 
 // Get all screening sessions (recruiter dashboard)
 app.get('/api/screening/sessions', authenticateToken, (req, res) => {
-  res.json({ success: true, sessions: screeningStore });
+  const userRole = req.user?.role || 'superadmin';
+  const userEmail = (req.user?.email || '').toLowerCase().trim();
+
+  let filtered = screeningStore;
+  if (userRole === 'recruiter') {
+    filtered = screeningStore.filter(s => {
+      if (!s) return false;
+      const sOwner = (s.createdBy || s.recruiterEmail || s.referredBy || s.recruiterId || '').toLowerCase().trim();
+      return sOwner === userEmail || s.isSample || s.jobId === 'J-102';
+    });
+  }
+  res.json({ success: true, sessions: filtered });
 });
 
 // Helper to get or auto-create a screening session on the fly
@@ -5104,6 +5187,9 @@ app.post('/api/screening/:sessionId/submit', (req, res) => {
     source: 'AI-Screening',
     status: 'New',
     received_at: session.submittedAt,
+    createdBy: session.createdBy || session.recruiterEmail || session.referredBy || '',
+    recruiterEmail: session.recruiterEmail || session.referredBy || '',
+    submittedBy: session.createdBy || session.recruiterEmail || session.referredBy || '',
     file: fileObj,
     email_context: {
       sender_email: session.extractedProfile?.email || '',
@@ -5505,10 +5591,20 @@ app.patch('/api/admin/recruiters/:id/status', async (req, res) => {
   }
 });
 
-// ─── Candidates API Endpoints ──────────────────────────────────────────────────
-app.get('/api/candidates', async (req, res) => {
+app.get('/api/candidates', authenticateToken, async (req, res) => {
   await loadCandidatesFromDisk();
-  res.json({ success: true, candidates: candidatesStore });
+  const userRole = req.user?.role || 'superadmin';
+  const userEmail = (req.user?.email || '').toLowerCase().trim();
+
+  let filtered = candidatesStore;
+  if (userRole === 'recruiter') {
+    filtered = candidatesStore.filter(c => {
+      if (!c) return false;
+      const cOwner = (c.createdBy || c.recruiterEmail || c.submittedBy || c.recruiterId || '').toLowerCase().trim();
+      return cOwner === userEmail || c.isSample || c.job_id === 'J-102';
+    });
+  }
+  res.json({ success: true, candidates: filtered });
 });
 
 app.put('/api/candidates/:id/status', async (req, res) => {
@@ -5651,8 +5747,30 @@ app.post('/api/admin/settings', (req, res) => {
 
 // ─── Candidate Real-time Messaging Persistence Store (Indeed-style) ──────────
 
-app.get('/api/messages/:candidateId', (req, res) => {
+app.get('/api/messages/:candidateId', authenticateToken, (req, res) => {
   const { candidateId } = req.params;
+  const userRole = req.user?.role || 'superadmin';
+  const userEmail = (req.user?.email || '').toLowerCase().trim();
+
+  // If recruiter, check ownership
+  if (userRole === 'recruiter') {
+    const candidate = candidatesStore.find(c => c && (c.id === candidateId || c.candidate_id === candidateId));
+    const session = screeningStore.find(s => s && s.sessionId === candidateId);
+    
+    const cOwner = (
+      (candidate && (candidate.createdBy || candidate.recruiterEmail || candidate.submittedBy || candidate.recruiterId)) ||
+      (session && (session.createdBy || session.recruiterEmail || session.referredBy || session.recruiterId)) ||
+      ''
+    ).toLowerCase().trim();
+
+    const isSample = (candidate && candidate.isSample) || (session && session.isSample) || candidateId === 'SCR-SAMPLE' || candidateId === 'C-SAMPLE';
+    const isSampleJob = (candidate && candidate.job_id === 'J-102') || (session && session.jobId === 'J-102');
+
+    if (cOwner !== userEmail && !isSample && !isSampleJob) {
+      return res.status(403).json({ success: false, message: 'Access denied to this conversation thread.' });
+    }
+  }
+
   const thread = messagesStore.filter(m => m && m.candidateId === candidateId);
   res.json({ success: true, messages: thread });
 });
@@ -5706,12 +5824,36 @@ app.get('/api/messages', authenticateToken, (req, res) => {
     });
   }
 
-  const threads = Object.values(threadsMap).sort((a, b) => {
+  const userRole = req.user?.role || 'superadmin';
+  const userEmail = (req.user?.email || '').toLowerCase().trim();
+
+  let allThreads = Object.values(threadsMap);
+  let filteredThreads = allThreads;
+
+  if (userRole === 'recruiter') {
+    filteredThreads = allThreads.filter(t => {
+      const candidate = candidatesStore.find(c => c && (c.id === t.candidateId || c.candidate_id === t.candidateId));
+      const session = screeningStore.find(s => s && s.sessionId === t.candidateId);
+      
+      const cOwner = (
+        (candidate && (candidate.createdBy || candidate.recruiterEmail || candidate.submittedBy || candidate.recruiterId)) ||
+        (session && (session.createdBy || session.recruiterEmail || session.referredBy || session.recruiterId)) ||
+        ''
+      ).toLowerCase().trim();
+      
+      const isSample = (candidate && candidate.isSample) || (session && session.isSample) || t.candidateId === 'SCR-SAMPLE' || t.candidateId === 'C-SAMPLE';
+      const isSampleJob = (candidate && candidate.job_id === 'J-102') || (session && session.jobId === 'J-102');
+      
+      return cOwner === userEmail || isSample || isSampleJob;
+    });
+  }
+
+  const sortedThreads = filteredThreads.sort((a, b) => {
     const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
     const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
     return timeB - timeA;
   });
-  res.json({ success: true, threads });
+  res.json({ success: true, threads: sortedThreads });
 });
 
 // Mark all messages in a thread as read
@@ -5727,11 +5869,33 @@ app.patch('/api/messages/:candidateId/read', authenticateToken, (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/api/messages/:candidateId', (req, res) => {
+app.post('/api/messages/:candidateId', authenticateToken, (req, res) => {
   const { candidateId } = req.params;
   const { sender = 'recruiter', text = '', candidateName = '', jobTitle = '', senderName = '' } = req.body;
   if (!text || !text.trim()) {
     return res.status(400).json({ success: false, message: 'Message text is required.' });
+  }
+
+  const userRole = req.user?.role || 'superadmin';
+  const userEmail = (req.user?.email || '').toLowerCase().trim();
+
+  // If recruiter, check ownership
+  if (userRole === 'recruiter') {
+    const candidate = candidatesStore.find(c => c && (c.id === candidateId || c.candidate_id === candidateId));
+    const session = screeningStore.find(s => s && s.sessionId === candidateId);
+    
+    const cOwner = (
+      (candidate && (candidate.createdBy || candidate.recruiterEmail || candidate.submittedBy || candidate.recruiterId)) ||
+      (session && (session.createdBy || session.recruiterEmail || session.referredBy || session.recruiterId)) ||
+      ''
+    ).toLowerCase().trim();
+
+    const isSample = (candidate && candidate.isSample) || (session && session.isSample) || candidateId === 'SCR-SAMPLE' || candidateId === 'C-SAMPLE';
+    const isSampleJob = (candidate && candidate.job_id === 'J-102') || (session && session.jobId === 'J-102');
+
+    if (cOwner !== userEmail && !isSample && !isSampleJob) {
+      return res.status(403).json({ success: false, message: 'Access denied. You cannot message this candidate.' });
+    }
   }
 
   const msg = {
