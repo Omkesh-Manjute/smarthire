@@ -57,13 +57,21 @@ function CandidatesModule({
     return `Professional Summary\n${candidate.name || 'Candidate'}\n${candidate.job_title || candidate.jobTitle || 'Role not provided'}\n\nContact\nEmail: ${candidate.email || 'N/A'}\nPhone: ${candidate.phone || 'N/A'}\nLocation: ${candidate.location || 'N/A'}\n\nExperience\n${candidate.experience || 'N/A'}\n\nSkills\n${skills}`
   }
 
-  const rawCandidateList = Array.isArray(allCandidates) && allCandidates.length > 0
+  const rawCandidateList = (Array.isArray(allCandidates) && allCandidates.length > 0)
     ? allCandidates
-    : Array.isArray(candidatesList)
+    : (Array.isArray(candidatesList) && candidatesList.length > 0)
     ? candidatesList
     : []
 
-  const safeCandidates = Array.isArray(rawCandidateList) ? rawCandidateList : []
+  const safeCandidates = (Array.isArray(rawCandidateList) ? rawCandidateList : []).map(c => ({
+    ...c,
+    id: c.id || c.candidate_id || c._id || `C-${Math.random().toString(36).slice(2, 7)}`,
+    name: c.extracted_profile?.name || c.name || c.candidateName || 'Candidate',
+    email: c.extracted_profile?.email || c.email || c.candidateEmail || '',
+    phone: c.extracted_profile?.phone || c.phone || c.candidatePhone || '',
+    role: c.job_title || c.jobTitle || c.role || c.extracted_profile?.title || 'General Applicant',
+    status: c.status || 'New',
+  }))
   const safeJobs = Array.isArray(jobsList) ? jobsList : []
 
   const safeFiltered = safeCandidates.filter(c => {
@@ -72,7 +80,7 @@ function CandidatesModule({
     const matchStatus = statusFilter === 'All' || c.status === statusFilter
     const name = c.extracted_profile?.name || c.name || ''
     const email = c.extracted_profile?.email || c.email || ''
-    const skills = Array.isArray(c.extracted_profile?.skills) ? c.extracted_profile.skills.join(' ') : (c.skills || '')
+    const skills = Array.isArray(c.extracted_profile?.skills) ? c.extracted_profile.skills.join(' ') : (typeof c.skills === 'string' ? c.skills : '')
     const matchQuery = !query ||
       name.toLowerCase().includes(query.toLowerCase()) ||
       email.toLowerCase().includes(query.toLowerCase()) ||
