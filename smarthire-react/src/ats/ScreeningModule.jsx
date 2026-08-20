@@ -14,6 +14,9 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
   const [targetPayRate, setTargetPayRate] = useState('')
   const [maxPayRate, setMaxPayRate] = useState('')
   const [filterTab, setFilterTab] = useState('all')
+  const [isLinkCardOpen, setIsLinkCardOpen] = useState(false)
+  const [sessionSearch, setSessionSearch] = useState('')
+  const [sessionStatusFilter, setSessionStatusFilter] = useState('all')
   
   // Modal State
   const [detailSession, setDetailSession] = useState(null)
@@ -286,231 +289,549 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
   const rejectedCount = sessions.filter(s => s.status === 'rejected').length
   const pendingCount = sessions.filter(s => s.status === 'pending').length
 
+  const filteredSessions = sessions.filter(s => {
+    if (!s) return false
+    const matchStatus = 
+      sessionStatusFilter === 'all' ? true :
+      sessionStatusFilter === 'completed' ? s.status === 'submitted' :
+      sessionStatusFilter === 'active' ? ['active', 'analyzing', 'screening'].includes(s.status) :
+      sessionStatusFilter === 'verification' ? s.status === 'verification' :
+      sessionStatusFilter === 'pending' ? s.status === 'pending' :
+      sessionStatusFilter === 'rejected' ? s.status === 'rejected' : true
+
+    const q = sessionSearch.toLowerCase().trim()
+    if (!q) return matchStatus
+
+    const matchQuery =
+      (s.sessionId || '').toLowerCase().includes(q) ||
+      (s.candidateName || '').toLowerCase().includes(q) ||
+      (s.jobTitle || '').toLowerCase().includes(q) ||
+      (s.status || '').toLowerCase().includes(q)
+
+    return matchStatus && matchQuery
+  })
+
   return (
-    <div style={{ animation: 'fadeIn 0.4s ease-out' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, animation: 'fadeIn 0.3s ease-out' }}>
       
       {/* Overview Stats Dashboard */}
-      <div style={styles.statsGrid}>
-        <div className="kpi-premium">
-          <div className="kpi-val">{totalCount}</div>
-          <div className="kpi-lbl">Total Sessions</div>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+        gap: 12
+      }}>
+        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 18px', borderLeft: '4px solid #3b82f6', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a' }}>{totalCount}</div>
+          <div style={{ fontSize: 11.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: 2 }}>Total Sessions</div>
         </div>
-        <div className="kpi-premium" style={{ borderLeft: '3px solid var(--brand-2)' }}>
-          <div className="kpi-val">{screeningCount}</div>
-          <div className="kpi-lbl">Active Chats</div>
+        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 18px', borderLeft: '4px solid #06b6d4', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a' }}>{screeningCount}</div>
+          <div style={{ fontSize: 11.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: 2 }}>Active Chats</div>
         </div>
-        <div className="kpi-premium" style={{ borderLeft: '3px solid var(--brand)' }}>
-          <div className="kpi-val">{completedCount}</div>
-          <div className="kpi-lbl">Submitted Profiles</div>
+        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 18px', borderLeft: '4px solid #10b981', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a' }}>{completedCount}</div>
+          <div style={{ fontSize: 11.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: 2 }}>Submitted Profiles</div>
         </div>
-        <div className="kpi-premium" style={{ borderLeft: '3px solid var(--danger)' }}>
-          <div className="kpi-val">{rejectedCount}</div>
-          <div className="kpi-lbl">Auto-Rejected</div>
+        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 18px', borderLeft: '4px solid #ef4444', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a' }}>{rejectedCount}</div>
+          <div style={{ fontSize: 11.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: 2 }}>Auto-Rejected</div>
         </div>
-        <div className="kpi-premium" style={{ borderLeft: '3px solid var(--line)' }}>
-          <div className="kpi-val">{pendingCount}</div>
-          <div className="kpi-lbl">Awaiting Response</div>
+        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 18px', borderLeft: '4px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a' }}>{pendingCount}</div>
+          <div style={{ fontSize: 11.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: 2 }}>Awaiting Response</div>
         </div>
       </div>
 
-      <div style={styles.dashboardSplit}>
-        {/* Left column: Generate link */}
-        <div style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <div className="card" style={{ padding: 24 }}>
-            <h2 style={{ fontFamily: 'Plus Jakarta Sans', fontSize: 16, fontWeight: 700, margin: '0 0 6px 0', color: 'var(--ink)' }}>
-              🤖 Generate Candidate Screening Link
-            </h2>
-            <p style={{ fontSize: 13, color: 'var(--ink-soft)', margin: '0 0 20px 0', lineHeight: 1.5 }}>
-              Choose an <strong>active</strong> vacancy and generate a unique interview portal link to share with candidates.
-            </p>
+      {/* TOP COLLAPSIBLE: Generate Candidate Screening Link */}
+      <div style={{
+        background: '#ffffff',
+        border: '1px solid #e2e8f0',
+        borderRadius: 12,
+        boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+        overflow: 'hidden',
+        transition: 'all 0.2s ease'
+      }}>
+        {/* Accordion Bar Header */}
+        <div 
+          onClick={() => setIsLinkCardOpen(!isLinkCardOpen)}
+          style={{
+            padding: '14px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            cursor: 'pointer',
+            background: isLinkCardOpen ? '#f8fafc' : '#ffffff',
+            borderBottom: isLinkCardOpen ? '1px solid #e2e8f0' : 'none',
+            userSelect: 'none'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{
+              width: 36,
+              height: 36,
+              borderRadius: 8,
+              background: '#ecfdf5',
+              border: '1px solid #a7f3d0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 18
+            }}>
+              🤖
+            </div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+                Generate Candidate Screening Link
+                <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe' }}>
+                  {activeJobs.length} Active Vacancies
+                </span>
+              </div>
+              <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
+                Create a candidate AI interview portal link or generate a 1-click public link for LinkedIn job postings
+              </div>
+            </div>
+          </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <label style={{ fontSize: 12, fontWeight: 'bold', color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: 0.5 }}>SELECT VACANCY</label>
+          <button
+            type="button"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              background: isLinkCardOpen ? '#f1f5f9' : '#0F766E',
+              color: isLinkCardOpen ? '#0f172a' : '#ffffff',
+              border: isLinkCardOpen ? '1px solid #cbd5e1' : 'none',
+              borderRadius: 8,
+              padding: '7px 14px',
+              fontSize: 12.5,
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: isLinkCardOpen ? 'none' : '0 2px 4px rgba(15,118,110,0.2)'
+            }}
+          >
+            {isLinkCardOpen ? '▲ Collapse Form' : '➕ Generate Link ▾'}
+          </button>
+        </div>
+
+        {/* Collapsible Content */}
+        {isLinkCardOpen && (
+          <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16, background: '#ffffff' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
               
-              {/* Search filter */}
-              <input
-                type="text"
-                placeholder="🔍 Search jobs by title, client, or location..."
-                value={jobSearch}
-                onChange={(e) => setJobSearch(e.target.value)}
-                style={{
-                  border: '1px solid var(--line)',
-                  borderRadius: 8,
-                  padding: '8px 12px',
-                  fontSize: 12,
-                  fontFamily: 'Outfit, sans-serif',
-                  color: 'var(--ink)',
-                  backgroundColor: 'var(--surface)',
-                  outline: 'none'
-                }}
-              />
-
-              {/* Dropdown with rich job info */}
-              <select
-                value={selectedJobId}
-                onChange={(e) => { setSelectedJobId(e.target.value); setGeneratedLink(''); }}
-                size={Math.min(filteredActiveJobs.length + 1, 6)}
-                style={{ ...styles.selectInput, height: 'auto', minHeight: 42, overflowY: 'auto', borderRadius: 8 }}
-              >
-                <option value="">-- Choose Active Vacancy --</option>
-                {filteredActiveJobs.length === 0 && jobSearch && (
-                  <option disabled value="">No matching active jobs found</option>
-                )}
-                {filteredActiveJobs.map(job => (
-                  <option key={job.id} value={job.id}>
-                    {job.title} · {job.client || 'General'} · {job.location || ''} · {job.employmentType || ''} · {relativeDate(job.createdAt || job.postedDate)}
-                  </option>
-                ))}
-              </select>
-
-              {/* Selected job preview card */}
-              {selectedJobId && (() => {
-                const selJob = filteredActiveJobs.find(j => j.id === selectedJobId)
-                return selJob ? (
-                  <div style={{ backgroundColor: 'rgba(15, 118, 110, 0.04)', border: '1px solid rgba(15, 118, 110, 0.15)', borderRadius: 8, padding: '10px 12px', fontSize: 12 }}>
-                    <div style={{ fontWeight: 800, color: 'var(--ink)', fontSize: 13, marginBottom: 4 }}>{selJob.title}</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 12px', color: 'var(--ink-soft)', marginBottom: 8 }}>
-                      {selJob.client && <span>🏢 {selJob.client}</span>}
-                      {selJob.location && <span>📍 {selJob.location}</span>}
-                      {selJob.employmentType && <span>📋 {selJob.employmentType}</span>}
-                      <span style={{ color: 'var(--brand)', fontWeight: 600 }}>✅ Active</span>
-                    </div>
-
-                    {/* Target Rate & Max Rate configuration */}
-                    <div style={{ display: 'flex', gap: 10, marginTop: 8, borderTop: '1px solid rgba(15, 118, 110, 0.15)', paddingTop: 10 }}>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ fontSize: 10, fontWeight: 'bold', color: 'var(--ink-soft)', display: 'block', marginBottom: 4, textTransform: 'uppercase' }}>Target Pay Rate ($/hr)</label>
-                        <input
-                          type="number"
-                          value={targetPayRate}
-                          onChange={(e) => setTargetPayRate(e.target.value)}
-                          placeholder="e.g. 60"
-                          style={{
-                            width: '100%',
-                            border: '1px solid var(--line)',
-                            borderRadius: 6,
-                            padding: '6px 10px',
-                            fontSize: 12,
-                            fontFamily: 'Outfit, sans-serif',
-                            color: 'var(--ink)',
-                            backgroundColor: 'var(--surface)',
-                            boxSizing: 'border-box'
-                          }}
-                        />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ fontSize: 10, fontWeight: 'bold', color: 'var(--ink-soft)', display: 'block', marginBottom: 4, textTransform: 'uppercase' }}>Max Pay Rate ($/hr)</label>
-                        <input
-                          type="number"
-                          value={maxPayRate}
-                          onChange={(e) => setMaxPayRate(e.target.value)}
-                          placeholder="e.g. 70"
-                          style={{
-                            width: '100%',
-                            border: '1px solid var(--line)',
-                            borderRadius: 6,
-                            padding: '6px 10px',
-                            fontSize: 12,
-                            fontFamily: 'Outfit, sans-serif',
-                            color: 'var(--ink)',
-                            backgroundColor: 'var(--surface)',
-                            boxSizing: 'border-box'
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ) : null
-              })()}
-
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                <button className="btn" style={{ background: 'var(--brand)', alignSelf: 'flex-start', padding: '10px 20px', fontSize: 13 }} onClick={handleGenerateLink}>
-                  Generate One-Time Link →
-                </button>
-
-                {selectedJobId && (
-                  <button
-                    className="btn"
-                    style={{ background: '#0F766E', color: '#ffffff', alignSelf: 'flex-start', padding: '10px 16px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}
-                    onClick={() => {
-                      const publicUrl = `${window.location.origin}/candidate-chat/job/${selectedJobId}`
-                      navigator.clipboard.writeText(publicUrl)
-                      alert(`🌐 Public Job Link Copied!\n\nLink: ${publicUrl}\n\nPaste this link on LinkedIn / Job Posts. Candidates who click it will automatically be screened by AI and added to your queue!`)
-                    }}
-                  >
-                    🔗 Copy Public Link (for LinkedIn)
-                  </button>
-                )}
+              {/* Vacancy Selector Column */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <label style={{ fontSize: 11.5, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Select Vacancy Opening
+                </label>
+                <input
+                  type="text"
+                  placeholder="🔍 Search active jobs by title, client, or location..."
+                  value={jobSearch}
+                  onChange={(e) => setJobSearch(e.target.value)}
+                  style={{
+                    border: '1px solid #cbd5e1',
+                    borderRadius: 8,
+                    padding: '8px 12px',
+                    fontSize: 13,
+                    fontFamily: 'inherit',
+                    color: '#0f172a',
+                    outline: 'none',
+                    background: '#f8fafc'
+                  }}
+                />
+                <select
+                  value={selectedJobId}
+                  onChange={(e) => { setSelectedJobId(e.target.value); setGeneratedLink(''); }}
+                  style={{
+                    border: '1px solid #cbd5e1',
+                    borderRadius: 8,
+                    padding: '9px 12px',
+                    fontSize: 13,
+                    fontFamily: 'inherit',
+                    color: '#0f172a',
+                    background: '#ffffff',
+                    outline: 'none'
+                  }}
+                >
+                  <option value="">-- Choose Active Vacancy ({filteredActiveJobs.length} available) --</option>
+                  {filteredActiveJobs.map(job => (
+                    <option key={job.id} value={job.id}>
+                      {job.title} · {job.client || 'General'} · {job.location || 'Remote'} · {job.employmentType || 'Contract'}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              <p style={{ fontSize: 11, color: 'var(--ink-soft)', margin: '4px 0 0 0' }}>
-                Only <strong>{activeJobs.length}</strong> active {activeJobs.length === 1 ? 'vacancy is' : 'vacancies are'} available. Archived, closed, filled, and draft jobs are hidden.
-              </p>
+              {/* Rate & Config Column */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <label style={{ fontSize: 11.5, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Pay Rate Parameters (Optional)
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div>
+                    <label style={{ fontSize: 10.5, fontWeight: 700, color: '#64748b', display: 'block', marginBottom: 4 }}>TARGET RATE ($/hr)</label>
+                    <input
+                      type="number"
+                      value={targetPayRate}
+                      onChange={(e) => setTargetPayRate(e.target.value)}
+                      placeholder="e.g. 60"
+                      style={{
+                        width: '100%',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: 8,
+                        padding: '8px 12px',
+                        fontSize: 13,
+                        fontFamily: 'inherit',
+                        color: '#0f172a',
+                        boxSizing: 'border-box',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 10.5, fontWeight: 700, color: '#64748b', display: 'block', marginBottom: 4 }}>MAX RATE ($/hr)</label>
+                    <input
+                      type="number"
+                      value={maxPayRate}
+                      onChange={(e) => setMaxPayRate(e.target.value)}
+                      placeholder="e.g. 70"
+                      style={{
+                        width: '100%',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: 8,
+                        padding: '8px 12px',
+                        fontSize: 13,
+                        fontFamily: 'inherit',
+                        color: '#0f172a',
+                        boxSizing: 'border-box',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Selected Job Quick Preview */}
+            {selectedJobId && (() => {
+              const selJob = filteredActiveJobs.find(j => j.id === selectedJobId)
+              return selJob ? (
+                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 800, color: '#166534', fontSize: 13 }}>{selJob.title}</span>
+                    {selJob.client && <span style={{ fontSize: 12, color: '#15803d' }}>🏢 {selJob.client}</span>}
+                    {selJob.location && <span style={{ fontSize: 12, color: '#15803d' }}>📍 {selJob.location}</span>}
+                    {selJob.budget && <span style={{ fontSize: 12, color: '#15803d', fontWeight: 600 }}>💵 {selJob.budget}</span>}
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 12, background: '#dcfce7', color: '#166534', border: '1px solid #86efac' }}>
+                    Active Posting
+                  </span>
+                </div>
+              ) : null
+            })()}
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', paddingTop: 4 }}>
+              <button
+                type="button"
+                onClick={handleGenerateLink}
+                style={{
+                  background: '#0F766E',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '9px 18px',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 4px rgba(15,118,110,0.2)'
+                }}
+              >
+                Generate One-Time Link →
+              </button>
+
+              {selectedJobId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const publicUrl = `${window.location.origin}/candidate-chat/job/${selectedJobId}`
+                    navigator.clipboard.writeText(publicUrl)
+                    alert(`🌐 Public Job Link Copied!\n\nLink: ${publicUrl}\n\nPaste this link on LinkedIn / Job Posts. Candidates who click it will automatically be screened by AI and added to your queue!`)
+                  }}
+                  style={{
+                    background: '#f8fafc',
+                    color: '#0F766E',
+                    border: '1px solid #0F766E',
+                    borderRadius: 8,
+                    padding: '9px 16px',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  🔗 Copy Public Link (for LinkedIn)
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* FULL WIDTH: AI Screening Queue Table */}
+      <div style={{
+        background: '#ffffff',
+        border: '1px solid #e2e8f0',
+        borderRadius: 12,
+        boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+        overflow: 'hidden'
+      }}>
+        {/* Table Header Bar with Search & Filter Tabs */}
+        <div style={{
+          padding: '16px 20px',
+          borderBottom: '1px solid #e2e8f0',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12
+        }}>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+              📋 AI Screening Queue
+              <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: '#f1f5f9', color: '#475569' }}>
+                {filteredSessions.length} Sessions
+              </span>
+            </div>
+            <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
+              Live candidates who submitted resumes or completed interactive AI interview screening
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            {/* Search Input */}
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                placeholder="🔍 Search candidate, job, or session..."
+                value={sessionSearch}
+                onChange={(e) => setSessionSearch(e.target.value)}
+                style={{
+                  border: '1px solid #cbd5e1',
+                  borderRadius: 8,
+                  padding: '7px 12px',
+                  fontSize: 12.5,
+                  width: 240,
+                  outline: 'none',
+                  background: '#f8fafc',
+                  color: '#0f172a'
+                }}
+              />
+            </div>
+
+            {/* Status Filter Tabs */}
+            <div style={{ display: 'flex', background: '#f1f5f9', padding: 3, borderRadius: 8, gap: 2 }}>
+              {[
+                { id: 'all', label: 'All' },
+                { id: 'completed', label: 'Completed' },
+                { id: 'active', label: 'Screening' },
+                { id: 'verification', label: 'Verifying' },
+                { id: 'rejected', label: 'Rejected' },
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setSessionStatusFilter(tab.id)}
+                  style={{
+                    border: 'none',
+                    background: sessionStatusFilter === tab.id ? '#ffffff' : 'transparent',
+                    color: sessionStatusFilter === tab.id ? '#0f172a' : '#64748b',
+                    fontWeight: sessionStatusFilter === tab.id ? 700 : 500,
+                    fontSize: 11.5,
+                    padding: '5px 10px',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    boxShadow: sessionStatusFilter === tab.id ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Right column: Sessions list */}
-        <div style={{ flex: '2 1 600px' }}>
-          <div className="card" style={{ padding: 24 }}>
-            <h2 style={{ fontFamily: 'Plus Jakarta Sans', fontSize: 16, fontWeight: 700, margin: '0 0 15px 0', color: 'var(--ink)' }}>
-              📋 AI Screening Queue
-            </h2>
+        {/* Full-Width Table */}
+        <div style={{ overflowX: 'auto', width: '100%' }}>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '50px 20px', color: '#64748b' }}>
+              <div style={{ fontSize: 24, marginBottom: 8 }}>⏳</div>
+              <div style={{ fontSize: 14, fontWeight: 600 }}>Syncing AI screening sessions...</div>
+            </div>
+          ) : filteredSessions.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>📭</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a' }}>No screening sessions found</div>
+              <div style={{ fontSize: 12.5, color: '#94a3b8', marginTop: 4 }}>
+                {sessionSearch || sessionStatusFilter !== 'all' ? 'Try clearing your search query or filters' : 'Use the top generator to create an interview link and invite candidates'}
+              </div>
+            </div>
+          ) : (
+            <table style={{ width: '100%', minWidth: 960, borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                  <th style={{ width: '130px', padding: '10px 14px', fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Session ID
+                  </th>
+                  <th style={{ width: '220px', padding: '10px 14px', fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Candidate Name
+                  </th>
+                  <th style={{ width: '240px', padding: '10px 14px', fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Applied Vacancy
+                  </th>
+                  <th style={{ width: '140px', padding: '10px 14px', fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Screening Status
+                  </th>
+                  <th style={{ width: '110px', padding: '10px 14px', fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>
+                    Match Score
+                  </th>
+                  <th style={{ width: '150px', padding: '10px 14px', fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Created Date
+                  </th>
+                  <th style={{ width: '120px', padding: '10px 14px', fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredSessions.map((s, idx) => {
+                  const score = s.jdMatch?.match_score
+                  const candidateInitials = (s.candidateName || '?').split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(0, 2)
+                  
+                  return (
+                    <tr
+                      key={s.sessionId || idx}
+                      onClick={() => setDetailSession(s)}
+                      style={{
+                        borderBottom: '1px solid #f1f5f9',
+                        cursor: 'pointer',
+                        transition: 'background 0.12s ease'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                      {/* Session ID */}
+                      <td style={{ padding: '10px 14px', verticalAlign: 'middle' }}>
+                        <code style={{ fontSize: 11.5, background: '#f1f5f9', padding: '2px 6px', borderRadius: 4, color: '#475569', fontWeight: 600 }}>
+                          {(s.sessionId || '').length > 14 ? `${s.sessionId.substring(0, 12)}...` : s.sessionId}
+                        </code>
+                      </td>
 
-            {loading ? (
-              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--ink-soft)' }}>
-                Syncing interview sessions...
-              </div>
-            ) : sessions.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--ink-soft)', fontSize: 13 }}>
-                No active screening sessions found. Generate a link to get started!
-              </div>
-            ) : (
-              <div className="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Session ID</th>
-                      <th>Job vacancy</th>
-                      <th>Candidate Name</th>
-                      <th>Status</th>
-                      <th>Match Score</th>
-                      <th>Created At</th>
-                      <th style={{ textAlign: 'right' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sessions.map((s) => (
-                      <tr
-                        key={s.sessionId}
-                        onClick={() => setDetailSession(s)}
-                        style={{ cursor: 'pointer', transition: 'background-color 0.2s' }}
-                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(18, 106, 90, 0.03)'}
-                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = ''}
-                      >
-                        <td><code style={{ fontSize: 11 }}>{s.sessionId.substring(0, 12)}...</code></td>
-                        <td style={{ fontWeight: 600 }}>{s.jobTitle}</td>
-                        <td>{s.candidateName || <span style={{ color: 'var(--ink-soft)', fontStyle: 'italic' }}>Awaiting upload...</span>}</td>
-                        <td>{statusBadge(s.status)}</td>
-                        <td>{scoreBadge(s.jdMatch?.match_score)}</td>
-                        <td style={{ fontSize: 12, color: 'var(--ink-soft)' }}>{formatDate(s.createdAt)}</td>
-                        <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
-                          <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                            <button className="btn btn-sm btn-ghost" onClick={() => setDetailSession(s)}>
-                              🔍 View
-                            </button>
-                            <button className="btn btn-sm" style={{ background: 'var(--danger)', color: 'white', border: 'none', padding: '4px 8px' }} onClick={(e) => handleDeleteSession(s.sessionId, e)}>
-                              🗑️
-                            </button>
+                      {/* Candidate Name */}
+                      <td style={{ padding: '10px 14px', verticalAlign: 'middle' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                          <div style={{
+                            width: 30,
+                            height: 30,
+                            borderRadius: '50%',
+                            background: '#eff6ff',
+                            color: '#2563eb',
+                            border: '1px solid #bfdbfe',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: 11,
+                            fontWeight: 800,
+                            flexShrink: 0
+                          }}>
+                            {candidateInitials}
                           </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>
+                              {s.candidateName || <span style={{ color: '#94a3b8', fontStyle: 'italic', fontWeight: 400 }}>Awaiting profile...</span>}
+                            </div>
+                            {s.candidateEmail && (
+                              <div style={{ fontSize: 11, color: '#64748b', whiteSpace: 'nowrap' }}>
+                                {s.candidateEmail}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Applied Vacancy */}
+                      <td style={{ padding: '10px 14px', verticalAlign: 'middle' }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 230 }}>
+                          {s.jobTitle || 'General Vacancy'}
+                        </div>
+                        {s.client && (
+                          <div style={{ fontSize: 11, color: '#64748b' }}>
+                            🏢 {s.client}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Status */}
+                      <td style={{ padding: '10px 14px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                        {statusBadge(s.status)}
+                      </td>
+
+                      {/* Match Score */}
+                      <td style={{ padding: '10px 14px', verticalAlign: 'middle', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                        {scoreBadge(score)}
+                      </td>
+
+                      {/* Created Date */}
+                      <td style={{ padding: '10px 14px', verticalAlign: 'middle', fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>
+                        {formatDate(s.createdAt)}
+                      </td>
+
+                      {/* Actions */}
+                      <td style={{ padding: '10px 14px', verticalAlign: 'middle', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
+                          <button
+                            type="button"
+                            onClick={() => setDetailSession(s)}
+                            style={{
+                              background: '#eff6ff',
+                              color: '#1d4ed8',
+                              border: '1px solid #bfdbfe',
+                              borderRadius: 6,
+                              padding: '4px 10px',
+                              fontSize: 11.5,
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4
+                            }}
+                          >
+                            👁️ View
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => handleDeleteSession(s.sessionId, e)}
+                            title="Delete screening session"
+                            style={{
+                              background: '#fef2f2',
+                              color: '#b91c1c',
+                              border: '1px solid #fecaca',
+                              borderRadius: 6,
+                              padding: '4px 8px',
+                              fontSize: 11.5,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 
