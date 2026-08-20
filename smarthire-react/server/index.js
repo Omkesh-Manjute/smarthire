@@ -2942,6 +2942,51 @@ app.post('/api/candidates/:id/finalize-rate', async (req, res) => {
   });
 });
 
+// Helper to resolve the actual JobsInHand 6-digit Requisition ID (e.g., 158937)
+function resolveRequisitionId(inputReqId, candidate) {
+  // If inputReqId is already a valid 5-6 digit number, return it
+  if (inputReqId) {
+    const clean = String(inputReqId).replace('J-', '').trim();
+    if (/^\d{5,6}$/.test(clean)) {
+      return clean;
+    }
+  }
+
+  // Look up the job object in the jobs store
+  const jobId = inputReqId || candidate?.jobId || candidate?.job_id;
+  if (jobId && jobsStore && jobsStore.length > 0) {
+    const job = jobsStore.find(j => j && (j.id === jobId || j._id?.toString() === jobId || String(j.title).toLowerCase() === String(jobId).toLowerCase()));
+    if (job) {
+      if (job.reqId && /^\d{5,6}$/.test(String(job.reqId).trim())) {
+        return String(job.reqId).trim();
+      }
+      if (job.rawReqId && /^\d{5,6}$/.test(String(job.rawReqId).trim())) {
+        return String(job.rawReqId).trim();
+      }
+      if (job.applyUrl) {
+        const match = job.applyUrl.match(/reqid=(\d+)/i);
+        if (match) return match[1];
+      }
+      const numericPart = String(job.id).replace('J-', '').trim();
+      if (/^\d{5,6}$/.test(numericPart)) {
+        return numericPart;
+      }
+    }
+  }
+
+  // Fallback to title-based keyword matching (crucial to map Cloud Security to Requisition 158937)
+  const jobTitle = candidate?.jobTitle || candidate?.job_title || candidate?.role || '';
+  const titleLower = String(jobTitle).toLowerCase();
+  if (titleLower.includes('cloud security') || titleLower.includes('security architect') || titleLower.includes('ncdot')) {
+    return '158937'; // Direct requisition mapping for Cloud Security Architect
+  }
+  if (titleLower.includes('salesforce') || titleLower.includes('developer')) {
+    return '158864'; // Default Salesforce Developer requisition
+  }
+
+  return '158864'; // Ultimate fallback Requisition
+}
+
 // ─── Reusable Push Candidate & Auto-Apply to JobsInHand ────────────────────────
 async function handleJobsInHandPush(candidateId, customReqId, customRate) {
   if (!candidatesStore || candidatesStore.length === 0) {
@@ -2992,18 +3037,12 @@ async function handleJobsInHandPush(candidateId, customReqId, customRate) {
     phone: candidate.extracted_profile?.phone || candidate.phone || candidate.candidatePhone || '615-555-0199',
     location: candidate.extracted_profile?.location || candidate.location || 'Nashville, TN',
     jobId: candidate.job_id || candidate.jobId,
+    jobTitle: candidate.job_title || candidate.jobTitle || candidate.role || '',
     resumeFileUrl: candidate.file?.local_path || candidate.resumeFileUrl || candidate.file?.stored_name
   };
 
-  // Find requirement ID
-  let targetReqId = customReqId;
-  if (!targetReqId && normalizedCandidate.jobId) {
-    const job = jobsStore.find(j => j.id === normalizedCandidate.jobId);
-    if (job) {
-      targetReqId = job.reqId || job.rawReqId || job.id.replace('J-', '');
-    }
-  }
-  if (!targetReqId) targetReqId = '158864'; // Default JobsInHand req ID
+  // Find requirement ID using the resolveRequisitionId helper
+  const targetReqId = resolveRequisitionId(customReqId || normalizedCandidate.jobId, normalizedCandidate);
 
   const chosenRate = customRate || candidate.finalRate || candidate.expectedRate || '$70/hr';
 
@@ -5520,7 +5559,10 @@ app.post('/api/candidates/push-to-jobsinhand', async (req, res) => {
     
     // Find target job requirement ID from job_id or fallback
     const targetJob = jobsStore.find(j => j.id === cand.job_id);
-    const targetReqId = reqId || targetJob?.reqId || targetJob?.id || '158864';
+    const targetReqId = resolveRequisitionId(reqId || cand.job_id, {
+      ...cand,
+      jobTitle: cand.job_title || cand.jobTitle || cand.extracted_profile?.title || ''
+    });
 
     const applyResult = await autoApplyCandidateToJobsInHand({
       reqId: targetReqId,
