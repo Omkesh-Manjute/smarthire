@@ -292,25 +292,25 @@ function CandidatesModule({
         </div>
       </div>
 
-      {/* ─── ENTERPRISE CANDIDATES TABLE (NO HORIZONTAL OVERLAP) ─── */}
+      {/* ─── ENTERPRISE CANDIDATES TABLE (COMPACT SAAS LAYOUT) ─── */}
       <div style={{
         background: '#ffffff',
         border: '1px solid #e2e8f0',
-        borderRadius: 14,
+        borderRadius: 12,
         overflow: 'hidden',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+        boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
       }}>
         <div style={{ overflowX: 'auto', width: '100%', WebkitOverflowScrolling: 'touch' }}>
           <table style={{
             width: '100%',
-            minWidth: '1160px',
+            minWidth: '980px',
             borderCollapse: 'collapse',
             textAlign: 'left',
             fontFamily: 'inherit'
           }}>
             <thead>
               <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                <th style={{ width: '40px', padding: '12px 14px', textAlign: 'center' }}>
+                <th style={{ width: '36px', padding: '9px 10px', textAlign: 'center' }}>
                   <input
                     type="checkbox"
                     checked={selectedIds.length === safeFiltered.length && safeFiltered.length > 0}
@@ -318,31 +318,31 @@ function CandidatesModule({
                     style={{ cursor: 'pointer', accentColor: '#4f46e5' }}
                   />
                 </th>
-                <th style={{ width: '50px', padding: '12px 8px', fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <th style={{ width: '36px', padding: '9px 6px', fontSize: '10.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   #
                 </th>
-                <th style={{ width: '250px', padding: '12px 14px', fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  Candidate & Profile
+                <th style={{ width: '200px', padding: '9px 10px', fontSize: '10.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Candidate
                 </th>
-                <th style={{ width: '210px', padding: '12px 14px', fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  Contact (Email / Phone)
+                <th style={{ width: '170px', padding: '9px 10px', fontSize: '10.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Contact Info
                 </th>
-                <th style={{ width: '170px', padding: '12px 14px', fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  Target Role
+                <th style={{ width: '140px', padding: '9px 10px', fontSize: '10.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Role / Opening
                 </th>
-                <th style={{ width: '220px', padding: '12px 14px', fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  Key Skills & Matches
+                <th style={{ width: '180px', padding: '9px 10px', fontSize: '10.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Key Skills
                 </th>
-                <th style={{ width: '90px', padding: '12px 10px', fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'center' }}>
-                  AI Match
+                <th style={{ width: '75px', padding: '9px 6px', fontSize: '10.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>
+                  Match
                 </th>
-                <th style={{ width: '120px', padding: '12px 12px', fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <th style={{ width: '100px', padding: '9px 8px', fontSize: '10.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   Final Rate
                 </th>
-                <th style={{ width: '150px', padding: '12px 14px', fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <th style={{ width: '125px', padding: '9px 10px', fontSize: '10.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   ATS Status
                 </th>
-                <th style={{ width: '80px', padding: '12px 12px', fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'center' }}>
+                <th style={{ width: '65px', padding: '9px 8px', fontSize: '10.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>
                   Action
                 </th>
               </tr>
@@ -350,10 +350,10 @@ function CandidatesModule({
             <tbody>
               {safeFiltered.length === 0 ? (
                 <tr>
-                  <td colSpan="10" style={{ textAlign: 'center', padding: '54px 20px', color: '#64748b' }}>
-                    <div style={{ fontSize: 36, marginBottom: 8 }}>🔍</div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a' }}>No candidates matching filters</div>
-                    <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 4 }}>Try clearing search keywords or selecting a different job</div>
+                  <td colSpan="10" style={{ textAlign: 'center', padding: '44px 20px', color: '#64748b' }}>
+                    <div style={{ fontSize: 32, marginBottom: 6 }}>🔍</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>No candidates matching filters</div>
+                    <div style={{ fontSize: 12.5, color: '#94a3b8', marginTop: 3 }}>Try clearing search keywords or selecting a different job</div>
                   </td>
                 </tr>
               ) : (
@@ -389,7 +389,7 @@ function CandidatesModule({
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     >
                       {/* Checkbox */}
-                      <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                      <td style={{ padding: '8px 10px', textAlign: 'center' }}>
                         <input
                           type="checkbox"
                           checked={selectedIds.includes(candidate.id)}
@@ -399,13 +399,13 @@ function CandidatesModule({
                       </td>
 
                       {/* Rank */}
-                      <td style={{ padding: '12px 8px', fontSize: '12px', fontWeight: '700', color: '#64748b' }}>
+                      <td style={{ padding: '8px 6px', fontSize: '11.5px', fontWeight: '700', color: '#64748b' }}>
                         #{idx + 1}
                       </td>
 
-                      {/* Candidate Name + Avatar + Quick Chat */}
-                      <td style={{ padding: '12px 14px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      {/* Candidate Name + Avatar */}
+                      <td style={{ padding: '8px 10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <div
                             onClick={() => {
                               setSelectedCandidate(candidate)
@@ -414,18 +414,18 @@ function CandidatesModule({
                               setModalTab('AI Analyst')
                             }}
                             style={{
-                              width: '34px',
-                              height: '34px',
+                              width: '30px',
+                              height: '30px',
                               borderRadius: '50%',
                               background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
                               display: 'grid',
                               placeItems: 'center',
-                              fontSize: '11.5px',
+                              fontSize: '11px',
                               fontWeight: '800',
                               color: '#fff',
                               flexShrink: 0,
                               cursor: 'pointer',
-                              boxShadow: '0 2px 6px rgba(79, 70, 229, 0.25)'
+                              boxShadow: '0 2px 4px rgba(79, 70, 229, 0.2)'
                             }}
                             title="Click to view candidate details"
                           >
@@ -441,7 +441,7 @@ function CandidatesModule({
                                 setModalTab('AI Analyst')
                               }}
                               style={{
-                                fontSize: '13.5px',
+                                fontSize: '13px',
                                 fontWeight: '700',
                                 color: '#0f172a',
                                 cursor: 'pointer',
@@ -458,14 +458,14 @@ function CandidatesModule({
                               {nameDisplay}
                             </div>
 
-                            <div style={{ display: 'flex', gap: '4px', marginTop: '3px' }}>
+                            <div style={{ display: 'flex', gap: '3px', marginTop: '2px' }}>
                               {candidate.ai_screening_complete && (
-                                <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', background: '#ecfdf5', color: '#059669', fontWeight: '800', border: '1px solid #a7f3d0' }}>
+                                <span style={{ fontSize: '8.5px', padding: '1px 4px', borderRadius: '3px', background: '#ecfdf5', color: '#059669', fontWeight: '800', border: '1px solid #a7f3d0' }}>
                                   ✓ Screened
                                 </span>
                               )}
                               {(candidate.pushedToJobsInHand || isPushed) && (
-                                <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', background: '#f0fdf4', color: '#16a34a', fontWeight: '800', border: '1px solid #bbf7d0' }}>
+                                <span style={{ fontSize: '8.5px', padding: '1px 4px', borderRadius: '3px', background: '#f0fdf4', color: '#16a34a', fontWeight: '800', border: '1px solid #bbf7d0' }}>
                                   Saved
                                 </span>
                               )}
@@ -475,53 +475,53 @@ function CandidatesModule({
                       </td>
 
                       {/* Contact Info (Email / Phone) */}
-                      <td style={{ padding: '12px 14px' }}>
-                        <div style={{ fontSize: '12px', color: '#334155', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }} title={emailDisplay}>
+                      <td style={{ padding: '8px 10px' }}>
+                        <div style={{ fontSize: '11.5px', color: '#334155', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '170px' }} title={emailDisplay}>
                           {emailDisplay}
                         </div>
                         {phoneDisplay ? (
-                          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+                          <div style={{ fontSize: '10.5px', color: '#64748b', marginTop: '1px' }}>
                             📞 {phoneDisplay}
                           </div>
                         ) : (
-                          <div style={{ fontSize: '10.5px', color: '#94a3b8', marginTop: '2px' }}>
-                            No phone provided
+                          <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '1px' }}>
+                            No phone
                           </div>
                         )}
                       </td>
 
                       {/* Target Role */}
-                      <td style={{ padding: '12px 14px' }}>
+                      <td style={{ padding: '8px 10px' }}>
                         <div style={{
-                          fontSize: '12.5px',
+                          fontSize: '12px',
                           fontWeight: '700',
                           color: '#0f172a',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
-                          maxWidth: '160px'
+                          maxWidth: '140px'
                         }} title={role}>
                           {role}
                         </div>
                         {candidateJob && (
-                          <div style={{ fontSize: '10.5px', color: '#6366f1', fontWeight: '600', marginTop: '2px' }}>
+                          <div style={{ fontSize: '10px', color: '#6366f1', fontWeight: '600', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }} title={candidateJob.title}>
                             📌 {candidateJob.title}
                           </div>
                         )}
                       </td>
 
                       {/* Key Skills */}
-                      <td style={{ padding: '12px 14px' }}>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', maxWidth: '220px' }}>
-                          {skillList.slice(0, 3).map((s, i) => {
+                      <td style={{ padding: '8px 10px' }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', maxWidth: '180px' }}>
+                          {skillList.slice(0, 2).map((s, i) => {
                             const badge = getSkillBadgeStyle(s, candidateJob)
                             return (
                               <span
                                 key={i}
                                 style={{
-                                  fontSize: '10.5px',
-                                  padding: '2px 7px',
-                                  borderRadius: '5px',
+                                  fontSize: '10px',
+                                  padding: '1px 5px',
+                                  borderRadius: '4px',
                                   background: badge.bg,
                                   color: badge.text,
                                   border: `1px solid ${badge.border}`,
@@ -533,25 +533,25 @@ function CandidatesModule({
                               </span>
                             )
                           })}
-                          {skillList.length > 3 && (
-                            <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: '700', alignSelf: 'center' }}>
-                              +{skillList.length - 3} more
+                          {skillList.length > 2 && (
+                            <span style={{ fontSize: '9.5px', color: '#94a3b8', fontWeight: '700', alignSelf: 'center' }}>
+                              +{skillList.length - 2}
                             </span>
                           )}
                         </div>
                       </td>
 
                       {/* AI Match Score */}
-                      <td style={{ padding: '12px 10px', textAlign: 'center' }}>
+                      <td style={{ padding: '8px 6px', textAlign: 'center' }}>
                         {matchScore != null ? (
                           <span style={{
-                            fontSize: '12.5px',
+                            fontSize: '11.5px',
                             fontWeight: '800',
                             color: scoreColor(matchScore),
                             background: matchScore >= 80 ? '#dcfce7' : matchScore >= 60 ? '#fef3c7' : '#fee2e2',
                             border: `1px solid ${matchScore >= 80 ? '#bbf7d0' : matchScore >= 60 ? '#fde68a' : '#fca5a5'}`,
-                            padding: '3px 8px',
-                            borderRadius: '6px',
+                            padding: '2px 6px',
+                            borderRadius: '5px',
                             display: 'inline-block'
                           }}>
                             {matchScore}%
@@ -562,21 +562,21 @@ function CandidatesModule({
                       </td>
 
                       {/* Final Rate */}
-                      <td style={{ padding: '12px 12px' }}>
-                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                      <td style={{ padding: '8px 8px' }}>
+                        <div style={{ display: 'flex', gap: '3px', alignItems: 'center' }}>
                           <input
                             type="text"
                             placeholder="$70/hr"
                             value={finalRates[candidate.id] ?? existingRate}
                             onChange={e => setFinalRates(prev => ({ ...prev, [candidate.id]: e.target.value }))}
                             style={{
-                              width: '65px',
-                              padding: '5px 7px',
-                              borderRadius: '6px',
+                              width: '56px',
+                              padding: '4px 6px',
+                              borderRadius: '5px',
                               border: '1px solid #cbd5e1',
                               background: '#ffffff',
                               color: '#0f172a',
-                              fontSize: '12px',
+                              fontSize: '11.5px',
                               fontWeight: '600'
                             }}
                           />
@@ -587,10 +587,10 @@ function CandidatesModule({
                               background: '#f0fdf4',
                               color: '#16a34a',
                               border: '1px solid #bbf7d0',
-                              borderRadius: '6px',
-                              padding: '5px 7px',
+                              borderRadius: '5px',
+                              padding: '4px 6px',
                               cursor: 'pointer',
-                              fontSize: '11px',
+                              fontSize: '10.5px',
                               fontWeight: '800'
                             }}
                             title="Save rate"
@@ -601,14 +601,14 @@ function CandidatesModule({
                       </td>
 
                       {/* ATS Status */}
-                      <td style={{ padding: '12px 14px' }}>
+                      <td style={{ padding: '8px 10px' }}>
                         <select
                           value={candidate.status || 'New'}
                           onChange={e => handleUpdateStatus(candidate.id, e.target.value)}
                           style={{
-                            fontSize: '12px',
-                            padding: '5px 8px',
-                            borderRadius: '7px',
+                            fontSize: '11.5px',
+                            padding: '4px 6px',
+                            borderRadius: '6px',
                             background: st.bg,
                             color: st.color,
                             border: `1.5px solid ${st.border}`,
@@ -623,9 +623,9 @@ function CandidatesModule({
                       </td>
 
                       {/* Action / Push */}
-                      <td style={{ padding: '12px 12px', textAlign: 'center' }}>
+                      <td style={{ padding: '8px 8px', textAlign: 'center' }}>
                         {isPushed ? (
-                          <span style={{ fontSize: '10.5px', background: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '3px 7px', fontWeight: '800' }}>
+                          <span style={{ fontSize: '9.5px', background: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: '5px', padding: '2px 5px', fontWeight: '800' }}>
                             ✓ Pushed
                           </span>
                         ) : (
@@ -637,12 +637,12 @@ function CandidatesModule({
                               background: '#4f46e5',
                               color: '#ffffff',
                               border: 'none',
-                              borderRadius: '6px',
-                              padding: '5px 10px',
+                              borderRadius: '5px',
+                              padding: '4px 8px',
                               cursor: 'pointer',
-                              fontSize: '12px',
+                              fontSize: '11px',
                               fontWeight: '700',
-                              boxShadow: '0 2px 4px rgba(79, 70, 229, 0.25)'
+                              boxShadow: '0 2px 4px rgba(79, 70, 229, 0.2)'
                             }}
                           >
                             {pushingId === candidate.id ? '⏳' : '🚀'}

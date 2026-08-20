@@ -32,12 +32,29 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
   const [search, setSearch] = useState('')
   const [updatingId, setUpdatingId] = useState(null)
   const [viewMode, setViewMode] = useState('kanban') // 'kanban' | 'funnel'
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [targetStageToAdd, setTargetStageToAdd] = useState('Shortlisted')
+
+  // Maintain list of candidates explicitly added to pipeline (Empty by default)
+  const [pipelineCandidateIds, setPipelineCandidateIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('smarthire_active_pipeline_ids')
+      return saved ? JSON.parse(saved) : []
+    } catch {
+      return []
+    }
+  })
 
   const safeCandidates = Array.isArray(allCandidates) ? allCandidates : []
   const safeJobs = Array.isArray(jobsList) ? jobsList : []
 
+  // Only candidates explicitly in the pipeline
+  const pipelineCandidates = useMemo(() => {
+    return safeCandidates.filter(c => c && pipelineCandidateIds.includes(c.id))
+  }, [safeCandidates, pipelineCandidateIds])
+
   const filtered = useMemo(() => {
-    return safeCandidates.filter(c => {
+    return pipelineCandidates.filter(c => {
       if (!c) return false
       const name = (c.extracted_profile?.name || c.name || '').toLowerCase()
       const role = (c.job_title || c.title || '').toLowerCase()
@@ -45,7 +62,7 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
       const matchJob = jobFilter === 'All' || c.job_id === jobFilter
       return matchSearch && matchJob
     })
-  }, [safeCandidates, jobFilter, search])
+  }, [pipelineCandidates, jobFilter, search])
 
   const handleStatusChange = async (candidateId, newStatus) => {
     setUpdatingId(candidateId)
@@ -53,7 +70,31 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
     setTimeout(() => setUpdatingId(null), 400)
   }
 
-  // Group candidates by stage
+  const handleAddToPipeline = (candidateId, stage = 'Shortlisted') => {
+    setPipelineCandidateIds(prev => {
+      const next = prev.includes(candidateId) ? prev : [...prev, candidateId]
+      try { localStorage.setItem('smarthire_active_pipeline_ids', JSON.stringify(next)) } catch {}
+      return next
+    })
+    updateStatus(candidateId, stage)
+  }
+
+  const handleRemoveFromPipeline = (candidateId) => {
+    setPipelineCandidateIds(prev => {
+      const next = prev.filter(id => id !== candidateId)
+      try { localStorage.setItem('smarthire_active_pipeline_ids', JSON.stringify(next)) } catch {}
+      return next
+    })
+  }
+
+  const handleClearPipeline = () => {
+    if (window.confirm('Are you sure you want to clear all candidates from the pipeline board?')) {
+      setPipelineCandidateIds([])
+      try { localStorage.setItem('smarthire_active_pipeline_ids', JSON.stringify([])) } catch {}
+    }
+  }
+
+  // Group pipeline candidates by stage
   const stageGroups = useMemo(() => {
     const map = {}
     PIPELINE_STAGES.forEach(st => {
@@ -65,7 +106,6 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
       if (map[st]) {
         map[st].push(c)
       } else {
-        // Fallback to New
         map['New'].push(c)
       }
     })
@@ -79,85 +119,117 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, fontFamily: "'Inter', 'Plus Jakarta Sans', sans-serif" }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18, fontFamily: "'Inter', 'Plus Jakarta Sans', sans-serif" }}>
 
       {/* ─── PAGE HEADER & CONTROLS ─── */}
       <div style={{
         background: '#ffffff',
         border: '1px solid #e2e8f0',
         borderRadius: 14,
-        padding: '18px 24px',
+        padding: '16px 22px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
         flexWrap: 'wrap',
-        gap: 14
+        gap: 12
       }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#0f172a' }}>
+            <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#0f172a' }}>
               📈 Visual Recruitment Pipeline
             </h2>
             <span style={{
-              background: '#e0e7ff',
-              color: '#4338ca',
+              background: '#f1f5f9',
+              color: '#475569',
               fontSize: 11,
               fontWeight: 800,
-              padding: '3px 9px',
+              padding: '2px 8px',
               borderRadius: 20
             }}>
-              Kanban Workflow
+              {pipelineCandidates.length} Active in Pipeline
             </span>
           </div>
-          <p style={{ margin: '4px 0 0', fontSize: 12.5, color: '#64748b' }}>
-            Interactive stage workflow board. Drag, review, and advance talent across recruitment milestones.
+          <p style={{ margin: '3px 0 0', fontSize: 12, color: '#64748b' }}>
+            Clean recruitment milestone board. Advance vetted talent across hiring stages.
           </p>
         </div>
 
-        {/* View Switcher (Kanban vs Analytics Funnel) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f1f5f9', padding: '4px', borderRadius: '10px' }}>
+        {/* Action buttons & View Switcher */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <button
-            onClick={() => setViewMode('kanban')}
+            onClick={() => { setTargetStageToAdd('Shortlisted'); setShowAddModal(true); }}
             style={{
+              background: '#4f46e5',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: 8,
+              padding: '7px 14px',
+              fontSize: '12.5px',
+              fontWeight: 700,
+              cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: '6px 14px',
-              borderRadius: '7px',
-              border: 'none',
-              background: viewMode === 'kanban' ? '#ffffff' : 'transparent',
-              color: viewMode === 'kanban' ? '#4f46e5' : '#64748b',
-              fontWeight: viewMode === 'kanban' ? '800' : '600',
-              fontSize: '12.5px',
-              cursor: 'pointer',
-              boxShadow: viewMode === 'kanban' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-              transition: 'all 0.15s'
+              gap: 6,
+              boxShadow: '0 2px 6px rgba(79, 70, 229, 0.25)'
             }}
           >
-            <span>📋 Kanban Board</span>
+            <span>➕ Add Candidate to Pipeline</span>
           </button>
 
-          <button
-            onClick={() => setViewMode('funnel')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 14px',
-              borderRadius: '7px',
-              border: 'none',
-              background: viewMode === 'funnel' ? '#ffffff' : 'transparent',
-              color: viewMode === 'funnel' ? '#4f46e5' : '#64748b',
-              fontWeight: viewMode === 'funnel' ? '800' : '600',
-              fontSize: '12.5px',
-              cursor: 'pointer',
-              boxShadow: viewMode === 'funnel' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-              transition: 'all 0.15s'
-            }}
-          >
-            <span>📊 Conversion Funnel</span>
-          </button>
+          {pipelineCandidates.length > 0 && (
+            <button
+              onClick={handleClearPipeline}
+              style={{
+                background: '#fef2f2',
+                color: '#dc2626',
+                border: '1px solid #fecaca',
+                borderRadius: 8,
+                padding: '7px 12px',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+              title="Clear all candidate cards from the pipeline"
+            >
+              🗑️ Clear Pipeline
+            </button>
+          )}
+
+          <div style={{ display: 'flex', alignItems: 'center', background: '#f1f5f9', padding: '3px', borderRadius: '8px' }}>
+            <button
+              onClick={() => setViewMode('kanban')}
+              style={{
+                padding: '5px 12px',
+                borderRadius: '6px',
+                border: 'none',
+                background: viewMode === 'kanban' ? '#ffffff' : 'transparent',
+                color: viewMode === 'kanban' ? '#4f46e5' : '#64748b',
+                fontWeight: viewMode === 'kanban' ? '800' : '600',
+                fontSize: '12px',
+                cursor: 'pointer',
+                boxShadow: viewMode === 'kanban' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none'
+              }}
+            >
+              📋 Kanban
+            </button>
+            <button
+              onClick={() => setViewMode('funnel')}
+              style={{
+                padding: '5px 12px',
+                borderRadius: '6px',
+                border: 'none',
+                background: viewMode === 'funnel' ? '#ffffff' : 'transparent',
+                color: viewMode === 'funnel' ? '#4f46e5' : '#64748b',
+                fontWeight: viewMode === 'funnel' ? '800' : '600',
+                fontSize: '12px',
+                cursor: 'pointer',
+                boxShadow: viewMode === 'funnel' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none'
+              }}
+            >
+              📊 Funnel
+            </button>
+          </div>
         </div>
       </div>
 
@@ -165,16 +237,16 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
       <div style={{
         background: '#ffffff',
         border: '1px solid #e2e8f0',
-        borderRadius: 14,
-        padding: '14px 20px',
+        borderRadius: 12,
+        padding: '12px 18px',
         display: 'flex',
         alignItems: 'center',
         gap: 12,
         flexWrap: 'wrap',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+        boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
       }}>
         {/* Search */}
-        <div style={{ position: 'relative', flex: '1 1 240px', minWidth: 200 }}>
+        <div style={{ position: 'relative', flex: '1 1 220px', minWidth: 180 }}>
           <svg style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }}
             width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
@@ -186,13 +258,13 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
             onChange={e => setSearch(e.target.value)}
             style={{
               width: '100%',
-              paddingLeft: 32,
-              paddingRight: 12,
-              paddingTop: 8,
-              paddingBottom: 8,
+              paddingLeft: 30,
+              paddingRight: 10,
+              paddingTop: 7,
+              paddingBottom: 7,
               border: '1px solid #cbd5e1',
-              borderRadius: 8,
-              fontSize: 13,
+              borderRadius: 7,
+              fontSize: 12.5,
               color: '#0f172a',
               background: '#ffffff',
               outline: 'none',
@@ -202,7 +274,7 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
         </div>
 
         {/* Job Filter */}
-        <div style={{ flex: '1 1 200px', minWidth: 180 }}>
+        <div style={{ flex: '1 1 180px', minWidth: 160 }}>
           <select
             value={jobFilter}
             onChange={e => setJobFilter(e.target.value)}
@@ -210,22 +282,22 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
               width: '100%',
               background: '#ffffff',
               border: '1px solid #cbd5e1',
-              borderRadius: 8,
+              borderRadius: 7,
               color: '#0f172a',
-              padding: '8px 12px',
-              fontSize: 13,
+              padding: '7px 10px',
+              fontSize: 12.5,
               cursor: 'pointer',
               outline: 'none'
             }}
           >
-            <option value="All">All Jobs & Openings ({safeJobs.length})</option>
+            <option value="All">All Jobs & Openings</option>
             {safeJobs.filter(Boolean).map(j => (
               <option key={j.id} value={j.id}>{j.title}</option>
             ))}
           </select>
         </div>
 
-        {/* Clear Filter button */}
+        {/* Reset Filter button */}
         {(search || jobFilter !== 'All') && (
           <button
             onClick={() => { setSearch(''); setJobFilter('All') }}
@@ -233,19 +305,19 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
               background: '#fef2f2',
               color: '#dc2626',
               border: '1px solid #fecaca',
-              borderRadius: 8,
-              padding: '8px 14px',
-              fontSize: 12,
+              borderRadius: 7,
+              padding: '6px 12px',
+              fontSize: 11.5,
               fontWeight: 700,
               cursor: 'pointer'
             }}
           >
-            ✕ Reset Filters
+            ✕ Clear
           </button>
         )}
 
-        <div style={{ marginLeft: 'auto', fontSize: 12.5, color: '#64748b', fontWeight: 600 }}>
-          Tracking <strong style={{ color: '#4f46e5' }}>{filtered.length}</strong> active candidate{filtered.length !== 1 ? 's' : ''}
+        <div style={{ marginLeft: 'auto', fontSize: 12, color: '#64748b', fontWeight: 600 }}>
+          Tracking <strong style={{ color: '#4f46e5' }}>{filtered.length}</strong> pipeline candidates
         </div>
       </div>
 
@@ -253,10 +325,10 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
       {viewMode === 'kanban' && (
         <div style={{
           display: 'flex',
-          gap: 14,
+          gap: 12,
           overflowX: 'auto',
           paddingBottom: 16,
-          minHeight: '620px',
+          minHeight: '560px',
           alignItems: 'flex-start',
           WebkitOverflowScrolling: 'touch'
         }}>
@@ -266,38 +338,38 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
               <div
                 key={stage.id}
                 style={{
-                  width: '280px',
-                  minWidth: '280px',
+                  width: '260px',
+                  minWidth: '260px',
                   background: '#f8fafc',
                   border: `1px solid ${stage.border}`,
-                  borderRadius: 14,
+                  borderRadius: 12,
                   display: 'flex',
                   flexDirection: 'column',
-                  maxHeight: '78vh',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+                  maxHeight: '75vh',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
                 }}
               >
                 {/* Stage Column Header */}
                 <div style={{
-                  padding: '12px 14px',
+                  padding: '10px 12px',
                   background: stage.headerBg,
                   borderBottom: `1px solid ${stage.border}`,
-                  borderRadius: '13px 13px 0 0',
+                  borderRadius: '11px 11px 0 0',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 15 }}>{stage.icon}</span>
-                    <span style={{ fontSize: 13, fontWeight: 800, color: stage.color }}>
+                    <span style={{ fontSize: 14 }}>{stage.icon}</span>
+                    <span style={{ fontSize: 12.5, fontWeight: 800, color: stage.color }}>
                       {stage.label}
                     </span>
                   </div>
                   <span style={{
                     fontSize: 11,
                     fontWeight: 800,
-                    padding: '2px 8px',
-                    borderRadius: 12,
+                    padding: '1px 7px',
+                    borderRadius: 10,
                     background: '#ffffff',
                     color: stage.color,
                     border: `1px solid ${stage.border}`
@@ -308,24 +380,44 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
 
                 {/* Candidate Cards List */}
                 <div style={{
-                  padding: '10px',
+                  padding: '8px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 10,
+                  gap: 8,
                   overflowY: 'auto',
                   flex: 1
                 }}>
                   {list.length === 0 ? (
                     <div style={{
-                      padding: '24px 12px',
+                      padding: '24px 10px',
                       textAlign: 'center',
                       color: '#94a3b8',
-                      fontSize: 12,
+                      fontSize: 11.5,
                       border: '1px dashed #cbd5e1',
-                      borderRadius: 10,
-                      background: '#ffffff'
+                      borderRadius: 8,
+                      background: '#ffffff',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 6
                     }}>
-                      No candidates in {stage.label}
+                      <span>📭 Empty Stage</span>
+                      <button
+                        onClick={() => { setTargetStageToAdd(stage.id); setShowAddModal(true); }}
+                        style={{
+                          background: 'transparent',
+                          border: '1px solid #cbd5e1',
+                          color: '#64748b',
+                          borderRadius: 5,
+                          padding: '3px 8px',
+                          fontSize: 10.5,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          marginTop: 2
+                        }}
+                      >
+                        + Add candidate
+                      </button>
                     </div>
                   ) : (
                     list.map((candidate, idx) => {
@@ -343,26 +435,26 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
                           style={{
                             background: '#ffffff',
                             border: '1px solid #e2e8f0',
-                            borderRadius: 10,
-                            padding: '12px 14px',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                            borderRadius: 8,
+                            padding: '10px 12px',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: 8,
+                            gap: 6,
                             opacity: isUpdating ? 0.5 : 1,
-                            transition: 'all 0.15s ease'
+                            transition: 'all 0.12s ease'
                           }}
                         >
                           {/* Card Top: Avatar + Name + Match */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
                               <div style={{
-                                width: 28,
-                                height: 28,
+                                width: 26,
+                                height: 26,
                                 borderRadius: '50%',
                                 background: avatarBg,
                                 color: '#fff',
-                                fontSize: 10.5,
+                                fontSize: 10,
                                 fontWeight: 800,
                                 display: 'grid',
                                 placeItems: 'center',
@@ -372,7 +464,7 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
                               </div>
                               <div style={{ minWidth: 0 }}>
                                 <div style={{
-                                  fontSize: 13,
+                                  fontSize: 12.5,
                                   fontWeight: 700,
                                   color: '#0f172a',
                                   whiteSpace: 'nowrap',
@@ -382,7 +474,7 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
                                   {name}
                                 </div>
                                 <div style={{
-                                  fontSize: 11,
+                                  fontSize: 10.5,
                                   color: '#64748b',
                                   whiteSpace: 'nowrap',
                                   overflow: 'hidden',
@@ -395,10 +487,10 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
 
                             {matchScore != null && (
                               <span style={{
-                                fontSize: 11,
+                                fontSize: 10.5,
                                 fontWeight: 800,
-                                padding: '2px 6px',
-                                borderRadius: 5,
+                                padding: '1px 5px',
+                                borderRadius: 4,
                                 color: scoreColor(matchScore),
                                 background: matchScore >= 80 ? '#dcfce7' : matchScore >= 60 ? '#fef3c7' : '#fee2e2',
                                 border: `1px solid ${matchScore >= 80 ? '#bbf7d0' : matchScore >= 60 ? '#fde68a' : '#fca5a5'}`,
@@ -412,11 +504,11 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
                           {/* Applied Job Badge */}
                           {candidateJob && (
                             <div style={{
-                              fontSize: 11,
+                              fontSize: 10.5,
                               color: '#4f46e5',
                               background: '#eef2ff',
-                              padding: '2px 8px',
-                              borderRadius: 5,
+                              padding: '2px 6px',
+                              borderRadius: 4,
                               whiteSpace: 'nowrap',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis'
@@ -425,43 +517,61 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
                             </div>
                           )}
 
-                          {/* Days in stage + Move Stage Select */}
+                          {/* Days in stage + Move Stage Select + Remove */}
                           <div style={{
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
                             borderTop: '1px solid #f1f5f9',
-                            paddingTop: 8,
+                            paddingTop: 6,
                             marginTop: 2
                           }}>
-                            <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>
-                              ⏱️ {daysInStage === 0 ? 'Today' : `${daysInStage}d ago`}
+                            <span style={{ fontSize: 10.5, color: '#94a3b8', fontWeight: 600 }}>
+                              ⏱️ {daysInStage === 0 ? 'Today' : `${daysInStage}d`}
                             </span>
 
-                            {/* Move Stage Selector */}
-                            <select
-                              value={candidate.status || 'New'}
-                              onChange={e => handleStatusChange(candidate.id, e.target.value)}
-                              disabled={isUpdating}
-                              style={{
-                                fontSize: 11,
-                                fontWeight: 700,
-                                padding: '3px 6px',
-                                borderRadius: 6,
-                                background: '#f8fafc',
-                                border: '1px solid #cbd5e1',
-                                color: '#334155',
-                                cursor: 'pointer',
-                                outline: 'none',
-                                maxWidth: '120px'
-                              }}
-                            >
-                              {PIPELINE_STAGES.map(st => (
-                                <option key={st.id} value={st.id}>
-                                  {st.label}
-                                </option>
-                              ))}
-                            </select>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <select
+                                value={candidate.status || 'New'}
+                                onChange={e => handleStatusChange(candidate.id, e.target.value)}
+                                disabled={isUpdating}
+                                style={{
+                                  fontSize: 10.5,
+                                  fontWeight: 700,
+                                  padding: '2px 5px',
+                                  borderRadius: 5,
+                                  background: '#f8fafc',
+                                  border: '1px solid #cbd5e1',
+                                  color: '#334155',
+                                  cursor: 'pointer',
+                                  outline: 'none',
+                                  maxWidth: '110px'
+                                }}
+                              >
+                                {PIPELINE_STAGES.map(st => (
+                                  <option key={st.id} value={st.id}>
+                                    {st.label}
+                                  </option>
+                                ))}
+                              </select>
+
+                              <button
+                                onClick={() => handleRemoveFromPipeline(candidate.id)}
+                                title="Remove from pipeline"
+                                style={{
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: '#94a3b8',
+                                  cursor: 'pointer',
+                                  fontSize: 11,
+                                  padding: '2px 4px'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.color = '#dc2626'}
+                                onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}
+                              >
+                                ✕
+                              </button>
+                            </div>
                           </div>
                         </div>
                       )
@@ -479,43 +589,43 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
         <div style={{
           background: '#ffffff',
           border: '1px solid #e2e8f0',
-          borderRadius: 14,
-          padding: 24,
-          boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+          borderRadius: 12,
+          padding: 20,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
           display: 'flex',
           flexDirection: 'column',
-          gap: 16
+          gap: 14
         }}>
-          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#0f172a' }}>
+          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#0f172a' }}>
             📊 Recruitment Funnel & Conversion Rates
           </h3>
-          <p style={{ margin: 0, fontSize: 13, color: '#64748b' }}>
+          <p style={{ margin: 0, fontSize: 12.5, color: '#64748b' }}>
             Track progression rates across pipeline milestones from New Application down to Final Placement.
           </p>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 10 }}>
-            {PIPELINE_STAGES.map((stage, idx) => {
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 6 }}>
+            {PIPELINE_STAGES.map((stage) => {
               const count = stageGroups[stage.id]?.length || 0
               const percentage = filtered.length > 0 ? Math.round((count / filtered.length) * 100) : 0
 
               return (
-                <div key={stage.id} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <div style={{ width: 140, display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#1e293b' }}>
+                <div key={stage.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 130, display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 700, color: '#1e293b' }}>
                     <span>{stage.icon}</span>
                     <span>{stage.label}</span>
                   </div>
 
-                  <div style={{ flex: 1, height: 24, background: '#f1f5f9', borderRadius: 6, overflow: 'hidden', position: 'relative' }}>
+                  <div style={{ flex: 1, height: 20, background: '#f1f5f9', borderRadius: 5, overflow: 'hidden' }}>
                     <div style={{
                       width: `${Math.max(percentage, 2)}%`,
                       height: '100%',
                       background: stage.color,
-                      borderRadius: 6,
+                      borderRadius: 5,
                       transition: 'width 0.4s ease'
                     }} />
                   </div>
 
-                  <div style={{ width: 90, textAlign: 'right', fontSize: 12.5, fontWeight: 800, color: stage.color }}>
+                  <div style={{ width: 80, textAlign: 'right', fontSize: 12, fontWeight: 800, color: stage.color }}>
                     {count} ({percentage}%)
                   </div>
                 </div>
@@ -524,6 +634,120 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
           </div>
         </div>
       )}
+
+      {/* ─── ADD CANDIDATES TO PIPELINE MODAL ─── */}
+      {showAddModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(6px)',
+            zIndex: 3000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20
+          }}
+          onClick={() => setShowAddModal(false)}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: 14,
+              width: '100%',
+              maxWidth: 580,
+              maxHeight: '80vh',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
+              border: '1px solid #e2e8f0',
+              overflow: 'hidden'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafbfc' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#0f172a' }}>
+                  ➕ Add Candidate to Pipeline
+                </h3>
+                <p style={{ margin: '2px 0 0', fontSize: 12, color: '#64748b' }}>
+                  Select talent to advance into stage: <strong>{targetStageToAdd}</strong>
+                </p>
+              </div>
+              <button
+                onClick={() => setShowAddModal(false)}
+                style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 700, color: '#64748b' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Candidate List Picker */}
+            <div style={{ padding: '16px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {safeCandidates.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 30, color: '#94a3b8' }}>No candidates available in talent directory.</div>
+              ) : (
+                safeCandidates.map(c => {
+                  const name = c.extracted_profile?.name || c.name || c.candidateName || 'Candidate'
+                  const role = c.job_title || c.jobTitle || 'Applicant'
+                  const isAlreadyIn = pipelineCandidateIds.includes(c.id)
+                  const candidateJob = safeJobs.find(j => j.id === c.job_id)
+
+                  return (
+                    <div
+                      key={c.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '10px 14px',
+                        borderRadius: 8,
+                        background: isAlreadyIn ? '#f0fdf4' : '#f8fafc',
+                        border: isAlreadyIn ? '1px solid #bbf7d0' : '1px solid #e2e8f0'
+                      }}
+                    >
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>{name}</div>
+                        <div style={{ fontSize: 11.5, color: '#64748b' }}>
+                          {role} {candidateJob ? `• 💼 ${candidateJob.title}` : ''}
+                        </div>
+                      </div>
+
+                      {isAlreadyIn ? (
+                        <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 800, background: '#dcfce7', padding: '3px 8px', borderRadius: 5 }}>
+                          ✓ In Pipeline ({c.status || 'Active'})
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            handleAddToPipeline(c.id, targetStageToAdd)
+                            setShowAddModal(false)
+                          }}
+                          style={{
+                            background: '#4f46e5',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: 6,
+                            padding: '5px 12px',
+                            fontSize: 11.5,
+                            fontWeight: 700,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          + Add to {targetStageToAdd}
+                        </button>
+                      )}
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
