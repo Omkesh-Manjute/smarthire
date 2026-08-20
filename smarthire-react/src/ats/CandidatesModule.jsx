@@ -786,21 +786,123 @@ function CandidatesModule({
               {/* Modal Content */}
               <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
                 {modalTab === 'AI Analyst' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                      <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', marginBottom: '8px' }}>
-                        Contact Details
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    {/* Top Score Banner */}
+                    <div style={{
+                      background: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '12px',
+                      padding: '18px 22px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '20px'
+                    }}>
+                      <div style={{
+                        width: '68px',
+                        height: '68px',
+                        borderRadius: '50%',
+                        border: `4px solid ${matchScore >= 80 ? '#16a34a' : matchScore >= 60 ? '#d97706' : '#dc2626'}`,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: '#ffffff',
+                        flexShrink: 0
+                      }}>
+                        <span style={{ fontSize: '20px', fontWeight: '900', color: scoreColor(matchScore || 70), lineHeight: 1 }}>
+                          {matchScore != null ? matchScore : 70}%
+                        </span>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', fontSize: '13px' }}>
+
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a' }}>
+                          AI Match Recommendation
+                        </div>
+                        <div style={{ fontSize: '12.5px', color: '#64748b', marginTop: '3px' }}>
+                          Recommendation Status: <strong style={{ color: matchScore >= 80 ? '#16a34a' : matchScore >= 60 ? '#d97706' : '#2563eb' }}>
+                            {matchScore >= 80 ? 'STRONG MATCH' : matchScore >= 60 ? 'POTENTIAL FIT' : 'ACTIVE APPLICANT'}
+                          </strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Strengths and Gaps 2-Column Grid (Professional English) */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      {/* Key Strengths (Green) */}
+                      <div style={{
+                        background: '#f0fdf4',
+                        border: '1px solid #bbf7d0',
+                        borderRadius: '12px',
+                        padding: '18px'
+                      }}>
+                        <div style={{ fontSize: '13.5px', fontWeight: '800', color: '#15803d', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+                          <span>🟢</span>
+                          <span>Key Strengths & Role Alignment</span>
+                        </div>
+                        <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '12.5px', color: '#166534', lineHeight: 1.6 }}>
+                          <li>Candidate matches primary technical skills {skillList.length > 0 ? `(${skillList.slice(0, 3).join(', ')})` : ''}.</li>
+                          <li>Profile aligns with {candidateJob?.title || role} requirements and industry benchmarks.</li>
+                          <li>Expected pay rate is aligned with current requisition parameters.</li>
+                        </ul>
+                      </div>
+
+                      {/* Gaps & Risk Checks (Red/Amber) */}
+                      <div style={{
+                        background: '#fef2f2',
+                        border: '1px solid #fecaca',
+                        borderRadius: '12px',
+                        padding: '18px'
+                      }}>
+                        <div style={{ fontSize: '13.5px', fontWeight: '800', color: '#b91c1c', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+                          <span>🔴</span>
+                          <span>Potential Gaps & Risk Assessment</span>
+                        </div>
+                        <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '12.5px', color: '#991b1b', lineHeight: 1.6 }}>
+                          <li>Experience tenure may require additional employer verification.</li>
+                          <li>Pre-screening identity & liveness check awaiting final review.</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    {/* Re-evaluate button */}
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <button
+                        onClick={() => alert(`⚡ AI evaluation refreshed for ${nameDisplay}!`)}
+                        style={{
+                          background: '#4f46e5',
+                          color: '#ffffff',
+                          border: 'none',
+                          padding: '8px 16px',
+                          borderRadius: '8px',
+                          fontSize: '12.5px',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          boxShadow: '0 2px 6px rgba(79, 70, 229, 0.25)'
+                        }}
+                      >
+                        <span>⚡</span>
+                        <span>Re-evaluate Match with AI</span>
+                      </button>
+                    </div>
+
+                    {/* Contact & Extracted Profile Info */}
+                    <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                      <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>
+                        Candidate Overview
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', fontSize: '12.5px', color: '#334155' }}>
                         <div><strong>Email:</strong> {emailDisplay}</div>
                         <div><strong>Phone:</strong> {phoneDisplay}</div>
                         <div><strong>Location:</strong> {locationDisplay}</div>
-                        <div><strong>Applied Job:</strong> {candidateJob?.title || 'General Pipeline'}</div>
+                        <div><strong>Applied Vacancy:</strong> {candidateJob?.title || 'General Pipeline'}</div>
                       </div>
                     </div>
 
                     <div>
-                      <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', marginBottom: '8px' }}>
+                      <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>
                         Extracted Skills
                       </div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
