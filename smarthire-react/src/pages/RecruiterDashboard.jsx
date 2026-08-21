@@ -3,6 +3,36 @@ import { Link } from 'react-router-dom'
 import SiteLayout from '../components/SiteLayout'
 import CandidatePdfReportModal from '../components/CandidatePdfReportModal'
 
+function getFullDescriptionText(job) {
+  if (!job) return ''
+  const raw = job.rawDescription || job.fullDescription || job.rawText || job.details || job.rawJd
+  if (raw && raw.length > 50) return raw
+
+  if (job.description && job.description.length > 50 && !job.description.startsWith('Looking for a')) {
+    return job.description
+  }
+
+  const reqSkills = Array.isArray(job.skills) && job.skills.length > 0
+    ? job.skills.join(', ')
+    : 'Technical leadership, architectural design, cloud deployments'
+
+  const prefSkills = Array.isArray(job.preferredSkills) && job.preferredSkills.length > 0
+    ? job.preferredSkills.join(', ')
+    : Array.isArray(job.preferred_skills) && job.preferred_skills.length > 0
+    ? job.preferred_skills.join(', ')
+    : 'PMP Certification, Bachelors Degree in IT Related Field, Agile / Scrum Delivery'
+
+  const expText = job.experience && job.experience !== 'TBD' && job.experience !== 'Any'
+    ? job.experience
+    : '5+ years'
+
+  const locText = job.location || 'Columbia, SC'
+  const modeText = job.work_mode || job.workMode || 'Hybrid'
+  const deadlineText = job.deadline || '08/28 at 5:00 PM EST'
+
+  return `Start date :${job.creationDate || '10/23/2026'}\nEnd Date   :${job.duration || '12 Months from projected start date'}\n\nSubmission deadline :${deadlineText}\n\nClient Info : ${job.client || 'ADMIN'}\n\nNote:\n* Interview Process: 1 round, Virtual/Online\n* Work Location: ${modeText} - schedule will be determined by the hiring manager after the start date.\n* Candidate Location: ${locText}\n\nRequired Skills & Experience:\n* Experience: ${expText}\n* Core Skills: ${reqSkills}\n* Certifications & Preferred: ${prefSkills}`
+}
+
 function RecruiterDashboard() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('All')
@@ -10,9 +40,61 @@ function RecruiterDashboard() {
   const [jobs, setJobs] = useState([])
   const [candidates, setCandidates] = useState([])
   const [selectedReq, setSelectedReq] = useState(null)
+  const [activeReqTab, setActiveReqTab] = useState('details') // 'details' | 'assign' | 'potential' | 'attachments' | 'newCandidates'
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
+  const [quickSearchId, setQuickSearchId] = useState('')
+
+  // Form Fields State for Single Requisition
   const [editingFields, setEditingFields] = useState({})
+
+  // Assign Recruiters Dual Listbox State
+  const [availableRecruiters, setAvailableRecruiters] = useState([
+    'Admin Blr', 'AI Agent', 'Ajay Arya', 'Anand Krishnamurthy', 'Deepak Joshi', 'Nitin Bhosale', 'Rahul Sharma', 'Priya Verma'
+  ])
+  const [assignedRecruiters, setAssignedRecruiters] = useState(['Vaibhav Bisen'])
+  const [selectedAvailable, setSelectedAvailable] = useState([])
+  const [selectedAssigned, setSelectedAssigned] = useState([])
+  const [emailOption, setEmailOption] = useState('none') // 'none' | 'new' | 'all'
+
+  // Attachments State
+  const [attachments, setAttachments] = useState([
+    { id: 1, title: '13285 - Admin - 158938', filename: '13285 - Admin - 158938.docx' },
+    { id: 2, title: 'SCMSP_Candidate_Cover_Sheet - 158938', filename: 'SCMSP_Candidate_Cover_Sheet - 158938.docx' },
+    { id: 3, title: 'SSN References - 158938', filename: 'SSN References - 158938.doc' },
+    { id: 4, title: 'Right_to_Represent_SOSC - 158938', filename: 'Right_to_Represent_SOSC - 158938.pdf' },
+  ])
+  const [showAddAttachment, setShowAddAttachment] = useState(false)
+  const [newAttachmentTitle, setNewAttachmentTitle] = useState('')
+  const [newAttachmentFile, setNewAttachmentFile] = useState(null)
+
+  // Potential Candidates State
+  const [potentialCandidates, setPotentialCandidates] = useState([
+    {
+      id: 'PC-1',
+      name: 'Kashyap K Vora',
+      payRate: '55/hr',
+      payRateType: 'W2',
+      assignedBy: 'Vaibhav',
+      assignedOn: 'Aug 20, 2026 06:41 PM',
+      status: 'Int-SubmittedToManager',
+      statusComments: 'Submitted',
+      interview: 'Select',
+      rejectedReason: ''
+    },
+    {
+      id: 'PC-2',
+      name: 'Ashok Ankalla',
+      payRate: '70/hr',
+      payRateType: 'C2C',
+      assignedBy: 'Prudhvi',
+      assignedOn: 'Aug 20, 2026 04:40 PM',
+      status: 'Int-SubmittedToManager',
+      statusComments: 'Submitted',
+      interview: 'Select',
+      rejectedReason: ''
+    }
+  ])
 
   // User role state
   const userStr = localStorage.getItem('smarthire_user') || localStorage.getItem('verifyhire_user')
@@ -25,10 +107,6 @@ function RecruiterDashboard() {
   const canSwitchRoles = realUserRole === 'superadmin' || realUserRole === 'admin'
   const activeRole = canSwitchRoles ? (localStorage.getItem('smarthire_active_role') || realUserRole) : realUserRole
   const isSuperAdmin = canSwitchRoles && (activeRole === 'superadmin' || activeRole === 'admin')
-
-  const [activeView, setActiveView] = useState(() => {
-    return isSuperAdmin ? 'analytics' : 'requisitions'
-  })
 
   // Fetch real jobs and candidates from API
   useEffect(() => {
@@ -54,29 +132,98 @@ function RecruiterDashboard() {
 
   const handleOpenReq = (job) => {
     setSelectedReq(job)
+    setActiveReqTab('details')
+    const fullDesc = getFullDescriptionText(job)
     setEditingFields({
       title: job.title || '',
       startDate: job.creationDate || '10/23/2026',
-      duration: job.duration || '12 months',
-      client: job.client || '',
+      duration: job.duration || '12',
+      durationUnit: 'months',
+      customer: job.client || 'State Of SC',
+      endClient: job.client || 'State Of SC',
       contact: job.contact || 'Hustedt Lexi',
+      numPositions: job.numPositions || '1',
       deadline: job.deadline || '8/28/2026',
+      maxSubmissions: job.maxSubmissions || '2',
       category: job.category || 'SP',
       type: job.type || 'Contract',
       address: job.address || '4430 Broad Rd.',
-      location: job.location || '',
+      city: job.city || 'Columbia',
+      state: job.state || 'SC',
+      zip: job.zip || '29210',
+      location: job.location || 'Columbia, SC 29210',
       billRate: job.billRate || '90',
-      payRate: job.budget || '75',
-      description: job.description || job.fullDescription || job.rawText || '',
-      experience: job.experience || '5 years',
-      skills: Array.isArray(job.skills) ? job.skills.join(', ') : ''
+      payRate: job.budget ? job.budget.replace(/[^0-9]/g, '').slice(0, 3) || '75' : '75',
+      interview: 'Select',
+      workAuth: 'Select',
+      subcontractable: 'No',
+      employmentType: 'Contract',
+      experience: job.experience ? (job.experience.replace(/[^0-9]/g, '') || '5') : '5',
+      description: fullDesc,
+      skills: Array.isArray(job.skills) ? job.skills : ['PMP Certification', 'Bachelors Degree In An IT Related Field', 'Project Management'],
+      desiredSkills: Array.isArray(job.preferredSkills) ? job.preferredSkills : ['Cloud Security', 'Public Sector Experience'],
+      status: job.status === 'Active' ? 'In-Progress' : (job.status || 'In-Progress'),
+      keyReq: false,
+      working: true,
+      hotReq: false,
+      incumbentVendor: false
     })
   }
 
   const handleSaveRequisition = (e) => {
     e.preventDefault()
-    alert(`💾 Requisition #${selectedReq.id} saved successfully!`)
+    alert(`💾 Requisition #${selectedReq?.id || '158938'} saved successfully!`)
     setSelectedReq(null)
+  }
+
+  const handleQuickSearch = (e) => {
+    e.preventDefault()
+    if (!quickSearchId.trim()) return
+    const match = jobs.find(j => (j.id || '').toLowerCase().includes(quickSearchId.toLowerCase()) || (j.title || '').toLowerCase().includes(quickSearchId.toLowerCase()))
+    if (match) {
+      handleOpenReq(match)
+    } else {
+      alert(`Requisition "${quickSearchId}" not found.`)
+    }
+  }
+
+  // Recruiter assignment transfer handlers
+  const handleAssignToSelected = () => {
+    if (selectedAvailable.length === 0) return
+    setAssignedRecruiters(prev => [...prev, ...selectedAvailable])
+    setAvailableRecruiters(prev => prev.filter(r => !selectedAvailable.includes(r)))
+    setSelectedAvailable([])
+  }
+
+  const handleUnassignSelected = () => {
+    if (selectedAssigned.length === 0) return
+    setAvailableRecruiters(prev => [...prev, ...selectedAssigned])
+    setAssignedRecruiters(prev => prev.filter(r => !selectedAssigned.includes(r)))
+    setSelectedAssigned([])
+  }
+
+  // Attachment upload handler
+  const handleAddAttachment = (e) => {
+    e.preventDefault()
+    if (!newAttachmentTitle.trim() && !newAttachmentFile) {
+      alert('Please provide an attachment title or file.')
+      return
+    }
+    const name = newAttachmentFile ? newAttachmentFile.name : `${newAttachmentTitle}.docx`
+    setAttachments(prev => [
+      ...prev,
+      { id: Date.now(), title: newAttachmentTitle || name, filename: name }
+    ])
+    setNewAttachmentTitle('')
+    setNewAttachmentFile(null)
+    setShowAddAttachment(false)
+    alert('✅ Document attached successfully!')
+  }
+
+  const handleDeleteAttachment = (id) => {
+    if (window.confirm('Delete this attachment?')) {
+      setAttachments(prev => prev.filter(a => a.id !== id))
+    }
   }
 
   const filteredJobs = useMemo(() => {
@@ -100,499 +247,768 @@ function RecruiterDashboard() {
 
   return (
     <SiteLayout>
-      <section className="section" style={{ paddingTop: '20px', minHeight: '85vh' }}>
-        <div className="container-wide">
-          
-          {/* Header Controls */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span className="eyebrow">COMMAND CONSOLE</span>
-              {isSuperAdmin ? (
-                <span style={{ background: '#7C3AED', color: '#fff', fontSize: '11px', fontWeight: '800', padding: '3px 8px', borderRadius: '6px' }}>SUPER ADMIN MODE</span>
-              ) : (
-                <span style={{ background: '#2563EB', color: '#fff', fontSize: '11px', fontWeight: '800', padding: '3px 8px', borderRadius: '6px' }}>RECRUITER PORTAL</span>
-              )}
-            </div>
-
-            {/* View Mode Switcher */}
-            <div style={{ display: 'flex', background: '#e2e8f0', padding: '3px', borderRadius: 8, gap: 4 }}>
-              <button
-                onClick={() => { setSelectedReq(null); setActiveView('requisitions'); }}
-                style={{
-                  padding: '6px 14px', borderRadius: 6, border: 'none',
-                  background: activeView === 'requisitions' ? '#ffffff' : 'transparent',
-                  color: activeView === 'requisitions' ? '#1d4ed8' : '#475569',
-                  fontWeight: 'bold', fontSize: 12, cursor: 'pointer',
-                  boxShadow: activeView === 'requisitions' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
-                }}
-              >
-                🏢 Open Requisitions (CoolSoft Portal)
-              </button>
-              <button
-                onClick={() => { setSelectedReq(null); setActiveView('analytics'); }}
-                style={{
-                  padding: '6px 14px', borderRadius: 6, border: 'none',
-                  background: activeView === 'analytics' ? '#ffffff' : 'transparent',
-                  color: activeView === 'analytics' ? '#1d4ed8' : '#475569',
-                  fontWeight: 'bold', fontSize: 12, cursor: 'pointer',
-                  boxShadow: activeView === 'analytics' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
-                }}
-              >
-                📊 Analytics & Overview
-              </button>
-            </div>
-          </div>
-
-          {/* ═══════════ COOLSOFT OPEN REQUISITIONS VIEW (Images 1, 2, 3) ═══════════ */}
-          {activeView === 'requisitions' && (
-            <div>
-              {selectedReq ? (
-                /* Single Requisition Details Sheet (Image 3) */
-                <div style={{ background: '#f8fafc', padding: '20px 24px', borderRadius: 12, border: '1px solid #cbd5e1', fontFamily: 'Arial, sans-serif' }}>
-                  {/* Breadcrumbs */}
-                  <div style={{ fontSize: 11, color: '#1e3a8a', fontWeight: 'bold', marginBottom: 12 }}>
-                    You are here: Home &gt; Requisitions &gt; Edit Requisition
-                  </div>
-
-                  {/* Header Title with Action links */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #ea580c', paddingBottom: 8, marginBottom: 16 }}>
-                    <h2 style={{ margin: 0, fontSize: 17, color: '#1e3a8a', fontWeight: 'bold' }}>
-                      Requisition #:{selectedReq.id} <span style={{ color: '#dc2626', fontSize: 13, marginLeft: 8 }}>Status: In-Progress</span>
-                    </h2>
-                    <div style={{ display: 'flex', gap: 16, fontSize: 12, fontWeight: 'bold' }}>
-                      <span style={{ color: '#0066cc', cursor: 'pointer' }} onClick={() => alert('Posting Job to JobsInHand...')}>Post To JobsInHand</span>
-                      <span style={{ color: '#0066cc', cursor: 'pointer' }} onClick={() => alert('Preparing Mass E-mail...')}>Mass E-mail</span>
-                      <span style={{ color: '#0066cc', cursor: 'pointer' }} onClick={() => setSelectedReq(null)}>&lt;&lt; Back To Search Results</span>
-                    </div>
-                  </div>
-
-                  <form onSubmit={handleSaveRequisition}>
-                    {/* Tab strip container */}
-                    <div style={{ display: 'flex', borderBottom: '1px solid #cbd5e1', background: '#e2e8f0', padding: '4px 8px 0', gap: 2 }}>
-                      {['Details', 'Assign to Recruiters', 'Potential Candidates', 'Attachments', 'New Candidates'].map((t, idx) => (
-                        <div key={t} style={{
-                          padding: '6px 14px', fontSize: 11.5, fontWeight: 'bold', borderRadius: '5px 5px 0 0',
-                          background: idx === 0 ? '#ffffff' : '#f1f5f9',
-                          border: idx === 0 ? '1px solid #cbd5e1' : 'none',
-                          borderBottom: idx === 0 ? '1px solid #ffffff' : 'none',
-                          color: idx === 0 ? '#0f172a' : '#475569',
-                          cursor: 'pointer'
-                        }}>
-                          {t} {idx === 2 ? '(2)' : idx === 4 ? '(0)' : ''}
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Form sheet panel */}
-                    <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderTop: 'none', padding: '20px 24px', display: 'flex', gap: 28, flexWrap: 'wrap' }}>
-                      
-                      {/* Left Column: Form Fields */}
-                      <div style={{ flex: '1 1 460px', display: 'grid', gridTemplateColumns: '150px 1fr', gap: '10px 12px', alignContent: 'start' }}>
-                        
-                        <label style={{ fontSize: 11.5, fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Position Title:*</label>
-                        <input type="text" value={editingFields.title} onChange={e => setEditingFields({ ...editingFields, title: e.target.value })} style={{ padding: '4px 8px', fontSize: 12, border: '1px solid #cbd5e1', borderRadius: 3 }} required />
-
-                        <label style={{ fontSize: 11.5, fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Start Date:*</label>
-                        <input type="text" value={editingFields.startDate} onChange={e => setEditingFields({ ...editingFields, startDate: e.target.value })} style={{ padding: '4px 8px', fontSize: 12, border: '1px solid #cbd5e1', borderRadius: 3 }} required />
-
-                        <label style={{ fontSize: 11.5, fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Duration:*</label>
-                        <input type="text" value={editingFields.duration} onChange={e => setEditingFields({ ...editingFields, duration: e.target.value })} style={{ padding: '4px 8px', fontSize: 12, border: '1px solid #cbd5e1', borderRadius: 3 }} required />
-
-                        <label style={{ fontSize: 11.5, fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Customer:</label>
-                        <input type="text" value={editingFields.client} onChange={e => setEditingFields({ ...editingFields, client: e.target.value })} style={{ padding: '4px 8px', fontSize: 12, border: '1px solid #cbd5e1', borderRadius: 3 }} />
-
-                        <label style={{ fontSize: 11.5, fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Contact:</label>
-                        <input type="text" value={editingFields.contact} onChange={e => setEditingFields({ ...editingFields, contact: e.target.value })} style={{ padding: '4px 8px', fontSize: 12, border: '1px solid #cbd5e1', borderRadius: 3 }} />
-
-                        <label style={{ fontSize: 11.5, fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Submission Deadline:*</label>
-                        <input type="text" value={editingFields.deadline} onChange={e => setEditingFields({ ...editingFields, deadline: e.target.value })} style={{ padding: '4px 8px', fontSize: 12, border: '1px solid #cbd5e1', borderRadius: 3 }} required />
-
-                        <label style={{ fontSize: 11.5, fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Req Category:*</label>
-                        <input type="text" value={editingFields.category} onChange={e => setEditingFields({ ...editingFields, category: e.target.value })} style={{ padding: '4px 8px', fontSize: 12, border: '1px solid #cbd5e1', borderRadius: 3 }} required />
-
-                        <label style={{ fontSize: 11.5, fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Req Type:*</label>
-                        <select value={editingFields.type} onChange={e => setEditingFields({ ...editingFields, type: e.target.value })} style={{ padding: '4px 8px', fontSize: 12, border: '1px solid #cbd5e1', borderRadius: 3 }}>
-                          <option>Contract</option>
-                          <option>Permanent</option>
-                          <option>C2H</option>
-                        </select>
-
-                        <label style={{ fontSize: 11.5, fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Location Address:</label>
-                        <input type="text" value={editingFields.address} onChange={e => setEditingFields({ ...editingFields, address: e.target.value })} style={{ padding: '4px 8px', fontSize: 12, border: '1px solid #cbd5e1', borderRadius: 3 }} />
-
-                        <label style={{ fontSize: 11.5, fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>City, State, Zip:*</label>
-                        <input type="text" value={editingFields.location} onChange={e => setEditingFields({ ...editingFields, location: e.target.value })} style={{ padding: '4px 8px', fontSize: 12, border: '1px solid #cbd5e1', borderRadius: 3 }} required />
-
-                        <label style={{ fontSize: 11.5, fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Bill Rate:</label>
-                        <input type="text" value={editingFields.billRate} onChange={e => setEditingFields({ ...editingFields, billRate: e.target.value })} style={{ padding: '4px 8px', fontSize: 12, border: '1px solid #cbd5e1', borderRadius: 3 }} />
-
-                        <label style={{ fontSize: 11.5, fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Pay Rate:</label>
-                        <input type="text" value={editingFields.payRate} onChange={e => setEditingFields({ ...editingFields, payRate: e.target.value })} style={{ padding: '4px 8px', fontSize: 12, border: '1px solid #cbd5e1', borderRadius: 3 }} />
-
-                        <label style={{ fontSize: 11.5, fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Interview:</label>
-                        <select style={{ padding: '4px 8px', fontSize: 12, border: '1px solid #cbd5e1', borderRadius: 3 }}>
-                          <option>Select</option>
-                          <option>1 Round Virtual</option>
-                          <option>In-Person</option>
-                        </select>
-
-                        <label style={{ fontSize: 11.5, fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Work Authorization:</label>
-                        <select style={{ padding: '4px 8px', fontSize: 12, border: '1px solid #cbd5e1', borderRadius: 3 }}>
-                          <option>Select</option>
-                          <option>US Citizen</option>
-                          <option>Green Card</option>
-                          <option>H1B interop</option>
-                        </select>
-
-                        <label style={{ fontSize: 11.5, fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Subcontractable:*</label>
-                        <select style={{ padding: '4px 8px', fontSize: 12, border: '1px solid #cbd5e1', borderRadius: 3 }}>
-                          <option>No</option>
-                          <option>Yes</option>
-                        </select>
-
-                        <label style={{ fontSize: 11.5, fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Employment Type:</label>
-                        <input type="text" value="Contract" disabled style={{ padding: '4px 8px', fontSize: 12, border: '1px solid #cbd5e1', borderRadius: 3, background: '#f1f5f9' }} />
-
-                        <label style={{ fontSize: 11.5, fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Experience:*</label>
-                        <input type="text" value={editingFields.experience} onChange={e => setEditingFields({ ...editingFields, experience: e.target.value })} style={{ padding: '4px 8px', fontSize: 12, border: '1px solid #cbd5e1', borderRadius: 3 }} required />
-
-                      </div>
-
-                      {/* Right Column: Description text area & Skills */}
-                      <div style={{ flex: '1 1 460px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-                        <div>
-                          <label style={{ fontSize: 11.5, fontWeight: 'bold', color: '#1e3a8a', display: 'block', marginBottom: 6 }}>Description:*</label>
-                          <textarea rows={13} value={editingFields.description} onChange={e => setEditingFields({ ...editingFields, description: e.target.value })} style={{ width: '100%', padding: '10px', fontSize: 12, border: '1px solid #cbd5e1', borderRadius: 4, fontFamily: 'monospace' }} required />
-                        </div>
-
-                        <div>
-                          <label style={{ fontSize: 11.5, fontWeight: 'bold', color: '#1e3a8a', display: 'block', marginBottom: 6 }}>Required Skills:*</label>
-                          <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: 6, padding: '12px 16px' }}>
-                            <ul style={{ margin: 0, paddingLeft: 20, fontSize: 12, color: '#334155', lineHeight: 1.7 }}>
-                              {editingFields.skills.split(',').map(s => s.trim()).filter(Boolean).map((s, i) => (
-                                <li key={i}>{s}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Created by info bar */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 20px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderTop: 'none', fontSize: 11.5, color: '#475569', fontWeight: 'bold' }}>
-                      <span>Created by: sharif on: 8/20/2026 2:31:19 PM</span>
-                      <span>Last Updated by: vaibhav on: {new Date().toLocaleDateString()}</span>
-                    </div>
-
-                    {/* Submit Save bar */}
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
-                      <button type="submit" style={{
-                        background: '#ea580c', color: '#ffffff', border: 'none', borderRadius: 4,
-                        padding: '8px 24px', fontSize: 12.5, fontWeight: 'bold', cursor: 'pointer',
-                        boxShadow: '0 2px 4px rgba(234, 88, 12, 0.2)'
-                      }}>
-                        Save
-                      </button>
-                    </div>
-                  </form>
+      <div style={{ background: '#f1f5f9', minHeight: '92vh', paddingBottom: '30px', fontFamily: 'Arial, sans-serif' }}>
+        
+        {/* ═══════════ COOLWORKS ORANGE HEADER NAVIGATION BAR ═══════════ */}
+        <header style={{ background: '#ea580c', borderBottom: '2px solid #c2410c', color: '#ffffff' }}>
+          <div className="container-wide" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '42px', padding: '0 16px' }}>
+            
+            {/* Left Main Tab Links */}
+            <div style={{ display: 'flex', gap: '2px', height: '100%', alignItems: 'stretch' }}>
+              <div style={{ display: 'flex', alignItems: 'center', padding: '0 12px', fontWeight: 'bold', fontSize: '15px', letterSpacing: '0.02em', background: '#c2410c' }}>
+                COOLWORKS
+              </div>
+              {[
+                { name: 'Requisitions', active: true },
+                { name: 'Candidates', active: false, link: '/ats' },
+                { name: 'Administration', active: false, link: '/ats' },
+                { name: 'Reports', active: false, link: '/reports' },
+                { name: 'Process', active: false, link: '/ats' }
+              ].map(t => (
+                <div
+                  key={t.name}
+                  onClick={() => { if (!t.active && t.link) window.location.href = t.link; else setSelectedReq(null); }}
+                  style={{
+                    display: 'flex', alignItems: 'center', padding: '0 16px', fontSize: '12.5px', fontWeight: 'bold',
+                    background: t.active && !selectedReq ? '#d97706' : 'transparent',
+                    borderRight: '1px solid rgba(255,255,255,0.2)',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s'
+                  }}
+                >
+                  {t.name}
                 </div>
-              ) : (
-                /* All Open Requisitions List View (Images 1 & 2) */
-                <div style={{ background: '#ffffff', padding: '16px 20px', borderRadius: 12, border: '1px solid #cbd5e1', fontFamily: 'Arial, sans-serif' }}>
-                  {/* Breadcrumbs */}
-                  <div style={{ fontSize: 11, color: '#1e3a8a', fontWeight: 'bold', marginBottom: 12 }}>
-                    You are here: Home
+              ))}
+            </div>
+
+            {/* Right Quick Search Input Form */}
+            <form onSubmit={handleQuickSearch} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 'bold' }}>Requisition #</span>
+              <input
+                type="text"
+                value={quickSearchId}
+                onChange={e => setQuickSearchId(e.target.value)}
+                placeholder="Req ID / Title"
+                style={{ padding: '2px 6px', fontSize: '11px', width: '130px', border: '1px solid #ffffff', borderRadius: '2px' }}
+              />
+              <button
+                type="submit"
+                style={{ background: '#f8fafc', color: '#0f172a', border: 'none', padding: '3px 10px', fontSize: '11px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer' }}
+              >
+                Quick Search
+              </button>
+            </form>
+          </div>
+        </header>
+
+        {/* ═══════════ MAIN CONTENT BODY ═══════════ */}
+        <div className="container-wide" style={{ padding: '16px', maxWidth: '1360px', margin: '0 auto' }}>
+
+          {/* ─────────────────────────────────────────────────────────────
+              VIEW 1: SINGLE REQUISITION DETAIL / EDIT SHEET (IMAGES 1, 3, 4, 5)
+              ───────────────────────────────────────────────────────────── */}
+          {selectedReq ? (
+            <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+              
+              {/* Breadcrumb path */}
+              <div style={{ fontSize: '11px', color: '#1e3a8a', fontWeight: 'bold', marginBottom: '10px' }}>
+                You are here: <span style={{ color: '#0066cc', cursor: 'pointer' }} onClick={() => setSelectedReq(null)}>Home</span> &gt; Requisitions &gt; Edit Requisition
+              </div>
+
+              {/* Title Bar with Status & Action Links */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #ea580c', paddingBottom: '6px', marginBottom: '14px', flexWrap: 'wrap', gap: 10 }}>
+                <h2 style={{ margin: 0, fontSize: '16px', color: '#1e3a8a', fontWeight: 'bold' }}>
+                  Requisition #:{selectedReq.id.replace('J-', '')} <span style={{ color: '#dc2626', fontSize: '12.5px', marginLeft: '8px' }}>Status: Ready</span>
+                </h2>
+                <div style={{ display: 'flex', gap: '16px', fontSize: '12px', fontWeight: 'bold' }}>
+                  <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => alert('Job posted to JobsInHand successfully!')}>
+                    Post To JobsInHand
+                  </span>
+                  <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => alert('Opening Mass E-mail Dispatcher...')}>
+                    Mass E-mail
+                  </span>
+                  <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setSelectedReq(null)}>
+                    &lt;&lt; Back To Search Results
+                  </span>
+                </div>
+              </div>
+
+              {/* Top 3-Column Header Form (Image 1) */}
+              <div style={{
+                background: '#f8fafc', border: '1px solid #e2e8f0', padding: '12px 16px', borderRadius: '4px', marginBottom: '14px',
+                display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '10px 18px', fontSize: '11.5px'
+              }}>
+                {/* Column 1 */}
+                <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr', gap: '6px 8px', alignItems: 'center' }}>
+                  <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}>Position Title:*</label>
+                  <input type="text" value={editingFields.title || ''} onChange={e => setEditingFields({ ...editingFields, title: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
+
+                  <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}>Start Date:*</label>
+                  <input type="text" value={editingFields.startDate || ''} onChange={e => setEditingFields({ ...editingFields, startDate: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
+
+                  <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}>Duration:*</label>
+                  <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                    <input type="text" value={editingFields.duration || '12'} onChange={e => setEditingFields({ ...editingFields, duration: e.target.value })} style={{ width: '45px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
+                    <span style={{ fontWeight: 'bold', color: '#1e3a8a' }}>months</span>
                   </div>
 
-                  {/* Banner header title */}
-                  <h2 style={{ margin: '0 0 4px', fontSize: 16, color: '#16a34a', fontWeight: 'bold' }}>
-                    COOLSOFT Recruitment Portal Home
-                  </h2>
-                  <div style={{ fontSize: 12, color: '#334155', fontWeight: 'bold', marginBottom: 14 }}>
-                    Welcome back to CoolWorks. You have {jobs.length} tasks.
+                  <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}># of Positions:*</label>
+                  <input type="text" value={editingFields.numPositions || '1'} onChange={e => setEditingFields({ ...editingFields, numPositions: e.target.value })} style={{ width: '45px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
+
+                  <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}>Max Submission:*</label>
+                  <input type="text" value={editingFields.maxSubmissions || '2'} onChange={e => setEditingFields({ ...editingFields, maxSubmissions: e.target.value })} style={{ width: '45px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
+                </div>
+
+                {/* Column 2 */}
+                <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '6px 8px', alignItems: 'center' }}>
+                  <div style={{ visibility: 'hidden' }}>spacer</div>
+                  <div style={{ visibility: 'hidden' }}>spacer</div>
+
+                  <label style={{ fontWeight: 'bold', color: '#0066cc', textAlign: 'right', textDecoration: 'underline', cursor: 'pointer' }}>Customer:</label>
+                  <select value={editingFields.customer || ''} onChange={e => setEditingFields({ ...editingFields, customer: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
+                    <option>State Of SC</option>
+                    <option>DFA</option>
+                    <option>DBHDS</option>
+                    <option>VDOT</option>
+                    <option>Acme Corp</option>
+                  </select>
+
+                  <label style={{ fontWeight: 'bold', color: '#0066cc', textAlign: 'right', textDecoration: 'underline', cursor: 'pointer' }}>Contact:</label>
+                  <select value={editingFields.contact || ''} onChange={e => setEditingFields({ ...editingFields, contact: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
+                    <option>Hustedt Lexi</option>
+                    <option>Miller Sarah</option>
+                    <option>Johnson Dave</option>
+                  </select>
+
+                  <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}>Submission Deadline:*</label>
+                  <input type="text" value={editingFields.deadline || ''} onChange={e => setEditingFields({ ...editingFields, deadline: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
+
+                  <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}>Req Category:*</label>
+                  <select value={editingFields.category || 'SP'} onChange={e => setEditingFields({ ...editingFields, category: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
+                    <option>SP</option>
+                    <option>IT</option>
+                    <option>ENG</option>
+                  </select>
+                </div>
+
+                {/* Column 3 */}
+                <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '6px 8px', alignItems: 'center' }}>
+                  <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}>Status:</label>
+                  <select value={editingFields.status || 'In-Progress'} onChange={e => setEditingFields({ ...editingFields, status: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
+                    <option>In-Progress</option>
+                    <option>Ready</option>
+                    <option>Closed</option>
+                  </select>
+
+                  <label style={{ fontWeight: 'bold', color: '#0066cc', textAlign: 'right', textDecoration: 'underline', cursor: 'pointer' }}>End Client:</label>
+                  <select value={editingFields.endClient || ''} onChange={e => setEditingFields({ ...editingFields, endClient: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
+                    <option>State Of SC</option>
+                    <option>DFA</option>
+                    <option>DBHDS</option>
+                  </select>
+
+                  <label style={{ fontWeight: 'bold', color: '#0066cc', textAlign: 'right', textDecoration: 'underline', cursor: 'pointer' }}>Contact:</label>
+                  <select value={editingFields.contact || ''} onChange={e => setEditingFields({ ...editingFields, contact: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
+                    <option>Hustedt Lexi</option>
+                  </select>
+
+                  <div style={{ gridColumn: 'span 2', display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '4px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: '#1e3a8a', fontWeight: 'bold' }}>
+                      <input type="checkbox" checked={editingFields.keyReq || false} onChange={e => setEditingFields({ ...editingFields, keyReq: e.target.checked })} /> Key Req
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: '#1e3a8a', fontWeight: 'bold' }}>
+                      <input type="checkbox" checked={editingFields.working || true} onChange={e => setEditingFields({ ...editingFields, working: e.target.checked })} /> Working
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: '#1e3a8a', fontWeight: 'bold' }}>
+                      <input type="checkbox" checked={editingFields.hotReq || false} onChange={e => setEditingFields({ ...editingFields, hotReq: e.target.checked })} /> Hot Req
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: '#1e3a8a', fontWeight: 'bold' }}>
+                      <input type="checkbox" checked={editingFields.incumbentVendor || false} onChange={e => setEditingFields({ ...editingFields, incumbentVendor: e.target.checked })} /> Incumbent Vendor
+                    </label>
                   </div>
 
-                  {/* All Open Requisitions Header Banner */}
-                  <div style={{
-                    background: '#bfdbfe', border: '1px solid #93c5fd', padding: '7px 14px',
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    borderRadius: '4px 4px 0 0'
-                  }}>
-                    <span style={{ fontSize: 12, fontWeight: 'bold', color: '#1e3a8a' }}>All Open Requisitions</span>
-                    <span style={{ fontSize: 12, fontWeight: 'bold', color: '#1e3a8a' }}>
-                      (Requisitions {filteredJobs.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, filteredJobs.length)} of {filteredJobs.length})
-                    </span>
-                  </div>
+                  <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}>Req Type:*</label>
+                  <select value={editingFields.type || 'Contract'} onChange={e => setEditingFields({ ...editingFields, type: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
+                    <option>Contract</option>
+                    <option>Full-Time</option>
+                    <option>C2H</option>
+                  </select>
+                </div>
+              </div>
 
-                  {/* Open Requisitions Table List */}
-                  <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, textAlign: 'left' }}>
-                      <thead>
-                        <tr style={{ background: '#94a3b8', color: '#ffffff', borderBottom: '1px solid #cbd5e1' }}>
-                          <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Req#</th>
-                          <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Position</th>
-                          <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Skills</th>
-                          <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Customer</th>
-                          <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Location</th>
-                          <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Deadline</th>
-                          <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Pay Rate</th>
-                          <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Recruiters</th>
-                          <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Status</th>
-                          <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Req Ctg</th>
-                          <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Req Type</th>
-                          <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Duration</th>
-                          <th style={{ padding: '8px 6px', fontWeight: 'bold', textAlign: 'center' }}>W</th>
-                          <th style={{ padding: '8px 6px', fontWeight: 'bold', textAlign: 'center' }}>K</th>
-                          <th style={{ padding: '8px 6px', fontWeight: 'bold', textAlign: 'center' }}>Cont</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {paginatedJobs.length === 0 ? (
-                          <tr>
-                            <td colSpan="15" style={{ padding: '36px', textAlign: 'center', color: '#64748b' }}>
-                              No open requisitions found.
-                            </td>
-                          </tr>
-                        ) : (
-                          paginatedJobs.map((job, idx) => (
-                            <tr key={job.id} style={{
-                              background: idx % 2 === 0 ? '#ffffff' : '#f8fafc',
-                              borderBottom: '1px solid #e2e8f0'
-                            }}>
-                              {/* Req# clickable link */}
-                              <td style={{ padding: '8px 10px', fontWeight: 'bold' }}>
-                                <span onClick={() => handleOpenReq(job)} style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>
-                                  {job.id.replace('J-', '')}
-                                </span>
-                              </td>
-                              {/* Position clickable link */}
-                              <td style={{ padding: '8px 10px', fontWeight: 'bold' }}>
-                                <span onClick={() => handleOpenReq(job)} style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>
-                                  {job.title}
-                                </span>
-                              </td>
-                              <td style={{ padding: '8px 10px', color: '#475569' }}>
-                                {Array.isArray(job.skills) ? job.skills.slice(0, 3).join(', ') : ''}
-                              </td>
-                              <td style={{ padding: '8px 10px', color: '#475569' }}>{job.client}</td>
-                              <td style={{ padding: '8px 10px', color: '#475569' }}>{job.location}</td>
-                              <td style={{ padding: '8px 10px', color: '#e11d48', fontWeight: 'bold' }}>{job.deadline || 'Aug 28, 2026'}</td>
-                              <td style={{ padding: '8px 10px', color: '#475569' }}>{job.budget || 'TBD'}</td>
-                              <td style={{ padding: '8px 10px', color: '#475569' }}>{job.postedByName || 'NitinBho...'}</td>
-                              <td style={{ padding: '8px 10px', color: '#16a34a', fontWeight: 'bold' }}>{job.status || 'Active'}</td>
-                              <td style={{ padding: '8px 10px', color: '#475569' }}>SP</td>
-                              <td style={{ padding: '8px 10px', color: '#475569' }}>{job.type || 'Contract'}</td>
-                              <td style={{ padding: '8px 10px', color: '#475569' }}>{job.duration || '12'}</td>
-                              {/* Checkbox indicators matching the reference */}
-                              <td style={{ padding: '8px 6px', textAlign: 'center' }}>
-                                <input type="checkbox" readOnly checked={false} />
-                              </td>
-                              <td style={{ padding: '8px 6px', textAlign: 'center' }}>
-                                <input type="checkbox" readOnly checked={false} />
-                              </td>
-                              <td style={{ padding: '8px 6px', textAlign: 'center' }}>
-                                <input type="checkbox" readOnly checked={idx % 2 === 1} />
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
+              {/* ═══════════ SUB-TAB STRIP ═══════════ */}
+              <div style={{ display: 'flex', borderBottom: '1px solid #cbd5e1', background: '#e2e8f0', padding: '4px 8px 0', gap: '2px' }}>
+                {[
+                  { id: 'details', label: 'Details' },
+                  { id: 'assign', label: 'Assign to Recruiters' },
+                  { id: 'potential', label: `Potential Candidates (${potentialCandidates.length})` },
+                  { id: 'attachments', label: `Attachments (${attachments.length})` },
+                  { id: 'newCandidates', label: 'New Candidates (0)' }
+                ].map(tab => (
+                  <div
+                    key={tab.id}
+                    onClick={() => setActiveReqTab(tab.id)}
+                    style={{
+                      padding: '6px 14px', fontSize: '11.5px', fontWeight: 'bold', borderRadius: '4px 4px 0 0',
+                      background: activeReqTab === tab.id ? '#ffffff' : '#f1f5f9',
+                      border: activeReqTab === tab.id ? '1px solid #cbd5e1' : '1px solid transparent',
+                      borderBottom: activeReqTab === tab.id ? '1px solid #ffffff' : 'none',
+                      color: activeReqTab === tab.id ? '#0f172a' : '#475569',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {tab.label}
                   </div>
+                ))}
+              </div>
 
-                  {/* Pagination controls matching Image 2 */}
-                  <div style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    borderTop: '1px solid #cbd5e1', paddingTop: 10, marginTop: 10
-                  }}>
-                    {/* Numbers list */}
-                    <div style={{ display: 'flex', gap: 10, fontSize: 12, fontWeight: 'bold' }}>
-                      {Array.from({ length: totalPages }).map((_, i) => {
-                        const p = i + 1
-                        return (
-                          <span key={p} onClick={() => setCurrentPage(p)} style={{
-                            color: currentPage === p ? '#ea580c' : '#0066cc',
-                            cursor: 'pointer',
-                            textDecoration: currentPage === p ? 'none' : 'underline'
-                          }}>
-                            {p}
-                          </span>
-                        )
-                      })}
-                      <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}>Next</span>
-                      <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setCurrentPage(totalPages)}>Last</span>
+              {/* ═══════════ TAB PANEL CONTENT ═══════════ */}
+              <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderTop: 'none', padding: '16px 20px', minHeight: '340px' }}>
+                
+                {/* ─── TAB 1: DETAILS (Image 1) ─── */}
+                {activeReqTab === 'details' && (
+                  <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+                    {/* Left Form Attributes */}
+                    <div style={{ flex: '1 1 420px', display: 'grid', gridTemplateColumns: '140px 1fr', gap: '8px 10px', alignContent: 'start', fontSize: '11.5px' }}>
+                      
+                      <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Location Address:</label>
+                      <input type="text" value={editingFields.address || ''} onChange={e => setEditingFields({ ...editingFields, address: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
+
+                      <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>City*, State*, Zip*:</label>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <input type="text" value={editingFields.city || 'Columbia'} onChange={e => setEditingFields({ ...editingFields, city: e.target.value })} style={{ flex: 2, padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
+                        <select value={editingFields.state || 'SC'} onChange={e => setEditingFields({ ...editingFields, state: e.target.value })} style={{ flex: 1, padding: '3px 4px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
+                          <option>SC</option>
+                          <option>VA</option>
+                          <option>TX</option>
+                          <option>NC</option>
+                          <option>GA</option>
+                          <option>FL</option>
+                        </select>
+                        <input type="text" value={editingFields.zip || '29210'} onChange={e => setEditingFields({ ...editingFields, zip: e.target.value })} style={{ width: '60px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
+                      </div>
+
+                      <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Bill Rate:</label>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <input type="text" value={editingFields.billRate || '90'} onChange={e => setEditingFields({ ...editingFields, billRate: e.target.value })} style={{ width: '60px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
+                        <select style={{ padding: '3px 4px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
+                          <option>Select</option>
+                          <option>Hourly</option>
+                          <option>Annual</option>
+                        </select>
+                      </div>
+
+                      <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Pay Rate:</label>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <input type="text" value={editingFields.payRate || '75'} onChange={e => setEditingFields({ ...editingFields, payRate: e.target.value })} style={{ width: '60px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
+                        <select style={{ padding: '3px 4px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
+                          <option>Select</option>
+                          <option>Hourly</option>
+                          <option>Annual</option>
+                        </select>
+                      </div>
+
+                      <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Interview:</label>
+                      <select value={editingFields.interview || 'Select'} onChange={e => setEditingFields({ ...editingFields, interview: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
+                        <option>Select</option>
+                        <option>1 Round Virtual/Online</option>
+                        <option>In-Person Interview</option>
+                      </select>
+
+                      <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Work Authorization:</label>
+                      <select value={editingFields.workAuth || 'Select'} onChange={e => setEditingFields({ ...editingFields, workAuth: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
+                        <option>Select</option>
+                        <option>US Citizen</option>
+                        <option>Green Card</option>
+                        <option>H1B / All eligible</option>
+                      </select>
+
+                      <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Subcontractable:*</label>
+                      <select value={editingFields.subcontractable || 'No'} onChange={e => setEditingFields({ ...editingFields, subcontractable: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
+                        <option>No</option>
+                        <option>Yes</option>
+                      </select>
+
+                      <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Employment Type:</label>
+                      <select value={editingFields.employmentType || 'Contract'} onChange={e => setEditingFields({ ...editingFields, employmentType: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
+                        <option>Contract</option>
+                        <option>Permanent</option>
+                        <option>C2H</option>
+                      </select>
+
+                      <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Experience:*</label>
+                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                        <input type="text" value={editingFields.experience || '5'} onChange={e => setEditingFields({ ...editingFields, experience: e.target.value })} style={{ width: '45px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
+                        <span style={{ fontWeight: 'bold', color: '#1e3a8a' }}>years</span>
+                      </div>
                     </div>
 
-                    {/* Page size select dropdown */}
-                    <div style={{ fontSize: 11, fontWeight: 'bold' }}>
-                      Page Size:
-                      <select value={pageSize} onChange={e => { setPageSize(parseInt(e.target.value)); setCurrentPage(1); }} style={{ marginLeft: 6, fontSize: 11, padding: '1px 3px' }}>
-                        <option value="10">10</option>
-                        <option value="20">20</option>
-                        <option value="50">50</option>
+                    {/* Right Form: Scraped Description Textarea & Skills Bullet Points */}
+                    <div style={{ flex: '1 1 480px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                          <label style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#1e3a8a' }}>Description:*</label>
+                          <span style={{ fontSize: '13px', cursor: 'pointer' }} title="Formatted Description View">🖨️</span>
+                        </div>
+                        <textarea
+                          rows={11}
+                          value={editingFields.description || ''}
+                          onChange={e => setEditingFields({ ...editingFields, description: e.target.value })}
+                          style={{
+                            width: '100%', padding: '8px', fontSize: '11.5px', lineHeight: '1.6',
+                            border: '1px solid #cbd5e1', borderRadius: '2px', fontFamily: 'monospace',
+                            background: '#fafafa', resize: 'vertical'
+                          }}
+                        />
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                        {/* Required Skills */}
+                        <div>
+                          <label style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#1e3a8a', display: 'block', marginBottom: '4px' }}>Required Skills:*</label>
+                          <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '11.5px', color: '#0066cc', fontWeight: 'bold', lineHeight: '1.6' }}>
+                            {Array.isArray(editingFields.skills) && editingFields.skills.map((s, idx) => (
+                              <li key={idx}><span style={{ color: '#1e3a8a' }}>{s}</span></li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        {/* Desired Skills */}
+                        <div>
+                          <label style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#1e3a8a', display: 'block', marginBottom: '4px' }}>Desired Skills:</label>
+                          <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '11.5px', color: '#0066cc', fontWeight: 'bold', lineHeight: '1.6' }}>
+                            {Array.isArray(editingFields.desiredSkills) && editingFields.desiredSkills.map((s, idx) => (
+                              <li key={idx}><span style={{ color: '#1e3a8a' }}>{s}</span></li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ─── TAB 2: ASSIGN TO RECRUITERS (Image 3) ─── */}
+                {activeReqTab === 'assign' && (
+                  <div style={{ fontSize: '11.5px' }}>
+                    <div style={{ fontWeight: 'bold', color: '#1e3a8a', marginBottom: '10px' }}>
+                      Select vendors to send the new Requisition
+                    </div>
+
+                    {/* Dual Listbox Selector */}
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '16px' }}>
+                      {/* Left Listbox: Available Recruiters */}
+                      <select
+                        multiple
+                        size={6}
+                        value={selectedAvailable}
+                        onChange={e => setSelectedAvailable(Array.from(e.target.selectedOptions, o => o.value))}
+                        style={{ width: '220px', height: '120px', border: '1px solid #cbd5e1', padding: '4px', fontSize: '11.5px' }}
+                      >
+                        {availableRecruiters.map(r => (
+                          <option key={r} value={r}>{r}</option>
+                        ))}
+                      </select>
+
+                      {/* Move Buttons */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <button
+                          type="button"
+                          onClick={handleAssignToSelected}
+                          style={{ padding: '3px 12px', fontSize: '11px', fontWeight: 'bold', background: '#f1f5f9', border: '1px solid #cbd5e1', cursor: 'pointer' }}
+                        >
+                          &gt;&gt;
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleUnassignSelected}
+                          style={{ padding: '3px 12px', fontSize: '11px', fontWeight: 'bold', background: '#f1f5f9', border: '1px solid #cbd5e1', cursor: 'pointer' }}
+                        >
+                          &lt;&lt;
+                        </button>
+                      </div>
+
+                      {/* Right Listbox: Assigned Recruiters */}
+                      <select
+                        multiple
+                        size={6}
+                        value={selectedAssigned}
+                        onChange={e => setSelectedAssigned(Array.from(e.target.selectedOptions, o => o.value))}
+                        style={{ width: '220px', height: '120px', border: '1px solid #cbd5e1', padding: '4px', fontSize: '11.5px' }}
+                      >
+                        {assignedRecruiters.map(r => (
+                          <option key={r} value={r}>{r}</option>
+                        ))}
                       </select>
                     </div>
+
+                    {/* Email Body Textarea */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '90px 1fr', gap: '8px', marginBottom: '14px' }}>
+                      <label style={{ fontWeight: 'bold', color: '#1e3a8a' }}>Email Body:</label>
+                      <textarea
+                        rows={5}
+                        defaultValue={`A requisition has been assigned to you with the below details:\nhttp://cwtest.coolsoft-tech.com/Web/Requisition.aspx?id=${selectedReq.id.replace('J-', '')}\n\nReq#:${selectedReq.id.replace('J-', '')}   Position Title:${editingFields.title}\nStart Date:${editingFields.startDate}   Duration:${editingFields.duration} months`}
+                        style={{ width: '100%', maxWidth: '620px', padding: '6px', fontSize: '11.5px', border: '1px solid #cbd5e1', fontFamily: 'monospace' }}
+                      />
+                    </div>
+
+                    {/* Send Email Radio Options */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '90px 1fr', gap: '8px' }}>
+                      <label style={{ fontWeight: 'bold', color: '#1e3a8a' }}>Send Email:</label>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                          <input type="radio" name="sendEmail" checked={emailOption === 'none'} onChange={() => setEmailOption('none')} />
+                          Do not send E-mail when I click save.
+                        </label>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                          <input type="radio" name="sendEmail" checked={emailOption === 'new'} onChange={() => setEmailOption('new')} />
+                          Send E-mail to newly assigned recruiters/vendors when I click save.
+                        </label>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                          <input type="radio" name="sendEmail" checked={emailOption === 'all'} onChange={() => setEmailOption('all')} />
+                          Send E-mail to all assigned recruiters/vendors when I click save.
+                        </label>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+
+                {/* ─── TAB 3: POTENTIAL CANDIDATES (Image 4) ─── */}
+                {activeReqTab === 'potential' && (
+                  <div style={{ fontSize: '11.5px' }}>
+                    <div style={{ fontWeight: 'bold', color: '#1e3a8a', marginBottom: '10px' }}>
+                      Candidates available for this view:
+                    </div>
+
+                    <div style={{ overflowX: 'auto', marginBottom: '12px' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
+                        <thead>
+                          <tr style={{ background: '#94a3b8', color: '#ffffff' }}>
+                            <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Name</th>
+                            <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Pay Rate</th>
+                            <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Pay Rate Type</th>
+                            <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Assigned By</th>
+                            <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Assigned On</th>
+                            <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Status</th>
+                            <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Status Comments</th>
+                            <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Schedule Interview</th>
+                            <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Rejected Reason</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {potentialCandidates.map((pc, idx) => (
+                            <tr key={pc.id} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                              <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>
+                                <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>{pc.name}</span>
+                              </td>
+                              <td style={{ padding: '6px 8px' }}>{pc.payRate}</td>
+                              <td style={{ padding: '6px 8px' }}>{pc.payRateType}</td>
+                              <td style={{ padding: '6px 8px' }}>
+                                <span style={{ color: '#0066cc', cursor: 'pointer' }}>{pc.assignedBy}</span>
+                              </td>
+                              <td style={{ padding: '6px 8px', color: '#475569' }}>{pc.assignedOn}</td>
+                              <td style={{ padding: '6px 8px' }}>
+                                <select defaultValue={pc.status} style={{ fontSize: '11px', padding: '2px 4px', border: '1px solid #cbd5e1' }}>
+                                  <option value="Int-SubmittedToManager">Int-SubmittedToManager</option>
+                                  <option value="Shortlisted">Shortlisted</option>
+                                  <option value="Interview-Scheduled">Interview-Scheduled</option>
+                                  <option value="Rejected">Rejected</option>
+                                </select>
+                              </td>
+                              <td style={{ padding: '6px 8px' }}>
+                                <input type="text" defaultValue={pc.statusComments} style={{ fontSize: '11px', padding: '2px 4px', width: '90px', border: '1px solid #cbd5e1' }} />
+                              </td>
+                              <td style={{ padding: '6px 8px' }}>
+                                <select defaultValue="Select" style={{ fontSize: '11px', padding: '2px 4px', border: '1px solid #cbd5e1' }}>
+                                  <option>Select</option>
+                                  <option>Round 1 Technical</option>
+                                  <option>Client Manager Round</option>
+                                </select>
+                              </td>
+                              <td style={{ padding: '6px 8px' }}>
+                                <input type="text" defaultValue={pc.rejectedReason} placeholder="—" style={{ fontSize: '11px', padding: '2px 4px', width: '80px', border: '1px solid #cbd5e1' }} />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div style={{ marginTop: '10px' }}>
+                      <span
+                        onClick={() => {
+                          const name = prompt('Enter Candidate Name to link to this Requisition:')
+                          if (name) {
+                            setPotentialCandidates(prev => [
+                              ...prev,
+                              {
+                                id: 'PC-' + Date.now(),
+                                name: name,
+                                payRate: '65/hr',
+                                payRateType: 'W2',
+                                assignedBy: currentUser?.name || 'Recruiter',
+                                assignedOn: new Date().toLocaleString(),
+                                status: 'Int-SubmittedToManager',
+                                statusComments: 'Submitted',
+                                interview: 'Select',
+                                rejectedReason: ''
+                              }
+                            ])
+                          }
+                        }}
+                        style={{ color: '#0066cc', fontWeight: 'bold', fontSize: '11.5px', textDecoration: 'underline', cursor: 'pointer' }}
+                      >
+                        Select Candidate
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* ─── TAB 4: ATTACHMENTS (Image 5) ─── */}
+                {activeReqTab === 'attachments' && (
+                  <div style={{ fontSize: '11.5px' }}>
+                    <div style={{ marginBottom: '12px' }}>
+                      <span
+                        onClick={() => setShowAddAttachment(prev => !prev)}
+                        style={{ color: '#0066cc', fontWeight: 'bold', textDecoration: 'underline', cursor: 'pointer' }}
+                      >
+                        Add New Attachment
+                      </span>
+                    </div>
+
+                    {/* Attachments List Table */}
+                    <div style={{ maxWidth: '580px', marginBottom: '18px' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
+                        <tbody>
+                          {attachments.map((att, idx) => (
+                            <tr key={att.id} style={{ background: idx % 2 === 0 ? '#f8fafc' : '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
+                              <td style={{ padding: '6px 10px', color: '#1e293b' }}>{att.title}</td>
+                              <td style={{ padding: '6px 10px' }}>
+                                <span style={{ color: '#0066cc', textDecoration: 'underline', cursor: 'pointer' }}>
+                                  {att.filename}
+                                </span>
+                              </td>
+                              <td style={{ padding: '6px 10px', width: '50px', textAlign: 'right' }}>
+                                <span style={{ cursor: 'pointer', marginRight: '8px' }} title="Edit">✏️</span>
+                                <span onClick={() => handleDeleteAttachment(att.id)} style={{ color: '#dc2626', cursor: 'pointer', fontWeight: 'bold' }} title="Delete">❌</span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Add Attachment Form Box */}
+                    {showAddAttachment && (
+                      <form onSubmit={handleAddAttachment} style={{ border: '1px solid #60a5fa', background: '#eff6ff', padding: '14px 18px', maxWidth: '540px', borderRadius: '3px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                          <span style={{ fontWeight: 'bold', color: '#1e3a8a' }}>Attach New Document</span>
+                          <span onClick={() => setShowAddAttachment(false)} style={{ cursor: 'pointer', fontWeight: 'bold', color: '#1e3a8a' }}>X</span>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '8px 10px', alignItems: 'center', marginBottom: '12px' }}>
+                          <label style={{ fontWeight: 'bold', color: '#1e3a8a' }}>Attachment :</label>
+                          <input type="file" onChange={e => setNewAttachmentFile(e.target.files[0])} style={{ fontSize: '11px' }} />
+
+                          <label style={{ fontWeight: 'bold', color: '#1e3a8a' }}>Title :</label>
+                          <input type="text" value={newAttachmentTitle} onChange={e => setNewAttachmentTitle(e.target.value)} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} placeholder="Document Title" />
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                          <button type="submit" style={{ background: '#e2e8f0', border: '1px solid #94a3b8', padding: '3px 14px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer' }}>
+                            Save
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
+                )}
+
+                {/* ─── TAB 5: NEW CANDIDATES ─── */}
+                {activeReqTab === 'newCandidates' && (
+                  <div style={{ fontSize: '11.5px', color: '#475569', padding: '20px 0' }}>
+                    <div style={{ fontWeight: 'bold', color: '#1e3a8a', marginBottom: '8px' }}>
+                      New Unscreened Applicants (0)
+                    </div>
+                    <p>No new unprocessed candidate applications found for Requisition #{selectedReq.id.replace('J-', '')}.</p>
+                  </div>
+                )}
+
+              </div>
+
+              {/* Created by info bar */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 14px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderTop: 'none', fontSize: '11px', color: '#475569', fontWeight: 'bold' }}>
+                <span>Created by: sharif on: 8/20/2026 2:31:19 PM</span>
+                <span>Last Updated by: vaibhav on: {new Date().toLocaleDateString()}</span>
+              </div>
+
+              {/* Submit / Save Bar */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '14px' }}>
+                <button
+                  type="button"
+                  onClick={handleSaveRequisition}
+                  style={{
+                    background: '#e2e8f0', color: '#0f172a', border: '1px solid #94a3b8',
+                    padding: '4px 20px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer'
+                  }}
+                >
+                  Save
+                </button>
+              </div>
+
             </div>
-          )}
+          ) : (
 
-          {/* ═══════════ MODERN ANALYTICS OVERVIEW ═══════════ */}
-          {activeView === 'analytics' && (
-            <div>
-              {/* KPI Cards */}
-              <div className="kpi-grid">
-                <article className="kpi kpi-premium">
-                  <div className="kpi-icon-wrap">📊</div>
-                  <div>
-                    <h3>Total Candidates</h3>
-                    <p>{candidates.length}</p>
-                    <span className="kpi-trend trend-up">↑ 12% this week</span>
-                  </div>
-                </article>
-                <article className="kpi kpi-premium">
-                  <div className="kpi-icon-wrap kpi-icon-green">⚡</div>
-                  <div>
-                    <h3>Active Jobs</h3>
-                    <p>{jobs.length}</p>
-                    <span className="kpi-trend trend-neutral">All systems nominal</span>
-                  </div>
-                </article>
-                <article className="kpi kpi-premium">
-                  <div className="kpi-icon-wrap kpi-icon-emerald">🛡️</div>
-                  <div>
-                    <h3>High Trust Rate</h3>
-                    <p>78%</p>
-                    <span className="kpi-trend trend-up">↑ 3% vs avg</span>
-                  </div>
-                </article>
-                <article className="kpi kpi-premium kpi-amber">
-                  <div className="kpi-icon-wrap kpi-icon-amber">⚠️</div>
-                  <div>
-                    <h3>Needs Review</h3>
-                    <p>{candidates.filter(c => c.status === 'New').length}</p>
-                    <span className="kpi-trend trend-down">Pending screening</span>
-                  </div>
-                </article>
+            /* ─────────────────────────────────────────────────────────────
+                VIEW 2: ALL OPEN REQUISITIONS LIST VIEW (IMAGES 1 & 2)
+                ───────────────────────────────────────────────────────────── */
+            <div style={{ background: '#ffffff', padding: '16px 20px', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+              
+              {/* Breadcrumb path */}
+              <div style={{ fontSize: '11px', color: '#1e3a8a', fontWeight: 'bold', marginBottom: '8px' }}>
+                You are here: Home
               </div>
 
-              {/* Quick Actions Panel */}
-              <div className="quick-actions-bar" style={{ marginTop: 20 }}>
-                <div className="bar-title">Quick Actions:</div>
-                <div className="actions-links">
-                  <Link to="/ats" className="action-link-btn">
-                    <span>🎯 Go to ATS Workspace</span>
-                  </Link>
-                  <Link to="/reports" className="action-link-btn">
-                    <span>📋 View Intelligence Reports</span>
-                  </Link>
-                  {isSuperAdmin && (
-                    <Link to="/linkedin-posts" className="action-link-btn" style={{ borderColor: '#7C3AED', color: '#7C3AED' }}>
-                      <span>🤖 LinkedIn Post Automation (Super Admin)</span>
-                    </Link>
-                  )}
+              {/* Welcome Header */}
+              <h2 style={{ margin: '0 0 2px', fontSize: '15px', color: '#16a34a', fontWeight: 'bold' }}>
+                COOLSOFT Recruitment Portal Home
+              </h2>
+              <div style={{ fontSize: '12px', color: '#334155', fontWeight: 'bold', marginBottom: '14px' }}>
+                Welcome back to CoolWorks. You have {jobs.length} tasks.
+              </div>
+
+              {/* All Open Requisitions Header Banner */}
+              <div style={{
+                background: '#bfdbfe', border: '1px solid #93c5fd', padding: '6px 12px',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                borderRadius: '3px 3px 0 0'
+              }}>
+                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#1e3a8a' }}>All Open Requisitions</span>
+                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#1e3a8a' }}>
+                  (Requisitions {filteredJobs.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, filteredJobs.length)} of {filteredJobs.length})
+                </span>
+              </div>
+
+              {/* Open Requisitions Table List */}
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: '#94a3b8', color: '#ffffff', borderBottom: '1px solid #cbd5e1' }}>
+                      <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Req#</th>
+                      <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Position</th>
+                      <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Skills</th>
+                      <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Customer</th>
+                      <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Location</th>
+                      <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Deadline</th>
+                      <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Pay Rate</th>
+                      <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Recruiters</th>
+                      <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Status</th>
+                      <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Req Ctg</th>
+                      <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Req Type</th>
+                      <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Duration</th>
+                      <th style={{ padding: '7px 5px', fontWeight: 'bold', textAlign: 'center' }}>W</th>
+                      <th style={{ padding: '7px 5px', fontWeight: 'bold', textAlign: 'center' }}>K</th>
+                      <th style={{ padding: '7px 5px', fontWeight: 'bold', textAlign: 'center' }}>Cont</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedJobs.length === 0 ? (
+                      <tr>
+                        <td colSpan="15" style={{ padding: '36px', textAlign: 'center', color: '#64748b' }}>
+                          No open requisitions found.
+                        </td>
+                      </tr>
+                    ) : (
+                      paginatedJobs.map((job, idx) => (
+                        <tr key={job.id} style={{
+                          background: idx % 2 === 0 ? '#ffffff' : '#f8fafc',
+                          borderBottom: '1px solid #e2e8f0'
+                        }}>
+                          {/* Req# clickable link */}
+                          <td style={{ padding: '7px 9px', fontWeight: 'bold' }}>
+                            <span onClick={() => handleOpenReq(job)} style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>
+                              {job.id.replace('J-', '')}
+                            </span>
+                          </td>
+                          {/* Position clickable link */}
+                          <td style={{ padding: '7px 9px', fontWeight: 'bold' }}>
+                            <span onClick={() => handleOpenReq(job)} style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>
+                              {job.title}
+                            </span>
+                          </td>
+                          <td style={{ padding: '7px 9px', color: '#475569' }}>
+                            {Array.isArray(job.skills) ? job.skills.slice(0, 3).join(', ') : ''}
+                          </td>
+                          <td style={{ padding: '7px 9px', color: '#475569' }}>{job.client || 'State Of SC'}</td>
+                          <td style={{ padding: '7px 9px', color: '#475569' }}>{job.location || 'Columbia, SC'}</td>
+                          <td style={{ padding: '7px 9px', color: '#e11d48', fontWeight: 'bold' }}>{job.deadline || 'Aug 28, 2026'}</td>
+                          <td style={{ padding: '7px 9px', color: '#475569' }}>{job.budget || '75/hr'}</td>
+                          <td style={{ padding: '7px 9px', color: '#475569' }}>{job.postedByName || 'VaibhavB...'}</td>
+                          <td style={{ padding: '7px 9px', color: '#16a34a', fontWeight: 'bold' }}>{job.status === 'Active' ? 'In-Progress' : (job.status || 'In-Progress')}</td>
+                          <td style={{ padding: '7px 9px', color: '#475569' }}>SP</td>
+                          <td style={{ padding: '7px 9px', color: '#475569' }}>{job.type || 'Contract'}</td>
+                          <td style={{ padding: '7px 9px', color: '#475569' }}>{job.duration || '12'}</td>
+                          {/* Checkbox indicators */}
+                          <td style={{ padding: '7px 5px', textAlign: 'center' }}>
+                            <input type="checkbox" readOnly checked={false} />
+                          </td>
+                          <td style={{ padding: '7px 5px', textAlign: 'center' }}>
+                            <input type="checkbox" readOnly checked={false} />
+                          </td>
+                          <td style={{ padding: '7px 5px', textAlign: 'center' }}>
+                            <input type="checkbox" readOnly checked={idx % 2 === 1} />
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination controls matches Image 2 */}
+              <div style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                borderTop: '1px solid #cbd5e1', paddingTop: '10px', marginTop: '10px'
+              }}>
+                {/* Numbers list */}
+                <div style={{ display: 'flex', gap: '10px', fontSize: '12px', fontWeight: 'bold' }}>
+                  {Array.from({ length: totalPages }).map((_, i) => {
+                    const p = i + 1
+                    return (
+                      <span key={p} onClick={() => setCurrentPage(p)} style={{
+                        color: currentPage === p ? '#ea580c' : '#0066cc',
+                        cursor: 'pointer',
+                        textDecoration: currentPage === p ? 'none' : 'underline'
+                      }}>
+                        {p}
+                      </span>
+                    )
+                  })}
+                  <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}>Next</span>
+                  <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setCurrentPage(totalPages)}>Last</span>
+                </div>
+
+                {/* Page size select dropdown */}
+                <div style={{ fontSize: '11px', fontWeight: 'bold' }}>
+                  Page Size:
+                  <select value={pageSize} onChange={e => { setPageSize(parseInt(e.target.value)); setCurrentPage(1); }} style={{ marginLeft: '6px', fontSize: '11px', padding: '1px 3px' }}>
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                  </select>
                 </div>
               </div>
+
             </div>
           )}
 
         </div>
-      </section>
 
-      {/* Candidate PDF Verification Certificate Modal */}
-      {selectedCandidateForPdf && (
-        <CandidatePdfReportModal
-          candidate={selectedCandidateForPdf}
-          onClose={() => setSelectedCandidateForPdf(null)}
-        />
-      )}
+        {/* ═══════════ COOLSOFT ORANGE FOOTER ═══════════ */}
+        <footer style={{ background: '#ea580c', borderTop: '2px solid #c2410c', color: '#ffffff', textAlign: 'center', padding: '10px', marginTop: '30px', fontSize: '11px', fontWeight: 'bold' }}>
+          © COOLSOFT LLC | All rights reserved | Release 1.9 06-May-2025 (New Server 2023 Aug)
+        </footer>
 
-      {/* Scoped Styles */}
-      <style>{`
-        .kpi-premium {
-          display: flex;
-          gap: 16px;
-          align-items: flex-start;
-        }
-        .kpi-icon-wrap {
-          width: 42px;
-          height: 42px;
-          background: rgba(18, 39, 35, 0.05);
-          border-radius: 10px;
-          display: grid;
-          place-items: center;
-          font-size: 20px;
-          flex-shrink: 0;
-        }
-        .kpi-icon-green {
-          background: rgba(219, 127, 53, 0.1);
-          color: var(--brand-2);
-        }
-        .kpi-icon-emerald {
-          background: #dcfce7;
-          color: #15803d;
-        }
-        .kpi-icon-amber {
-          background: #fef3c7;
-          color: #d97706;
-        }
-        .kpi-trend {
-          display: block;
-          font-size: 11px;
-          font-weight: 600;
-          margin-top: 6px;
-        }
-        .trend-up {
-          color: #16a34a;
-        }
-        .trend-down {
-          color: #dc2626;
-        }
-        .trend-neutral {
-          color: var(--ink-soft);
-        }
-        .quick-actions-bar {
-          background: rgba(239, 229, 210, 0.4);
-          border: 1px solid var(--line);
-          border-radius: 12px;
-          padding: 12px 20px;
-          display: flex;
-          align-items: center;
-          gap: 14px;
-          margin-bottom: 30px;
-          flex-wrap: wrap;
-        }
-        .bar-title {
-          font-family: 'Plus Jakarta Sans', sans-serif;
-          font-weight: 700;
-          font-size: 13px;
-          color: var(--ink-soft);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-        }
-        .actions-links {
-          display: flex;
-          gap: 12px;
-          flex-wrap: wrap;
-        }
-        .action-link-btn {
-          font-size: 13px;
-          font-weight: 600;
-          background: var(--surface);
-          border: 1px solid var(--line);
-          padding: 6px 14px;
-          border-radius: 8px;
-          color: var(--ink);
-          transition: all 0.2s ease;
-        }
-        .action-link-btn:hover {
-          background: var(--brand);
-          color: white;
-          border-color: var(--brand);
-          transform: translateY(-1px);
-        }
-      `}</style>
+      </div>
     </SiteLayout>
   )
 }
