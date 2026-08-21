@@ -1,4 +1,32 @@
-import React, { useState, useEffect } from 'react'
+const ALL_SMARTHIRE_RECRUITERS = [
+  { name: 'Omkesh Manjute', email: 'omkesh.manjute@smarthire.com', refCode: 'omkesh' },
+  { name: 'Vaibhav Bisen', email: 'vaibhav.bisen@smarthire.com', refCode: 'vaibhav-bisen' },
+  { name: 'Sukamal Chatterjee', email: 'sukamal.c@smarthire.com', refCode: 'sukamal-chatterjee' },
+  { name: 'Prudhvi Sevveti', email: 'prudhvi.s@smarthire.com', refCode: 'prudhvi-sevveti' },
+  { name: 'Nitin Bhosale', email: 'nitin.b@smarthire.com', refCode: 'nitin-bhosale' },
+  { name: 'Naveen Korimelli', email: 'naveen.k@smarthire.com', refCode: 'naveen-korimelli' },
+  { name: 'Ajay Arya', email: 'ajay.a@smarthire.com', refCode: 'ajay-arya' },
+  { name: 'Raj Barve', email: 'raj.b@smarthire.com', refCode: 'raj-barve' },
+  { name: 'Pankaj Maharwade', email: 'pankaj.m@smarthire.com', refCode: 'pankaj-maharwade' },
+  { name: 'Nishant Kathane', email: 'nishant.k@smarthire.com', refCode: 'nishant-kathane' }
+]
+
+function getInitialRecruiterEmail() {
+  try {
+    const raw = localStorage.getItem('smarthire_user')
+    if (raw) {
+      const u = JSON.parse(raw)
+      const found = ALL_SMARTHIRE_RECRUITERS.find(r => 
+        (u.email && r.email.toLowerCase() === u.email.toLowerCase()) ||
+        (u.refCode && r.refCode.toLowerCase() === u.refCode.toLowerCase()) ||
+        (u.name && r.name.toLowerCase().includes(u.name.toLowerCase())) ||
+        (u.name && u.name.toLowerCase().includes(r.refCode.toLowerCase()))
+      )
+      if (found) return found.email
+    }
+  } catch (e) {}
+  return localStorage.getItem('smarthire_current_user_email') || 'omkesh.manjute@smarthire.com'
+}
 
 function SettingsModule() {
   const [savedToast, setSavedToast] = useState(false)
@@ -8,8 +36,21 @@ function SettingsModule() {
   const [newStage, setNewStage] = useState('')
 
   // Email Config State
-  const [emailCfg, setEmailCfg] = useState({ displayName: '', fromEmail: '', provider: 'gmail', smtpHost: 'smtp.gmail.com', smtpPort: 587, security: 'TLS', appPassword: '', signature: '' })
-  const [recruiterEmailKey, setRecruiterEmailKey] = useState(() => localStorage.getItem('smarthire_current_user_email') || 'omkesh.manjute@smarthire.com')
+  const [recruiterEmailKey, setRecruiterEmailKey] = useState(getInitialRecruiterEmail)
+  const [emailCfg, setEmailCfg] = useState(() => {
+    const initialEmail = getInitialRecruiterEmail()
+    const rec = ALL_SMARTHIRE_RECRUITERS.find(r => r.email === initialEmail)
+    return {
+      displayName: rec ? rec.name : '',
+      fromEmail: '',
+      provider: 'gmail',
+      smtpHost: 'smtp.gmail.com',
+      smtpPort: 587,
+      security: 'TLS',
+      appPassword: '',
+      signature: ''
+    }
+  })
   const [emailCfgSaving, setEmailCfgSaving] = useState(false)
   const [emailCfgMsg, setEmailCfgMsg] = useState('')
   const [testingEmail, setTestingEmail] = useState(false)
@@ -23,13 +64,31 @@ function SettingsModule() {
   const [tplSubject, setTplSubject] = useState('')
   const [tplBody, setTplBody] = useState('')
 
-  useEffect(() => { fetchEmailConfig(); fetchEmailTemplates() }, [])
+  useEffect(() => {
+    fetchEmailConfig(recruiterEmailKey)
+    fetchEmailTemplates()
+  }, [recruiterEmailKey])
 
-  const fetchEmailConfig = async () => {
+  const fetchEmailConfig = async (emailToFetch = recruiterEmailKey) => {
     try {
-      const res = await fetch(`/api/recruiter/email-config?email=${encodeURIComponent(recruiterEmailKey)}`)
+      const res = await fetch(`/api/recruiter/email-config?email=${encodeURIComponent(emailToFetch)}`)
       const data = await res.json()
-      if (data.success && data.config) setEmailCfg(prev => ({ ...prev, ...data.config }))
+      if (data.success && data.config) {
+        setEmailCfg(prev => ({ ...prev, ...data.config }))
+      } else {
+        const rec = ALL_SMARTHIRE_RECRUITERS.find(r => r.email === emailToFetch)
+        setEmailCfg(prev => ({
+          ...prev,
+          displayName: rec ? rec.name : prev.displayName,
+          fromEmail: '',
+          provider: 'gmail',
+          smtpHost: 'smtp.gmail.com',
+          smtpPort: 587,
+          security: 'TLS',
+          appPassword: '',
+          signature: ''
+        }))
+      }
     } catch(e) {}
   }
 
@@ -150,30 +209,42 @@ function SettingsModule() {
 
           <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 22, marginBottom: 16 }}>
             <div style={{ marginBottom: 14 }}>
-              <label style={labelStyle}>Your SmartHire Email (Account Key)</label>
-              <select value={recruiterEmailKey} onChange={e => { setRecruiterEmailKey(e.target.value); }}
-                style={inputStyle}>
-                <option value="omkesh.manjute@smarthire.com">Omkesh Manjute</option>
-                <option value="vaibhav.bisen@smarthire.com">Vaibhav Bisen</option>
-                <option value="sukamal.c@smarthire.com">Sukamal Chatterjee</option>
-                <option value="prudhvi.s@smarthire.com">Prudhvi Sevveti</option>
-                <option value="nitin.b@smarthire.com">Nitin Bhosale</option>
-                <option value="naveen.k@smarthire.com">Naveen Korimelli</option>
-                <option value="ajay.a@smarthire.com">Ajay Arya</option>
-                <option value="raj.b@smarthire.com">Raj Barve</option>
-                <option value="pankaj.m@smarthire.com">Pankaj Maharwade</option>
-                <option value="nishant.k@smarthire.com">Nishant Kathane</option>
+              <label style={labelStyle}>Select Recruiter Account</label>
+              <select
+                value={recruiterEmailKey}
+                onChange={e => {
+                  const newEmail = e.target.value
+                  setRecruiterEmailKey(newEmail)
+                }}
+                style={inputStyle}
+              >
+                {ALL_SMARTHIRE_RECRUITERS.map(r => (
+                  <option key={r.email} value={r.email}>
+                    {r.name} ({r.email})
+                  </option>
+                ))}
               </select>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
               <div>
                 <label style={labelStyle}>Display Name (From Name)</label>
-                <input value={emailCfg.displayName} onChange={e => setEmailCfg(p => ({ ...p, displayName: e.target.value }))} placeholder="e.g. Vaibhav Bisen" style={inputStyle} />
+                <input
+                  value={emailCfg.displayName}
+                  onChange={e => setEmailCfg(p => ({ ...p, displayName: e.target.value }))}
+                  placeholder="e.g. John Doe / Recruiter Name"
+                  style={inputStyle}
+                />
               </div>
               <div>
                 <label style={labelStyle}>From Email Address</label>
-                <input value={emailCfg.fromEmail} onChange={e => setEmailCfg(p => ({ ...p, fromEmail: e.target.value }))} placeholder="your.email@gmail.com" type="email" style={inputStyle} />
+                <input
+                  value={emailCfg.fromEmail}
+                  onChange={e => setEmailCfg(p => ({ ...p, fromEmail: e.target.value }))}
+                  placeholder="e.g. your.email@gmail.com"
+                  type="email"
+                  style={inputStyle}
+                />
               </div>
             </div>
 
@@ -221,7 +292,13 @@ function SettingsModule() {
 
             <div style={{ marginBottom: 16 }}>
               <label style={labelStyle}>Email Signature (optional)</label>
-              <textarea rows={4} value={emailCfg.signature} onChange={e => setEmailCfg(p => ({ ...p, signature: e.target.value }))} placeholder={`e.g.\nVaibhav Bisen\nSenior Recruiter | SmartHire LLC\nPhone: (312) 555-0102`} style={{ ...inputStyle, resize: 'vertical' }} />
+              <textarea
+                rows={5}
+                value={emailCfg.signature}
+                onChange={e => setEmailCfg(p => ({ ...p, signature: e.target.value }))}
+                placeholder={`e.g. (Demo Signature)\nJohn Doe\nTechnical Recruiter | SmartHire LLC\nPhone: (555) 000-0000\nEmail: recruiter@smarthire.com`}
+                style={{ ...inputStyle, resize: 'vertical' }}
+              />
             </div>
 
             {emailCfgMsg && (

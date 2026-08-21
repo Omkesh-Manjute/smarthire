@@ -42,9 +42,9 @@ function DashboardModule({
 
   // Assign Recruiters State
   const [availableRecruiters, setAvailableRecruiters] = useState([
-    'Admin Blr', 'AI Agent', 'Ajay Arya', 'Anand Krishnamurthy', 'Deepak Joshi', 'Nitin Bhosale', 'Rahul Sharma', 'Priya Verma'
+    'Admin Blr', 'AI Agent', 'Ajay Arya', 'Anand Krishnamurthy', 'Deepak Joshi', 'Nitin Bhosale', 'Rahul Sharma', 'Priya Verma', 'Vaibhav Bisen'
   ])
-  const [assignedRecruiters, setAssignedRecruiters] = useState(['Vaibhav Bisen'])
+  const [assignedRecruiters, setAssignedRecruiters] = useState([])
   const [selectedAvailable, setSelectedAvailable] = useState([])
   const [selectedAssigned, setSelectedAssigned] = useState([])
   const [emailOption, setEmailOption] = useState('none')
