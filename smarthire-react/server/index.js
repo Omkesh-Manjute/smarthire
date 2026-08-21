@@ -5787,11 +5787,40 @@ app.get('/api/messages/:candidateId', authenticateToken, (req, res) => {
 
 // List all candidate message threads (for Recruiter Inbox)
 app.get('/api/messages', authenticateToken, (req, res) => {
+  // Helper to find candidate or session metadata
+  const getCandidateMeta = (candidateId) => {
+    const session = Array.isArray(screeningStore) ? screeningStore.find(s => s && (s.sessionId === candidateId || s.id === candidateId)) : null;
+    const cand = Array.isArray(candidatesStore) ? candidatesStore.find(c => c && (c.id === candidateId || c.candidate_id === candidateId || c.sessionId === candidateId)) : null;
+    
+    const recEmail = (
+      (session && (session.recruiterEmail || session.referredByEmail || session.createdBy)) ||
+      (cand && (cand.recruiterEmail || cand.submittedBy || cand.createdBy)) ||
+      ''
+    ).toLowerCase().trim();
+
+    const refCode = (
+      (session && (session.refCode || session.referredBy)) ||
+      (cand && (cand.refCode || cand.referredBy)) ||
+      ''
+    ).toLowerCase().trim();
+
+    const recName = (
+      (session && session.recruiterName) ||
+      (cand && cand.recruiterName) ||
+      ''
+    );
+
+    const jobId = (session && session.jobId) || (cand && (cand.job_id || cand.jobId)) || '';
+
+    return { session, cand, recEmail, refCode, recName, jobId };
+  };
+
   // Group messages by candidateId and get the latest message per thread
   const threadsMap = {};
   messagesStore.forEach(m => {
     if (!m || !m.candidateId) return;
     if (!threadsMap[m.candidateId]) {
+      const meta = getCandidateMeta(m.candidateId);
       threadsMap[m.candidateId] = {
         candidateId: m.candidateId,
         candidateName: m.candidateName || 'Candidate',
@@ -5799,6 +5828,10 @@ app.get('/api/messages', authenticateToken, (req, res) => {
         lastMessage: m.text,
         lastMessageTime: m.timestamp,
         unreadCount: 0,
+        recruiterEmail: meta.recEmail || m.recruiterEmail || '',
+        refCode: meta.refCode || m.refCode || '',
+        recruiterName: meta.recName || m.recruiterName || '',
+        jobId: meta.jobId || m.jobId || '',
         messages: []
       };
     }
@@ -5821,6 +5854,7 @@ app.get('/api/messages', authenticateToken, (req, res) => {
     screeningStore.forEach(s => {
       if (!s || !s.sessionId) return;
       if (!threadsMap[s.sessionId]) {
+        const meta = getCandidateMeta(s.sessionId);
         threadsMap[s.sessionId] = {
           candidateId: s.sessionId,
           candidateName: s.candidateName || s.name || 'Candidate',
@@ -5828,33 +5862,45 @@ app.get('/api/messages', authenticateToken, (req, res) => {
           lastMessage: 'Applied via Careers Portal',
           lastMessageTime: s.createdAt || s.submittedAt || new Date().toISOString(),
           unreadCount: 0,
+          recruiterEmail: meta.recEmail || s.recruiterEmail || '',
+          refCode: meta.refCode || s.refCode || s.referredBy || '',
+          recruiterName: meta.recName || s.recruiterName || '',
+          jobId: meta.jobId || s.jobId || '',
           messages: []
         };
       }
     });
   }
 
+  const queryRecruiter = (req.query.recruiter || req.headers['x-recruiter-email'] || req.headers['x-recruiter-ref'] || '').toLowerCase().trim();
   const userRole = req.user?.role || 'superadmin';
   const userEmail = (req.user?.email || '').toLowerCase().trim();
 
-  let allThreads = Object.values(threadsMap);
+  let allThreads = Object.values(threadsMap).map(t => {
+    const meta = getCandidateMeta(t.candidateId);
+    return {
+      ...t,
+      recruiterEmail: t.recruiterEmail || meta.recEmail,
+      refCode: t.refCode || meta.refCode,
+      recruiterName: t.recruiterName || meta.recName,
+      jobId: t.jobId || meta.jobId
+    };
+  });
+
   let filteredThreads = allThreads;
 
-  if (userRole === 'recruiter') {
+  if (queryRecruiter && queryRecruiter !== 'all') {
     filteredThreads = allThreads.filter(t => {
-      const candidate = candidatesStore.find(c => c && (c.id === t.candidateId || c.candidate_id === t.candidateId));
-      const session = screeningStore.find(s => s && s.sessionId === t.candidateId);
-      
-      const cOwner = (
-        (candidate && (candidate.createdBy || candidate.recruiterEmail || candidate.submittedBy || candidate.recruiterId)) ||
-        (session && (session.createdBy || session.recruiterEmail || session.referredBy || session.recruiterId)) ||
-        ''
-      ).toLowerCase().trim();
-      
-      const isSample = (candidate && candidate.isSample) || (session && session.isSample) || t.candidateId === 'SCR-SAMPLE' || t.candidateId === 'C-SAMPLE';
-      const isSampleJob = (candidate && candidate.job_id === 'J-102') || (session && session.jobId === 'J-102');
-      
-      return cOwner === userEmail || isSample || isSampleJob;
+      const matchEmail = t.recruiterEmail && (t.recruiterEmail.toLowerCase() === queryRecruiter || t.recruiterEmail.toLowerCase().includes(queryRecruiter));
+      const matchRef = t.refCode && (t.refCode.toLowerCase() === queryRecruiter || queryRecruiter.includes(t.refCode.toLowerCase()) || t.refCode.toLowerCase().includes(queryRecruiter));
+      const matchName = t.recruiterName && t.recruiterName.toLowerCase().includes(queryRecruiter);
+      return matchEmail || matchRef || matchName;
+    });
+  } else if (userRole === 'recruiter' && userEmail) {
+    filteredThreads = allThreads.filter(t => {
+      const matchEmail = t.recruiterEmail && t.recruiterEmail.toLowerCase() === userEmail;
+      const matchRef = t.refCode && userEmail.includes(t.refCode.toLowerCase());
+      return matchEmail || matchRef || (!t.recruiterEmail && !t.refCode);
     });
   }
 

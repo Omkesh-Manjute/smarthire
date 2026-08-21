@@ -160,6 +160,8 @@ function SettingsModule() {
     setStages(prev => prev.filter(s => s !== stageToRemove))
   }
 
+  const [guideProvider, setGuideProvider] = useState('gmail')
+
   const PROVIDER_DEFAULTS = {
     gmail: { smtpHost: 'smtp.gmail.com', smtpPort: 587, security: 'TLS' },
     outlook: { smtpHost: 'smtp-mail.outlook.com', smtpPort: 587, security: 'TLS' },
@@ -202,12 +204,140 @@ function SettingsModule() {
 
       {/* ── EMAIL CONFIG TAB ── */}
       {activeSettingsTab === 'email' && (
-        <div style={{ maxWidth: 680 }}>
-          <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 13 }}>
-            <strong>📧 Per-Recruiter Email Setup</strong> — Configure your personal SMTP settings using Gmail App Password, Outlook App Password, or custom SMTP. All emails sent from SmartHire will use your configured credentials.
+        <div style={{ maxWidth: 860 }}>
+          {/* Step-by-Step App Password Tutorial Guide */}
+          <div style={{ background: '#fff', border: '1px solid #bfdbfe', borderRadius: 14, padding: '18px 20px', marginBottom: 20, boxShadow: '0 2px 10px rgba(37,99,235,0.06)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
+              <div>
+                <h4 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  📖 Step-by-Step Setup Guide: How to Generate App Password
+                </h4>
+                <p style={{ margin: '4px 0 0', fontSize: 12.5, color: '#64748b' }}>
+                  Select your email provider to see exact instructions for generating an App Password for SMTP sending.
+                </p>
+              </div>
+              {/* Guide Tabs */}
+              <div style={{ display: 'flex', gap: 6 }}>
+                {[
+                  { id: 'gmail', label: '🔴 Gmail', color: '#ea4335' },
+                  { id: 'yahoo', label: '🟣 Yahoo Mail', color: '#6001d2' },
+                  { id: 'outlook', label: '🔵 Outlook / Office 365', color: '#0078d4' }
+                ].map(g => (
+                  <button
+                    key={g.id}
+                    onClick={() => {
+                      setGuideProvider(g.id)
+                      setEmailCfg(prev => ({ ...prev, provider: g.id === 'outlook' ? 'outlook' : g.id, ...PROVIDER_DEFAULTS[g.id === 'outlook' ? 'outlook' : g.id] }))
+                    }}
+                    style={{
+                      padding: '5px 12px',
+                      borderRadius: 8,
+                      border: '1px solid',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      background: guideProvider === g.id ? g.color : '#f8fafc',
+                      color: guideProvider === g.id ? '#fff' : '#475569',
+                      borderColor: guideProvider === g.id ? g.color : '#cbd5e1'
+                    }}
+                  >
+                    {g.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* GMAIL INSTRUCTIONS */}
+            {guideProvider === 'gmail' && (
+              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: 14 }}>
+                <div style={{ fontWeight: 800, fontSize: 13, color: '#991b1b', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>🔴</span> Gmail App Password Instructions (5 Steps)
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10, fontSize: 12, color: '#334155' }}>
+                  <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #fca5a5' }}>
+                    <div style={{ fontWeight: 800, color: '#b91c1c', marginBottom: 4 }}>1. Open Google Security</div>
+                    Go to <a href="https://myaccount.google.com/security" target="_blank" rel="noreferrer" style={{ color: '#2563eb', fontWeight: 700 }}>myaccount.google.com/security</a> in your browser.
+                  </div>
+                  <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #fca5a5' }}>
+                    <div style={{ fontWeight: 800, color: '#b91c1c', marginBottom: 4 }}>2. Enable 2-Step Verification</div>
+                    Ensure <strong>2-Step Verification</strong> is turned <strong>ON</strong> on your Google Account (mandatory).
+                  </div>
+                  <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #fca5a5' }}>
+                    <div style={{ fontWeight: 800, color: '#b91c1c', marginBottom: 4 }}>3. Go to App Passwords</div>
+                    Visit <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noreferrer" style={{ color: '#2563eb', fontWeight: 700 }}>Google App Passwords</a> or search "App Passwords".
+                  </div>
+                  <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #fca5a5' }}>
+                    <div style={{ fontWeight: 800, color: '#b91c1c', marginBottom: 4 }}>4. Create App Password</div>
+                    Type App Name <strong>SmartHire ATS</strong> and click <strong>Create</strong>. Copy the yellow 16-character code.
+                  </div>
+                  <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #fca5a5' }}>
+                    <div style={{ fontWeight: 800, color: '#b91c1c', marginBottom: 4 }}>5. Paste & Test Email</div>
+                    Paste the 16-letter code into <strong>App Password</strong> below and click <strong>Save & Send Test Email</strong>.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* YAHOO INSTRUCTIONS */}
+            {guideProvider === 'yahoo' && (
+              <div style={{ background: '#faf5ff', border: '1px solid #e9d5ff', borderRadius: 10, padding: 14 }}>
+                <div style={{ fontWeight: 800, fontSize: 13, color: '#6b21a8', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>🟣</span> Yahoo Mail App Password Instructions (5 Steps)
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10, fontSize: 12, color: '#334155' }}>
+                  <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #d8b4fe' }}>
+                    <div style={{ fontWeight: 800, color: '#7e22ce', marginBottom: 4 }}>1. Open Yahoo Security</div>
+                    Log in to <a href="https://login.yahoo.com/account/security" target="_blank" rel="noreferrer" style={{ color: '#7e22ce', fontWeight: 700 }}>login.yahoo.com/account/security</a>.
+                  </div>
+                  <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #d8b4fe' }}>
+                    <div style={{ fontWeight: 800, color: '#7e22ce', marginBottom: 4 }}>2. Generate App Password</div>
+                    Scroll down and click on <strong>Generate and manage app passwords</strong>.
+                  </div>
+                  <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #d8b4fe' }}>
+                    <div style={{ fontWeight: 800, color: '#7e22ce', marginBottom: 4 }}>3. Enter App Name</div>
+                    Enter <strong>SmartHire</strong> in the text box and click the <strong>Generate password</strong> button.
+                  </div>
+                  <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #d8b4fe' }}>
+                    <div style={{ fontWeight: 800, color: '#7e22ce', marginBottom: 4 }}>4. Copy 16-Letter Code</div>
+                    Copy the generated one-time code provided by Yahoo (e.g. <code>xxxx xxxx xxxx xxxx</code>).
+                  </div>
+                  <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #d8b4fe' }}>
+                    <div style={{ fontWeight: 800, color: '#7e22ce', marginBottom: 4 }}>5. Paste & Test</div>
+                    Paste into <strong>App Password</strong> below. SMTP Host: <code>smtp.mail.yahoo.com</code>, Port: <code>587</code> (TLS).
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* OUTLOOK / OFFICE 365 INSTRUCTIONS */}
+            {guideProvider === 'outlook' && (
+              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: 14 }}>
+                <div style={{ fontWeight: 800, fontSize: 13, color: '#1e40af', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>🔵</span> Microsoft Outlook / Office 365 App Password Instructions
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10, fontSize: 12, color: '#334155' }}>
+                  <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #93c5fd' }}>
+                    <div style={{ fontWeight: 800, color: '#1d4ed8', marginBottom: 4 }}>1. Microsoft Security</div>
+                    Sign in to <a href="https://account.live.com/proofs/manage/additional" target="_blank" rel="noreferrer" style={{ color: '#1d4ed8', fontWeight: 700 }}>Microsoft Security Options</a>.
+                  </div>
+                  <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #93c5fd' }}>
+                    <div style={{ fontWeight: 800, color: '#1d4ed8', marginBottom: 4 }}>2. Enable 2-Step Verification</div>
+                    Ensure Two-step verification is turned on under Additional security.
+                  </div>
+                  <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #93c5fd' }}>
+                    <div style={{ fontWeight: 800, color: '#1d4ed8', marginBottom: 4 }}>3. Create App Password</div>
+                    Under the <strong>App passwords</strong> section, click <strong>Create a new app password</strong>.
+                  </div>
+                  <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #93c5fd' }}>
+                    <div style={{ fontWeight: 800, color: '#1d4ed8', marginBottom: 4 }}>4. Paste & Save</div>
+                    Paste into <strong>App Password</strong> below. Host: <code>smtp-mail.outlook.com</code> (or <code>smtp.office365.com</code>), Port: <code>587</code>.
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 22, marginBottom: 16 }}>
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, padding: 24, marginBottom: 16 }}>
             <div style={{ marginBottom: 14 }}>
               <label style={labelStyle}>Select Recruiter Account</label>
               <select
@@ -252,7 +382,11 @@ function SettingsModule() {
               <label style={labelStyle}>Email Provider</label>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {['gmail', 'outlook', 'office365', 'yahoo', 'custom'].map(p => (
-                  <button key={p} onClick={() => setEmailCfg(prev => ({ ...prev, provider: p, ...PROVIDER_DEFAULTS[p] }))}
+                  <button key={p} onClick={() => {
+                    setEmailCfg(prev => ({ ...prev, provider: p, ...PROVIDER_DEFAULTS[p] }))
+                    if (p === 'gmail' || p === 'yahoo') setGuideProvider(p)
+                    else if (p === 'outlook' || p === 'office365') setGuideProvider('outlook')
+                  }}
                     style={{ padding: '6px 14px', fontSize: 12, fontWeight: 700, borderRadius: 8, cursor: 'pointer', border: '1px solid', background: emailCfg.provider === p ? '#2563eb' : '#f8fafc', color: emailCfg.provider === p ? '#fff' : '#334155', borderColor: emailCfg.provider === p ? '#2563eb' : '#cbd5e1', textTransform: 'capitalize' }}>
                     {p === 'office365' ? 'Office 365' : p.charAt(0).toUpperCase() + p.slice(1)}
                   </button>

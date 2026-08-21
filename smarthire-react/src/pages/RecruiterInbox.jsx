@@ -181,6 +181,31 @@ export default function RecruiterInbox() {
   const inputRef = useRef(null)
   const pollingRef = useRef(null)
 
+  const ALL_SMARTHIRE_RECRUITERS = [
+    { name: 'Omkesh Manjute', email: 'omkesh.manjute@smarthire.com', refCode: 'omkesh', role: 'Super Admin' },
+    { name: 'Vaibhav Bisen', email: 'vaibhav.bisen@smarthire.com', refCode: 'vaibhav-bisen', role: 'Lead Recruiter' },
+    { name: 'Sukamal Chatterjee', email: 'sukamal.c@smarthire.com', refCode: 'sukamal-chatterjee', role: 'Senior Recruiter' },
+    { name: 'Prudhvi Sevveti', email: 'prudhvi.s@smarthire.com', refCode: 'prudhvi-sevveti', role: 'Recruiter' },
+    { name: 'Nitin Bhosale', email: 'nitin.b@smarthire.com', refCode: 'nitin-bhosale', role: 'Recruiter' },
+    { name: 'Naveen Korimelli', email: 'naveen.k@smarthire.com', refCode: 'naveen-korimelli', role: 'Recruiter' },
+    { name: 'Ajay Arya', email: 'ajay.a@smarthire.com', refCode: 'ajay-arya', role: 'Recruiter' },
+    { name: 'Raj Barve', email: 'raj.b@smarthire.com', refCode: 'raj-barve', role: 'Recruiter' },
+    { name: 'Pankaj Maharwade', email: 'pankaj.m@smarthire.com', refCode: 'pankaj-maharwade', role: 'Senior Recruiter' },
+    { name: 'Nishant Kathane', email: 'nishant.k@smarthire.com', refCode: 'nishant-kathane', role: 'Recruiter' }
+  ]
+
+  const [recruiterFilter, setRecruiterFilter] = useState(() => {
+    try {
+      const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
+      if (u.refCode) return u.refCode
+      if (u.email) {
+        const found = ALL_SMARTHIRE_RECRUITERS.find(r => r.email.toLowerCase() === u.email.toLowerCase() || r.refCode.toLowerCase() === u.email.toLowerCase())
+        if (found) return found.refCode
+      }
+    } catch (e) {}
+    return 'all'
+  })
+
   const quickTemplates = [
     "Hi! I reviewed your resume and would love to connect. Are you available for a quick call this week?",
     "Thank you for your application! Could you confirm your work authorization status and notice period?",
@@ -191,16 +216,18 @@ export default function RecruiterInbox() {
 
   const fetchThreads = useCallback(async () => {
     try {
-      const res = await fetch('/api/messages', {
+      const queryParam = recruiterFilter !== 'all' ? `?recruiter=${encodeURIComponent(recruiterFilter)}` : ''
+      const res = await fetch(`/api/messages${queryParam}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`,
+          'x-recruiter-ref': recruiterFilter
         }
       })
       const data = await res.json()
       if (data.success && Array.isArray(data.threads)) setThreads(data.threads)
     } catch (e) { console.warn('Thread fetch error:', e) }
     finally { setLoadingThreads(false) }
-  }, [])
+  }, [recruiterFilter])
 
   const fetchCandidateDetails = useCallback(async (candidateId) => {
     try {
@@ -322,16 +349,15 @@ export default function RecruiterInbox() {
   const activeRole = localStorage.getItem('smarthire_active_role') || defaultRole
   const isSuperAdmin = activeRole === 'superadmin' || activeRole === 'admin'
 
-  const recruiterUserEmail = (currentUser?.email || '').toLowerCase()
-  const recruiterUserId = currentUser?.id || currentUser?._id || ''
-
-  const visibleThreads = isSuperAdmin
-    ? threads
-    : threads.filter(t => {
-        if (!t) return false
-        const tRecruiter = (t.recruiterId || t.recruiterEmail || t.createdBy || '').toLowerCase()
-        return !tRecruiter || tRecruiter === recruiterUserEmail || tRecruiter === recruiterUserId
-      })
+  const visibleThreads = threads.filter(t => {
+    if (!t) return false
+    if (recruiterFilter === 'all') return true
+    const tRef = (t.refCode || t.referredBy || '').toLowerCase()
+    const tEmail = (t.recruiterEmail || t.createdBy || '').toLowerCase()
+    const tName = (t.recruiterName || '').toLowerCase()
+    const target = recruiterFilter.toLowerCase()
+    return tRef === target || tRef.includes(target) || tEmail.includes(target) || tName.includes(target) || target.includes(tRef)
+  })
 
   const filteredThreads = visibleThreads.filter(t => {
     if (!searchQuery) return true
@@ -365,7 +391,7 @@ export default function RecruiterInbox() {
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
           <span style={{ fontSize:12, color:C.textSecondary, background:C.inputBg, border:`1px solid ${C.border}`, padding:'5px 14px', borderRadius:20, fontWeight:600, display:'inline-flex', alignItems:'center', gap:6 }}>
-            <span style={{ width:7, height:7, borderRadius:'50%', background:'#22C55E', display:'inline-block' }} /> {threads.length} Active Conversations
+            <span style={{ width:7, height:7, borderRadius:'50%', background:'#22C55E', display:'inline-block' }} /> {visibleThreads.length} Conversations
           </span>
           <button onClick={() => { const m = themeMode==='light'?'dark':'light'; setThemeMode(m); localStorage.setItem('smarthire_theme',m) }} style={{ background:C.inputBg, border:`1px solid ${C.border}`, borderRadius:20, padding:'6px 14px', fontSize:12, fontWeight:700, cursor:'pointer', color:C.textPrimary, display:'inline-flex', alignItems:'center', gap:6 }}>
             {isLight ? <><IconMoon /> Dark</> : <><IconSun /> Light</>}
@@ -376,8 +402,45 @@ export default function RecruiterInbox() {
       {/* 3-Panel Layout */}
       <div style={{ display:'flex', flex:1, overflow:'hidden' }}>
         {/* LEFT SIDEBAR */}
-        <div style={{ width:320, flexShrink:0, backgroundColor:C.sidebar, borderRight:`1px solid ${C.border}`, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+        <div style={{ width:330, flexShrink:0, backgroundColor:C.sidebar, borderRight:`1px solid ${C.border}`, display:'flex', flexDirection:'column', overflow:'hidden' }}>
           <div style={{ padding:'14px 14px 10px', borderBottom:`1px solid ${C.border}`, flexShrink:0 }}>
+            {/* Recruiter Filter Dropdown */}
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  👤 Recruiter Filter
+                </label>
+                {recruiterFilter !== 'all' && (
+                  <button onClick={() => setRecruiterFilter('all')} style={{ fontSize: 11, background: 'none', border: 'none', color: '#2563EB', cursor: 'pointer', fontWeight: 700 }}>
+                    Show All
+                  </button>
+                )}
+              </div>
+              <select
+                value={recruiterFilter}
+                onChange={e => setRecruiterFilter(e.target.value)}
+                style={{
+                  width: '100%',
+                  background: isLight ? '#F1F5F9' : '#1E293B',
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 8,
+                  padding: '7px 10px',
+                  fontSize: 12.5,
+                  fontWeight: 700,
+                  color: C.textPrimary,
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="all">🌐 All Recruiters ({threads.length})</option>
+                {ALL_SMARTHIRE_RECRUITERS.map(r => (
+                  <option key={r.refCode} value={r.refCode}>
+                    👤 {r.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div style={{ position:'relative' }}>
               <span style={{ position:'absolute', left:11, top:'50%', transform:'translateY(-50%)', color:C.textSecondary, display:'flex', alignItems:'center', pointerEvents:'none' }}>
                 <IconSearch />
@@ -393,7 +456,7 @@ export default function RecruiterInbox() {
             ) : filteredThreads.length === 0 ? (
               <div style={{ padding:'50px 20px', textAlign:'center', color:C.textSecondary }}>
                 <div style={{ color:C.textSecondary, marginBottom:10, display:'flex', justifyContent:'center' }}><IconChat /></div>
-                <p style={{ fontSize:13, lineHeight:1.6 }}>{searchQuery ? 'No conversations match your search.' : 'No candidate messages yet.\nIncoming messages will appear here.'}</p>
+                <p style={{ fontSize:13, lineHeight:1.6 }}>{searchQuery ? 'No conversations match your search.' : 'No candidate messages for this recruiter yet.\nIncoming messages will appear here.'}</p>
               </div>
             ) : filteredThreads.map(thread => (
               <div key={thread.candidateId} style={{ cursor:'pointer', padding:'14px 16px', transition:'background 0.15s', borderLeft: activeThread?.candidateId===thread.candidateId ? '3px solid #2563EB' : '3px solid transparent', background: activeThread?.candidateId===thread.candidateId ? C.activeConv : 'transparent', borderBottom:`1px solid ${C.border}` }} onClick={() => selectThread(thread)}>
@@ -401,15 +464,22 @@ export default function RecruiterInbox() {
                   <Avatar name={thread.candidateName} size={42} />
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:3 }}>
-                      <span style={{ fontWeight:thread.unreadCount>0?800:600, fontSize:13.5, color:C.textPrimary, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', maxWidth:150 }}>{thread.candidateName}</span>
+                      <span style={{ fontWeight:thread.unreadCount>0?800:600, fontSize:13.5, color:C.textPrimary, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', maxWidth:140 }}>{thread.candidateName}</span>
                       <span style={{ fontSize:11, color:C.textSecondary, flexShrink:0, marginLeft:4 }}>{formatTime(thread.lastMessageTime)}</span>
                     </div>
                     <div style={{ fontSize:11.5, color:'#2563EB', fontWeight:600, marginBottom:3, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', display:'flex', alignItems:'center', gap:4 }}>
                       <IconBriefcase /> {thread.jobTitle || 'General Applicant'}
                     </div>
                     <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                      <span style={{ fontSize:12, color:thread.unreadCount>0?C.textPrimary:C.textSecondary, fontWeight:thread.unreadCount>0?600:400, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', maxWidth:180 }}>{thread.lastMessage}</span>
-                      {thread.unreadCount>0 && <span style={{ background:'#2563EB', color:'#FFF', fontSize:10, fontWeight:800, borderRadius:10, padding:'2px 7px', flexShrink:0, marginLeft:4 }}>{thread.unreadCount}</span>}
+                      <span style={{ fontSize:12, color:thread.unreadCount>0?C.textPrimary:C.textSecondary, fontWeight:thread.unreadCount>0?600:400, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', maxWidth:140 }}>{thread.lastMessage}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        {thread.recruiterName && (
+                          <span style={{ fontSize: 10, background: isLight ? '#EFF6FF' : '#1E3A8A', color: isLight ? '#1D4ED8' : '#93C5FD', padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>
+                            {thread.recruiterName.split(' ')[0]}
+                          </span>
+                        )}
+                        {thread.unreadCount>0 && <span style={{ background:'#2563EB', color:'#FFF', fontSize:10, fontWeight:800, borderRadius:10, padding:'2px 7px', flexShrink:0 }}>{thread.unreadCount}</span>}
+                      </div>
                     </div>
                   </div>
                 </div>
