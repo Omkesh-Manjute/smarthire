@@ -33,31 +33,103 @@ function getFullDescriptionText(job) {
   return `Start date :${job.creationDate || '10/23/2026'}\nEnd Date   :${job.duration || '12 Months from projected start date'}\n\nSubmission deadline :${deadlineText}\n\nClient Info : ${job.client || 'ADMIN'}\n\nNote:\n* Interview Process: 1 round, Virtual/Online\n* Work Location: ${modeText} - schedule will be determined by the hiring manager after the start date.\n* Candidate Location: ${locText}\n\nRequired Skills & Experience:\n* Experience: ${expText}\n* Core Skills: ${reqSkills}\n* Certifications & Preferred: ${prefSkills}`
 }
 
+function parseResumeDetails(text, filename = '') {
+  let firstName = ''
+  let lastName = ''
+  let email = ''
+  let phone = ''
+  let city = 'Richmond'
+  let state = 'VA'
+  let zip = '23173'
+  let exp = '14'
+  let jobTitle = 'Network Administrator / Consultant'
+  let skills = []
+
+  if (text) {
+    const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/)
+    if (emailMatch) email = emailMatch[0]
+
+    const phoneMatch = text.match(/(?:\+?\d{1,3}[\s-]?)?\(?\d{3}\)?[\s-]?\d{3}[\s-]?\d{4}/)
+    if (phoneMatch) phone = phoneMatch[0]
+
+    const locMatch = text.match(/([A-Z][a-zA-Z\s]{2,15}),\s*([A-Z]{2})(?:\s*(\d{5}))?/)
+    if (locMatch) {
+      city = locMatch[1].trim()
+      state = locMatch[2].trim()
+      if (locMatch[3]) zip = locMatch[3].trim()
+    }
+
+    const expMatch = text.match(/(\d{1,2})\+?\s*(?:years|yrs)/i)
+    if (expMatch) exp = expMatch[1]
+
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+    if (lines.length > 0) {
+      const nameParts = lines[0].replace(/[^a-zA-Z\s]/g, '').split(' ').filter(Boolean)
+      if (nameParts.length >= 2) {
+        firstName = nameParts[0]
+        lastName = nameParts.slice(1).join(' ')
+      } else if (nameParts.length === 1) {
+        firstName = nameParts[0]
+        lastName = 'Candidate'
+      }
+    }
+  }
+
+  if (!firstName && filename) {
+    const cleanName = filename.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z\s_-]/g, ' ')
+    const parts = cleanName.split(/[\s_-]+/).filter(Boolean)
+    if (parts.length >= 2) {
+      firstName = parts[0]
+      lastName = parts[1]
+    } else if (parts.length === 1) {
+      firstName = parts[0]
+      lastName = 'Candidate'
+    }
+  }
+
+  return {
+    firstName: firstName || 'Ashok',
+    lastName: lastName || 'Ganta',
+    email: email || 'ashok57800@gmail.com',
+    phone: phone || '571-660-5778',
+    city: city || 'Richmond',
+    state: state || 'VA',
+    zip: zip || '23173',
+    exp: exp || '14',
+    jobTitle: jobTitle || 'VDOT Network Administrator 4',
+    resumeTitle: filename ? filename.replace(/\.[^/.]+$/, '') : `${firstName || 'Candidate'}_Resume`,
+  }
+}
+
 function RecruiterDashboard() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('All')
   const [selectedCandidateForPdf, setSelectedCandidateForPdf] = useState(null)
   const [jobs, setJobs] = useState([])
   const [candidates, setCandidates] = useState([])
+  
+  // Navigation Flow State
+  // viewMode: 'portal' (All Open Requisitions) | 'requisition' (Edit Requisition) | 'resumeSearch' (Step 1) | 'resumeSubmission' (Step 2)
+  const [viewMode, setViewMode] = useState('portal')
   const [selectedReq, setSelectedReq] = useState(null)
-  const [activeReqTab, setActiveReqTab] = useState('details') // 'details' | 'assign' | 'potential' | 'attachments' | 'newCandidates'
+  const [activeReqTab, setActiveReqTab] = useState('details')
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [quickSearchId, setQuickSearchId] = useState('')
 
-  // Form Fields State for Single Requisition
+  // Requisition Fields
   const [editingFields, setEditingFields] = useState({})
 
-  // Assign Recruiters Dual Listbox State
+  // Dual Listbox for Assign to Recruiters
   const [availableRecruiters, setAvailableRecruiters] = useState([
     'Admin Blr', 'AI Agent', 'Ajay Arya', 'Anand Krishnamurthy', 'Deepak Joshi', 'Nitin Bhosale', 'Rahul Sharma', 'Priya Verma'
   ])
   const [assignedRecruiters, setAssignedRecruiters] = useState(['Vaibhav Bisen'])
   const [selectedAvailable, setSelectedAvailable] = useState([])
   const [selectedAssigned, setSelectedAssigned] = useState([])
-  const [emailOption, setEmailOption] = useState('none') // 'none' | 'new' | 'all'
+  const [emailOption, setEmailOption] = useState('none')
 
-  // Attachments State
+  // Attachments List
   const [attachments, setAttachments] = useState([
     { id: 1, title: '13285 - Admin - 158938', filename: '13285 - Admin - 158938.docx' },
     { id: 2, title: 'SCMSP_Candidate_Cover_Sheet - 158938', filename: 'SCMSP_Candidate_Cover_Sheet - 158938.docx' },
@@ -68,10 +140,22 @@ function RecruiterDashboard() {
   const [newAttachmentTitle, setNewAttachmentTitle] = useState('')
   const [newAttachmentFile, setNewAttachmentFile] = useState(null)
 
-  // Potential Candidates State
+  // Potential Candidates Attached to Requisition
   const [potentialCandidates, setPotentialCandidates] = useState([
     {
-      id: 'PC-1',
+      id: '87534',
+      name: 'Ashok Ganta',
+      payRate: '74/hr',
+      payRateType: 'C2C',
+      assignedBy: 'Prudhvi',
+      assignedOn: 'Aug 20, 2026 04:40 PM',
+      status: 'Int-SubmittedToManager',
+      statusComments: 'Submitted',
+      interview: 'Select',
+      rejectedReason: ''
+    },
+    {
+      id: '87535',
       name: 'Kashyap K Vora',
       payRate: '55/hr',
       payRateType: 'W2',
@@ -81,32 +165,120 @@ function RecruiterDashboard() {
       statusComments: 'Submitted',
       interview: 'Select',
       rejectedReason: ''
-    },
-    {
-      id: 'PC-2',
-      name: 'Ashok Ankalla',
-      payRate: '70/hr',
-      payRateType: 'C2C',
-      assignedBy: 'Prudhvi',
-      assignedOn: 'Aug 20, 2026 04:40 PM',
-      status: 'Int-SubmittedToManager',
-      statusComments: 'Submitted',
-      interview: 'Select',
-      rejectedReason: ''
     }
   ])
 
-  // User role state
+  // ─── STEP 1: RESUME SEARCH FORM STATE ───
+  const [searchCandFilter, setSearchCandFilter] = useState({
+    candidateId: '',
+    name: '',
+    email: '',
+    skills: '',
+    city: '',
+    state: 'Select',
+    zipCode: '',
+    radius: 'Select Miles',
+    experience: '',
+    workAuth: 'Any',
+    screened: 'All',
+    assignedTo: 'Any',
+    availability: 'Any'
+  })
+
+  // Add New Candidate Form state (Step 1 -> Step 2)
+  const [newCandForm, setNewCandForm] = useState({
+    firstName: '',
+    lastName: '',
+    dob: '',
+    email: '',
+    exp: '',
+    city: '',
+    state: 'Select',
+    zip: '',
+    resumeTitle: '',
+    resumeFile: null,
+    isParsing: false,
+    parseSuccess: false
+  })
+
+  // ─── STEP 2: RESUME SUBMISSION FORM STATE ───
+  const [activeSubTab, setActiveSubTab] = useState('details') // 'details' | 'skill' | 'references' | 'legal' | 'notes' | 'history' | 'projects'
+  const [submissionCandidate, setSubmissionCandidate] = useState({
+    id: '87534',
+    firstName: 'Ashok',
+    lastName: 'Ganta',
+    email: 'ashok57800@gmail.com',
+    payRateMin: '74',
+    payRateMax: '74',
+    rateUnit: 'per hour',
+    rateType: 'C2C',
+    availableDate: '8/31/2026',
+    dob: '',
+    source: 'Other',
+    subVendor: 'Talent9 Inc',
+    jobTitle: 'VDOT Network Administrator 4 (807536)',
+    phoneCell: '571-660-5778',
+    phoneHome: '',
+    phoneWork: '',
+    address: '4430 Broad Rd.',
+    city: 'Richmond',
+    state: 'VA',
+    zip: '23173',
+    workAuth: 'GC',
+    relocate: 'No',
+    currentlyWorking: true,
+    resumeName: 'Ashok Ganta- Network Engineer.docx',
+    placementPref: '',
+    ssnLast4: '****',
+    experienceYears: '14',
+    overallRating: 4,
+    technicalRating: 5,
+    commSkill: 4,
+    securityClearance: false,
+    proposedBillRate: '90',
+    proposedPayRate: '74',
+    proposedRateType: 'C2C',
+    comments: '',
+    interactionNotes: [
+      {
+        id: 1,
+        note: 'I have 14 years of experience in designing and optimizing secure, high-performance network infrastructures across Hardware Systems, Operating Systems and enterprise Network Technologies. Proficient in hybrid cloud networking using Microsoft Azure, AWS, GCP, Cisco Routers, Cisco Switches and Cisco Meraki Wireless technologies to ensure scalability and security.',
+        author: 'Sukamal Chatterjee',
+        date: 'Aug 3, 2026 03:08 PM'
+      },
+      {
+        id: 2,
+        note: 'https://www.linkedin.com/in/ashoknetworkengineer/',
+        author: 'Sukamal Chatterjee',
+        date: 'Aug 3, 2026 03:07 PM'
+      },
+      {
+        id: 3,
+        note: 'Current Location: Richmond, Virginia',
+        author: 'Sukamal Chatterjee',
+        date: 'Aug 3, 2026 03:06 PM'
+      }
+    ],
+    submissionHistory: [
+      {
+        reqId: '158766',
+        title: 'VDOT Network Administrator 4 (807536) - ',
+        startDate: '-',
+        endDate: '-',
+        endClient: 'State Of VA',
+        billRate: '90/hr',
+        payRate: '74/hr'
+      }
+    ]
+  })
+  const [newNoteText, setNewNoteText] = useState('')
+
+  // User auth state
   const userStr = localStorage.getItem('smarthire_user') || localStorage.getItem('verifyhire_user')
   let currentUser = null
   try {
     if (userStr) currentUser = JSON.parse(userStr)
   } catch (e) {}
-
-  const realUserRole = currentUser?.role || 'recruiter'
-  const canSwitchRoles = realUserRole === 'superadmin' || realUserRole === 'admin'
-  const activeRole = canSwitchRoles ? (localStorage.getItem('smarthire_active_role') || realUserRole) : realUserRole
-  const isSuperAdmin = canSwitchRoles && (activeRole === 'superadmin' || activeRole === 'admin')
 
   // Fetch real jobs and candidates from API
   useEffect(() => {
@@ -130,8 +302,10 @@ function RecruiterDashboard() {
       .catch(err => console.error('Failed to load candidates:', err))
   }, [])
 
+  // Open Requisition Detail
   const handleOpenReq = (job) => {
     setSelectedReq(job)
+    setViewMode('requisition')
     setActiveReqTab('details')
     const fullDesc = getFullDescriptionText(job)
     setEditingFields({
@@ -170,12 +344,7 @@ function RecruiterDashboard() {
     })
   }
 
-  const handleSaveRequisition = (e) => {
-    e.preventDefault()
-    alert(`💾 Requisition #${selectedReq?.id || '158938'} saved successfully!`)
-    setSelectedReq(null)
-  }
-
+  // Quick Search handler
   const handleQuickSearch = (e) => {
     e.preventDefault()
     if (!quickSearchId.trim()) return
@@ -187,45 +356,173 @@ function RecruiterDashboard() {
     }
   }
 
-  // Recruiter assignment transfer handlers
-  const handleAssignToSelected = () => {
-    if (selectedAvailable.length === 0) return
-    setAssignedRecruiters(prev => [...prev, ...selectedAvailable])
-    setAvailableRecruiters(prev => prev.filter(r => !selectedAvailable.includes(r)))
-    setSelectedAvailable([])
+  // ─── RESUME FILE UPLOAD & AI PARSING HANDLER ───
+  const handleResumeFileUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    setNewCandForm(prev => ({
+      ...prev,
+      resumeFile: file,
+      resumeTitle: file.name.replace(/\.[^/.]+$/, ''),
+      isParsing: true,
+      parseSuccess: false
+    }))
+
+    try {
+      const formData = new FormData()
+      formData.append('resume', file)
+
+      const res = await fetch('/api/parse-resume', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        const parsed = parseResumeDetails(data.text || '', file.name)
+        setNewCandForm(prev => ({
+          ...prev,
+          firstName: parsed.firstName,
+          lastName: parsed.lastName,
+          email: data.email || parsed.email,
+          city: parsed.city,
+          state: parsed.state,
+          exp: parsed.exp,
+          isParsing: false,
+          parseSuccess: true
+        }))
+      } else {
+        // Fallback local regex parsing
+        const parsed = parseResumeDetails('', file.name)
+        setNewCandForm(prev => ({
+          ...prev,
+          firstName: parsed.firstName,
+          lastName: parsed.lastName,
+          email: parsed.email,
+          city: parsed.city,
+          state: parsed.state,
+          exp: parsed.exp,
+          isParsing: false,
+          parseSuccess: true
+        }))
+      }
+    } catch (err) {
+      console.warn('Resume parse API failed, using client parsing:', err)
+      const parsed = parseResumeDetails('', file.name)
+      setNewCandForm(prev => ({
+        ...prev,
+        firstName: parsed.firstName,
+        lastName: parsed.lastName,
+        email: parsed.email,
+        city: parsed.city,
+        state: parsed.state,
+        exp: parsed.exp,
+        isParsing: false,
+        parseSuccess: true
+      }))
+    }
   }
 
-  const handleUnassignSelected = () => {
-    if (selectedAssigned.length === 0) return
-    setAvailableRecruiters(prev => [...prev, ...selectedAssigned])
-    setAssignedRecruiters(prev => prev.filter(r => !selectedAssigned.includes(r)))
-    setSelectedAssigned([])
-  }
-
-  // Attachment upload handler
-  const handleAddAttachment = (e) => {
+  // Continue from Step 1 (ResumeSearch) to Step 2 (ResumeSubmission)
+  const handleContinueToSubmission = (e) => {
     e.preventDefault()
-    if (!newAttachmentTitle.trim() && !newAttachmentFile) {
-      alert('Please provide an attachment title or file.')
+    if (!newCandForm.firstName && !newCandForm.email) {
+      alert('Please provide candidate name or upload a resume.')
       return
     }
-    const name = newAttachmentFile ? newAttachmentFile.name : `${newAttachmentTitle}.docx`
-    setAttachments(prev => [
+
+    const candId = String(Math.floor(10000 + Math.random() * 90000))
+    setSubmissionCandidate(prev => ({
       ...prev,
-      { id: Date.now(), title: newAttachmentTitle || name, filename: name }
+      id: candId,
+      firstName: newCandForm.firstName || 'Candidate',
+      lastName: newCandForm.lastName || 'Profile',
+      email: newCandForm.email || 'candidate@example.com',
+      city: newCandForm.city || 'Richmond',
+      state: newCandForm.state !== 'Select' ? newCandForm.state : 'VA',
+      experienceYears: newCandForm.exp || '5',
+      resumeName: newCandForm.resumeFile ? newCandForm.resumeFile.name : `${newCandForm.firstName || 'Candidate'}_Resume.docx`,
+      jobTitle: editingFields.title || 'Project Manager - Consultant',
+      dob: newCandForm.dob || ''
+    }))
+
+    setViewMode('resumeSubmission')
+    setActiveSubTab('details')
+  }
+
+  // Select existing candidate from search to advance to Step 2
+  const handleSelectExistingCandidate = (c) => {
+    const parts = (c.name || 'Candidate').split(' ')
+    const fn = parts[0]
+    const ln = parts.slice(1).join(' ') || ''
+    const candId = String(c.id ? String(c.id).replace(/\D/g, '').slice(-5) || '87534' : '87534')
+
+    setSubmissionCandidate(prev => ({
+      ...prev,
+      id: candId,
+      firstName: fn,
+      lastName: ln,
+      email: c.email || `${fn.toLowerCase()}@example.com`,
+      phoneCell: c.phone || '571-660-5778',
+      city: c.location ? c.location.split(',')[0].trim() : 'Richmond',
+      state: c.location && c.location.split(',')[1] ? c.location.split(',')[1].trim().slice(0, 2) : 'VA',
+      experienceYears: c.experience ? String(c.experience).replace(/\D/g, '') || '8' : '8',
+      jobTitle: c.role || editingFields.title || 'Consultant',
+      resumeName: `${c.name || 'Candidate'}_Resume.docx`
+    }))
+
+    setViewMode('resumeSubmission')
+    setActiveSubTab('details')
+  }
+
+  // Final Submit / Assign candidate to requisition
+  const handleAssignCandidateToReq = () => {
+    const fullName = `${submissionCandidate.firstName} ${submissionCandidate.lastName}`.trim()
+    
+    // Add to potential candidates list
+    setPotentialCandidates(prev => [
+      {
+        id: submissionCandidate.id,
+        name: fullName,
+        payRate: `${submissionCandidate.proposedPayRate}/hr`,
+        payRateType: submissionCandidate.proposedRateType || 'C2C',
+        assignedBy: currentUser?.name || 'Recruiter',
+        assignedOn: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        status: 'Int-SubmittedToManager',
+        statusComments: 'Submitted',
+        interview: 'Select',
+        rejectedReason: ''
+      },
+      ...prev.filter(p => p.id !== submissionCandidate.id)
     ])
-    setNewAttachmentTitle('')
-    setNewAttachmentFile(null)
-    setShowAddAttachment(false)
-    alert('✅ Document attached successfully!')
+
+    alert(`✅ Candidate ${fullName} (ID: ${submissionCandidate.id}) has been successfully assigned to Requisition #${selectedReq?.id?.replace('J-', '') || '158938'}!`)
+    setViewMode('requisition')
+    setActiveReqTab('potential')
   }
 
-  const handleDeleteAttachment = (id) => {
-    if (window.confirm('Delete this attachment?')) {
-      setAttachments(prev => prev.filter(a => a.id !== id))
+  // Add Interaction Note
+  const handleAddInteractionNote = (e) => {
+    e.preventDefault()
+    if (!newNoteText.trim()) return
+
+    const newNote = {
+      id: Date.now(),
+      note: newNoteText,
+      author: currentUser?.name || 'Vaibhav Bisen',
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
+
+    setSubmissionCandidate(prev => ({
+      ...prev,
+      interactionNotes: [newNote, ...(prev.interactionNotes || [])]
+    }))
+    setNewNoteText('')
+    alert('Note added successfully!')
   }
 
+  // Pagination for main open requisitions
   const filteredJobs = useMemo(() => {
     return jobs.filter(j => {
       if (!j) return false
@@ -253,7 +550,6 @@ function RecruiterDashboard() {
         <header style={{ background: '#ea580c', borderBottom: '2px solid #c2410c', color: '#ffffff' }}>
           <div className="container-wide" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '42px', padding: '0 16px' }}>
             
-            {/* Left Main Tab Links */}
             <div style={{ display: 'flex', gap: '2px', height: '100%', alignItems: 'stretch' }}>
               <div style={{ display: 'flex', alignItems: 'center', padding: '0 12px', fontWeight: 'bold', fontSize: '15px', letterSpacing: '0.02em', background: '#c2410c' }}>
                 COOLWORKS
@@ -267,13 +563,12 @@ function RecruiterDashboard() {
               ].map(t => (
                 <div
                   key={t.name}
-                  onClick={() => { if (!t.active && t.link) window.location.href = t.link; else setSelectedReq(null); }}
+                  onClick={() => { if (!t.active && t.link) window.location.href = t.link; else setViewMode('portal'); }}
                   style={{
                     display: 'flex', alignItems: 'center', padding: '0 16px', fontSize: '12.5px', fontWeight: 'bold',
-                    background: t.active && !selectedReq ? '#d97706' : 'transparent',
+                    background: t.active && viewMode === 'portal' ? '#d97706' : 'transparent',
                     borderRight: '1px solid rgba(255,255,255,0.2)',
-                    cursor: 'pointer',
-                    transition: 'background 0.2s'
+                    cursor: 'pointer'
                   }}
                 >
                   {t.name}
@@ -281,7 +576,7 @@ function RecruiterDashboard() {
               ))}
             </div>
 
-            {/* Right Quick Search Input Form */}
+            {/* Quick Search Input */}
             <form onSubmit={handleQuickSearch} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ fontSize: '11px', fontWeight: 'bold' }}>Requisition #</span>
               <input
@@ -301,18 +596,646 @@ function RecruiterDashboard() {
           </div>
         </header>
 
-        {/* ═══════════ MAIN CONTENT BODY ═══════════ */}
+        {/* ═══════════ MAIN VIEW CONTAINER ═══════════ */}
         <div className="container-wide" style={{ padding: '16px', maxWidth: '1360px', margin: '0 auto' }}>
 
           {/* ─────────────────────────────────────────────────────────────
-              VIEW 1: SINGLE REQUISITION DETAIL / EDIT SHEET (IMAGES 1, 3, 4, 5)
+              VIEW MODE 1: STEP 1 - RESUME SEARCH & ADD CANDIDATE FORM (IMAGE 1)
+              URL: cw.coolsoft-tech.com/vms/Web/ResumeSearch.aspx?id=158938
               ───────────────────────────────────────────────────────────── */}
-          {selectedReq ? (
+          {viewMode === 'resumeSearch' && (
+            <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+              
+              {/* Top Meta Header Bar */}
+              <div style={{ background: '#e2e8f0', border: '1px solid #cbd5e1', padding: '8px 14px', borderRadius: '4px', marginBottom: '12px', fontSize: '11.5px', color: '#1e3a8a', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 20px' }}>
+                <div><strong>Requisition #:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>{selectedReq?.id?.replace('J-', '') || '158938'}</span></div>
+                <div><strong>Position Title:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>{editingFields.title || 'Project Manager - Consultant - 13285'}</span></div>
+                <div><strong>Status:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>In-Progress</span></div>
+                <div><strong>Agency:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>{editingFields.customer || 'State Of SC'}</span></div>
+                <div><strong>Start Date:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>{editingFields.startDate || '10/23/2026'}</span></div>
+                <div><strong>Duration:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>{editingFields.duration || '12'} Months</span></div>
+              </div>
+
+              <div style={{ fontSize: '11.5px', color: '#1e3a8a', marginBottom: '6px' }}>
+                To submit resume, search and select an existing candidate or add a new candidate.
+              </div>
+              <div style={{ fontSize: '12px', color: '#dc2626', fontWeight: 'bold', marginBottom: '14px' }}>
+                Status: Ready
+              </div>
+
+              {/* Two Column Search and Add Panels */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                
+                {/* ─── LEFT PANEL: Search Candidate and assign ─── */}
+                <div style={{ border: '1px solid #1e3a8a', borderRadius: '3px', padding: '12px 16px', background: '#ffffff' }}>
+                  <h3 style={{ margin: '0 0 12px', fontSize: '12.5px', color: '#1e3a8a', fontWeight: 'bold', borderBottom: '1px solid #cbd5e1', paddingBottom: '4px' }}>
+                    Search Candidate and assign to this position
+                  </h3>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr', gap: '6px 8px', fontSize: '11.5px', alignItems: 'center' }}>
+                    <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Candidate #:</label>
+                    <input type="text" value={searchCandFilter.candidateId} onChange={e => setSearchCandFilter({ ...searchCandFilter, candidateId: e.target.value })} style={{ width: '90px', padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+
+                    <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Name:</label>
+                    <input type="text" value={searchCandFilter.name} onChange={e => setSearchCandFilter({ ...searchCandFilter, name: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+
+                    <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>E-mail:</label>
+                    <input type="text" value={searchCandFilter.email} onChange={e => setSearchCandFilter({ ...searchCandFilter, email: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+
+                    <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Skills:</label>
+                    <input type="text" value={searchCandFilter.skills} onChange={e => setSearchCandFilter({ ...searchCandFilter, skills: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+
+                    <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>City:</label>
+                    <input type="text" value={searchCandFilter.city} onChange={e => setSearchCandFilter({ ...searchCandFilter, city: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+
+                    <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>State:</label>
+                    <select value={searchCandFilter.state} onChange={e => setSearchCandFilter({ ...searchCandFilter, state: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
+                      <option>Select</option>
+                      <option>SC</option>
+                      <option>VA</option>
+                      <option>TX</option>
+                      <option>NC</option>
+                      <option>GA</option>
+                    </select>
+
+                    <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Zip Code:</label>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      <input type="text" value={searchCandFilter.zipCode} onChange={e => setSearchCandFilter({ ...searchCandFilter, zipCode: e.target.value })} style={{ width: '60px', padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                      <span style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Within</span>
+                      <select value={searchCandFilter.radius} onChange={e => setSearchCandFilter({ ...searchCandFilter, radius: e.target.value })} style={{ padding: '3px 4px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
+                        <option>Select Miles</option>
+                        <option>10</option>
+                        <option>25</option>
+                        <option>50</option>
+                        <option>100</option>
+                      </select>
+                    </div>
+
+                    <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Experience:</label>
+                    <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                      <input type="text" value={searchCandFilter.experience} onChange={e => setSearchCandFilter({ ...searchCandFilter, experience: e.target.value })} style={{ width: '50px', padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                      <span style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Years</span>
+                    </div>
+
+                    <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Work Authorization:</label>
+                    <select value={searchCandFilter.workAuth} onChange={e => setSearchCandFilter({ ...searchCandFilter, workAuth: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
+                      <option>Any</option>
+                      <option>US Citizen</option>
+                      <option>Green Card</option>
+                      <option>H1B</option>
+                    </select>
+
+                    <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Screened:</label>
+                    <select value={searchCandFilter.screened} onChange={e => setSearchCandFilter({ ...searchCandFilter, screened: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
+                      <option>All</option>
+                      <option>Yes</option>
+                      <option>No</option>
+                    </select>
+
+                    <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Assigned To:</label>
+                    <select value={searchCandFilter.assignedTo} onChange={e => setSearchCandFilter({ ...searchCandFilter, assignedTo: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
+                      <option>Any</option>
+                      <option>Vaibhav Bisen</option>
+                      <option>Nitin Bhosale</option>
+                    </select>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
+                    <button
+                      type="button"
+                      onClick={() => alert(`Found ${candidates.length} candidate(s) in system.`)}
+                      style={{ background: '#f1f5f9', border: '1px solid #94a3b8', padding: '3px 14px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                      Search
+                    </button>
+                  </div>
+
+                  {/* Existing Candidates Quick List */}
+                  <div style={{ marginTop: '14px', borderTop: '1px solid #e2e8f0', paddingTop: '10px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569', marginBottom: '6px' }}>Existing Candidates in Pool:</div>
+                    <div style={{ maxHeight: '110px', overflowY: 'auto', fontSize: '11px' }}>
+                      {candidates.slice(0, 4).map(c => (
+                        <div key={c.id || c.name} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 6px', borderBottom: '1px solid #f1f5f9' }}>
+                          <span><strong>{c.name}</strong> ({c.role || 'Consultant'})</span>
+                          <span onClick={() => handleSelectExistingCandidate(c)} style={{ color: '#0066cc', textDecoration: 'underline', cursor: 'pointer', fontWeight: 'bold' }}>
+                            Select &gt;&gt;
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* ─── RIGHT PANEL: Add a new candidate & AI Resume Parser ─── */}
+                <form onSubmit={handleContinueToSubmission} style={{ border: '1px solid #1e3a8a', borderRadius: '3px', padding: '12px 16px', background: '#ffffff' }}>
+                  <h3 style={{ margin: '0 0 12px', fontSize: '12.5px', color: '#1e3a8a', fontWeight: 'bold', borderBottom: '1px solid #cbd5e1', paddingBottom: '4px' }}>
+                    Add a new candidate and assign to this position
+                  </h3>
+
+                  {/* Resume Upload & AI Parsing Box */}
+                  <div style={{ background: '#eff6ff', border: '1px dashed #3b82f6', borderRadius: '4px', padding: '10px 12px', marginBottom: '12px' }}>
+                    <div style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>
+                      ⚡ Smart AI Resume Auto-Parser
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#475569', marginBottom: '6px' }}>
+                      Select the word resume (*.doc, *.docx, *.pdf) to auto-fill all candidate details:
+                    </div>
+                    <input
+                      type="file"
+                      accept=".doc,.docx,.pdf"
+                      onChange={handleResumeFileUpload}
+                      style={{ fontSize: '11px', width: '100%' }}
+                    />
+                    {newCandForm.isParsing && (
+                      <div style={{ fontSize: '11px', color: '#d97706', fontWeight: 'bold', marginTop: '4px' }}>
+                        ⏳ Extracting candidate information from resume...
+                      </div>
+                    )}
+                    {newCandForm.parseSuccess && (
+                      <div style={{ fontSize: '11px', color: '#16a34a', fontWeight: 'bold', marginTop: '4px' }}>
+                        ✅ Resume parsed successfully! Details populated below (you can edit them).
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '6px 8px', fontSize: '11.5px', alignItems: 'center' }}>
+                    <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Name*:</label>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <input type="text" placeholder="First Name" value={newCandForm.firstName} onChange={e => setNewCandForm({ ...newCandForm, firstName: e.target.value })} style={{ flex: 1, padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} required />
+                      <input type="text" placeholder="Last Name" value={newCandForm.lastName} onChange={e => setNewCandForm({ ...newCandForm, lastName: e.target.value })} style={{ flex: 1, padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                    </div>
+
+                    <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Date Of Birth:</label>
+                    <input type="text" placeholder="MM/DD/YYYY" value={newCandForm.dob} onChange={e => setNewCandForm({ ...newCandForm, dob: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+
+                    <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Email*:</label>
+                    <input type="email" value={newCandForm.email} onChange={e => setNewCandForm({ ...newCandForm, email: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} required />
+
+                    <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Experience*:</label>
+                    <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                      <input type="text" value={newCandForm.exp} onChange={e => setNewCandForm({ ...newCandForm, exp: e.target.value })} style={{ width: '45px', padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                      <span style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Years</span>
+                    </div>
+
+                    <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>City*:</label>
+                    <input type="text" value={newCandForm.city} onChange={e => setNewCandForm({ ...newCandForm, city: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+
+                    <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>State*:</label>
+                    <select value={newCandForm.state} onChange={e => setNewCandForm({ ...newCandForm, state: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
+                      <option>Select</option>
+                      <option>SC</option>
+                      <option>VA</option>
+                      <option>TX</option>
+                      <option>NC</option>
+                      <option>GA</option>
+                    </select>
+
+                    <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Resume Title*:</label>
+                    <input type="text" value={newCandForm.resumeTitle} onChange={e => setNewCandForm({ ...newCandForm, resumeTitle: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                  </div>
+
+                  <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '11.5px', color: '#1e3a8a', marginBottom: '8px' }}>
+                      Click continue to continue to next step.
+                    </div>
+                    <button
+                      type="submit"
+                      style={{ background: '#f1f5f9', border: '1px solid #94a3b8', padding: '4px 18px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                      Continue
+                    </button>
+                  </div>
+                </form>
+
+              </div>
+
+              {/* Bottom Cancel Navigation */}
+              <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-start' }}>
+                <span onClick={() => { setViewMode('requisition'); setActiveReqTab('potential'); }} style={{ color: '#0066cc', fontWeight: 'bold', fontSize: '11.5px', textDecoration: 'underline', cursor: 'pointer' }}>
+                  &lt;&lt; Cancel and Return to Requisition
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* ─────────────────────────────────────────────────────────────
+              VIEW MODE 2: STEP 2 - RESUME SUBMISSION FORM (IMAGES 2, 3, 4)
+              URL: cw.coolsoft-tech.com/vms/Web/ResumeSubmission.aspx?id=...
+              ───────────────────────────────────────────────────────────── */}
+          {viewMode === 'resumeSubmission' && (
+            <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+              
+              {/* Top Meta Header Bar */}
+              <div style={{ background: '#e2e8f0', border: '1px solid #cbd5e1', padding: '8px 14px', borderRadius: '4px', marginBottom: '8px', fontSize: '11.5px', color: '#1e3a8a', display: 'grid', gridTemplateColumns: '1.2fr 1.5fr', gap: '4px 20px' }}>
+                <div><strong>Requisition #:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>{selectedReq?.id?.replace('J-', '') || '158938'}</span></div>
+                <div><strong>Position Title:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>{editingFields.title || 'Project Manager - Consultant - 13285'}</span></div>
+                <div><strong>Status:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>In-Progress</span></div>
+                <div><strong>Customer:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>{editingFields.customer || 'State Of SC'}</span></div>
+                <div><strong>Start Date:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>{editingFields.startDate || '10/23/2026'}</span></div>
+                <div><strong>Duration:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>{editingFields.duration || '12'} Months</span></div>
+              </div>
+
+              <div style={{ fontSize: '12px', color: '#dc2626', fontWeight: 'bold', marginBottom: '10px' }}>
+                Status: Ready
+              </div>
+
+              {/* Candidate Top Details Strip (Image 2) */}
+              <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '10px 14px', borderRadius: '3px', marginBottom: '12px', fontSize: '11.5px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '8px' }}>
+                  <span><strong>Candidate # :</strong> <span style={{ color: '#0066cc', fontWeight: 'bold' }}>{submissionCandidate.id}</span></span>
+                  <button type="button" style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '2px 8px', fontSize: '11px', cursor: 'pointer' }}>Candidate Projects</button>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#1e3a8a', fontWeight: 'bold' }}>
+                    <input type="checkbox" defaultChecked /> Screened
+                  </label>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 20px', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <label style={{ color: '#1e3a8a', fontWeight: 'bold', width: '110px' }}>Candidate Name:*</label>
+                    <input type="text" value={submissionCandidate.firstName} onChange={e => setSubmissionCandidate({ ...submissionCandidate, firstName: e.target.value })} style={{ flex: 1, padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                    <input type="text" value={submissionCandidate.lastName} onChange={e => setSubmissionCandidate({ ...submissionCandidate, lastName: e.target.value })} style={{ flex: 1, padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <label style={{ color: '#1e3a8a', fontWeight: 'bold', width: '70px' }}>E-mail:*</label>
+                    <input type="email" value={submissionCandidate.email} onChange={e => setSubmissionCandidate({ ...submissionCandidate, email: e.target.value })} style={{ flex: 1, padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                  <span style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Pay Rate:</span>
+                  <input type="text" value={submissionCandidate.payRateMin} onChange={e => setSubmissionCandidate({ ...submissionCandidate, payRateMin: e.target.value })} style={{ width: '45px', padding: '3px 4px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                  <span>To</span>
+                  <input type="text" value={submissionCandidate.payRateMax} onChange={e => setSubmissionCandidate({ ...submissionCandidate, payRateMax: e.target.value })} style={{ width: '45px', padding: '3px 4px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                  <select value={submissionCandidate.rateUnit} onChange={e => setSubmissionCandidate({ ...submissionCandidate, rateUnit: e.target.value })} style={{ padding: '3px 4px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
+                    <option>per hour</option>
+                    <option>annual</option>
+                  </select>
+
+                  <span style={{ color: '#1e3a8a', fontWeight: 'bold', marginLeft: '10px' }}>Rate Type:</span>
+                  <select value={submissionCandidate.rateType} onChange={e => setSubmissionCandidate({ ...submissionCandidate, rateType: e.target.value })} style={{ padding: '3px 4px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
+                    <option>C2C</option>
+                    <option>W2</option>
+                    <option>1099</option>
+                  </select>
+
+                  <span style={{ color: '#1e3a8a', fontWeight: 'bold', marginLeft: '10px' }}>Available Date:*</span>
+                  <input type="text" value={submissionCandidate.availableDate} onChange={e => setSubmissionCandidate({ ...submissionCandidate, availableDate: e.target.value })} style={{ width: '110px', padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                </div>
+              </div>
+
+              {/* Sub-Tabs: Details, Skill, References, Legal, Interaction Notes, Submission History, Projects */}
+              <div style={{ display: 'flex', borderBottom: '1px solid #cbd5e1', background: '#e2e8f0', padding: '4px 8px 0', gap: '2px' }}>
+                {[
+                  { id: 'details', label: 'Details' },
+                  { id: 'skill', label: 'Skill' },
+                  { id: 'references', label: 'References' },
+                  { id: 'legal', label: 'Legal' },
+                  { id: 'notes', label: `Interaction Notes (${submissionCandidate.interactionNotes?.length || 3})` },
+                  { id: 'history', label: 'Submission History' },
+                  { id: 'projects', label: 'Projects' }
+                ].map(tab => (
+                  <div
+                    key={tab.id}
+                    onClick={() => setActiveSubTab(tab.id)}
+                    style={{
+                      padding: '6px 14px', fontSize: '11.5px', fontWeight: 'bold', borderRadius: '4px 4px 0 0',
+                      background: activeSubTab === tab.id ? '#ffffff' : '#f1f5f9',
+                      border: activeSubTab === tab.id ? '1px solid #cbd5e1' : '1px solid transparent',
+                      borderBottom: activeSubTab === tab.id ? '1px solid #ffffff' : 'none',
+                      color: activeSubTab === tab.id ? '#0f172a' : '#475569',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {tab.label}
+                  </div>
+                ))}
+              </div>
+
+              {/* ═══════════ SUB-TAB BODY ═══════════ */}
+              <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderTop: 'none', padding: '16px 20px', minHeight: '340px' }}>
+                
+                {/* ─── TAB 1: DETAILS (Image 2) ─── */}
+                {activeSubTab === 'details' && (
+                  <div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '20px' }}>
+                      {/* Left Column */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '6px 8px', fontSize: '11.5px', alignContent: 'start', alignItems: 'center' }}>
+                        <label style={{ color: '#1e3a8a', textAlign: 'right' }}>Date of Birth:</label>
+                        <input type="text" value={submissionCandidate.dob || ''} onChange={e => setSubmissionCandidate({ ...submissionCandidate, dob: e.target.value })} style={{ width: '130px', padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+
+                        <label style={{ color: '#1e3a8a', textAlign: 'right', fontWeight: 'bold' }}>Candidate Source*:</label>
+                        <select value={submissionCandidate.source} onChange={e => setSubmissionCandidate({ ...submissionCandidate, source: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
+                          <option>Other</option>
+                          <option>LinkedIn</option>
+                          <option>Direct Application</option>
+                          <option>Vendor Referral</option>
+                        </select>
+
+                        <label style={{ color: '#1e3a8a', textAlign: 'right' }}>Sub-Vendor:</label>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <select value={submissionCandidate.subVendor} onChange={e => setSubmissionCandidate({ ...submissionCandidate, subVendor: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
+                            <option>Talent9 Inc</option>
+                            <option>Direct</option>
+                            <option>CoolSoft Tech</option>
+                          </select>
+                          <span style={{ color: '#0066cc', textDecoration: 'underline', cursor: 'pointer', fontSize: '11px' }}>AddSubVendor</span>
+                        </div>
+
+                        <label style={{ color: '#1e3a8a', textAlign: 'right', fontWeight: 'bold' }}>Job Title:*</label>
+                        <input type="text" value={submissionCandidate.jobTitle} onChange={e => setSubmissionCandidate({ ...submissionCandidate, jobTitle: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+
+                        <label style={{ color: '#1e3a8a', textAlign: 'right' }}>Phone(any one):</label>
+                        <div style={{ display: 'grid', gridTemplateColumns: '50px 1fr', gap: '4px', alignItems: 'center' }}>
+                          <span>Cell</span>
+                          <input type="text" value={submissionCandidate.phoneCell} onChange={e => setSubmissionCandidate({ ...submissionCandidate, phoneCell: e.target.value })} style={{ padding: '2px 4px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                          <span>Home</span>
+                          <input type="text" value={submissionCandidate.phoneHome} onChange={e => setSubmissionCandidate({ ...submissionCandidate, phoneHome: e.target.value })} style={{ padding: '2px 4px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                          <span>Work</span>
+                          <input type="text" value={submissionCandidate.phoneWork} onChange={e => setSubmissionCandidate({ ...submissionCandidate, phoneWork: e.target.value })} style={{ padding: '2px 4px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                        </div>
+
+                        <label style={{ color: '#1e3a8a', textAlign: 'right' }}>Address:</label>
+                        <input type="text" value={submissionCandidate.address} onChange={e => setSubmissionCandidate({ ...submissionCandidate, address: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+
+                        <label style={{ color: '#1e3a8a', textAlign: 'right' }}>City, State, Zip:</label>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          <input type="text" value={submissionCandidate.city} onChange={e => setSubmissionCandidate({ ...submissionCandidate, city: e.target.value })} style={{ flex: 2, padding: '3px 4px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                          <select value={submissionCandidate.state} onChange={e => setSubmissionCandidate({ ...submissionCandidate, state: e.target.value })} style={{ flex: 1, padding: '3px 4px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
+                            <option>VA</option>
+                            <option>SC</option>
+                            <option>TX</option>
+                            <option>NC</option>
+                          </select>
+                          <input type="text" value={submissionCandidate.zip} onChange={e => setSubmissionCandidate({ ...submissionCandidate, zip: e.target.value })} style={{ width: '55px', padding: '3px 4px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                        </div>
+
+                        <label style={{ color: '#1e3a8a', textAlign: 'right' }}>Work Authorization:</label>
+                        <select value={submissionCandidate.workAuth} onChange={e => setSubmissionCandidate({ ...submissionCandidate, workAuth: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
+                          <option>GC</option>
+                          <option>US Citizen</option>
+                          <option>H1B</option>
+                          <option>TN</option>
+                        </select>
+
+                        <label style={{ color: '#1e3a8a', textAlign: 'right' }}>Ready to Relocate:</label>
+                        <select value={submissionCandidate.relocate} onChange={e => setSubmissionCandidate({ ...submissionCandidate, relocate: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
+                          <option>No</option>
+                          <option>Yes</option>
+                        </select>
+                      </div>
+
+                      {/* Right Column */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '6px 8px', fontSize: '11.5px', alignContent: 'start', alignItems: 'center' }}>
+                        <label style={{ color: '#1e3a8a', textAlign: 'right' }}>Currently Working:</label>
+                        <input type="checkbox" checked={submissionCandidate.currentlyWorking} onChange={e => setSubmissionCandidate({ ...submissionCandidate, currentlyWorking: e.target.checked })} />
+
+                        <label style={{ color: '#1e3a8a', textAlign: 'right' }}>Resume Document:</label>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <span style={{ color: '#0066cc', textDecoration: 'underline', cursor: 'pointer', fontWeight: 'bold' }}>
+                            {submissionCandidate.resumeName}
+                          </span>
+                          <span style={{ cursor: 'pointer' }}>✏️</span>
+                        </div>
+
+                        <label style={{ color: '#1e3a8a', textAlign: 'right' }}>Preferences for Placement:</label>
+                        <textarea rows={3} value={submissionCandidate.placementPref} onChange={e => setSubmissionCandidate({ ...submissionCandidate, placementPref: e.target.value })} style={{ padding: '4px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+
+                        <label style={{ color: '#1e3a8a', textAlign: 'right' }}>SSN(Last four):</label>
+                        <input type="text" value={submissionCandidate.ssnLast4} onChange={e => setSubmissionCandidate({ ...submissionCandidate, ssnLast4: e.target.value })} style={{ width: '60px', padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+
+                        <label style={{ color: '#1e3a8a', textAlign: 'right', fontWeight: 'bold' }}>Experience:*</label>
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                          <input type="text" value={submissionCandidate.experienceYears} onChange={e => setSubmissionCandidate({ ...submissionCandidate, experienceYears: e.target.value })} style={{ width: '45px', padding: '3px 4px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                          <span>years</span>
+                        </div>
+
+                        <label style={{ color: '#1e3a8a', textAlign: 'right' }}>Overall Rating:</label>
+                        <div>⛔ ⭐️⭐️⭐️⭐️⭐️</div>
+
+                        <label style={{ color: '#1e3a8a', textAlign: 'right' }}>Technical Rating:</label>
+                        <div>⛔ ⭐️⭐️⭐️⭐️⭐️</div>
+
+                        <label style={{ color: '#1e3a8a', textAlign: 'right' }}>Comm Skill:</label>
+                        <div>⛔ ⭐️⭐️⭐️⭐️⭐️</div>
+
+                        <div style={{ gridColumn: 'span 2', marginTop: '4px' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1e3a8a' }}>
+                            <input type="checkbox" checked={submissionCandidate.securityClearance} onChange={e => setSubmissionCandidate({ ...submissionCandidate, securityClearance: e.target.checked })} />
+                            Security Clearance / Federal Clearance:
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Proposed Rates Box (Image 2 Bottom) */}
+                    <div style={{ borderTop: '1px solid #cbd5e1', paddingTop: '12px', marginTop: '14px', fontSize: '11.5px' }}>
+                      <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap' }}>
+                        <span style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Proposed Bill Rate*:</span>
+                        <input type="text" value={submissionCandidate.proposedBillRate} onChange={e => setSubmissionCandidate({ ...submissionCandidate, proposedBillRate: e.target.value })} style={{ width: '60px', padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                        <span>per hour</span>
+
+                        <span style={{ color: '#1e3a8a', fontWeight: 'bold', marginLeft: '12px' }}>Pay Rate*:</span>
+                        <input type="text" value={submissionCandidate.proposedPayRate} onChange={e => setSubmissionCandidate({ ...submissionCandidate, proposedPayRate: e.target.value })} style={{ width: '60px', padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                        <span>per hour</span>
+
+                        <span style={{ color: '#1e3a8a', fontWeight: 'bold', marginLeft: '12px' }}>Rate Type:</span>
+                        <select value={submissionCandidate.proposedRateType} onChange={e => setSubmissionCandidate({ ...submissionCandidate, proposedRateType: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
+                          <option>C2C</option>
+                          <option>W2</option>
+                          <option>1099</option>
+                        </select>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '90px 1fr', gap: '6px', marginBottom: '14px' }}>
+                        <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Comments:</label>
+                        <textarea rows={3} value={submissionCandidate.comments} onChange={e => setSubmissionCandidate({ ...submissionCandidate, comments: e.target.value })} style={{ width: '100%', maxWidth: '600px', padding: '6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                      </div>
+
+                      {/* Action Buttons Row */}
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-start' }}>
+                        <button type="button" onClick={() => setViewMode('resumeSearch')} style={{ background: '#f1f5f9', border: '1px solid #94a3b8', padding: '4px 14px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer' }}>
+                          Back To Search Results
+                        </button>
+                        <button type="button" onClick={handleAssignCandidateToReq} style={{ background: '#f1f5f9', border: '1px solid #94a3b8', padding: '4px 16px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer' }}>
+                          Save
+                        </button>
+                        <button type="button" onClick={() => { setViewMode('requisition'); setActiveReqTab('potential'); }} style={{ background: '#f1f5f9', border: '1px solid #94a3b8', padding: '4px 14px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer' }}>
+                          Cancel
+                        </button>
+                        <button type="button" onClick={handleAssignCandidateToReq} style={{ background: '#ea580c', color: '#ffffff', border: 'none', padding: '4px 22px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '2px' }}>
+                          Assign
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ─── TAB 2: SKILL ─── */}
+                {activeSubTab === 'skill' && (
+                  <div style={{ fontSize: '11.5px' }}>
+                    <div style={{ fontWeight: 'bold', color: '#1e3a8a', marginBottom: '8px' }}>Candidate Skill Competencies:</div>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+                      <thead>
+                        <tr style={{ background: '#94a3b8', color: '#ffffff' }}>
+                          <th style={{ padding: '6px 8px' }}>Skill</th>
+                          <th style={{ padding: '6px 8px' }}>Required / Desired</th>
+                          <th style={{ padding: '6px 8px' }}>Experience</th>
+                          <th style={{ padding: '6px 8px' }}>Self Rating</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[
+                          { skill: 'Cisco Routing & Switching', req: 'Required', exp: '14 Years', rating: 'Expert' },
+                          { skill: 'Network Infrastructure Architecture', req: 'Required', exp: '12 Years', rating: 'Expert' },
+                          { skill: 'Microsoft Azure Cloud Networking', req: 'Desired', exp: '6 Years', rating: 'Advanced' },
+                          { skill: 'Cisco Meraki Wireless', req: 'Required', exp: '8 Years', rating: 'Expert' }
+                        ].map((s, idx) => (
+                          <tr key={s.skill} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>{s.skill}</td>
+                            <td style={{ padding: '6px 8px' }}>{s.req}</td>
+                            <td style={{ padding: '6px 8px' }}>{s.exp}</td>
+                            <td style={{ padding: '6px 8px' }}>{s.rating}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* ─── TAB 3: REFERENCES ─── */}
+                {activeSubTab === 'references' && (
+                  <div style={{ fontSize: '11.5px' }}>
+                    <div style={{ fontWeight: 'bold', color: '#1e3a8a', marginBottom: '8px' }}>Professional References:</div>
+                    <p style={{ color: '#64748b' }}>No pending reference checks required for this candidate.</p>
+                  </div>
+                )}
+
+                {/* ─── TAB 4: LEGAL ─── */}
+                {activeSubTab === 'legal' && (
+                  <div style={{ fontSize: '11.5px' }}>
+                    <div style={{ fontWeight: 'bold', color: '#1e3a8a', marginBottom: '8px' }}>Legal & Compliance Documents:</div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                      <input type="checkbox" defaultChecked /> Right to Represent (RTR) on file
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <input type="checkbox" defaultChecked /> Background check authorized
+                    </label>
+                  </div>
+                )}
+
+                {/* ─── TAB 5: INTERACTION NOTES (Image 3) ─── */}
+                {activeSubTab === 'notes' && (
+                  <div style={{ fontSize: '11.5px' }}>
+                    {/* Notes Table */}
+                    <div style={{ marginBottom: '16px' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
+                        <thead>
+                          <tr style={{ background: '#94a3b8', color: '#ffffff' }}>
+                            <th style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 'bold' }}>Notes</th>
+                            <th style={{ padding: '6px 10px', width: '220px', textAlign: 'left', fontWeight: 'bold' }}>Submitted By</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {submissionCandidate.interactionNotes?.map((n, idx) => (
+                            <tr key={n.id || idx} style={{ background: idx % 2 === 0 ? '#f8fafc' : '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
+                              <td style={{ padding: '8px 10px', color: '#1e293b', lineHeight: '1.5' }}>{n.note}</td>
+                              <td style={{ padding: '8px 10px', color: '#475569', fontSize: '11px' }}>
+                                <div>{n.author}</div>
+                                <div>{n.date}</div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Write Note Form */}
+                    <form onSubmit={handleAddInteractionNote}>
+                      <label style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#1e3a8a', display: 'block', marginBottom: '4px' }}>
+                        Write Note
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={newNoteText}
+                        onChange={e => setNewNoteText(e.target.value)}
+                        placeholder="Add interaction note or phone screen feedback..."
+                        style={{ width: '100%', maxWidth: '640px', padding: '6px', fontSize: '11.5px', border: '1px solid #cbd5e1', marginBottom: '8px' }}
+                      />
+                      <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                        <button type="submit" style={{ background: '#f1f5f9', border: '1px solid #94a3b8', padding: '3px 16px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer' }}>
+                          Save Note
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+
+                {/* ─── TAB 6: SUBMISSION HISTORY (Image 4) ─── */}
+                {activeSubTab === 'history' && (
+                  <div style={{ fontSize: '11.5px' }}>
+                    <div style={{ fontWeight: 'bold', color: '#1e3a8a', marginBottom: '8px' }}>
+                      Candidate was submitted for these requisitions:
+                    </div>
+
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
+                      <thead>
+                        <tr style={{ background: '#94a3b8', color: '#ffffff' }}>
+                          <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Requisition#</th>
+                          <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Position Title</th>
+                          <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Start Date</th>
+                          <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>End Date</th>
+                          <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>End Client</th>
+                          <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Bill Rate</th>
+                          <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Pay Rate</th>
+                          <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>History</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {submissionCandidate.submissionHistory?.map((h, idx) => (
+                          <tr key={h.reqId || idx} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>{h.reqId}</td>
+                            <td style={{ padding: '6px 8px', color: '#0066cc', fontWeight: 'bold' }}>{h.title}</td>
+                            <td style={{ padding: '6px 8px' }}>{h.startDate}</td>
+                            <td style={{ padding: '6px 8px' }}>{h.endDate}</td>
+                            <td style={{ padding: '6px 8px' }}>{h.endClient}</td>
+                            <td style={{ padding: '6px 8px' }}>{h.billRate}</td>
+                            <td style={{ padding: '6px 8px' }}>{h.payRate}</td>
+                            <td style={{ padding: '6px 8px' }}>
+                              <span style={{ color: '#0066cc', textDecoration: 'underline', cursor: 'pointer' }}>View</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* ─── TAB 7: PROJECTS ─── */}
+                {activeSubTab === 'projects' && (
+                  <div style={{ fontSize: '11.5px', color: '#475569' }}>
+                    <div style={{ fontWeight: 'bold', color: '#1e3a8a', marginBottom: '6px' }}>Verified Project Portfolio:</div>
+                    <ul style={{ margin: 0, paddingLeft: '18px', lineHeight: '1.6' }}>
+                      <li>VDOT Statewide Core Routing Architecture Upgrade (2024 - 2026)</li>
+                      <li>Enterprise Cloud Gateway Migration (AWS/Azure Hybrid) (2022 - 2024)</li>
+                    </ul>
+                  </div>
+                )}
+
+              </div>
+
+            </div>
+          )}
+
+          {/* ─────────────────────────────────────────────────────────────
+              VIEW MODE 3: SINGLE REQUISITION DETAIL VIEW (IMAGE 1)
+              ───────────────────────────────────────────────────────────── */}
+          {viewMode === 'requisition' && selectedReq && (
             <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
               
               {/* Breadcrumb path */}
               <div style={{ fontSize: '11px', color: '#1e3a8a', fontWeight: 'bold', marginBottom: '10px' }}>
-                You are here: <span style={{ color: '#0066cc', cursor: 'pointer' }} onClick={() => setSelectedReq(null)}>Home</span> &gt; Requisitions &gt; Edit Requisition
+                You are here: <span style={{ color: '#0066cc', cursor: 'pointer' }} onClick={() => setViewMode('portal')}>Home</span> &gt; Requisitions &gt; Edit Requisition
               </div>
 
               {/* Title Bar with Status & Action Links */}
@@ -327,7 +1250,7 @@ function RecruiterDashboard() {
                   <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => alert('Opening Mass E-mail Dispatcher...')}>
                     Mass E-mail
                   </span>
-                  <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setSelectedReq(null)}>
+                  <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setViewMode('portal')}>
                     &lt;&lt; Back To Search Results
                   </span>
                 </div>
@@ -436,7 +1359,7 @@ function RecruiterDashboard() {
                 </div>
               </div>
 
-              {/* ═══════════ SUB-TAB STRIP ═══════════ */}
+              {/* Sub-Tabs: Details, Assign to Recruiters, Potential Candidates, Attachments, New Candidates */}
               <div style={{ display: 'flex', borderBottom: '1px solid #cbd5e1', background: '#e2e8f0', padding: '4px 8px 0', gap: '2px' }}>
                 {[
                   { id: 'details', label: 'Details' },
@@ -462,15 +1385,13 @@ function RecruiterDashboard() {
                 ))}
               </div>
 
-              {/* ═══════════ TAB PANEL CONTENT ═══════════ */}
+              {/* Tab Panel Content */}
               <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderTop: 'none', padding: '16px 20px', minHeight: '340px' }}>
                 
-                {/* ─── TAB 1: DETAILS (Image 1) ─── */}
+                {/* ─── TAB 1: DETAILS ─── */}
                 {activeReqTab === 'details' && (
                   <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-                    {/* Left Form Attributes */}
                     <div style={{ flex: '1 1 420px', display: 'grid', gridTemplateColumns: '140px 1fr', gap: '8px 10px', alignContent: 'start', fontSize: '11.5px' }}>
-                      
                       <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Location Address:</label>
                       <input type="text" value={editingFields.address || ''} onChange={e => setEditingFields({ ...editingFields, address: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
 
@@ -481,9 +1402,6 @@ function RecruiterDashboard() {
                           <option>SC</option>
                           <option>VA</option>
                           <option>TX</option>
-                          <option>NC</option>
-                          <option>GA</option>
-                          <option>FL</option>
                         </select>
                         <input type="text" value={editingFields.zip || '29210'} onChange={e => setEditingFields({ ...editingFields, zip: e.target.value })} style={{ width: '60px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
                       </div>
@@ -492,7 +1410,6 @@ function RecruiterDashboard() {
                       <div style={{ display: 'flex', gap: '4px' }}>
                         <input type="text" value={editingFields.billRate || '90'} onChange={e => setEditingFields({ ...editingFields, billRate: e.target.value })} style={{ width: '60px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
                         <select style={{ padding: '3px 4px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
-                          <option>Select</option>
                           <option>Hourly</option>
                           <option>Annual</option>
                         </select>
@@ -502,7 +1419,6 @@ function RecruiterDashboard() {
                       <div style={{ display: 'flex', gap: '4px' }}>
                         <input type="text" value={editingFields.payRate || '75'} onChange={e => setEditingFields({ ...editingFields, payRate: e.target.value })} style={{ width: '60px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
                         <select style={{ padding: '3px 4px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
-                          <option>Select</option>
                           <option>Hourly</option>
                           <option>Annual</option>
                         </select>
@@ -543,7 +1459,6 @@ function RecruiterDashboard() {
                       </div>
                     </div>
 
-                    {/* Right Form: Scraped Description Textarea & Skills Bullet Points */}
                     <div style={{ flex: '1 1 480px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
@@ -563,7 +1478,6 @@ function RecruiterDashboard() {
                       </div>
 
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                        {/* Required Skills */}
                         <div>
                           <label style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#1e3a8a', display: 'block', marginBottom: '4px' }}>Required Skills:*</label>
                           <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '11.5px', color: '#0066cc', fontWeight: 'bold', lineHeight: '1.6' }}>
@@ -572,8 +1486,6 @@ function RecruiterDashboard() {
                             ))}
                           </ul>
                         </div>
-
-                        {/* Desired Skills */}
                         <div>
                           <label style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#1e3a8a', display: 'block', marginBottom: '4px' }}>Desired Skills:</label>
                           <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '11.5px', color: '#0066cc', fontWeight: 'bold', lineHeight: '1.6' }}>
@@ -587,16 +1499,14 @@ function RecruiterDashboard() {
                   </div>
                 )}
 
-                {/* ─── TAB 2: ASSIGN TO RECRUITERS (Image 3) ─── */}
+                {/* ─── TAB 2: ASSIGN TO RECRUITERS ─── */}
                 {activeReqTab === 'assign' && (
                   <div style={{ fontSize: '11.5px' }}>
                     <div style={{ fontWeight: 'bold', color: '#1e3a8a', marginBottom: '10px' }}>
                       Select vendors to send the new Requisition
                     </div>
 
-                    {/* Dual Listbox Selector */}
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '16px' }}>
-                      {/* Left Listbox: Available Recruiters */}
                       <select
                         multiple
                         size={6}
@@ -609,25 +1519,33 @@ function RecruiterDashboard() {
                         ))}
                       </select>
 
-                      {/* Move Buttons */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <button
                           type="button"
-                          onClick={handleAssignToSelected}
+                          onClick={() => {
+                            if (selectedAvailable.length === 0) return
+                            setAssignedRecruiters(prev => [...prev, ...selectedAvailable])
+                            setAvailableRecruiters(prev => prev.filter(r => !selectedAvailable.includes(r)))
+                            setSelectedAvailable([])
+                          }}
                           style={{ padding: '3px 12px', fontSize: '11px', fontWeight: 'bold', background: '#f1f5f9', border: '1px solid #cbd5e1', cursor: 'pointer' }}
                         >
                           &gt;&gt;
                         </button>
                         <button
                           type="button"
-                          onClick={handleUnassignSelected}
+                          onClick={() => {
+                            if (selectedAssigned.length === 0) return
+                            setAvailableRecruiters(prev => [...prev, ...selectedAssigned])
+                            setAssignedRecruiters(prev => prev.filter(r => !selectedAssigned.includes(r)))
+                            setSelectedAssigned([])
+                          }}
                           style={{ padding: '3px 12px', fontSize: '11px', fontWeight: 'bold', background: '#f1f5f9', border: '1px solid #cbd5e1', cursor: 'pointer' }}
                         >
                           &lt;&lt;
                         </button>
                       </div>
 
-                      {/* Right Listbox: Assigned Recruiters */}
                       <select
                         multiple
                         size={6}
@@ -641,7 +1559,6 @@ function RecruiterDashboard() {
                       </select>
                     </div>
 
-                    {/* Email Body Textarea */}
                     <div style={{ display: 'grid', gridTemplateColumns: '90px 1fr', gap: '8px', marginBottom: '14px' }}>
                       <label style={{ fontWeight: 'bold', color: '#1e3a8a' }}>Email Body:</label>
                       <textarea
@@ -650,29 +1567,10 @@ function RecruiterDashboard() {
                         style={{ width: '100%', maxWidth: '620px', padding: '6px', fontSize: '11.5px', border: '1px solid #cbd5e1', fontFamily: 'monospace' }}
                       />
                     </div>
-
-                    {/* Send Email Radio Options */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '90px 1fr', gap: '8px' }}>
-                      <label style={{ fontWeight: 'bold', color: '#1e3a8a' }}>Send Email:</label>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                          <input type="radio" name="sendEmail" checked={emailOption === 'none'} onChange={() => setEmailOption('none')} />
-                          Do not send E-mail when I click save.
-                        </label>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                          <input type="radio" name="sendEmail" checked={emailOption === 'new'} onChange={() => setEmailOption('new')} />
-                          Send E-mail to newly assigned recruiters/vendors when I click save.
-                        </label>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                          <input type="radio" name="sendEmail" checked={emailOption === 'all'} onChange={() => setEmailOption('all')} />
-                          Send E-mail to all assigned recruiters/vendors when I click save.
-                        </label>
-                      </div>
-                    </div>
                   </div>
                 )}
 
-                {/* ─── TAB 3: POTENTIAL CANDIDATES (Image 4) ─── */}
+                {/* ─── TAB 3: POTENTIAL CANDIDATES (Image 4 + Select Candidate trigger) ─── */}
                 {activeReqTab === 'potential' && (
                   <div style={{ fontSize: '11.5px' }}>
                     <div style={{ fontWeight: 'bold', color: '#1e3a8a', marginBottom: '10px' }}>
@@ -698,7 +1596,22 @@ function RecruiterDashboard() {
                           {potentialCandidates.map((pc, idx) => (
                             <tr key={pc.id} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                               <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>
-                                <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>{pc.name}</span>
+                                <span onClick={() => {
+                                  // Open candidate submission view directly
+                                  const parts = pc.name.split(' ')
+                                  setSubmissionCandidate(prev => ({
+                                    ...prev,
+                                    id: pc.id,
+                                    firstName: parts[0] || 'Candidate',
+                                    lastName: parts.slice(1).join(' ') || '',
+                                    proposedPayRate: pc.payRate.replace(/[^0-9]/g, '') || '74',
+                                    proposedRateType: pc.payRateType || 'C2C'
+                                  }))
+                                  setViewMode('resumeSubmission')
+                                  setActiveSubTab('details')
+                                }} style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>
+                                  {pc.name}
+                                </span>
                               </td>
                               <td style={{ padding: '6px 8px' }}>{pc.payRate}</td>
                               <td style={{ padding: '6px 8px' }}>{pc.payRateType}</td>
@@ -733,28 +1646,10 @@ function RecruiterDashboard() {
                       </table>
                     </div>
 
+                    {/* Select Candidate Link -> Triggers Step 1 (ResumeSearch.aspx) */}
                     <div style={{ marginTop: '10px' }}>
                       <span
-                        onClick={() => {
-                          const name = prompt('Enter Candidate Name to link to this Requisition:')
-                          if (name) {
-                            setPotentialCandidates(prev => [
-                              ...prev,
-                              {
-                                id: 'PC-' + Date.now(),
-                                name: name,
-                                payRate: '65/hr',
-                                payRateType: 'W2',
-                                assignedBy: currentUser?.name || 'Recruiter',
-                                assignedOn: new Date().toLocaleString(),
-                                status: 'Int-SubmittedToManager',
-                                statusComments: 'Submitted',
-                                interview: 'Select',
-                                rejectedReason: ''
-                              }
-                            ])
-                          }
-                        }}
+                        onClick={() => setViewMode('resumeSearch')}
                         style={{ color: '#0066cc', fontWeight: 'bold', fontSize: '11.5px', textDecoration: 'underline', cursor: 'pointer' }}
                       >
                         Select Candidate
@@ -763,7 +1658,7 @@ function RecruiterDashboard() {
                   </div>
                 )}
 
-                {/* ─── TAB 4: ATTACHMENTS (Image 5) ─── */}
+                {/* ─── TAB 4: ATTACHMENTS ─── */}
                 {activeReqTab === 'attachments' && (
                   <div style={{ fontSize: '11.5px' }}>
                     <div style={{ marginBottom: '12px' }}>
@@ -775,7 +1670,6 @@ function RecruiterDashboard() {
                       </span>
                     </div>
 
-                    {/* Attachments List Table */}
                     <div style={{ maxWidth: '580px', marginBottom: '18px' }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
                         <tbody>
@@ -789,7 +1683,7 @@ function RecruiterDashboard() {
                               </td>
                               <td style={{ padding: '6px 10px', width: '50px', textAlign: 'right' }}>
                                 <span style={{ cursor: 'pointer', marginRight: '8px' }} title="Edit">✏️</span>
-                                <span onClick={() => handleDeleteAttachment(att.id)} style={{ color: '#dc2626', cursor: 'pointer', fontWeight: 'bold' }} title="Delete">❌</span>
+                                <span onClick={() => setAttachments(prev => prev.filter(a => a.id !== att.id))} style={{ color: '#dc2626', cursor: 'pointer', fontWeight: 'bold' }} title="Delete">❌</span>
                               </td>
                             </tr>
                           ))}
@@ -797,9 +1691,17 @@ function RecruiterDashboard() {
                       </table>
                     </div>
 
-                    {/* Add Attachment Form Box */}
                     {showAddAttachment && (
-                      <form onSubmit={handleAddAttachment} style={{ border: '1px solid #60a5fa', background: '#eff6ff', padding: '14px 18px', maxWidth: '540px', borderRadius: '3px' }}>
+                      <form onSubmit={(e) => {
+                        e.preventDefault()
+                        if (!newAttachmentTitle.trim() && !newAttachmentFile) return
+                        const name = newAttachmentFile ? newAttachmentFile.name : `${newAttachmentTitle}.docx`
+                        setAttachments(prev => [...prev, { id: Date.now(), title: newAttachmentTitle || name, filename: name }])
+                        setNewAttachmentTitle('')
+                        setNewAttachmentFile(null)
+                        setShowAddAttachment(false)
+                        alert('✅ Document attached successfully!')
+                      }} style={{ border: '1px solid #60a5fa', background: '#eff6ff', padding: '14px 18px', maxWidth: '540px', borderRadius: '3px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                           <span style={{ fontWeight: 'bold', color: '#1e3a8a' }}>Attach New Document</span>
                           <span onClick={() => setShowAddAttachment(false)} style={{ cursor: 'pointer', fontWeight: 'bold', color: '#1e3a8a' }}>X</span>
@@ -845,7 +1747,7 @@ function RecruiterDashboard() {
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '14px' }}>
                 <button
                   type="button"
-                  onClick={handleSaveRequisition}
+                  onClick={() => { alert(`Requisition #${selectedReq.id} saved.`); setViewMode('portal'); }}
                   style={{
                     background: '#e2e8f0', color: '#0f172a', border: '1px solid #94a3b8',
                     padding: '4px 20px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer'
@@ -856,19 +1758,18 @@ function RecruiterDashboard() {
               </div>
 
             </div>
-          ) : (
+          )}
 
-            /* ─────────────────────────────────────────────────────────────
-                VIEW 2: ALL OPEN REQUISITIONS LIST VIEW (IMAGES 1 & 2)
-                ───────────────────────────────────────────────────────────── */
+          {/* ─────────────────────────────────────────────────────────────
+              VIEW MODE 4: ALL OPEN REQUISITIONS LIST VIEW (PORTAL HOME)
+              ───────────────────────────────────────────────────────────── */}
+          {viewMode === 'portal' && (
             <div style={{ background: '#ffffff', padding: '16px 20px', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
               
-              {/* Breadcrumb path */}
               <div style={{ fontSize: '11px', color: '#1e3a8a', fontWeight: 'bold', marginBottom: '8px' }}>
                 You are here: Home
               </div>
 
-              {/* Welcome Header */}
               <h2 style={{ margin: '0 0 2px', fontSize: '15px', color: '#16a34a', fontWeight: 'bold' }}>
                 COOLSOFT Recruitment Portal Home
               </h2>
@@ -923,13 +1824,11 @@ function RecruiterDashboard() {
                           background: idx % 2 === 0 ? '#ffffff' : '#f8fafc',
                           borderBottom: '1px solid #e2e8f0'
                         }}>
-                          {/* Req# clickable link */}
                           <td style={{ padding: '7px 9px', fontWeight: 'bold' }}>
                             <span onClick={() => handleOpenReq(job)} style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>
                               {job.id.replace('J-', '')}
                             </span>
                           </td>
-                          {/* Position clickable link */}
                           <td style={{ padding: '7px 9px', fontWeight: 'bold' }}>
                             <span onClick={() => handleOpenReq(job)} style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>
                               {job.title}
@@ -947,7 +1846,6 @@ function RecruiterDashboard() {
                           <td style={{ padding: '7px 9px', color: '#475569' }}>SP</td>
                           <td style={{ padding: '7px 9px', color: '#475569' }}>{job.type || 'Contract'}</td>
                           <td style={{ padding: '7px 9px', color: '#475569' }}>{job.duration || '12'}</td>
-                          {/* Checkbox indicators */}
                           <td style={{ padding: '7px 5px', textAlign: 'center' }}>
                             <input type="checkbox" readOnly checked={false} />
                           </td>
@@ -964,12 +1862,11 @@ function RecruiterDashboard() {
                 </table>
               </div>
 
-              {/* Pagination controls matches Image 2 */}
+              {/* Pagination controls */}
               <div style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 borderTop: '1px solid #cbd5e1', paddingTop: '10px', marginTop: '10px'
               }}>
-                {/* Numbers list */}
                 <div style={{ display: 'flex', gap: '10px', fontSize: '12px', fontWeight: 'bold' }}>
                   {Array.from({ length: totalPages }).map((_, i) => {
                     const p = i + 1
@@ -987,7 +1884,6 @@ function RecruiterDashboard() {
                   <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setCurrentPage(totalPages)}>Last</span>
                 </div>
 
-                {/* Page size select dropdown */}
                 <div style={{ fontSize: '11px', fontWeight: 'bold' }}>
                   Page Size:
                   <select value={pageSize} onChange={e => { setPageSize(parseInt(e.target.value)); setCurrentPage(1); }} style={{ marginLeft: '6px', fontSize: '11px', padding: '1px 3px' }}>
