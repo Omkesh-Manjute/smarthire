@@ -2,7 +2,157 @@ import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import SiteLayout from '../components/SiteLayout'
 
-// ─── MOCK DATA STORES FOR THE 13 REPORTS ───
+// ─── MOCK DATA STORES FOR THE REPORTS ───
+
+// Exact Match Data for "Resumes Added" (media_1787315254728.png)
+const mockResumesAddedRows = [
+  {
+    date: '08/20/2026', recruiter: 'Ajay Arya', total: 2, newCount: 0, poolCount: 2, notPerf: 1, submittedClient: '',
+    candidates: [
+      { name: 'Srinivas Rao', role: 'Java AWS Lead', type: 'SW Pool', reqId: '158938', client: 'State Of SC', status: 'Added to Requisition' },
+      { name: 'Kiran Verma', role: 'DevOps Architect', type: 'SW Pool', reqId: '158766', client: 'State Of VA', status: 'Submitted' }
+    ]
+  },
+  {
+    date: '08/20/2026', recruiter: 'Ashwath S', total: 1, newCount: 0, poolCount: 1, notPerf: 1, submittedClient: '',
+    candidates: [
+      { name: 'Anil Reddy', role: 'Senior SQL DBA', type: 'SW Pool', reqId: '158204', client: 'State of TX', status: 'Reviewed' }
+    ]
+  },
+  {
+    date: '08/20/2026', recruiter: 'JIH Resumes', total: 3, newCount: 1, poolCount: 2, notPerf: 1, submittedClient: '',
+    candidates: [
+      { name: 'Robert Miller', role: 'Cloud Engineer', type: 'NEW', reqId: '158310', client: 'State of CT', status: 'Parsed & Added' },
+      { name: 'Samantha Clark', role: 'Project Manager', type: 'SW Pool', reqId: '158938', client: 'State Of SC', status: 'Matched' },
+      { name: 'David Wilson', role: 'Network Specialist', type: 'SW Pool', reqId: '158766', client: 'State Of VA', status: 'Matched' }
+    ]
+  },
+  {
+    date: '08/20/2026', recruiter: 'Kamlesh SmartHire', total: 3, newCount: 0, poolCount: 3, notPerf: 1, submittedClient: '',
+    candidates: [
+      { name: 'Vijay Kumar', role: 'Data Analyst', type: 'SW Pool', reqId: '158310', client: 'State of CT', status: 'Submitted' },
+      { name: 'Deepak Patel', role: 'ETL Developer', type: 'SW Pool', reqId: '158310', client: 'State of CT', status: 'Submitted' },
+      { name: 'Ramesh Naidu', role: 'QA Lead', type: 'SW Pool', reqId: '158420', client: 'State of MN', status: 'Screened' }
+    ]
+  },
+  {
+    date: '08/20/2026', recruiter: 'Krishnendu Jana', total: 1, newCount: 1, poolCount: 0, notPerf: 1, submittedClient: '',
+    candidates: [
+      { name: 'Sourav Banerjee', role: 'Full Stack .Net', type: 'NEW', reqId: '157980', client: 'State of MN', status: 'Newly Added' }
+    ]
+  },
+  {
+    date: '08/20/2026', recruiter: 'Manikanta Siripalli', total: 1, newCount: 1, poolCount: 0, notPerf: 1, submittedClient: '',
+    candidates: [
+      { name: 'Chaitanya Krishna', role: 'Snowflake Specialist', type: 'NEW', reqId: '158310', client: 'State of CT', status: 'Newly Added' }
+    ]
+  },
+  {
+    date: '08/20/2026', recruiter: 'Naveen Korimelli', total: 1, newCount: 0, poolCount: 1, notPerf: 1, submittedClient: '',
+    candidates: [
+      { name: 'Girish Sharma', role: 'Business Systems Analyst', type: 'SW Pool', reqId: '158112', client: 'State of NC', status: 'Submitted' }
+    ]
+  },
+  {
+    date: '08/20/2026', recruiter: 'Nishant Kathane', total: 1, newCount: 1, poolCount: 0, notPerf: 1, submittedClient: '',
+    candidates: [
+      { name: 'Tushar Deshmukh', role: 'Power Platform Developer', type: 'NEW', reqId: '157890', client: 'State of TN', status: 'Newly Added' }
+    ]
+  },
+  {
+    date: '08/20/2026', recruiter: 'Omkesh Manjute', total: 3, newCount: 1, poolCount: 2, notPerf: 1, submittedClient: '',
+    candidates: [
+      { name: 'Ashok Ganta', role: 'VDOT Network Administrator 4', type: 'SW Pool', reqId: '158938', client: 'State Of SC', status: 'Int-SubmittedToManager' },
+      { name: 'Upendra Ganta', role: 'Data Engineer', type: 'SW Pool', reqId: '158310', client: 'State of CT', status: 'Placed' },
+      { name: 'Priyanka Gantareddy', role: 'Senior QA Lead', type: 'NEW', reqId: '158420', client: 'State of MN', status: 'Newly Added & Assigned' }
+    ]
+  },
+  {
+    date: '08/20/2026', recruiter: 'Pankaj Maharwade', total: 1, newCount: 0, poolCount: 1, notPerf: 1, submittedClient: '',
+    candidates: [
+      { name: 'Sanjay Joshi', role: 'Systems Analyst', type: 'SW Pool', reqId: '158112', client: 'State of NC', status: 'Submitted' }
+    ]
+  },
+  {
+    date: '08/20/2026', recruiter: 'Prudhvi Sevveti', total: 1, newCount: 0, poolCount: 1, notPerf: 1, submittedClient: '',
+    candidates: [
+      { name: 'Vadivelu Ashok Kumar', role: 'IT Lead Architect', type: 'SW Pool', reqId: '158420', client: 'State of MN', status: 'Offer Extended' }
+    ]
+  },
+  {
+    date: '08/20/2026', recruiter: 'Sukamal Chatterjee', total: 4, newCount: 4, poolCount: 0, notPerf: '', submittedClient: '',
+    candidates: [
+      { name: 'Ashok Rajendran', role: 'Application Developer', type: 'NEW', reqId: '157980', client: 'State of MN', status: 'Newly Added' },
+      { name: 'Triveni Ganta', role: '.Net Angular Lead', type: 'NEW', reqId: '157980', client: 'State of MN', status: 'Newly Added' },
+      { name: 'Sri Sai Tejasvi Gantakolla', role: 'Power Platform Lead', type: 'NEW', reqId: '157890', client: 'State of TN', status: 'Newly Added' },
+      { name: 'Ravi Shankar', role: 'Cloud DevOps', type: 'NEW', reqId: '158766', client: 'State Of VA', status: 'Newly Added' }
+    ]
+  },
+  {
+    date: '08/20/2026', recruiter: 'Vaibhav Bisen', total: 1, newCount: 0, poolCount: 1, notPerf: 1, submittedClient: '',
+    candidates: [
+      { name: 'Kashyap K Vora', role: 'Java Spring Boot Lead', type: 'SW Pool', reqId: '158938', client: 'State Of SC', status: 'Submitted' }
+    ]
+  },
+  {
+    date: '08/19/2026', recruiter: 'Ajay Arya', total: 1, newCount: 0, poolCount: 1, notPerf: 1, submittedClient: '',
+    candidates: [
+      { name: 'Manoj Tiwari', role: 'Oracle Consultant', type: 'SW Pool', reqId: '158204', client: 'State of TX', status: 'Submitted' }
+    ]
+  },
+  {
+    date: '08/19/2026', recruiter: 'Bhanu Raman Budithi', total: 1, newCount: 1, poolCount: 0, notPerf: 1, submittedClient: '',
+    candidates: [
+      { name: 'Sunil Gavaskar', role: 'Cybersecurity Analyst', type: 'NEW', reqId: '158766', client: 'State Of VA', status: 'Newly Added' }
+    ]
+  },
+  {
+    date: '08/19/2026', recruiter: 'Charan Teja Pappu', total: 1, newCount: 1, poolCount: 0, notPerf: 1, submittedClient: '',
+    candidates: [
+      { name: 'Harsha Vardhan', role: 'React Frontend Developer', type: 'NEW', reqId: '157980', client: 'State of MN', status: 'Newly Added' }
+    ]
+  },
+  {
+    date: '08/19/2026', recruiter: 'JIH Resumes', total: 2, newCount: 2, poolCount: 0, notPerf: 1, submittedClient: '',
+    candidates: [
+      { name: 'James Anderson', role: 'Database Administrator', type: 'NEW', reqId: '158204', client: 'State of TX', status: 'Parsed & Added' },
+      { name: 'Linda Brown', role: 'Project Coordinator', type: 'NEW', reqId: '158938', client: 'State Of SC', status: 'Parsed & Added' }
+    ]
+  },
+  {
+    date: '08/19/2026', recruiter: 'Kamlesh SmartHire', total: 1, newCount: 1, poolCount: 0, notPerf: 1, submittedClient: '',
+    candidates: [
+      { name: 'Praveen Gupta', role: 'Solutions Architect', type: 'NEW', reqId: '158420', client: 'State of MN', status: 'Newly Added' }
+    ]
+  },
+  {
+    date: '08/19/2026', recruiter: 'Manikanta Siripalli', total: 1, newCount: 1, poolCount: 0, notPerf: 1, submittedClient: '',
+    candidates: [
+      { name: 'Venkat Raman', role: 'Senior Data Engineer', type: 'NEW', reqId: '158310', client: 'State of CT', status: 'Newly Added' }
+    ]
+  },
+  {
+    date: '08/19/2026', recruiter: 'Omkesh Manjute', total: 2, newCount: 1, poolCount: 1, notPerf: 1, submittedClient: '',
+    candidates: [
+      { name: 'Ashok Ankalla', role: 'Project Delivery Lead', type: 'SW Pool', reqId: '158766', client: 'State Of VA', status: 'Interview Scheduled' },
+      { name: 'Vamshi Krishna Ganta', role: 'Senior Systems Analyst', type: 'NEW', reqId: '158112', client: 'State of NC', status: 'Newly Added' }
+    ]
+  },
+  {
+    date: '08/19/2026', recruiter: 'Sukamal Chatterjee', total: 2, newCount: 2, poolCount: 0, notPerf: '', submittedClient: '',
+    candidates: [
+      { name: 'Ashok Juttu Kannan', role: 'QA Automation Lead', type: 'NEW', reqId: '158420', client: 'State of MN', status: 'Newly Added' },
+      { name: 'Goutham Gantala', role: 'Cloud Engineer AWS', type: 'NEW', reqId: '158766', client: 'State Of VA', status: 'Newly Added' }
+    ]
+  },
+  {
+    date: '08/19/2026', recruiter: 'Vaibhav Bisen', total: 2, newCount: 1, poolCount: 1, notPerf: 1, submittedClient: '',
+    candidates: [
+      { name: 'Ashok Kumar Rayapudi', role: 'Infrastructure Project Manager', type: 'NEW', reqId: '158938', client: 'State Of SC', status: 'Newly Added' },
+      { name: 'Cx Avinash Ashokrao Mahajan', role: 'Senior Business Analyst', type: 'SW Pool', reqId: '158112', client: 'State of NC', status: 'Interview Scheduled' }
+    ]
+  }
+]
 
 // Exact Match Data for "Report of Candidates submitted by a recruiter for a given period" (media_1787314976453.png)
 const mockSubmissionSummaryGrouped = [
@@ -96,56 +246,6 @@ const mockSubmissionSummaryGrouped = [
   }
 ]
 
-const mockSubmissionDetails = [
-  { id: 'SUB-101', reqId: '158938', title: 'Project Manager - Consultant', client: 'State Of SC', candidateName: 'Ashok Ganta', recruiter: 'Omkesh Manjute', payRate: '$74/hr', billRate: '$90/hr', rateType: 'C2C', subVendor: 'Talent9 Inc', submitDate: '2026-08-20', status: 'Int-SubmittedToManager', comments: 'Strong SC government delivery background' },
-  { id: 'SUB-102', reqId: '158938', title: 'Project Manager - Consultant', client: 'State Of SC', candidateName: 'Kashyap K Vora', recruiter: 'Vaibhav Bisen', payRate: '$55/hr', billRate: '$90/hr', rateType: 'W2', subVendor: 'SmartHire LLC', submitDate: '2026-08-20', status: 'Int-SubmittedToManager', comments: 'PMP certified, local in Columbia' },
-  { id: 'SUB-103', reqId: '158766', title: 'VDOT Network Administrator 4', client: 'State Of VA', candidateName: 'Ashok Ankalla', recruiter: 'Vaibhav Bisen', payRate: '$60/hr', billRate: '$85/hr', rateType: 'C2C', subVendor: 'SmartHire LLC', submitDate: '2026-08-19', status: 'Interview Scheduled', comments: 'Cisco CCNA/CCNP expert' },
-  { id: 'SUB-104', reqId: '158766', title: 'VDOT Network Administrator 4', client: 'State Of VA', candidateName: 'Tirumala Ashok Varmadantuluri', recruiter: 'Nitin Bhosale', payRate: '$71/hr', billRate: '$88/hr', rateType: 'C2C', subVendor: 'Ameritech Global INC', submitDate: '2026-08-18', status: 'Client Shortlisted', comments: 'SD-WAN and PKI background' },
-  { id: 'SUB-105', reqId: '158420', title: 'DCY - IT Lead Architect', client: 'State of MN', candidateName: 'Vadivelu Ashok Kumar', recruiter: 'Prudhvi', payRate: '$75/hr', billRate: '$95/hr', rateType: 'C2C', subVendor: 'Paramount Software Solutions', submitDate: '2026-08-17', status: 'Offer Extended', comments: '12+ yrs experience in enterprise architecture' },
-  { id: 'SUB-106', reqId: '158310', title: 'Senior Data Engineer / Snowflake', client: 'State of CT', candidateName: 'Upendra Ganta', recruiter: 'Omkesh Manjute', payRate: '$60/hr', billRate: '$82/hr', rateType: 'C2C', subVendor: 'SmartHire LLC', submitDate: '2026-08-16', status: 'Placed', comments: 'Snowflake + dbt specialist' },
-  { id: 'SUB-107', reqId: '158204', title: 'Oracle DBA / PL-SQL Specialist', client: 'State of TX', candidateName: 'Nagababu Ganta', recruiter: 'Vaibhav Bisen', payRate: '$63/hr', billRate: '$80/hr', rateType: 'C2C', subVendor: 'SmartHire LLC', submitDate: '2026-08-15', status: 'Client Review', comments: '13 yrs Oracle performance tuning' },
-  { id: 'SUB-108', reqId: '158112', title: 'Senior Business Systems Analyst', client: 'State of NC', candidateName: 'Cx Avinash Ashokrao Mahajan', recruiter: 'Vaibhav Bisen', payRate: '$55/hr', billRate: '$75/hr', rateType: 'W2', subVendor: 'SmartHire LLC', submitDate: '2026-08-14', status: 'Interview Scheduled', comments: 'Healthcare Medicaid specialist' },
-  { id: 'SUB-109', reqId: '157980', title: '.Net Core / Angular Developer', client: 'State of MN', candidateName: 'Triveni Ganta', recruiter: 'Sukamal Chatterjee', payRate: '$55/hr', billRate: '$78/hr', rateType: 'C2C', subVendor: 'Origin Tek Solutions', submitDate: '2026-08-12', status: 'Pending Review', comments: 'C# .NET Core 8 with Angular 17' },
-  { id: 'SUB-110', reqId: '157890', title: 'Power Platform / Dynamics 365', client: 'State of TN', candidateName: 'Sri Sai Tejasvi Gantakolla', recruiter: 'Sukamal Chatterjee', payRate: '$65/hr', billRate: '$85/hr', rateType: 'C2C', subVendor: 'SmartHire LLC', submitDate: '2026-08-10', status: 'Placed', comments: 'PowerApps certified solution developer' }
-]
-
-const mockInterviewSchedules = [
-  { id: 'INT-301', reqId: '158938', title: 'Project Manager - Consultant', client: 'State Of SC', candidateName: 'Ashok Ganta', recruiter: 'Omkesh Manjute', interviewDate: '2026-08-25', interviewTime: '10:00 AM EST', round: 'Round 1 (Virtual)', clientStartDate: '2026-10-23', status: 'Confirmed', feedback: 'Interview invite sent via Teams' },
-  { id: 'INT-302', reqId: '158766', title: 'VDOT Network Administrator 4', client: 'State Of VA', candidateName: 'Ashok Ankalla', recruiter: 'Vaibhav Bisen', interviewDate: '2026-08-24', interviewTime: '02:30 PM EST', round: 'Technical Panel', clientStartDate: '2026-09-15', status: 'Completed', feedback: 'Passed technical round. Awaiting manager approval.' },
-  { id: 'INT-303', reqId: '158112', title: 'Senior Business Systems Analyst', client: 'State of NC', candidateName: 'Cx Avinash Ashokrao Mahajan', recruiter: 'Vaibhav Bisen', interviewDate: '2026-08-26', interviewTime: '11:00 AM EST', round: 'Client Manager Round', clientStartDate: '2026-09-01', status: 'Scheduled', feedback: 'Webex video link shared with candidate' },
-  { id: 'INT-304', reqId: '158420', title: 'DCY - IT Lead Architect', client: 'State of MN', candidateName: 'Vadivelu Ashok Kumar', recruiter: 'Prudhvi', interviewDate: '2026-08-22', interviewTime: '03:00 PM CST', round: 'Final Round', clientStartDate: '2026-09-08', status: 'Selected', feedback: 'Offer letter in preparation' },
-  { id: 'INT-305', reqId: '158310', title: 'Senior Data Engineer / Snowflake', client: 'State of CT', candidateName: 'Upendra Ganta', recruiter: 'Omkesh Manjute', interviewDate: '2026-08-18', interviewTime: '01:00 PM EST', round: 'Round 1 (Online)', clientStartDate: '2026-09-01', status: 'Offered & Joined', feedback: 'Candidate started onboarding' }
-]
-
-const mockRequisitionStatuses = [
-  { reqId: '158938', title: 'Project Manager - Consultant - 13285', client: 'State Of SC', category: 'SP', type: 'Contract', status: 'In-Progress', submissions: 2, maxSubmissions: 2, assignedRecruiters: 'Vaibhav Bisen, Omkesh Manjute', creationDate: '10/23/2026', deadline: '8/28/2026', billRate: '$90/hr', payRate: '$75/hr' },
-  { reqId: '158766', title: 'VDOT Network Administrator 4 (807536)', client: 'State Of VA', category: 'IT', type: 'Contract', status: 'In-Progress', submissions: 2, maxSubmissions: 2, assignedRecruiters: 'Vaibhav Bisen, Nitin Bhosale', creationDate: '08/15/2026', deadline: '8/30/2026', billRate: '$88/hr', payRate: '$74/hr' },
-  { reqId: '158420', title: 'DCY - IT Lead Architect', client: 'State of MN', category: 'IT', type: 'Contract', status: 'Ready', submissions: 1, maxSubmissions: 2, assignedRecruiters: 'Prudhvi', creationDate: '08/10/2026', deadline: '8/25/2026', billRate: '$95/hr', payRate: '$75/hr' },
-  { reqId: '158310', title: 'Senior Data Engineer / Snowflake', client: 'State of CT', category: 'SP', type: 'Contract', status: 'Closed', submissions: 2, maxSubmissions: 2, assignedRecruiters: 'Omkesh Manjute', creationDate: '08/01/2026', deadline: '8/18/2026', billRate: '$82/hr', payRate: '$60/hr' },
-  { reqId: '158204', title: 'Oracle DBA / PL-SQL Specialist', client: 'State of TX', category: 'IT', type: 'Contract', status: 'In-Progress', submissions: 1, maxSubmissions: 3, assignedRecruiters: 'Vaibhav Bisen', creationDate: '08/05/2026', deadline: '9/05/2026', billRate: '$80/hr', payRate: '$63/hr' },
-  { reqId: '158112', title: 'Senior Business Systems Analyst', client: 'State of NC', category: 'SP', type: 'Contract', status: 'In-Progress', submissions: 1, maxSubmissions: 2, assignedRecruiters: 'Vaibhav Bisen', creationDate: '08/08/2026', deadline: '8/29/2026', billRate: '$75/hr', payRate: '$55/hr' },
-  { reqId: '157980', title: '.Net Core / Angular Full Stack Developer', client: 'State of MN', category: 'ENG', type: 'Contract', status: 'In-Progress', submissions: 1, maxSubmissions: 2, assignedRecruiters: 'Sukamal Chatterjee', creationDate: '08/02/2026', deadline: '8/26/2026', billRate: '$78/hr', payRate: '$55/hr' },
-  { reqId: '157890', title: 'Power Platform / Dynamics 365 Architect', client: 'State of TN', category: 'IT', type: 'Contract', status: 'Closed', submissions: 1, maxSubmissions: 1, assignedRecruiters: 'Sukamal Chatterjee', creationDate: '07/28/2026', deadline: '8/15/2026', billRate: '$85/hr', payRate: '$65/hr' }
-]
-
-const mockW2Candidates = [
-  { id: 'W2-87535', name: 'Kashyap K Vora', role: 'Full Stack Java / Spring Boot Lead', exp: '10 yrs', location: 'Columbia, SC', payRate: '$55/hr', workAuth: 'US Citizen', recruiter: 'Omkesh Manjute', addedDate: '2026-08-15', resumesSubmitted: 2, status: 'Active / Available' },
-  { id: 'W2-87512', name: 'Cx Avinash Ashokrao Mahajan', role: 'Senior Business Systems Analyst', exp: '16 yrs', location: 'Raleigh, NC', payRate: '$55/hr', workAuth: 'US Citizen', recruiter: 'Vaibhav Bisen', addedDate: '2026-08-10', resumesSubmitted: 1, status: 'Interviewing' },
-  { id: 'W2-87505', name: 'Upendra Ganta', role: 'Data Engineer / Snowflake Lead', exp: '11 yrs', location: 'Hartford, CT', payRate: '$60/hr', workAuth: 'US Citizen', recruiter: 'Omkesh Manjute', addedDate: '2026-08-01', resumesSubmitted: 2, status: 'Placed' },
-  { id: 'W2-87514', name: 'Ashok Ankalla', role: 'Project Coordinator / Scrum Master', exp: '18 yrs', location: 'Bentonville, AR', payRate: '$60/hr', workAuth: 'US Citizen', recruiter: 'Omkesh Manjute', addedDate: '2026-07-25', resumesSubmitted: 3, status: 'Active / Available' },
-  { id: 'W2-87516', name: 'Priyanka Gantareddy', role: 'Senior Quality Assurance Lead', exp: '16 yrs', location: 'Austin, TX', payRate: '$60/hr', workAuth: 'US Citizen', recruiter: 'Omkesh Manjute', addedDate: '2026-07-20', resumesSubmitted: 1, status: 'Active / Available' },
-  { id: 'W2-87519', name: 'Ashok Anakalla', role: 'Technical Lead / Solution Architect', exp: '18 yrs', location: 'Herndon, VA', payRate: '$68/hr', workAuth: 'US Citizen', recruiter: 'Omkesh Manjute', addedDate: '2026-07-15', resumesSubmitted: 2, status: 'Active / Available' },
-  { id: 'W2-87524', name: 'Ashok Natarajan', role: 'Project Manager - Enterprise ERP', exp: '17 yrs', location: 'Irving, TX', payRate: '$80/hr', workAuth: 'US Citizen', recruiter: 'Nitin Bhosale', addedDate: '2026-07-10', resumesSubmitted: 1, status: 'Active / Available' }
-]
-
-const mockRecruiterPerformance = [
-  { recruiter: 'Omkesh Manjute', sourced: 28, submitted: 18, interviews: 8, offers: 4, placed: 3, margin: '$38,400', avgSubmissionTime: '1.8 days' },
-  { recruiter: 'Vaibhav Bisen', sourced: 34, submitted: 22, interviews: 11, offers: 5, placed: 4, margin: '$46,200', avgSubmissionTime: '1.5 days' },
-  { recruiter: 'Sukamal Chatterjee', sourced: 22, submitted: 14, interviews: 6, offers: 3, placed: 2, margin: '$24,800', avgSubmissionTime: '2.1 days' },
-  { recruiter: 'Prudhvi', sourced: 19, submitted: 12, interviews: 5, offers: 2, placed: 2, margin: '$21,500', avgSubmissionTime: '2.0 days' },
-  { recruiter: 'Nitin Bhosale', sourced: 25, submitted: 15, interviews: 7, offers: 3, placed: 2, margin: '$26,100', avgSubmissionTime: '1.9 days' }
-]
-
 function Reports() {
   // Navigation Menus Structure (Exact Match to User's Screenshots)
   const reportCategories = [
@@ -153,6 +253,7 @@ function Reports() {
       id: 'summary',
       name: 'Summary',
       items: [
+        { id: 'resumes-added', label: 'Resumes Added (New vs Old)' },
         { id: 'submission-summary', label: 'Submission Summary' },
         { id: 'submission-details', label: 'Submission Details' },
         { id: 'daily-submission-summary', label: 'Daily Submission Summary' },
@@ -188,18 +289,22 @@ function Reports() {
     }
   ]
 
-  // Active Category & Sub-Report State (Defaults to Submission Summary)
+  // Active Category & Sub-Report State (Defaults to Resumes Added)
   const [activeCategory, setActiveCategory] = useState('summary')
-  const [activeSubReport, setActiveSubReport] = useState('submission-summary')
+  const [activeSubReport, setActiveSubReport] = useState('resumes-added')
   const [hoverCategory, setHoverCategory] = useState(null)
 
-  // Filters State (Exact match to media_1787314976453.png)
-  const [fromDate, setFromDate] = useState('7/1/2026')
-  const [toDate, setToDate] = useState('8/21/2026')
-  const [selectedRecruiter, setSelectedRecruiter] = useState('ALL')
+  // Filters State (Exact match to media_1787315254728.png & media_1787314976453.png)
+  const [startDate, setStartDate] = useState('8/1/2026')
+  const [endDate, setEndDate] = useState('8/31/2026')
+  const [selectedOffice, setSelectedOffice] = useState('All')
+  const [selectedRecruiter, setSelectedRecruiter] = useState('All')
   const [searchTerm, setSearchTerm] = useState('')
   const [reportPage, setReportPage] = useState(1)
   const [totalPages, setTotalPages] = useState(2)
+
+  // Modal State for Candidate Details Breakdown
+  const [detailsModalData, setDetailsModalData] = useState(null)
 
   // Switch Sub-report
   const handleSelectReport = (catId, subId) => {
@@ -209,11 +314,26 @@ function Reports() {
     setReportPage(1)
   }
 
+  // Filter Resumes Added Rows
+  const filteredResumesAdded = useMemo(() => {
+    return mockResumesAddedRows.filter(row => {
+      if (selectedRecruiter !== 'All' && selectedRecruiter !== 'ALL') {
+        if (!row.recruiter.toLowerCase().includes(selectedRecruiter.toLowerCase())) return false
+      }
+      if (searchTerm.trim()) {
+        const q = searchTerm.toLowerCase()
+        const text = `${row.date} ${row.recruiter}`.toLowerCase()
+        if (!text.includes(q)) return false
+      }
+      return true
+    })
+  }, [selectedRecruiter, searchTerm])
+
   // Filter grouped submissions by recruiter
   const filteredSummaryGroups = useMemo(() => {
     return mockSubmissionSummaryGrouped.map(group => {
       let filteredRecs = group.recruiters
-      if (selectedRecruiter !== 'ALL') {
+      if (selectedRecruiter !== 'All' && selectedRecruiter !== 'ALL') {
         filteredRecs = group.recruiters.filter(r => r.name.toLowerCase().includes(selectedRecruiter.toLowerCase()))
       }
       if (searchTerm.trim()) {
@@ -232,32 +352,26 @@ function Reports() {
     let headers = []
     let rows = []
 
-    if (activeSubReport === 'submission-summary') {
+    if (activeSubReport === 'resumes-added') {
+      headers = ['Submission Date', 'Recruiter Name', 'Resumes Submitted', 'New', 'SW Pool', 'Not Performed', 'Submitted To Client']
+      filteredResumesAdded.forEach(r => {
+        rows.push([
+          r.date, `"${r.recruiter}"`, r.total, r.newCount, r.poolCount, r.notPerf, `"${r.submittedClient}"`
+        ])
+      })
+    } else if (activeSubReport === 'submission-summary') {
       headers = ['Assigned Date', 'Submission Date', 'Name', '# of Reqs', 'Total Submissions']
       filteredSummaryGroups.forEach(group => {
         group.recruiters.forEach(r => {
           rows.push([
-            group.assignedDate,
-            group.submissionDate,
-            `"${r.name}"`,
-            r.reqs,
-            r.total
+            group.assignedDate, group.submissionDate, `"${r.name}"`, r.reqs, r.total
           ])
         })
       })
-    } else if (activeSubReport === 'submission-details') {
-      headers = ['ID', 'Req #', 'Job Title', 'Client', 'Candidate Name', 'Recruiter', 'Pay Rate', 'Bill Rate', 'Rate Type', 'Sub Vendor', 'Submit Date', 'Status', 'Comments']
-      mockSubmissionDetails.forEach(s => {
-        rows.push([
-          s.id, s.reqId, `"${s.title}"`, `"${s.client}"`, `"${s.candidateName}"`, `"${s.recruiter}"`, `"${s.payRate}"`, `"${s.billRate}"`, s.rateType, `"${s.subVendor}"`, s.submitDate, `"${s.status}"`, `"${s.comments}"`
-        ])
-      })
     } else {
-      headers = ['Submission Date', 'Name', 'Total Submissions']
-      filteredSummaryGroups.forEach(group => {
-        group.recruiters.forEach(r => {
-          rows.push([group.submissionDate, `"${r.name}"`, r.total])
-        })
+      headers = ['Date', 'Recruiter', 'Total Submissions']
+      filteredResumesAdded.forEach(r => {
+        rows.push([r.date, `"${r.recruiter}"`, r.total])
       })
     }
 
@@ -271,15 +385,6 @@ function Reports() {
     document.body.removeChild(link)
   }
 
-  // Active Report Name Helper
-  const currentReportLabel = useMemo(() => {
-    for (const cat of reportCategories) {
-      const match = cat.items.find(i => i.id === activeSubReport)
-      if (match) return match.label
-    }
-    return 'Report'
-  }, [activeSubReport])
-
   return (
     <SiteLayout>
       <div style={{ background: '#f1f5f9', minHeight: '92vh', paddingBottom: '40px', fontFamily: 'Arial, sans-serif' }}>
@@ -292,7 +397,7 @@ function Reports() {
           </div>
         </div>
 
-        {/* ═══════════ BLUE 4-TAB NAVIGATION BAR (EXACT TO SCREENSHOT) ═══════════ */}
+        {/* ═══════════ BLUE 4-TAB NAVIGATION BAR (EXACT TO SCREENSHOTS) ═══════════ */}
         <div style={{ background: '#739bbd', borderBottom: '1px solid #557b9d', position: 'relative', zIndex: 100 }}>
           <div className="container-wide" style={{ display: 'flex', alignItems: 'stretch', padding: '0 16px' }}>
             {reportCategories.map(cat => {
@@ -335,7 +440,7 @@ function Reports() {
                       position: 'absolute',
                       top: '100%',
                       left: 0,
-                      minWidth: '220px',
+                      minWidth: '240px',
                       background: '#8ba8c4',
                       border: '1px solid #668cae',
                       boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
@@ -375,75 +480,95 @@ function Reports() {
           </div>
         </div>
 
-        {/* ═══════════ MAIN REPORT VIEWER (EXACT MATCH TO MEDIA_1787314976453.PNG) ═══════════ */}
+        {/* ═══════════ MAIN REPORT VIEWER (EXACT MATCH TO MEDIA_1787315254728.PNG) ═══════════ */}
         <div style={{ padding: '0 16px', maxWidth: '100%', margin: '0 auto' }}>
           
-          {/* Top Filter Controls Bar (Light Grey Area) */}
+          {/* Top Filter Controls Area (2x2 Grid + View Report) */}
           <div style={{
             background: '#e9edf1', border: '1px solid #cbd5e1', borderTop: 'none', padding: '12px 18px',
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', fontSize: '11.5px'
+            display: 'grid', gridTemplateColumns: '1fr auto', gap: '8px 24px', alignItems: 'center', fontSize: '11.5px'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 30px' }}>
               
-              {/* From Date */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ color: '#1e3a8a', fontWeight: 'bold' }}>From Date</span>
-                <div style={{ display: 'flex', alignItems: 'center', background: '#ffffff', border: '1px solid #94a3b8', borderRadius: '2px', padding: '1px 4px' }}>
+              {/* Row 1: Start Date & End Date */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ color: '#1e3a8a', fontWeight: 'bold', width: '70px' }}>Start Date</span>
+                <div style={{ display: 'flex', alignItems: 'center', background: '#ffffff', border: '1px solid #94a3b8', borderRadius: '2px', padding: '1px 4px', width: '140px' }}>
                   <input
                     type="text"
-                    value={fromDate}
-                    onChange={e => setFromDate(e.target.value)}
-                    style={{ border: 'none', outline: 'none', fontSize: '11px', width: '90px' }}
+                    value={startDate}
+                    onChange={e => setStartDate(e.target.value)}
+                    style={{ border: 'none', outline: 'none', fontSize: '11px', width: '100%' }}
                   />
                   <span style={{ cursor: 'pointer', fontSize: '12px' }}>📅</span>
                 </div>
               </div>
 
-              {/* To Date */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ color: '#1e3a8a', fontWeight: 'bold' }}>To Date</span>
-                <div style={{ display: 'flex', alignItems: 'center', background: '#ffffff', border: '1px solid #94a3b8', borderRadius: '2px', padding: '1px 4px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ color: '#1e3a8a', fontWeight: 'bold', width: '70px' }}>End Date</span>
+                <div style={{ display: 'flex', alignItems: 'center', background: '#ffffff', border: '1px solid #94a3b8', borderRadius: '2px', padding: '1px 4px', width: '140px' }}>
                   <input
                     type="text"
-                    value={toDate}
-                    onChange={e => setToDate(e.target.value)}
-                    style={{ border: 'none', outline: 'none', fontSize: '11px', width: '90px' }}
+                    value={endDate}
+                    onChange={e => setEndDate(e.target.value)}
+                    style={{ border: 'none', outline: 'none', fontSize: '11px', width: '100%' }}
                   />
                   <span style={{ cursor: 'pointer', fontSize: '12px' }}>📅</span>
                 </div>
               </div>
 
-              {/* Select Recruiter */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Select Recruiter</span>
+              {/* Row 2: Office & Recruiter */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ color: '#1e3a8a', fontWeight: 'bold', width: '70px' }}>Office</span>
+                <select
+                  value={selectedOffice}
+                  onChange={e => setSelectedOffice(e.target.value)}
+                  style={{ padding: '2px 8px', fontSize: '11px', border: '1px solid #94a3b8', background: '#ffffff', width: '140px' }}
+                >
+                  <option value="All">All</option>
+                  <option value="Columbia">Columbia</option>
+                  <option value="Richmond">Richmond</option>
+                  <option value="Austin">Austin</option>
+                  <option value="Louisville">Louisville</option>
+                  <option value="Atlanta">Atlanta</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ color: '#1e3a8a', fontWeight: 'bold', width: '70px' }}>Recruiter</span>
                 <select
                   value={selectedRecruiter}
                   onChange={e => setSelectedRecruiter(e.target.value)}
-                  style={{ padding: '2px 8px', fontSize: '11px', border: '1px solid #94a3b8', background: '#ffffff', minWidth: '130px' }}
+                  style={{ padding: '2px 8px', fontSize: '11px', border: '1px solid #94a3b8', background: '#ffffff', width: '140px' }}
                 >
-                  <option value="ALL">ALL</option>
-                  <option value="Raj Barve">Raj Barve</option>
-                  <option value="Sukamal Chatterjee">Sukamal Chatterjee</option>
-                  <option value="Pankaj Maharwade">Pankaj Maharwade</option>
-                  <option value="JIH Resumes">JIH Resumes</option>
+                  <option value="All">All</option>
                   <option value="Ajay Arya">Ajay Arya</option>
-                  <option value="Vaibhav Bisen">Vaibhav Bisen</option>
-                  <option value="Prudhvi Sevveti">Prudhvi Sevveti</option>
+                  <option value="Ashwath S">Ashwath S</option>
+                  <option value="Bhanu Raman Budithi">Bhanu Raman Budithi</option>
+                  <option value="Charan Teja Pappu">Charan Teja Pappu</option>
+                  <option value="JIH Resumes">JIH Resumes</option>
+                  <option value="Kamlesh SmartHire">Kamlesh SmartHire</option>
+                  <option value="Krishnendu Jana">Krishnendu Jana</option>
+                  <option value="Manikanta Siripalli">Manikanta Siripalli</option>
+                  <option value="Naveen Korimelli">Naveen Korimelli</option>
                   <option value="Nishant Kathane">Nishant Kathane</option>
                   <option value="Omkesh Manjute">Omkesh Manjute</option>
-                  <option value="Naveen Korimelli">Naveen Korimelli</option>
+                  <option value="Pankaj Maharwade">Pankaj Maharwade</option>
+                  <option value="Prudhvi Sevveti">Prudhvi Sevveti</option>
+                  <option value="Sukamal Chatterjee">Sukamal Chatterjee</option>
+                  <option value="Vaibhav Bisen">Vaibhav Bisen</option>
                 </select>
               </div>
 
             </div>
 
-            {/* View Report Button (Far Right) */}
+            {/* View Report Button */}
             <div>
               <button
                 type="button"
-                onClick={() => alert(`Report refreshed for date range ${fromDate} - ${toDate} and recruiter: ${selectedRecruiter}`)}
+                onClick={() => alert(`Report refreshed for date range ${startDate} - ${endDate}, Office: ${selectedOffice}, Recruiter: ${selectedRecruiter}`)}
                 style={{
-                  background: '#f1f5f9', border: '1px solid #94a3b8', padding: '4px 16px',
+                  background: '#f1f5f9', border: '1px solid #94a3b8', padding: '5px 18px',
                   fontSize: '11.5px', fontWeight: 'bold', color: '#0f172a', cursor: 'pointer',
                   boxShadow: 'inset 0 1px 0 #ffffff, 0 1px 2px rgba(0,0,0,0.1)', borderRadius: '2px'
                 }}
@@ -513,306 +638,229 @@ function Reports() {
           {/* ═══════════ REPORT CONTENT CANVAS ═══════════ */}
           <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderTop: 'none', padding: '16px 20px', minHeight: '520px' }}>
             
-            {/* Report Title */}
-            <h3 style={{ margin: '0 0 14px', fontSize: '13px', color: '#0f172a', fontWeight: 'bold' }}>
-              Report of Candidates submitted by a recruiter for a given period
-            </h3>
+            {/* ─── 1. REPORT: RESUMES ADDED (EXACT MATCH TO MEDIA_1787315254728.PNG) ─── */}
+            {activeSubReport === 'resumes-added' && (
+              <div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '18px', marginBottom: '12px' }}>
+                  <h1 style={{ margin: 0, fontSize: '20px', color: '#1d4ed8', fontWeight: 'bold', letterSpacing: '-0.02em' }}>
+                    Resumes Added
+                  </h1>
+                  <span style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#0f172a' }}>
+                    Total No.of non performed days: 138
+                  </span>
+                </div>
 
-            {/* ─── EXACT SUBMISSION SUMMARY TABLE (MATCHING MEDIA_1787314976453.PNG) ─── */}
-            {activeSubReport === 'submission-summary' && (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', maxWidth: '640px', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', border: '1px solid #cbd5e1' }}>
-                  <thead>
-                    <tr style={{ background: '#555555', color: '#ffffff' }}>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold', width: '100px', borderRight: '1px solid #777777' }}>Assigned Date</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold', width: '110px', borderRight: '1px solid #777777', textAlign: 'center' }}>Submission Date</th>
-                      <th style={{ padding: '6px 12px', fontWeight: 'bold', borderRight: '1px solid #777777', textAlign: 'center' }}>Name</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold', width: '70px', borderRight: '1px solid #777777', textAlign: 'center' }}># of Reqs</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold', width: '110px', textAlign: 'center' }}>Total Submissions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredSummaryGroups.length === 0 ? (
-                      <tr>
-                        <td colSpan="5" style={{ padding: '30px', textAlign: 'center', color: '#64748b' }}>
-                          No submission records found for the selected recruiter and date range.
-                        </td>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', maxWidth: '780px', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', border: '1px solid #cbd5e1' }}>
+                    <thead>
+                      <tr style={{ background: '#3b82f6', color: '#ffffff' }}>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', width: '110px', borderRight: '1px solid #60a5fa' }}>Submission Date ↕</th>
+                        <th style={{ padding: '6px 12px', fontWeight: 'bold', width: '170px', borderRight: '1px solid #60a5fa' }}>Recruiter Name ↕</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', textAlign: 'center', width: '115px', borderRight: '1px solid #60a5fa' }}>Resumes Submitted</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', textAlign: 'center', width: '45px', borderRight: '1px solid #60a5fa', background: '#2563eb' }}>New</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', textAlign: 'center', width: '45px', borderRight: '1px solid #60a5fa', background: '#2563eb' }}>CW</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', textAlign: 'center', width: '90px', borderRight: '1px solid #60a5fa' }}>Not Performed</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', width: '120px', borderRight: '1px solid #60a5fa' }}>Submitted To Client</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', textAlign: 'center', width: '60px' }}>Action</th>
                       </tr>
-                    ) : (
-                      filteredSummaryGroups.map((group, gIdx) => (
+                    </thead>
+                    <tbody>
+                      {filteredResumesAdded.length === 0 ? (
+                        <tr>
+                          <td colSpan="8" style={{ padding: '30px', textAlign: 'center', color: '#64748b' }}>
+                            No resume activity found for the selected recruiter and date range.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredResumesAdded.map((row, idx) => (
+                          <tr key={`${row.date}-${row.recruiter}-${idx}`} style={{
+                            background: idx % 2 === 0 ? '#ffffff' : '#f8fafc',
+                            borderBottom: '1px solid #e2e8f0'
+                          }}>
+                            <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', color: '#0f172a' }}>{row.date}</td>
+                            <td style={{ padding: '5px 12px', borderRight: '1px solid #cbd5e1', color: '#0f172a', fontWeight: 'normal' }}>{row.recruiter}</td>
+                            <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', color: '#0f172a' }}>{row.total}</td>
+                            <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: row.newCount > 0 ? '#16a34a' : '#0f172a', background: row.newCount > 0 ? '#f0fdf4' : 'transparent' }}>
+                              {row.newCount}
+                            </td>
+                            <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: row.poolCount > 0 ? '#0284c7' : '#0f172a', background: row.poolCount > 0 ? '#eff6ff' : 'transparent' }}>
+                              {row.poolCount}
+                            </td>
+                            <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', color: '#0f172a' }}>{row.notPerf}</td>
+                            <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', color: '#0f172a' }}>{row.submittedClient}</td>
+                            <td style={{ padding: '5px 8px', textAlign: 'center' }}>
+                              <span
+                                onClick={() => setDetailsModalData(row)}
+                                style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline', fontWeight: 'bold' }}
+                              >
+                                Details
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* ─── 2. REPORT: SUBMISSION SUMMARY (MATCHING MEDIA_1787314976453.PNG) ─── */}
+            {activeSubReport === 'submission-summary' && (
+              <div>
+                <h3 style={{ margin: '0 0 14px', fontSize: '13px', color: '#0f172a', fontWeight: 'bold' }}>
+                  Report of Candidates submitted by a recruiter for a given period
+                </h3>
+
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', maxWidth: '640px', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', border: '1px solid #cbd5e1' }}>
+                    <thead>
+                      <tr style={{ background: '#555555', color: '#ffffff' }}>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', width: '100px', borderRight: '1px solid #777777' }}>Assigned Date</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', width: '110px', borderRight: '1px solid #777777', textAlign: 'center' }}>Submission Date</th>
+                        <th style={{ padding: '6px 12px', fontWeight: 'bold', borderRight: '1px solid #777777', textAlign: 'center' }}>Name</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', width: '70px', borderRight: '1px solid #777777', textAlign: 'center' }}># of Reqs</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', width: '110px', textAlign: 'center' }}>Total Submissions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredSummaryGroups.map((group, gIdx) => (
                         <React.Fragment key={group.submissionDate}>
                           {group.recruiters.map((rec, rIdx) => (
                             <tr key={`${group.submissionDate}-${rec.name}-${rIdx}`} style={{ borderBottom: '1px solid #e2e8f0', background: '#ffffff' }}>
-                              
-                              {/* Assigned Date (Rowspan for the whole date group) */}
                               {rIdx === 0 && (
-                                <td
-                                  rowSpan={group.recruiters.length}
-                                  style={{
-                                    padding: '6px 8px',
-                                    borderRight: '1px solid #cbd5e1',
-                                    verticalAlign: 'top',
-                                    background: '#ffffff'
-                                  }}
-                                >
+                                <td rowSpan={group.recruiters.length} style={{ padding: '6px 8px', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
                                   {group.assignedDate}
                                 </td>
                               )}
-
-                              {/* Submission Date (Rowspan for the whole date group) */}
                               {rIdx === 0 && (
-                                <td
-                                  rowSpan={group.recruiters.length}
-                                  style={{
-                                    padding: '6px 8px',
-                                    borderRight: '1px solid #cbd5e1',
-                                    verticalAlign: 'top',
-                                    textAlign: 'center',
-                                    fontWeight: 'normal',
-                                    background: '#ffffff'
-                                  }}
-                                >
+                                <td rowSpan={group.recruiters.length} style={{ padding: '6px 8px', borderRight: '1px solid #cbd5e1', verticalAlign: 'top', textAlign: 'center' }}>
                                   {group.submissionDate}
                                 </td>
                               )}
-
-                              {/* Recruiter / Channel Name */}
-                              <td style={{ padding: '5px 12px', borderRight: '1px solid #cbd5e1', color: '#0f172a' }}>
-                                {rec.name}
-                              </td>
-
-                              {/* # of Reqs */}
-                              <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', color: '#475569' }}>
-                                {rec.reqs || ''}
-                              </td>
-
-                              {/* Total Submissions */}
-                              <td style={{ padding: '5px 8px', textAlign: 'center', fontWeight: 'normal', color: '#0f172a' }}>
-                                {rec.total}
-                              </td>
+                              <td style={{ padding: '5px 12px', borderRight: '1px solid #cbd5e1', color: '#0f172a' }}>{rec.name}</td>
+                              <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', color: '#475569' }}>{rec.reqs || ''}</td>
+                              <td style={{ padding: '5px 8px', textAlign: 'center', color: '#0f172a' }}>{rec.total}</td>
                             </tr>
                           ))}
                         </React.Fragment>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
 
-            {/* ─── SUBMISSION DETAILS REPORT TABLE ─── */}
-            {activeSubReport === 'submission-details' && (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', border: '1px solid #cbd5e1' }}>
-                  <thead>
-                    <tr style={{ background: '#555555', color: '#ffffff' }}>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Submission ID</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Req #</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Position Title</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Client</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Candidate Name</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Recruiter (Added By)</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Pay Rate</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Bill Rate</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Rate Type</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Sub Vendor</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Submitted On</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {mockSubmissionDetails.map((s, idx) => (
-                      <tr key={s.id} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{s.id}</td>
-                        <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>
-                          <Link to="/dashboard" style={{ color: '#0066cc', textDecoration: 'underline' }}>{s.reqId}</Link>
-                        </td>
-                        <td style={{ padding: '6px 8px', color: '#1e293b' }}>{s.title}</td>
-                        <td style={{ padding: '6px 8px', color: '#334155' }}>{s.client}</td>
-                        <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>
-                          <Link to="/dashboard" style={{ color: '#0066cc', textDecoration: 'underline' }}>{s.candidateName}</Link>
-                        </td>
-                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#1e3a8a', background: idx % 2 === 0 ? '#f1f5f9' : '#e2e8f0' }}>{s.recruiter}</td>
-                        <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold' }}>{s.payRate}</td>
-                        <td style={{ padding: '6px 8px', color: '#334155' }}>{s.billRate}</td>
-                        <td style={{ padding: '6px 8px', color: '#334155' }}>{s.rateType}</td>
-                        <td style={{ padding: '6px 8px', color: '#334155' }}>{s.subVendor}</td>
-                        <td style={{ padding: '6px 8px', color: '#64748b' }}>{s.submitDate}</td>
-                        <td style={{ padding: '6px 8px' }}>
-                          <span style={{
-                            padding: '2px 6px', borderRadius: '3px', fontSize: '10.5px', fontWeight: 'bold',
-                            background: s.status === 'Placed' ? '#dcfce7' : s.status.includes('Interview') ? '#e0e7ff' : '#fef3c7',
-                            color: s.status === 'Placed' ? '#166534' : s.status.includes('Interview') ? '#3730a3' : '#92400e'
-                          }}>
-                            {s.status}
-                          </span>
-                        </td>
+            {/* ─── OTHER SUB-REPORTS (SUBMISSION DETAILS, ETC.) ─── */}
+            {activeSubReport !== 'resumes-added' && activeSubReport !== 'submission-summary' && (
+              <div>
+                <h3 style={{ margin: '0 0 14px', fontSize: '13px', color: '#0f172a', fontWeight: 'bold' }}>
+                  {activeSubReport.replace(/-/g, ' ').toUpperCase()}
+                </h3>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', border: '1px solid #cbd5e1' }}>
+                    <thead>
+                      <tr style={{ background: '#555555', color: '#ffffff' }}>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Date</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Recruiter</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Resumes Submitted</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>New</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>CW/Pool</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Action</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* ─── INTERVIEW SCHEDULE TABLE ─── */}
-            {activeSubReport === 'interview-schedule-client-start' && (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', border: '1px solid #cbd5e1' }}>
-                  <thead>
-                    <tr style={{ background: '#555555', color: '#ffffff' }}>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Interview ID</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Req #</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Position Title</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Client</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Candidate Name</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Recruiter</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Interview Date</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Time</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Round</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Client Start Date</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Status</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Feedback / Notes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {mockInterviewSchedules.map((i, idx) => (
-                      <tr key={i.id} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{i.id}</td>
-                        <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>{i.reqId}</td>
-                        <td style={{ padding: '6px 8px', color: '#1e293b' }}>{i.title}</td>
-                        <td style={{ padding: '6px 8px', color: '#334155' }}>{i.client}</td>
-                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{i.candidateName}</td>
-                        <td style={{ padding: '6px 8px', color: '#1e3a8a', fontWeight: 'bold' }}>{i.recruiter}</td>
-                        <td style={{ padding: '6px 8px', color: '#dc2626', fontWeight: 'bold' }}>{i.interviewDate}</td>
-                        <td style={{ padding: '6px 8px', color: '#475569' }}>{i.interviewTime}</td>
-                        <td style={{ padding: '6px 8px', color: '#334155' }}>{i.round}</td>
-                        <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold', background: '#f0fdf4' }}>{i.clientStartDate}</td>
-                        <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>{i.status}</td>
-                        <td style={{ padding: '6px 8px', color: '#64748b' }}>{i.feedback}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* ─── REQUISITION STATUS TABLE ─── */}
-            {activeSubReport === 'requisition-status' && (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', border: '1px solid #cbd5e1' }}>
-                  <thead>
-                    <tr style={{ background: '#555555', color: '#ffffff' }}>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Req #</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Position Title</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Client</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Category</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Type</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Status</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Submissions</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Assigned Recruiters</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Creation Date</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Deadline</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Pay Rate</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {mockRequisitionStatuses.map((r, idx) => (
-                      <tr key={r.reqId} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{r.reqId}</td>
-                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#1e293b' }}>{r.title}</td>
-                        <td style={{ padding: '6px 8px', color: '#334155' }}>{r.client}</td>
-                        <td style={{ padding: '6px 8px', color: '#475569' }}>{r.category}</td>
-                        <td style={{ padding: '6px 8px', color: '#475569' }}>{r.type}</td>
-                        <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold' }}>{r.status}</td>
-                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{r.submissions} / {r.maxSubmissions}</td>
-                        <td style={{ padding: '6px 8px', color: '#1e3a8a', fontWeight: 'bold' }}>{r.assignedRecruiters}</td>
-                        <td style={{ padding: '6px 8px', color: '#64748b' }}>{r.creationDate}</td>
-                        <td style={{ padding: '6px 8px', color: '#dc2626', fontWeight: 'bold' }}>{r.deadline}</td>
-                        <td style={{ padding: '6px 8px', color: '#334155' }}>{r.payRate}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* ─── W2 CANDIDATE TABLE ─── */}
-            {activeSubReport === 'w2-candidate-added' && (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', border: '1px solid #cbd5e1' }}>
-                  <thead>
-                    <tr style={{ background: '#555555', color: '#ffffff' }}>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Candidate ID</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Candidate Name</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Role</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Exp</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Location</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Pay Rate</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Work Auth</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Recruiter (Added By)</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Added On</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Resumes Submitted</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {mockW2Candidates.map((w, idx) => (
-                      <tr key={w.id} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{w.id}</td>
-                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{w.name}</td>
-                        <td style={{ padding: '6px 8px', color: '#1e293b' }}>{w.role}</td>
-                        <td style={{ padding: '6px 8px', color: '#475569' }}>{w.exp}</td>
-                        <td style={{ padding: '6px 8px', color: '#475569' }}>{w.location}</td>
-                        <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold' }}>{w.payRate}</td>
-                        <td style={{ padding: '6px 8px', color: '#475569' }}>{w.workAuth}</td>
-                        <td style={{ padding: '6px 8px', color: '#1e3a8a', fontWeight: 'bold', background: idx % 2 === 0 ? '#f1f5f9' : '#e2e8f0' }}>{w.recruiter}</td>
-                        <td style={{ padding: '6px 8px', color: '#64748b' }}>{w.addedDate}</td>
-                        <td style={{ padding: '6px 8px', fontWeight: 'bold', textAlign: 'center' }}>{w.resumesSubmitted}</td>
-                        <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold' }}>{w.status}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* ─── RECRUITER PERFORMANCE SUMMARY ─── */}
-            {(activeSubReport === 'recruiters-performance' || activeSubReport === 'performance-summary' || activeSubReport === 'performance-details' || activeSubReport === 'monthly-status') && (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', border: '1px solid #cbd5e1' }}>
-                  <thead>
-                    <tr style={{ background: '#555555', color: '#ffffff' }}>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Recruiter Name</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Candidates Sourced</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Submissions</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Interviews</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Offers</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Placed</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Margin Generated</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Avg Sourcing Speed</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {mockRecruiterPerformance.map((p, idx) => (
-                      <tr key={p.recruiter} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#1e3a8a' }}>{p.recruiter}</td>
-                        <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>{p.sourced}</td>
-                        <td style={{ padding: '6px 8px', color: '#0284c7', fontWeight: 'bold' }}>{p.submitted}</td>
-                        <td style={{ padding: '6px 8px', color: '#7c3aed', fontWeight: 'bold' }}>{p.interviews}</td>
-                        <td style={{ padding: '6px 8px', color: '#ea580c', fontWeight: 'bold' }}>{p.offers}</td>
-                        <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold' }}>{p.placed}</td>
-                        <td style={{ padding: '6px 8px', color: '#15803d', fontWeight: 'bold' }}>{p.margin}</td>
-                        <td style={{ padding: '6px 8px', color: '#475569' }}>{p.avgSubmissionTime}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {filteredResumesAdded.map((row, idx) => (
+                        <tr key={idx} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ padding: '6px 8px' }}>{row.date}</td>
+                          <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>{row.recruiter}</td>
+                          <td style={{ padding: '6px 8px' }}>{row.total}</td>
+                          <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold' }}>{row.newCount}</td>
+                          <td style={{ padding: '6px 8px', color: '#0284c7', fontWeight: 'bold' }}>{row.poolCount}</td>
+                          <td style={{ padding: '6px 8px' }}>
+                            <span onClick={() => setDetailsModalData(row)} style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline', fontWeight: 'bold' }}>
+                              Details
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
 
           </div>
 
         </div>
+
+        {/* ═══════════ RESUME DETAILS POPUP / MODAL ═══════════ */}
+        {detailsModalData && (
+          <div style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+          }}>
+            <div style={{ background: '#ffffff', borderRadius: '6px', maxWidth: '680px', width: '100%', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2)', overflow: 'hidden' }}>
+              <div style={{ background: '#1e3a8a', color: '#ffffff', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '13px', fontWeight: 'bold' }}>
+                  Candidate Breakdown - {detailsModalData.recruiter} ({detailsModalData.date})
+                </span>
+                <span style={{ cursor: 'pointer', fontSize: '16px', fontWeight: 'bold' }} onClick={() => setDetailsModalData(null)}>✕</span>
+              </div>
+
+              <div style={{ padding: '16px', maxHeight: '420px', overflowY: 'auto', fontSize: '11.5px' }}>
+                <div style={{ display: 'flex', gap: '16px', background: '#eff6ff', padding: '8px 12px', borderRadius: '4px', marginBottom: '14px' }}>
+                  <div><strong>Total Submitted:</strong> <span style={{ color: '#1e3a8a' }}>{detailsModalData.total}</span></div>
+                  <div><strong>New Resumes:</strong> <span style={{ color: '#16a34a', fontWeight: 'bold' }}>{detailsModalData.newCount}</span></div>
+                  <div><strong>Existing / SW Pool:</strong> <span style={{ color: '#0284c7', fontWeight: 'bold' }}>{detailsModalData.poolCount}</span></div>
+                </div>
+
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: '#e2e8f0', color: '#0f172a' }}>
+                      <th style={{ padding: '6px 8px' }}>Candidate Name</th>
+                      <th style={{ padding: '6px 8px' }}>Role</th>
+                      <th style={{ padding: '6px 8px' }}>Source Type</th>
+                      <th style={{ padding: '6px 8px' }}>Req #</th>
+                      <th style={{ padding: '6px 8px' }}>Client</th>
+                      <th style={{ padding: '6px 8px' }}>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detailsModalData.candidates && detailsModalData.candidates.map((c, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{c.name}</td>
+                        <td style={{ padding: '6px 8px' }}>{c.role}</td>
+                        <td style={{ padding: '6px 8px' }}>
+                          <span style={{
+                            padding: '1px 5px', borderRadius: '3px', fontSize: '10px', fontWeight: 'bold',
+                            background: c.type === 'NEW' ? '#dcfce7' : '#e0e7ff',
+                            color: c.type === 'NEW' ? '#166534' : '#3730a3'
+                          }}>
+                            {c.type}
+                          </span>
+                        </td>
+                        <td style={{ padding: '6px 8px' }}>{c.reqId}</td>
+                        <td style={{ padding: '6px 8px' }}>{c.client}</td>
+                        <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold' }}>{c.status}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div style={{ background: '#f8fafc', borderTop: '1px solid #e2e8f0', padding: '8px 16px', display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={() => setDetailsModalData(null)}
+                  style={{ background: '#e2e8f0', border: '1px solid #94a3b8', padding: '4px 14px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '2px' }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ═══════════ ORANGE FOOTER ═══════════ */}
         <footer style={{ background: '#ea580c', borderTop: '2px solid #c2410c', color: '#ffffff', textAlign: 'center', padding: '10px', marginTop: '40px', fontSize: '11px', fontWeight: 'bold' }}>
