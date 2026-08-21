@@ -4,6 +4,22 @@ import SiteLayout from '../components/SiteLayout'
 
 // ─── MOCK DATA STORES FOR THE REPORTS ───
 
+// Exact Match Data for "SmartHire Careers / JIH Candidate Summary" (media_1787315422853.png)
+const mockSmartHireCareersCandidates = [
+  { fName: 'Simone', lName: 'Thibodeau', email: 'simone.thibodeau@quopost.com', phone: '1413345819', canId: '87603', reqId: '158916', appliedDate: '8/20/2026 9:42:17 PM', status: 'Int-SubmittedToManager', rejectReason: '', comments: 'Submitted from SmartHire Careers' },
+  { fName: 'Yadhria', lName: 'Marcos Avila', email: 'yadhiramavila@gmail.com', phone: '2522924109', canId: '87753', reqId: '158914', appliedDate: '8/20/2026 5:19:56 PM', status: 'Int-SubmittedToManager', rejectReason: '', comments: 'Submitted from SmartHire Careers' },
+  { fName: 'Abhilash Reddy', lName: 'Nayalaconda', email: 'abhilashre@gmail.com', phone: '5715295350', canId: '87749', reqId: '158937', appliedDate: '8/20/2026 3:38:39 PM', status: 'Int-SubmittedToManager', rejectReason: '', comments: 'Submitted from SmartHire Careers' },
+  { fName: 'Simone', lName: 'Thibodeau', email: 'simone.thibodeau@careerio-aa.com', phone: '1413345819', canId: '87442', reqId: '158916', appliedDate: '8/20/2026 1:25:43 PM', status: 'Int-SubmittedToManager', rejectReason: '', comments: 'Submitted from SmartHire Careers' },
+  { fName: 'William', lName: 'Floyd', email: 'generalgrant64@hotmail.com', phone: '5403925784', canId: '87744', reqId: '158914', appliedDate: '8/19/2026 10:16:14 PM', status: 'Int-SubmittedToManager', rejectReason: '', comments: 'Submitted from SmartHire Careers' },
+  { fName: 'Willie', lName: 'Black', email: 'billy.careering@gmail.com', phone: '7049993932', canId: '87740', reqId: '158902', appliedDate: '8/19/2026 4:14:03 PM', status: 'Int-SubmittedToManager', rejectReason: '', comments: 'Submitted from SmartHire Careers' },
+  { fName: 'Courtney', lName: 'Tyree', email: 'courtneytyree75@gmail.com', phone: '6786950140', canId: '87735', reqId: '158904', appliedDate: '8/18/2026 9:23:14 PM', status: 'Int-SubmittedToManager', rejectReason: '', comments: 'Submitted from SmartHire Careers' },
+  { fName: 'Sahana', lName: 'Sriram', email: 'sahanasriram853@gmail.com', phone: '7869815625', canId: '87729', reqId: '153771', appliedDate: '8/18/2026 3:39:09 PM', status: 'Int-SubmittedToManager', rejectReason: '', comments: 'Submitted from SmartHire Careers' },
+  { fName: 'Anand', lName: 'Upadhyay', email: 'Aupadhyay5@Outlook.com', phone: '4403649547', canId: '87724', reqId: '158879', appliedDate: '8/18/2026 9:25:21 AM', status: 'Int-SubmittedToManager', rejectReason: '', comments: 'Submitted from SmartHire Careers' },
+  { fName: 'Sunil Kamal', lName: 'Ahuja', email: 'sunilkamalahuja@quopost.com', phone: '4256155231', canId: '87475', reqId: '158873', appliedDate: '8/18/2026 2:43:43 AM', status: 'Int-SubmittedToManager', rejectReason: '', comments: 'Submitted from SmartHire Careers' },
+  { fName: 'Sunil', lName: 'Ahuja', email: 'sunil.kamal.ahuja@careerio-aa.com', phone: '4256155231', canId: '87444', reqId: '158873', appliedDate: '8/18/2026 12:08:42 AM', status: 'Int-SubmittedToManager', rejectReason: '', comments: 'Submitted from SmartHire Careers' },
+  { fName: 'Kaylar', lName: 'Allen', email: 'Allenkaylar36@gmail.com', phone: '6785291598', canId: '87714', reqId: '158904', appliedDate: '8/16/2026 9:25:37 AM', status: 'Int-SubmittedToManager', rejectReason: '', comments: 'Submitted from SmartHire Careers' }
+]
+
 // Exact Match Data for "Resumes Added" (media_1787315254728.png)
 const mockResumesAddedRows = [
   {
@@ -253,12 +269,12 @@ function Reports() {
       id: 'summary',
       name: 'Summary',
       items: [
+        { id: 'smarthire-careers-summary', label: 'SmartHire Careers Candidate Summary' },
         { id: 'resumes-added', label: 'Resumes Added (New vs Old)' },
         { id: 'submission-summary', label: 'Submission Summary' },
         { id: 'submission-details', label: 'Submission Details' },
         { id: 'daily-submission-summary', label: 'Daily Submission Summary' },
         { id: 'recruiters-performance', label: 'Recruiters performance summary' },
-        { id: 'jih-candidate-summary', label: 'JIH Candidate Summary' },
         { id: 'candidate-by-hrai', label: 'Candidate By HRAI' }
       ]
     },
@@ -289,14 +305,14 @@ function Reports() {
     }
   ]
 
-  // Active Category & Sub-Report State (Defaults to Resumes Added)
+  // Active Category & Sub-Report State (Defaults to SmartHire Careers Candidate Summary)
   const [activeCategory, setActiveCategory] = useState('summary')
-  const [activeSubReport, setActiveSubReport] = useState('resumes-added')
+  const [activeSubReport, setActiveSubReport] = useState('smarthire-careers-summary')
   const [hoverCategory, setHoverCategory] = useState(null)
 
-  // Filters State (Exact match to media_1787315254728.png & media_1787314976453.png)
-  const [startDate, setStartDate] = useState('8/1/2026')
-  const [endDate, setEndDate] = useState('8/31/2026')
+  // Filters State
+  const [startDate, setStartDate] = useState('7/1/2026 8:29:04 AM')
+  const [endDate, setEndDate] = useState('8/21/2026 8:29:04 AM')
   const [selectedOffice, setSelectedOffice] = useState('All')
   const [selectedRecruiter, setSelectedRecruiter] = useState('All')
   const [searchTerm, setSearchTerm] = useState('')
@@ -313,6 +329,18 @@ function Reports() {
     setHoverCategory(null)
     setReportPage(1)
   }
+
+  // Filter SmartHire Careers Candidates
+  const filteredCareersCandidates = useMemo(() => {
+    return mockSmartHireCareersCandidates.filter(c => {
+      if (searchTerm.trim()) {
+        const q = searchTerm.toLowerCase()
+        const text = `${c.fName} ${c.lName} ${c.email} ${c.phone} ${c.canId} ${c.reqId} ${c.status}`.toLowerCase()
+        if (!text.includes(q)) return false
+      }
+      return true
+    })
+  }, [searchTerm])
 
   // Filter Resumes Added Rows
   const filteredResumesAdded = useMemo(() => {
@@ -352,7 +380,14 @@ function Reports() {
     let headers = []
     let rows = []
 
-    if (activeSubReport === 'resumes-added') {
+    if (activeSubReport === 'smarthire-careers-summary') {
+      headers = ['FNAME', 'LNAME', 'EMAIL', 'Phone No', 'Can ID', 'Req ID', 'Applied Date', 'Submission Status', 'Reject Reason', 'Comments']
+      filteredCareersCandidates.forEach(c => {
+        rows.push([
+          `"${c.fName}"`, `"${c.lName}"`, `"${c.email}"`, `"${c.phone}"`, c.canId, c.reqId, `"${c.appliedDate}"`, `"${c.status}"`, `"${c.rejectReason}"`, `"${c.comments}"`
+        ])
+      })
+    } else if (activeSubReport === 'resumes-added') {
       headers = ['Submission Date', 'Recruiter Name', 'Resumes Submitted', 'New', 'SW Pool', 'Not Performed', 'Submitted To Client']
       filteredResumesAdded.forEach(r => {
         rows.push([
@@ -369,9 +404,9 @@ function Reports() {
         })
       })
     } else {
-      headers = ['Date', 'Recruiter', 'Total Submissions']
-      filteredResumesAdded.forEach(r => {
-        rows.push([r.date, `"${r.recruiter}"`, r.total])
+      headers = ['Candidate ID', 'Applied Date', 'Submission Status']
+      filteredCareersCandidates.forEach(c => {
+        rows.push([c.canId, c.appliedDate, c.status])
       })
     }
 
@@ -397,7 +432,7 @@ function Reports() {
           </div>
         </div>
 
-        {/* ═══════════ BLUE 4-TAB NAVIGATION BAR (EXACT TO SCREENSHOTS) ═══════════ */}
+        {/* ═══════════ BLUE 4-TAB NAVIGATION BAR ═══════════ */}
         <div style={{ background: '#739bbd', borderBottom: '1px solid #557b9d', position: 'relative', zIndex: 100 }}>
           <div className="container-wide" style={{ display: 'flex', alignItems: 'stretch', padding: '0 16px' }}>
             {reportCategories.map(cat => {
@@ -440,7 +475,7 @@ function Reports() {
                       position: 'absolute',
                       top: '100%',
                       left: 0,
-                      minWidth: '240px',
+                      minWidth: '270px',
                       background: '#8ba8c4',
                       border: '1px solid #668cae',
                       boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
@@ -480,85 +515,70 @@ function Reports() {
           </div>
         </div>
 
-        {/* ═══════════ MAIN REPORT VIEWER (EXACT MATCH TO MEDIA_1787315254728.PNG) ═══════════ */}
+        {/* ═══════════ MAIN REPORT VIEWER (EXACT MATCH TO SCREENSHOTS) ═══════════ */}
         <div style={{ padding: '0 16px', maxWidth: '100%', margin: '0 auto' }}>
           
-          {/* Top Filter Controls Area (2x2 Grid + View Report) */}
+          {/* Top Filter Controls Area */}
           <div style={{
             background: '#e9edf1', border: '1px solid #cbd5e1', borderTop: 'none', padding: '12px 18px',
-            display: 'grid', gridTemplateColumns: '1fr auto', gap: '8px 24px', alignItems: 'center', fontSize: '11.5px'
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', fontSize: '11.5px'
           }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 30px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
               
-              {/* Row 1: Start Date & End Date */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ color: '#1e3a8a', fontWeight: 'bold', width: '70px' }}>Start Date</span>
-                <div style={{ display: 'flex', alignItems: 'center', background: '#ffffff', border: '1px solid #94a3b8', borderRadius: '2px', padding: '1px 4px', width: '140px' }}>
+              {/* Start Date */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Start Date</span>
+                <div style={{ display: 'flex', alignItems: 'center', background: '#ffffff', border: '1px solid #94a3b8', borderRadius: '2px', padding: '2px 6px' }}>
                   <input
                     type="text"
                     value={startDate}
                     onChange={e => setStartDate(e.target.value)}
-                    style={{ border: 'none', outline: 'none', fontSize: '11px', width: '100%' }}
+                    style={{ border: 'none', outline: 'none', fontSize: '11px', width: '150px' }}
                   />
                   <span style={{ cursor: 'pointer', fontSize: '12px' }}>📅</span>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ color: '#1e3a8a', fontWeight: 'bold', width: '70px' }}>End Date</span>
-                <div style={{ display: 'flex', alignItems: 'center', background: '#ffffff', border: '1px solid #94a3b8', borderRadius: '2px', padding: '1px 4px', width: '140px' }}>
+              {/* End Date */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ color: '#1e3a8a', fontWeight: 'bold' }}>End Date</span>
+                <div style={{ display: 'flex', alignItems: 'center', background: '#ffffff', border: '1px solid #94a3b8', borderRadius: '2px', padding: '2px 6px' }}>
                   <input
                     type="text"
                     value={endDate}
                     onChange={e => setEndDate(e.target.value)}
-                    style={{ border: 'none', outline: 'none', fontSize: '11px', width: '100%' }}
+                    style={{ border: 'none', outline: 'none', fontSize: '11px', width: '150px' }}
                   />
                   <span style={{ cursor: 'pointer', fontSize: '12px' }}>📅</span>
                 </div>
               </div>
 
-              {/* Row 2: Office & Recruiter */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ color: '#1e3a8a', fontWeight: 'bold', width: '70px' }}>Office</span>
-                <select
-                  value={selectedOffice}
-                  onChange={e => setSelectedOffice(e.target.value)}
-                  style={{ padding: '2px 8px', fontSize: '11px', border: '1px solid #94a3b8', background: '#ffffff', width: '140px' }}
-                >
-                  <option value="All">All</option>
-                  <option value="Columbia">Columbia</option>
-                  <option value="Richmond">Richmond</option>
-                  <option value="Austin">Austin</option>
-                  <option value="Louisville">Louisville</option>
-                  <option value="Atlanta">Atlanta</option>
-                </select>
-              </div>
+              {/* Office & Recruiter (when in Resumes Added view) */}
+              {activeSubReport === 'resumes-added' && (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Office</span>
+                    <select value={selectedOffice} onChange={e => setSelectedOffice(e.target.value)} style={{ padding: '2px 6px', fontSize: '11px', border: '1px solid #94a3b8' }}>
+                      <option value="All">All</option>
+                      <option value="Columbia">Columbia</option>
+                      <option value="Richmond">Richmond</option>
+                      <option value="Austin">Austin</option>
+                    </select>
+                  </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ color: '#1e3a8a', fontWeight: 'bold', width: '70px' }}>Recruiter</span>
-                <select
-                  value={selectedRecruiter}
-                  onChange={e => setSelectedRecruiter(e.target.value)}
-                  style={{ padding: '2px 8px', fontSize: '11px', border: '1px solid #94a3b8', background: '#ffffff', width: '140px' }}
-                >
-                  <option value="All">All</option>
-                  <option value="Ajay Arya">Ajay Arya</option>
-                  <option value="Ashwath S">Ashwath S</option>
-                  <option value="Bhanu Raman Budithi">Bhanu Raman Budithi</option>
-                  <option value="Charan Teja Pappu">Charan Teja Pappu</option>
-                  <option value="JIH Resumes">JIH Resumes</option>
-                  <option value="Kamlesh SmartHire">Kamlesh SmartHire</option>
-                  <option value="Krishnendu Jana">Krishnendu Jana</option>
-                  <option value="Manikanta Siripalli">Manikanta Siripalli</option>
-                  <option value="Naveen Korimelli">Naveen Korimelli</option>
-                  <option value="Nishant Kathane">Nishant Kathane</option>
-                  <option value="Omkesh Manjute">Omkesh Manjute</option>
-                  <option value="Pankaj Maharwade">Pankaj Maharwade</option>
-                  <option value="Prudhvi Sevveti">Prudhvi Sevveti</option>
-                  <option value="Sukamal Chatterjee">Sukamal Chatterjee</option>
-                  <option value="Vaibhav Bisen">Vaibhav Bisen</option>
-                </select>
-              </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Recruiter</span>
+                    <select value={selectedRecruiter} onChange={e => setSelectedRecruiter(e.target.value)} style={{ padding: '2px 6px', fontSize: '11px', border: '1px solid #94a3b8' }}>
+                      <option value="All">All</option>
+                      <option value="Ajay Arya">Ajay Arya</option>
+                      <option value="Ashwath S">Ashwath S</option>
+                      <option value="Omkesh Manjute">Omkesh Manjute</option>
+                      <option value="Sukamal Chatterjee">Sukamal Chatterjee</option>
+                      <option value="Vaibhav Bisen">Vaibhav Bisen</option>
+                    </select>
+                  </div>
+                </>
+              )}
 
             </div>
 
@@ -566,7 +586,7 @@ function Reports() {
             <div>
               <button
                 type="button"
-                onClick={() => alert(`Report refreshed for date range ${startDate} - ${endDate}, Office: ${selectedOffice}, Recruiter: ${selectedRecruiter}`)}
+                onClick={() => alert(`Report refreshed for date range ${startDate} to ${endDate}`)}
                 style={{
                   background: '#f1f5f9', border: '1px solid #94a3b8', padding: '5px 18px',
                   fontSize: '11.5px', fontWeight: 'bold', color: '#0f172a', cursor: 'pointer',
@@ -578,7 +598,7 @@ function Reports() {
             </div>
           </div>
 
-          {/* ═══════════ SSRS / CRYSTAL REPORTS TOOLBAR (EXACT MATCH) ═══════════ */}
+          {/* ═══════════ SSRS / CRYSTAL REPORTS TOOLBAR ═══════════ */}
           <div style={{
             background: '#e9ebd4', border: '1px solid #cbd5e1', borderTop: 'none', padding: '4px 14px',
             display: 'flex', alignItems: 'center', gap: '14px', fontSize: '11.5px', color: '#334155'
@@ -613,8 +633,8 @@ function Reports() {
                 type="text"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                placeholder="Search..."
-                style={{ padding: '1px 6px', fontSize: '11px', border: '1px solid #94a3b8', width: '90px', background: '#ffffff' }}
+                placeholder="Search candidates, req#, email..."
+                style={{ padding: '1px 6px', fontSize: '11px', border: '1px solid #94a3b8', width: '140px', background: '#ffffff' }}
               />
               <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline', fontSize: '11px' }} onClick={() => {}}>
                 Find | Next
@@ -638,7 +658,61 @@ function Reports() {
           {/* ═══════════ REPORT CONTENT CANVAS ═══════════ */}
           <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderTop: 'none', padding: '16px 20px', minHeight: '520px' }}>
             
-            {/* ─── 1. REPORT: RESUMES ADDED (EXACT MATCH TO MEDIA_1787315254728.PNG) ─── */}
+            {/* ─── 1. REPORT: SMARTHIRE CAREERS CANDIDATE SUMMARY (EXACT MATCH TO MEDIA_1787315422853.PNG) ─── */}
+            {activeSubReport === 'smarthire-careers-summary' && (
+              <div style={{ border: '1px solid #000000', padding: '12px', background: '#ffffff' }}>
+                
+                <h2 style={{ margin: '0 0 10px', fontSize: '20px', color: '#000000', fontWeight: 'bold', fontFamily: 'Georgia, serif' }}>
+                  SmartHire Careers Candidate Summary
+                </h2>
+
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', border: '1px solid #000000' }}>
+                    <thead>
+                      <tr style={{ background: '#ffffff', color: '#000000', borderBottom: '1px solid #000000' }}>
+                        <th style={{ padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid #000000', width: '85px' }}>FNAME</th>
+                        <th style={{ padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid #000000', width: '90px' }}>LNAME</th>
+                        <th style={{ padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid #000000' }}>EMAIL</th>
+                        <th style={{ padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid #000000', width: '85px' }}>Phone No</th>
+                        <th style={{ padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid #000000', width: '55px', textAlign: 'center' }}>Can ID</th>
+                        <th style={{ padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid #000000', width: '55px', textAlign: 'center' }}>Req ID</th>
+                        <th style={{ padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid #000000', width: '130px', textAlign: 'center' }}>Applied Date</th>
+                        <th style={{ padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid #000000', width: '135px' }}>Submission Status</th>
+                        <th style={{ padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid #000000', width: '85px' }}>Reject Reason</th>
+                        <th style={{ padding: '5px 8px', fontWeight: 'bold' }}>Comments</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredCareersCandidates.length === 0 ? (
+                        <tr>
+                          <td colSpan="10" style={{ padding: '30px', textAlign: 'center', color: '#64748b' }}>
+                            No candidate applications found from SmartHire Careers matching your search.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredCareersCandidates.map((c, idx) => (
+                          <tr key={`${c.canId}-${c.reqId}-${idx}`} style={{ borderBottom: '1px solid #000000', background: '#ffffff' }}>
+                            <td style={{ padding: '5px 8px', borderRight: '1px solid #000000' }}>{c.fName}</td>
+                            <td style={{ padding: '5px 8px', borderRight: '1px solid #000000' }}>{c.lName}</td>
+                            <td style={{ padding: '5px 8px', borderRight: '1px solid #000000', color: '#0066cc', wordBreak: 'break-all' }}>{c.email}</td>
+                            <td style={{ padding: '5px 8px', borderRight: '1px solid #000000' }}>{c.phone}</td>
+                            <td style={{ padding: '5px 8px', borderRight: '1px solid #000000', textAlign: 'center' }}>{c.canId}</td>
+                            <td style={{ padding: '5px 8px', borderRight: '1px solid #000000', textAlign: 'center', fontWeight: 'bold', color: '#0066cc' }}>{c.reqId}</td>
+                            <td style={{ padding: '5px 8px', borderRight: '1px solid #000000', textAlign: 'center', fontSize: '10.5px' }}>{c.appliedDate}</td>
+                            <td style={{ padding: '5px 8px', borderRight: '1px solid #000000' }}>{c.status}</td>
+                            <td style={{ padding: '5px 8px', borderRight: '1px solid #000000' }}>{c.rejectReason}</td>
+                            <td style={{ padding: '5px 8px', color: '#334155' }}>{c.comments}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+              </div>
+            )}
+
+            {/* ─── 2. REPORT: RESUMES ADDED (MATCHING MEDIA_1787315254728.PNG) ─── */}
             {activeSubReport === 'resumes-added' && (
               <div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '18px', marginBottom: '12px' }}>
@@ -665,47 +739,39 @@ function Reports() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredResumesAdded.length === 0 ? (
-                        <tr>
-                          <td colSpan="8" style={{ padding: '30px', textAlign: 'center', color: '#64748b' }}>
-                            No resume activity found for the selected recruiter and date range.
+                      {filteredResumesAdded.map((row, idx) => (
+                        <tr key={`${row.date}-${row.recruiter}-${idx}`} style={{
+                          background: idx % 2 === 0 ? '#ffffff' : '#f8fafc',
+                          borderBottom: '1px solid #e2e8f0'
+                        }}>
+                          <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', color: '#0f172a' }}>{row.date}</td>
+                          <td style={{ padding: '5px 12px', borderRight: '1px solid #cbd5e1', color: '#0f172a' }}>{row.recruiter}</td>
+                          <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', color: '#0f172a' }}>{row.total}</td>
+                          <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: row.newCount > 0 ? '#16a34a' : '#0f172a', background: row.newCount > 0 ? '#f0fdf4' : 'transparent' }}>
+                            {row.newCount}
+                          </td>
+                          <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: row.poolCount > 0 ? '#0284c7' : '#0f172a', background: row.poolCount > 0 ? '#eff6ff' : 'transparent' }}>
+                            {row.poolCount}
+                          </td>
+                          <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', color: '#0f172a' }}>{row.notPerf}</td>
+                          <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', color: '#0f172a' }}>{row.submittedClient}</td>
+                          <td style={{ padding: '5px 8px', textAlign: 'center' }}>
+                            <span
+                              onClick={() => setDetailsModalData(row)}
+                              style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline', fontWeight: 'bold' }}
+                            >
+                              Details
+                            </span>
                           </td>
                         </tr>
-                      ) : (
-                        filteredResumesAdded.map((row, idx) => (
-                          <tr key={`${row.date}-${row.recruiter}-${idx}`} style={{
-                            background: idx % 2 === 0 ? '#ffffff' : '#f8fafc',
-                            borderBottom: '1px solid #e2e8f0'
-                          }}>
-                            <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', color: '#0f172a' }}>{row.date}</td>
-                            <td style={{ padding: '5px 12px', borderRight: '1px solid #cbd5e1', color: '#0f172a', fontWeight: 'normal' }}>{row.recruiter}</td>
-                            <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', color: '#0f172a' }}>{row.total}</td>
-                            <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: row.newCount > 0 ? '#16a34a' : '#0f172a', background: row.newCount > 0 ? '#f0fdf4' : 'transparent' }}>
-                              {row.newCount}
-                            </td>
-                            <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: row.poolCount > 0 ? '#0284c7' : '#0f172a', background: row.poolCount > 0 ? '#eff6ff' : 'transparent' }}>
-                              {row.poolCount}
-                            </td>
-                            <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', color: '#0f172a' }}>{row.notPerf}</td>
-                            <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', color: '#0f172a' }}>{row.submittedClient}</td>
-                            <td style={{ padding: '5px 8px', textAlign: 'center' }}>
-                              <span
-                                onClick={() => setDetailsModalData(row)}
-                                style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline', fontWeight: 'bold' }}
-                              >
-                                Details
-                              </span>
-                            </td>
-                          </tr>
-                        ))
-                      )}
+                      ))}
                     </tbody>
                   </table>
                 </div>
               </div>
             )}
 
-            {/* ─── 2. REPORT: SUBMISSION SUMMARY (MATCHING MEDIA_1787314976453.PNG) ─── */}
+            {/* ─── 3. REPORT: SUBMISSION SUMMARY (MATCHING MEDIA_1787314976453.PNG) ─── */}
             {activeSubReport === 'submission-summary' && (
               <div>
                 <h3 style={{ margin: '0 0 14px', fontSize: '13px', color: '#0f172a', fontWeight: 'bold' }}>
@@ -744,45 +810,6 @@ function Reports() {
                             </tr>
                           ))}
                         </React.Fragment>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* ─── OTHER SUB-REPORTS (SUBMISSION DETAILS, ETC.) ─── */}
-            {activeSubReport !== 'resumes-added' && activeSubReport !== 'submission-summary' && (
-              <div>
-                <h3 style={{ margin: '0 0 14px', fontSize: '13px', color: '#0f172a', fontWeight: 'bold' }}>
-                  {activeSubReport.replace(/-/g, ' ').toUpperCase()}
-                </h3>
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', border: '1px solid #cbd5e1' }}>
-                    <thead>
-                      <tr style={{ background: '#555555', color: '#ffffff' }}>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Date</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Recruiter</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Resumes Submitted</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>New</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>CW/Pool</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredResumesAdded.map((row, idx) => (
-                        <tr key={idx} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                          <td style={{ padding: '6px 8px' }}>{row.date}</td>
-                          <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>{row.recruiter}</td>
-                          <td style={{ padding: '6px 8px' }}>{row.total}</td>
-                          <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold' }}>{row.newCount}</td>
-                          <td style={{ padding: '6px 8px', color: '#0284c7', fontWeight: 'bold' }}>{row.poolCount}</td>
-                          <td style={{ padding: '6px 8px' }}>
-                            <span onClick={() => setDetailsModalData(row)} style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline', fontWeight: 'bold' }}>
-                              Details
-                            </span>
-                          </td>
-                        </tr>
                       ))}
                     </tbody>
                   </table>
