@@ -4,6 +4,98 @@ import SiteLayout from '../components/SiteLayout'
 
 // ─── MOCK DATA STORES FOR THE 13 REPORTS ───
 
+// Exact Match Data for "Report of Candidates submitted by a recruiter for a given period" (media_1787314976453.png)
+const mockSubmissionSummaryGrouped = [
+  {
+    submissionDate: '07-01-2026',
+    assignedDate: '',
+    recruiters: [
+      { name: 'Raj Barve', reqs: '', total: 2 },
+      { name: 'Sukamal Chatterjee', reqs: '', total: 2 },
+      { name: 'Pankaj Maharwade', reqs: '', total: 1 },
+      { name: 'JIH Resumes', reqs: '', total: 2 },
+      { name: 'Ajay Arya', reqs: '', total: 4 },
+      { name: 'Vaibhav Bisen', reqs: '', total: 1 },
+      { name: 'Prudhvi Sevveti', reqs: '', total: 1 }
+    ]
+  },
+  {
+    submissionDate: '07-02-2026',
+    assignedDate: '',
+    recruiters: [
+      { name: 'Vaibhav Bisen', reqs: '', total: 1 },
+      { name: 'JIH Resumes', reqs: '', total: 2 },
+      { name: 'Nishant Kathane', reqs: '', total: 1 },
+      { name: 'Prudhvi Sevveti', reqs: '', total: 1 },
+      { name: 'Omkesh Manjute', reqs: '', total: 1 },
+      { name: 'Naveen Korimelli', reqs: '', total: 2 }
+    ]
+  },
+  {
+    submissionDate: '07-03-2026',
+    assignedDate: '',
+    recruiters: [
+      { name: 'JIH Resumes', reqs: '', total: 1 }
+    ]
+  },
+  {
+    submissionDate: '07-05-2026',
+    assignedDate: '',
+    recruiters: [
+      { name: 'JIH Resumes', reqs: '', total: 1 }
+    ]
+  },
+  {
+    submissionDate: '07-06-2026',
+    assignedDate: '',
+    recruiters: [
+      { name: 'Raj Barve', reqs: '', total: 4 },
+      { name: 'Omkesh Manjute', reqs: '', total: 1 },
+      { name: 'Naveen Korimelli', reqs: '', total: 1 },
+      { name: 'Sukamal Chatterjee', reqs: '', total: 4 },
+      { name: 'Nishant Kathane', reqs: '', total: 1 }
+    ]
+  },
+  {
+    submissionDate: '07-07-2026',
+    assignedDate: '',
+    recruiters: [
+      { name: 'Ajay Arya', reqs: '', total: 2 },
+      { name: 'Vaibhav Bisen', reqs: '', total: 3 },
+      { name: 'Prudhvi Sevveti', reqs: '', total: 2 },
+      { name: 'JIH Resumes', reqs: '', total: 1 }
+    ]
+  },
+  {
+    submissionDate: '07-08-2026',
+    assignedDate: '',
+    recruiters: [
+      { name: 'Raj Barve', reqs: '', total: 3 },
+      { name: 'Omkesh Manjute', reqs: '', total: 2 },
+      { name: 'Sukamal Chatterjee', reqs: '', total: 3 },
+      { name: 'Pankaj Maharwade', reqs: '', total: 2 }
+    ]
+  },
+  {
+    submissionDate: '07-09-2026',
+    assignedDate: '',
+    recruiters: [
+      { name: 'Vaibhav Bisen', reqs: '', total: 2 },
+      { name: 'Naveen Korimelli', reqs: '', total: 3 },
+      { name: 'JIH Resumes', reqs: '', total: 2 }
+    ]
+  },
+  {
+    submissionDate: '07-10-2026',
+    assignedDate: '',
+    recruiters: [
+      { name: 'Ajay Arya', reqs: '', total: 3 },
+      { name: 'Omkesh Manjute', reqs: '', total: 4 },
+      { name: 'Sukamal Chatterjee', reqs: '', total: 2 }
+    ]
+  }
+]
+
 const mockSubmissionDetails = [
   { id: 'SUB-101', reqId: '158938', title: 'Project Manager - Consultant', client: 'State Of SC', candidateName: 'Ashok Ganta', recruiter: 'Omkesh Manjute', payRate: '$74/hr', billRate: '$90/hr', rateType: 'C2C', subVendor: 'Talent9 Inc', submitDate: '2026-08-20', status: 'Int-SubmittedToManager', comments: 'Strong SC government delivery background' },
   { id: 'SUB-102', reqId: '158938', title: 'Project Manager - Consultant', client: 'State Of SC', candidateName: 'Kashyap K Vora', recruiter: 'Vaibhav Bisen', payRate: '$55/hr', billRate: '$90/hr', rateType: 'W2', subVendor: 'SmartHire LLC', submitDate: '2026-08-20', status: 'Int-SubmittedToManager', comments: 'PMP certified, local in Columbia' },
@@ -55,7 +147,7 @@ const mockRecruiterPerformance = [
 ]
 
 function Reports() {
-  // Navigation Menus Structure (Exact Match to User's 4 Screenshots)
+  // Navigation Menus Structure (Exact Match to User's Screenshots)
   const reportCategories = [
     {
       id: 'summary',
@@ -96,61 +188,77 @@ function Reports() {
     }
   ]
 
-  // Active Category & Sub-Report State
+  // Active Category & Sub-Report State (Defaults to Submission Summary)
   const [activeCategory, setActiveCategory] = useState('summary')
-  const [activeSubReport, setActiveSubReport] = useState('submission-details')
+  const [activeSubReport, setActiveSubReport] = useState('submission-summary')
   const [hoverCategory, setHoverCategory] = useState(null)
 
-  // Filters State
+  // Filters State (Exact match to media_1787314976453.png)
+  const [fromDate, setFromDate] = useState('7/1/2026')
+  const [toDate, setToDate] = useState('8/21/2026')
+  const [selectedRecruiter, setSelectedRecruiter] = useState('ALL')
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedRecruiter, setSelectedRecruiter] = useState('All')
-  const [selectedClient, setSelectedClient] = useState('All')
-  const [selectedStatus, setSelectedStatus] = useState('All')
-  const [startDate, setStartDate] = useState('2026-08-01')
-  const [endDate, setEndDate] = useState('2026-08-31')
-
-  // Pagination State
-  const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize, setPageSize] = useState(25)
+  const [reportPage, setReportPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(2)
 
   // Switch Sub-report
   const handleSelectReport = (catId, subId) => {
     setActiveCategory(catId)
     setActiveSubReport(subId)
     setHoverCategory(null)
-    setCurrentPage(1)
+    setReportPage(1)
   }
+
+  // Filter grouped submissions by recruiter
+  const filteredSummaryGroups = useMemo(() => {
+    return mockSubmissionSummaryGrouped.map(group => {
+      let filteredRecs = group.recruiters
+      if (selectedRecruiter !== 'ALL') {
+        filteredRecs = group.recruiters.filter(r => r.name.toLowerCase().includes(selectedRecruiter.toLowerCase()))
+      }
+      if (searchTerm.trim()) {
+        const q = searchTerm.toLowerCase()
+        filteredRecs = filteredRecs.filter(r => r.name.toLowerCase().includes(q) || group.submissionDate.includes(q))
+      }
+      return {
+        ...group,
+        recruiters: filteredRecs
+      }
+    }).filter(group => group.recruiters.length > 0)
+  }, [selectedRecruiter, searchTerm])
 
   // Export to CSV / Excel
   const handleExportToExcel = () => {
     let headers = []
     let rows = []
 
-    if (activeSubReport === 'submission-details' || activeSubReport === 'submission-summary' || activeSubReport === 'daily-submission-summary' || activeSubReport === 'resumes-submitted') {
+    if (activeSubReport === 'submission-summary') {
+      headers = ['Assigned Date', 'Submission Date', 'Name', '# of Reqs', 'Total Submissions']
+      filteredSummaryGroups.forEach(group => {
+        group.recruiters.forEach(r => {
+          rows.push([
+            group.assignedDate,
+            group.submissionDate,
+            `"${r.name}"`,
+            r.reqs,
+            r.total
+          ])
+        })
+      })
+    } else if (activeSubReport === 'submission-details') {
       headers = ['ID', 'Req #', 'Job Title', 'Client', 'Candidate Name', 'Recruiter', 'Pay Rate', 'Bill Rate', 'Rate Type', 'Sub Vendor', 'Submit Date', 'Status', 'Comments']
-      rows = filteredSubmissions.map(s => [
-        s.id, s.reqId, `"${s.title}"`, `"${s.client}"`, `"${s.candidateName}"`, `"${s.recruiter}"`, `"${s.payRate}"`, `"${s.billRate}"`, s.rateType, `"${s.subVendor}"`, s.submitDate, `"${s.status}"`, `"${s.comments}"`
-      ])
-    } else if (activeSubReport.startsWith('interview')) {
-      headers = ['Interview ID', 'Req #', 'Job Title', 'Client', 'Candidate Name', 'Recruiter', 'Interview Date', 'Interview Time', 'Round', 'Client Start Date', 'Status', 'Feedback']
-      rows = filteredInterviews.map(i => [
-        i.id, i.reqId, `"${i.title}"`, `"${i.client}"`, `"${i.candidateName}"`, `"${i.recruiter}"`, i.interviewDate, i.interviewTime, `"${i.round}"`, i.clientStartDate, `"${i.status}"`, `"${i.feedback}"`
-      ])
-    } else if (activeSubReport === 'requisition-status') {
-      headers = ['Req #', 'Position Title', 'Client', 'Category', 'Type', 'Status', 'Submissions', 'Max Submissions', 'Assigned Recruiters', 'Creation Date', 'Deadline', 'Bill Rate', 'Pay Rate']
-      rows = filteredRequisitions.map(r => [
-        r.reqId, `"${r.title}"`, `"${r.client}"`, r.category, r.type, r.status, r.submissions, r.maxSubmissions, `"${r.assignedRecruiters}"`, r.creationDate, r.deadline, `"${r.billRate}"`, `"${r.payRate}"`
-      ])
-    } else if (activeSubReport === 'w2-candidate-added') {
-      headers = ['Candidate ID', 'Name', 'Role', 'Experience', 'Location', 'Pay Rate', 'Work Auth', 'Recruiter', 'Added Date', 'Resumes Submitted', 'Status']
-      rows = filteredW2Candidates.map(w => [
-        w.id, `"${w.name}"`, `"${w.role}"`, w.exp, `"${w.location}"`, `"${w.payRate}"`, w.workAuth, `"${w.recruiter}"`, w.addedDate, w.resumesSubmitted, `"${w.status}"`
-      ])
-    } else if (activeSubReport === 'recruiters-performance' || activeSubReport === 'performance-summary' || activeSubReport === 'performance-details') {
-      headers = ['Recruiter Name', 'Candidates Sourced', 'Submitted', 'Interviews', 'Offers', 'Placed', 'Margin Generated', 'Avg Submission Time']
-      rows = mockRecruiterPerformance.map(p => [
-        `"${p.recruiter}"`, p.sourced, p.submitted, p.interviews, p.offers, p.placed, `"${p.margin}"`, `"${p.avgSubmissionTime}"`
-      ])
+      mockSubmissionDetails.forEach(s => {
+        rows.push([
+          s.id, s.reqId, `"${s.title}"`, `"${s.client}"`, `"${s.candidateName}"`, `"${s.recruiter}"`, `"${s.payRate}"`, `"${s.billRate}"`, s.rateType, `"${s.subVendor}"`, s.submitDate, `"${s.status}"`, `"${s.comments}"`
+        ])
+      })
+    } else {
+      headers = ['Submission Date', 'Name', 'Total Submissions']
+      filteredSummaryGroups.forEach(group => {
+        group.recruiters.forEach(r => {
+          rows.push([group.submissionDate, `"${r.name}"`, r.total])
+        })
+      })
     }
 
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n')
@@ -162,63 +270,6 @@ function Reports() {
     link.click()
     document.body.removeChild(link)
   }
-
-  // Filter Submissions
-  const filteredSubmissions = useMemo(() => {
-    return mockSubmissionDetails.filter(s => {
-      if (selectedRecruiter !== 'All' && s.recruiter !== selectedRecruiter) return false
-      if (selectedClient !== 'All' && s.client !== selectedClient) return false
-      if (selectedStatus !== 'All' && s.status !== selectedStatus) return false
-      if (searchTerm.trim()) {
-        const q = searchTerm.toLowerCase()
-        const text = `${s.reqId} ${s.title} ${s.candidateName} ${s.client} ${s.recruiter} ${s.subVendor}`.toLowerCase()
-        if (!text.includes(q)) return false
-      }
-      return true
-    })
-  }, [selectedRecruiter, selectedClient, selectedStatus, searchTerm])
-
-  // Filter Interviews
-  const filteredInterviews = useMemo(() => {
-    return mockInterviewSchedules.filter(i => {
-      if (selectedRecruiter !== 'All' && i.recruiter !== selectedRecruiter) return false
-      if (selectedClient !== 'All' && i.client !== selectedClient) return false
-      if (searchTerm.trim()) {
-        const q = searchTerm.toLowerCase()
-        const text = `${i.reqId} ${i.title} ${i.candidateName} ${i.client} ${i.recruiter} ${i.status}`.toLowerCase()
-        if (!text.includes(q)) return false
-      }
-      return true
-    })
-  }, [selectedRecruiter, selectedClient, searchTerm])
-
-  // Filter Requisitions
-  const filteredRequisitions = useMemo(() => {
-    return mockRequisitionStatuses.filter(r => {
-      if (selectedClient !== 'All' && r.client !== selectedClient) return false
-      if (selectedStatus !== 'All' && r.status !== selectedStatus) return false
-      if (selectedRecruiter !== 'All' && !r.assignedRecruiters.includes(selectedRecruiter)) return false
-      if (searchTerm.trim()) {
-        const q = searchTerm.toLowerCase()
-        const text = `${r.reqId} ${r.title} ${r.client} ${r.assignedRecruiters}`.toLowerCase()
-        if (!text.includes(q)) return false
-      }
-      return true
-    })
-  }, [selectedClient, selectedStatus, selectedRecruiter, searchTerm])
-
-  // Filter W2 Candidates
-  const filteredW2Candidates = useMemo(() => {
-    return mockW2Candidates.filter(w => {
-      if (selectedRecruiter !== 'All' && w.recruiter !== selectedRecruiter) return false
-      if (searchTerm.trim()) {
-        const q = searchTerm.toLowerCase()
-        const text = `${w.name} ${w.role} ${w.location} ${w.recruiter}`.toLowerCase()
-        if (!text.includes(q)) return false
-      }
-      return true
-    })
-  }, [selectedRecruiter, searchTerm])
 
   // Active Report Name Helper
   const currentReportLabel = useMemo(() => {
@@ -233,22 +284,15 @@ function Reports() {
     <SiteLayout>
       <div style={{ background: '#f1f5f9', minHeight: '92vh', paddingBottom: '40px', fontFamily: 'Arial, sans-serif' }}>
         
-        {/* ═══════════ TOP BREADCRUMB & LOGO BAR ═══════════ */}
+        {/* ═══════════ TOP BREADCRUMB ═══════════ */}
         <div style={{ background: '#ffffff', borderBottom: '1px solid #cbd5e1', padding: '6px 18px', fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1e3a8a', fontWeight: 'bold' }}>
             <span style={{ fontSize: '16px' }}>🏠</span>
             <Link to="/dashboard" style={{ color: '#0066cc', textDecoration: 'underline' }}>Home</Link>
-            <span>&gt;</span>
-            <span>Reports</span>
-            <span>&gt;</span>
-            <span style={{ color: '#ea580c' }}>{currentReportLabel}</span>
-          </div>
-          <div style={{ fontSize: '11.5px', color: '#475569', fontWeight: 'bold' }}>
-            SmartWorks Intelligence & Reporting Suite
           </div>
         </div>
 
-        {/* ═══════════ BLUE 4-TAB NAVIGATION BAR (MATCHING SCREENSHOTS) ═══════════ */}
+        {/* ═══════════ BLUE 4-TAB NAVIGATION BAR (EXACT TO SCREENSHOT) ═══════════ */}
         <div style={{ background: '#739bbd', borderBottom: '1px solid #557b9d', position: 'relative', zIndex: 100 }}>
           <div className="container-wide" style={{ display: 'flex', alignItems: 'stretch', padding: '0 16px' }}>
             {reportCategories.map(cat => {
@@ -269,7 +313,7 @@ function Reports() {
                       setActiveSubReport(cat.items[0].id)
                     }}
                     style={{
-                      padding: '8px 24px',
+                      padding: '8px 26px',
                       fontSize: '12.5px',
                       fontWeight: 'bold',
                       color: '#ffffff',
@@ -283,10 +327,9 @@ function Reports() {
                     }}
                   >
                     <span>{cat.name}</span>
-                    <span style={{ fontSize: '9px', opacity: 0.8 }}>▼</span>
                   </div>
 
-                  {/* Dropdown Menu on Hover / Active (Exact styling from screenshots) */}
+                  {/* Dropdown Menu on Hover / Active */}
                   {(isHovered || (isActiveCat && hoverCategory === null)) && (
                     <div style={{
                       position: 'absolute',
@@ -332,187 +375,237 @@ function Reports() {
           </div>
         </div>
 
-        {/* ═══════════ MAIN REPORT CONTAINER ═══════════ */}
-        <div className="container-wide" style={{ padding: '16px', maxWidth: '1360px', margin: '0 auto', marginTop: '10px' }}>
+        {/* ═══════════ MAIN REPORT VIEWER (EXACT MATCH TO MEDIA_1787314976453.PNG) ═══════════ */}
+        <div style={{ padding: '0 16px', maxWidth: '100%', margin: '0 auto' }}>
           
-          {/* Top Quick Search & Filter Panel */}
-          <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '12px 16px', marginBottom: '14px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-            
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '18px' }}>📑</span>
-                <h2 style={{ margin: 0, fontSize: '15px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                  {currentReportLabel}
-                </h2>
-              </div>
-
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  type="button"
-                  onClick={handleExportToExcel}
-                  style={{
-                    background: '#f1f5f9', border: '1px solid #94a3b8', padding: '4px 12px',
-                    fontSize: '11.5px', fontWeight: 'bold', color: '#0f172a', cursor: 'pointer',
-                    boxShadow: 'inset 0 1px 0 #ffffff, 0 1px 2px rgba(0,0,0,0.05)', borderRadius: '2px',
-                    display: 'flex', alignItems: 'center', gap: '5px'
-                  }}
-                >
-                  <span>📊</span>
-                  <span>Export to Excel</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => window.print()}
-                  style={{
-                    background: '#f1f5f9', border: '1px solid #94a3b8', padding: '4px 12px',
-                    fontSize: '11.5px', fontWeight: 'bold', color: '#0f172a', cursor: 'pointer',
-                    borderRadius: '2px', display: 'flex', alignItems: 'center', gap: '5px'
-                  }}
-                >
-                  <span>🖨️</span>
-                  <span>Print</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Filter Bar */}
-            <div style={{
-              background: '#f8fafc', border: '1px solid #e2e8f0', padding: '10px 14px', borderRadius: '3px',
-              display: 'flex', gap: '12px 18px', alignItems: 'center', flexWrap: 'wrap', fontSize: '11.5px'
-            }}>
+          {/* Top Filter Controls Bar (Light Grey Area) */}
+          <div style={{
+            background: '#e9edf1', border: '1px solid #cbd5e1', borderTop: 'none', padding: '12px 18px',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', fontSize: '11.5px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+              
+              {/* From Date */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Search:</label>
-                <input
-                  type="text"
-                  placeholder="Filter candidate, req#, keyword..."
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  style={{ padding: '3px 8px', fontSize: '11px', border: '1px solid #cbd5e1', width: '180px' }}
-                />
+                <span style={{ color: '#1e3a8a', fontWeight: 'bold' }}>From Date</span>
+                <div style={{ display: 'flex', alignItems: 'center', background: '#ffffff', border: '1px solid #94a3b8', borderRadius: '2px', padding: '1px 4px' }}>
+                  <input
+                    type="text"
+                    value={fromDate}
+                    onChange={e => setFromDate(e.target.value)}
+                    style={{ border: 'none', outline: 'none', fontSize: '11px', width: '90px' }}
+                  />
+                  <span style={{ cursor: 'pointer', fontSize: '12px' }}>📅</span>
+                </div>
               </div>
 
+              {/* To Date */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Recruiter:</label>
+                <span style={{ color: '#1e3a8a', fontWeight: 'bold' }}>To Date</span>
+                <div style={{ display: 'flex', alignItems: 'center', background: '#ffffff', border: '1px solid #94a3b8', borderRadius: '2px', padding: '1px 4px' }}>
+                  <input
+                    type="text"
+                    value={toDate}
+                    onChange={e => setToDate(e.target.value)}
+                    style={{ border: 'none', outline: 'none', fontSize: '11px', width: '90px' }}
+                  />
+                  <span style={{ cursor: 'pointer', fontSize: '12px' }}>📅</span>
+                </div>
+              </div>
+
+              {/* Select Recruiter */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Select Recruiter</span>
                 <select
                   value={selectedRecruiter}
                   onChange={e => setSelectedRecruiter(e.target.value)}
-                  style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}
+                  style={{ padding: '2px 8px', fontSize: '11px', border: '1px solid #94a3b8', background: '#ffffff', minWidth: '130px' }}
                 >
-                  <option value="All">All Recruiters</option>
-                  <option value="Omkesh Manjute">Omkesh Manjute</option>
-                  <option value="Vaibhav Bisen">Vaibhav Bisen</option>
+                  <option value="ALL">ALL</option>
+                  <option value="Raj Barve">Raj Barve</option>
                   <option value="Sukamal Chatterjee">Sukamal Chatterjee</option>
-                  <option value="Prudhvi">Prudhvi</option>
-                  <option value="Nitin Bhosale">Nitin Bhosale</option>
+                  <option value="Pankaj Maharwade">Pankaj Maharwade</option>
+                  <option value="JIH Resumes">JIH Resumes</option>
+                  <option value="Ajay Arya">Ajay Arya</option>
+                  <option value="Vaibhav Bisen">Vaibhav Bisen</option>
+                  <option value="Prudhvi Sevveti">Prudhvi Sevveti</option>
+                  <option value="Nishant Kathane">Nishant Kathane</option>
+                  <option value="Omkesh Manjute">Omkesh Manjute</option>
+                  <option value="Naveen Korimelli">Naveen Korimelli</option>
                 </select>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Client:</label>
-                <select
-                  value={selectedClient}
-                  onChange={e => setSelectedClient(e.target.value)}
-                  style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}
-                >
-                  <option value="All">All Clients</option>
-                  <option value="State Of SC">State Of SC</option>
-                  <option value="State Of VA">State Of VA</option>
-                  <option value="State of MN">State of MN</option>
-                  <option value="State of CT">State of CT</option>
-                  <option value="State of TX">State of TX</option>
-                  <option value="State of NC">State of NC</option>
-                  <option value="State of TN">State of TN</option>
-                </select>
-              </div>
+            </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Date From:</label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={e => setStartDate(e.target.value)}
-                  style={{ padding: '2px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}
-                />
-                <span style={{ color: '#1e3a8a', fontWeight: 'bold' }}>To:</span>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={e => setEndDate(e.target.value)}
-                  style={{ padding: '2px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}
-                />
-              </div>
-
+            {/* View Report Button (Far Right) */}
+            <div>
               <button
                 type="button"
-                onClick={() => { setSearchTerm(''); setSelectedRecruiter('All'); setSelectedClient('All'); setSelectedStatus('All'); }}
-                style={{ background: '#e2e8f0', border: '1px solid #94a3b8', padding: '3px 10px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                onClick={() => alert(`Report refreshed for date range ${fromDate} - ${toDate} and recruiter: ${selectedRecruiter}`)}
+                style={{
+                  background: '#f1f5f9', border: '1px solid #94a3b8', padding: '4px 16px',
+                  fontSize: '11.5px', fontWeight: 'bold', color: '#0f172a', cursor: 'pointer',
+                  boxShadow: 'inset 0 1px 0 #ffffff, 0 1px 2px rgba(0,0,0,0.1)', borderRadius: '2px'
+                }}
               >
-                Reset
+                View Report
               </button>
             </div>
-
           </div>
 
-          {/* ═══════════ KPI SUMMARY WIDGETS ═══════════ */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '14px' }}>
-            <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '12px 14px', borderLeft: '4px solid #0284c7' }}>
-              <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Total Submissions</div>
-              <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#0f172a', marginTop: '2px' }}>{mockSubmissionDetails.length}</div>
-              <div style={{ fontSize: '10.5px', color: '#0284c7', marginTop: '2px' }}>Across 8 active state agencies</div>
+          {/* ═══════════ SSRS / CRYSTAL REPORTS TOOLBAR (EXACT MATCH) ═══════════ */}
+          <div style={{
+            background: '#e9ebd4', border: '1px solid #cbd5e1', borderTop: 'none', padding: '4px 14px',
+            display: 'flex', alignItems: 'center', gap: '14px', fontSize: '11.5px', color: '#334155'
+          }}>
+            {/* Page Navigation */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ cursor: 'pointer', fontSize: '11px', color: '#475569' }} onClick={() => setReportPage(1)} title="First Page">⏮</span>
+              <span style={{ cursor: 'pointer', fontSize: '11px', color: '#475569' }} onClick={() => setReportPage(prev => Math.max(1, prev - 1))} title="Previous Page">◀</span>
+              <input
+                type="text"
+                value={reportPage}
+                onChange={e => setReportPage(parseInt(e.target.value) || 1)}
+                style={{ width: '26px', textAlign: 'center', padding: '1px', fontSize: '11px', border: '1px solid #94a3b8', background: '#ffffff' }}
+              />
+              <span style={{ fontSize: '11px' }}>of {totalPages} ?</span>
+              <span style={{ cursor: 'pointer', fontSize: '11px', color: '#475569' }} onClick={() => setReportPage(prev => Math.min(totalPages, prev + 1))} title="Next Page">▶</span>
+              <span style={{ cursor: 'pointer', fontSize: '11px', color: '#475569' }} onClick={() => setReportPage(totalPages)} title="Last Page">⏭</span>
             </div>
 
-            <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '12px 14px', borderLeft: '4px solid #16a34a' }}>
-              <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Interviews Scheduled</div>
-              <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#0f172a', marginTop: '2px' }}>{mockInterviewSchedules.length}</div>
-              <div style={{ fontSize: '10.5px', color: '#16a34a', marginTop: '2px' }}>4 upcoming this week</div>
+            <div style={{ height: '14px', width: '1px', background: '#cbd5e1' }} />
+
+            {/* Refresh */}
+            <span style={{ cursor: 'pointer', fontSize: '13px' }} onClick={() => alert('Report data reloaded!')} title="Refresh">
+              🔄
+            </span>
+
+            <div style={{ height: '14px', width: '1px', background: '#cbd5e1' }} />
+
+            {/* Search Input */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                placeholder="Search..."
+                style={{ padding: '1px 6px', fontSize: '11px', border: '1px solid #94a3b8', width: '90px', background: '#ffffff' }}
+              />
+              <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline', fontSize: '11px' }} onClick={() => {}}>
+                Find | Next
+              </span>
             </div>
 
-            <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '12px 14px', borderLeft: '4px solid #ea580c' }}>
-              <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Open Requisitions</div>
-              <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#0f172a', marginTop: '2px' }}>{mockRequisitionStatuses.filter(r => r.status === 'In-Progress').length}</div>
-              <div style={{ fontSize: '10.5px', color: '#ea580c', marginTop: '2px' }}>Ready for candidate submittals</div>
+            <div style={{ height: '14px', width: '1px', background: '#cbd5e1' }} />
+
+            {/* Export Dropdown */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }} onClick={handleExportToExcel} title="Export to Excel / CSV">
+              <span>💾</span>
+              <span style={{ fontSize: '10px' }}>▼</span>
             </div>
 
-            <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '12px 14px', borderLeft: '4px solid #7c3aed' }}>
-              <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>W2 Candidates In Pool</div>
-              <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#0f172a', marginTop: '2px' }}>{mockW2Candidates.length}</div>
-              <div style={{ fontSize: '10.5px', color: '#7c3aed', marginTop: '2px' }}>Vetted and available for placement</div>
-            </div>
+            {/* Print */}
+            <span style={{ cursor: 'pointer', fontSize: '13px' }} onClick={() => window.print()} title="Print Report">
+              🖨️
+            </span>
           </div>
 
-          {/* ═══════════ REPORT DATA TABLES ═══════════ */}
-          <div style={{ background: '#ffffff', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+          {/* ═══════════ REPORT CONTENT CANVAS ═══════════ */}
+          <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderTop: 'none', padding: '16px 20px', minHeight: '520px' }}>
             
-            {/* Table Header Bar */}
-            <div style={{
-              background: '#bfdbfe', borderBottom: '1px solid #93c5fd', padding: '6px 14px',
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-            }}>
-              <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#1e3a8a' }}>
-                {currentReportLabel} Records
-              </span>
-              <span style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#1e3a8a' }}>
-                Total Matches: {
-                  activeSubReport === 'submission-details' || activeSubReport === 'submission-summary' || activeSubReport === 'daily-submission-summary' || activeSubReport === 'resumes-submitted'
-                    ? filteredSubmissions.length
-                    : activeSubReport.startsWith('interview')
-                    ? filteredInterviews.length
-                    : activeSubReport === 'requisition-status'
-                    ? filteredRequisitions.length
-                    : activeSubReport === 'w2-candidate-added'
-                    ? filteredW2Candidates.length
-                    : mockRecruiterPerformance.length
-                }
-              </span>
-            </div>
+            {/* Report Title */}
+            <h3 style={{ margin: '0 0 14px', fontSize: '13px', color: '#0f172a', fontWeight: 'bold' }}>
+              Report of Candidates submitted by a recruiter for a given period
+            </h3>
 
-            {/* 1. SUBMISSIONS REPORT TABLE */}
-            {(activeSubReport === 'submission-details' || activeSubReport === 'submission-summary' || activeSubReport === 'daily-submission-summary' || activeSubReport === 'resumes-submitted' || activeSubReport === 'jih-candidate-summary' || activeSubReport === 'candidate-by-hrai') && (
+            {/* ─── EXACT SUBMISSION SUMMARY TABLE (MATCHING MEDIA_1787314976453.PNG) ─── */}
+            {activeSubReport === 'submission-summary' && (
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
+                <table style={{ width: '100%', maxWidth: '640px', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', border: '1px solid #cbd5e1' }}>
                   <thead>
-                    <tr style={{ background: '#94a3b8', color: '#ffffff' }}>
+                    <tr style={{ background: '#555555', color: '#ffffff' }}>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold', width: '100px', borderRight: '1px solid #777777' }}>Assigned Date</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold', width: '110px', borderRight: '1px solid #777777', textAlign: 'center' }}>Submission Date</th>
+                      <th style={{ padding: '6px 12px', fontWeight: 'bold', borderRight: '1px solid #777777', textAlign: 'center' }}>Name</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold', width: '70px', borderRight: '1px solid #777777', textAlign: 'center' }}># of Reqs</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold', width: '110px', textAlign: 'center' }}>Total Submissions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredSummaryGroups.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" style={{ padding: '30px', textAlign: 'center', color: '#64748b' }}>
+                          No submission records found for the selected recruiter and date range.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredSummaryGroups.map((group, gIdx) => (
+                        <React.Fragment key={group.submissionDate}>
+                          {group.recruiters.map((rec, rIdx) => (
+                            <tr key={`${group.submissionDate}-${rec.name}-${rIdx}`} style={{ borderBottom: '1px solid #e2e8f0', background: '#ffffff' }}>
+                              
+                              {/* Assigned Date (Rowspan for the whole date group) */}
+                              {rIdx === 0 && (
+                                <td
+                                  rowSpan={group.recruiters.length}
+                                  style={{
+                                    padding: '6px 8px',
+                                    borderRight: '1px solid #cbd5e1',
+                                    verticalAlign: 'top',
+                                    background: '#ffffff'
+                                  }}
+                                >
+                                  {group.assignedDate}
+                                </td>
+                              )}
+
+                              {/* Submission Date (Rowspan for the whole date group) */}
+                              {rIdx === 0 && (
+                                <td
+                                  rowSpan={group.recruiters.length}
+                                  style={{
+                                    padding: '6px 8px',
+                                    borderRight: '1px solid #cbd5e1',
+                                    verticalAlign: 'top',
+                                    textAlign: 'center',
+                                    fontWeight: 'normal',
+                                    background: '#ffffff'
+                                  }}
+                                >
+                                  {group.submissionDate}
+                                </td>
+                              )}
+
+                              {/* Recruiter / Channel Name */}
+                              <td style={{ padding: '5px 12px', borderRight: '1px solid #cbd5e1', color: '#0f172a' }}>
+                                {rec.name}
+                              </td>
+
+                              {/* # of Reqs */}
+                              <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', color: '#475569' }}>
+                                {rec.reqs || ''}
+                              </td>
+
+                              {/* Total Submissions */}
+                              <td style={{ padding: '5px 8px', textAlign: 'center', fontWeight: 'normal', color: '#0f172a' }}>
+                                {rec.total}
+                              </td>
+                            </tr>
+                          ))}
+                        </React.Fragment>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* ─── SUBMISSION DETAILS REPORT TABLE ─── */}
+            {activeSubReport === 'submission-details' && (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', border: '1px solid #cbd5e1' }}>
+                  <thead>
+                    <tr style={{ background: '#555555', color: '#ffffff' }}>
                       <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Submission ID</th>
                       <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Req #</th>
                       <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Position Title</th>
@@ -528,51 +621,167 @@ function Reports() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredSubmissions.length === 0 ? (
-                      <tr>
-                        <td colSpan="12" style={{ padding: '30px', textAlign: 'center', color: '#64748b' }}>No submission records found matching criteria.</td>
+                    {mockSubmissionDetails.map((s, idx) => (
+                      <tr key={s.id} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{s.id}</td>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>
+                          <Link to="/dashboard" style={{ color: '#0066cc', textDecoration: 'underline' }}>{s.reqId}</Link>
+                        </td>
+                        <td style={{ padding: '6px 8px', color: '#1e293b' }}>{s.title}</td>
+                        <td style={{ padding: '6px 8px', color: '#334155' }}>{s.client}</td>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>
+                          <Link to="/dashboard" style={{ color: '#0066cc', textDecoration: 'underline' }}>{s.candidateName}</Link>
+                        </td>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#1e3a8a', background: idx % 2 === 0 ? '#f1f5f9' : '#e2e8f0' }}>{s.recruiter}</td>
+                        <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold' }}>{s.payRate}</td>
+                        <td style={{ padding: '6px 8px', color: '#334155' }}>{s.billRate}</td>
+                        <td style={{ padding: '6px 8px', color: '#334155' }}>{s.rateType}</td>
+                        <td style={{ padding: '6px 8px', color: '#334155' }}>{s.subVendor}</td>
+                        <td style={{ padding: '6px 8px', color: '#64748b' }}>{s.submitDate}</td>
+                        <td style={{ padding: '6px 8px' }}>
+                          <span style={{
+                            padding: '2px 6px', borderRadius: '3px', fontSize: '10.5px', fontWeight: 'bold',
+                            background: s.status === 'Placed' ? '#dcfce7' : s.status.includes('Interview') ? '#e0e7ff' : '#fef3c7',
+                            color: s.status === 'Placed' ? '#166534' : s.status.includes('Interview') ? '#3730a3' : '#92400e'
+                          }}>
+                            {s.status}
+                          </span>
+                        </td>
                       </tr>
-                    ) : (
-                      filteredSubmissions.map((s, idx) => (
-                        <tr key={s.id} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                          <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{s.id}</td>
-                          <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>
-                            <Link to="/dashboard" style={{ color: '#0066cc', textDecoration: 'underline' }}>{s.reqId}</Link>
-                          </td>
-                          <td style={{ padding: '6px 8px', color: '#1e293b' }}>{s.title}</td>
-                          <td style={{ padding: '6px 8px', color: '#334155' }}>{s.client}</td>
-                          <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>
-                            <Link to="/dashboard" style={{ color: '#0066cc', textDecoration: 'underline' }}>{s.candidateName}</Link>
-                          </td>
-                          <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#1e3a8a', background: idx % 2 === 0 ? '#f1f5f9' : '#e2e8f0' }}>{s.recruiter}</td>
-                          <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold' }}>{s.payRate}</td>
-                          <td style={{ padding: '6px 8px', color: '#334155' }}>{s.billRate}</td>
-                          <td style={{ padding: '6px 8px', color: '#334155' }}>{s.rateType}</td>
-                          <td style={{ padding: '6px 8px', color: '#334155' }}>{s.subVendor}</td>
-                          <td style={{ padding: '6px 8px', color: '#64748b' }}>{s.submitDate}</td>
-                          <td style={{ padding: '6px 8px' }}>
-                            <span style={{
-                              padding: '2px 6px', borderRadius: '3px', fontSize: '10.5px', fontWeight: 'bold',
-                              background: s.status === 'Placed' ? '#dcfce7' : s.status.includes('Interview') ? '#e0e7ff' : '#fef3c7',
-                              color: s.status === 'Placed' ? '#166534' : s.status.includes('Interview') ? '#3730a3' : '#92400e'
-                            }}>
-                              {s.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                    )}
+                    ))}
                   </tbody>
                 </table>
               </div>
             )}
 
-            {/* 2. RECRUITER PERFORMANCE TABLE */}
+            {/* ─── INTERVIEW SCHEDULE TABLE ─── */}
+            {activeSubReport === 'interview-schedule-client-start' && (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', border: '1px solid #cbd5e1' }}>
+                  <thead>
+                    <tr style={{ background: '#555555', color: '#ffffff' }}>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Interview ID</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Req #</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Position Title</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Client</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Candidate Name</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Recruiter</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Interview Date</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Time</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Round</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Client Start Date</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Status</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Feedback / Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mockInterviewSchedules.map((i, idx) => (
+                      <tr key={i.id} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{i.id}</td>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>{i.reqId}</td>
+                        <td style={{ padding: '6px 8px', color: '#1e293b' }}>{i.title}</td>
+                        <td style={{ padding: '6px 8px', color: '#334155' }}>{i.client}</td>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{i.candidateName}</td>
+                        <td style={{ padding: '6px 8px', color: '#1e3a8a', fontWeight: 'bold' }}>{i.recruiter}</td>
+                        <td style={{ padding: '6px 8px', color: '#dc2626', fontWeight: 'bold' }}>{i.interviewDate}</td>
+                        <td style={{ padding: '6px 8px', color: '#475569' }}>{i.interviewTime}</td>
+                        <td style={{ padding: '6px 8px', color: '#334155' }}>{i.round}</td>
+                        <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold', background: '#f0fdf4' }}>{i.clientStartDate}</td>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>{i.status}</td>
+                        <td style={{ padding: '6px 8px', color: '#64748b' }}>{i.feedback}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* ─── REQUISITION STATUS TABLE ─── */}
+            {activeSubReport === 'requisition-status' && (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', border: '1px solid #cbd5e1' }}>
+                  <thead>
+                    <tr style={{ background: '#555555', color: '#ffffff' }}>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Req #</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Position Title</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Client</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Category</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Type</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Status</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Submissions</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Assigned Recruiters</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Creation Date</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Deadline</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Pay Rate</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mockRequisitionStatuses.map((r, idx) => (
+                      <tr key={r.reqId} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{r.reqId}</td>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#1e293b' }}>{r.title}</td>
+                        <td style={{ padding: '6px 8px', color: '#334155' }}>{r.client}</td>
+                        <td style={{ padding: '6px 8px', color: '#475569' }}>{r.category}</td>
+                        <td style={{ padding: '6px 8px', color: '#475569' }}>{r.type}</td>
+                        <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold' }}>{r.status}</td>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{r.submissions} / {r.maxSubmissions}</td>
+                        <td style={{ padding: '6px 8px', color: '#1e3a8a', fontWeight: 'bold' }}>{r.assignedRecruiters}</td>
+                        <td style={{ padding: '6px 8px', color: '#64748b' }}>{r.creationDate}</td>
+                        <td style={{ padding: '6px 8px', color: '#dc2626', fontWeight: 'bold' }}>{r.deadline}</td>
+                        <td style={{ padding: '6px 8px', color: '#334155' }}>{r.payRate}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* ─── W2 CANDIDATE TABLE ─── */}
+            {activeSubReport === 'w2-candidate-added' && (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', border: '1px solid #cbd5e1' }}>
+                  <thead>
+                    <tr style={{ background: '#555555', color: '#ffffff' }}>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Candidate ID</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Candidate Name</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Role</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Exp</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Location</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Pay Rate</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Work Auth</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Recruiter (Added By)</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Added On</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Resumes Submitted</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mockW2Candidates.map((w, idx) => (
+                      <tr key={w.id} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{w.id}</td>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{w.name}</td>
+                        <td style={{ padding: '6px 8px', color: '#1e293b' }}>{w.role}</td>
+                        <td style={{ padding: '6px 8px', color: '#475569' }}>{w.exp}</td>
+                        <td style={{ padding: '6px 8px', color: '#475569' }}>{w.location}</td>
+                        <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold' }}>{w.payRate}</td>
+                        <td style={{ padding: '6px 8px', color: '#475569' }}>{w.workAuth}</td>
+                        <td style={{ padding: '6px 8px', color: '#1e3a8a', fontWeight: 'bold', background: idx % 2 === 0 ? '#f1f5f9' : '#e2e8f0' }}>{w.recruiter}</td>
+                        <td style={{ padding: '6px 8px', color: '#64748b' }}>{w.addedDate}</td>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold', textAlign: 'center' }}>{w.resumesSubmitted}</td>
+                        <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold' }}>{w.status}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* ─── RECRUITER PERFORMANCE SUMMARY ─── */}
             {(activeSubReport === 'recruiters-performance' || activeSubReport === 'performance-summary' || activeSubReport === 'performance-details' || activeSubReport === 'monthly-status') && (
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', border: '1px solid #cbd5e1' }}>
                   <thead>
-                    <tr style={{ background: '#94a3b8', color: '#ffffff' }}>
+                    <tr style={{ background: '#555555', color: '#ffffff' }}>
                       <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Recruiter Name</th>
                       <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Candidates Sourced</th>
                       <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Submissions</th>
@@ -600,151 +809,6 @@ function Reports() {
                 </table>
               </div>
             )}
-
-            {/* 3. INTERVIEW SCHEDULE TABLE */}
-            {activeSubReport === 'interview-schedule-client-start' && (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
-                  <thead>
-                    <tr style={{ background: '#94a3b8', color: '#ffffff' }}>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Interview ID</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Req #</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Position Title</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Client</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Candidate Name</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Recruiter</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Interview Date</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Time</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Round</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#fef08a' }}>Client Start Date</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Status</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Feedback / Notes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredInterviews.map((i, idx) => (
-                      <tr key={i.id} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{i.id}</td>
-                        <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>{i.reqId}</td>
-                        <td style={{ padding: '6px 8px', color: '#1e293b' }}>{i.title}</td>
-                        <td style={{ padding: '6px 8px', color: '#334155' }}>{i.client}</td>
-                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{i.candidateName}</td>
-                        <td style={{ padding: '6px 8px', color: '#1e3a8a', fontWeight: 'bold' }}>{i.recruiter}</td>
-                        <td style={{ padding: '6px 8px', color: '#dc2626', fontWeight: 'bold' }}>{i.interviewDate}</td>
-                        <td style={{ padding: '6px 8px', color: '#475569' }}>{i.interviewTime}</td>
-                        <td style={{ padding: '6px 8px', color: '#334155' }}>{i.round}</td>
-                        <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold', background: '#f0fdf4' }}>{i.clientStartDate}</td>
-                        <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>{i.status}</td>
-                        <td style={{ padding: '6px 8px', color: '#64748b' }}>{i.feedback}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* 4. REQUISITION STATUS TABLE */}
-            {activeSubReport === 'requisition-status' && (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
-                  <thead>
-                    <tr style={{ background: '#94a3b8', color: '#ffffff' }}>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Req #</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Position Title</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Client</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Category</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Type</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Status</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Submissions</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Assigned Recruiters</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Creation Date</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Deadline</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Pay Rate</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredRequisitions.map((r, idx) => (
-                      <tr key={r.reqId} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{r.reqId}</td>
-                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#1e293b' }}>{r.title}</td>
-                        <td style={{ padding: '6px 8px', color: '#334155' }}>{r.client}</td>
-                        <td style={{ padding: '6px 8px', color: '#475569' }}>{r.category}</td>
-                        <td style={{ padding: '6px 8px', color: '#475569' }}>{r.type}</td>
-                        <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold' }}>{r.status}</td>
-                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{r.submissions} / {r.maxSubmissions}</td>
-                        <td style={{ padding: '6px 8px', color: '#1e3a8a', fontWeight: 'bold' }}>{r.assignedRecruiters}</td>
-                        <td style={{ padding: '6px 8px', color: '#64748b' }}>{r.creationDate}</td>
-                        <td style={{ padding: '6px 8px', color: '#dc2626', fontWeight: 'bold' }}>{r.deadline}</td>
-                        <td style={{ padding: '6px 8px', color: '#334155' }}>{r.payRate}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* 5. W2 CANDIDATE TABLE */}
-            {activeSubReport === 'w2-candidate-added' && (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
-                  <thead>
-                    <tr style={{ background: '#94a3b8', color: '#ffffff' }}>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Candidate ID</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Candidate Name</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Role</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Exp</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Location</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Pay Rate</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Work Auth</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Recruiter (Added By)</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Added On</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Resumes Submitted</th>
-                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredW2Candidates.map((w, idx) => (
-                      <tr key={w.id} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{w.id}</td>
-                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{w.name}</td>
-                        <td style={{ padding: '6px 8px', color: '#1e293b' }}>{w.role}</td>
-                        <td style={{ padding: '6px 8px', color: '#475569' }}>{w.exp}</td>
-                        <td style={{ padding: '6px 8px', color: '#475569' }}>{w.location}</td>
-                        <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold' }}>{w.payRate}</td>
-                        <td style={{ padding: '6px 8px', color: '#475569' }}>{w.workAuth}</td>
-                        <td style={{ padding: '6px 8px', color: '#1e3a8a', fontWeight: 'bold', background: idx % 2 === 0 ? '#f1f5f9' : '#e2e8f0' }}>{w.recruiter}</td>
-                        <td style={{ padding: '6px 8px', color: '#64748b' }}>{w.addedDate}</td>
-                        <td style={{ padding: '6px 8px', fontWeight: 'bold', textAlign: 'center' }}>{w.resumesSubmitted}</td>
-                        <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold' }}>{w.status}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* Pagination Footer */}
-            <div style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              background: '#f8fafc', borderTop: '1px solid #cbd5e1', padding: '6px 14px'
-            }}>
-              <div style={{ display: 'flex', gap: '8px', fontSize: '11.5px', fontWeight: 'bold' }}>
-                <span style={{ color: '#ea580c', cursor: 'pointer' }}>1</span>
-                <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>2</span>
-                <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>3</span>
-                <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>Next</span>
-                <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>Last</span>
-              </div>
-
-              <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#1e3a8a' }}>
-                Page Size:
-                <select value={pageSize} onChange={e => setPageSize(parseInt(e.target.value))} style={{ marginLeft: '6px', fontSize: '11px', padding: '1px 3px' }}>
-                  <option value="10">10</option>
-                  <option value="25">25</option>
-                  <option value="50">50</option>
-                </select>
-              </div>
-            </div>
 
           </div>
 
