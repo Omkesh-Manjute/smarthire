@@ -34,13 +34,14 @@ function Navigation() {
     localStorage.getItem('smarthire_authenticated') === 'true' ||
     localStorage.getItem('verifyhire_authenticated') === 'true'
 
-  // Dynamic Role State
+  const realUserRole = user?.role || 'recruiter'
+  const canSwitchRoles = realUserRole === 'superadmin' || realUserRole === 'admin'
   const defaultRole = user && user.role ? user.role : 'superadmin'
   const [activeRole, setActiveRole] = useState(() => {
-    return localStorage.getItem('smarthire_active_role') || defaultRole
+    return canSwitchRoles ? (localStorage.getItem('smarthire_active_role') || defaultRole) : defaultRole
   })
 
-  const isSuperAdmin = activeRole === 'superadmin' || activeRole === 'admin'
+  const isSuperAdmin = canSwitchRoles && (activeRole === 'superadmin' || activeRole === 'admin')
 
   // Live health check
   useEffect(() => {
@@ -476,15 +477,17 @@ function Navigation() {
                 </Link>
 
                 {/* Role Switcher Pill */}
-                <button
-                  className={`nav-role-switcher-pill ${isSuperAdmin ? 'admin-theme' : 'recruiter-theme'}`}
-                  onClick={toggleRoleMode}
-                  title="Click to toggle between Super Admin and Recruiter workspace modes"
-                >
-                  <span className="role-icon">{isSuperAdmin ? '👑' : '💼'}</span>
-                  <span className="role-label">{isSuperAdmin ? 'Admin' : 'Recruiter'}</span>
-                  <span className="role-switch-badge">⇄</span>
-                </button>
+                {canSwitchRoles && (
+                  <button
+                    className={`nav-role-switcher-pill ${isSuperAdmin ? 'admin-theme' : 'recruiter-theme'}`}
+                    onClick={toggleRoleMode}
+                    title="Click to toggle between Super Admin and Recruiter workspace modes"
+                  >
+                    <span className="role-icon">{isSuperAdmin ? '👑' : '💼'}</span>
+                    <span className="role-label">{isSuperAdmin ? 'Admin' : 'Recruiter'}</span>
+                    <span className="role-switch-badge">⇄</span>
+                  </button>
+                )}
 
                 {/* User Profile Avatar & Dropdown */}
                 <div className="nav-dropdown-wrapper" ref={profileMenuRef}>
@@ -517,16 +520,18 @@ function Navigation() {
                       </div>
 
                       <div className="profile-menu-body">
-                        <button
-                          className="profile-menu-link"
-                          onClick={() => {
-                            setProfileMenuOpen(false)
-                            toggleRoleMode()
-                          }}
-                        >
-                          <span className="menu-link-icon">⇄</span>
-                          <span>Switch to {isSuperAdmin ? 'Recruiter Mode' : 'Super Admin Mode'}</span>
-                        </button>
+                        {canSwitchRoles && (
+                          <button
+                            className="profile-menu-link"
+                            onClick={() => {
+                              setProfileMenuOpen(false)
+                              toggleRoleMode()
+                            }}
+                          >
+                            <span className="menu-link-icon">⇄</span>
+                            <span>Switch to {isSuperAdmin ? 'Recruiter Mode' : 'Super Admin Mode'}</span>
+                          </button>
+                        )}
 
                         <button
                           className="profile-menu-link"
@@ -637,11 +642,15 @@ function Navigation() {
                   <span>💳 Pricing Plans</span>
                 </Link>
 
-                <div className="mobile-section-label">Role Switcher</div>
-                <button className="mobile-role-btn" onClick={toggleRoleMode}>
-                  <span>Current: {isSuperAdmin ? '👑 Super Admin' : '💼 Recruiter'}</span>
-                  <span>(Switch Mode ⇄)</span>
-                </button>
+                {canSwitchRoles && (
+                  <>
+                    <div className="mobile-section-label">Role Switcher</div>
+                    <button className="mobile-role-btn" onClick={toggleRoleMode}>
+                      <span>Current: {isSuperAdmin ? '👑 Super Admin' : '💼 Recruiter'}</span>
+                      <span>(Switch Mode ⇄)</span>
+                    </button>
+                  </>
+                )}
 
                 <div className="mobile-drawer-footer">
                   <button className="btn btn-danger-mobile" onClick={handleSignOut}>
