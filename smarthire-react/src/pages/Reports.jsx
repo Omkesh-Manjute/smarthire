@@ -1,1226 +1,763 @@
-import React, { useState, useEffect, useRef } from 'react';
-import SiteLayout from '../components/SiteLayout';
+import React, { useState, useEffect, useMemo, useRef } from 'react'
+import { Link } from 'react-router-dom'
+import SiteLayout from '../components/SiteLayout'
+
+// ─── MOCK DATA STORES FOR THE 13 REPORTS ───
+
+const mockSubmissionDetails = [
+  { id: 'SUB-101', reqId: '158938', title: 'Project Manager - Consultant', client: 'State Of SC', candidateName: 'Ashok Ganta', recruiter: 'Omkesh Manjute', payRate: '$74/hr', billRate: '$90/hr', rateType: 'C2C', subVendor: 'Talent9 Inc', submitDate: '2026-08-20', status: 'Int-SubmittedToManager', comments: 'Strong SC government delivery background' },
+  { id: 'SUB-102', reqId: '158938', title: 'Project Manager - Consultant', client: 'State Of SC', candidateName: 'Kashyap K Vora', recruiter: 'Vaibhav Bisen', payRate: '$55/hr', billRate: '$90/hr', rateType: 'W2', subVendor: 'SmartHire LLC', submitDate: '2026-08-20', status: 'Int-SubmittedToManager', comments: 'PMP certified, local in Columbia' },
+  { id: 'SUB-103', reqId: '158766', title: 'VDOT Network Administrator 4', client: 'State Of VA', candidateName: 'Ashok Ankalla', recruiter: 'Vaibhav Bisen', payRate: '$60/hr', billRate: '$85/hr', rateType: 'C2C', subVendor: 'SmartHire LLC', submitDate: '2026-08-19', status: 'Interview Scheduled', comments: 'Cisco CCNA/CCNP expert' },
+  { id: 'SUB-104', reqId: '158766', title: 'VDOT Network Administrator 4', client: 'State Of VA', candidateName: 'Tirumala Ashok Varmadantuluri', recruiter: 'Nitin Bhosale', payRate: '$71/hr', billRate: '$88/hr', rateType: 'C2C', subVendor: 'Ameritech Global INC', submitDate: '2026-08-18', status: 'Client Shortlisted', comments: 'SD-WAN and PKI background' },
+  { id: 'SUB-105', reqId: '158420', title: 'DCY - IT Lead Architect', client: 'State of MN', candidateName: 'Vadivelu Ashok Kumar', recruiter: 'Prudhvi', payRate: '$75/hr', billRate: '$95/hr', rateType: 'C2C', subVendor: 'Paramount Software Solutions', submitDate: '2026-08-17', status: 'Offer Extended', comments: '12+ yrs experience in enterprise architecture' },
+  { id: 'SUB-106', reqId: '158310', title: 'Senior Data Engineer / Snowflake', client: 'State of CT', candidateName: 'Upendra Ganta', recruiter: 'Omkesh Manjute', payRate: '$60/hr', billRate: '$82/hr', rateType: 'C2C', subVendor: 'SmartHire LLC', submitDate: '2026-08-16', status: 'Placed', comments: 'Snowflake + dbt specialist' },
+  { id: 'SUB-107', reqId: '158204', title: 'Oracle DBA / PL-SQL Specialist', client: 'State of TX', candidateName: 'Nagababu Ganta', recruiter: 'Vaibhav Bisen', payRate: '$63/hr', billRate: '$80/hr', rateType: 'C2C', subVendor: 'SmartHire LLC', submitDate: '2026-08-15', status: 'Client Review', comments: '13 yrs Oracle performance tuning' },
+  { id: 'SUB-108', reqId: '158112', title: 'Senior Business Systems Analyst', client: 'State of NC', candidateName: 'Cx Avinash Ashokrao Mahajan', recruiter: 'Vaibhav Bisen', payRate: '$55/hr', billRate: '$75/hr', rateType: 'W2', subVendor: 'SmartHire LLC', submitDate: '2026-08-14', status: 'Interview Scheduled', comments: 'Healthcare Medicaid specialist' },
+  { id: 'SUB-109', reqId: '157980', title: '.Net Core / Angular Developer', client: 'State of MN', candidateName: 'Triveni Ganta', recruiter: 'Sukamal Chatterjee', payRate: '$55/hr', billRate: '$78/hr', rateType: 'C2C', subVendor: 'Origin Tek Solutions', submitDate: '2026-08-12', status: 'Pending Review', comments: 'C# .NET Core 8 with Angular 17' },
+  { id: 'SUB-110', reqId: '157890', title: 'Power Platform / Dynamics 365', client: 'State of TN', candidateName: 'Sri Sai Tejasvi Gantakolla', recruiter: 'Sukamal Chatterjee', payRate: '$65/hr', billRate: '$85/hr', rateType: 'C2C', subVendor: 'SmartHire LLC', submitDate: '2026-08-10', status: 'Placed', comments: 'PowerApps certified solution developer' }
+]
+
+const mockInterviewSchedules = [
+  { id: 'INT-301', reqId: '158938', title: 'Project Manager - Consultant', client: 'State Of SC', candidateName: 'Ashok Ganta', recruiter: 'Omkesh Manjute', interviewDate: '2026-08-25', interviewTime: '10:00 AM EST', round: 'Round 1 (Virtual)', clientStartDate: '2026-10-23', status: 'Confirmed', feedback: 'Interview invite sent via Teams' },
+  { id: 'INT-302', reqId: '158766', title: 'VDOT Network Administrator 4', client: 'State Of VA', candidateName: 'Ashok Ankalla', recruiter: 'Vaibhav Bisen', interviewDate: '2026-08-24', interviewTime: '02:30 PM EST', round: 'Technical Panel', clientStartDate: '2026-09-15', status: 'Completed', feedback: 'Passed technical round. Awaiting manager approval.' },
+  { id: 'INT-303', reqId: '158112', title: 'Senior Business Systems Analyst', client: 'State of NC', candidateName: 'Cx Avinash Ashokrao Mahajan', recruiter: 'Vaibhav Bisen', interviewDate: '2026-08-26', interviewTime: '11:00 AM EST', round: 'Client Manager Round', clientStartDate: '2026-09-01', status: 'Scheduled', feedback: 'Webex video link shared with candidate' },
+  { id: 'INT-304', reqId: '158420', title: 'DCY - IT Lead Architect', client: 'State of MN', candidateName: 'Vadivelu Ashok Kumar', recruiter: 'Prudhvi', interviewDate: '2026-08-22', interviewTime: '03:00 PM CST', round: 'Final Round', clientStartDate: '2026-09-08', status: 'Selected', feedback: 'Offer letter in preparation' },
+  { id: 'INT-305', reqId: '158310', title: 'Senior Data Engineer / Snowflake', client: 'State of CT', candidateName: 'Upendra Ganta', recruiter: 'Omkesh Manjute', interviewDate: '2026-08-18', interviewTime: '01:00 PM EST', round: 'Round 1 (Online)', clientStartDate: '2026-09-01', status: 'Offered & Joined', feedback: 'Candidate started onboarding' }
+]
+
+const mockRequisitionStatuses = [
+  { reqId: '158938', title: 'Project Manager - Consultant - 13285', client: 'State Of SC', category: 'SP', type: 'Contract', status: 'In-Progress', submissions: 2, maxSubmissions: 2, assignedRecruiters: 'Vaibhav Bisen, Omkesh Manjute', creationDate: '10/23/2026', deadline: '8/28/2026', billRate: '$90/hr', payRate: '$75/hr' },
+  { reqId: '158766', title: 'VDOT Network Administrator 4 (807536)', client: 'State Of VA', category: 'IT', type: 'Contract', status: 'In-Progress', submissions: 2, maxSubmissions: 2, assignedRecruiters: 'Vaibhav Bisen, Nitin Bhosale', creationDate: '08/15/2026', deadline: '8/30/2026', billRate: '$88/hr', payRate: '$74/hr' },
+  { reqId: '158420', title: 'DCY - IT Lead Architect', client: 'State of MN', category: 'IT', type: 'Contract', status: 'Ready', submissions: 1, maxSubmissions: 2, assignedRecruiters: 'Prudhvi', creationDate: '08/10/2026', deadline: '8/25/2026', billRate: '$95/hr', payRate: '$75/hr' },
+  { reqId: '158310', title: 'Senior Data Engineer / Snowflake', client: 'State of CT', category: 'SP', type: 'Contract', status: 'Closed', submissions: 2, maxSubmissions: 2, assignedRecruiters: 'Omkesh Manjute', creationDate: '08/01/2026', deadline: '8/18/2026', billRate: '$82/hr', payRate: '$60/hr' },
+  { reqId: '158204', title: 'Oracle DBA / PL-SQL Specialist', client: 'State of TX', category: 'IT', type: 'Contract', status: 'In-Progress', submissions: 1, maxSubmissions: 3, assignedRecruiters: 'Vaibhav Bisen', creationDate: '08/05/2026', deadline: '9/05/2026', billRate: '$80/hr', payRate: '$63/hr' },
+  { reqId: '158112', title: 'Senior Business Systems Analyst', client: 'State of NC', category: 'SP', type: 'Contract', status: 'In-Progress', submissions: 1, maxSubmissions: 2, assignedRecruiters: 'Vaibhav Bisen', creationDate: '08/08/2026', deadline: '8/29/2026', billRate: '$75/hr', payRate: '$55/hr' },
+  { reqId: '157980', title: '.Net Core / Angular Full Stack Developer', client: 'State of MN', category: 'ENG', type: 'Contract', status: 'In-Progress', submissions: 1, maxSubmissions: 2, assignedRecruiters: 'Sukamal Chatterjee', creationDate: '08/02/2026', deadline: '8/26/2026', billRate: '$78/hr', payRate: '$55/hr' },
+  { reqId: '157890', title: 'Power Platform / Dynamics 365 Architect', client: 'State of TN', category: 'IT', type: 'Contract', status: 'Closed', submissions: 1, maxSubmissions: 1, assignedRecruiters: 'Sukamal Chatterjee', creationDate: '07/28/2026', deadline: '8/15/2026', billRate: '$85/hr', payRate: '$65/hr' }
+]
+
+const mockW2Candidates = [
+  { id: 'W2-87535', name: 'Kashyap K Vora', role: 'Full Stack Java / Spring Boot Lead', exp: '10 yrs', location: 'Columbia, SC', payRate: '$55/hr', workAuth: 'US Citizen', recruiter: 'Omkesh Manjute', addedDate: '2026-08-15', resumesSubmitted: 2, status: 'Active / Available' },
+  { id: 'W2-87512', name: 'Cx Avinash Ashokrao Mahajan', role: 'Senior Business Systems Analyst', exp: '16 yrs', location: 'Raleigh, NC', payRate: '$55/hr', workAuth: 'US Citizen', recruiter: 'Vaibhav Bisen', addedDate: '2026-08-10', resumesSubmitted: 1, status: 'Interviewing' },
+  { id: 'W2-87505', name: 'Upendra Ganta', role: 'Data Engineer / Snowflake Lead', exp: '11 yrs', location: 'Hartford, CT', payRate: '$60/hr', workAuth: 'US Citizen', recruiter: 'Omkesh Manjute', addedDate: '2026-08-01', resumesSubmitted: 2, status: 'Placed' },
+  { id: 'W2-87514', name: 'Ashok Ankalla', role: 'Project Coordinator / Scrum Master', exp: '18 yrs', location: 'Bentonville, AR', payRate: '$60/hr', workAuth: 'US Citizen', recruiter: 'Omkesh Manjute', addedDate: '2026-07-25', resumesSubmitted: 3, status: 'Active / Available' },
+  { id: 'W2-87516', name: 'Priyanka Gantareddy', role: 'Senior Quality Assurance Lead', exp: '16 yrs', location: 'Austin, TX', payRate: '$60/hr', workAuth: 'US Citizen', recruiter: 'Omkesh Manjute', addedDate: '2026-07-20', resumesSubmitted: 1, status: 'Active / Available' },
+  { id: 'W2-87519', name: 'Ashok Anakalla', role: 'Technical Lead / Solution Architect', exp: '18 yrs', location: 'Herndon, VA', payRate: '$68/hr', workAuth: 'US Citizen', recruiter: 'Omkesh Manjute', addedDate: '2026-07-15', resumesSubmitted: 2, status: 'Active / Available' },
+  { id: 'W2-87524', name: 'Ashok Natarajan', role: 'Project Manager - Enterprise ERP', exp: '17 yrs', location: 'Irving, TX', payRate: '$80/hr', workAuth: 'US Citizen', recruiter: 'Nitin Bhosale', addedDate: '2026-07-10', resumesSubmitted: 1, status: 'Active / Available' }
+]
+
+const mockRecruiterPerformance = [
+  { recruiter: 'Omkesh Manjute', sourced: 28, submitted: 18, interviews: 8, offers: 4, placed: 3, margin: '$38,400', avgSubmissionTime: '1.8 days' },
+  { recruiter: 'Vaibhav Bisen', sourced: 34, submitted: 22, interviews: 11, offers: 5, placed: 4, margin: '$46,200', avgSubmissionTime: '1.5 days' },
+  { recruiter: 'Sukamal Chatterjee', sourced: 22, submitted: 14, interviews: 6, offers: 3, placed: 2, margin: '$24,800', avgSubmissionTime: '2.1 days' },
+  { recruiter: 'Prudhvi', sourced: 19, submitted: 12, interviews: 5, offers: 2, placed: 2, margin: '$21,500', avgSubmissionTime: '2.0 days' },
+  { recruiter: 'Nitin Bhosale', sourced: 25, submitted: 15, interviews: 7, offers: 3, placed: 2, margin: '$26,100', avgSubmissionTime: '1.9 days' }
+]
 
 function Reports() {
-  const [activeTab, setActiveTab] = useState('ai-brief'); // 'ai-brief' | 'jobs' | 'verification'
-  const [report, setReport] = useState(null);
-  const [reportsList, setReportsList] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [copied, setCopied] = useState(false);
-  const [isRawExpanded, setIsRawExpanded] = useState(false);
+  // Navigation Menus Structure (Exact Match to User's 4 Screenshots)
+  const reportCategories = [
+    {
+      id: 'summary',
+      name: 'Summary',
+      items: [
+        { id: 'submission-summary', label: 'Submission Summary' },
+        { id: 'submission-details', label: 'Submission Details' },
+        { id: 'daily-submission-summary', label: 'Daily Submission Summary' },
+        { id: 'recruiters-performance', label: 'Recruiters performance summary' },
+        { id: 'jih-candidate-summary', label: 'JIH Candidate Summary' },
+        { id: 'candidate-by-hrai', label: 'Candidate By HRAI' }
+      ]
+    },
+    {
+      id: 'interview-schedule',
+      name: 'Interview Schedule',
+      items: [
+        { id: 'interview-schedule-client-start', label: 'InterviewSchedule ClientStartDate' },
+        { id: 'performance-summary', label: 'Performance Summary' },
+        { id: 'performance-details', label: 'Performance Details' },
+        { id: 'monthly-status', label: 'Monthly Status' }
+      ]
+    },
+    {
+      id: 'requisition',
+      name: 'Requisition',
+      items: [
+        { id: 'requisition-status', label: 'Requisition Status' }
+      ]
+    },
+    {
+      id: 'w2-candidate',
+      name: 'W2 Candidate',
+      items: [
+        { id: 'w2-candidate-added', label: 'W2 Candidate Added' },
+        { id: 'resumes-submitted', label: 'Resumes Submitted' }
+      ]
+    }
+  ]
 
-  // Ingestion live state
-  const [ingestionStatus, setIngestionStatus] = useState(null);
-  const [ingestionLogs, setIngestionLogs] = useState([]);
-  const [ingestionRunning, setIngestionRunning] = useState(false);
-  const [triggerMessage, setTriggerMessage] = useState(null);
-  const logScrollRef = useRef(null);
-  const pollIntervalRef = useRef(null);
+  // Active Category & Sub-Report State
+  const [activeCategory, setActiveCategory] = useState('summary')
+  const [activeSubReport, setActiveSubReport] = useState('submission-details')
+  const [hoverCategory, setHoverCategory] = useState(null)
 
-  const fetchReportsList = async (type) => {
-    setLoading(true);
-    setError(null);
-    try {
-      let response = await fetch(`/api/automation/reports?type=${type}`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch reports list (Status: ${response.status})`);
+  // Filters State
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedRecruiter, setSelectedRecruiter] = useState('All')
+  const [selectedClient, setSelectedClient] = useState('All')
+  const [selectedStatus, setSelectedStatus] = useState('All')
+  const [startDate, setStartDate] = useState('2026-08-01')
+  const [endDate, setEndDate] = useState('2026-08-31')
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(25)
+
+  // Switch Sub-report
+  const handleSelectReport = (catId, subId) => {
+    setActiveCategory(catId)
+    setActiveSubReport(subId)
+    setHoverCategory(null)
+    setCurrentPage(1)
+  }
+
+  // Export to CSV / Excel
+  const handleExportToExcel = () => {
+    let headers = []
+    let rows = []
+
+    if (activeSubReport === 'submission-details' || activeSubReport === 'submission-summary' || activeSubReport === 'daily-submission-summary' || activeSubReport === 'resumes-submitted') {
+      headers = ['ID', 'Req #', 'Job Title', 'Client', 'Candidate Name', 'Recruiter', 'Pay Rate', 'Bill Rate', 'Rate Type', 'Sub Vendor', 'Submit Date', 'Status', 'Comments']
+      rows = filteredSubmissions.map(s => [
+        s.id, s.reqId, `"${s.title}"`, `"${s.client}"`, `"${s.candidateName}"`, `"${s.recruiter}"`, `"${s.payRate}"`, `"${s.billRate}"`, s.rateType, `"${s.subVendor}"`, s.submitDate, `"${s.status}"`, `"${s.comments}"`
+      ])
+    } else if (activeSubReport.startsWith('interview')) {
+      headers = ['Interview ID', 'Req #', 'Job Title', 'Client', 'Candidate Name', 'Recruiter', 'Interview Date', 'Interview Time', 'Round', 'Client Start Date', 'Status', 'Feedback']
+      rows = filteredInterviews.map(i => [
+        i.id, i.reqId, `"${i.title}"`, `"${i.client}"`, `"${i.candidateName}"`, `"${i.recruiter}"`, i.interviewDate, i.interviewTime, `"${i.round}"`, i.clientStartDate, `"${i.status}"`, `"${i.feedback}"`
+      ])
+    } else if (activeSubReport === 'requisition-status') {
+      headers = ['Req #', 'Position Title', 'Client', 'Category', 'Type', 'Status', 'Submissions', 'Max Submissions', 'Assigned Recruiters', 'Creation Date', 'Deadline', 'Bill Rate', 'Pay Rate']
+      rows = filteredRequisitions.map(r => [
+        r.reqId, `"${r.title}"`, `"${r.client}"`, r.category, r.type, r.status, r.submissions, r.maxSubmissions, `"${r.assignedRecruiters}"`, r.creationDate, r.deadline, `"${r.billRate}"`, `"${r.payRate}"`
+      ])
+    } else if (activeSubReport === 'w2-candidate-added') {
+      headers = ['Candidate ID', 'Name', 'Role', 'Experience', 'Location', 'Pay Rate', 'Work Auth', 'Recruiter', 'Added Date', 'Resumes Submitted', 'Status']
+      rows = filteredW2Candidates.map(w => [
+        w.id, `"${w.name}"`, `"${w.role}"`, w.exp, `"${w.location}"`, `"${w.payRate}"`, w.workAuth, `"${w.recruiter}"`, w.addedDate, w.resumesSubmitted, `"${w.status}"`
+      ])
+    } else if (activeSubReport === 'recruiters-performance' || activeSubReport === 'performance-summary' || activeSubReport === 'performance-details') {
+      headers = ['Recruiter Name', 'Candidates Sourced', 'Submitted', 'Interviews', 'Offers', 'Placed', 'Margin Generated', 'Avg Submission Time']
+      rows = mockRecruiterPerformance.map(p => [
+        `"${p.recruiter}"`, p.sourced, p.submitted, p.interviews, p.offers, p.placed, `"${p.margin}"`, `"${p.avgSubmissionTime}"`
+      ])
+    }
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n')
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement('a')
+    link.setAttribute('href', encodedUri)
+    link.setAttribute('download', `SmartWorks_${activeSubReport}_${new Date().toISOString().slice(0, 10)}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  // Filter Submissions
+  const filteredSubmissions = useMemo(() => {
+    return mockSubmissionDetails.filter(s => {
+      if (selectedRecruiter !== 'All' && s.recruiter !== selectedRecruiter) return false
+      if (selectedClient !== 'All' && s.client !== selectedClient) return false
+      if (selectedStatus !== 'All' && s.status !== selectedStatus) return false
+      if (searchTerm.trim()) {
+        const q = searchTerm.toLowerCase()
+        const text = `${s.reqId} ${s.title} ${s.candidateName} ${s.client} ${s.recruiter} ${s.subVendor}`.toLowerCase()
+        if (!text.includes(q)) return false
       }
-      const data = await response.json();
-      if (data.success) {
-        setReportsList(data.reports || []);
-        if (data.reports && data.reports.length > 0) {
-          setReport(data.reports[0]);
-        } else {
-          setReport(null);
-        }
-      } else {
-        throw new Error(data.message || 'Unknown server error');
+      return true
+    })
+  }, [selectedRecruiter, selectedClient, selectedStatus, searchTerm])
+
+  // Filter Interviews
+  const filteredInterviews = useMemo(() => {
+    return mockInterviewSchedules.filter(i => {
+      if (selectedRecruiter !== 'All' && i.recruiter !== selectedRecruiter) return false
+      if (selectedClient !== 'All' && i.client !== selectedClient) return false
+      if (searchTerm.trim()) {
+        const q = searchTerm.toLowerCase()
+        const text = `${i.reqId} ${i.title} ${i.candidateName} ${i.client} ${i.recruiter} ${i.status}`.toLowerCase()
+        if (!text.includes(q)) return false
       }
-    } catch (err) {
-      console.error('Fetch List Error:', err);
-      setError(err.message || 'An error occurred while loading the reports.');
-    } finally {
-      setLoading(false);
-    }
-  };
+      return true
+    })
+  }, [selectedRecruiter, selectedClient, searchTerm])
 
-  const fetchLatestReport = async (type) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/automation/latest?type=${type}`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch report (Status: ${response.status})`);
+  // Filter Requisitions
+  const filteredRequisitions = useMemo(() => {
+    return mockRequisitionStatuses.filter(r => {
+      if (selectedClient !== 'All' && r.client !== selectedClient) return false
+      if (selectedStatus !== 'All' && r.status !== selectedStatus) return false
+      if (selectedRecruiter !== 'All' && !r.assignedRecruiters.includes(selectedRecruiter)) return false
+      if (searchTerm.trim()) {
+        const q = searchTerm.toLowerCase()
+        const text = `${r.reqId} ${r.title} ${r.client} ${r.assignedRecruiters}`.toLowerCase()
+        if (!text.includes(q)) return false
       }
-      const data = await response.json();
-      if (data.success) {
-        setReport(data.report);
-      } else {
-        throw new Error(data.message || 'Unknown server error');
+      return true
+    })
+  }, [selectedClient, selectedStatus, selectedRecruiter, searchTerm])
+
+  // Filter W2 Candidates
+  const filteredW2Candidates = useMemo(() => {
+    return mockW2Candidates.filter(w => {
+      if (selectedRecruiter !== 'All' && w.recruiter !== selectedRecruiter) return false
+      if (searchTerm.trim()) {
+        const q = searchTerm.toLowerCase()
+        const text = `${w.name} ${w.role} ${w.location} ${w.recruiter}`.toLowerCase()
+        if (!text.includes(q)) return false
       }
-    } catch (err) {
-      console.error('Fetch Error:', err);
-      setError(err.message || 'An error occurred while loading the report.');
-    } finally {
-      setLoading(false);
+      return true
+    })
+  }, [selectedRecruiter, searchTerm])
+
+  // Active Report Name Helper
+  const currentReportLabel = useMemo(() => {
+    for (const cat of reportCategories) {
+      const match = cat.items.find(i => i.id === activeSubReport)
+      if (match) return match.label
     }
-  };
-
-  const fetchIngestionStatus = async () => {
-    try {
-      const res = await fetch('/api/jobs/ingestion/status');
-      if (res.ok) {
-        const data = await res.json();
-        setIngestionStatus(data.status);
-        setIngestionRunning(data.currently_running || false);
-      }
-    } catch (_) {}
-  };
-
-  const fetchIngestionLogs = async () => {
-    try {
-      const res = await fetch('/api/jobs/ingestion/logs');
-      if (res.ok) {
-        const data = await res.json();
-        setIngestionLogs(data.logs || []);
-      }
-    } catch (_) {}
-  };
-
-  const triggerIngestion = async () => {
-    if (ingestionRunning) return;
-    setIngestionRunning(true);
-    setTriggerMessage({ type: 'info', text: '⚡ Ingestion pipeline started. This may take 1–3 minutes...' });
-
-    try {
-      const endpoint = '/api/jobs/ingestion/trigger';
-      const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-      if (!res.ok) throw new Error(`Trigger failed (${res.status})`);
-      
-      setTriggerMessage({ type: 'success', text: '✅ Ingestion running in background. Status will update automatically.' });
-
-      // Poll for completion
-      let attempts = 0;
-      const poll = setInterval(async () => {
-        attempts++;
-        await fetchIngestionStatus();
-        await fetchIngestionLogs();
-        if (attempts > 40) {
-          clearInterval(poll);
-          setIngestionRunning(false);
-        }
-      }, 4000);
-      pollIntervalRef.current = poll;
-
-    } catch (err) {
-      setTriggerMessage({ type: 'error', text: `❌ ${err.message}` });
-      setIngestionRunning(false);
-    }
-  };
-
-  // Auto-stop polling when ingestion finishes
-  useEffect(() => {
-    if (!ingestionRunning && pollIntervalRef.current) {
-      clearInterval(pollIntervalRef.current);
-      pollIntervalRef.current = null;
-      // Reload the report after completion
-      if (activeTab === 'jobs') {
-        setTimeout(() => fetchLatestReport('jobs'), 2000);
-      }
-    }
-  }, [ingestionRunning]);
-
-  // Auto-scroll logs to bottom
-  useEffect(() => {
-    if (logScrollRef.current) {
-      logScrollRef.current.scrollTop = logScrollRef.current.scrollHeight;
-    }
-  }, [ingestionLogs]);
-
-  useEffect(() => {
-    if (activeTab === 'verification') {
-      fetchReportsList('verification');
-    } else {
-      fetchLatestReport(activeTab);
-    }
-    setIsRawExpanded(false);
-
-    if (activeTab === 'jobs') {
-      fetchIngestionStatus();
-      fetchIngestionLogs();
-    }
-  }, [activeTab]);
-
-  const handleCopyRaw = () => {
-    if (!report) return;
-    const rawString = typeof report.raw === 'string' ? report.raw : JSON.stringify(report.raw, null, 2);
-    navigator.clipboard.writeText(rawString);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const getStatusPill = (status) => {
-    const s = (status || '').toLowerCase();
-    if (s === 'success' || s === 'completed' || s === 'active') {
-      return <span className="pill trusted">Success</span>;
-    }
-    if (s === 'warning' || s === 'pending' || s === 'no_jobs') {
-      return <span className="pill review">Pending</span>;
-    }
-    return <span className="pill risk">{status || 'Error'}</span>;
-  };
-
-  const formatDateTime = (isoString) => {
-    if (!isoString) return 'Never';
-    try {
-      const date = new Date(isoString);
-      return date.toLocaleString(undefined, {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-      });
-    } catch (e) {
-      return isoString;
-    }
-  };
-
-  // Build live log lines from ingestion logs for the terminal panel
-  const terminalLines = React.useMemo(() => {
-    if (ingestionLogs.length === 0) {
-      return [
-        { time: '--:--:--', tag: 'cron', tagClass: 'tag-info', text: 'No ingestion runs yet. Click "Run Now" to start.' },
-        { time: new Date().toLocaleTimeString(), tag: 'api', tagClass: 'tag-success', text: 'Idle. Listening for webhook events...', cursor: true },
-      ];
-    }
-
-    const latest = ingestionLogs[0];
-    const lines = [];
-
-    lines.push({
-      time: new Date(latest.run_start || latest.run_end).toLocaleTimeString(),
-      tag: 'cron',
-      tagClass: 'tag-info',
-      text: `Last run: ${formatDateTime(latest.run_start)}`,
-    });
-
-    lines.push({
-      time: '',
-      tag: latest.status === 'success' ? 'success' : latest.status === 'error' ? 'error' : 'info',
-      tagClass: latest.status === 'success' ? 'tag-success' : latest.status === 'error' ? 'tag-error' : 'tag-warning',
-      text: `Status: ${(latest.status || 'unknown').toUpperCase()} · Mode: ${latest.mode || 'http'}`,
-    });
-
-    lines.push({ time: '', tag: 'scraper', tagClass: 'tag-info', text: `Jobs found: ${latest.jobs_found ?? 0}` });
-    lines.push({ time: '', tag: 'database', tagClass: 'tag-success', text: `Jobs added to DB: ${latest.jobs_added ?? 0}` });
-    lines.push({ time: '', tag: 'filter', tagClass: 'tag-warning', text: `Duplicates skipped: ${latest.duplicates_skipped ?? 0} · Rebid filtered: ${latest.rebid_filtered ?? 0}` });
-
-    if (latest.failed_jobs > 0) {
-      lines.push({ time: '', tag: 'error', tagClass: 'tag-error', text: `Failed jobs: ${latest.failed_jobs}` });
-    }
-
-    if (ingestionRunning) {
-      lines.push({ time: new Date().toLocaleTimeString(), tag: 'cron', tagClass: 'tag-warning', text: '⚡ Ingestion is RUNNING NOW...', cursor: true });
-    } else {
-      lines.push({
-        time: new Date(latest.run_end || latest.run_start).toLocaleTimeString(),
-        tag: 'api',
-        tagClass: 'tag-success',
-        text: 'Idle. Next run: Automatic every 15 minutes.',
-        cursor: true,
-      });
-    }
-
-    return lines;
-  }, [ingestionLogs, ingestionRunning]);
+    return 'Report'
+  }, [activeSubReport])
 
   return (
     <SiteLayout>
-      <section className="section">
-        <div className="container-wide">
-          <div className="reports-grid-layout">
-            
-            {/* Left Column: Reports and Main Content */}
-            <div className="reports-main-pane">
-              <div className="no-print">
-                <p className="eyebrow">DAILY INTELLIGENCE PIPELINES</p>
-                <h1 className="page-title">Automation Reports</h1>
-                <p className="lead">
-                  Real-time updates and daily brief logs synchronized directly from background automations.
-                </p>
-              </div>
+      <div style={{ background: '#f1f5f9', minHeight: '92vh', paddingBottom: '40px', fontFamily: 'Arial, sans-serif' }}>
+        
+        {/* ═══════════ TOP BREADCRUMB & LOGO BAR ═══════════ */}
+        <div style={{ background: '#ffffff', borderBottom: '1px solid #cbd5e1', padding: '6px 18px', fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1e3a8a', fontWeight: 'bold' }}>
+            <span style={{ fontSize: '16px' }}>🏠</span>
+            <Link to="/dashboard" style={{ color: '#0066cc', textDecoration: 'underline' }}>Home</Link>
+            <span>&gt;</span>
+            <span>Reports</span>
+            <span>&gt;</span>
+            <span style={{ color: '#ea580c' }}>{currentReportLabel}</span>
+          </div>
+          <div style={{ fontSize: '11.5px', color: '#475569', fontWeight: 'bold' }}>
+            SmartWorks Intelligence & Reporting Suite
+          </div>
+        </div>
 
-              {/* Tab Navigation */}
-              <div className="tabs-container no-print">
-                <button
-                  className={`tab-btn ${activeTab === 'ai-brief' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('ai-brief')}
-                >
-                  📰 AI Brief Report
-                </button>
-                <button
-                  className={`tab-btn ${activeTab === 'jobs' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('jobs')}
-                >
-                  💼 JobsInHand Postings
-                </button>
-                <button
-                  className={`tab-btn ${activeTab === 'leaderboard' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('leaderboard')}
-                >
-                  🏆 Recruiter Leaderboard
-                </button>
-                <button
-                  className={`tab-btn ${activeTab === 'verification' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('verification')}
-                >
-                  🛡️ AI Document Verification
-                </button>
-              </div>
+        {/* ═══════════ BLUE 4-TAB NAVIGATION BAR (MATCHING SCREENSHOTS) ═══════════ */}
+        <div style={{ background: '#739bbd', borderBottom: '1px solid #557b9d', position: 'relative', zIndex: 100 }}>
+          <div className="container-wide" style={{ display: 'flex', alignItems: 'stretch', padding: '0 16px' }}>
+            {reportCategories.map(cat => {
+              const isActiveCat = activeCategory === cat.id
+              const isHovered = hoverCategory === cat.id
 
-              {/* Trigger Message Banner */}
-              {activeTab === 'jobs' && triggerMessage && (
-                <div className={`trigger-banner trigger-banner-${triggerMessage.type}`}>
-                  {triggerMessage.text}
-                  <button className="banner-dismiss" onClick={() => setTriggerMessage(null)}>✕</button>
+              return (
+                <div
+                  key={cat.id}
+                  onMouseEnter={() => setHoverCategory(cat.id)}
+                  onMouseLeave={() => setHoverCategory(null)}
+                  style={{ position: 'relative' }}
+                >
+                  {/* Category Top Tab Button */}
+                  <div
+                    onClick={() => {
+                      setActiveCategory(cat.id)
+                      setActiveSubReport(cat.items[0].id)
+                    }}
+                    style={{
+                      padding: '8px 24px',
+                      fontSize: '12.5px',
+                      fontWeight: 'bold',
+                      color: '#ffffff',
+                      background: isActiveCat ? '#50789d' : 'transparent',
+                      borderRight: '1px solid #5a82a6',
+                      borderLeft: '1px solid rgba(255,255,255,0.15)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <span>{cat.name}</span>
+                    <span style={{ fontSize: '9px', opacity: 0.8 }}>▼</span>
+                  </div>
+
+                  {/* Dropdown Menu on Hover / Active (Exact styling from screenshots) */}
+                  {(isHovered || (isActiveCat && hoverCategory === null)) && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      minWidth: '220px',
+                      background: '#8ba8c4',
+                      border: '1px solid #668cae',
+                      boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
+                      zIndex: 200
+                    }}>
+                      {cat.items.map(item => {
+                        const isSubActive = activeSubReport === item.id
+                        return (
+                          <div
+                            key={item.id}
+                            onClick={() => handleSelectReport(cat.id, item.id)}
+                            style={{
+                              padding: '7px 14px',
+                              fontSize: '11.5px',
+                              fontWeight: isSubActive ? 'bold' : 'normal',
+                              color: '#ffffff',
+                              background: isSubActive ? '#50789d' : 'transparent',
+                              borderBottom: '1px solid #7a9cb8',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center'
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.background = '#658bad' }}
+                            onMouseLeave={e => { e.currentTarget.style.background = isSubActive ? '#50789d' : 'transparent' }}
+                          >
+                            <span>{item.label}</span>
+                            {isSubActive && <span style={{ fontSize: '10px' }}>✔</span>}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
-              )}
+              )
+            })}
+          </div>
+        </div>
 
-              {/* Content Area */}
-              <div className="report-card-wrap">
-                {loading ? (
-                  // Loading Skeleton
-                  <div className="card skeleton-card">
-                    <div className="skeleton-line skeleton-title" />
-                    <div className="skeleton-row">
-                      <div className="skeleton-badge" />
-                      <div className="skeleton-line skeleton-meta" />
-                    </div>
-                    <hr className="divider" />
-                    <div className="skeleton-line skeleton-body" />
-                    <div className="skeleton-line skeleton-body" />
-                    <div className="skeleton-line skeleton-body short" />
-                  </div>
-                ) : error ? (
-                  // Error State
-                  <div className="card error-card">
-                    <div className="error-icon">⚠️</div>
-                    <h3>Failed to load report</h3>
-                    <p className="error-message">{error}</p>
-                    <button className="btn btn-sm btn-ghost" onClick={() => fetchLatestReport(activeTab)}>
-                      Retry Connection
-                    </button>
-                  </div>
-                ) : !report ? (
-                  // Empty State
-                  <div className="card empty-card">
-                    <div className="empty-icon">📊</div>
-                    <h3>No reports found</h3>
-                    <p className="empty-message">
-                      {activeTab === 'jobs'
-                        ? 'No job sync reports yet. Click "Run Now" in the panel to trigger the first ingestion.'
-                        : 'This report stream has not received any sync logs yet. Configure your daily automation to send reports here.'}
-                    </p>
-                    <div className="api-hint">
-                      <code>POST /api/automation/report</code>
-                    </div>
-                    {activeTab === 'jobs' && (
-                      <button
-                        className="btn btn-sync-trigger"
-                        style={{ marginTop: 16 }}
-                        onClick={triggerIngestion}
-                        disabled={ingestionRunning}
-                      >
-                        {ingestionRunning ? '⏳ Running...' : '⚡ Run Now'}
-                      </button>
-                    )}
-                  </div>
-                ) : activeTab === 'leaderboard' ? (
-                  <div className="card" style={{ padding: 24, borderRadius: 16 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                      <div>
-                        <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: 'var(--ink)' }}>
-                          🏆 Recruiter Performance Leaderboard & Attribution
-                        </h2>
-                        <p style={{ fontSize: 13, color: 'var(--ink-soft)', margin: '4px 0 0 0' }}>
-                          Real-time candidate sourcing rankings, trust compliance scores, and recruiter referral performance.
-                        </p>
-                      </div>
-                      <span style={{ background: '#FEF3C7', color: '#B45309', padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 800 }}>
-                        MONTHLY LEADERBOARD
-                      </span>
-                    </div>
+        {/* ═══════════ MAIN REPORT CONTAINER ═══════════ */}
+        <div className="container-wide" style={{ padding: '16px', maxWidth: '1360px', margin: '0 auto', marginTop: '10px' }}>
+          
+          {/* Top Quick Search & Filter Panel */}
+          <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '12px 16px', marginBottom: '14px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '18px' }}>📑</span>
+                <h2 style={{ margin: 0, fontSize: '15px', color: '#1e3a8a', fontWeight: 'bold' }}>
+                  {currentReportLabel}
+                </h2>
+              </div>
 
-                    <div style={{ overflowX: 'auto' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                        <thead>
-                          <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
-                            <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 800 }}>Rank</th>
-                            <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 800 }}>Recruiter Name</th>
-                            <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 800 }}>Ref Tag Code</th>
-                            <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 800 }}>Total Sourced</th>
-                            <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 800 }}>Trusted Rate (%)</th>
-                            <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 800 }}>Share Link</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {[
-                            { rank: 1, name: 'Rahul Sharma', refCode: 'rahul-sharma-892', total: 18, trustedRate: 94, isTop: true },
-                            { rank: 2, name: 'Priya Verma', refCode: 'priya-verma-341', total: 12, trustedRate: 88, isTop: false },
-                            { rank: 3, name: 'Ankit Gupta', refCode: 'ankit-gupta-102', total: 9, trustedRate: 85, isTop: false },
-                            { rank: 4, name: 'Neha Kapoor', refCode: 'neha-kapoor-551', total: 7, trustedRate: 82, isTop: false }
-                          ].map((rec) => (
-                            <tr key={rec.rank} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                              <td style={{ padding: '14px 16px', textAlign: 'center', fontWeight: 900, fontSize: 15 }}>
-                                {rec.rank === 1 ? '🥇 #1' : rec.rank === 2 ? '🥈 #2' : rec.rank === 3 ? '🥉 #3' : `#${rec.rank}`}
-                              </td>
-                              <td style={{ padding: '14px 16px', fontWeight: 700, color: 'var(--ink)' }}>
-                                {rec.name}
-                                {rec.isTop && <span style={{ marginLeft: 8, fontSize: 10, background: '#DCFCE7', color: '#15803D', padding: '2px 6px', borderRadius: 4, fontWeight: 800 }}>TOP PERFORMER</span>}
-                              </td>
-                              <td style={{ padding: '14px 16px' }}>
-                                <span style={{ fontFamily: 'monospace', background: '#EFF6FF', color: '#1D4ED8', padding: '3px 8px', borderRadius: 6, fontWeight: 700 }}>
-                                  {rec.refCode}
-                                </span>
-                              </td>
-                              <td style={{ padding: '14px 16px', textAlign: 'center', fontWeight: 800, color: '#2563EB', fontSize: 15 }}>
-                                {rec.total} Candidates
-                              </td>
-                              <td style={{ padding: '14px 16px', textAlign: 'center', fontWeight: 800, color: rec.trustedRate >= 90 ? '#16A34A' : '#D97706' }}>
-                                {rec.trustedRate}%
-                              </td>
-                              <td style={{ padding: '14px 16px', textAlign: 'right' }}>
-                                <button
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(`${window.location.origin}/careers?ref=${rec.refCode}`);
-                                    alert(`Copied recruiter link: ${window.location.origin}/careers?ref=${rec.refCode}`);
-                                  }}
-                                  style={{ background: 'rgba(37,99,235,0.08)', color: '#2563EB', border: '1px solid rgba(37,99,235,0.2)', padding: '6px 12px', borderRadius: 6, fontWeight: 700, cursor: 'pointer', fontSize: 12 }}
-                                >
-                                  Copy Link 🔗
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                ) : (
-                  // Loaded Report Content
-                  activeTab === 'verification' ? (
-                    <div className="verification-results-dashboard" style={{ marginTop: 0 }}>
-                      <div className="results-actions-bar no-print" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-                        <button className="btn" style={{ background: 'var(--brand)', color: 'white', fontWeight: 'bold' }} onClick={() => window.print()}>
-                          📋 Download / Print PDF Report
-                        </button>
-                      </div>
-                      
-                      {/* Overall Verdict Banner */}
-                      <div className={`verdict-banner-premium ${
-                        report.raw?.verdict === 'LEGITIMATE' ? 'verdict-pass' : 
-                        report.raw?.verdict === 'SUSPICIOUS' ? 'verdict-warn' : 'verdict-fail'
-                      }`}>
-                        <div className="verdict-header-row">
-                          <div className="verdict-title-group">
-                            <span className="verdict-label">AI VERIFICATION STATUS</span>
-                            <h3>{
-                              report.raw?.verdict === 'LEGITIMATE' ? '🛡️ LEGITIMATE - PASS' : 
-                              report.raw?.verdict === 'SUSPICIOUS' ? '⚠️ SUSPICIOUS - ACTION REQUIRED' : '🚨 SUSPECTED FRAUD - FAIL'
-                            }</h3>
-                          </div>
-                          <div className="verdict-score-gauge">
-                            <strong>{report.raw?.confidence_score}</strong>
-                            <span>Score</span>
-                          </div>
-                        </div>
-                        <p className="verdict-summary-text">{report.raw?.summary}</p>
-                      </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={handleExportToExcel}
+                  style={{
+                    background: '#f1f5f9', border: '1px solid #94a3b8', padding: '4px 12px',
+                    fontSize: '11.5px', fontWeight: 'bold', color: '#0f172a', cursor: 'pointer',
+                    boxShadow: 'inset 0 1px 0 #ffffff, 0 1px 2px rgba(0,0,0,0.05)', borderRadius: '2px',
+                    display: 'flex', alignItems: 'center', gap: '5px'
+                  }}
+                >
+                  <span>📊</span>
+                  <span>Export to Excel</span>
+                </button>
 
-                      {/* Compliance Checks Cards Grid */}
-                      <div className="compliance-cards-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '20px' }}>
-                        {/* Driver's License Card */}
-                        <div className="compliance-card" style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: '12px', padding: '16px' }}>
-                          <div className="card-header-icon" style={{ fontWeight: 'bold', marginBottom: '12px' }}>🪪 Driver's License Audit</div>
-                          <div className="card-checks-list" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            <div className="extracted-header" style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--brand)' }}>Detected State: {report.raw?.state_rules_validation?.detected_state || 'Not Found'}</div>
-                            <div className="applied-rules-text" style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>{report.raw?.state_rules_validation?.state_rules_applied}</div>
-                            {report.raw?.state_rules_validation?.checks?.map((chk, idx) => (
-                              <div key={idx} className="check-item-row" style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', fontSize: '13px' }}>
-                                <span className={`status-icon ${chk.status === 'PASS' ? 'pass' : chk.status === 'WARN' ? 'warn' : 'fail'}`} style={{ fontWeight: 'bold' }}>
-                                  {chk.status === 'PASS' ? '✓' : chk.status === 'WARN' ? '⚠' : '✗'}
-                                </span>
-                                <div className="check-item-desc" style={{ display: 'flex', flexDirection: 'column' }}>
-                                  <strong>{chk.name}</strong>
-                                  <span style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>{chk.details}</span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Visa Card */}
-                        <div className="compliance-card" style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: '12px', padding: '16px' }}>
-                          <div className="card-header-icon" style={{ fontWeight: 'bold', marginBottom: '12px' }}>📄 Immigration Visa Audit</div>
-                          <div className="card-checks-list" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            <div className="extracted-header" style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--brand)' }}>Detected Visa Type: {report.raw?.visa_validation?.detected_visa_type || 'Not Found'}</div>
-                            <div className="applied-rules-text" style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>Federal Visa compliance checks: cross-references date sequences, beneficiary names, and employer petition sponsors.</div>
-                            {report.raw?.visa_validation?.checks?.map((chk, idx) => (
-                              <div key={idx} className="check-item-row" style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', fontSize: '13px' }}>
-                                <span className={`status-icon ${chk.status === 'PASS' ? 'pass' : chk.status === 'WARN' ? 'warn' : 'fail'}`} style={{ fontWeight: 'bold' }}>
-                                  {chk.status === 'PASS' ? '✓' : chk.status === 'WARN' ? '⚠' : '✗'}
-                                </span>
-                                <div className="check-item-desc" style={{ display: 'flex', flexDirection: 'column' }}>
-                                  <strong>{chk.name}</strong>
-                                  <span style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>{chk.details}</span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Extracted Metadata Comparison Table */}
-                      <div className="extracted-metadata-table-card" style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: '12px', padding: '16px', marginTop: '20px' }}>
-                        <h4 style={{ margin: '0 0 12px 0' }}>📋 Extracted Document Metadata Comparison</h4>
-                        <div className="table-wrapper">
-                          <table className="comparison-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                            <thead>
-                              <tr style={{ borderBottom: '1px solid var(--line)' }}>
-                                <th style={{ textAlign: 'left', padding: '8px' }}>Verification Field</th>
-                                <th style={{ textAlign: 'left', padding: '8px' }}>Driver's License Data</th>
-                                <th style={{ textAlign: 'left', padding: '8px' }}>Visa Document Data</th>
-                                <th style={{ textAlign: 'left', padding: '8px' }}>Cross-Match Status</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              <tr style={{ borderBottom: '1px solid var(--line)' }}>
-                                <td style={{ padding: '8px' }}><strong>Candidate Name</strong></td>
-                                <td style={{ padding: '8px' }}>{report.raw?.extracted_data?.dl_details?.candidate_name || report.raw?.extracted_data?.candidate_name || 'N/A'}</td>
-                                <td style={{ padding: '8px' }}>{report.raw?.extracted_data?.visa_details?.beneficiary_name || report.raw?.extracted_data?.candidate_name || 'N/A'}</td>
-                                <td style={{ padding: '8px' }}>
-                                  <span className={`status-pill ${
-                                    (report.raw?.extracted_data?.dl_details?.candidate_name && report.raw?.extracted_data?.visa_details?.beneficiary_name && 
-                                    report.raw?.extracted_data?.dl_details?.candidate_name.toLowerCase().includes(report.raw?.extracted_data?.visa_details?.beneficiary_name.split(' ')[0].toLowerCase())) 
-                                    ? 'pill-ok' : 'pill-warn'
-                                  }`}>
-                                    {(report.raw?.extracted_data?.dl_details?.candidate_name && report.raw?.extracted_data?.visa_details?.beneficiary_name && 
-                                    report.raw?.extracted_data?.dl_details?.candidate_name.toLowerCase().includes(report.raw?.extracted_data?.visa_details?.beneficiary_name.split(' ')[0].toLowerCase())) 
-                                    ? 'MATCH' : 'DISCREPANCY'}
-                                  </span>
-                                </td>
-                              </tr>
-                              <tr style={{ borderBottom: '1px solid var(--line)' }}>
-                                <td style={{ padding: '8px' }}><strong>ID Number</strong></td>
-                                <td style={{ padding: '8px' }}><code>{report.raw?.extracted_data?.dl_details?.number || 'N/A'}</code></td>
-                                <td style={{ padding: '8px' }}><code>{report.raw?.extracted_data?.visa_details?.number || 'N/A'}</code></td>
-                                <td style={{ padding: '8px' }}><span className="status-pill pill-neutral">N/A</span></td>
-                              </tr>
-                              <tr style={{ borderBottom: '1px solid var(--line)' }}>
-                                <td style={{ padding: '8px' }}><strong>Date of Birth</strong></td>
-                                <td style={{ padding: '8px' }}>{report.raw?.extracted_data?.dl_details?.dob || 'N/A'}</td>
-                                <td style={{ padding: '8px' }}>{report.raw?.extracted_data?.visa_details?.dob || 'N/A'}</td>
-                                <td style={{ padding: '8px' }}>
-                                  <span className={`status-pill ${
-                                    (report.raw?.extracted_data?.dl_details?.dob && report.raw?.extracted_data?.visa_details?.dob &&
-                                    report.raw?.extracted_data?.dl_details?.dob === report.raw?.extracted_data?.visa_details?.dob)
-                                    ? 'pill-ok' : 'pill-warn'
-                                  }`}>
-                                    {report.raw?.extracted_data?.dl_details?.dob === report.raw?.extracted_data?.visa_details?.dob ? 'MATCH' : 'MISMATCH'}
-                                  </span>
-                                </td>
-                              </tr>
-                              <tr style={{ borderBottom: '1px solid var(--line)' }}>
-                                <td style={{ padding: '8px' }}><strong>Issue Date</strong></td>
-                                <td style={{ padding: '8px' }}>{report.raw?.extracted_data?.dl_details?.issue_date || 'N/A'}</td>
-                                <td style={{ padding: '8px' }}>{report.raw?.extracted_data?.visa_details?.issue_date || 'N/A'}</td>
-                                <td style={{ padding: '8px' }}><span className="status-pill pill-neutral">N/A</span></td>
-                              </tr>
-                              <tr>
-                                <td style={{ padding: '8px' }}><strong>Expiration Date</strong></td>
-                                <td style={{ padding: '8px' }}>{report.raw?.extracted_data?.dl_details?.expiration_date || 'N/A'}</td>
-                                <td style={{ padding: '8px' }}>{report.raw?.extracted_data?.visa_details?.expiration_date || 'N/A'}</td>
-                                <td style={{ padding: '8px' }}>
-                                  <span className={`status-pill ${
-                                    (report.raw?.extracted_data?.dl_details?.expiration_date && report.raw?.extracted_data?.visa_details?.expiration_date)
-                                    ? 'pill-ok' : 'pill-warn'
-                                  }`}>
-                                    ACTIVE
-                                  </span>
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-
-                      {/* Fraud Risk Assessment Indicators */}
-                      <div className="fraud-indicators-card" style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: '12px', padding: '16px', marginTop: '20px' }}>
-                        <h4 style={{ margin: '0 0 12px 0' }}>🛡️ Forensic Integrity Indicators</h4>
-                        <div className="indicators-list" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                          {report.raw?.fraud_indicators?.map((ind, idx) => (
-                            <div key={idx} className="indicator-row" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <div className="ind-header" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                <span className={`risk-badge ${ind.risk_level === 'HIGH' ? 'high' : ind.risk_level === 'MEDIUM' ? 'medium' : 'low'}`} style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
-                                  {ind.risk_level} RISK
-                                </span>
-                                <strong>{ind.indicator}</strong>
-                              </div>
-                              <p className="ind-details" style={{ fontSize: '12px', color: 'var(--ink-soft)', margin: 0 }}>{ind.details}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <article className="card report-content-card">
-                      <div className="report-header">
-                        <div className="report-meta-row">
-                          {getStatusPill(report.status)}
-                          <span className="report-date-badge">
-                            📅 {report.report_date}
-                          </span>
-                          {report.raw?.scrape_mode && (
-                            <span className="report-mode-badge">
-                              {report.raw.scrape_mode === 'playwright' ? '🤖 Playwright' : '🌐 HTTP'}
-                            </span>
-                          )}
-                        </div>
-                        <h2 className="report-title">{report.title}</h2>
-                        <p className="last-updated">
-                          Synced from webhook &bull; <strong>{formatDateTime(report.created_at)}</strong>
-                        </p>
-                      </div>
-
-                      <hr className="divider" />
-
-                      <div className="report-body">
-                        {report.content.split('\n\n').map((paragraph, idx) => (
-                          <p key={idx} className="report-p">
-                            {paragraph.split('\n').map((line, lIdx) => (
-                              <React.Fragment key={lIdx}>
-                                {line}
-                                {lIdx < paragraph.split('\n').length - 1 && <br />}
-                              </React.Fragment>
-                            ))}
-                          </p>
-                        ))}
-                      </div>
-
-                      {/* Stats Row for Jobs reports */}
-                      {activeTab === 'jobs' && report.raw && (
-                        <div className="stats-row">
-                          <div className="stat-chip stat-green">
-                            <span className="stat-num">{report.raw.jobs_added ?? report.raw.jobs_imported ?? 0}</span>
-                            <span className="stat-label">Added</span>
-                          </div>
-                          <div className="stat-chip stat-blue">
-                            <span className="stat-num">{report.raw.jobs_found ?? report.raw.jobs_fetched ?? 0}</span>
-                            <span className="stat-label">Found</span>
-                          </div>
-                          <div className="stat-chip stat-yellow">
-                            <span className="stat-num">{report.raw.duplicates_skipped ?? 0}</span>
-                            <span className="stat-label">Duplicates</span>
-                          </div>
-                          <div className="stat-chip stat-orange">
-                            <span className="stat-num">{report.raw.rebid_filtered ?? 0}</span>
-                            <span className="stat-label">Rebid Skip</span>
-                          </div>
-                          <div className="stat-chip stat-red">
-                            <span className="stat-num">{report.raw.failed_jobs ?? 0}</span>
-                            <span className="stat-label">Failed</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Raw JSON Accordion */}
-                      <div className="accordion-section">
-                        <button
-                          className="accordion-toggle"
-                          onClick={() => setIsRawExpanded(!isRawExpanded)}
-                        >
-                          <span>{isRawExpanded ? '▼' : '▶'} View Raw JSON Payload</span>
-                          <span className="toggle-label">{isRawExpanded ? 'Collapse' : 'Expand'}</span>
-                        </button>
-
-                        {isRawExpanded && (
-                          <div className="accordion-content">
-                            <div className="code-header">
-                              <span>Payload JSON</span>
-                              <button className="btn-copy" onClick={handleCopyRaw}>
-                                {copied ? '✓ Copied' : '📋 Copy JSON'}
-                              </button>
-                            </div>
-                            <pre className="resume-text-box raw-json-viewer">
-                              {typeof report.raw === 'string'
-                                ? report.raw
-                                : JSON.stringify(report.raw, null, 2)}
-                            </pre>
-                          </div>
-                        )}
-                      </div>
-                    </article>
-                  )
-                )}
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  style={{
+                    background: '#f1f5f9', border: '1px solid #94a3b8', padding: '4px 12px',
+                    fontSize: '11.5px', fontWeight: 'bold', color: '#0f172a', cursor: 'pointer',
+                    borderRadius: '2px', display: 'flex', alignItems: 'center', gap: '5px'
+                  }}
+                >
+                  <span>🖨️</span>
+                  <span>Print</span>
+                </button>
               </div>
             </div>
 
-            {/* Right Column: Console Panels & Controls */}
-            <div className="reports-side-pane no-print">
-              {activeTab === 'verification' ? (
-                <div className="card run-history-card">
-                  <h3 style={{ fontSize: 16, margin: '0 0 4px 0' }}>📋 Verification Scans</h3>
-                  <p style={{ fontSize: 12, color: 'var(--ink-soft)', margin: '0 0 14px 0' }}>
-                    Select a scan to inspect its validation rules and fraud analysis.
-                  </p>
-                  <div className="history-list" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {reportsList.length === 0 ? (
-                      <p style={{ fontSize: 13, color: 'var(--ink-soft)', textAlign: 'center', padding: '10px 0' }}>No scans run yet.</p>
-                    ) : (
-                      reportsList.map((item, idx) => (
-                        <div 
-                          key={idx} 
-                          className={`history-row ${report?.id === item.id ? 'active-report-item' : ''}`}
-                          onClick={() => setReport(item)}
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            padding: '10px',
-                            background: report?.id === item.id ? 'var(--surface-3)' : 'var(--surface)',
-                            border: report?.id === item.id ? '1px solid var(--brand)' : '1px solid var(--line)',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease'
-                          }}
-                        >
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            <strong style={{ fontSize: 13, color: report?.id === item.id ? 'var(--brand)' : 'inherit' }}>
-                              {item.raw?.extracted_data?.candidate_name || item.title}
-                            </strong>
-                            <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>
-                              {formatDateTime(item.created_at)}
-                            </span>
-                          </div>
-                          <div style={{ alignSelf: 'center' }}>
-                            <span className={`pill ${
-                              item.status === 'LEGITIMATE' ? 'trusted' :
-                              item.status === 'SUSPICIOUS' ? 'review' : 'risk'
-                            }`} style={{ fontSize: 10, padding: '2px 6px', fontWeight: 'bold' }}>
-                              {item.status}
-                            </span>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {/* Automation Console Widget */}
-                  <div className="card console-control-card">
-                    <h3>⚡ Automation Control</h3>
-                    <p style={{ fontSize: 13, color: 'var(--ink-soft)', margin: '0 0 14px 0' }}>
-                      {activeTab === 'jobs'
-                        ? 'Trigger the JobsInHand ingestion or monitor daily cron runs.'
-                        : 'Force trigger or monitor background cron jobs synced to n8n webhooks.'}
-                    </p>
+            {/* Filter Bar */}
+            <div style={{
+              background: '#f8fafc', border: '1px solid #e2e8f0', padding: '10px 14px', borderRadius: '3px',
+              display: 'flex', gap: '12px 18px', alignItems: 'center', flexWrap: 'wrap', fontSize: '11.5px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Search:</label>
+                <input
+                  type="text"
+                  placeholder="Filter candidate, req#, keyword..."
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  style={{ padding: '3px 8px', fontSize: '11px', border: '1px solid #cbd5e1', width: '180px' }}
+                />
+              </div>
 
-                    {activeTab === 'jobs' && (
-                      <>
-                        <button
-                          className={`btn btn-block ${ingestionRunning ? 'btn-running' : 'btn-sync-trigger'}`}
-                          onClick={triggerIngestion}
-                          disabled={ingestionRunning}
-                        >
-                          {ingestionRunning ? (
-                            <span className="running-indicator">
-                              <span className="spin">⟳</span> Running...
-                            </span>
-                          ) : '⚡ Run Now'}
-                        </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Recruiter:</label>
+                <select
+                  value={selectedRecruiter}
+                  onChange={e => setSelectedRecruiter(e.target.value)}
+                  style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}
+                >
+                  <option value="All">All Recruiters</option>
+                  <option value="Omkesh Manjute">Omkesh Manjute</option>
+                  <option value="Vaibhav Bisen">Vaibhav Bisen</option>
+                  <option value="Sukamal Chatterjee">Sukamal Chatterjee</option>
+                  <option value="Prudhvi">Prudhvi</option>
+                  <option value="Nitin Bhosale">Nitin Bhosale</option>
+                </select>
+              </div>
 
-                        <button
-                          className="btn btn-block btn-secondary-trigger"
-                          onClick={() => { fetchIngestionStatus(); fetchIngestionLogs(); fetchLatestReport('jobs'); }}
-                          disabled={ingestionRunning}
-                          style={{ marginTop: 8 }}
-                        >
-                          🔄 Refresh Status
-                        </button>
-                      </>
-                    )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Client:</label>
+                <select
+                  value={selectedClient}
+                  onChange={e => setSelectedClient(e.target.value)}
+                  style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}
+                >
+                  <option value="All">All Clients</option>
+                  <option value="State Of SC">State Of SC</option>
+                  <option value="State Of VA">State Of VA</option>
+                  <option value="State of MN">State of MN</option>
+                  <option value="State of CT">State of CT</option>
+                  <option value="State of TX">State of TX</option>
+                  <option value="State of NC">State of NC</option>
+                  <option value="State of TN">State of TN</option>
+                </select>
+              </div>
 
-                    {activeTab === 'ai-brief' && (
-                      <button
-                        className="btn btn-block btn-sync-trigger"
-                        onClick={() => fetchLatestReport(activeTab)}
-                        disabled={loading}
-                      >
-                        {loading ? '⏳ Syncing...' : '🔄 Sync Latest Report'}
-                      </button>
-                    )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Date From:</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={e => setStartDate(e.target.value)}
+                  style={{ padding: '2px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}
+                />
+                <span style={{ color: '#1e3a8a', fontWeight: 'bold' }}>To:</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={e => setEndDate(e.target.value)}
+                  style={{ padding: '2px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}
+                />
+              </div>
 
-                    {/* Last Run Stats (only for jobs tab) */}
-                    {activeTab === 'jobs' && ingestionStatus && (
-                      <div className="last-run-stats">
-                        <div className="stat-row">
-                          <span className="stat-key">Last Run</span>
-                          <span className="stat-val">{formatDateTime(ingestionStatus.last_run)}</span>
-                        </div>
-                        <div className="stat-row">
-                          <span className="stat-key">Status</span>
-                          <span className={`stat-val stat-status-${ingestionStatus.status}`}>
-                            {ingestionStatus.status?.toUpperCase() || 'Unknown'}
-                          </span>
-                        </div>
-                        <div className="stat-row">
-                          <span className="stat-key">Jobs Added</span>
-                          <span className="stat-val stat-highlight">{ingestionStatus.jobs_added ?? 0}</span>
-                        </div>
-                        <div className="stat-row">
-                          <span className="stat-key">Mode</span>
-                          <span className="stat-val">{ingestionStatus.mode === 'playwright' ? '🤖 Playwright' : '🌐 HTTP'}</span>
-                        </div>
-                        <div className="stat-row">
-                          <span className="stat-key">Next Run</span>
-                          <span className="stat-val">Every 15 minutes</span>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="webhook-url-box">
-                      <div className="webhook-title">
-                        {activeTab === 'jobs' ? 'Ingestion Trigger URL' : 'Webhook Intake URL'}
-                      </div>
-                      <code className="webhook-code">
-                        {activeTab === 'jobs' ? 'POST /api/jobs/ingestion/trigger' : 'POST /api/automation/report'}
-                      </code>
-                    </div>
-                  </div>
-
-                  {/* Live Cron Terminal Viewer */}
-                  <div className="card terminal-logs-card">
-                    <div className="terminal-header">
-                      <span className="terminal-dot red" />
-                      <span className="terminal-dot yellow" />
-                      <span className="terminal-dot green" />
-                      <span className="terminal-title">
-                        {activeTab === 'jobs' ? 'jobsinhand-ingestion.log' : 'automation-cron-daemon.log'}
-                      </span>
-                    </div>
-                    <div className="terminal-body-content" ref={logScrollRef}>
-                      {activeTab === 'jobs' ? (
-                        terminalLines.map((line, idx) => (
-                          <div key={idx} className="log-row">
-                            {line.time && <span className="log-time">[{line.time}]</span>}{' '}
-                            <span className={`log-tag ${line.tagClass}`}>[{line.tag}]</span>{' '}
-                            {line.text}
-                            {line.cursor && <span className="terminal-cursor">█</span>}
-                          </div>
-                        ))
-                      ) : (
-                        <>
-                          <div className="log-row"><span className="log-time">[06:00:01]</span> <span className="log-tag tag-info">[cron]</span> Triggering daily brief sync...</div>
-                          <div className="log-row"><span className="log-time">[06:00:03]</span> <span className="log-tag tag-info">[n8n]</span> Fetching inbox emails from mail server...</div>
-                          <div className="log-row"><span className="log-time">[06:00:07]</span> <span className="log-tag tag-success">[success]</span> Synced 4 unread messages.</div>
-                          <div className="log-row"><span className="log-time">[06:00:08]</span> <span className="log-tag tag-info">[gpt-4]</span> Extracting candidate metadata and matching to JDs...</div>
-                          <div className="log-row"><span className="log-time">[06:00:15]</span> <span className="log-tag tag-info">[database]</span> Stored 2 new candidates in VerifyHire DB.</div>
-                          <div className="log-row"><span className="log-time">[06:00:16]</span> <span className="log-tag tag-info">[report]</span> Generating Daily Brief summary...</div>
-                          <div className="log-row"><span className="log-time">[06:00:19]</span> <span className="log-tag tag-success">[success]</span> Report broadcast complete (200 OK).</div>
-                          <div className="log-row"><span className="log-time">[07:15:32]</span> <span className="log-tag tag-warning">[api]</span> Keep-alive healthcheck: OK.</div>
-                          <div className="log-row blinking-cursor-row"><span className="log-time">[{new Date().toLocaleTimeString()}]</span> <span className="log-tag tag-success">[api]</span> Idle. Listening for webhook events...<span className="terminal-cursor">█</span></div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Run History (jobs tab only) */}
-                  {activeTab === 'jobs' && ingestionLogs.length > 0 && (
-                    <div className="card run-history-card">
-                      <h4 className="history-title">📋 Run History</h4>
-                      <div className="history-list">
-                        {ingestionLogs.slice(0, 5).map((log, idx) => (
-                          <div key={idx} className="history-row">
-                            <div className="history-left">
-                              <span className={`history-dot ${log.status === 'success' ? 'dot-green' : log.status === 'error' ? 'dot-red' : 'dot-yellow'}`} />
-                              <span className="history-date">{formatDateTime(log.run_start || log.run_end)}</span>
-                            </div>
-                            <div className="history-right">
-                              <span className="history-added">+{log.jobs_added ?? 0} jobs</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
+              <button
+                type="button"
+                onClick={() => { setSearchTerm(''); setSelectedRecruiter('All'); setSelectedClient('All'); setSelectedStatus('All'); }}
+                style={{ background: '#e2e8f0', border: '1px solid #94a3b8', padding: '3px 10px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                Reset
+              </button>
             </div>
 
           </div>
+
+          {/* ═══════════ KPI SUMMARY WIDGETS ═══════════ */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '14px' }}>
+            <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '12px 14px', borderLeft: '4px solid #0284c7' }}>
+              <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Total Submissions</div>
+              <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#0f172a', marginTop: '2px' }}>{mockSubmissionDetails.length}</div>
+              <div style={{ fontSize: '10.5px', color: '#0284c7', marginTop: '2px' }}>Across 8 active state agencies</div>
+            </div>
+
+            <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '12px 14px', borderLeft: '4px solid #16a34a' }}>
+              <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Interviews Scheduled</div>
+              <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#0f172a', marginTop: '2px' }}>{mockInterviewSchedules.length}</div>
+              <div style={{ fontSize: '10.5px', color: '#16a34a', marginTop: '2px' }}>4 upcoming this week</div>
+            </div>
+
+            <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '12px 14px', borderLeft: '4px solid #ea580c' }}>
+              <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Open Requisitions</div>
+              <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#0f172a', marginTop: '2px' }}>{mockRequisitionStatuses.filter(r => r.status === 'In-Progress').length}</div>
+              <div style={{ fontSize: '10.5px', color: '#ea580c', marginTop: '2px' }}>Ready for candidate submittals</div>
+            </div>
+
+            <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '12px 14px', borderLeft: '4px solid #7c3aed' }}>
+              <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>W2 Candidates In Pool</div>
+              <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#0f172a', marginTop: '2px' }}>{mockW2Candidates.length}</div>
+              <div style={{ fontSize: '10.5px', color: '#7c3aed', marginTop: '2px' }}>Vetted and available for placement</div>
+            </div>
+          </div>
+
+          {/* ═══════════ REPORT DATA TABLES ═══════════ */}
+          <div style={{ background: '#ffffff', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+            
+            {/* Table Header Bar */}
+            <div style={{
+              background: '#bfdbfe', borderBottom: '1px solid #93c5fd', padding: '6px 14px',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+            }}>
+              <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#1e3a8a' }}>
+                {currentReportLabel} Records
+              </span>
+              <span style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#1e3a8a' }}>
+                Total Matches: {
+                  activeSubReport === 'submission-details' || activeSubReport === 'submission-summary' || activeSubReport === 'daily-submission-summary' || activeSubReport === 'resumes-submitted'
+                    ? filteredSubmissions.length
+                    : activeSubReport.startsWith('interview')
+                    ? filteredInterviews.length
+                    : activeSubReport === 'requisition-status'
+                    ? filteredRequisitions.length
+                    : activeSubReport === 'w2-candidate-added'
+                    ? filteredW2Candidates.length
+                    : mockRecruiterPerformance.length
+                }
+              </span>
+            </div>
+
+            {/* 1. SUBMISSIONS REPORT TABLE */}
+            {(activeSubReport === 'submission-details' || activeSubReport === 'submission-summary' || activeSubReport === 'daily-submission-summary' || activeSubReport === 'resumes-submitted' || activeSubReport === 'jih-candidate-summary' || activeSubReport === 'candidate-by-hrai') && (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: '#94a3b8', color: '#ffffff' }}>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Submission ID</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Req #</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Position Title</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Client</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Candidate Name</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Recruiter (Added By)</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Pay Rate</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Bill Rate</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Rate Type</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Sub Vendor</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Submitted On</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredSubmissions.length === 0 ? (
+                      <tr>
+                        <td colSpan="12" style={{ padding: '30px', textAlign: 'center', color: '#64748b' }}>No submission records found matching criteria.</td>
+                      </tr>
+                    ) : (
+                      filteredSubmissions.map((s, idx) => (
+                        <tr key={s.id} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{s.id}</td>
+                          <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>
+                            <Link to="/dashboard" style={{ color: '#0066cc', textDecoration: 'underline' }}>{s.reqId}</Link>
+                          </td>
+                          <td style={{ padding: '6px 8px', color: '#1e293b' }}>{s.title}</td>
+                          <td style={{ padding: '6px 8px', color: '#334155' }}>{s.client}</td>
+                          <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>
+                            <Link to="/dashboard" style={{ color: '#0066cc', textDecoration: 'underline' }}>{s.candidateName}</Link>
+                          </td>
+                          <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#1e3a8a', background: idx % 2 === 0 ? '#f1f5f9' : '#e2e8f0' }}>{s.recruiter}</td>
+                          <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold' }}>{s.payRate}</td>
+                          <td style={{ padding: '6px 8px', color: '#334155' }}>{s.billRate}</td>
+                          <td style={{ padding: '6px 8px', color: '#334155' }}>{s.rateType}</td>
+                          <td style={{ padding: '6px 8px', color: '#334155' }}>{s.subVendor}</td>
+                          <td style={{ padding: '6px 8px', color: '#64748b' }}>{s.submitDate}</td>
+                          <td style={{ padding: '6px 8px' }}>
+                            <span style={{
+                              padding: '2px 6px', borderRadius: '3px', fontSize: '10.5px', fontWeight: 'bold',
+                              background: s.status === 'Placed' ? '#dcfce7' : s.status.includes('Interview') ? '#e0e7ff' : '#fef3c7',
+                              color: s.status === 'Placed' ? '#166534' : s.status.includes('Interview') ? '#3730a3' : '#92400e'
+                            }}>
+                              {s.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* 2. RECRUITER PERFORMANCE TABLE */}
+            {(activeSubReport === 'recruiters-performance' || activeSubReport === 'performance-summary' || activeSubReport === 'performance-details' || activeSubReport === 'monthly-status') && (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: '#94a3b8', color: '#ffffff' }}>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Recruiter Name</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Candidates Sourced</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Submissions</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Interviews</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Offers</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Placed</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Margin Generated</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Avg Sourcing Speed</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mockRecruiterPerformance.map((p, idx) => (
+                      <tr key={p.recruiter} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#1e3a8a' }}>{p.recruiter}</td>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>{p.sourced}</td>
+                        <td style={{ padding: '6px 8px', color: '#0284c7', fontWeight: 'bold' }}>{p.submitted}</td>
+                        <td style={{ padding: '6px 8px', color: '#7c3aed', fontWeight: 'bold' }}>{p.interviews}</td>
+                        <td style={{ padding: '6px 8px', color: '#ea580c', fontWeight: 'bold' }}>{p.offers}</td>
+                        <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold' }}>{p.placed}</td>
+                        <td style={{ padding: '6px 8px', color: '#15803d', fontWeight: 'bold' }}>{p.margin}</td>
+                        <td style={{ padding: '6px 8px', color: '#475569' }}>{p.avgSubmissionTime}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* 3. INTERVIEW SCHEDULE TABLE */}
+            {activeSubReport === 'interview-schedule-client-start' && (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: '#94a3b8', color: '#ffffff' }}>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Interview ID</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Req #</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Position Title</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Client</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Candidate Name</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Recruiter</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Interview Date</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Time</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Round</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#fef08a' }}>Client Start Date</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Status</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Feedback / Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredInterviews.map((i, idx) => (
+                      <tr key={i.id} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{i.id}</td>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>{i.reqId}</td>
+                        <td style={{ padding: '6px 8px', color: '#1e293b' }}>{i.title}</td>
+                        <td style={{ padding: '6px 8px', color: '#334155' }}>{i.client}</td>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{i.candidateName}</td>
+                        <td style={{ padding: '6px 8px', color: '#1e3a8a', fontWeight: 'bold' }}>{i.recruiter}</td>
+                        <td style={{ padding: '6px 8px', color: '#dc2626', fontWeight: 'bold' }}>{i.interviewDate}</td>
+                        <td style={{ padding: '6px 8px', color: '#475569' }}>{i.interviewTime}</td>
+                        <td style={{ padding: '6px 8px', color: '#334155' }}>{i.round}</td>
+                        <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold', background: '#f0fdf4' }}>{i.clientStartDate}</td>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>{i.status}</td>
+                        <td style={{ padding: '6px 8px', color: '#64748b' }}>{i.feedback}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* 4. REQUISITION STATUS TABLE */}
+            {activeSubReport === 'requisition-status' && (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: '#94a3b8', color: '#ffffff' }}>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Req #</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Position Title</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Client</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Category</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Type</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Status</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Submissions</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Assigned Recruiters</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Creation Date</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Deadline</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Pay Rate</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRequisitions.map((r, idx) => (
+                      <tr key={r.reqId} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{r.reqId}</td>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#1e293b' }}>{r.title}</td>
+                        <td style={{ padding: '6px 8px', color: '#334155' }}>{r.client}</td>
+                        <td style={{ padding: '6px 8px', color: '#475569' }}>{r.category}</td>
+                        <td style={{ padding: '6px 8px', color: '#475569' }}>{r.type}</td>
+                        <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold' }}>{r.status}</td>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{r.submissions} / {r.maxSubmissions}</td>
+                        <td style={{ padding: '6px 8px', color: '#1e3a8a', fontWeight: 'bold' }}>{r.assignedRecruiters}</td>
+                        <td style={{ padding: '6px 8px', color: '#64748b' }}>{r.creationDate}</td>
+                        <td style={{ padding: '6px 8px', color: '#dc2626', fontWeight: 'bold' }}>{r.deadline}</td>
+                        <td style={{ padding: '6px 8px', color: '#334155' }}>{r.payRate}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* 5. W2 CANDIDATE TABLE */}
+            {activeSubReport === 'w2-candidate-added' && (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: '#94a3b8', color: '#ffffff' }}>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Candidate ID</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Candidate Name</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Role</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Exp</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Location</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Pay Rate</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Work Auth</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Recruiter (Added By)</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Added On</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Resumes Submitted</th>
+                      <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredW2Candidates.map((w, idx) => (
+                      <tr key={w.id} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{w.id}</td>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{w.name}</td>
+                        <td style={{ padding: '6px 8px', color: '#1e293b' }}>{w.role}</td>
+                        <td style={{ padding: '6px 8px', color: '#475569' }}>{w.exp}</td>
+                        <td style={{ padding: '6px 8px', color: '#475569' }}>{w.location}</td>
+                        <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold' }}>{w.payRate}</td>
+                        <td style={{ padding: '6px 8px', color: '#475569' }}>{w.workAuth}</td>
+                        <td style={{ padding: '6px 8px', color: '#1e3a8a', fontWeight: 'bold', background: idx % 2 === 0 ? '#f1f5f9' : '#e2e8f0' }}>{w.recruiter}</td>
+                        <td style={{ padding: '6px 8px', color: '#64748b' }}>{w.addedDate}</td>
+                        <td style={{ padding: '6px 8px', fontWeight: 'bold', textAlign: 'center' }}>{w.resumesSubmitted}</td>
+                        <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold' }}>{w.status}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Pagination Footer */}
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              background: '#f8fafc', borderTop: '1px solid #cbd5e1', padding: '6px 14px'
+            }}>
+              <div style={{ display: 'flex', gap: '8px', fontSize: '11.5px', fontWeight: 'bold' }}>
+                <span style={{ color: '#ea580c', cursor: 'pointer' }}>1</span>
+                <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>2</span>
+                <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>3</span>
+                <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>Next</span>
+                <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>Last</span>
+              </div>
+
+              <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#1e3a8a' }}>
+                Page Size:
+                <select value={pageSize} onChange={e => setPageSize(parseInt(e.target.value))} style={{ marginLeft: '6px', fontSize: '11px', padding: '1px 3px' }}>
+                  <option value="10">10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                </select>
+              </div>
+            </div>
+
+          </div>
+
         </div>
-      </section>
 
-      {/* Styled JSX scoped CSS */}
-      <style>{`
-        .reports-grid-layout {
-          display: grid;
-          grid-template-columns: 1fr 340px;
-          gap: 28px;
-          align-items: start;
-        }
-        @media (max-width: 1024px) {
-          .reports-grid-layout {
-            grid-template-columns: 1fr;
-          }
-        }
-        .reports-main-pane {
-          display: grid;
-          gap: 20px;
-        }
-        .reports-side-pane {
-          display: grid;
-          gap: 20px;
-        }
-        .tabs-container {
-          display: flex;
-          gap: 12px;
-          margin-bottom: 8px;
-          border-bottom: 1px solid var(--line);
-          padding-bottom: 8px;
-        }
-        .tab-btn {
-          background: transparent;
-          border: none;
-          padding: 10px 18px;
-          font-family: 'Plus Jakarta Sans', sans-serif;
-          font-weight: 700;
-          font-size: 14px;
-          color: var(--ink-soft);
-          cursor: pointer;
-          position: relative;
-          transition: color 0.2s ease;
-        }
-        .tab-btn:hover { color: var(--brand); }
-        .tab-btn.active { color: var(--brand); }
-        .tab-btn.active::after {
-          content: '';
-          position: absolute;
-          bottom: -9px; left: 0; right: 0;
-          height: 3px;
-          background: var(--brand);
-          border-radius: 999px;
-          animation: tabLine 0.2s ease;
-        }
+        {/* ═══════════ ORANGE FOOTER ═══════════ */}
+        <footer style={{ background: '#ea580c', borderTop: '2px solid #c2410c', color: '#ffffff', textAlign: 'center', padding: '10px', marginTop: '40px', fontSize: '11px', fontWeight: 'bold' }}>
+          © SmartHire LLC | All rights reserved | Release 1.9 06-May-2025 (New Server 2023 Aug)
+        </footer>
 
-        /* Trigger Banner */
-        .trigger-banner {
-          padding: 12px 16px;
-          border-radius: 8px;
-          font-size: 14px;
-          font-weight: 600;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          animation: slideDown 0.3s ease;
-        }
-        .trigger-banner-info    { background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.3); color: #3b82f6; }
-        .trigger-banner-success { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); color: #10b981; }
-        .trigger-banner-error   { background: rgba(239,68,68,0.12);  border: 1px solid rgba(239,68,68,0.3);  color: #ef4444; }
-        .banner-dismiss {
-          background: none; border: none; cursor: pointer;
-          font-size: 16px; color: inherit; opacity: 0.7; padding: 0 4px;
-        }
-        .banner-dismiss:hover { opacity: 1; }
-
-        .report-card-wrap {
-          animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
-        .report-content-card {
-          padding: 32px;
-          background: var(--surface);
-          border: 1px solid var(--line);
-          border-radius: var(--radius);
-          box-shadow: var(--shadow);
-        }
-        .report-header { display: flex; flex-direction: column; gap: 8px; }
-        .report-meta-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-        .report-date-badge {
-          font-size: 12px; font-weight: 700;
-          background: var(--surface-2); color: var(--ink-soft);
-          padding: 4px 12px; border-radius: 6px;
-          border: 1px solid var(--line);
-          font-family: 'Plus Jakarta Sans', sans-serif;
-        }
-        .report-mode-badge {
-          font-size: 11px; font-weight: 700;
-          background: rgba(16,185,129,0.1); color: #10b981;
-          padding: 3px 10px; border-radius: 99px;
-          border: 1px solid rgba(16,185,129,0.2);
-        }
-        .report-title {
-          font-family: 'Plus Jakarta Sans', sans-serif;
-          font-size: 24px; margin: 4px 0 0;
-          color: var(--ink); line-height: 1.25; font-weight: 800;
-        }
-        .last-updated { font-size: 12px; color: var(--ink-soft); margin: 0; }
-        .divider { border: 0; border-top: 1px solid var(--line); margin: 20px 0; }
-        .report-body { font-size: 15px; line-height: 1.7; color: var(--ink); margin-bottom: 24px; }
-        .report-p { margin: 0 0 16px; }
-        .report-p:last-child { margin-bottom: 0; }
-
-        /* Stats Row */
-        .stats-row {
-          display: flex; gap: 10px; flex-wrap: wrap;
-          margin: 0 0 24px;
-          padding: 16px;
-          background: var(--surface-2);
-          border-radius: 10px;
-          border: 1px solid var(--line);
-        }
-        .stat-chip {
-          display: flex; flex-direction: column; align-items: center;
-          padding: 10px 16px; border-radius: 8px;
-          flex: 1; min-width: 70px;
-        }
-        .stat-chip .stat-num { font-size: 22px; font-weight: 800; line-height: 1; }
-        .stat-chip .stat-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; opacity: 0.8; }
-        .stat-green { background: rgba(16,185,129,0.12); color: #10b981; }
-        .stat-blue  { background: rgba(59,130,246,0.12); color: #3b82f6; }
-        .stat-yellow { background: rgba(245,158,11,0.12); color: #f59e0b; }
-        .stat-orange { background: rgba(249,115,22,0.12); color: #f97316; }
-        .stat-red   { background: rgba(239,68,68,0.12);  color: #ef4444; }
-
-        .accordion-section { border-top: 1px solid var(--line); padding-top: 20px; }
-        .accordion-toggle {
-          width: 100%; display: flex; justify-content: space-between; align-items: center;
-          background: var(--surface-2); border: 1px solid var(--line);
-          padding: 10px 16px; border-radius: 8px;
-          font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 13px;
-          color: var(--ink); cursor: pointer; transition: background-color 0.15s ease;
-        }
-        .accordion-toggle:hover { background-color: #e6dac3; }
-        .toggle-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); }
-        .accordion-content { margin-top: 12px; animation: accordionExpand 0.25s cubic-bezier(0.16, 1, 0.3, 1) both; }
-        .code-header {
-          display: flex; justify-content: space-between; align-items: center;
-          padding: 8px 12px; background: #141a19;
-          border-top-left-radius: 8px; border-top-right-radius: 8px;
-          color: #8c9c99; font-size: 11px; font-family: monospace;
-          border-bottom: 1px solid #283331;
-        }
-        .btn-copy {
-          background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
-          color: #cbd5e1; padding: 4px 10px; border-radius: 4px;
-          cursor: pointer; font-size: 11px; transition: all 0.15s ease;
-        }
-        .btn-copy:hover { background: rgba(255,255,255,0.2); color: white; }
-        .raw-json-viewer { margin: 0; border-top-left-radius: 0 !important; border-top-right-radius: 0 !important; max-height: 250px; }
-
-        /* Console Controls */
-        .console-control-card { padding: 20px; background: var(--surface); border: 1px solid var(--line); }
-        .console-control-card h3 { font-family: 'Plus Jakarta Sans', sans-serif; margin: 0 0 6px 0; font-size: 15px; }
-        .btn-block { width: 100%; display: flex; justify-content: center; align-items: center; }
-        .btn-sync-trigger {
-          background: linear-gradient(135deg, var(--brand), #1b5e52);
-          color: white; border-radius: 8px; padding: 10px 16px;
-          font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 13px;
-          cursor: pointer; transition: all 0.2s ease; border: none;
-        }
-        .btn-sync-trigger:hover:not(:disabled) { background: linear-gradient(135deg, #164f44, #103a32); transform: translateY(-1px); }
-        .btn-sync-trigger:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-        .btn-running {
-          background: linear-gradient(135deg, #92400e, #78350f);
-          color: white; border-radius: 8px; padding: 10px 16px;
-          font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 13px;
-          cursor: not-allowed; border: none; width: 100%;
-          display: flex; justify-content: center; align-items: center;
-        }
-        .btn-secondary-trigger {
-          background: var(--surface-2); border: 1px solid var(--line);
-          color: var(--ink); border-radius: 8px; padding: 8px 16px;
-          font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 12px;
-          cursor: pointer; transition: all 0.2s ease;
-        }
-        .btn-secondary-trigger:hover:not(:disabled) { background: var(--line); }
-        .btn-secondary-trigger:disabled { opacity: 0.5; cursor: not-allowed; }
-        .running-indicator { display: flex; align-items: center; gap: 8px; }
-        .spin { display: inline-block; animation: rotate 1s linear infinite; font-size: 16px; }
-
-        /* Last Run Stats */
-        .last-run-stats {
-          margin: 14px 0 0;
-          border: 1px solid var(--line);
-          border-radius: 8px;
-          overflow: hidden;
-        }
-        .stat-row {
-          display: flex; justify-content: space-between; align-items: center;
-          padding: 7px 12px; font-size: 12px;
-          border-bottom: 1px solid var(--line);
-        }
-        .stat-row:last-child { border-bottom: none; }
-        .stat-key { color: var(--ink-soft); font-weight: 600; }
-        .stat-val { color: var(--ink); font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; }
-        .stat-val.stat-status-success { color: #10b981; }
-        .stat-val.stat-status-error   { color: #ef4444; }
-        .stat-val.stat-status-no_jobs { color: #f59e0b; }
-        .stat-highlight { color: var(--brand); }
-
-        .webhook-url-box {
-          margin-top: 14px; background: var(--surface-2);
-          border: 1px solid var(--line); padding: 10px 12px; border-radius: 8px;
-        }
-        .webhook-title { font-size: 11px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; margin-bottom: 4px; }
-        .webhook-code { font-size: 11px; word-break: break-all; color: var(--brand); font-weight: 700; }
-
-        /* Live Cron Terminal Viewer */
-        .terminal-logs-card {
-          background: #111615; border: 1px solid #283331; color: #e2e8f0;
-          padding: 14px 16px; border-radius: 12px;
-          font-family: 'Fira Code', 'Courier New', Courier, monospace;
-          box-shadow: 0 10px 30px rgba(17, 22, 21, 0.3);
-        }
-        .terminal-header {
-          display: flex; align-items: center; gap: 6px;
-          border-bottom: 1px solid #283331;
-          padding-bottom: 8px; margin-bottom: 12px;
-        }
-        .terminal-dot { width: 10px; height: 10px; border-radius: 50%; }
-        .terminal-dot.red    { background: #ef4444; }
-        .terminal-dot.yellow { background: #f59e0b; }
-        .terminal-dot.green  { background: #10b981; }
-        .terminal-title { font-size: 11px; color: #718096; margin-left: 6px; }
-        .terminal-body-content {
-          font-size: 11px; line-height: 1.6;
-          display: flex; flex-direction: column; gap: 4px;
-          max-height: 240px; overflow-y: auto;
-          scrollbar-width: thin; scrollbar-color: #283331 transparent;
-        }
-        .log-row { word-break: break-all; white-space: pre-wrap; color: #cbd5e1; }
-        .log-time { color: #5d6e6b; }
-        .log-tag { font-weight: 700; }
-        .log-tag.tag-info    { color: #3b82f6; }
-        .log-tag.tag-success { color: #10b981; }
-        .log-tag.tag-warning { color: #f59e0b; }
-        .log-tag.tag-error   { color: #ef4444; }
-        .terminal-cursor { animation: cursorBlink 1s infinite steps(2, start); color: #10b981; margin-left: 2px; }
-
-        /* Run History */
-        .run-history-card { padding: 16px; background: var(--surface); border: 1px solid var(--line); }
-        .history-title { margin: 0 0 12px; font-size: 13px; font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; color: var(--ink); }
-        .history-list { display: flex; flex-direction: column; gap: 6px; }
-        .history-row {
-          display: flex; justify-content: space-between; align-items: center;
-          padding: 6px 0;
-          border-bottom: 1px solid var(--line);
-          font-size: 12px;
-        }
-        .history-row:last-child { border-bottom: none; }
-        .history-left { display: flex; align-items: center; gap: 8px; }
-        .history-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-        .dot-green  { background: #10b981; }
-        .dot-yellow { background: #f59e0b; }
-        .dot-red    { background: #ef4444; }
-        .history-date { color: var(--ink-soft); font-weight: 500; }
-        .history-added { color: #10b981; font-weight: 700; }
-
-        /* Error/Empty states */
-        .error-card {
-          display: flex; flex-direction: column; align-items: center;
-          text-align: center; padding: 40px; gap: 12px;
-          border: 1px dashed var(--danger);
-          background: rgba(181, 71, 79, 0.03);
-        }
-        .error-icon { font-size: 36px; }
-        .error-message { color: var(--danger); font-size: 14px; max-width: 420px; margin-bottom: 8px; }
-        .empty-card {
-          display: flex; flex-direction: column; align-items: center;
-          text-align: center; padding: 50px 30px; gap: 12px;
-          border: 1px dashed var(--line);
-        }
-        .empty-icon { font-size: 40px; }
-        .empty-message { color: var(--ink-soft); font-size: 14px; max-width: 420px; margin-bottom: 12px; }
-        .api-hint { background: var(--surface-2); padding: 6px 14px; border-radius: 6px; border: 1px solid var(--line); }
-
-        /* Skeleton */
-        .skeleton-card { padding: 32px; pointer-events: none; }
-        .skeleton-line {
-          background: linear-gradient(90deg, var(--surface-2) 25%, #ebdcb9 50%, var(--surface-2) 75%);
-          background-size: 200% 100%;
-          animation: skeletonPulse 1.5s infinite linear;
-          border-radius: 4px;
-        }
-        .skeleton-title { height: 32px; width: 70%; margin-bottom: 16px; }
-        .skeleton-row { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
-        .skeleton-badge { height: 22px; width: 60px; border-radius: 99px; background: var(--surface-2); }
-        .skeleton-meta { height: 16px; width: 150px; }
-        .skeleton-body { height: 16px; width: 100%; margin-bottom: 12px; }
-        .skeleton-body.short { width: 60%; }
-
-        /* Keyframes */
-        @keyframes tabLine {
-          from { transform: scaleX(0); opacity: 0; }
-          to   { transform: scaleX(1); opacity: 1; }
-        }
-        @keyframes accordionExpand {
-          from { transform: translateY(-10px); opacity: 0; }
-          to   { transform: translateY(0); opacity: 1; }
-        }
-        @keyframes skeletonPulse {
-          0%   { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-        @keyframes cursorBlink {
-          0%, 100% { opacity: 0; }
-          50%       { opacity: 1; }
-        }
-        @keyframes slideDown {
-          from { transform: translateY(-6px); opacity: 0; }
-          to   { transform: translateY(0); opacity: 1; }
-        }
-        @keyframes rotate {
-          from { transform: rotate(0deg); }
-          to   { transform: rotate(360deg); }
-        }
-
-        @media print {
-          body {
-            background: white !important;
-            color: black !important;
-          }
-          body * {
-            visibility: hidden;
-          }
-          .verification-results-dashboard, .verification-results-dashboard * {
-            visibility: visible;
-          }
-          .verification-results-dashboard {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            padding: 0;
-            margin: 0;
-            box-shadow: none !important;
-            border: none !important;
-          }
-          .no-print {
-            display: none !important;
-          }
-          .verdict-banner-premium {
-            box-shadow: none !important;
-            border: 2px solid #ccc !important;
-          }
-          .compliance-card, .extracted-metadata-table-card, .fraud-indicators-card {
-            page-break-inside: avoid;
-            box-shadow: none !important;
-            border: 1px solid #ddd !important;
-            margin-bottom: 20px !important;
-          }
-        }
-      `}</style>
+      </div>
     </SiteLayout>
-  );
+  )
 }
 
-export default Reports;
+export default Reports
