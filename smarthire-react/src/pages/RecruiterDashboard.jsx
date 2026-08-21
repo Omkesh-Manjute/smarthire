@@ -100,9 +100,38 @@ function parseResumeDetails(text, filename = '') {
   }
 }
 
+// ─── RICH MOCK CANDIDATES (EXACT MATCH TO MEDIA_1787312540212.PNG) ───
+const legacyCandidateData = [
+  { id: '87501', name: 'Ashok Ankalla', role: 'Project ..', fullRole: 'Project Manager / Delivery Lead', exp: '18', location: 'Plainsboro,NJ', city: 'Plainsboro', state: 'NJ', locPref: '', payRate: '60 /hr', rateType: 'C2C', rating: 5, subVendor: '??????????????.', recruiter: 'Vaibhav Bisen', agrExists: false, avblDate: 'Aug 13, 2026', email: 'a.ankalla@gmail.com', phone: '609-555-1201', workAuth: 'GC', screened: 'Yes' },
+  { id: '87534', name: 'Ashok Ganta', role: 'VDOT Net..', fullRole: 'VDOT Network Administrator 4 (807536)', exp: '14', location: 'Richmond,VA', city: 'Richmond', state: 'VA', locPref: '', payRate: '74 /hr', rateType: 'C2C', rating: 1, subVendor: 'Talent9 Inc', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Aug 31, 2026', email: 'ashok57800@gmail.com', phone: '571-660-5778', workAuth: 'GC', screened: 'Yes' },
+  { id: '87503', name: 'Vadivelu Ashok Kumar', role: 'DCY - IT..', fullRole: 'DCY - IT Lead Architect', exp: '12', location: 'Minneapolis,MN', city: 'Minneapolis', state: 'MN', locPref: '', payRate: '75 /hr', rateType: 'C2C', rating: 1, subVendor: 'Paramount Software Solutions', recruiter: 'Prudhvi', agrExists: false, avblDate: 'Apr 30, 2026', email: 'vadivelu.kumar@paramount.com', phone: '612-555-8821', workAuth: 'H1B', screened: 'Yes' },
+  { id: '87504', name: 'Ashok Rajendran', role: 'Applicat..', fullRole: 'Application Developer Senior', exp: '13', location: 'Omaha,NE', city: 'Omaha', state: 'NE', locPref: '', payRate: '74 /hr', rateType: 'C2C', rating: 1, subVendor: 'Ardor IT Systems INC', recruiter: 'Sukamal Chatterjee', agrExists: false, avblDate: 'Mar 31, 2026', email: 'ashok.raj@ardorit.com', phone: '402-555-0912', workAuth: 'GC', screened: 'Yes' },
+  { id: '87505', name: 'Upendra Ganta', role: 'Data Eng..', fullRole: 'Data Engineer / Snowflake Lead', exp: '11', location: 'Hartford,CT', city: 'Hartford', state: 'CT', locPref: '', payRate: '60 /hr', rateType: 'C2C', rating: 1, subVendor: '??????????????.', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Feb 10, 2026', email: 'upendra.ganta@cloudtek.io', phone: '860-555-4421', workAuth: 'US Citizen', screened: 'Yes' },
+  { id: '87506', name: 'Ashok Kumar Rayapudi', role: 'Project ..', fullRole: 'Project Manager - Infrastructure', exp: '17', location: 'Novi,MI', city: 'Novi', state: 'MI', locPref: '', payRate: '85 /hr', rateType: 'C2C', rating: 5, subVendor: 'IConnect', recruiter: 'Vaibhav Bisen', agrExists: false, avblDate: 'Jan 19, 2026', email: 'ashok.rayapudi@iconnect.com', phone: '248-555-3312', workAuth: 'US Citizen', screened: 'Yes' },
+  { id: '87507', name: 'Goutham Gantala', role: 'Cloud En..', fullRole: 'Cloud Engineer / AWS Solutions', exp: '11', location: 'Bayonne,NY', city: 'Bayonne', state: 'NY', locPref: '', payRate: '78 /hr', rateType: 'C2C', rating: 1, subVendor: 'Cloud TechnoSoft LLC', recruiter: 'Nitin Bhosale', agrExists: false, avblDate: 'Dec 31, 2025', email: 'goutham.g@technosoft.com', phone: '201-555-9081', workAuth: 'H1B', screened: 'Yes' },
+  { id: '87508', name: 'Vamshi Krishna Ganta', role: 'TAX - Sr..', fullRole: 'TAX - Senior Systems Analyst', exp: '8', location: 'Woodbridge,NJ', city: 'Woodbridge', state: 'NJ', locPref: '', payRate: '60 /hr', rateType: 'C2C', rating: 1, subVendor: 'Client Server Technologies', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Dec 31, 2025', email: 'vamshi.ganta@clientserver.com', phone: '732-555-6671', workAuth: 'GC', screened: 'Yes' },
+  { id: '87509', name: 'Nagababu Ganta', role: 'Oracle D..', fullRole: 'Oracle DBA / PL-SQL Specialist', exp: '13', location: 'Katy,TX', city: 'Katy', state: 'TX', locPref: '', payRate: '63 /hr', rateType: 'C2C', rating: 5, subVendor: '??????????????.', recruiter: 'Vaibhav Bisen', agrExists: false, avblDate: 'Oct 9, 2025', email: 'nagababu.g@oracletech.net', phone: '281-555-1190', workAuth: 'GC', screened: 'Yes' },
+  { id: '87510', name: 'Ashok Juttu Kannan', role: 'QA', fullRole: 'QA Automation Lead (Selenium/Cypress)', exp: '19', location: 'Louisville,KY', city: 'Louisville', state: 'KY', locPref: '', payRate: '40 /hr', rateType: 'C2C', rating: 1, subVendor: 'COOLSOFT LLC', recruiter: 'Sukamal Chatterjee', agrExists: false, avblDate: 'Oct 1, 2024', email: 'ashok.jk@coolsoft.com', phone: '502-555-8721', workAuth: 'US Citizen', screened: 'Yes' },
+  { id: '87511', name: 'Naga Babu Ganta', role: 'Database..', fullRole: 'Database Engineer - PostgreSQL / AWS', exp: '13', location: 'Katy,TX', city: 'Katy', state: 'TX', locPref: '', payRate: '70 /hr', rateType: 'C2C', rating: 5, subVendor: '??????????????.', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Oct 3, 2025', email: 'naga.ganta@katytech.io', phone: '281-555-7612', workAuth: 'US Citizen', screened: 'Yes' },
+  { id: '87512', name: 'Cx Avinash Ashokrao Mahajan', role: 'Senior B..', fullRole: 'Senior Business Systems Analyst', exp: '16', location: 'Raleigh,NC', city: 'Raleigh', state: 'NC', locPref: '', payRate: '55 /hr', rateType: 'W2', rating: 1, subVendor: 'COOLSOFT LLC', recruiter: 'Vaibhav Bisen', agrExists: true, avblDate: 'May 14, 2025', email: 'avinash.mahajan@coolsoft.com', phone: '919-555-0918', workAuth: 'US Citizen', screened: 'Yes' },
+  { id: '87513', name: 'Naga Babu Ganta', role: 'Database..', fullRole: 'Database Administrator Senior', exp: '13', location: 'Houston,TX', city: 'Houston', state: 'TX', locPref: '', payRate: '65 /hr', rateType: 'C2C', rating: 1, subVendor: '??????????????.', recruiter: 'Prudhvi', agrExists: false, avblDate: 'Sep 3, 2025', email: 'naga.houston@databasedev.com', phone: '713-555-9921', workAuth: 'GC', screened: 'Yes' },
+  { id: '87514', name: 'Ashok Ankalla', role: 'Project ..', fullRole: 'Project Coordinator / Scrum Master', exp: '18', location: 'Bentonville,AR', city: 'Bentonville', state: 'AR', locPref: '', payRate: '60 /hr', rateType: 'C2C', rating: 1, subVendor: '??????????????.', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Aug 29, 2025', email: 'ashok.a.benton@retailtech.com', phone: '479-555-1120', workAuth: 'US Citizen', screened: 'Yes' },
+  { id: '87515', name: 'Tirumala Ashok Varmadantuluri', role: 'SCC - Sr..', fullRole: 'SCC - Senior Network Architect', exp: '16', location: 'Ashburn,VA', city: 'Ashburn', state: 'VA', locPref: '', payRate: '71 /hr', rateType: 'C2C', rating: 1, subVendor: 'Ameritech Global INC', recruiter: 'Nitin Bhosale', agrExists: false, avblDate: 'Jun 17, 2025', email: 'tirumala.v@ameritech.com', phone: '571-555-3341', workAuth: 'GC', screened: 'Yes' },
+  { id: '87516', name: 'Priyanka Gantareddy', role: 'Senior Q..', fullRole: 'Senior Quality Assurance Lead', exp: '16', location: 'Austin,TX', city: 'Austin', state: 'TX', locPref: '', payRate: '60 /hr', rateType: 'C2C', rating: 5, subVendor: '??????????????.', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Feb 26, 2025', email: 'priyanka.ganta@austintech.com', phone: '512-555-7721', workAuth: 'US Citizen', screened: 'Yes' },
+  { id: '87517', name: 'Nagajyothsna Ch Ganta', role: 'ERFO-ISD..', fullRole: 'ERFO-ISD Developer / Analyst', exp: '10', location: 'Ceref,CA', city: 'Ceref', state: 'CA', locPref: '', payRate: '65 /hr', rateType: 'C2C', rating: 1, subVendor: 'COOLSOFT LLC', recruiter: 'Vaibhav Bisen', agrExists: false, avblDate: 'Feb 13, 2025', email: 'nagajyothsna@coolsoft.com', phone: '408-555-6671', workAuth: 'H1B', screened: 'Yes' },
+  { id: '87518', name: 'Triveni Ganta', role: '.Net Dev..', fullRole: '.Net Core / Angular Full Stack Developer', exp: '8', location: 'Minneapolis,MN', city: 'Minneapolis', state: 'MN', locPref: '', payRate: '55 /hr', rateType: 'C2C', rating: 1, subVendor: 'Origin Tek Solutions', recruiter: 'Sukamal Chatterjee', agrExists: false, avblDate: 'Jan 22, 2025', email: 'triveni.ganta@origintek.com', phone: '612-555-1234', workAuth: 'H1B', screened: 'Yes' },
+  { id: '87519', name: 'Ashok Anakalla', role: 'Technica..', fullRole: 'Technical Lead / Solution Architect', exp: '18', location: 'Herndon,VA', city: 'Herndon', state: 'VA', locPref: '', payRate: '68 /hr', rateType: 'C2C', rating: 1, subVendor: '??????????????.', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Jan 13, 2025', email: 'ashok.anakalla@herndontech.com', phone: '703-555-9012', workAuth: 'US Citizen', screened: 'Yes' },
+  { id: '87520', name: 'Ashok Kumar Dodda', role: 'Cloud En..', fullRole: 'Cloud Enterprise Solutions Architect', exp: '13', location: 'Dallas,TX', city: 'Dallas', state: 'TX', locPref: '', payRate: '75 /hr', rateType: 'C2C', rating: 1, subVendor: 'E-Solutions Inc', recruiter: 'Vaibhav Bisen', agrExists: false, avblDate: 'Dec 12, 2024', email: 'ashok.dodda@esolutions.com', phone: '214-555-4431', workAuth: 'GC', screened: 'Yes' },
+  { id: '87521', name: 'Ashok Reddy', role: 'Software..', fullRole: 'Software Engineer Lead (Java/Cloud)', exp: '14', location: 'Fishers,IN', city: 'Fishers', state: 'IN', locPref: '', payRate: '65 /hr', rateType: 'C2C', rating: 1, subVendor: '??????????????.', recruiter: 'Prudhvi', agrExists: false, avblDate: 'Dec 23, 2024', email: 'ashok.reddy@indydigital.com', phone: '317-555-8812', workAuth: 'US Citizen', screened: 'Yes' },
+  { id: '87522', name: 'Ashok Bellala', role: 'Java Dev..', fullRole: 'Java Developer / Microservices', exp: '13', location: 'Columbus,OH', city: 'Columbus', state: 'OH', locPref: '', payRate: '60 /hr', rateType: '1099', rating: 1, subVendor: '48170', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Aug 25, 2020', email: 'ashok.bellala@ohiodata.org', phone: '614-555-0912', workAuth: 'GC', screened: 'Yes' },
+  { id: '87523', name: 'Ashok Mundlamuri', role: 'NCDIT - ..', fullRole: 'NCDIT - Systems Security Specialist', exp: '12', location: 'North Brunswick,NJ', city: 'North Brunswick', state: 'NJ', locPref: '', payRate: '65 /hr', rateType: 'C2C', rating: 1, subVendor: '??????????????.', recruiter: 'Vaibhav Bisen', agrExists: false, avblDate: 'Sep 25, 2024', email: 'ashok.mundlamuri@njtech.io', phone: '732-555-1823', workAuth: 'US Citizen', screened: 'Yes' },
+  { id: '87524', name: 'Ashok Natarajan', role: 'Project ..', fullRole: 'Project Manager - Enterprise ERP', exp: '17', location: 'Irving,TX', city: 'Irving', state: 'TX', locPref: '', payRate: '80 /hr', rateType: 'C2C', rating: 1, subVendor: 'Paramount Software Solutions', recruiter: 'Nitin Bhosale', agrExists: false, avblDate: 'Aug 28, 2024', email: 'ashok.natarajan@paramount.com', phone: '972-555-6671', workAuth: 'US Citizen', screened: 'Yes' },
+  { id: '87525', name: 'Sri Sai Tejasvi Gantakolla', role: 'Power Pl..', fullRole: 'Power Platform / Dynamics 365 Architect', exp: '10', location: 'Memphis,TN', city: 'Memphis', state: 'TN', locPref: '', payRate: '65 /hr', rateType: 'C2C', rating: 1, subVendor: 'COOLSOFT LLC', recruiter: 'Sukamal Chatterjee', agrExists: false, avblDate: 'Aug 22, 2024', email: 'tejasvi.ganta@coolsoft.com', phone: '901-555-7781', workAuth: 'GC', screened: 'Yes' }
+]
+
 function RecruiterDashboard() {
   const [jobs, setJobs] = useState([])
-  const [candidates, setCandidates] = useState([])
+  const [candidates, setCandidates] = useState(legacyCandidateData)
   
   // User auth state
   const userStr = localStorage.getItem('smarthire_user') || localStorage.getItem('verifyhire_user')
@@ -122,7 +151,7 @@ function RecruiterDashboard() {
   const [selectedReq, setSelectedReq] = useState(null)
   const [activeReqTab, setActiveReqTab] = useState('details')
   const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
+  const [pageSize, setPageSize] = useState(25)
   const [quickSearchId, setQuickSearchId] = useState('')
   const [showFilterPanel, setShowFilterPanel] = useState(true)
 
@@ -152,7 +181,7 @@ function RecruiterDashboard() {
     reqType: 'Select Req Type'
   })
 
-  // ─── SEARCH CANDIDATES FILTER STATE (NEW SCREENSHOT) ───
+  // ─── SEARCH CANDIDATES FILTER STATE (IMAGE 1787312030395) ───
   const [candFilters, setCandFilters] = useState({
     candidateId: '',
     name: '',
@@ -332,87 +361,7 @@ function RecruiterDashboard() {
   })
   const [newNoteText, setNewNoteText] = useState('')
 
-  // Default initial candidates list with recruiter tags
-  const initialDefaultCandidates = [
-    {
-      id: '87534',
-      name: 'Ashok Ganta',
-      email: 'ashok57800@gmail.com',
-      phone: '571-660-5778',
-      role: 'VDOT Network Administrator 4',
-      skills: ['Cisco Routing', 'Azure', 'Meraki Wireless', 'Firewall'],
-      location: 'Richmond, VA 23173',
-      city: 'Richmond',
-      state: 'VA',
-      zipCode: '23173',
-      experience: '14 years',
-      workAuth: 'GC',
-      assignedTo: userName,
-      screened: 'Yes',
-      availability: 'Immediate',
-      payRate: '74/hr',
-      rateType: 'C2C'
-    },
-    {
-      id: '87535',
-      name: 'Kashyap K Vora',
-      email: 'kashyap.vora@gmail.com',
-      phone: '804-555-0192',
-      role: 'Full Stack Java / Spring Boot Lead',
-      skills: ['Java 17', 'Spring Boot', 'Microservices', 'AWS', 'React'],
-      location: 'Columbia, SC 29210',
-      city: 'Columbia',
-      state: 'SC',
-      zipCode: '29210',
-      experience: '10 years',
-      workAuth: 'US Citizen',
-      assignedTo: userName,
-      screened: 'Yes',
-      availability: '2 Weeks',
-      payRate: '55/hr',
-      rateType: 'W2'
-    },
-    {
-      id: '87536',
-      name: 'Priyanka Sen',
-      email: 'priyanka.sen@techpulse.org',
-      phone: '404-982-3341',
-      role: 'Senior Data Engineer / Snowflake Specialist',
-      skills: ['Python', 'Snowflake', 'dbt', 'AWS Glue', 'Airflow'],
-      location: 'Atlanta, GA 30303',
-      city: 'Atlanta',
-      state: 'GA',
-      zipCode: '30303',
-      experience: '8 years',
-      workAuth: 'H1B',
-      assignedTo: 'Vaibhav Bisen',
-      screened: 'Yes',
-      availability: 'Immediate',
-      payRate: '68/hr',
-      rateType: 'C2C'
-    },
-    {
-      id: '87537',
-      name: 'Marcus Sterling',
-      email: 'm.sterling@solutions.io',
-      phone: '512-409-8871',
-      role: 'Cloud DevOps Architect',
-      skills: ['Terraform', 'Kubernetes', 'CI/CD', 'AWS', 'Docker'],
-      location: 'Austin, TX 78701',
-      city: 'Austin',
-      state: 'TX',
-      zipCode: '78701',
-      experience: '12 years',
-      workAuth: 'US Citizen',
-      assignedTo: userName,
-      screened: 'Yes',
-      availability: '30 Days',
-      payRate: '85/hr',
-      rateType: '1099'
-    }
-  ]
-
-  // Fetch jobs and candidates
+  // Fetch jobs
   useEffect(() => {
     const token = localStorage.getItem('smarthire_token') || ''
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
@@ -424,38 +373,7 @@ function RecruiterDashboard() {
         setJobs(list)
       })
       .catch(err => console.error('Failed to load jobs:', err))
-
-    fetch('/api/candidates', { headers })
-      .then(res => res.json())
-      .then(data => {
-        const list = Array.isArray(data) ? data : data.candidates || data.data || []
-        if (list.length > 0) {
-          const merged = list.map((c, i) => ({
-            id: c.id ? String(c.id).replace(/\D/g, '').slice(-5) || `8754${i}` : `8754${i}`,
-            name: c.name || 'Candidate Name',
-            email: c.email || 'candidate@example.com',
-            phone: c.phone || '555-010-0202',
-            role: c.role || 'Consultant',
-            skills: Array.isArray(c.skills) ? c.skills : ['Technical Skills'],
-            location: c.location || 'Richmond, VA',
-            city: c.location ? c.location.split(',')[0].trim() : 'Richmond',
-            state: c.location && c.location.split(',')[1] ? c.location.split(',')[1].trim().slice(0, 2) : 'VA',
-            zipCode: '23173',
-            experience: c.experience ? `${c.experience} years` : '6 years',
-            workAuth: c.workAuth || 'GC',
-            assignedTo: i % 2 === 0 ? userName : 'Vaibhav Bisen',
-            screened: c.status === 'Shortlisted' ? 'Yes' : 'Pending',
-            availability: 'Immediate',
-            payRate: c.expectedSalary || '70/hr',
-            rateType: 'C2C'
-          }))
-          setCandidates([...initialDefaultCandidates, ...merged.filter(m => !initialDefaultCandidates.some(d => d.id === m.id))])
-        } else {
-          setCandidates(initialDefaultCandidates)
-        }
-      })
-      .catch(() => setCandidates(initialDefaultCandidates))
-  }, [userName])
+  }, [])
 
   // Open Requisition Detail
   const handleOpenReq = (job) => {
@@ -528,6 +446,35 @@ function RecruiterDashboard() {
     } else {
       alert(`Requisition "${quickSearchId}" not found.`)
     }
+  }
+
+  // Export Results to CSV / Excel
+  const handleExportToExcel = () => {
+    const headers = ['Scr?', 'Candidate ID', 'Name', 'Job Title', 'Exp', 'Location', 'Pay Rate', 'Rate Type', 'Rating', 'Sub Vendor', 'Recruiter (Added By)', 'AgrExists', 'Avbl Date']
+    const rows = filteredCandidates.map(c => [
+      c.screened,
+      c.id,
+      `"${c.name}"`,
+      `"${c.fullRole || c.role}"`,
+      c.exp,
+      `"${c.location}"`,
+      `"${c.payRate}"`,
+      c.rateType,
+      c.rating,
+      `"${c.subVendor}"`,
+      `"${c.recruiter || c.assignedTo}"`,
+      c.agrExists ? 'Yes' : 'No',
+      `"${c.avblDate}"`
+    ])
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n')
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement('a')
+    link.setAttribute('href', encodedUri)
+    link.setAttribute('download', `CoolWorks_Candidates_Export_${new Date().toISOString().slice(0, 10)}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   // Resume File Upload & AI Auto-Parsing
@@ -635,11 +582,13 @@ function RecruiterDashboard() {
       lastName: ln,
       email: c.email || `${fn.toLowerCase()}@example.com`,
       phoneCell: c.phone || '571-660-5778',
-      city: c.location ? c.location.split(',')[0].trim() : 'Richmond',
-      state: c.location && c.location.split(',')[1] ? c.location.split(',')[1].trim().slice(0, 2) : 'VA',
-      experienceYears: c.experience ? String(c.experience).replace(/\D/g, '') || '8' : '8',
-      jobTitle: c.role || editingFields.title || 'Consultant',
-      resumeName: `${c.name || 'Candidate'}_Resume.docx`
+      city: c.city || (c.location ? c.location.split(',')[0].trim() : 'Richmond'),
+      state: c.state || (c.location && c.location.split(',')[1] ? c.location.split(',')[1].trim().slice(0, 2) : 'VA'),
+      experienceYears: c.exp || (c.experience ? String(c.experience).replace(/\D/g, '') || '8' : '8'),
+      jobTitle: c.fullRole || c.role || editingFields.title || 'Consultant',
+      resumeName: `${c.name || 'Candidate'}_Resume.docx`,
+      proposedPayRate: c.payRate ? c.payRate.replace(/[^0-9]/g, '') : '74',
+      proposedRateType: c.rateType || 'C2C'
     }))
 
     setViewMode('resumeSubmission')
@@ -723,9 +672,9 @@ function RecruiterDashboard() {
     return candidates.filter(c => {
       if (!c) return false
 
-      // Role-Based Assigned Recruiter Filter:
+      // Recruiter Name Filter (Assigned To)
       if (candFilters.assignedTo !== 'Any' && candFilters.assignedTo !== 'All') {
-        const assigned = (c.assignedTo || '').toLowerCase()
+        const assigned = (c.recruiter || c.assignedTo || '').toLowerCase()
         const filterVal = candFilters.assignedTo.toLowerCase()
         if (!assigned.includes(filterVal) && !filterVal.includes(assigned)) return false
       }
@@ -745,10 +694,10 @@ function RecruiterDashboard() {
         if (!c.email.toLowerCase().includes(candFilters.email.toLowerCase())) return false
       }
 
-      // Skills Filter
+      // Skills / Role Filter
       if (candFilters.skills.trim()) {
-        const skillsStr = Array.isArray(c.skills) ? c.skills.join(' ').toLowerCase() : ''
-        if (!skillsStr.includes(candFilters.skills.toLowerCase())) return false
+        const skillsStr = (Array.isArray(c.skills) ? c.skills.join(' ') : '') + ' ' + (c.fullRole || c.role || '')
+        if (!skillsStr.toLowerCase().includes(candFilters.skills.toLowerCase())) return false
       }
 
       // City Filter
@@ -765,13 +714,18 @@ function RecruiterDashboard() {
 
       // Job Title Filter
       if (candFilters.jobTitle.trim()) {
-        const title = (c.role || '').toLowerCase()
+        const title = (c.fullRole || c.role || '').toLowerCase()
         if (!title.includes(candFilters.jobTitle.toLowerCase())) return false
       }
 
       // Work Auth Filter
       if (candFilters.workAuth !== 'Any') {
         if (c.workAuth !== candFilters.workAuth) return false
+      }
+
+      // Sub-Vendor Filter
+      if (candFilters.subVendor !== 'Select') {
+        if (c.subVendor !== candFilters.subVendor) return false
       }
 
       // Screened Status Filter
@@ -782,6 +736,13 @@ function RecruiterDashboard() {
       return true
     })
   }, [candidates, candFilters])
+
+  const paginatedCandidates = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return filteredCandidates.slice(start, start + pageSize)
+  }, [filteredCandidates, currentPage, pageSize])
+
+  const totalCandPages = Math.ceil(filteredCandidates.length / pageSize) || 1
 
   return (
     <SiteLayout>
@@ -826,6 +787,7 @@ function RecruiterDashboard() {
                     } else {
                       setActiveMainTab(t.id)
                       setViewMode('portal')
+                      setCurrentPage(1)
                     }
                   }}
                   style={{
@@ -864,7 +826,7 @@ function RecruiterDashboard() {
         <div className="container-wide" style={{ padding: '16px', maxWidth: '1360px', margin: '0 auto' }}>
 
           {/* ─────────────────────────────────────────────────────────────
-              TAB 2: CANDIDATES SEARCH & LIST VIEW (NEW UPLOADED SCREENSHOT)
+              TAB 2: CANDIDATES SEARCH & LIST VIEW (EXACT MATCH TO SCREENSHOTS)
               ───────────────────────────────────────────────────────────── */}
           {activeMainTab === 'candidates' && viewMode === 'portal' && (
             <div>
@@ -874,25 +836,21 @@ function RecruiterDashboard() {
               </div>
 
               {/* ─── SEARCH CANDIDATE 3-COLUMN PANEL (IMAGE 1787312030395) ─── */}
-              <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 18px', marginBottom: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+              <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 18px', marginBottom: '14px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                 
-                {/* Title & Add new Candidate Link */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                   <h2 style={{ margin: 0, fontSize: '15px', color: '#1e3a8a', fontWeight: 'bold' }}>
                     Search Candidate
                   </h2>
                   <span
-                    onClick={() => {
-                      setViewMode('resumeSearch')
-                    }}
+                    onClick={() => setViewMode('resumeSearch')}
                     style={{ color: '#0066cc', fontWeight: 'bold', fontSize: '12px', textDecoration: 'underline', cursor: 'pointer' }}
                   >
                     Add new Candidate
                   </span>
                 </div>
 
-                {/* 3-Column Search Candidate Form */}
-                <form onSubmit={e => e.preventDefault()} style={{ border: '1px solid #fed7aa', background: '#fffaf5', padding: '14px 18px', borderRadius: '3px' }}>
+                <form onSubmit={e => { e.preventDefault(); setCurrentPage(1); }} style={{ border: '1px solid #fed7aa', background: '#fffaf5', padding: '14px 18px', borderRadius: '3px' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.2fr 1fr', gap: '14px 24px', fontSize: '11.5px' }}>
                     
                     {/* Column 1 */}
@@ -918,12 +876,21 @@ function RecruiterDashboard() {
                       <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>State:</label>
                       <select value={candFilters.state} onChange={e => setCandFilters({ ...candFilters, state: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
                         <option>Select</option>
-                        <option>SC</option>
+                        <option>NJ</option>
                         <option>VA</option>
                         <option>TX</option>
+                        <option>MN</option>
+                        <option>NE</option>
+                        <option>CT</option>
+                        <option>MI</option>
+                        <option>NY</option>
+                        <option>KY</option>
                         <option>NC</option>
-                        <option>GA</option>
-                        <option>FL</option>
+                        <option>AR</option>
+                        <option>CA</option>
+                        <option>IN</option>
+                        <option>OH</option>
+                        <option>TN</option>
                       </select>
 
                       <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Job Title :</label>
@@ -956,7 +923,6 @@ function RecruiterDashboard() {
                         <option>US Citizen</option>
                         <option>GC</option>
                         <option>H1B</option>
-                        <option>EAD</option>
                       </select>
 
                       <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Assigned To:</label>
@@ -964,16 +930,24 @@ function RecruiterDashboard() {
                         <option value="Any">Any (All Pool)</option>
                         <option value={userName}>{userName} (My Candidates)</option>
                         <option value="Vaibhav Bisen">Vaibhav Bisen</option>
-                        <option value="Nitin Bhosale">Nitin Bhosale</option>
                         <option value="Prudhvi">Prudhvi</option>
+                        <option value="Sukamal Chatterjee">Sukamal Chatterjee</option>
+                        <option value="Nitin Bhosale">Nitin Bhosale</option>
                       </select>
 
                       <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Sub-Vendor :</label>
                       <select value={candFilters.subVendor} onChange={e => setCandFilters({ ...candFilters, subVendor: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
                         <option>Select</option>
                         <option>Talent9 Inc</option>
-                        <option>Direct</option>
-                        <option>CoolSoft Tech</option>
+                        <option>Paramount Software Solutions</option>
+                        <option>Ardor IT Systems INC</option>
+                        <option>IConnect</option>
+                        <option>Cloud TechnoSoft LLC</option>
+                        <option>Client Server Technologies</option>
+                        <option>COOLSOFT LLC</option>
+                        <option>Ameritech Global INC</option>
+                        <option>Origin Tek Solutions</option>
+                        <option>E-Solutions Inc</option>
                       </select>
 
                       <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Availability Date :</label>
@@ -1032,7 +1006,6 @@ function RecruiterDashboard() {
                         <option>All</option>
                         <option>Yes</option>
                         <option>Pending</option>
-                        <option>No</option>
                       </select>
 
                       <div style={{ gridColumn: 'span 2', display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
@@ -1049,79 +1022,141 @@ function RecruiterDashboard() {
                 </form>
               </div>
 
-              {/* ─── CANDIDATES LIST TABLE (ROLE-BASED VIEW) ─── */}
-              <div style={{ background: '#ffffff', padding: '14px 18px', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+              {/* ─── CANDIDATE SEARCH RESULTS TABLE (EXACT MATCH TO MEDIA_1787312540212.PNG) ─── */}
+              <div style={{ background: '#ffffff', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+                
+                {/* Header Strip with Export to Excel Button & Counts */}
                 <div style={{
-                  background: '#bfdbfe', border: '1px solid #93c5fd', padding: '6px 12px',
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  borderRadius: '3px 3px 0 0'
+                  background: '#bfdbfe', borderBottom: '1px solid #93c5fd', padding: '5px 12px',
+                  display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '14px'
                 }}>
+                  <button
+                    type="button"
+                    onClick={handleExportToExcel}
+                    style={{
+                      background: '#f1f5f9', border: '1px solid #94a3b8', padding: '2px 10px',
+                      fontSize: '11px', fontWeight: 'bold', color: '#0f172a', cursor: 'pointer',
+                      boxShadow: 'inset 0 1px 0 #ffffff, 0 1px 2px rgba(0,0,0,0.1)', borderRadius: '2px'
+                    }}
+                  >
+                    Export Results to Excel
+                  </button>
                   <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#1e3a8a' }}>
-                    Candidate Pool {candFilters.assignedTo !== 'Any' ? `(Assigned to: ${candFilters.assignedTo})` : '(All Candidates)'}
-                  </span>
-                  <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#1e3a8a' }}>
-                    Total Found: {filteredCandidates.length} candidate(s)
+                    (Candidates {filteredCandidates.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, filteredCandidates.length)} of {filteredCandidates.length})
                   </span>
                 </div>
 
+                {/* Legacy CoolWorks Candidate Grid */}
                 <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', background: '#ffffff' }}>
                     <thead>
                       <tr style={{ background: '#94a3b8', color: '#ffffff', borderBottom: '1px solid #cbd5e1' }}>
-                        <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Candidate #</th>
-                        <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Name</th>
-                        <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Job Title / Skills</th>
-                        <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Email</th>
-                        <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Phone</th>
-                        <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Location</th>
-                        <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Experience</th>
-                        <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Work Auth</th>
-                        <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Assigned To</th>
-                        <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Screened</th>
-                        <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Actions</th>
+                        <th style={{ padding: '6px 5px', fontWeight: 'bold', textAlign: 'center', width: '35px' }}>Scr?</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Name</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Job Title</th>
+                        <th style={{ padding: '6px 5px', fontWeight: 'bold', textAlign: 'center', width: '35px' }}>Exp</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Location</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Location Preferences</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Pay Rate</th>
+                        <th style={{ padding: '6px 6px', fontWeight: 'bold' }}>Rate Type</th>
+                        <th style={{ padding: '6px 6px', fontWeight: 'bold' }}>Rating</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Sub Vendor</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', background: '#475569' }}>Recruiter (Added By)</th>
+                        <th style={{ padding: '6px 5px', fontWeight: 'bold', textAlign: 'center' }}>AgrExists</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Avbl Date</th>
+                        <th style={{ padding: '6px 5px', fontWeight: 'bold', textAlign: 'center', width: '35px' }}>Res</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredCandidates.length === 0 ? (
+                      {paginatedCandidates.length === 0 ? (
                         <tr>
-                          <td colSpan="11" style={{ padding: '36px', textAlign: 'center', color: '#64748b' }}>
-                            No candidates found for selected filters. (Try setting Assigned To: "Any" to view the full pool)
+                          <td colSpan="14" style={{ padding: '36px', textAlign: 'center', color: '#64748b' }}>
+                            No candidates found matching search criteria.
                           </td>
                         </tr>
                       ) : (
-                        filteredCandidates.map((c, idx) => (
+                        paginatedCandidates.map((c, idx) => (
                           <tr key={c.id || idx} style={{
                             background: idx % 2 === 0 ? '#ffffff' : '#f8fafc',
                             borderBottom: '1px solid #e2e8f0'
                           }}>
-                            <td style={{ padding: '7px 9px', fontWeight: 'bold' }}>
-                              <span onClick={() => handleSelectExistingCandidate(c)} style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>
-                                {c.id}
-                              </span>
+                            {/* Scr? Checkmark */}
+                            <td style={{ padding: '5px 5px', textAlign: 'center' }}>
+                              <span style={{ color: '#16a34a', fontSize: '12px' }} title="Screened">🟢</span>
                             </td>
-                            <td style={{ padding: '7px 9px', fontWeight: 'bold' }}>
+
+                            {/* Name Link */}
+                            <td style={{ padding: '5px 8px', fontWeight: 'bold' }}>
                               <span onClick={() => handleSelectExistingCandidate(c)} style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>
                                 {c.name}
                               </span>
                             </td>
-                            <td style={{ padding: '7px 9px', color: '#334155' }}>
-                              <div><strong>{c.role}</strong></div>
-                              <div style={{ color: '#64748b', fontSize: '10.5px' }}>{Array.isArray(c.skills) ? c.skills.slice(0, 3).join(', ') : ''}</div>
+
+                            {/* Job Title */}
+                            <td style={{ padding: '5px 8px', color: '#334155' }} title={c.fullRole || c.role}>
+                              {c.role}
                             </td>
-                            <td style={{ padding: '7px 9px', color: '#475569' }}>{c.email}</td>
-                            <td style={{ padding: '7px 9px', color: '#475569' }}>{c.phone}</td>
-                            <td style={{ padding: '7px 9px', color: '#475569' }}>{c.location}</td>
-                            <td style={{ padding: '7px 9px', color: '#475569' }}>{c.experience}</td>
-                            <td style={{ padding: '7px 9px', color: '#475569' }}>{c.workAuth}</td>
-                            <td style={{ padding: '7px 9px', color: '#16a34a', fontWeight: 'bold' }}>
-                              {c.assignedTo || userName}
+
+                            {/* Exp */}
+                            <td style={{ padding: '5px 5px', textAlign: 'center', color: '#334155' }}>
+                              {c.exp}
                             </td>
-                            <td style={{ padding: '7px 9px', color: c.screened === 'Yes' ? '#16a34a' : '#d97706', fontWeight: 'bold' }}>
-                              {c.screened}
+
+                            {/* Location */}
+                            <td style={{ padding: '5px 8px', color: '#334155' }}>
+                              {c.location}
                             </td>
-                            <td style={{ padding: '7px 9px' }}>
-                              <span onClick={() => handleSelectExistingCandidate(c)} style={{ color: '#0066cc', textDecoration: 'underline', cursor: 'pointer', fontWeight: 'bold' }}>
-                                Submit to Req &gt;&gt;
+
+                            {/* Location Preferences */}
+                            <td style={{ padding: '5px 8px', color: '#64748b' }}>
+                              {c.locPref || ''}
+                            </td>
+
+                            {/* Pay Rate */}
+                            <td style={{ padding: '5px 8px', color: '#334155' }}>
+                              {c.payRate}
+                            </td>
+
+                            {/* Rate Type */}
+                            <td style={{ padding: '5px 6px', color: '#334155' }}>
+                              {c.rateType}
+                            </td>
+
+                            {/* Rating Stars */}
+                            <td style={{ padding: '5px 6px' }}>
+                              {c.rating >= 4 ? (
+                                <span style={{ color: '#f59e0b', fontSize: '11px' }}>⭐⭐⭐⭐⭐</span>
+                              ) : (
+                                <span style={{ color: '#cbd5e1', fontSize: '11px' }}>☆☆☆☆☆</span>
+                              )}
+                            </td>
+
+                            {/* Sub Vendor */}
+                            <td style={{ padding: '5px 8px', color: '#334155' }}>
+                              {c.subVendor}
+                            </td>
+
+                            {/* Recruiter / Added By */}
+                            <td style={{ padding: '5px 8px', fontWeight: 'bold', color: '#1e3a8a', background: idx % 2 === 0 ? '#f1f5f9' : '#e2e8f0' }}>
+                              {c.recruiter || c.assignedTo || userName}
+                            </td>
+
+                            {/* AgrExists */}
+                            <td style={{ padding: '5px 5px', textAlign: 'center' }}>
+                              {c.agrExists && (
+                                <span style={{ color: '#16a34a', fontSize: '12px' }}>🟢</span>
+                              )}
+                            </td>
+
+                            {/* Avbl Date */}
+                            <td style={{ padding: '5px 8px', color: '#334155' }}>
+                              {c.avblDate}
+                            </td>
+
+                            {/* Resume Icon */}
+                            <td style={{ padding: '5px 5px', textAlign: 'center' }}>
+                              <span onClick={() => handleSelectExistingCandidate(c)} style={{ cursor: 'pointer', fontSize: '13px' }} title="View / Download Resume">
+                                📎
                               </span>
                             </td>
                           </tr>
@@ -1129,6 +1164,35 @@ function RecruiterDashboard() {
                       )}
                     </tbody>
                   </table>
+                </div>
+
+                {/* Bottom Pagination Bar (Exact to Screenshot) */}
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  background: '#f8fafc', borderTop: '1px solid #cbd5e1', padding: '6px 14px'
+                }}>
+                  <div style={{ display: 'flex', gap: '8px', fontSize: '11.5px', fontWeight: 'bold' }}>
+                    {[1, 2, 3, 4, 5].map(p => (
+                      <span key={p} onClick={() => setCurrentPage(p)} style={{
+                        color: currentPage === p ? '#ea580c' : '#0066cc',
+                        cursor: 'pointer',
+                        textDecoration: currentPage === p ? 'none' : 'underline'
+                      }}>
+                        {p}
+                      </span>
+                    ))}
+                    <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setCurrentPage(prev => Math.min(totalCandPages, prev + 1))}>Next</span>
+                    <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setCurrentPage(totalCandPages)}>Last</span>
+                  </div>
+
+                  <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#1e3a8a' }}>
+                    Page Size:
+                    <select value={pageSize} onChange={e => { setPageSize(parseInt(e.target.value)); setCurrentPage(1); }} style={{ marginLeft: '6px', fontSize: '11px', padding: '1px 3px' }}>
+                      <option value="10">10</option>
+                      <option value="25">25</option>
+                      <option value="50">50</option>
+                    </select>
+                  </div>
                 </div>
 
               </div>
@@ -1140,7 +1204,6 @@ function RecruiterDashboard() {
               ───────────────────────────────────────────────────────────── */}
           {viewMode === 'resumeSearch' && (
             <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-              
               <div style={{ background: '#e2e8f0', border: '1px solid #cbd5e1', padding: '8px 14px', borderRadius: '4px', marginBottom: '12px', fontSize: '11.5px', color: '#1e3a8a', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 20px' }}>
                 <div><strong>Requisition #:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>{selectedReq?.id?.replace('J-', '') || '158938'}</span></div>
                 <div><strong>Position Title:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>{editingFields.title || 'Project Manager - Consultant - 13285'}</span></div>
@@ -1187,7 +1250,6 @@ function RecruiterDashboard() {
                       <option>VA</option>
                       <option>TX</option>
                       <option>NC</option>
-                      <option>GA</option>
                     </select>
 
                     <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Zip Code:</label>
@@ -1199,7 +1261,6 @@ function RecruiterDashboard() {
                         <option>10</option>
                         <option>25</option>
                         <option>50</option>
-                        <option>100</option>
                       </select>
                     </div>
 
@@ -1214,14 +1275,6 @@ function RecruiterDashboard() {
                       <option>Any</option>
                       <option>US Citizen</option>
                       <option>GC</option>
-                      <option>H1B</option>
-                    </select>
-
-                    <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Screened:</label>
-                    <select value={searchCandFilter.screened} onChange={e => setSearchCandFilter({ ...searchCandFilter, screened: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
-                      <option>All</option>
-                      <option>Yes</option>
-                      <option>No</option>
                     </select>
 
                     <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Assigned To:</label>
@@ -1229,7 +1282,6 @@ function RecruiterDashboard() {
                       <option>Any</option>
                       <option>{userName}</option>
                       <option>Vaibhav Bisen</option>
-                      <option>Nitin Bhosale</option>
                     </select>
                   </div>
 
@@ -1318,7 +1370,6 @@ function RecruiterDashboard() {
                       <option>VA</option>
                       <option>TX</option>
                       <option>NC</option>
-                      <option>GA</option>
                     </select>
 
                     <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Resume Title*:</label>
@@ -1352,7 +1403,6 @@ function RecruiterDashboard() {
               ───────────────────────────────────────────────────────────── */}
           {viewMode === 'resumeSubmission' && (
             <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-              
               <div style={{ background: '#e2e8f0', border: '1px solid #cbd5e1', padding: '8px 14px', borderRadius: '4px', marginBottom: '8px', fontSize: '11.5px', color: '#1e3a8a', display: 'grid', gridTemplateColumns: '1.2fr 1.5fr', gap: '4px 20px' }}>
                 <div><strong>Requisition #:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>{selectedReq?.id?.replace('J-', '') || '158938'}</span></div>
                 <div><strong>Position Title:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>{editingFields.title || 'Project Manager - Consultant - 13285'}</span></div>
@@ -2233,7 +2283,7 @@ function RecruiterDashboard() {
                     Page Size:
                     <select value={pageSize} onChange={e => { setPageSize(parseInt(e.target.value)); setCurrentPage(1); }} style={{ marginLeft: '6px', fontSize: '11px', padding: '1px 3px' }}>
                       <option value="10">10</option>
-                      <option value="20">20</option>
+                      <option value="25">25</option>
                       <option value="50">50</option>
                     </select>
                   </div>
