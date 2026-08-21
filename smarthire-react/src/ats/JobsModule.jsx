@@ -31,9 +31,32 @@ function JobsModule({
   const [postingLinkedIn, setPostingLinkedIn] = useState(false)
   const [postSuccessMsg, setPostSuccessMsg] = useState('')
 
+  // Recruiter List for Attribution
+  const ALL_SMARTHIRE_RECRUITERS = [
+    { name: 'Omkesh Manjute', email: 'omkesh.manjute@smarthire.com', refCode: 'omkesh', role: 'Super Admin' },
+    { name: 'Vaibhav Bisen', email: 'vaibhav.bisen@smarthire.com', refCode: 'vaibhav-bisen', role: 'Lead Recruiter' },
+    { name: 'Sukamal Chatterjee', email: 'sukamal.c@smarthire.com', refCode: 'sukamal-chatterjee', role: 'Senior Recruiter' },
+    { name: 'Prudhvi Sevveti', email: 'prudhvi.s@smarthire.com', refCode: 'prudhvi-sevveti', role: 'Recruiter' },
+    { name: 'Nitin Bhosale', email: 'nitin.b@smarthire.com', refCode: 'nitin-bhosale', role: 'Recruiter' },
+    { name: 'Naveen Korimelli', email: 'naveen.k@smarthire.com', refCode: 'naveen-korimelli', role: 'Recruiter' },
+    { name: 'Ajay Arya', email: 'ajay.a@smarthire.com', refCode: 'ajay-arya', role: 'Recruiter' },
+    { name: 'Raj Barve', email: 'raj.b@smarthire.com', refCode: 'raj-barve', role: 'Recruiter' },
+    { name: 'Pankaj Maharwade', email: 'pankaj.m@smarthire.com', refCode: 'pankaj-maharwade', role: 'Senior Recruiter' },
+    { name: 'Nishant Kathane', email: 'nishant.k@smarthire.com', refCode: 'nishant-kathane', role: 'Recruiter' }
+  ]
+
+  const [selectedRecruiterPoster, setSelectedRecruiterPoster] = useState(() => {
+    const matched = ALL_SMARTHIRE_RECRUITERS.find(r => 
+      (recruiterInfo?.email && r.email.toLowerCase() === recruiterInfo.email.toLowerCase()) ||
+      (recruiterInfo?.name && r.name.toLowerCase().includes(recruiterInfo.name.toLowerCase()))
+    )
+    return matched || ALL_SMARTHIRE_RECRUITERS[0]
+  })
+
   // Candidate Application Links Modal State
   const [applyLinksJob, setApplyLinksJob] = useState(null)
-  const recruiterEmail = recruiterInfo?.email || 'omkesh@coolsofttech.com'
+  const [copiedLinkSuccess, setCopiedLinkSuccess] = useState(false)
+  const [copyLinkToast, setCopyLinkToast] = useState('')
 
   const allSafeJobs = Array.isArray(jobsList) ? jobsList : []
   // Recruiters see only their own jobs; Admin sees all
@@ -44,17 +67,15 @@ function JobsModule({
   const safeSubmissions = Array.isArray(submissions) ? submissions : []
 
   // Recruiter unique application link for a job
-  const getRecruiterJobLink = (jobId) => {
-    const ref = recruiterInfo?.refCode || ''
+  const getRecruiterJobLink = (jobId, customRefCode) => {
+    const ref = customRefCode || selectedRecruiterPoster?.refCode || recruiterInfo?.refCode || 'omkesh'
     const base = `${window.location.origin}/careers?job=${jobId}`
-    return ref ? `${base}&ref=${ref}` : base
+    return `${base}&ref=${ref}`
   }
 
   // LinkedIn Share URL generator (no API needed)
   const getLinkedInShareUrl = (job) => {
-    const link = isSuperAdmin
-      ? `${window.location.origin}/careers?job=${job.id}`
-      : getRecruiterJobLink(job.id)
+    const link = getRecruiterJobLink(job.id, selectedRecruiterPoster?.refCode)
     return `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(link)}`
   }
 
@@ -70,9 +91,9 @@ function JobsModule({
         skills: skillsArray,
         status: 'Active',
         source: 'manual',
-        postedBy: recruiterInfo?.id || recruiterInfo?.email || 'recruiter',
-        postedByName: recruiterInfo?.name || 'Recruiter',
-        refCode: recruiterInfo?.refCode || '',
+        postedBy: selectedRecruiterPoster.email || recruiterInfo?.id || recruiterInfo?.email || 'recruiter',
+        postedByName: selectedRecruiterPoster.name || recruiterInfo?.name || 'Recruiter',
+        refCode: selectedRecruiterPoster.refCode || recruiterInfo?.refCode || 'omkesh',
       }
       const res = await fetch('/api/jobs', {
         method: 'POST',
@@ -81,7 +102,7 @@ function JobsModule({
       })
       const data = res.ok ? await res.json() : null
       const jobId = data?.id || data?.data?.id || data?.job?.id || Date.now().toString()
-      const appLink = getRecruiterJobLink(jobId)
+      const appLink = getRecruiterJobLink(jobId, selectedRecruiterPoster.refCode)
       setPostedJobLink(appLink)
       setPostForm({ title: '', client: '', location: '', work_mode: 'Onsite', employment_type: 'Contract', experience: '', skills: '', description: '' })
       if (fetchJobs) fetchJobs()
@@ -89,7 +110,7 @@ function JobsModule({
       console.error('Manual job post failed:', err)
       // Even if API fails, show a generated link
       const tempId = Date.now().toString()
-      setPostedJobLink(getRecruiterJobLink(tempId))
+      setPostedJobLink(getRecruiterJobLink(tempId, selectedRecruiterPoster.refCode))
     } finally {
       setPostingJob(false)
     }
@@ -133,14 +154,15 @@ function JobsModule({
   }
 
   // LinkedIn Post Text Generator (Matching exact recruiter template format)
-  const generateLinkedInPost = (job) => {
+  const generateLinkedInPost = (job, specificRecruiter = null) => {
     if (!job) return ''
+    const rec = specificRecruiter || selectedRecruiterPoster || ALL_SMARTHIRE_RECRUITERS[0]
     const title = job.title || 'Specialist'
     let loc = job.location || 'Remote, US'
     const mode = job.work_mode || job.workMode || 'Onsite'
     const type = job.employment_type || job.employmentType || job.type || 'Contract'
-    const appLink = getRecruiterJobLink(job.id)
-    const emailToUse = recruiterEmail
+    const appLink = getRecruiterJobLink(job.id, rec.refCode)
+    const emailToUse = rec.email || recruiterInfo?.email || 'omkesh.manjute@smarthire.com'
 
     // Clean location string if it duplicates work mode
     if (loc === 'Hybrid' || loc === 'Onsite' || loc === 'Remote') {
@@ -193,16 +215,18 @@ ${type}
 Only local candidates with a flexible in-office or remote work arrangement are eligible for this position.
 
 🔗 Direct Candidate Application Link: ${appLink}
-📧 Share the matching candidate resume at ${emailToUse}
+✉️ Share the matching candidate resume at ${emailToUse}
 
 ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #AgileMethods #DevOps ${skillTags}`
   }
 
-  const handleOpenLinkedInModal = (e, job) => {
+  const handleOpenLinkedInModal = (e, job, rec = null) => {
     if (e) e.stopPropagation()
+    const activeRec = rec || selectedRecruiterPoster
     setLinkedinModalJob(job)
-    setLinkedinPostText(generateLinkedInPost(job))
+    setLinkedinPostText(generateLinkedInPost(job, activeRec))
     setCopiedSuccess(false)
+    setCopiedLinkSuccess(false)
     setPostSuccessMsg('')
   }
 
@@ -696,7 +720,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
 
               {/* Action Buttons */}
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', borderTop: '1px solid #f1f5f9', paddingTop: 12, marginTop: 4 }}>
-                {isSuperAdmin ? (
+                {isSuperAdmin && (
                   <>
                     <button onClick={(e) => handleOpenEdit(e, job)}
                       style={{ flex: 1, background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
@@ -706,65 +730,50 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
                       style={{ flex: 1, background: '#f5f3ff', color: '#6d28d9', border: '1px solid #ddd6fe', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                       {isReformatting ? '⏳' : '🪄'} {isReformatting ? 'Formatting...' : 'AI Re-format'}
                     </button>
-                    <button onClick={() => setJdModalJob(job)}
-                      style={{ flex: 1, background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                      📄 Full JD
-                    </button>
-                    <button
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        if (window.confirm(`Post "${job.title}" directly to LinkedIn?`)) {
-                          alert(`⏳ Posting "${job.title}" to LinkedIn...`);
-                          try {
-                            const postContent = generateLinkedInPost(job);
-                            await handlePostJobToLinkedIn(job.id, postContent);
-                            alert(`🎉 Successfully posted "${job.title}" to LinkedIn!`);
-                          } catch (err) {
-                            console.error(err);
-                            alert(`❌ LinkedIn direct posting failed: ${err.message || 'verify credentials'}`);
-                          }
-                        }
-                      }}
-                      style={{ flex: 1, background: '#e8f0fe', color: '#0a66c2', border: '1px solid #bfdbfe', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
-                      title="Post this job directly to LinkedIn Feed using connected token"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-                      Post LinkedIn
-                    </button>
-                    <button
-                      onClick={(e) => handleOpenLinkedInModal(e, job)}
-                      style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: 7, padding: '7px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
-                      title="Generate formatted LinkedIn post text">
-                      📝
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleDeleteJob(job.id) }}
-                      style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fca5a5', borderRadius: 7, padding: '7px 10px', fontSize: 12, cursor: 'pointer' }}>
-                      🗑️
-                    </button>
                   </>
-                ) : (
-                  <>
-                    <button onClick={() => setJdModalJob(job)}
-                      style={{ flex: 1, background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                      📄 View Full JD
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigator.clipboard.writeText(getRecruiterJobLink(job.id));
-                        alert('📋 Recruiter referral application link copied to clipboard!');
-                      }}
-                      style={{ flex: 1, background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                      🔗 Copy Apply Link
-                    </button>
-                  </>
+                )}
+                <button onClick={() => setJdModalJob(job)}
+                  style={{ flex: 1, background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                  📄 Full JD
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const link = getRecruiterJobLink(job.id, selectedRecruiterPoster.refCode);
+                    navigator.clipboard.writeText(link);
+                    setCopyLinkToast(`✅ Referral link copied for ${selectedRecruiterPoster.name}!`);
+                    setTimeout(() => setCopyLinkToast(''), 3500);
+                  }}
+                  style={{ flex: 1, background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+                  title={`Copy application link tagged to ${selectedRecruiterPoster.name}`}
+                >
+                  🔗 Copy Apply Link
+                </button>
+                <button
+                  onClick={(e) => handleOpenLinkedInModal(e, job)}
+                  style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: 7, padding: '7px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                  title="Generate formatted LinkedIn post text with recruiter attribution"
+                >
+                  📝 Post
+                </button>
+                {isSuperAdmin && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDeleteJob(job.id) }}
+                    style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fca5a5', borderRadius: 7, padding: '7px 10px', fontSize: 12, cursor: 'pointer' }}>
+                    🗑️
+                  </button>
                 )}
               </div>
             </div>
           )
         })}
       </div>
+
+      {copyLinkToast && (
+        <div style={{ position: 'fixed', bottom: 24, right: 24, background: '#0f172a', color: '#ffffff', padding: '12px 20px', borderRadius: 8, boxShadow: '0 10px 30px rgba(0,0,0,0.25)', zIndex: 9999, fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8, borderLeft: '4px solid #10b981' }}>
+          {copyLinkToast}
+        </div>
+      )}
 
       {filteredJobs.length === 0 && (
         <div style={{ textAlign: 'center', padding: '60px 0', color: '#64748b' }}>
@@ -778,7 +787,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
       {linkedinModalJob && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.65)', backdropFilter: 'blur(6px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
           onClick={() => setLinkedinModalJob(null)}>
-          <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 16, width: '100%', maxWidth: 680, maxHeight: '90vh', overflowY: 'auto', padding: 26, boxShadow: '0 20px 50px rgba(0,0,0,0.18)' }}
+          <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 16, width: '100%', maxWidth: 720, maxHeight: '90vh', overflowY: 'auto', padding: 26, boxShadow: '0 20px 50px rgba(0,0,0,0.18)' }}
             onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
               <div>
@@ -792,9 +801,42 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
               <button onClick={() => setLinkedinModalJob(null)} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>✕</button>
             </div>
 
+            {/* Recruiter Attribution Selector */}
+            <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: 8, padding: '10px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 13, fontWeight: 800, color: '#1e3a8a' }}>👤 Recruiter Attribution:</span>
+                <select
+                  value={selectedRecruiterPoster.refCode}
+                  onChange={(e) => {
+                    const found = ALL_SMARTHIRE_RECRUITERS.find(r => r.refCode === e.target.value) || ALL_SMARTHIRE_RECRUITERS[0]
+                    setSelectedRecruiterPoster(found)
+                    if (linkedinModalJob) {
+                      setLinkedinPostText(generateLinkedInPost(linkedinModalJob, found))
+                    }
+                  }}
+                  style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid #94a3b8', fontSize: 13, fontWeight: 700, background: '#ffffff', color: '#0f172a' }}
+                >
+                  {ALL_SMARTHIRE_RECRUITERS.map(r => (
+                    <option key={r.refCode} value={r.refCode}>
+                      {r.name} ({r.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <span style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>
+                Link Tag: <code style={{ color: '#0284c7', background: '#e0f2fe', padding: '2px 6px', borderRadius: 4, fontWeight: 'bold' }}>ref={selectedRecruiterPoster.refCode}</code>
+              </span>
+            </div>
+
             {copiedSuccess && (
               <div style={{ background: '#dcfce7', border: '1px solid #bbf7d0', color: '#15803d', padding: '10px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, marginBottom: 14 }}>
-                ✅ LinkedIn Post Copied to Clipboard with Direct Link & Hashtags!
+                ✅ Full LinkedIn Post Copied to Clipboard with Direct Link & Hashtags!
+              </div>
+            )}
+
+            {copiedLinkSuccess && (
+              <div style={{ background: '#e0f2fe', border: '1px solid #bae6fd', color: '#0369a1', padding: '10px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, marginBottom: 14 }}>
+                ✅ Candidate Application Link Copied for <strong>{selectedRecruiterPoster.name}</strong>!
               </div>
             )}
 
@@ -817,6 +859,17 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end', marginTop: 16 }}>
               <button onClick={() => setLinkedinModalJob(null)} style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: 8, padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
                 Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const link = getRecruiterJobLink(linkedinModalJob.id, selectedRecruiterPoster.refCode)
+                  navigator.clipboard.writeText(link)
+                  setCopiedLinkSuccess(true)
+                  setTimeout(() => setCopiedLinkSuccess(false), 3000)
+                }}
+                style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 8, padding: '10px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+              >
+                🔗 Copy Apply Link Only
               </button>
               <button onClick={handleCopyLinkedInPost}
                 style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>

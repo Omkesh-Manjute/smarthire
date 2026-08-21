@@ -277,21 +277,27 @@ const RecruiterDoc = mongoose.models.RecruiterStore || mongoose.model('Recruiter
   password: { type: String, required: true },
   role: { type: String, required: true },
   refCode: { type: String, required: true },
-  company: { type: String, default: 'Coolsoft LLC' },
+  company: { type: String, default: 'SmartHire LLC' },
   isActive: { type: Boolean, default: true },
   lastLogin: { type: String, default: null },
   createdAt: { type: String, default: () => new Date().toISOString() }
 }));
 
 let recruitersMock = [
-  { _id: 'rec-1', name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', company: 'Coolsoft LLC', isActive: true, password: 'admin', lastLogin: '2026-08-17T18:45:00.000Z', createdAt: '2026-01-10T10:00:00.000Z' },
-  { _id: 'rec-2', name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com', role: 'recruiter', refCode: 'sukamal-chatterjee', company: 'Coolsoft LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-02-15T11:30:00.000Z' },
-  { _id: 'rec-3', name: 'Raj', email: 'raj@coolsofttech.com', role: 'recruiter', refCode: 'raj', company: 'Coolsoft LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' },
-  { _id: 'rec-4', name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com', role: 'recruiter', refCode: 'vaibhav-bisen', company: 'Coolsoft LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-10T09:00:00.000Z' },
+  { _id: 'rec-1', name: 'Omkesh Manjute', email: 'omkesh.manjute@smarthire.com', role: 'superadmin', refCode: 'omkesh', company: 'SmartHire LLC', isActive: true, password: 'admin', lastLogin: '2026-08-17T18:45:00.000Z', createdAt: '2026-01-10T10:00:00.000Z' },
+  { _id: 'rec-2', name: 'Vaibhav Bisen', email: 'vaibhav.bisen@smarthire.com', role: 'recruiter', refCode: 'vaibhav-bisen', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-10T09:00:00.000Z' },
+  { _id: 'rec-3', name: 'Sukamal Chatterjee', email: 'sukamal.c@smarthire.com', role: 'recruiter', refCode: 'sukamal-chatterjee', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-02-15T11:30:00.000Z' },
+  { _id: 'rec-4', name: 'Prudhvi Sevveti', email: 'prudhvi.s@smarthire.com', role: 'recruiter', refCode: 'prudhvi-sevveti', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' },
+  { _id: 'rec-5', name: 'Nitin Bhosale', email: 'nitin.b@smarthire.com', role: 'recruiter', refCode: 'nitin-bhosale', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' },
+  { _id: 'rec-6', name: 'Naveen Korimelli', email: 'naveen.k@smarthire.com', role: 'recruiter', refCode: 'naveen-korimelli', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' },
+  { _id: 'rec-7', name: 'Ajay Arya', email: 'ajay.a@smarthire.com', role: 'recruiter', refCode: 'ajay-arya', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' },
+  { _id: 'rec-8', name: 'Raj Barve', email: 'raj.b@smarthire.com', role: 'recruiter', refCode: 'raj-barve', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' },
+  { _id: 'rec-9', name: 'Pankaj Maharwade', email: 'pankaj.m@smarthire.com', role: 'recruiter', refCode: 'pankaj-maharwade', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' },
+  { _id: 'rec-10', name: 'Nishant Kathane', email: 'nishant.k@smarthire.com', role: 'recruiter', refCode: 'nishant-kathane', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' }
 ];
 
 async function resolveRecruiterEmailFromRefCode(refCode) {
-  if (!refCode) return '';
+  if (!refCode) return 'omkesh.manjute@smarthire.com';
   const cleanRef = String(refCode).toLowerCase().trim();
   
   if (cleanRef.includes('@')) return cleanRef;
@@ -303,10 +309,14 @@ async function resolveRecruiterEmailFromRefCode(refCode) {
     } catch (e) {}
   }
   
-  const rec = recruitersMock.find(r => r.refCode && r.refCode.toLowerCase() === cleanRef);
+  const rec = recruitersMock.find(r => 
+    r.refCode.toLowerCase() === cleanRef || 
+    r.refCode.toLowerCase().replace(/[-_]/g, '') === cleanRef.replace(/[-_]/g, '') ||
+    cleanRef.includes(r.refCode.toLowerCase())
+  );
   if (rec) return rec.email.toLowerCase().trim();
   
-  return cleanRef; // fallback
+  return `${cleanRef}@smarthire.com`; // smart fallback to smarthire domain
 }
 
 

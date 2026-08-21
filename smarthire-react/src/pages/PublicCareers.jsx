@@ -7,7 +7,30 @@ import { loginWithGoogle } from '../lib/firebase'
 export default function PublicCareers() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const targetJobId = searchParams.get('jobId')
+  const targetJobId = searchParams.get('jobId') || searchParams.get('job')
+
+  const ALL_SMARTHIRE_RECRUITERS = [
+    { name: 'Omkesh Manjute', email: 'omkesh.manjute@smarthire.com', refCode: 'omkesh', role: 'Super Admin' },
+    { name: 'Vaibhav Bisen', email: 'vaibhav.bisen@smarthire.com', refCode: 'vaibhav-bisen', role: 'Lead Recruiter' },
+    { name: 'Sukamal Chatterjee', email: 'sukamal.c@smarthire.com', refCode: 'sukamal-chatterjee', role: 'Senior Recruiter' },
+    { name: 'Prudhvi Sevveti', email: 'prudhvi.s@smarthire.com', refCode: 'prudhvi-sevveti', role: 'Recruiter' },
+    { name: 'Nitin Bhosale', email: 'nitin.b@smarthire.com', refCode: 'nitin-bhosale', role: 'Recruiter' },
+    { name: 'Naveen Korimelli', email: 'naveen.k@smarthire.com', refCode: 'naveen-korimelli', role: 'Recruiter' },
+    { name: 'Ajay Arya', email: 'ajay.a@smarthire.com', refCode: 'ajay-arya', role: 'Recruiter' },
+    { name: 'Raj Barve', email: 'raj.b@smarthire.com', refCode: 'raj-barve', role: 'Recruiter' },
+    { name: 'Pankaj Maharwade', email: 'pankaj.m@smarthire.com', refCode: 'pankaj-maharwade', role: 'Senior Recruiter' },
+    { name: 'Nishant Kathane', email: 'nishant.k@smarthire.com', refCode: 'nishant-kathane', role: 'Recruiter' }
+  ]
+
+  const resolveRecruiterFromRef = (refCode) => {
+    if (!refCode) return null
+    const clean = String(refCode).toLowerCase().trim()
+    return ALL_SMARTHIRE_RECRUITERS.find(r => 
+      r.refCode.toLowerCase() === clean || 
+      r.name.toLowerCase().replace(/[^a-z0-9]/g, '-').includes(clean) ||
+      clean.includes(r.refCode.toLowerCase())
+    ) || { name: refCode.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), email: `${clean}@smarthire.com`, refCode: clean }
+  }
 
   const getJobPostTimezones = (job) => {
     let date = null;
@@ -42,7 +65,7 @@ export default function PublicCareers() {
     };
   }
 
-  // Capture referral parameter from URL (e.g. ?ref=john-doe)
+  // Capture referral parameter from URL (e.g. ?ref=vaibhav-bisen)
   useEffect(() => {
     const refCode = searchParams.get('ref') || searchParams.get('recruiter') || searchParams.get('recruiterRef')
     if (refCode) {
@@ -280,7 +303,12 @@ export default function PublicCareers() {
         setJobs(data.jobs)
         
         if (targetJobId) {
-          const match = data.jobs.find(j => j.id === targetJobId)
+          const cleanTarget = String(targetJobId).replace('J-', '')
+          const match = data.jobs.find(j => 
+            j.id === targetJobId || 
+            String(j.id).replace('J-', '') === cleanTarget ||
+            j.id === `J-${cleanTarget}`
+          )
           if (match) openApplicationModal(match)
         }
       }
@@ -308,6 +336,7 @@ export default function PublicCareers() {
     setCurrentLocation('')
     setAutoFillSuccess(false)
     setDetailsVerified(false)
+    setParsedSkills([])
   }
 
   // Resume Upload Handler with Smart Name & Details Auto-Parsing
@@ -318,15 +347,10 @@ export default function PublicCareers() {
     setResumeFile(file)
     setIsParsingResume(true)
     setAutoFillSuccess(false)
+    setParsedSkills([])
+    setSubmitError('')
 
     try {
-      // 1. First extract candidate name from filename (e.g. ResumeFrancisPribilovics.pdf -> Francis Pribilovics)
-      const nameFromFilename = cleanNameFromFileName(file.name)
-      if (nameFromFilename && nameFromFilename.toUpperCase() !== 'PDF') {
-        setCandidateName(nameFromFilename)
-      }
-
-      // 2. Send file to backend parser API for text extraction & regex matching
       const formData = new FormData()
       formData.append('resume', file)
 
@@ -334,54 +358,48 @@ export default function PublicCareers() {
         method: 'POST',
         body: formData
       })
-      const data = await response.json()
 
-      if (data.success) {
-        const text = data.text || ''
-        setResumeText(text)
-
-        if (data.email) {
-          setCandidateEmail(data.email)
-        } else {
-          const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/)
-          if (emailMatch) setCandidateEmail(emailMatch[0])
+      const result = await response.json()
+      if (result.success && result.profile) {
+        const p = result.profile
+        let rawExtractedName = (p.name || '').trim()
+        if (!rawExtractedName || rawExtractedName.toUpperCase() === 'PDF') {
+          rawExtractedName = cleanNameFromFileName(file.name)
         }
-
-        if (data.phone) {
-          setCandidatePhone(data.phone)
-        } else {
-          const phoneMatch = text.match(/(?:\+?\d{1,3}[\s-]?)?\(?\d{3}\)?[\s-]?\d{3}[\s-]?\d{4}/)
-          if (phoneMatch) setCandidatePhone(phoneMatch[0])
+        if (rawExtractedName && rawExtractedName.toUpperCase() !== 'PDF') setCandidateName(rawExtractedName)
+        if (p.email) setCandidateEmail(p.email)
+        if (p.phone) setCandidatePhone(p.phone)
+        if (p.location) setCurrentLocation(p.location)
+        if (Array.isArray(p.skills) && p.skills.length > 0) setParsedSkills(p.skills)
+        if (p.resumeText) setResumeText(p.resumeText)
+        if (!rawExtractedName && file.name) {
+          const fallback = cleanNameFromFileName(file.name)
+          if (fallback && fallback.toUpperCase() !== 'PDF') setCandidateName(fallback)
         }
-
-        if (data.location) {
-          setCurrentLocation(data.location)
-        } else {
-          const locationMatch = text.match(/([A-Z][a-zA-Z\s]{2,15},\s*[A-Z]{2})/)
-          if (locationMatch) setCurrentLocation(locationMatch[1])
+        if (p.email || p.phone || p.location || (rawExtractedName && rawExtractedName.toUpperCase() !== 'PDF')) {
+          setAutoFillSuccess(true)
         }
-
-        // Advanced Name Extraction from text lines if filename didn't produce a full 2-word name
-        if (!nameFromFilename || nameFromFilename.split(' ').length < 2) {
-          const cleanLines = text.split('\n')
-            .map(l => l.trim())
-            .filter(l => l.length > 2 && l.length < 40)
-            .filter(l => !/%pdf|pdf|adobe|stream|obj|endobj|resume|cv|curriculum|vitae|page|email|phone|tel|http|www|@/i.test(l))
-
-          for (const line of cleanLines) {
+      } else {
+        if (file.name) {
+          const fallback = cleanNameFromFileName(file.name)
+          if (fallback && fallback.toUpperCase() !== 'PDF') setCandidateName(fallback)
+        }
+        const text = await file.text().catch(() => '')
+        if (text && text.length > 50) {
+          setResumeText(text)
+          const lines = text.split(/[\r\n]+/).map(l => l.trim()).filter(l => l.length > 2 && l.length < 40).filter(l => !/%pdf|pdf|adobe|stream|obj|endobj|resume|cv|curriculum|vitae|page|email|phone|tel|http|www|@/i.test(l))
+          for (const line of lines) {
             const words = line.replace(/[^a-zA-Z\s]/g, '').trim().split(/\s+/)
             if (words.length >= 2 && words.length <= 3 && words.every(w => w.length >= 2 && /^[A-Z]/.test(w))) {
-              const nameCandidate = words.join(' ')
-              if (nameCandidate.toUpperCase() !== 'PDF') {
-                setCandidateName(nameCandidate)
+              const guessed = words.join(' ')
+              if (guessed.toUpperCase() !== 'PDF') {
+                setCandidateName(guessed)
                 break
               }
             }
           }
         }
-
-        // Only show autofill success badge if any details were successfully extracted
-        if (data.email || data.phone || data.location || (nameFromFilename && nameFromFilename.toUpperCase() !== 'PDF')) {
+        if (result.email || result.phone || result.location || (result.name && result.name.toUpperCase() !== 'PDF')) {
           setAutoFillSuccess(true)
         }
       }
@@ -392,11 +410,10 @@ export default function PublicCareers() {
     }
   }
 
-  const filteredJobs = jobs.filter(j => {
+  const filteredJobs = jobs.filter((j) => {
     if (isJobExpired(j)) return false
-
     const titleMatch = j.title?.toLowerCase().includes(searchQuery.toLowerCase())
-    const skillMatch = Array.isArray(j.skills) && j.skills.some(s => s.toLowerCase().includes(searchQuery.toLowerCase()))
+    const skillMatch = Array.isArray(j.skills) && j.skills.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()))
     const locMatch = (j.location || 'Remote, US').toLowerCase().includes(searchQuery.toLowerCase())
     const qMatch = titleMatch || skillMatch || locMatch
 
@@ -422,7 +439,9 @@ export default function PublicCareers() {
     setSubmitError('')
 
     try {
-      const recruiterRef = sessionStorage.getItem('smarthire_recruiter_ref') || localStorage.getItem('smarthire_recruiter_ref') || '';
+      const urlParams = new URLSearchParams(window.location.search)
+      const recruiterRef = sessionStorage.getItem('smarthire_recruiter_ref') || localStorage.getItem('smarthire_recruiter_ref') || urlParams.get('ref') || urlParams.get('recruiter') || '';
+      const activeRecruiter = resolveRecruiterFromRef(recruiterRef) || ALL_SMARTHIRE_RECRUITERS[0]
       let res
       if (resumeFile) {
         const formData = new FormData()
@@ -483,7 +502,32 @@ export default function PublicCareers() {
         setAppliedJobs(updated)
         try { localStorage.setItem('smarthire_applied_jobs', JSON.stringify(updated)) } catch(e) {}
 
-        setSubmitSuccess({ ...data, candidateName: parsedName, appRecord })
+        // Save into smarthire_careers_applications so it immediately reflects in Reports & Dashboard
+        const newApp = {
+          fName: parsedName.split(' ')[0] || parsedName,
+          lName: parsedName.split(' ').slice(1).join(' ') || '',
+          name: parsedName,
+          email: candidateEmail.trim(),
+          phone: candidatePhone.trim() || '—',
+          canId: data.candidateId || String(Math.floor(10000 + Math.random() * 89999)),
+          reqId: selectedJob.id.replace('J-', ''),
+          jobId: selectedJob.id,
+          jobTitle: selectedJob.title,
+          appliedDate: new Date().toLocaleDateString('en-US') + ' ' + new Date().toLocaleTimeString('en-US'),
+          status: 'Int-SubmittedToManager',
+          rejectReason: '',
+          comments: `Submitted from SmartHire Careers via ${activeRecruiter.name}`,
+          recruiter: activeRecruiter.name,
+          recruiterEmail: activeRecruiter.email,
+          recruiterRef: activeRecruiter.refCode
+        }
+
+        try {
+          const existingApps = JSON.parse(localStorage.getItem('smarthire_careers_applications') || '[]')
+          localStorage.setItem('smarthire_careers_applications', JSON.stringify([newApp, ...existingApps]))
+        } catch(e) {}
+
+        setSubmitSuccess({ ...data, candidateName: parsedName, appRecord, recruiterName: activeRecruiter.name })
       } else {
         setSubmitError(data.message || 'Failed to submit application.')
       }
@@ -1342,6 +1386,36 @@ export default function PublicCareers() {
                 ✕
               </button>
             </div>
+
+            {/* Recruiter Referral Attribution Badge */}
+            {(() => {
+              const urlParams = new URLSearchParams(window.location.search)
+              const refCode = sessionStorage.getItem('smarthire_recruiter_ref') || localStorage.getItem('smarthire_recruiter_ref') || urlParams.get('ref') || urlParams.get('recruiter')
+              const rec = resolveRecruiterFromRef(refCode)
+              if (!rec) return null
+              return (
+                <div style={{
+                  background: isLight ? '#f0fdf4' : 'rgba(22, 163, 74, 0.12)',
+                  border: `1px solid ${isLight ? '#bbf7d0' : 'rgba(34, 197, 94, 0.3)'}`,
+                  borderRadius: 8,
+                  padding: '8px 12px',
+                  marginBottom: 16,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 10,
+                  flexWrap: 'wrap'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: isLight ? '#15803d' : '#86efac' }}>
+                    <span>👤</span>
+                    <span>Sourcing Recruiter: <strong style={{ color: isLight ? '#0f172a' : '#ffffff' }}>{rec.name}</strong> ({rec.email})</span>
+                  </div>
+                  <span style={{ fontSize: 10.5, background: isLight ? '#dcfce7' : 'rgba(34, 197, 94, 0.25)', color: isLight ? '#166534' : '#bbf7d0', padding: '2px 8px', borderRadius: 12, fontWeight: 800 }}>
+                    Direct Recruiter Referral
+                  </span>
+                </div>
+              )
+            })()}
 
             {/* IF APPLICATION SUBMITTED */}
             {submitSuccess ? (

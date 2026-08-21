@@ -332,10 +332,17 @@ function Reports() {
 
   // Filter SmartHire Careers Candidates
   const filteredCareersCandidates = useMemo(() => {
-    return mockSmartHireCareersCandidates.filter(c => {
+    let localApps = []
+    try {
+      const saved = localStorage.getItem('smarthire_careers_applications')
+      if (saved) localApps = JSON.parse(saved)
+    } catch(e) {}
+
+    const allApps = [...localApps, ...mockSmartHireCareersCandidates]
+    return allApps.filter(c => {
       if (searchTerm.trim()) {
         const q = searchTerm.toLowerCase()
-        const text = `${c.fName} ${c.lName} ${c.email} ${c.phone} ${c.canId} ${c.reqId} ${c.status}`.toLowerCase()
+        const text = `${c.fName} ${c.lName} ${c.email} ${c.phone} ${c.canId} ${c.reqId} ${c.status} ${c.comments} ${c.recruiter || ''}`.toLowerCase()
         if (!text.includes(q)) return false
       }
       return true
@@ -344,7 +351,47 @@ function Reports() {
 
   // Filter Resumes Added Rows
   const filteredResumesAdded = useMemo(() => {
-    return mockResumesAddedRows.filter(row => {
+    let localApps = []
+    try {
+      const saved = localStorage.getItem('smarthire_careers_applications')
+      if (saved) localApps = JSON.parse(saved)
+    } catch(e) {}
+
+    // Build dynamic rows for any local apps submitted today
+    let dynamicRows = []
+    if (localApps.length > 0) {
+      const groupedByRecruiter = {}
+      localApps.forEach(app => {
+        const rec = app.recruiter || 'Omkesh Manjute'
+        if (!groupedByRecruiter[rec]) groupedByRecruiter[rec] = []
+        groupedByRecruiter[rec].push(app)
+      })
+
+      const todayStr = new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })
+      Object.keys(groupedByRecruiter).forEach(rec => {
+        const apps = groupedByRecruiter[rec]
+        dynamicRows.push({
+          date: todayStr,
+          recruiter: rec,
+          total: apps.length,
+          newCount: apps.length,
+          poolCount: 0,
+          notPerf: '',
+          submittedClient: '',
+          candidates: apps.map(a => ({
+            name: `${a.fName} ${a.lName}`.trim() || a.name,
+            role: a.jobTitle || 'Applicant',
+            type: 'NEW',
+            reqId: a.reqId || '158938',
+            client: 'State Of SC',
+            status: a.status || 'Newly Added'
+          }))
+        })
+      })
+    }
+
+    const mergedRows = [...dynamicRows, ...mockResumesAddedRows]
+    return mergedRows.filter(row => {
       if (selectedRecruiter !== 'All' && selectedRecruiter !== 'ALL') {
         if (!row.recruiter.toLowerCase().includes(selectedRecruiter.toLowerCase())) return false
       }
