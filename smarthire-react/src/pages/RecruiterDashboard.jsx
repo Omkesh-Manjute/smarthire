@@ -111,14 +111,14 @@ const legacyCandidateData = [
   { id: '87507', name: 'Goutham Gantala', role: 'Cloud En..', fullRole: 'Cloud Engineer / AWS Solutions', exp: '11', location: 'Bayonne,NY', city: 'Bayonne', state: 'NY', locPref: '', payRate: '78 /hr', rateType: 'C2C', rating: 1, subVendor: 'Cloud TechnoSoft LLC', recruiter: 'Nitin Bhosale', agrExists: false, avblDate: 'Dec 31, 2025', email: 'goutham.g@technosoft.com', phone: '201-555-9081', workAuth: 'H1B', screened: 'Yes' },
   { id: '87508', name: 'Vamshi Krishna Ganta', role: 'TAX - Sr..', fullRole: 'TAX - Senior Systems Analyst', exp: '8', location: 'Woodbridge,NJ', city: 'Woodbridge', state: 'NJ', locPref: '', payRate: '60 /hr', rateType: 'C2C', rating: 1, subVendor: 'Client Server Technologies', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Dec 31, 2025', email: 'vamshi.ganta@clientserver.com', phone: '732-555-6671', workAuth: 'GC', screened: 'Yes' },
   { id: '87509', name: 'Nagababu Ganta', role: 'Oracle D..', fullRole: 'Oracle DBA / PL-SQL Specialist', exp: '13', location: 'Katy,TX', city: 'Katy', state: 'TX', locPref: '', payRate: '63 /hr', rateType: 'C2C', rating: 5, subVendor: '??????????????.', recruiter: 'Vaibhav Bisen', agrExists: false, avblDate: 'Oct 9, 2025', email: 'nagababu.g@oracletech.net', phone: '281-555-1190', workAuth: 'GC', screened: 'Yes' },
-  { id: '87510', name: 'Ashok Juttu Kannan', role: 'QA', fullRole: 'QA Automation Lead (Selenium/Cypress)', exp: '19', location: 'Louisville,KY', city: 'Louisville', state: 'KY', locPref: '', payRate: '40 /hr', rateType: 'C2C', rating: 1, subVendor: 'COOLSOFT LLC', recruiter: 'Sukamal Chatterjee', agrExists: false, avblDate: 'Oct 1, 2024', email: 'ashok.jk@coolsoft.com', phone: '502-555-8721', workAuth: 'US Citizen', screened: 'Yes' },
+  { id: '87510', name: 'Ashok Juttu Kannan', role: 'QA', fullRole: 'QA Automation Lead (Selenium/Cypress)', exp: '19', location: 'Louisville,KY', city: 'Louisville', state: 'KY', locPref: '', payRate: '40 /hr', rateType: 'C2C', rating: 1, subVendor: 'SmartHire LLC', recruiter: 'Sukamal Chatterjee', agrExists: false, avblDate: 'Oct 1, 2024', email: 'ashok.jk@smarthire.com', phone: '502-555-8721', workAuth: 'US Citizen', screened: 'Yes' },
   { id: '87511', name: 'Naga Babu Ganta', role: 'Database..', fullRole: 'Database Engineer - PostgreSQL / AWS', exp: '13', location: 'Katy,TX', city: 'Katy', state: 'TX', locPref: '', payRate: '70 /hr', rateType: 'C2C', rating: 5, subVendor: '??????????????.', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Oct 3, 2025', email: 'naga.ganta@katytech.io', phone: '281-555-7612', workAuth: 'US Citizen', screened: 'Yes' },
-  { id: '87512', name: 'Cx Avinash Ashokrao Mahajan', role: 'Senior B..', fullRole: 'Senior Business Systems Analyst', exp: '16', location: 'Raleigh,NC', city: 'Raleigh', state: 'NC', locPref: '', payRate: '55 /hr', rateType: 'W2', rating: 1, subVendor: 'COOLSOFT LLC', recruiter: 'Vaibhav Bisen', agrExists: true, avblDate: 'May 14, 2025', email: 'avinash.mahajan@coolsoft.com', phone: '919-555-0918', workAuth: 'US Citizen', screened: 'Yes' },
+  { id: '87512', name: 'Cx Avinash Ashokrao Mahajan', role: 'Senior B..', fullRole: 'Senior Business Systems Analyst', exp: '16', location: 'Raleigh,NC', city: 'Raleigh', state: 'NC', locPref: '', payRate: '55 /hr', rateType: 'W2', rating: 1, subVendor: 'SmartHire LLC', recruiter: 'Vaibhav Bisen', agrExists: true, avblDate: 'May 14, 2025', email: 'avinash.mahajan@smarthire.com', phone: '919-555-0918', workAuth: 'US Citizen', screened: 'Yes' },
   { id: '87513', name: 'Naga Babu Ganta', role: 'Database..', fullRole: 'Database Administrator Senior', exp: '13', location: 'Houston,TX', city: 'Houston', state: 'TX', locPref: '', payRate: '65 /hr', rateType: 'C2C', rating: 1, subVendor: '??????????????.', recruiter: 'Prudhvi', agrExists: false, avblDate: 'Sep 3, 2025', email: 'naga.houston@databasedev.com', phone: '713-555-9921', workAuth: 'GC', screened: 'Yes' },
   { id: '87514', name: 'Ashok Ankalla', role: 'Project ..', fullRole: 'Project Coordinator / Scrum Master', exp: '18', location: 'Bentonville,AR', city: 'Bentonville', state: 'AR', locPref: '', payRate: '60 /hr', rateType: 'C2C', rating: 1, subVendor: '??????????????.', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Aug 29, 2025', email: 'ashok.a.benton@retailtech.com', phone: '479-555-1120', workAuth: 'US Citizen', screened: 'Yes' },
   { id: '87515', name: 'Tirumala Ashok Varmadantuluri', role: 'SCC - Sr..', fullRole: 'SCC - Senior Network Architect', exp: '16', location: 'Ashburn,VA', city: 'Ashburn', state: 'VA', locPref: '', payRate: '71 /hr', rateType: 'C2C', rating: 1, subVendor: 'Ameritech Global INC', recruiter: 'Nitin Bhosale', agrExists: false, avblDate: 'Jun 17, 2025', email: 'tirumala.v@ameritech.com', phone: '571-555-3341', workAuth: 'GC', screened: 'Yes' },
   { id: '87516', name: 'Priyanka Gantareddy', role: 'Senior Q..', fullRole: 'Senior Quality Assurance Lead', exp: '16', location: 'Austin,TX', city: 'Austin', state: 'TX', locPref: '', payRate: '60 /hr', rateType: 'C2C', rating: 5, subVendor: '??????????????.', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Feb 26, 2025', email: 'priyanka.ganta@austintech.com', phone: '512-555-7721', workAuth: 'US Citizen', screened: 'Yes' },
-  { id: '87517', name: 'Nagajyothsna Ch Ganta', role: 'ERFO-ISD..', fullRole: 'ERFO-ISD Developer / Analyst', exp: '10', location: 'Ceref,CA', city: 'Ceref', state: 'CA', locPref: '', payRate: '65 /hr', rateType: 'C2C', rating: 1, subVendor: 'COOLSOFT LLC', recruiter: 'Vaibhav Bisen', agrExists: false, avblDate: 'Feb 13, 2025', email: 'nagajyothsna@coolsoft.com', phone: '408-555-6671', workAuth: 'H1B', screened: 'Yes' },
+  { id: '87517', name: 'Nagajyothsna Ch Ganta', role: 'ERFO-ISD..', fullRole: 'ERFO-ISD Developer / Analyst', exp: '10', location: 'Ceref,CA', city: 'Ceref', state: 'CA', locPref: '', payRate: '65 /hr', rateType: 'C2C', rating: 1, subVendor: 'SmartHire LLC', recruiter: 'Vaibhav Bisen', agrExists: false, avblDate: 'Feb 13, 2025', email: 'nagajyothsna@smarthire.com', phone: '408-555-6671', workAuth: 'H1B', screened: 'Yes' },
   { id: '87518', name: 'Triveni Ganta', role: '.Net Dev..', fullRole: '.Net Core / Angular Full Stack Developer', exp: '8', location: 'Minneapolis,MN', city: 'Minneapolis', state: 'MN', locPref: '', payRate: '55 /hr', rateType: 'C2C', rating: 1, subVendor: 'Origin Tek Solutions', recruiter: 'Sukamal Chatterjee', agrExists: false, avblDate: 'Jan 22, 2025', email: 'triveni.ganta@origintek.com', phone: '612-555-1234', workAuth: 'H1B', screened: 'Yes' },
   { id: '87519', name: 'Ashok Anakalla', role: 'Technica..', fullRole: 'Technical Lead / Solution Architect', exp: '18', location: 'Herndon,VA', city: 'Herndon', state: 'VA', locPref: '', payRate: '68 /hr', rateType: 'C2C', rating: 1, subVendor: '??????????????.', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Jan 13, 2025', email: 'ashok.anakalla@herndontech.com', phone: '703-555-9012', workAuth: 'US Citizen', screened: 'Yes' },
   { id: '87520', name: 'Ashok Kumar Dodda', role: 'Cloud En..', fullRole: 'Cloud Enterprise Solutions Architect', exp: '13', location: 'Dallas,TX', city: 'Dallas', state: 'TX', locPref: '', payRate: '75 /hr', rateType: 'C2C', rating: 1, subVendor: 'E-Solutions Inc', recruiter: 'Vaibhav Bisen', agrExists: false, avblDate: 'Dec 12, 2024', email: 'ashok.dodda@esolutions.com', phone: '214-555-4431', workAuth: 'GC', screened: 'Yes' },
@@ -126,7 +126,7 @@ const legacyCandidateData = [
   { id: '87522', name: 'Ashok Bellala', role: 'Java Dev..', fullRole: 'Java Developer / Microservices', exp: '13', location: 'Columbus,OH', city: 'Columbus', state: 'OH', locPref: '', payRate: '60 /hr', rateType: '1099', rating: 1, subVendor: '48170', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Aug 25, 2020', email: 'ashok.bellala@ohiodata.org', phone: '614-555-0912', workAuth: 'GC', screened: 'Yes' },
   { id: '87523', name: 'Ashok Mundlamuri', role: 'NCDIT - ..', fullRole: 'NCDIT - Systems Security Specialist', exp: '12', location: 'North Brunswick,NJ', city: 'North Brunswick', state: 'NJ', locPref: '', payRate: '65 /hr', rateType: 'C2C', rating: 1, subVendor: '??????????????.', recruiter: 'Vaibhav Bisen', agrExists: false, avblDate: 'Sep 25, 2024', email: 'ashok.mundlamuri@njtech.io', phone: '732-555-1823', workAuth: 'US Citizen', screened: 'Yes' },
   { id: '87524', name: 'Ashok Natarajan', role: 'Project ..', fullRole: 'Project Manager - Enterprise ERP', exp: '17', location: 'Irving,TX', city: 'Irving', state: 'TX', locPref: '', payRate: '80 /hr', rateType: 'C2C', rating: 1, subVendor: 'Paramount Software Solutions', recruiter: 'Nitin Bhosale', agrExists: false, avblDate: 'Aug 28, 2024', email: 'ashok.natarajan@paramount.com', phone: '972-555-6671', workAuth: 'US Citizen', screened: 'Yes' },
-  { id: '87525', name: 'Sri Sai Tejasvi Gantakolla', role: 'Power Pl..', fullRole: 'Power Platform / Dynamics 365 Architect', exp: '10', location: 'Memphis,TN', city: 'Memphis', state: 'TN', locPref: '', payRate: '65 /hr', rateType: 'C2C', rating: 1, subVendor: 'COOLSOFT LLC', recruiter: 'Sukamal Chatterjee', agrExists: false, avblDate: 'Aug 22, 2024', email: 'tejasvi.ganta@coolsoft.com', phone: '901-555-7781', workAuth: 'GC', screened: 'Yes' }
+  { id: '87525', name: 'Sri Sai Tejasvi Gantakolla', role: 'Power Pl..', fullRole: 'Power Platform / Dynamics 365 Architect', exp: '10', location: 'Memphis,TN', city: 'Memphis', state: 'TN', locPref: '', payRate: '65 /hr', rateType: 'C2C', rating: 1, subVendor: 'SmartHire LLC', recruiter: 'Sukamal Chatterjee', agrExists: false, avblDate: 'Aug 22, 2024', email: 'tejasvi.ganta@smarthire.com', phone: '901-555-7781', workAuth: 'GC', screened: 'Yes' }
 ]
 
 function RecruiterDashboard() {
@@ -471,7 +471,7 @@ function RecruiterDashboard() {
     const encodedUri = encodeURI(csvContent)
     const link = document.createElement('a')
     link.setAttribute('href', encodedUri)
-    link.setAttribute('download', `CoolWorks_Candidates_Export_${new Date().toISOString().slice(0, 10)}.csv`)
+    link.setAttribute('download', `SmartWorks_Candidates_Export_${new Date().toISOString().slice(0, 10)}.csv`)
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -764,13 +764,13 @@ function RecruiterDashboard() {
           </div>
         </div>
 
-        {/* ═══════════ COOLWORKS ORANGE HEADER NAVIGATION BAR ═══════════ */}
+        {/* ═══════════ SMARTWORKS ORANGE HEADER NAVIGATION BAR ═══════════ */}
         <header style={{ background: '#ea580c', borderBottom: '2px solid #c2410c', color: '#ffffff' }}>
           <div className="container-wide" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '42px', padding: '0 16px' }}>
             
             <div style={{ display: 'flex', gap: '2px', height: '100%', alignItems: 'stretch' }}>
               <div style={{ display: 'flex', alignItems: 'center', padding: '0 12px', fontWeight: 'bold', fontSize: '15px', letterSpacing: '0.02em', background: '#c2410c' }}>
-                COOLWORKS
+                SmartWorks
               </div>
               {[
                 { id: 'requisitions', name: 'Requisitions' },
@@ -944,7 +944,7 @@ function RecruiterDashboard() {
                         <option>IConnect</option>
                         <option>Cloud TechnoSoft LLC</option>
                         <option>Client Server Technologies</option>
-                        <option>COOLSOFT LLC</option>
+                        <option>SmartHire LLC</option>
                         <option>Ameritech Global INC</option>
                         <option>Origin Tek Solutions</option>
                         <option>E-Solutions Inc</option>
@@ -1509,7 +1509,7 @@ function RecruiterDashboard() {
                           <select value={submissionCandidate.subVendor} onChange={e => setSubmissionCandidate({ ...submissionCandidate, subVendor: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
                             <option>Talent9 Inc</option>
                             <option>Direct</option>
-                            <option>CoolSoft Tech</option>
+                            <option>SmartHire Tech</option>
                           </select>
                           <span style={{ color: '#0066cc', textDecoration: 'underline', cursor: 'pointer', fontSize: '11px' }}>AddSubVendor</span>
                         </div>
@@ -2168,10 +2168,10 @@ function RecruiterDashboard() {
               {/* All Open Requisitions Table */}
               <div style={{ background: '#ffffff', padding: '14px 18px', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                 <h2 style={{ margin: '0 0 2px', fontSize: '15px', color: '#16a34a', fontWeight: 'bold' }}>
-                  COOLSOFT Recruitment Portal Home
+                  SmartHire Recruitment Portal Home
                 </h2>
                 <div style={{ fontSize: '12px', color: '#334155', fontWeight: 'bold', marginBottom: '12px' }}>
-                  Welcome back to CoolWorks. You have {jobs.length} tasks.
+                  Welcome back to SmartWorks. You have {jobs.length} tasks.
                 </div>
 
                 <div style={{
@@ -2295,9 +2295,9 @@ function RecruiterDashboard() {
 
         </div>
 
-        {/* ═══════════ COOLSOFT ORANGE FOOTER ═══════════ */}
+        {/* ═══════════ SMARTHIRE ORANGE FOOTER ═══════════ */}
         <footer style={{ background: '#ea580c', borderTop: '2px solid #c2410c', color: '#ffffff', textAlign: 'center', padding: '10px', marginTop: '30px', fontSize: '11px', fontWeight: 'bold' }}>
-          © COOLSOFT LLC | All rights reserved | Release 1.9 06-May-2025 (New Server 2023 Aug)
+          © SmartHire LLC | All rights reserved | Release 1.9 06-May-2025 (New Server 2023 Aug)
         </footer>
 
       </div>

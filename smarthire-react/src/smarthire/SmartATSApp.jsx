@@ -173,7 +173,7 @@ export function SmartATSApp() {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailType, setEmailType] = useState('shortlist');
-  const [companyName, setCompanyName] = useState('COOLSOFT LLC');
+  const [companyName, setCompanyName] = useState('SmartHire LLC');
   const [recruiterName, setRecruiterName] = useState('Omkesh');
   const [emailMode, setEmailMode] = useState('single');
   const [aiLoading, setAiLoading] = useState(false);

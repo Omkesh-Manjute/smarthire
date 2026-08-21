@@ -7,7 +7,7 @@ const DEFAULT_RECRUITERS = [
     email: 'omkesh@coolsofttech.com',
     role: 'superadmin',
     refCode: 'omkesh',
-    company: 'Coolsoft LLC',
+    company: 'SmartHire LLC',
     isActive: true,
     password: 'admin',
     lastLogin: '2026-08-17T18:45:00.000Z',
@@ -19,7 +19,7 @@ const DEFAULT_RECRUITERS = [
     email: 'kamal@coolsofttech.com',
     role: 'recruiter',
     refCode: 'sukamal-chatterjee',
-    company: 'Coolsoft LLC',
+    company: 'SmartHire LLC',
     isActive: true,
     password: 'recruiter123',
     lastLogin: null,
@@ -31,7 +31,7 @@ const DEFAULT_RECRUITERS = [
     email: 'raj@coolsofttech.com',
     role: 'recruiter',
     refCode: 'raj',
-    company: 'Coolsoft LLC',
+    company: 'SmartHire LLC',
     isActive: true,
     password: 'recruiter123',
     lastLogin: null,
@@ -43,7 +43,7 @@ const DEFAULT_RECRUITERS = [
     email: 'vaibhav@coolsofttech.com',
     role: 'recruiter',
     refCode: 'vaibhav-bisen',
-    company: 'Coolsoft LLC',
+    company: 'SmartHire LLC',
     isActive: true,
     password: 'recruiter123',
     lastLogin: null,
@@ -55,7 +55,7 @@ const DEFAULT_RECRUITERS = [
     email: 'pankajm@coolsofttech.com',
     role: 'recruiter',
     refCode: 'pankaj',
-    company: 'Coolsoft LLC',
+    company: 'SmartHire LLC',
     isActive: true,
     password: 'recruiter123',
     lastLogin: null,
@@ -166,7 +166,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
       email: newRecEmail.trim().toLowerCase(),
       role: newRecRole,
       refCode: newRefCode,
-      company: newRecCompany.trim() || 'Coolsoft LLC',
+      company: newRecCompany.trim() || 'SmartHire LLC',
       password: newRecPassword.trim()
     }
 
@@ -228,7 +228,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
       email: editRecEmail.trim().toLowerCase(),
       role: editRecRole,
       refCode: finalRefCode,
-      company: editRecCompany.trim() || 'Coolsoft LLC',
+      company: editRecCompany.trim() || 'SmartHire LLC',
       password: editRecPassword.trim()
     }
 
@@ -648,7 +648,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                 <label>Company</label>
                 <input 
                   type="text" 
-                  placeholder="e.g. Coolsoft LLC" 
+                  placeholder="e.g. SmartHire LLC" 
                   value={newRecCompany}
                   onChange={e => setNewRecCompany(e.target.value)}
                 />

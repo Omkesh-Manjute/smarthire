@@ -522,7 +522,7 @@ function DashboardModule({
                   <label style={{ fontWeight: 'bold', color: '#1e3a8a' }}>Email Body:</label>
                   <textarea
                     rows={5}
-                    defaultValue={`A requisition has been assigned to you with the below details:\nhttp://cwtest.coolsoft-tech.com/Web/Requisition.aspx?id=${selectedReq.id.replace('J-', '')}\n\nReq#:${selectedReq.id.replace('J-', '')}   Position Title:${editingFields.title}\nStart Date:${editingFields.startDate}   Duration:${editingFields.duration} months`}
+                    defaultValue={`A requisition has been assigned to you with the below details:\nhttp://portal.smarthire.com/Web/Requisition.aspx?id=${selectedReq.id.replace('J-', '')}\n\nReq#:${selectedReq.id.replace('J-', '')}   Position Title:${editingFields.title}\nStart Date:${editingFields.startDate}   Duration:${editingFields.duration} months`}
                     style={{ width: '100%', maxWidth: '620px', padding: '6px', fontSize: '11.5px', border: '1px solid #cbd5e1', fontFamily: 'monospace' }}
                   />
                 </div>
@@ -743,10 +743,10 @@ function DashboardModule({
 
           {/* Welcome Header */}
           <h2 style={{ margin: '0 0 2px', fontSize: '15px', color: '#16a34a', fontWeight: 'bold' }}>
-            COOLSOFT Recruitment Portal Home
+            SmartHire Recruitment Portal Home
           </h2>
           <div style={{ fontSize: '12px', color: '#334155', fontWeight: 'bold', marginBottom: '14px' }}>
-            Welcome back to CoolWorks. You have {safeJobs.length} tasks.
+            Welcome back to SmartWorks. You have {safeJobs.length} tasks.
           </div>
 
           {/* All Open Requisitions Header Banner */}
