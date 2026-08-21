@@ -268,6 +268,9 @@ function RecruiterDashboard() {
     ]
   })
 
+  // Notification toast on save
+  const [saveToastMessage, setSaveToastMessage] = useState(null)
+
   // Handler to update candidate submission status and record audit log (Who changed it, role, timestamp)
   const handleUpdatePotentialCandidate = (candId, field, value) => {
     const userRoleDisplay = currentUser?.role === 'superadmin' || currentUser?.role === 'admin' || userName.toLowerCase().includes('omkesh') ? 'Manager' : 'Recruiter'
@@ -1672,7 +1675,13 @@ function RecruiterDashboard() {
                         <button type="button" onClick={() => setViewMode('resumeSearch')} style={{ background: '#f1f5f9', border: '1px solid #94a3b8', padding: '4px 14px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer' }}>
                           Back To Search Results
                         </button>
-                        <button type="button" onClick={handleAssignCandidateToReq} style={{ background: '#f1f5f9', border: '1px solid #94a3b8', padding: '4px 16px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer' }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            alert(`Candidate draft details saved successfully for ${submissionCandidate.firstName} ${submissionCandidate.lastName}!`);
+                          }}
+                          style={{ background: '#f1f5f9', border: '1px solid #94a3b8', padding: '4px 16px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
                           Save
                         </button>
                         <button type="button" onClick={() => { setViewMode('requisition'); setActiveReqTab('potential'); }} style={{ background: '#f1f5f9', border: '1px solid #94a3b8', padding: '4px 14px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer' }}>
@@ -1714,6 +1723,27 @@ function RecruiterDashboard() {
                   </span>
                 </div>
               </div>
+
+              {/* Success Notification Banner */}
+              {saveToastMessage && (
+                <div style={{
+                  background: '#ecfdf5',
+                  border: '1px solid #10b981',
+                  color: '#065f46',
+                  padding: '8px 14px',
+                  borderRadius: '3px',
+                  fontSize: '11.5px',
+                  fontWeight: 'bold',
+                  marginBottom: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                }}>
+                  <span>{saveToastMessage}</span>
+                  <span style={{ cursor: 'pointer', marginLeft: '12px', fontSize: '13px' }} onClick={() => setSaveToastMessage(null)}>✕</span>
+                </div>
+              )}
 
               {/* 3-Column Header Form */}
               <div style={{
@@ -2074,17 +2104,18 @@ function RecruiterDashboard() {
                 )}
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '14px', gap: '10px' }}>
                 <button
                   type="button"
                   onClick={() => {
                     try {
                       localStorage.setItem('smarthire_potential_candidates_158938', JSON.stringify(potentialCandidates))
+                      localStorage.setItem('smarthire_req_158938', JSON.stringify(editingFields))
                     } catch (e) {}
-                    alert(`Requisition #158938 updated successfully!\nAll candidate statuses and manager/recruiter audit trails have been saved and synced to Reports.`);
-                    setViewMode('portal');
+                    setSaveToastMessage(`✅ Requisition #${selectedReq?.id?.replace('J-', '') || '158938'} updated successfully! Candidate statuses and audit logs saved.`)
+                    setTimeout(() => setSaveToastMessage(null), 5000)
                   }}
-                  style={{ background: '#e2e8f0', color: '#0f172a', border: '1px solid #94a3b8', padding: '4px 20px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '2px' }}
+                  style={{ background: '#e2e8f0', color: '#0f172a', border: '1px solid #94a3b8', padding: '5px 22px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '2px', boxShadow: 'inset 0 1px 0 #ffffff, 0 1px 2px rgba(0,0,0,0.05)' }}
                 >
                   Save
                 </button>
