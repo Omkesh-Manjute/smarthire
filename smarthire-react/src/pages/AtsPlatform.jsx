@@ -668,6 +668,7 @@ export default function AtsPlatform() {
                 jobsList={safeJobs}
                 apiOnline={apiOnline}
                 submissions={submissions}
+                isSuperAdmin={isSuperAdmin}
               />
             )}
 
