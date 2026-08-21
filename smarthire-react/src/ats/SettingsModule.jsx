@@ -1,3 +1,5 @@
+import React, { useState, useEffect } from 'react'
+
 const ALL_SMARTHIRE_RECRUITERS = [
   { name: 'Omkesh Manjute', email: 'omkesh.manjute@smarthire.com', refCode: 'omkesh' },
   { name: 'Vaibhav Bisen', email: 'vaibhav.bisen@smarthire.com', refCode: 'vaibhav-bisen' },
