@@ -5927,6 +5927,641 @@ app.post('/api/messages/:candidateId', authenticateToken, (req, res) => {
   res.json({ success: true, message: msg, thread });
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// FEATURE 2: Per-Recruiter Email Configuration & Direct Send (nodemailer)
+// ═══════════════════════════════════════════════════════════════════════════════
+const emailConfigsPath = path.resolve(__dirname, 'email_configs.json');
+let emailConfigsStore = {};
+try {
+  if (fs.existsSync(emailConfigsPath)) emailConfigsStore = JSON.parse(fs.readFileSync(emailConfigsPath, 'utf8'));
+} catch(e) { emailConfigsStore = {}; }
+
+function saveEmailConfigs() {
+  try { fs.writeFileSync(emailConfigsPath, JSON.stringify(emailConfigsStore, null, 2)); } catch(e) {}
+}
+
+// GET recruiter email config
+app.get('/api/recruiter/email-config', (req, res) => {
+  const recruiterEmail = req.query.email || req.headers['x-recruiter-email'] || '';
+  const cfg = emailConfigsStore[recruiterEmail] || null;
+  // Never return the password in plain text
+  if (cfg) {
+    const safe = { ...cfg, appPassword: cfg.appPassword ? '••••••••••••' : '' };
+    return res.json({ success: true, config: safe });
+  }
+  res.json({ success: true, config: null });
+});
+
+// POST save recruiter email config
+app.post('/api/recruiter/email-config', express.json(), (req, res) => {
+  const { recruiterEmail, displayName, fromEmail, provider, smtpHost, smtpPort, security, appPassword, signature } = req.body;
+  if (!recruiterEmail || !fromEmail) return res.json({ success: false, message: 'recruiterEmail and fromEmail are required' });
+  
+  emailConfigsStore[recruiterEmail] = {
+    displayName: displayName || '',
+    fromEmail,
+    provider: provider || 'gmail',
+    smtpHost: smtpHost || 'smtp.gmail.com',
+    smtpPort: smtpPort || 587,
+    security: security || 'TLS',
+    appPassword: appPassword || emailConfigsStore[recruiterEmail]?.appPassword || '',
+    signature: signature || ''
+  };
+  saveEmailConfigs();
+  res.json({ success: true, message: 'Email configuration saved!' });
+});
+
+// POST send email via recruiter's configured SMTP
+app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
+  const { recruiterEmail, to, subject, body, html, replyTo } = req.body;
+  if (!recruiterEmail || !to || !subject) return res.json({ success: false, message: 'recruiterEmail, to, and subject required' });
+
+  const cfg = emailConfigsStore[recruiterEmail];
+  if (!cfg || !cfg.appPassword) {
+    return res.json({ success: false, message: 'No email configuration found. Please configure your SMTP settings first.' });
+  }
+
+  try {
+    const nodemailer = await import('nodemailer').catch(() => null);
+    if (!nodemailer) return res.json({ success: false, message: 'Email service not available on this server' });
+    
+    const transporter = nodemailer.default.createTransport({
+      host: cfg.smtpHost,
+      port: parseInt(cfg.smtpPort) || 587,
+      secure: cfg.security === 'SSL',
+      auth: { user: cfg.fromEmail, pass: cfg.appPassword },
+      tls: { rejectUnauthorized: false }
+    });
+
+    const emailSignature = cfg.signature ? `\n\n--\n${cfg.signature}` : '';
+    await transporter.sendMail({
+      from: `"${cfg.displayName || 'SmartHire Recruiter'}" <${cfg.fromEmail}>`,
+      to: Array.isArray(to) ? to.join(', ') : to,
+      replyTo: replyTo || cfg.fromEmail,
+      subject,
+      text: (body || '') + emailSignature,
+      html: html ? html + (cfg.signature ? `<br><br>--<br>${cfg.signature}` : '') : undefined
+    });
+
+    res.json({ success: true, message: `Email sent successfully from ${cfg.fromEmail}` });
+  } catch(err) {
+    console.error('Email send error:', err.message);
+    res.json({ success: false, message: `Failed to send: ${err.message}` });
+  }
+});
+
+// POST test email connection
+app.post('/api/recruiter/test-email', express.json(), async (req, res) => {
+  const { recruiterEmail } = req.body;
+  const cfg = emailConfigsStore[recruiterEmail];
+  if (!cfg || !cfg.appPassword) return res.json({ success: false, message: 'No config found' });
+
+  try {
+    const nodemailer = await import('nodemailer').catch(() => null);
+    if (!nodemailer) return res.json({ success: false, message: 'Email service unavailable' });
+    const transporter = nodemailer.default.createTransport({
+      host: cfg.smtpHost,
+      port: parseInt(cfg.smtpPort) || 587,
+      secure: cfg.security === 'SSL',
+      auth: { user: cfg.fromEmail, pass: cfg.appPassword },
+      tls: { rejectUnauthorized: false }
+    });
+    await transporter.verify();
+    // Send test email to self
+    await transporter.sendMail({
+      from: `"${cfg.displayName}" <${cfg.fromEmail}>`,
+      to: cfg.fromEmail,
+      subject: '✅ SmartHire - Email Configuration Test Successful',
+      text: `Your SmartHire email configuration for ${cfg.fromEmail} is working correctly!\n\nSent at: ${new Date().toLocaleString()}`
+    });
+    res.json({ success: true, message: `✅ Test email sent to ${cfg.fromEmail}` });
+  } catch(err) {
+    res.json({ success: false, message: `Connection failed: ${err.message}` });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FEATURE 1: LinkedIn Match Bot - Cross-verify resume vs LinkedIn profile
+// ═══════════════════════════════════════════════════════════════════════════════
+app.post('/api/linkedin/match', express.json(), async (req, res) => {
+  const { resumeText, linkedinText, linkedinUrl, candidateName, jobTitle } = req.body;
+  if (!resumeText) return res.json({ success: false, message: 'resumeText required' });
+
+  const r = resumeText.toLowerCase();
+  const l = (linkedinText || '').toLowerCase();
+  const hasLinkedInData = l.length > 50;
+
+  // Extract company names from both
+  const companyRegex = /(?:at|with|for|@)\s+([A-Z][a-zA-Z\s&.,]+(?:LLC|Inc|Corp|Ltd|Technologies|Solutions|Systems|Consulting|Services)?)/g;
+  const resumeCompanies = [...resumeText.matchAll(companyRegex)].map(m => m[1].trim().toLowerCase());
+  const linkedinCompanies = hasLinkedInData ? [...(linkedinText||'').matchAll(companyRegex)].map(m => m[1].trim().toLowerCase()) : [];
+  
+  // Date gap analysis
+  const dateRegex = /(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}|\d{4}/gi;
+  const resumeDates = [...resumeText.matchAll(dateRegex)].map(m => m[0]);
+  const linkedinDates = hasLinkedInData ? [...(linkedinText||'').matchAll(dateRegex)].map(m => m[0]) : [];
+
+  // Skills cross-match
+  const techSkills = ['python','java','javascript','react','angular','vue','node','aws','azure','gcp','sql','mongodb','docker','kubernetes','power platform','powerbi','tableau','salesforce','sap','oracle','snowflake','databricks','c#','c++','golang','rust','typescript'];
+  const resumeSkills = techSkills.filter(s => r.includes(s));
+  const linkedinSkills = hasLinkedInData ? techSkills.filter(s => l.includes(s)) : resumeSkills;
+  const skillsMatched = resumeSkills.filter(s => linkedinSkills.includes(s));
+  const skillsMissing = resumeSkills.filter(s => !linkedinSkills.includes(s));
+  
+  const skillMatchRate = resumeSkills.length > 0 ? Math.round((skillsMatched.length / resumeSkills.length) * 100) : 85;
+
+  // Company overlap
+  const companyOverlap = resumeCompanies.length > 0 && linkedinCompanies.length > 0
+    ? resumeCompanies.filter(c => linkedinCompanies.some(lc => lc.includes(c.slice(0,6)) || c.includes(lc.slice(0,6)))).length
+    : null;
+
+  // Fake/proxy risk indicators
+  const riskSignals = [];
+  if (!hasLinkedInData && linkedinUrl) riskSignals.push('LinkedIn profile data not provided for cross-check');
+  if (resumeSkills.length > 20) riskSignals.push('Unusually high number of skills on resume (possible skill inflation)');
+  if (skillsMissing.length > skillsMatched.length && hasLinkedInData) riskSignals.push('Several skills on resume not reflected in LinkedIn profile');
+  if (companyOverlap !== null && companyOverlap === 0 && resumeCompanies.length > 0) riskSignals.push('Company names on resume do not match LinkedIn work history');
+
+  const riskScore = Math.min(100, riskSignals.length * 25);
+  
+  let verdict, verdictIcon, verdictColor;
+  if (!hasLinkedInData) {
+    verdict = 'LinkedIn Data Needed'; verdictIcon = '⚠️'; verdictColor = '#d97706';
+  } else if (riskScore >= 50 || skillMatchRate < 50) {
+    verdict = 'High Risk / Discrepancy Detected'; verdictIcon = '❌'; verdictColor = '#dc2626';
+  } else if (riskScore >= 25 || skillMatchRate < 75) {
+    verdict = 'Minor Discrepancies Found'; verdictIcon = '⚠️'; verdictColor = '#d97706';
+  } else {
+    verdict = 'Verified Match'; verdictIcon = '✅'; verdictColor = '#16a34a';
+  }
+
+  res.json({
+    success: true,
+    verdict, verdictIcon, verdictColor,
+    riskScore,
+    skillMatchRate,
+    skillsMatched,
+    skillsMissing,
+    riskSignals,
+    companyOverlap,
+    resumeCompanies: resumeCompanies.slice(0, 5),
+    linkedinCompanies: linkedinCompanies.slice(0, 5),
+    resumeDateCount: resumeDates.length,
+    linkedinDateCount: linkedinDates.length,
+    summary: `LinkedIn cross-check ${hasLinkedInData ? 'complete' : 'requires LinkedIn data'}. Skills match rate: ${skillMatchRate}%. ${riskSignals.length} risk signal(s) detected. Verdict: ${verdict}`
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FEATURE 4: AI Job Deep Analysis & Boolean Search Generator
+// ═══════════════════════════════════════════════════════════════════════════════
+app.post('/api/ai/job-analysis', express.json(), async (req, res) => {
+  const { jobId, jobTitle, location, skills, description, workMode, type } = req.body;
+  if (!jobTitle) return res.json({ success: false, message: 'jobTitle required' });
+
+  const skillsList = Array.isArray(skills) ? skills : (skills || '').split(',').map(s => s.trim()).filter(Boolean);
+  const primarySkills = skillsList.slice(0, 5);
+  const secondarySkills = skillsList.slice(5, 10);
+  const allSkills = skillsList;
+
+  // Generate targeted Boolean queries
+  const mainTerms = primarySkills.slice(0, 3).map(s => `"${s}"`).join(' OR ');
+  const supportingTerms = secondarySkills.slice(0, 3).map(s => `"${s}"`).join(' OR ');
+  const titleVariants = `"${jobTitle}" OR "${jobTitle.replace('Developer', 'Engineer')}" OR "${jobTitle.replace('Engineer', 'Developer')}"`;
+  const locationQuery = location ? location.split(',')[0].trim() : 'US';
+
+  const booleanLinkedIn = `(${titleVariants}) AND (${mainTerms}) ${supportingSkills => supportingSkills.length ? `AND (${supportingTerms})` : ''}`;
+  const booleanDice = `("${jobTitle}" OR "${jobTitle.replace('Developer','Consultant')}") AND (${primarySkills.slice(0,4).map(s=>`"${s}"`).join(' AND ')})`;
+  const booleanGoogle = `site:linkedin.com/in ("${jobTitle}") AND (${primarySkills.slice(0,3).map(s=>`"${s}"`).join(' OR ')}) AND ("${locationQuery}")`;
+  const booleanMonster = `${primarySkills.slice(0,3).join(' ')} ${jobTitle}`;
+
+  // Candidate persona
+  const seniorityKeywords = ['senior','lead','principal','architect','staff','director'];
+  const seniorityLevel = seniorityKeywords.find(k => jobTitle.toLowerCase().includes(k)) 
+    ? jobTitle.toLowerCase().includes('senior') || jobTitle.toLowerCase().includes('lead') ? 'Senior (5–10 yrs)' : 'Principal/Architect (10+ yrs)'
+    : (description||'').toLowerCase().includes('senior') ? 'Senior (5–8 yrs)' : 'Mid-Level (3–5 yrs)';
+
+  // Work auth for US staffing
+  const isGovt = (description||'').toLowerCase().includes('state of') || (description||'').toLowerCase().includes('government') || (description||'').toLowerCase().includes('federal') || (description||'').toLowerCase().includes('public sector');
+  const workAuth = isGovt ? 'US Citizens and Green Card holders preferred (State/Government client)' : 'US Citizens, GC, H1B, EAD, OPT accepted';
+
+  // Key screening questions
+  const screeningQuestions = [
+    `How many years of hands-on experience do you have with ${primarySkills[0] || jobTitle}?`,
+    primarySkills[1] ? `Can you walk me through a project where you used ${primarySkills[1]} in a production environment?` : `What has been your most complex project in this domain?`,
+    `Are you comfortable working ${workMode || 'onsite'} and what is your current location?`,
+    `What is your expected bill/pay rate and availability to start?`,
+    `What is your work authorization status? ${isGovt ? '(US Citizen/GC preferred for this state client)' : ''}`
+  ];
+
+  // Must-have vs nice-to-have
+  const mustHave = primarySkills.slice(0, Math.ceil(primarySkills.length * 0.6));
+  const niceToHave = [...secondarySkills, ...primarySkills.slice(Math.ceil(primarySkills.length * 0.6))];
+
+  res.json({
+    success: true,
+    analysis: {
+      jobTitle,
+      seniorityLevel,
+      workAuth,
+      workMode: workMode || 'Onsite',
+      location: location || 'Not specified',
+      contractType: type || 'Contract',
+      isGovernmentClient: isGovt,
+      candidatePersona: `We are looking for a ${seniorityLevel} ${jobTitle} with proven expertise in ${mustHave.join(', ')}. Ideal candidates will have experience ${isGovt ? 'in government/public sector IT projects' : 'in enterprise software delivery'} with strong communication skills for client-facing engagements.`,
+      mustHaveSkills: mustHave,
+      niceToHaveSkills: niceToHave,
+      screeningQuestions,
+      booleanSearches: {
+        linkedInRecruiter: `(${titleVariants}) AND (${mainTerms})${secondarySkills.length ? ` AND (${supportingTerms})` : ''}`,
+        dice: booleanDice,
+        googleXRay: booleanGoogle,
+        monster: booleanMonster,
+        careerBuilder: `"${jobTitle}" ${primarySkills.slice(0,4).join(' ')}`,
+        indeed: `${jobTitle} (${primarySkills.slice(0,3).join(' OR ')})`
+      },
+      keyDomains: isGovt ? ['State/Local Government IT', 'Public Sector', 'SDLC', 'Agile'] : ['Enterprise Software', 'Agile/Scrum', 'SDLC'],
+      redFlags: [
+        'No matching skills on resume',
+        `Less than ${seniorityLevel.includes('Senior') ? '5' : '3'} years of relevant experience`,
+        'Cannot work onsite as required',
+        isGovt ? 'Non-US work authorization' : null
+      ].filter(Boolean)
+    }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FEATURE 5: One-Click AI Resume Formatter for Client Submission
+// ═══════════════════════════════════════════════════════════════════════════════
+app.post('/api/ai/format-resume', express.json(), async (req, res) => {
+  const { resumeText, candidateName, jobTitle, skills, proposedRate, workAuth } = req.body;
+  if (!resumeText || !candidateName) return res.json({ success: false, message: 'resumeText and candidateName required' });
+
+  const skillsList = Array.isArray(skills) ? skills : [];
+  
+  // Parse experience years from text
+  const expYearsMatch = resumeText.match(/(\d+)\+?\s+years?\s+(?:of\s+)?(?:experience|exp)/i);
+  const totalYears = expYearsMatch ? expYearsMatch[1] : '5+';
+
+  // Extract email and phone
+  const emailMatch = resumeText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+  const phoneMatch = resumeText.match(/(\+?1?[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/);
+
+  // Split skills into categories intelligently
+  const programmingKeywords = ['python','java','javascript','typescript','c#','c++','golang','rust','scala','ruby','php','swift','kotlin'];
+  const cloudKeywords = ['aws','azure','gcp','google cloud','oracle cloud','heroku','vercel'];
+  const frameworkKeywords = ['react','angular','vue','spring','django','flask','node','express','next.js','fastapi','.net','laravel'];
+  const dbKeywords = ['sql','mysql','postgresql','mongodb','redis','elasticsearch','cassandra','dynamodb','snowflake','databricks','oracle'];
+  const toolKeywords = ['docker','kubernetes','jenkins','git','jira','confluence','terraform','ansible','power platform','powerbi','tableau','salesforce','sap'];
+
+  const categorizedSkills = {
+    programming: skillsList.filter(s => programmingKeywords.some(k => s.toLowerCase().includes(k))),
+    cloud: skillsList.filter(s => cloudKeywords.some(k => s.toLowerCase().includes(k))),
+    frameworks: skillsList.filter(s => frameworkKeywords.some(k => s.toLowerCase().includes(k))),
+    databases: skillsList.filter(s => dbKeywords.some(k => s.toLowerCase().includes(k))),
+    tools: skillsList.filter(s => toolKeywords.some(k => s.toLowerCase().includes(k))),
+    other: skillsList.filter(s => !programmingKeywords.concat(cloudKeywords,frameworkKeywords,dbKeywords,toolKeywords).some(k => s.toLowerCase().includes(k)))
+  };
+
+  // Build formatted resume
+  const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const formatted = `
+================================================================================
+                    SMARTHIRE LLC — CANDIDATE SUBMISSION
+================================================================================
+Submitted by: SmartHire LLC | Submission Date: ${today}
+Contact: submissions@smarthire.com | Phone: (312) 555-0101
+================================================================================
+
+CANDIDATE PROFILE
+─────────────────────────────────────────────────────────────────────────────────
+Full Name        : ${candidateName}
+Proposed Role    : ${jobTitle || 'Not specified'}
+Total Experience : ${totalYears}+ Years
+${emailMatch ? `Email            : ${emailMatch[0]}` : ''}
+${phoneMatch ? `Phone            : ${phoneMatch[0]}` : ''}
+${workAuth ? `Work Authorization: ${workAuth}` : ''}
+${proposedRate ? `Proposed Rate    : ${proposedRate}` : ''}
+─────────────────────────────────────────────────────────────────────────────────
+
+PROFESSIONAL SUMMARY
+─────────────────────────────────────────────────────────────────────────────────
+${candidateName} is an accomplished ${jobTitle || 'Technology Professional'} with ${totalYears}+ years of 
+progressive experience delivering enterprise-grade solutions. Demonstrates deep 
+expertise across ${skillsList.slice(0,4).join(', ')}${skillsList.length > 4 ? ', and more' : ''}. 
+Consistently delivers high-quality work within Agile and DevOps frameworks, with 
+strong stakeholder communication and a proven track record in cross-functional teams.
+─────────────────────────────────────────────────────────────────────────────────
+
+TECHNICAL SKILLS MATRIX
+─────────────────────────────────────────────────────────────────────────────────
+${categorizedSkills.programming.length ? `Programming Languages : ${categorizedSkills.programming.join(', ')}` : ''}
+${categorizedSkills.cloud.length ? `Cloud Platforms       : ${categorizedSkills.cloud.join(', ')}` : ''}
+${categorizedSkills.frameworks.length ? `Frameworks/Libraries  : ${categorizedSkills.frameworks.join(', ')}` : ''}
+${categorizedSkills.databases.length ? `Databases             : ${categorizedSkills.databases.join(', ')}` : ''}
+${categorizedSkills.tools.length ? `Tools & Platforms     : ${categorizedSkills.tools.join(', ')}` : ''}
+${categorizedSkills.other.length ? `Other                 : ${categorizedSkills.other.join(', ')}` : ''}
+─────────────────────────────────────────────────────────────────────────────────
+
+PROFESSIONAL EXPERIENCE
+─────────────────────────────────────────────────────────────────────────────────
+[Resume Content Below — Recruiter: Please review and format as needed]
+
+${resumeText.substring(0, 3000)}${resumeText.length > 3000 ? '\n... [Continued] ...' : ''}
+─────────────────────────────────────────────────────────────────────────────────
+
+================================================================================
+SMARTHIRE LLC | CONFIDENTIAL SUBMISSION DOCUMENT
+This resume is submitted exclusively for the referenced position by SmartHire LLC.
+Redistribution without written consent is strictly prohibited.
+================================================================================
+`.trim();
+
+  res.json({
+    success: true,
+    formattedResume: formatted,
+    candidateName,
+    jobTitle,
+    totalYears,
+    categorizedSkills,
+    submissionDate: today
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FEATURE 3: Manager AI Match Score for a Candidate + Status Change Broadcast
+// ═══════════════════════════════════════════════════════════════════════════════
+app.post('/api/ai/manager-match', express.json(), (req, res) => {
+  const { resumeText, jobSkills, jobTitle, jobDescription, experienceRequired } = req.body;
+  if (!resumeText) return res.json({ success: false, message: 'resumeText required' });
+
+  const r = resumeText.toLowerCase();
+  const skills = Array.isArray(jobSkills) ? jobSkills : (jobSkills || '').split(',').map(s => s.trim()).filter(Boolean);
+  
+  // 1. Technical Skills Score (40% weight)
+  const matchedSkills = skills.filter(s => r.includes(s.toLowerCase()));
+  const missingSkills = skills.filter(s => !r.includes(s.toLowerCase()));
+  const skillScore = skills.length > 0 ? (matchedSkills.length / skills.length) * 40 : 32;
+
+  // 2. Experience Score (30% weight)
+  const expMatch = resumeText.match(/(\d+)\+?\s+years?\s+(?:of\s+)?(?:experience|exp)/i);
+  const candidateYears = expMatch ? parseInt(expMatch[1]) : 3;
+  const requiredYears = parseInt(experienceRequired) || 3;
+  const expScore = Math.min(30, Math.round((Math.min(candidateYears, requiredYears * 1.5) / (requiredYears * 1.5)) * 30));
+
+  // 3. Domain Relevance Score (15% weight)
+  const domainKeywords = ['agile','scrum','sdlc','enterprise','production','microservices','api','rest','cloud','devops','ci/cd'];
+  const domainMatched = domainKeywords.filter(k => r.includes(k));
+  const domainScore = Math.min(15, Math.round((domainMatched.length / domainKeywords.length) * 15));
+
+  // 4. Rate & Auth Compatibility (15% weight) — approximate
+  const authKeywords = ['citizen','green card','gc','ead','h1b','authorized','permanent resident'];
+  const authMatched = authKeywords.some(k => r.includes(k));
+  const authScore = authMatched ? 15 : 10;
+
+  const totalScore = Math.round(skillScore + expScore + domainScore + authScore);
+  const clampedScore = Math.min(98, Math.max(30, totalScore));
+
+  let verdict, verdictColor;
+  if (clampedScore >= 80) { verdict = 'Strong Match ✅'; verdictColor = '#16a34a'; }
+  else if (clampedScore >= 65) { verdict = 'Good Match 👍'; verdictColor = '#2563eb'; }
+  else if (clampedScore >= 50) { verdict = 'Moderate Match ⚠️'; verdictColor = '#d97706'; }
+  else { verdict = 'Potential Mismatch ❌'; verdictColor = '#dc2626'; }
+
+  res.json({
+    success: true,
+    totalScore: clampedScore,
+    verdict,
+    verdictColor,
+    breakdown: {
+      technicalSkills: { score: Math.round(skillScore), max: 40, label: 'Technical Skills' },
+      experience: { score: expScore, max: 30, label: 'Experience & Seniority' },
+      domainRelevance: { score: domainScore, max: 15, label: 'Domain Relevance' },
+      rateAuthFit: { score: authScore, max: 15, label: 'Rate & Auth Fit' }
+    },
+    matchedSkills,
+    missingSkills,
+    candidateYears,
+    requiredYears,
+    domainMatched,
+    highlights: matchedSkills.slice(0, 8),
+    summary: `${clampedScore}% match — ${verdict}. Found ${matchedSkills.length}/${skills.length} required skills. Candidate has ~${candidateYears} years of experience (required: ${requiredYears}+).`
+  });
+});
+
+// Manager status change → store notification for all recruiters on that requisition
+const notificationsPath = path.resolve(__dirname, 'notifications.json');
+let notificationsStore = [];
+try {
+  if (fs.existsSync(notificationsPath)) notificationsStore = JSON.parse(fs.readFileSync(notificationsPath, 'utf8'));
+} catch(e) { notificationsStore = []; }
+
+function saveNotifications() {
+  try { fs.writeFileSync(notificationsPath, JSON.stringify(notificationsStore, null, 2)); } catch(e) {}
+}
+
+app.post('/api/notifications/status-change', express.json(), (req, res) => {
+  const { candidateName, jobTitle, jobId, newStatus, previousStatus, changedBy, assignedRecruiters } = req.body;
+  
+  const notification = {
+    id: 'NOTIF-' + Date.now(),
+    type: 'status_change',
+    candidateName,
+    jobTitle,
+    jobId,
+    newStatus,
+    previousStatus,
+    changedBy: changedBy || 'Manager',
+    assignedRecruiters: assignedRecruiters || [],
+    message: `📋 ${changedBy || 'Manager'} updated ${candidateName}'s status from "${previousStatus}" to "${newStatus}" for position: ${jobTitle}`,
+    createdAt: new Date().toISOString(),
+    read: false
+  };
+
+  notificationsStore.unshift(notification);
+  // Keep last 500 notifications
+  if (notificationsStore.length > 500) notificationsStore = notificationsStore.slice(0, 500);
+  saveNotifications();
+
+  res.json({ success: true, notification });
+});
+
+app.get('/api/notifications', (req, res) => {
+  const recruiterEmail = req.query.email || '';
+  const filtered = recruiterEmail
+    ? notificationsStore.filter(n => !n.assignedRecruiters.length || n.assignedRecruiters.some(r => r.toLowerCase().includes(recruiterEmail.toLowerCase())))
+    : notificationsStore;
+  res.json({ success: true, notifications: filtered.slice(0, 50) });
+});
+
+app.post('/api/notifications/mark-read', express.json(), (req, res) => {
+  const { notificationIds } = req.body;
+  if (Array.isArray(notificationIds)) {
+    notificationsStore = notificationsStore.map(n => 
+      notificationIds.includes(n.id) ? { ...n, read: true } : n
+    );
+    saveNotifications();
+  }
+  res.json({ success: true });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FEATURE 6: Email Templates Store
+// ═══════════════════════════════════════════════════════════════════════════════
+const emailTemplatesPath = path.resolve(__dirname, 'email_templates.json');
+let emailTemplatesStore = [
+  {
+    id: 'tpl-rtr',
+    name: 'RTR Agreement',
+    category: 'RTR',
+    subject: 'Right to Represent - {{candidate_name}} for {{job_title}} at {{client_name}}',
+    body: `Dear {{candidate_name}},
+
+I hope this message finds you well. I am {{recruiter_name}} from SmartHire LLC, and I am reaching out regarding an exciting contract opportunity.
+
+POSITION DETAILS:
+• Job Title: {{job_title}}
+• Client: {{client_name}}
+• Location: {{location}}
+• Duration: {{duration}}
+• Pay Rate: {{pay_rate}} /hr
+
+By replying to this email, you authorize SmartHire LLC to represent you exclusively for the above-mentioned position with {{client_name}} for a period of 30 days from the date of this email.
+
+Please reply with your confirmation and provide:
+1. Updated resume tailored for this position
+2. Current location and availability date
+3. 2 professional references (Name, Company, Phone, Email)
+
+I look forward to working with you on this opportunity.
+
+Best regards,
+{{recruiter_name}}
+{{recruiter_email}}
+SmartHire LLC`
+  },
+  {
+    id: 'tpl-interview',
+    name: 'Interview Scheduling Request',
+    category: 'Interview',
+    subject: 'Interview Confirmation – {{candidate_name}} for {{job_title}}',
+    body: `Dear {{candidate_name}},
+
+Congratulations! Our client {{client_name}} would like to schedule an interview with you for the {{job_title}} position.
+
+INTERVIEW DETAILS:
+• Date/Time: {{interview_date}}
+• Format: {{interview_format}} (Phone/Video/Onsite)
+• Meeting Link: {{meeting_link}}
+• Interviewer: {{interviewer_name}}
+• Duration: ~{{duration}} minutes
+
+Please review the attached job description and be prepared to discuss:
+• Your experience with the required technical skills
+• Specific project examples and challenges solved
+• Your approach to teamwork and Agile methodologies
+
+PREPARATION TIPS:
+✅ Review the job description thoroughly
+✅ Prepare 2–3 examples of relevant projects
+✅ Test your audio/video if it's a virtual interview
+✅ Have questions ready for the interviewer
+
+Please confirm your availability by replying to this email.
+
+Best regards,
+{{recruiter_name}}
+{{recruiter_email}}`
+  },
+  {
+    id: 'tpl-rejection',
+    name: 'Candidate Rejection',
+    category: 'Rejection',
+    subject: 'Update on Your Application – {{job_title}}',
+    body: `Dear {{candidate_name}},
+
+Thank you for your interest in the {{job_title}} position and for taking the time to speak with us.
+
+After careful consideration, we regret to inform you that we will not be moving forward with your candidacy for this particular role at this time. This was a difficult decision as we had many qualified applicants.
+
+We truly appreciate your time and interest in SmartHire LLC. Your profile has been added to our database, and we will reach out if a suitable opportunity matching your skills and experience becomes available in the future.
+
+We encourage you to keep an eye on our current openings and apply for roles that interest you.
+
+Thank you again for your time, and we wish you all the best in your job search.
+
+Warm regards,
+{{recruiter_name}}
+{{recruiter_email}}
+SmartHire LLC`
+  },
+  {
+    id: 'tpl-submission',
+    name: 'Client Candidate Submission Pitch',
+    category: 'Submission',
+    subject: '🎯 Candidate Submission: {{candidate_name}} for {{job_title}} (Req# {{req_id}})',
+    body: `Dear {{hiring_manager_name}},
+
+Please find below the profile of an excellent candidate for the {{job_title}} position (Req# {{req_id}}).
+
+CANDIDATE OVERVIEW:
+• Name: {{candidate_name}}
+• Current Location: {{candidate_location}}
+• Total Experience: {{total_experience}} Years
+• Work Authorization: {{work_auth}}
+• Availability: {{availability}}
+• Proposed Rate: {{pay_rate}} /hr
+
+WHY THIS CANDIDATE:
+{{candidate_name}} brings {{total_experience}} years of hands-on expertise in {{key_skills}}, with direct experience in {{relevant_domain}} environments. Their background aligns closely with your requirement for a strong {{job_title}}.
+
+KEY STRENGTHS:
+• Proven track record in {{key_skills}}
+• Strong communication and client-facing experience
+• Available to start {{availability}}
+• Cleared background check process
+
+I have attached the formatted resume for your review. Please let me know if you would like to schedule an interview.
+
+Best regards,
+{{recruiter_name}}
+{{recruiter_email}}
+SmartHire LLC | www.smarthire.com`
+  }
+];
+try {
+  if (fs.existsSync(emailTemplatesPath)) {
+    const saved = JSON.parse(fs.readFileSync(emailTemplatesPath, 'utf8'));
+    if (saved.length) emailTemplatesStore = saved;
+  }
+} catch(e) {}
+
+app.get('/api/email-templates', (req, res) => {
+  res.json({ success: true, templates: emailTemplatesStore });
+});
+
+app.post('/api/email-templates', express.json(), (req, res) => {
+  const { id, name, category, subject, body } = req.body;
+  if (!name || !subject || !body) return res.json({ success: false, message: 'name, subject, and body required' });
+  
+  const existingIdx = emailTemplatesStore.findIndex(t => t.id === id);
+  const tpl = { id: id || 'tpl-' + Date.now(), name, category: category || 'Custom', subject, body };
+  
+  if (existingIdx >= 0) emailTemplatesStore[existingIdx] = tpl;
+  else emailTemplatesStore.push(tpl);
+  
+  try { fs.writeFileSync(emailTemplatesPath, JSON.stringify(emailTemplatesStore, null, 2)); } catch(e) {}
+  res.json({ success: true, template: tpl });
+});
+
+app.delete('/api/email-templates/:id', (req, res) => {
+  const { id } = req.params;
+  emailTemplatesStore = emailTemplatesStore.filter(t => t.id !== id);
+  try { fs.writeFileSync(emailTemplatesPath, JSON.stringify(emailTemplatesStore, null, 2)); } catch(e) {}
+  res.json({ success: true });
+});
+
 // ─── Serve static frontend files in production ────────────────────────────────
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath))

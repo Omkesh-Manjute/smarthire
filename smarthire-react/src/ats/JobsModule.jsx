@@ -18,6 +18,35 @@ function JobsModule({
   const [statusFilter, setStatusFilter] = useState('All')
   const [searchQuery, setSearchQuery] = useState('')
 
+  // AI Job Deep Analysis state
+  const [aiAnalysisJobId, setAiAnalysisJobId] = useState(null)
+  const [aiAnalysisResult, setAiAnalysisResult] = useState({})
+  const [aiAnalysisLoading, setAiAnalysisLoading] = useState({})
+  const [copiedBoolean, setCopiedBoolean] = useState({})
+
+  const handleAIJobAnalysis = async (job) => {
+    const jobId = job.id || job._id
+    setAiAnalysisJobId(prev => prev === jobId ? null : jobId)
+    if (aiAnalysisResult[jobId]) return // already loaded
+    setAiAnalysisLoading(prev => ({ ...prev, [jobId]: true }))
+    try {
+      const res = await fetch('/api/ai/job-analysis', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId, jobTitle: job.title || job.jobTitle, location: job.location, skills: job.skills || [], description: job.description || job.rawJd || '', workMode: job.work_mode || job.workMode, type: job.employment_type || job.type })
+      })
+      const data = await res.json()
+      if (data.success) setAiAnalysisResult(prev => ({ ...prev, [jobId]: data.analysis }))
+    } catch (e) {}
+    setAiAnalysisLoading(prev => ({ ...prev, [jobId]: false }))
+  }
+
+  const copyBoolean = (jobId, platform, text) => {
+    navigator.clipboard.writeText(text)
+    setCopiedBoolean(prev => ({ ...prev, [jobId + platform]: true }))
+    setTimeout(() => setCopiedBoolean(prev => ({ ...prev, [jobId + platform]: false })), 2000)
+  }
+
+
   // Recruiter Manual Job Post state
   const [showPostForm, setShowPostForm] = useState(false)
   const [postForm, setPostForm] = useState({ title: '', client: '', location: '', work_mode: 'Onsite', employment_type: 'Contract', experience: '', skills: '', description: '' })
@@ -756,6 +785,14 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
                 >
                   📝 Post
                 </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleAIJobAnalysis(job) }}
+                  disabled={aiAnalysisLoading[job.id || job._id]}
+                  style={{ background: aiAnalysisJobId === (job.id || job._id) ? '#7c3aed' : '#f5f3ff', color: aiAnalysisJobId === (job.id || job._id) ? '#fff' : '#7c3aed', border: '1px solid #ddd6fe', borderRadius: 7, padding: '7px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                  title="AI Job Deep Analysis — Candidate persona, boolean search strings, screening questions"
+                >
+                  {aiAnalysisLoading[job.id || job._id] ? '⏳' : '🧠'} AI
+                </button>
                 {isSuperAdmin && (
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDeleteJob(job.id) }}
@@ -764,6 +801,80 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
                   </button>
                 )}
               </div>
+
+              {/* AI Job Deep Analysis Panel */}
+              {aiAnalysisJobId === (job.id || job._id) && (
+                <div style={{ marginTop: 14, borderTop: '2px solid #7c3aed', paddingTop: 14 }}>
+                  {aiAnalysisLoading[job.id || job._id] ? (
+                    <div style={{ textAlign: 'center', padding: '24px 0', color: '#7c3aed', fontSize: 13, fontWeight: 700 }}>🧠 Generating AI Job Analysis...</div>
+                  ) : aiAnalysisResult[job.id || job._id] ? (() => {
+                    const a = aiAnalysisResult[job.id || job._id]
+                    const jobIdKey = job.id || job._id
+                    return (
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: '#7c3aed', marginBottom: 12 }}>🧠 AI Job Deep Analysis — {a.jobTitle}</div>
+
+                        {/* Candidate Persona */}
+                        <div style={{ background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 8, padding: '10px 14px', marginBottom: 12 }}>
+                          <div style={{ fontSize: 11, fontWeight: 800, color: '#6d28d9', marginBottom: 6, textTransform: 'uppercase' }}>Ideal Candidate Persona</div>
+                          <p style={{ margin: 0, fontSize: 12, lineHeight: 1.6, color: '#334155' }}>{a.candidatePersona}</p>
+                          <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
+                            <span style={{ background: '#7c3aed', color: '#fff', fontSize: 11, padding: '3px 10px', borderRadius: 12, fontWeight: 700 }}>{a.seniorityLevel}</span>
+                            <span style={{ background: '#2563eb', color: '#fff', fontSize: 11, padding: '3px 10px', borderRadius: 12, fontWeight: 700 }}>{a.workMode}</span>
+                            <span style={{ background: a.isGovernmentClient ? '#dc2626' : '#16a34a', color: '#fff', fontSize: 11, padding: '3px 10px', borderRadius: 12, fontWeight: 700 }}>{a.workAuth.substring(0, 30)}</span>
+                          </div>
+                        </div>
+
+                        {/* Must-Have vs Nice-to-Have */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+                          <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '10px 12px' }}>
+                            <div style={{ fontSize: 11, fontWeight: 800, color: '#16a34a', marginBottom: 6, textTransform: 'uppercase' }}>Must-Have Skills</div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                              {a.mustHaveSkills.map(s => <span key={s} style={{ background: '#dcfce7', color: '#15803d', fontSize: 10, padding: '2px 8px', borderRadius: 8, fontWeight: 700 }}>{s}</span>)}
+                            </div>
+                          </div>
+                          <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 8, padding: '10px 12px' }}>
+                            <div style={{ fontSize: 11, fontWeight: 800, color: '#0369a1', marginBottom: 6, textTransform: 'uppercase' }}>Nice-to-Have</div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                              {a.niceToHaveSkills.slice(0,6).map(s => <span key={s} style={{ background: '#e0f2fe', color: '#0369a1', fontSize: 10, padding: '2px 8px', borderRadius: 8, fontWeight: 700 }}>{s}</span>)}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Screening Questions */}
+                        <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '10px 14px', marginBottom: 12 }}>
+                          <div style={{ fontSize: 11, fontWeight: 800, color: '#92400e', marginBottom: 8, textTransform: 'uppercase' }}>Top 5 Screening Questions</div>
+                          {a.screeningQuestions.map((q, i) => (
+                            <div key={i} style={{ fontSize: 12, color: '#78350f', marginBottom: 6, paddingLeft: 12, borderLeft: '2px solid #f59e0b' }}>
+                              <strong>{i + 1}.</strong> {q}
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Boolean Search Strings */}
+                        <div style={{ background: '#0f172a', borderRadius: 10, padding: '12px 14px' }}>
+                          <div style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Boolean Search Strings</div>
+                          {Object.entries(a.booleanSearches || {}).map(([platform, query]) => (
+                            <div key={platform} style={{ marginBottom: 8 }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+                                <span style={{ fontSize: 10, fontWeight: 700, color: '#7c3aed', textTransform: 'uppercase' }}>{platform.replace('linkedInRecruiter', 'LinkedIn Recruiter').replace('googleXRay', 'Google X-Ray').replace('careerBuilder', 'CareerBuilder')}</span>
+                                <button onClick={() => copyBoolean(jobIdKey, platform, query)} style={{ fontSize: 10, padding: '2px 8px', background: copiedBoolean[jobIdKey + platform] ? '#16a34a' : '#334155', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 700 }}>
+                                  {copiedBoolean[jobIdKey + platform] ? 'Copied!' : 'Copy'}
+                                </button>
+                              </div>
+                              <code style={{ display: 'block', fontSize: 11, color: '#e2e8f0', lineHeight: 1.5, wordBreak: 'break-word' }}>{query}</code>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })() : (
+                    <div style={{ textAlign: 'center', padding: '12px 0', color: '#7c3aed' }}>
+                      <button onClick={() => handleAIJobAnalysis(job)} style={{ padding: '8px 20px', background: '#7c3aed', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 700 }}>Generate Analysis</button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )
         })}
