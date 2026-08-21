@@ -58,6 +58,7 @@ function App() {
       <Route path="/" element={<Homepage />} />
       <Route path="/jobs" element={<PublicCareers />} />
       <Route path="/careers" element={<PublicCareers />} />
+      <Route path="/manager" element={<ProtectedRoute><RecruiterDashboard /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><RecruiterDashboard /></ProtectedRoute>} />
       <Route path="/verify" element={<Navigate to="/ats" replace />} />
       <Route path="/ats" element={<ProtectedRoute><AtsPlatform /></ProtectedRoute>} />

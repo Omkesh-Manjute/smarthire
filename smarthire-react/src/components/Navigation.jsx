@@ -234,15 +234,19 @@ function Navigation() {
           <nav className="nav-center-menu">
             {isAuthenticated ? (
               <>
-                <Link
-                  to="/dashboard"
-                  className={`nav-tab-item ${location.pathname === '/dashboard' ? 'active' : ''}`}
-                >
-                  <span className="nav-tab-icon">📊</span>
-                  <span>Dashboard</span>
-                </Link>
+                {/* 👔 Manager Workspace (Manager / Super Admin Only) */}
+                {isSuperAdmin && (
+                  <Link
+                    to="/manager"
+                    className={`nav-tab-item ${location.pathname === '/manager' || location.pathname === '/dashboard' ? 'active' : ''}`}
+                    title="Manager Console: Requisitions, Candidate Reviews, Status Broadcasts"
+                  >
+                    <span className="nav-tab-icon">👔</span>
+                    <span>Manager Workspace</span>
+                  </Link>
+                )}
 
-                {/* ATS Workspace with Direct Navigation & Dropdown */}
+                {/* ⚡ Recruiter Workspace (ATS) with Direct Navigation & Dropdown */}
                 <div
                   className="nav-dropdown-wrapper"
                   ref={atsMenuRef}
@@ -257,9 +261,10 @@ function Navigation() {
                     } ${atsMenuOpen ? 'menu-open' : ''}`}
                     onClick={() => setAtsMenuOpen(false)}
                     style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                    title="Recruiter Console: Sourcing Hub, AI Job Analysis, Boolean Strings, Pipeline"
                   >
-                    <span className="nav-tab-icon">💼</span>
-                    <span>ATS Workspace</span>
+                    <span className="nav-tab-icon">⚡</span>
+                    <span>Recruiter Workspace</span>
                     <span
                       onClick={(e) => {
                         e.preventDefault()
@@ -267,7 +272,7 @@ function Navigation() {
                         setAtsMenuOpen(!atsMenuOpen)
                       }}
                       style={{ display: 'inline-flex', alignItems: 'center', padding: '2px', cursor: 'pointer' }}
-                      title="View ATS Modules"
+                      title="View Sourcing Modules"
                     >
                       <svg className="chevron-down-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <polyline points="6 9 12 15 18 9" />
@@ -277,7 +282,7 @@ function Navigation() {
 
                   {atsMenuOpen && (
                     <div className="nav-sub-dropdown shadow-enterprise" style={{ zIndex: 1000 }}>
-                      <div className="dropdown-section-title">Core ATS Modules</div>
+                      <div className="dropdown-section-title">Recruiter Sourcing Modules</div>
                       {atsSubModules.map((sub) => (
                         <button
                           key={sub.id}
@@ -300,60 +305,44 @@ function Navigation() {
                           navigate('/ats')
                         }}
                       >
-                        <span>Open Full ATS Console</span>
+                        <span>Open Sourcing Workspace</span>
                         <span>→</span>
                       </button>
                     </div>
                   )}
                 </div>
 
+                {/* 💬 Candidate Messaging Inbox */}
+                <Link
+                  to="/inbox"
+                  className={`nav-tab-item ${location.pathname === '/inbox' ? 'active' : ''}`}
+                  title="Direct Candidate Conversations"
+                >
+                  <span className="nav-tab-icon">💬</span>
+                  <span>Inbox</span>
+                </Link>
+
+                {/* 📑 Intelligence Reports */}
                 {isSuperAdmin && (
                   <Link
                     to="/reports"
                     className={`nav-tab-item ${location.pathname === '/reports' ? 'active' : ''}`}
+                    title="Placement & Velocity Reports"
                   >
                     <span className="nav-tab-icon">📑</span>
                     <span>Reports</span>
                   </Link>
                 )}
 
-                {isSuperAdmin && (
-                  <Link
-                    to="/linkedin-posts"
-                    className={`nav-tab-item ${location.pathname === '/linkedin-posts' ? 'active' : ''}`}
-                  >
-                    <span className="nav-tab-icon">🌐</span>
-                    <span>LinkedIn Auto</span>
-                  </Link>
-                )}
-
-                {isSuperAdmin && (
-                  <Link
-                    to="/branding"
-                    className={`nav-tab-item ${location.pathname === '/branding' ? 'active' : ''}`}
-                  >
-                    <span className="nav-tab-icon">🎨</span>
-                    <span>Branding</span>
-                  </Link>
-                )}
-
+                {/* 🚀 Careers Portal */}
                 <Link
                   to="/jobs"
                   className={`nav-tab-item ${location.pathname === '/jobs' ? 'active' : ''}`}
+                  title="Public Careers Page"
                 >
                   <span className="nav-tab-icon">🚀</span>
                   <span>Careers</span>
                 </Link>
-
-                {isSuperAdmin && (
-                  <Link
-                    to="/pricing"
-                    className={`nav-tab-item ${location.pathname === '/pricing' ? 'active' : ''}`}
-                  >
-                    <span className="nav-tab-icon">💳</span>
-                    <span>Pricing</span>
-                  </Link>
-                )}
               </>
             ) : (
               <>
@@ -499,10 +488,11 @@ function Navigation() {
                   <button
                     className={`nav-role-switcher-pill ${isSuperAdmin ? 'admin-theme' : 'recruiter-theme'}`}
                     onClick={toggleRoleMode}
-                    title="Click to toggle between Super Admin and Recruiter workspace modes"
+                    title="Click to switch between Manager Workspace and Recruiter Sourcing Workspace"
+                    style={{ cursor: 'pointer' }}
                   >
-                    <span className="role-icon">{isSuperAdmin ? '👑' : '💼'}</span>
-                    <span className="role-label">{isSuperAdmin ? 'Admin' : 'Recruiter'}</span>
+                    <span className="role-icon">{isSuperAdmin ? '👔' : '⚡'}</span>
+                    <span className="role-label">{isSuperAdmin ? 'Manager Mode' : 'Recruiter Mode'}</span>
                     <span className="role-switch-badge">⇄</span>
                   </button>
                 )}

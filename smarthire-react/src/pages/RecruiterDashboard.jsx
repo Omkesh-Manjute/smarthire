@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import SiteLayout from '../components/SiteLayout'
 import CandidatePdfReportModal from '../components/CandidatePdfReportModal'
+import ResumeViewerModal from '../components/ResumeViewerModal'
+import EmailComposerModal from '../components/EmailComposerModal'
 
 function getFullDescriptionText(job) {
   if (!job) return ''
@@ -270,6 +272,28 @@ function RecruiterDashboard() {
 
   // Notification toast on save
   const [saveToastMessage, setSaveToastMessage] = useState(null)
+
+  // Modals for AI Resume Review & Email Composer
+  const [reviewCandidateModal, setReviewCandidateModal] = useState(null)
+  const [emailComposerCandidate, setEmailComposerCandidate] = useState(null)
+  const userEmail = currentUser?.email || 'omkesh.manjute@smarthire.com'
+
+  const broadcastStatusChange = async (candidateName, newStatus, jobId, jobTitle, assignedRecs) => {
+    try {
+      await fetch('/api/notifications/status-change', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          candidateName,
+          newStatus,
+          jobId: jobId || 'REQ-158938',
+          jobTitle: jobTitle || 'Position',
+          changedBy: userName,
+          recruiterEmails: Array.isArray(assignedRecs) ? assignedRecs.map(r => typeof r === 'string' ? r : r.email) : []
+        })
+      })
+    } catch(e) {}
+  }
 
   // Handler to update candidate submission status and record audit log (Who changed it, role, timestamp)
   const handleUpdatePotentialCandidate = (candId, field, value) => {
@@ -868,38 +892,83 @@ function RecruiterDashboard() {
     <SiteLayout>
       <div style={{ background: '#f1f5f9', minHeight: '92vh', paddingBottom: '30px', fontFamily: 'Arial, sans-serif' }}>
         
-        {/* ═══════════ TOP HEADER USER INFO STRIP ═══════════ */}
-        <div style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', padding: '4px 16px', fontSize: '11px', color: '#475569' }}>
-          <div className="container-wide" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', gap: '14px' }}>
-              <span onClick={() => { setActiveMainTab('requisitions'); setViewMode('portal'); }} style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>Home</span>
-              <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>About Us</span>
-              <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>My Account</span>
-              <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>Logout</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <span>Theme: <select style={{ fontSize: '11px', padding: '1px 3px' }}><option>Default</option></select></span>
-              <span style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Welcome: {userName}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* ═══════════ SMARTWORKS ORANGE HEADER NAVIGATION BAR ═══════════ */}
-        <header style={{ background: '#ea580c', borderBottom: '2px solid #c2410c', color: '#ffffff' }}>
-          <div className="container-wide" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '42px', padding: '0 16px' }}>
+        {/* ═══════════ MODERN MANAGER WORKSPACE CONSOLE HEADER ═══════════ */}
+        <div style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+          <div className="container-wide" style={{ maxWidth: '1360px', margin: '0 auto', padding: '14px 16px 0' }}>
             
-            <div style={{ display: 'flex', gap: '2px', height: '100%', alignItems: 'stretch' }}>
-              <div style={{ display: 'flex', alignItems: 'center', padding: '0 12px', fontWeight: 'bold', fontSize: '15px', letterSpacing: '0.02em', background: '#c2410c' }}>
-                SmartWorks
+            {/* Top Row: Title, Subtitle, Quick Search, New Req & Recruiter Switch Button */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '14px' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '18px' }}>👔</span>
+                  <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0f172a', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                    Manager Console — Requisitions & Reviews
+                  </h1>
+                  <span style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '12px' }}>
+                    Enterprise Manager Mode
+                  </span>
+                </div>
+                <p style={{ margin: '3px 0 0', fontSize: '12.5px', color: '#64748b' }}>
+                  Manage client requisitions, assign recruiters, evaluate candidate submissions with AI match scoring, and track approvals.
+                </p>
               </div>
+
+              {/* Right Action Cluster */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                {/* Quick Search */}
+                <form onSubmit={handleQuickSearch} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '4px 8px' }}>
+                  <span style={{ fontSize: '12px' }}>🔍</span>
+                  <input
+                    type="text"
+                    value={quickSearchId}
+                    onChange={e => setQuickSearchId(e.target.value)}
+                    placeholder="Req ID or Position..."
+                    style={{ border: 'none', background: 'transparent', fontSize: '12px', width: '130px', outline: 'none', color: '#0f172a' }}
+                  />
+                  <button
+                    type="submit"
+                    style={{ background: '#2563eb', color: '#ffffff', border: 'none', padding: '4px 10px', fontSize: '11px', fontWeight: 700, borderRadius: '6px', cursor: 'pointer' }}
+                  >
+                    Search
+                  </button>
+                </form>
+
+                {/* Add Requisition */}
+                <button
+                  onClick={handleAddNewRequisition}
+                  style={{
+                    background: '#16a34a', color: '#ffffff', border: 'none', padding: '7px 14px',
+                    borderRadius: '8px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer',
+                    display: 'inline-flex', alignItems: 'center', gap: '6px'
+                  }}
+                >
+                  <span>＋</span>
+                  <span>New Requisition</span>
+                </button>
+
+                {/* Recruiter View Shortcut */}
+                <Link
+                  to="/ats"
+                  style={{
+                    background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', padding: '7px 14px',
+                    borderRadius: '8px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer',
+                    textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px'
+                  }}
+                >
+                  <span>⚡ Recruiter Sourcing</span>
+                  <span>→</span>
+                </Link>
+              </div>
+            </div>
+
+            {/* Bottom Row: Tab Navigation */}
+            <div style={{ display: 'flex', gap: '6px', borderBottom: '2px solid #e2e8f0', marginBottom: '-1px' }}>
               {[
-                { id: 'requisitions', name: 'Requisitions' },
-                { id: 'candidates', name: 'Candidates' },
-                { id: 'admin', name: 'Administration', link: '/ats' },
-                { id: 'reports', name: 'Reports', link: '/reports' },
-                { id: 'process', name: 'Process', link: '/ats' }
+                { id: 'requisitions', label: `📋 All Requisitions (${jobs.length})`, icon: '📋' },
+                { id: 'candidates', label: `👤 Candidate Directory (${candidates.length})`, icon: '👤' },
+                { id: 'reports', label: '📊 Sourcing & Placement Reports', link: '/reports', icon: '📊' }
               ].map(t => (
-                <div
+                <button
                   key={t.id}
                   onClick={() => {
                     if (t.link) {
@@ -911,36 +980,25 @@ function RecruiterDashboard() {
                     }
                   }}
                   style={{
-                    display: 'flex', alignItems: 'center', padding: '0 16px', fontSize: '12.5px', fontWeight: 'bold',
-                    background: activeMainTab === t.id && viewMode === 'portal' ? '#d97706' : 'transparent',
-                    borderRight: '1px solid rgba(255,255,255,0.2)',
-                    cursor: 'pointer'
+                    padding: '8px 18px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    border: 'none',
+                    background: 'none',
+                    color: activeMainTab === t.id && viewMode === 'portal' ? '#2563eb' : '#64748b',
+                    borderBottom: activeMainTab === t.id && viewMode === 'portal' ? '3px solid #2563eb' : '3px solid transparent',
+                    marginBottom: '-2px',
+                    transition: 'all 0.15s ease'
                   }}
                 >
-                  {t.name}
-                </div>
+                  {t.label}
+                </button>
               ))}
             </div>
 
-            {/* Quick Search Input */}
-            <form onSubmit={handleQuickSearch} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 'bold' }}>Requisition #</span>
-              <input
-                type="text"
-                value={quickSearchId}
-                onChange={e => setQuickSearchId(e.target.value)}
-                placeholder="Req ID / Title"
-                style={{ padding: '2px 6px', fontSize: '11px', width: '130px', border: '1px solid #ffffff', borderRadius: '2px' }}
-              />
-              <button
-                type="submit"
-                style={{ background: '#f8fafc', color: '#0f172a', border: 'none', padding: '3px 10px', fontSize: '11px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer' }}
-              >
-                Quick Search
-              </button>
-            </form>
           </div>
-        </header>
+        </div>
 
         {/* ═══════════ MAIN VIEW CONTAINER ═══════════ */}
         <div className="container-wide" style={{ padding: '16px', maxWidth: '1360px', margin: '0 auto' }}>
@@ -2244,6 +2302,7 @@ function RecruiterDashboard() {
                         <thead>
                           <tr style={{ background: '#94a3b8', color: '#ffffff' }}>
                             <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Name</th>
+                            <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>AI & Actions</th>
                             <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Pay Rate</th>
                             <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Pay Rate Type</th>
                             <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Assigned By</th>
@@ -2273,6 +2332,54 @@ function RecruiterDashboard() {
                                 }} style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>
                                   {pc.name}
                                 </span>
+                              </td>
+                              <td style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>
+                                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                                  <button
+                                    onClick={() => setReviewCandidateModal({
+                                      candidate: {
+                                        ...pc,
+                                        resumeText: pc.resumeText || `${pc.name}\nSkills: Workday, Benefits Integration, HCM, Payroll\nRate: ${pc.payRate}\nExperience: 8+ years\nSummary: Highly qualified Workday integration engineer with deep functional & technical background.`
+                                      },
+                                      job: selectedReq
+                                    })}
+                                    style={{
+                                      background: '#eff6ff',
+                                      color: '#1d4ed8',
+                                      border: '1px solid #bfdbfe',
+                                      borderRadius: '4px',
+                                      padding: '3px 8px',
+                                      fontSize: '11px',
+                                      fontWeight: 700,
+                                      cursor: 'pointer',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '3px'
+                                    }}
+                                    title="Open In-App AI Resume Review Modal (No download required)"
+                                  >
+                                    👁 AI Review
+                                  </button>
+                                  <button
+                                    onClick={() => setEmailComposerCandidate({ candidate: pc, job: selectedReq })}
+                                    style={{
+                                      background: '#f0fdf4',
+                                      color: '#15803d',
+                                      border: '1px solid #bbf7d0',
+                                      borderRadius: '4px',
+                                      padding: '3px 8px',
+                                      fontSize: '11px',
+                                      fontWeight: 700,
+                                      cursor: 'pointer',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '3px'
+                                    }}
+                                    title="Send Email / RTR"
+                                  >
+                                    📧 Email
+                                  </button>
+                                </div>
                               </td>
                               <td style={{ padding: '6px 8px', color: '#1e293b' }}>{pc.payRate}</td>
                               <td style={{ padding: '6px 8px', color: '#1e293b' }}>{pc.payRateType}</td>
@@ -2769,9 +2876,39 @@ function RecruiterDashboard() {
 
         </div>
 
-        {/* ═══════════ SMARTHIRE ORANGE FOOTER ═══════════ */}
-        <footer style={{ background: '#ea580c', borderTop: '2px solid #c2410c', color: '#ffffff', textAlign: 'center', padding: '10px', marginTop: '30px', fontSize: '11px', fontWeight: 'bold' }}>
-          © SmartHire LLC | All rights reserved | Release 1.9 06-May-2025 (New Server 2023 Aug)
+        {/* ═══════════ MODALS ═══════════ */}
+        {reviewCandidateModal && (
+          <ResumeViewerModal
+            candidate={reviewCandidateModal.candidate}
+            job={reviewCandidateModal.job}
+            onClose={() => setReviewCandidateModal(null)}
+            onStatusChange={(updatedCand, newStat) => {
+              handleUpdatePotentialCandidate(updatedCand.id, 'status', newStat)
+              broadcastStatusChange(
+                updatedCand.name || 'Candidate',
+                newStat,
+                reviewCandidateModal.job?.id,
+                reviewCandidateModal.job?.title,
+                reviewCandidateModal.job?.assignedRecruiters
+              )
+            }}
+            currentUser={currentUser}
+          />
+        )}
+
+        {emailComposerCandidate && (
+          <EmailComposerModal
+            candidate={emailComposerCandidate.candidate}
+            job={emailComposerCandidate.job}
+            onClose={() => setEmailComposerCandidate(null)}
+            recruiterEmail={userEmail}
+            recruiterName={userName}
+          />
+        )}
+
+        {/* ═══════════ SMARTHIRE CLEAN ENTERPRISE FOOTER ═══════════ */}
+        <footer style={{ background: '#f8fafc', borderTop: '1px solid #e2e8f0', color: '#64748b', textAlign: 'center', padding: '16px', marginTop: '40px', fontSize: '12px', fontWeight: 600 }}>
+          SmartHire Enterprise Manager Console • Connected to Real-time ATS & Screening Engine
         </footer>
 
       </div>
