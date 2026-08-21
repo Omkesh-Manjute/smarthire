@@ -451,13 +451,14 @@ function Reports() {
                     onClick={() => {
                       setActiveCategory(cat.id)
                       setActiveSubReport(cat.items[0].id)
+                      setHoverCategory(null)
                     }}
                     style={{
                       padding: '8px 26px',
                       fontSize: '12.5px',
                       fontWeight: 'bold',
                       color: '#ffffff',
-                      background: isActiveCat ? '#50789d' : 'transparent',
+                      background: isActiveCat ? '#50789d' : isHovered ? '#6188ac' : 'transparent',
                       borderRight: '1px solid #5a82a6',
                       borderLeft: '1px solid rgba(255,255,255,0.15)',
                       cursor: 'pointer',
@@ -467,10 +468,11 @@ function Reports() {
                     }}
                   >
                     <span>{cat.name}</span>
+                    <span style={{ fontSize: '9px', opacity: 0.75 }}>▼</span>
                   </div>
 
-                  {/* Dropdown Menu on Hover / Active */}
-                  {(isHovered || (isActiveCat && hoverCategory === null)) && (
+                  {/* Dropdown Menu on Hover (Hides immediately when mouse leaves) */}
+                  {isHovered && (
                     <div style={{
                       position: 'absolute',
                       top: '100%',
