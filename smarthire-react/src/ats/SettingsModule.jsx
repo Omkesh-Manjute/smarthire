@@ -1,25 +1,8 @@
 import React, { useState, useEffect } from 'react'
 
 function SettingsModule() {
-  const [companyName, setCompanyName] = useState('SmartHire Inc.')
-  const [companyEmail, setCompanyEmail] = useState('hr@smarthire.ai')
-  const [timezone, setTimezone] = useState('America/Chicago')
-  const [autoMatch, setAutoMatch] = useState(true)
-  const [emailNotifications, setEmailNotifications] = useState(true)
-  const [matchThreshold, setMatchThreshold] = useState(60)
   const [savedToast, setSavedToast] = useState(false)
-  const [chatEnabled, setChatEnabled] = useState(true)
-  const [chatToggling, setChatToggling] = useState(false)
-  const [activeSettingsTab, setActiveSettingsTab] = useState('general')
-
-  // Staffing policies & Persona
-  const [minMargin, setMinMargin] = useState(12)
-  const [targetMargin, setTargetMargin] = useState(15)
-  const [minPayRate, setMinPayRate] = useState(50)
-  const [preferredEmploymentTypes, setPreferredEmploymentTypes] = useState(['W2', 'C2C'])
-  const [recruiterName, setRecruiterName] = useState('Copilot')
-  const [recruiterTone, setRecruiterTone] = useState('Friendly & Personal')
-  const [evaluationStrictness, setEvaluationStrictness] = useState('Balanced')
+  const [activeSettingsTab, setActiveSettingsTab] = useState('email')
 
   const [stages, setStages] = useState(['New', 'Matched', 'Submitted', 'Interview', 'Offer', 'Placed', 'Rejected'])
   const [newStage, setNewStage] = useState('')
@@ -40,7 +23,7 @@ function SettingsModule() {
   const [tplSubject, setTplSubject] = useState('')
   const [tplBody, setTplBody] = useState('')
 
-  useEffect(() => { fetchSettings(); fetchSiteSettings(); fetchEmailConfig(); fetchEmailTemplates() }, [])
+  useEffect(() => { fetchEmailConfig(); fetchEmailTemplates() }, [])
 
   const fetchEmailConfig = async () => {
     try {
@@ -106,60 +89,6 @@ function SettingsModule() {
     fetchEmailTemplates()
   }
 
-  const fetchSiteSettings = async () => {
-    try {
-      const res = await fetch('/api/settings')
-      const data = await res.json()
-      if (data.success && data.settings) setChatEnabled(data.settings.chatEnabled !== false)
-    } catch (e) {}
-  }
-
-  const handleChatToggle = async () => {
-    setChatToggling(true)
-    const newVal = !chatEnabled
-    setChatEnabled(newVal)
-    try {
-      await fetch('/api/admin/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chatEnabled: newVal }) })
-    } catch (e) {}
-    setChatToggling(false)
-  }
-
-  const fetchSettings = async () => {
-    try {
-      const res = await fetch('/api/recruiter/settings')
-      const data = await res.json()
-      if (data.success && data.settings) {
-        setMinMargin(data.settings.minMargin || 12)
-        setTargetMargin(data.settings.targetMargin || 15)
-        setMinPayRate(data.settings.minPayRate || 50)
-        setPreferredEmploymentTypes(data.settings.preferredEmploymentTypes || ['W2', 'C2C'])
-        setRecruiterName(data.settings.recruiterName || 'Copilot')
-        setRecruiterTone(data.settings.recruiterTone || 'Friendly & Personal')
-        setEvaluationStrictness(data.settings.evaluationStrictness || 'Balanced')
-      }
-    } catch (e) {}
-  }
-
-  const handleSave = async () => {
-    try {
-      const res = await fetch('/api/recruiter/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ settings: { minMargin, targetMargin, minPayRate, preferredEmploymentTypes, recruiterName, recruiterTone, evaluationStrictness } })
-      })
-      const data = await res.json()
-      if (data.success) { setSavedToast(true); setTimeout(() => setSavedToast(false), 2000) }
-      else alert('Failed to save settings')
-    } catch (e) {
-      console.error(e)
-      alert('Error saving settings')
-    }
-  }
-
-  const toggleEmploymentType = (type) => {
-    setPreferredEmploymentTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])
-  }
-
   const addStage = () => {
     if (newStage.trim() && !stages.includes(newStage.trim())) {
       setStages(prev => [...prev.slice(0, -1), newStage.trim(), prev[prev.length - 1]])
@@ -181,7 +110,6 @@ function SettingsModule() {
   }
 
   const TAB_BTNS = [
-    { id: 'general', label: '⚙️ General' },
     { id: 'email', label: '📧 Email Config' },
     { id: 'templates', label: '📝 Email Templates' },
     { id: 'pipeline', label: '🔄 Pipeline' },
@@ -197,7 +125,7 @@ function SettingsModule() {
         <div>
           <h3 style={{ margin: 0, fontFamily: 'Plus Jakarta Sans' }}>⚙️ ATS Settings</h3>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--ink-soft)' }}>
-            Configure your ATS workspace preferences, email configuration, pipeline stages, and staffing rules.
+            Configure your email settings, email templates, pipeline stages, and data export.
           </p>
         </div>
         {savedToast && <div className="settings-toast">✅ Settings saved successfully!</div>}
@@ -212,90 +140,6 @@ function SettingsModule() {
           </button>
         ))}
       </div>
-
-      {/* ── GENERAL TAB ── */}
-      {activeSettingsTab === 'general' && (
-        <div className="settings-grid">
-          <article className="card settings-card">
-            <h4 className="settings-card-title">🏢 Company Profile</h4>
-            <div className="settings-form">
-              <div className="select-wrapper"><label>Company Name</label><input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Your company name" /></div>
-              <div className="select-wrapper"><label>Contact Email</label><input value={companyEmail} onChange={(e) => setCompanyEmail(e.target.value)} placeholder="hr@company.com" type="email" /></div>
-              <div className="select-wrapper">
-                <label>Timezone</label>
-                <select value={timezone} onChange={(e) => setTimezone(e.target.value)}>
-                  <option value="America/New_York">Eastern (ET)</option>
-                  <option value="America/Chicago">Central (CT)</option>
-                  <option value="America/Denver">Mountain (MT)</option>
-                  <option value="America/Los_Angeles">Pacific (PT)</option>
-                  <option value="Asia/Kolkata">India (IST)</option>
-                  <option value="Europe/London">UK (GMT)</option>
-                </select>
-              </div>
-            </div>
-          </article>
-
-          <article className="card settings-card">
-            <h4 className="settings-card-title">💵 US Staffing & Negotiation Rules</h4>
-            <div className="settings-form">
-              <div style={{ display: 'flex', gap: 10 }}>
-                <div className="select-wrapper" style={{ flex: 1 }}><label>Min Margin ($/hr)</label><input type="number" value={minMargin} onChange={(e) => setMinMargin(Number(e.target.value) || 0)} /></div>
-                <div className="select-wrapper" style={{ flex: 1 }}><label>Target Margin ($/hr)</label><input type="number" value={targetMargin} onChange={(e) => setTargetMargin(Number(e.target.value) || 0)} /></div>
-              </div>
-              <div className="select-wrapper"><label>Min Pay Rate ($/hr)</label><input type="number" value={minPayRate} onChange={(e) => setMinPayRate(Number(e.target.value) || 0)} /></div>
-              <div>
-                <label className="settings-label">Preferred Employment Types</label>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 6 }}>
-                  {['W2', 'C2C', '1099', 'Full-Time'].map(t => (
-                    <button key={t} onClick={() => toggleEmploymentType(t)}
-                      style={{ padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: '1px solid', background: preferredEmploymentTypes.includes(t) ? '#2563eb' : '#f1f5f9', color: preferredEmploymentTypes.includes(t) ? '#fff' : '#475569', borderColor: preferredEmploymentTypes.includes(t) ? '#2563eb' : '#cbd5e1' }}>
-                      {t}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </article>
-
-          <article className="card settings-card">
-            <h4 className="settings-card-title">🤖 AI Recruiter Persona</h4>
-            <div className="settings-form">
-              <div className="select-wrapper"><label>Recruiter Persona Name</label><input value={recruiterName} onChange={(e) => setRecruiterName(e.target.value)} placeholder="e.g. Alex" /></div>
-              <div className="select-wrapper"><label>Conversation Tone</label>
-                <select value={recruiterTone} onChange={(e) => setRecruiterTone(e.target.value)}>
-                  <option>Friendly & Personal</option><option>Professional & Formal</option><option>Direct & Concise</option><option>Empathetic & Supportive</option>
-                </select>
-              </div>
-              <div className="select-wrapper"><label>Evaluation Strictness</label>
-                <select value={evaluationStrictness} onChange={(e) => setEvaluationStrictness(e.target.value)}>
-                  <option>Strict</option><option>Balanced</option><option>Flexible</option>
-                </select>
-              </div>
-            </div>
-          </article>
-
-          <article className="card settings-card">
-            <h4 className="settings-card-title">💬 Candidate Chat Widget</h4>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-              <div>
-                <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>SmartHire Chat Widget</p>
-                <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--ink-soft)' }}>Allow candidates to message recruiters directly via the public portal.</p>
-              </div>
-              <button onClick={handleChatToggle} disabled={chatToggling}
-                style={{ padding: '8px 18px', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer', border: 'none', background: chatEnabled ? '#16a34a' : '#dc2626', color: '#fff', minWidth: 80 }}>
-                {chatToggling ? '...' : chatEnabled ? '✅ ON' : '🔴 OFF'}
-              </button>
-            </div>
-            <div style={{ marginTop: 12, fontSize: 12, color: chatEnabled ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
-              {chatEnabled ? '✅ Chat is ENABLED — candidates can message recruiters' : '🔴 Chat is DISABLED — hidden from public portal'}
-            </div>
-          </article>
-
-          <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
-            <button className="btn" onClick={handleSave} style={{ padding: '12px 32px', fontSize: 15 }}>💾 Save General Settings</button>
-          </div>
-        </div>
-      )}
 
       {/* ── EMAIL CONFIG TAB ── */}
       {activeSettingsTab === 'email' && (
