@@ -229,32 +229,79 @@ function RecruiterDashboard() {
   const [newAttachmentFile, setNewAttachmentFile] = useState(null)
 
   // Potential Candidates Attached to Requisition
-  const [potentialCandidates, setPotentialCandidates] = useState([
-    {
-      id: '87534',
-      name: 'Ashok Ganta',
-      payRate: '74/hr',
-      payRateType: 'C2C',
-      assignedBy: 'Prudhvi',
-      assignedOn: 'Aug 20, 2026 04:40 PM',
-      status: 'Int-SubmittedToManager',
-      statusComments: 'Submitted',
-      interview: 'Select',
-      rejectedReason: ''
-    },
-    {
-      id: '87535',
-      name: 'Kashyap K Vora',
-      payRate: '55/hr',
-      payRateType: 'W2',
-      assignedBy: 'Vaibhav',
-      assignedOn: 'Aug 20, 2026 06:41 PM',
-      status: 'Int-SubmittedToManager',
-      statusComments: 'Submitted',
-      interview: 'Select',
-      rejectedReason: ''
-    }
-  ])
+  const [potentialCandidates, setPotentialCandidates] = useState(() => {
+    try {
+      const saved = localStorage.getItem('smarthire_potential_candidates_158938')
+      if (saved) return JSON.parse(saved)
+    } catch (e) {}
+    return [
+      {
+        id: '87534',
+        name: 'Ashok Ganta',
+        payRate: '74/hr',
+        payRateType: 'C2C',
+        assignedBy: 'Prudhvi',
+        assignedOn: 'Aug 20, 2026 04:40 PM',
+        status: 'Int-SubmittedToManager',
+        statusComments: 'Submitted',
+        interview: 'Select',
+        rejectedReason: 'Select',
+        lastChangedBy: 'Prudhvi',
+        lastChangedRole: 'Recruiter',
+        lastChangedOn: 'Aug 20, 2026 04:40 PM'
+      },
+      {
+        id: '87535',
+        name: 'Kashyap K Vora',
+        payRate: '55/hr',
+        payRateType: 'W2',
+        assignedBy: 'Vaibhav',
+        assignedOn: 'Aug 20, 2026 06:41 PM',
+        status: 'Int-SubmittedToManager',
+        statusComments: 'Submitted',
+        interview: 'Select',
+        rejectedReason: 'Select',
+        lastChangedBy: 'Vaibhav',
+        lastChangedRole: 'Recruiter',
+        lastChangedOn: 'Aug 20, 2026 06:41 PM'
+      }
+    ]
+  })
+
+  // Handler to update candidate submission status and record audit log (Who changed it, role, timestamp)
+  const handleUpdatePotentialCandidate = (candId, field, value) => {
+    const userRoleDisplay = currentUser?.role === 'superadmin' || currentUser?.role === 'admin' || userName.toLowerCase().includes('omkesh') ? 'Manager' : 'Recruiter'
+    const timeString = new Date().toLocaleString('en-US', { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })
+
+    setPotentialCandidates(prev => {
+      const updated = prev.map(c => {
+        if (c.id === candId) {
+          return {
+            ...c,
+            [field]: value,
+            lastChangedBy: userName,
+            lastChangedRole: userRoleDisplay,
+            lastChangedOn: timeString,
+            history: [
+              ...(c.history || []),
+              {
+                field,
+                value,
+                by: userName,
+                role: userRoleDisplay,
+                on: timeString
+              }
+            ]
+          }
+        }
+        return c
+      })
+      try {
+        localStorage.setItem('smarthire_potential_candidates_158938', JSON.stringify(updated))
+      } catch (e) {}
+      return updated
+    })
+  }
 
   // Step 1: Resume Search state
   const [searchCandFilter, setSearchCandFilter] = useState({
@@ -1918,14 +1965,97 @@ function RecruiterDashboard() {
                                   {pc.name}
                                 </span>
                               </td>
-                              <td style={{ padding: '6px 8px' }}>{pc.payRate}</td>
-                              <td style={{ padding: '6px 8px' }}>{pc.payRateType}</td>
-                              <td style={{ padding: '6px 8px' }}>{pc.assignedBy}</td>
-                              <td style={{ padding: '6px 8px', color: '#475569' }}>{pc.assignedOn}</td>
-                              <td style={{ padding: '6px 8px' }}>{pc.status}</td>
-                              <td style={{ padding: '6px 8px' }}>{pc.statusComments}</td>
-                              <td style={{ padding: '6px 8px' }}>{pc.interview}</td>
-                              <td style={{ padding: '6px 8px' }}>{pc.rejectedReason || '—'}</td>
+                              <td style={{ padding: '6px 8px', color: '#1e293b' }}>{pc.payRate}</td>
+                              <td style={{ padding: '6px 8px', color: '#1e293b' }}>{pc.payRateType}</td>
+                              <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{pc.assignedBy}</td>
+                              <td style={{ padding: '6px 8px', color: '#475569', fontSize: '10.5px' }}>{pc.assignedOn}</td>
+                              <td style={{ padding: '6px 8px', minWidth: '190px' }}>
+                                <select
+                                  value={pc.status}
+                                  onChange={e => handleUpdatePotentialCandidate(pc.id, 'status', e.target.value)}
+                                  style={{
+                                    fontSize: '11px',
+                                    padding: '3px 6px',
+                                    border: '1px solid #cbd5e1',
+                                    borderRadius: '2px',
+                                    background: '#ffffff',
+                                    fontWeight: 'bold',
+                                    width: '100%',
+                                    color: pc.status === 'Placed' ? '#166534' : pc.status.includes('Interview') ? '#1d4ed8' : pc.status.includes('Rejected') ? '#dc2626' : '#1e3a8a'
+                                  }}
+                                >
+                                  <option value="Int-SubmittedToManager">Int-SubmittedToManager</option>
+                                  <option value="Int-ApprovedByManager">Int-ApprovedByManager</option>
+                                  <option value="Int-RejectedByManager">Int-RejectedByManager</option>
+                                  <option value="Agency-Submitted">Agency-Submitted</option>
+                                  <option value="Agency-InterviewScheduled">Agency-InterviewScheduled</option>
+                                  <option value="Agency-Approved">Agency-Approved</option>
+                                  <option value="Agency-Rejected">Agency-Rejected</option>
+                                  <option value="Client-SubmittedToCustomer">Client-SubmittedToCustomer</option>
+                                  <option value="Client-InterviewScheduled">Client-InterviewScheduled</option>
+                                  <option value="Client-Selected">Client-Selected</option>
+                                  <option value="Client-Rejected">Client-Rejected</option>
+                                  <option value="Offer Extended">Offer Extended</option>
+                                  <option value="Placed">Placed</option>
+                                </select>
+                                
+                                {/* Audit Info Strip */}
+                                {pc.lastChangedBy && (
+                                  <div style={{ fontSize: '9.5px', color: '#475569', marginTop: '3px', lineHeight: '1.2' }}>
+                                    <span style={{ fontWeight: 'bold' }}>Changed by:</span>{' '}
+                                    <span style={{ color: pc.lastChangedRole === 'Manager' || pc.lastChangedRole === 'superadmin' ? '#b45309' : '#0284c7', fontWeight: 'bold' }}>
+                                      {pc.lastChangedRole || 'Recruiter'} ({pc.lastChangedBy})
+                                    </span>
+                                    <br />
+                                    <span style={{ color: '#94a3b8' }}>{pc.lastChangedOn}</span>
+                                  </div>
+                                )}
+                              </td>
+                              <td style={{ padding: '6px 8px' }}>
+                                <textarea
+                                  rows={2}
+                                  value={pc.statusComments || ''}
+                                  onChange={e => handleUpdatePotentialCandidate(pc.id, 'statusComments', e.target.value)}
+                                  placeholder="Status comments..."
+                                  style={{
+                                    fontSize: '11px',
+                                    padding: '3px 6px',
+                                    width: '130px',
+                                    border: '1px solid #cbd5e1',
+                                    borderRadius: '2px',
+                                    fontFamily: 'inherit',
+                                    resize: 'vertical'
+                                  }}
+                                />
+                              </td>
+                              <td style={{ padding: '6px 8px' }}>
+                                <select
+                                  value={pc.interview || 'Select'}
+                                  onChange={e => handleUpdatePotentialCandidate(pc.id, 'interview', e.target.value)}
+                                  style={{ fontSize: '11px', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '2px', background: '#ffffff', minWidth: '110px' }}
+                                >
+                                  <option value="Select">Select</option>
+                                  <option value="Round 1 (Virtual)">Round 1 (Virtual)</option>
+                                  <option value="Technical Panel">Technical Panel</option>
+                                  <option value="Client Manager Round">Client Manager Round</option>
+                                  <option value="Final Round">Final Round</option>
+                                </select>
+                              </td>
+                              <td style={{ padding: '6px 8px' }}>
+                                <select
+                                  value={pc.rejectedReason || 'Select'}
+                                  onChange={e => handleUpdatePotentialCandidate(pc.id, 'rejectedReason', e.target.value)}
+                                  style={{ fontSize: '11px', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '2px', background: '#ffffff', minWidth: '110px' }}
+                                >
+                                  <option value="Select">Select</option>
+                                  <option value="Rate High">Rate High</option>
+                                  <option value="Skill Gap">Skill Gap</option>
+                                  <option value="Client Selected Another">Client Selected Another</option>
+                                  <option value="Not Local">Not Local</option>
+                                  <option value="Failed Tech Round">Failed Tech Round</option>
+                                  <option value="Candidate Withdrew">Candidate Withdrew</option>
+                                </select>
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -1947,8 +2077,14 @@ function RecruiterDashboard() {
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '14px' }}>
                 <button
                   type="button"
-                  onClick={() => { alert(`Requisition saved successfully!`); setViewMode('portal'); }}
-                  style={{ background: '#e2e8f0', color: '#0f172a', border: '1px solid #94a3b8', padding: '4px 20px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                  onClick={() => {
+                    try {
+                      localStorage.setItem('smarthire_potential_candidates_158938', JSON.stringify(potentialCandidates))
+                    } catch (e) {}
+                    alert(`Requisition #158938 updated successfully!\nAll candidate statuses and manager/recruiter audit trails have been saved and synced to Reports.`);
+                    setViewMode('portal');
+                  }}
+                  style={{ background: '#e2e8f0', color: '#0f172a', border: '1px solid #94a3b8', padding: '4px 20px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '2px' }}
                 >
                   Save
                 </button>
