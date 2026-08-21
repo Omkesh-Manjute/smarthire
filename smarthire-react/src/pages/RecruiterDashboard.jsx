@@ -411,6 +411,57 @@ function RecruiterDashboard() {
   })
   const [newNoteText, setNewNoteText] = useState('')
 
+  // All Available Recruiters
+  const allRecruitersList = [
+    { name: 'Omkesh Manjute', role: 'Manager / Superadmin', email: 'omkesh.manjute@smarthire.com' },
+    { name: 'Vaibhav Bisen', role: 'Senior Recruiter', email: 'vaibhav.bisen@smarthire.com' },
+    { name: 'Sukamal Chatterjee', role: 'Technical Recruiter', email: 'sukamal.c@smarthire.com' },
+    { name: 'Prudhvi Sevveti', role: 'Lead Recruiter', email: 'prudhvi.s@smarthire.com' },
+    { name: 'Nitin Bhosale', role: 'Sr. IT Recruiter', email: 'nitin.bhosale@smarthire.com' },
+    { name: 'Raj Barve', role: 'Technical Recruiter', email: 'raj.barve@smarthire.com' },
+    { name: 'Ajay Arya', role: 'Senior Recruiter', email: 'ajay.arya@smarthire.com' },
+    { name: 'Nishant Kathane', role: 'IT Recruiter', email: 'nishant.k@smarthire.com' },
+    { name: 'Naveen Korimelli', role: 'Lead Sourcing Specialist', email: 'naveen.k@smarthire.com' },
+    { name: 'Pankaj Maharwade', role: 'Senior Recruiter', email: 'pankaj.m@smarthire.com' }
+  ]
+
+  const getJobAssignedRecruiters = (jobId, title = '') => {
+    try {
+      const saved = localStorage.getItem(`smarthire_req_assigned_${jobId}`)
+      if (saved) return JSON.parse(saved)
+    } catch (e) {}
+
+    const cleanId = String(jobId).replace('J-', '')
+    if (cleanId === '158938' || title.toLowerCase().includes('project manager')) {
+      return ['Vaibhav Bisen', 'Omkesh Manjute']
+    }
+    if (cleanId === '158766' || title.toLowerCase().includes('network admin')) {
+      return ['Vaibhav Bisen', 'Nitin Bhosale']
+    }
+    if (cleanId === '158420' || title.toLowerCase().includes('architect')) {
+      return ['Prudhvi Sevveti']
+    }
+    if (cleanId === '158310' || title.toLowerCase().includes('data engineer') || title.toLowerCase().includes('snowflake')) {
+      return ['Omkesh Manjute', 'Sukamal Chatterjee']
+    }
+    if (cleanId === '158204' || title.toLowerCase().includes('oracle') || title.toLowerCase().includes('dba')) {
+      return ['Vaibhav Bisen']
+    }
+    if (cleanId === '158112' || title.toLowerCase().includes('systems analyst')) {
+      return ['Vaibhav Bisen', 'Raj Barve']
+    }
+    if (cleanId === '157980' || title.toLowerCase().includes('.net')) {
+      return ['Sukamal Chatterjee']
+    }
+    if (cleanId === '157890' || title.toLowerCase().includes('dynamics') || title.toLowerCase().includes('power platform')) {
+      return ['Sukamal Chatterjee', 'Ajay Arya']
+    }
+    if (cleanId === '157812' || title.toLowerCase().includes('java')) {
+      return ['Nishant Kathane', 'Naveen Korimelli']
+    }
+    return ['Vaibhav Bisen']
+  }
+
   // Fetch jobs
   useEffect(() => {
     const token = localStorage.getItem('smarthire_token') || ''
@@ -420,7 +471,11 @@ function RecruiterDashboard() {
       .then(res => res.json())
       .then(data => {
         const list = Array.isArray(data) ? data : data.jobs || data.data || []
-        setJobs(list)
+        const mapped = list.map(j => ({
+          ...j,
+          assignedRecruiters: getJobAssignedRecruiters(j.id, j.title)
+        }))
+        setJobs(mapped)
       })
       .catch(err => console.error('Failed to load jobs:', err))
   }, [])
@@ -431,6 +486,10 @@ function RecruiterDashboard() {
     setViewMode('requisition')
     setActiveReqTab('details')
     const fullDesc = getFullDescriptionText(job)
+    const assigned = Array.isArray(job.assignedRecruiters) && job.assignedRecruiters.length > 0 
+      ? job.assignedRecruiters 
+      : getJobAssignedRecruiters(job.id, job.title)
+
     setEditingFields({
       title: job.title || '',
       startDate: job.creationDate || '10/23/2026',
@@ -460,6 +519,7 @@ function RecruiterDashboard() {
       skills: Array.isArray(job.skills) ? job.skills : ['PMP Certification', 'Bachelors Degree In An IT Related Field', 'Project Management'],
       desiredSkills: Array.isArray(job.preferredSkills) ? job.preferredSkills : ['Cloud Security', 'Public Sector Experience'],
       status: job.status === 'Active' ? 'In-Progress' : (job.status || 'In-Progress'),
+      assignedRecruiters: assigned,
       keyReq: false,
       working: true,
       hotReq: false,
@@ -698,9 +758,13 @@ function RecruiterDashboard() {
         if (reqFilters.status === 'Ready' && stat !== 'ready') return false
         if (reqFilters.status === 'Closed' && stat !== 'closed') return false
       }
-      if (reqFilters.endClient !== 'Any') {
-        const client = (j.client || '').toLowerCase()
-        if (!client.includes(reqFilters.endClient.toLowerCase())) return false
+      if (reqFilters.assignedTo && reqFilters.assignedTo !== 'Any' && reqFilters.assignedTo !== 'All') {
+        const targetRec = reqFilters.assignedTo.toLowerCase()
+        const assignedList = Array.isArray(j.assignedRecruiters) ? j.assignedRecruiters.map(r => r.toLowerCase()) : []
+        const postedBy = (j.postedByName || '').toLowerCase()
+        if (!assignedList.some(r => r.includes(targetRec)) && !postedBy.includes(targetRec)) {
+          return false
+        }
       }
       if (reqFilters.reqType !== 'Select Req Type') {
         const type = (j.type || '').toLowerCase()
@@ -978,11 +1042,9 @@ function RecruiterDashboard() {
                       <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Assigned To:</label>
                       <select value={candFilters.assignedTo} onChange={e => setCandFilters({ ...candFilters, assignedTo: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
                         <option value="Any">Any (All Pool)</option>
-                        <option value={userName}>{userName} (My Candidates)</option>
-                        <option value="Vaibhav Bisen">Vaibhav Bisen</option>
-                        <option value="Prudhvi">Prudhvi</option>
-                        <option value="Sukamal Chatterjee">Sukamal Chatterjee</option>
-                        <option value="Nitin Bhosale">Nitin Bhosale</option>
+                        {allRecruitersList.map(r => (
+                          <option key={r.name} value={r.name}>{r.name} {r.name === userName ? '(You)' : ''}</option>
+                        ))}
                       </select>
 
                       <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Sub-Vendor :</label>
@@ -1188,7 +1250,7 @@ function RecruiterDashboard() {
 
                             {/* Recruiter / Added By */}
                             <td style={{ padding: '5px 8px', fontWeight: 'bold', color: '#1e3a8a', background: idx % 2 === 0 ? '#f1f5f9' : '#e2e8f0' }}>
-                              {c.recruiter || c.assignedTo || userName}
+                              {c.recruiter || c.assignedTo || 'Unassigned'}
                             </td>
 
                             {/* AgrExists */}
@@ -1954,6 +2016,196 @@ function RecruiterDashboard() {
                   </div>
                 )}
 
+                {/* ─── TAB 2: ASSIGN TO RECRUITERS ─── */}
+                {activeReqTab === 'assign' && (
+                  <div style={{ fontSize: '11.5px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
+                      <div>
+                        <div style={{ fontWeight: 'bold', color: '#1e3a8a', fontSize: '13px' }}>
+                          Assign Requisition to Recruiters
+                        </div>
+                        <div style={{ color: '#64748b', fontSize: '11px', marginTop: '2px' }}>
+                          Select one or multiple recruiters who are assigned to source, screen, and submit candidates for Requisition #{selectedReq.id.replace('J-', '')}.
+                        </div>
+                      </div>
+
+                      {/* Quick Action Buttons */}
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingFields(prev => ({
+                              ...prev,
+                              assignedRecruiters: allRecruitersList.map(r => r.name)
+                            }))
+                          }}
+                          style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '4px 10px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '2px' }}
+                        >
+                          Select All
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingFields(prev => ({
+                              ...prev,
+                              assignedRecruiters: []
+                            }))
+                          }}
+                          style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '4px 10px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '2px' }}
+                        >
+                          Clear All
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const current = editingFields.assignedRecruiters || []
+                            if (!current.includes(userName)) {
+                              setEditingFields(prev => ({
+                                ...prev,
+                                assignedRecruiters: [...current, userName]
+                              }))
+                            }
+                          }}
+                          style={{ background: '#0284c7', color: '#ffffff', border: 'none', padding: '4px 12px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '2px' }}
+                        >
+                          + Assign to Me ({userName})
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Currently Assigned Summary Bar */}
+                    <div style={{
+                      background: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '4px',
+                      padding: '8px 12px',
+                      marginBottom: '14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      flexWrap: 'wrap'
+                    }}>
+                      <span style={{ fontWeight: 'bold', color: '#1e3a8a', fontSize: '11.5px' }}>
+                        Currently Assigned ({editingFields.assignedRecruiters?.length || 0}):
+                      </span>
+                      {(!editingFields.assignedRecruiters || editingFields.assignedRecruiters.length === 0) ? (
+                        <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '11px' }}>No recruiters assigned yet</span>
+                      ) : (
+                        editingFields.assignedRecruiters.map(recName => (
+                          <span
+                            key={recName}
+                            style={{
+                              background: '#e0f2fe',
+                              color: '#0369a1',
+                              border: '1px solid #bae6fd',
+                              borderRadius: '12px',
+                              padding: '2px 8px',
+                              fontSize: '11px',
+                              fontWeight: 'bold',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '5px'
+                            }}
+                          >
+                            👤 {recName}
+                            <span
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setEditingFields(prev => ({
+                                  ...prev,
+                                  assignedRecruiters: (prev.assignedRecruiters || []).filter(r => r !== recName)
+                                }))
+                              }}
+                              style={{ cursor: 'pointer', color: '#ef4444', fontWeight: 'bold', marginLeft: '2px' }}
+                              title="Remove"
+                            >
+                              ✕
+                            </span>
+                          </span>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Recruiters Selection Table */}
+                    <div style={{ overflowX: 'auto', border: '1px solid #cbd5e1', borderRadius: '3px' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left' }}>
+                        <thead>
+                          <tr style={{ background: '#94a3b8', color: '#ffffff' }}>
+                            <th style={{ padding: '7px 10px', width: '40px', textAlign: 'center' }}>
+                              <input
+                                type="checkbox"
+                                checked={allRecruitersList.length > 0 && allRecruitersList.every(r => (editingFields.assignedRecruiters || []).includes(r.name))}
+                                onChange={e => {
+                                  if (e.target.checked) {
+                                    setEditingFields(prev => ({ ...prev, assignedRecruiters: allRecruitersList.map(r => r.name) }))
+                                  } else {
+                                    setEditingFields(prev => ({ ...prev, assignedRecruiters: [] }))
+                                  }
+                                }}
+                              />
+                            </th>
+                            <th style={{ padding: '7px 10px', fontWeight: 'bold' }}>Recruiter Name</th>
+                            <th style={{ padding: '7px 10px', fontWeight: 'bold' }}>Role / Designation</th>
+                            <th style={{ padding: '7px 10px', fontWeight: 'bold' }}>Email Address</th>
+                            <th style={{ padding: '7px 10px', fontWeight: 'bold' }}>Assignment Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {allRecruitersList.map((rec, idx) => {
+                            const isAssigned = (editingFields.assignedRecruiters || []).includes(rec.name)
+                            return (
+                              <tr
+                                key={rec.name}
+                                onClick={() => {
+                                  const current = editingFields.assignedRecruiters || []
+                                  if (isAssigned) {
+                                    setEditingFields(prev => ({ ...prev, assignedRecruiters: current.filter(r => r !== rec.name) }))
+                                  } else {
+                                    setEditingFields(prev => ({ ...prev, assignedRecruiters: [...current, rec.name] }))
+                                  }
+                                }}
+                                style={{
+                                  background: isAssigned ? '#eff6ff' : (idx % 2 === 0 ? '#ffffff' : '#f8fafc'),
+                                  borderBottom: '1px solid #e2e8f0',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                <td style={{ padding: '7px 10px', textAlign: 'center' }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={isAssigned}
+                                    onChange={() => {}} // handled by row onClick
+                                  />
+                                </td>
+                                <td style={{ padding: '7px 10px', fontWeight: 'bold', color: isAssigned ? '#0284c7' : '#0f172a' }}>
+                                  {rec.name} {rec.name === userName ? '(You)' : ''}
+                                </td>
+                                <td style={{ padding: '7px 10px', color: '#475569' }}>
+                                  {rec.role}
+                                </td>
+                                <td style={{ padding: '7px 10px', color: '#64748b', fontFamily: 'monospace' }}>
+                                  {rec.email}
+                                </td>
+                                <td style={{ padding: '7px 10px' }}>
+                                  {isAssigned ? (
+                                    <span style={{ color: '#16a34a', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                      🟢 Assigned
+                                    </span>
+                                  ) : (
+                                    <span style={{ color: '#94a3b8' }}>
+                                      ⚪ Not Assigned
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
                 {activeReqTab === 'potential' && (
                   <div style={{ fontSize: '11.5px' }}>
                     <div style={{ fontWeight: 'bold', color: '#1e3a8a', marginBottom: '10px' }}>
@@ -2108,11 +2360,27 @@ function RecruiterDashboard() {
                 <button
                   type="button"
                   onClick={() => {
+                    const reqId = selectedReq?.id || 'J-158938'
+                    const updatedAssigned = editingFields.assignedRecruiters || []
                     try {
                       localStorage.setItem('smarthire_potential_candidates_158938', JSON.stringify(potentialCandidates))
                       localStorage.setItem('smarthire_req_158938', JSON.stringify(editingFields))
+                      localStorage.setItem(`smarthire_req_assigned_${reqId}`, JSON.stringify(updatedAssigned))
                     } catch (e) {}
-                    setSaveToastMessage(`✅ Requisition #${selectedReq?.id?.replace('J-', '') || '158938'} updated successfully! Candidate statuses and audit logs saved.`)
+
+                    // Update jobs list in state
+                    setJobs(prev => prev.map(j => {
+                      if (j.id === reqId) {
+                        return {
+                          ...j,
+                          title: editingFields.title || j.title,
+                          assignedRecruiters: updatedAssigned
+                        }
+                      }
+                      return j
+                    }))
+
+                    setSaveToastMessage(`✅ Requisition #${reqId.replace('J-', '')} updated successfully! Candidate statuses and assigned recruiters (${updatedAssigned.length}) saved.`)
                     setTimeout(() => setSaveToastMessage(null), 5000)
                   }}
                   style={{ background: '#e2e8f0', color: '#0f172a', border: '1px solid #94a3b8', padding: '5px 22px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '2px', boxShadow: 'inset 0 1px 0 #ffffff, 0 1px 2px rgba(0,0,0,0.05)' }}
@@ -2197,9 +2465,10 @@ function RecruiterDashboard() {
 
                         <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Assigned To:</label>
                         <select value={reqFilters.assignedTo} onChange={e => setReqFilters({ ...reqFilters, assignedTo: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
-                          <option>Any</option>
-                          <option>Vaibhav Bisen</option>
-                          <option>Nitin Bhosale</option>
+                          <option value="Any">Any</option>
+                          {allRecruitersList.map(r => (
+                            <option key={r.name} value={r.name}>{r.name} {r.name === userName ? '(You)' : ''}</option>
+                          ))}
                         </select>
 
                         <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Zip Code:</label>
@@ -2403,7 +2672,11 @@ function RecruiterDashboard() {
                             <td style={{ padding: '7px 9px', color: '#475569' }}>{job.location || 'Columbia, SC'}</td>
                             <td style={{ padding: '7px 9px', color: '#e11d48', fontWeight: 'bold' }}>{job.deadline || 'Aug 28, 2026'}</td>
                             <td style={{ padding: '7px 9px', color: '#475569' }}>{job.budget || '75/hr'}</td>
-                            <td style={{ padding: '7px 9px', color: '#475569' }}>{job.postedByName || 'VaibhavB...'}</td>
+                            <td style={{ padding: '7px 9px', color: '#1e3a8a', fontWeight: 'bold' }}>
+                              {Array.isArray(job.assignedRecruiters) && job.assignedRecruiters.length > 0
+                                ? job.assignedRecruiters.join(', ')
+                                : (job.postedByName || job.recruiter || 'Unassigned')}
+                            </td>
                             <td style={{ padding: '7px 9px', color: '#16a34a', fontWeight: 'bold' }}>{job.status === 'Active' ? 'In-Progress' : (job.status || 'In-Progress')}</td>
                             <td style={{ padding: '7px 9px', color: '#475569' }}>SP</td>
                             <td style={{ padding: '7px 9px', color: '#475569' }}>{job.type || 'Contract'}</td>
