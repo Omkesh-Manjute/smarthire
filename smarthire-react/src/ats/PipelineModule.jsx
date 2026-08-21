@@ -31,7 +31,7 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
   const [jobFilter, setJobFilter] = useState('All')
   const [search, setSearch] = useState('')
   const [updatingId, setUpdatingId] = useState(null)
-  const [viewMode, setViewMode] = useState('kanban') // 'kanban' | 'funnel'
+  const [viewMode, setViewMode] = useState('table') // 'table' | 'kanban' | 'funnel'
   const [showAddModal, setShowAddModal] = useState(false)
   const [targetStageToAdd, setTargetStageToAdd] = useState('Shortlisted')
 
@@ -197,6 +197,22 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
           )}
 
           <div style={{ display: 'flex', alignItems: 'center', background: '#f1f5f9', padding: '3px', borderRadius: '8px' }}>
+            <button
+              onClick={() => setViewMode('table')}
+              style={{
+                padding: '5px 12px',
+                borderRadius: '6px',
+                border: 'none',
+                background: viewMode === 'table' ? '#ffffff' : 'transparent',
+                color: viewMode === 'table' ? '#4f46e5' : '#64748b',
+                fontWeight: viewMode === 'table' ? '800' : '600',
+                fontSize: '12px',
+                cursor: 'pointer',
+                boxShadow: viewMode === 'table' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none'
+              }}
+            >
+              📝 Table List
+            </button>
             <button
               onClick={() => setViewMode('kanban')}
               style={{
@@ -581,6 +597,176 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* ─── TABLE VIEW ─── */}
+      {viewMode === 'table' && (
+        <div style={{
+          background: '#ffffff',
+          border: '1px solid #e2e8f0',
+          borderRadius: 14,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+          overflow: 'hidden'
+        }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13.5 }}>
+            <thead>
+              <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                <th style={{ padding: '14px 18px', fontWeight: 700, color: '#475569' }}>Candidate</th>
+                <th style={{ padding: '14px 18px', fontWeight: 700, color: '#475569' }}>Job Title</th>
+                <th style={{ padding: '14px 18px', fontWeight: 700, color: '#475569' }}>Pipeline Stage</th>
+                <th style={{ padding: '14px 18px', fontWeight: 700, color: '#475569', textAlign: 'center' }}>AI Match</th>
+                <th style={{ padding: '14px 18px', fontWeight: 700, color: '#475569' }}>Time in Stage</th>
+                <th style={{ padding: '14px 18px', fontWeight: 700, color: '#475569', textAlign: 'center' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan="6" style={{ padding: '40px 18px', textAlign: 'center', color: '#64748b' }}>
+                    <div style={{ fontSize: 32, marginBottom: 8 }}>📭</div>
+                    <p style={{ margin: 0, fontWeight: 600 }}>No candidates in this pipeline.</p>
+                    <p style={{ margin: '4px 0 0', fontSize: 12, color: '#94a3b8' }}>Add some candidates or clear search filters to view.</p>
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((candidate, idx) => {
+                  const name = candidate.extracted_profile?.name || candidate.name || candidate.candidateName || 'Candidate'
+                  const role = candidate.job_title || candidate.jobTitle || 'General Applicant'
+                  const matchScore = candidate.jd_match?.match_score ?? candidate.matchScore ?? candidate.ai_match?.score ?? null
+                  const daysInStage = getDaysInStage(candidate)
+                  const currentStage = PIPELINE_STAGES.find(st => st.id === (candidate.status || 'New')) || PIPELINE_STAGES[0]
+                  const avatarBg = AVATAR_COLORS[(name.charCodeAt(0) || 0) % AVATAR_COLORS.length]
+                  const isUpdating = updatingId === candidate.id
+
+                  return (
+                    <tr key={candidate.id || idx} style={{
+                      borderBottom: '1px solid #f1f5f9',
+                      background: isUpdating ? '#f8fafc' : 'transparent',
+                      transition: 'background 0.15s ease'
+                    }}>
+                      {/* Candidate Avatar + Name */}
+                      <td style={{ padding: '12px 18px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: '50%',
+                            background: avatarBg,
+                            color: '#ffffff',
+                            fontSize: 11,
+                            fontWeight: 800,
+                            display: 'grid',
+                            placeItems: 'center',
+                            flexShrink: 0
+                          }}>
+                            {getInitials(name)}
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 700, color: '#0f172a' }}>{name}</div>
+                            <div style={{ fontSize: 11, color: '#64748b' }}>{candidate.email}</div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Job Title / Vacancy */}
+                      <td style={{ padding: '12px 18px' }}>
+                        <div style={{ fontWeight: 600, color: '#334155' }}>{role}</div>
+                        {candidate.job_id && (
+                          <span style={{ fontSize: 10.5, color: '#64748b' }}>ID: {candidate.job_id}</span>
+                        )}
+                      </td>
+
+                      {/* Pipeline Stage Select */}
+                      <td style={{ padding: '12px 18px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontSize: 14 }}>{currentStage.icon}</span>
+                          <select
+                            value={candidate.status || 'New'}
+                            onChange={e => handleStatusChange(candidate.id, e.target.value)}
+                            disabled={isUpdating}
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 700,
+                              padding: '4px 8px',
+                              borderRadius: 6,
+                              background: currentStage.bg,
+                              border: `1px solid ${currentStage.border}`,
+                              color: currentStage.color,
+                              cursor: 'pointer',
+                              outline: 'none',
+                              boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+                            }}
+                          >
+                            {PIPELINE_STAGES.map(st => (
+                              <option key={st.id} value={st.id} style={{ background: '#ffffff', color: '#0f172a' }}>
+                                {st.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </td>
+
+                      {/* AI Match Score */}
+                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>
+                        {matchScore != null ? (
+                          <span style={{
+                            fontSize: 11.5,
+                            fontWeight: 800,
+                            padding: '3px 8px',
+                            borderRadius: 6,
+                            color: scoreColor(matchScore),
+                            background: matchScore >= 80 ? '#dcfce7' : matchScore >= 60 ? '#fef3c7' : '#fee2e2',
+                            border: `1px solid ${matchScore >= 80 ? '#bbf7d0' : matchScore >= 60 ? '#fde68a' : '#fca5a5'}`
+                          }}>
+                            {matchScore}% Match
+                          </span>
+                        ) : (
+                          <span style={{ color: '#94a3b8' }}>—</span>
+                        )}
+                      </td>
+
+                      {/* Days in stage */}
+                      <td style={{ padding: '12px 18px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, color: '#475569' }}>
+                          <span>⏱️</span>
+                          <span>{daysInStage === 0 ? 'Today' : `${daysInStage} days`}</span>
+                        </div>
+                      </td>
+
+                      {/* Actions */}
+                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>
+                        <button
+                          onClick={() => handleRemoveFromPipeline(candidate.id)}
+                          style={{
+                            background: '#fef2f2',
+                            color: '#dc2626',
+                            border: '1px solid #fca5a5',
+                            borderRadius: 6,
+                            padding: '4px 10px',
+                            fontSize: 11.5,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            transition: 'all 0.1s'
+                          }}
+                          onMouseEnter={e => {
+                            e.currentTarget.style.background = '#dc2626'
+                            e.currentTarget.style.color = '#ffffff'
+                          }}
+                          onMouseLeave={e => {
+                            e.currentTarget.style.background = '#fef2f2'
+                            e.currentTarget.style.color = '#dc2626'
+                          }}
+                        >
+                          Remove ✕
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       )}
 
