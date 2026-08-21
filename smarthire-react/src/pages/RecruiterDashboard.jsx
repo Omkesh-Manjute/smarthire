@@ -104,6 +104,19 @@ function RecruiterDashboard() {
   const [jobs, setJobs] = useState([])
   const [candidates, setCandidates] = useState([])
   
+  // User auth state
+  const userStr = localStorage.getItem('smarthire_user') || localStorage.getItem('verifyhire_user')
+  let currentUser = null
+  try {
+    if (userStr) currentUser = JSON.parse(userStr)
+  } catch (e) {}
+
+  const userName = currentUser?.name || currentUser?.displayName || 'Omkesh Manjute'
+  const isRecruiterRole = currentUser?.role === 'recruiter' || !currentUser?.role || currentUser?.role !== 'admin'
+
+  // Top Nav Tab: 'requisitions' | 'candidates'
+  const [activeMainTab, setActiveMainTab] = useState('requisitions')
+
   // Navigation Flow State: 'portal' | 'requisition' | 'resumeSearch' | 'resumeSubmission'
   const [viewMode, setViewMode] = useState('portal')
   const [selectedReq, setSelectedReq] = useState(null)
@@ -113,7 +126,7 @@ function RecruiterDashboard() {
   const [quickSearchId, setQuickSearchId] = useState('')
   const [showFilterPanel, setShowFilterPanel] = useState(true)
 
-  // ─── TOP SEARCH REQUISITIONS FILTER STATE (NEW IMAGE) ───
+  // ─── SEARCH REQUISITIONS FILTER STATE ───
   const [reqFilters, setReqFilters] = useState({
     reqId: '',
     title: '',
@@ -139,7 +152,32 @@ function RecruiterDashboard() {
     reqType: 'Select Req Type'
   })
 
-  // Requisition Fields
+  // ─── SEARCH CANDIDATES FILTER STATE (NEW SCREENSHOT) ───
+  const [candFilters, setCandFilters] = useState({
+    candidateId: '',
+    name: '',
+    email: '',
+    skills: '',
+    city: '',
+    state: 'Select',
+    jobTitle: '',
+    zipCode: '',
+    radius: 'Select Miles',
+    experience: '',
+    workAuth: 'Any',
+    assignedTo: isRecruiterRole ? userName : 'Any',
+    subVendor: 'Select',
+    availabilityDate: 'Any',
+    securityClearance: false,
+    rating: 0,
+    currentEmployees: false,
+    workPermit: 'All',
+    officeLocation: 'All',
+    skyped: false,
+    screenedStatus: 'All'
+  })
+
+  // Requisition Edit Fields
   const [editingFields, setEditingFields] = useState({})
 
   // Dual Listbox for Assign to Recruiters
@@ -149,7 +187,6 @@ function RecruiterDashboard() {
   const [assignedRecruiters, setAssignedRecruiters] = useState(['Vaibhav Bisen'])
   const [selectedAvailable, setSelectedAvailable] = useState([])
   const [selectedAssigned, setSelectedAssigned] = useState([])
-  const [emailOption, setEmailOption] = useState('none')
 
   // Attachments List
   const [attachments, setAttachments] = useState([
@@ -295,16 +332,87 @@ function RecruiterDashboard() {
   })
   const [newNoteText, setNewNoteText] = useState('')
 
-  // User auth state
-  const userStr = localStorage.getItem('smarthire_user') || localStorage.getItem('verifyhire_user')
-  let currentUser = null
-  try {
-    if (userStr) currentUser = JSON.parse(userStr)
-  } catch (e) {}
+  // Default initial candidates list with recruiter tags
+  const initialDefaultCandidates = [
+    {
+      id: '87534',
+      name: 'Ashok Ganta',
+      email: 'ashok57800@gmail.com',
+      phone: '571-660-5778',
+      role: 'VDOT Network Administrator 4',
+      skills: ['Cisco Routing', 'Azure', 'Meraki Wireless', 'Firewall'],
+      location: 'Richmond, VA 23173',
+      city: 'Richmond',
+      state: 'VA',
+      zipCode: '23173',
+      experience: '14 years',
+      workAuth: 'GC',
+      assignedTo: userName,
+      screened: 'Yes',
+      availability: 'Immediate',
+      payRate: '74/hr',
+      rateType: 'C2C'
+    },
+    {
+      id: '87535',
+      name: 'Kashyap K Vora',
+      email: 'kashyap.vora@gmail.com',
+      phone: '804-555-0192',
+      role: 'Full Stack Java / Spring Boot Lead',
+      skills: ['Java 17', 'Spring Boot', 'Microservices', 'AWS', 'React'],
+      location: 'Columbia, SC 29210',
+      city: 'Columbia',
+      state: 'SC',
+      zipCode: '29210',
+      experience: '10 years',
+      workAuth: 'US Citizen',
+      assignedTo: userName,
+      screened: 'Yes',
+      availability: '2 Weeks',
+      payRate: '55/hr',
+      rateType: 'W2'
+    },
+    {
+      id: '87536',
+      name: 'Priyanka Sen',
+      email: 'priyanka.sen@techpulse.org',
+      phone: '404-982-3341',
+      role: 'Senior Data Engineer / Snowflake Specialist',
+      skills: ['Python', 'Snowflake', 'dbt', 'AWS Glue', 'Airflow'],
+      location: 'Atlanta, GA 30303',
+      city: 'Atlanta',
+      state: 'GA',
+      zipCode: '30303',
+      experience: '8 years',
+      workAuth: 'H1B',
+      assignedTo: 'Vaibhav Bisen',
+      screened: 'Yes',
+      availability: 'Immediate',
+      payRate: '68/hr',
+      rateType: 'C2C'
+    },
+    {
+      id: '87537',
+      name: 'Marcus Sterling',
+      email: 'm.sterling@solutions.io',
+      phone: '512-409-8871',
+      role: 'Cloud DevOps Architect',
+      skills: ['Terraform', 'Kubernetes', 'CI/CD', 'AWS', 'Docker'],
+      location: 'Austin, TX 78701',
+      city: 'Austin',
+      state: 'TX',
+      zipCode: '78701',
+      experience: '12 years',
+      workAuth: 'US Citizen',
+      assignedTo: userName,
+      screened: 'Yes',
+      availability: '30 Days',
+      payRate: '85/hr',
+      rateType: '1099'
+    }
+  ]
 
-  const userName = currentUser?.name || currentUser?.displayName || 'Omkesh Manjute'
-
-  // Fetch real jobs and candidates from API
+  // Fetch jobs and candidates
   useEffect(() => {
     const token = localStorage.getItem('smarthire_token') || ''
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
@@ -321,10 +429,33 @@ function RecruiterDashboard() {
       .then(res => res.json())
       .then(data => {
         const list = Array.isArray(data) ? data : data.candidates || data.data || []
-        setCandidates(list)
+        if (list.length > 0) {
+          const merged = list.map((c, i) => ({
+            id: c.id ? String(c.id).replace(/\D/g, '').slice(-5) || `8754${i}` : `8754${i}`,
+            name: c.name || 'Candidate Name',
+            email: c.email || 'candidate@example.com',
+            phone: c.phone || '555-010-0202',
+            role: c.role || 'Consultant',
+            skills: Array.isArray(c.skills) ? c.skills : ['Technical Skills'],
+            location: c.location || 'Richmond, VA',
+            city: c.location ? c.location.split(',')[0].trim() : 'Richmond',
+            state: c.location && c.location.split(',')[1] ? c.location.split(',')[1].trim().slice(0, 2) : 'VA',
+            zipCode: '23173',
+            experience: c.experience ? `${c.experience} years` : '6 years',
+            workAuth: c.workAuth || 'GC',
+            assignedTo: i % 2 === 0 ? userName : 'Vaibhav Bisen',
+            screened: c.status === 'Shortlisted' ? 'Yes' : 'Pending',
+            availability: 'Immediate',
+            payRate: c.expectedSalary || '70/hr',
+            rateType: 'C2C'
+          }))
+          setCandidates([...initialDefaultCandidates, ...merged.filter(m => !initialDefaultCandidates.some(d => d.id === m.id))])
+        } else {
+          setCandidates(initialDefaultCandidates)
+        }
       })
-      .catch(err => console.error('Failed to load candidates:', err))
-  }, [])
+      .catch(() => setCandidates(initialDefaultCandidates))
+  }, [userName])
 
   // Open Requisition Detail
   const handleOpenReq = (job) => {
@@ -539,60 +670,43 @@ function RecruiterDashboard() {
     setActiveReqTab('potential')
   }
 
-  // ─── FILTER REQUISITIONS LIST (WITH SEARCH REQUISITIONS FILTER CRITERIA) ───
+  // ─── FILTER REQUISITIONS LIST ───
   const filteredJobs = useMemo(() => {
     return jobs.filter(j => {
       if (!j) return false
-      
-      // Req ID filter
       if (reqFilters.reqId.trim()) {
         const cleanId = j.id.replace('J-', '')
         if (!cleanId.toLowerCase().includes(reqFilters.reqId.toLowerCase())) return false
       }
-
-      // Title filter
       if (reqFilters.title.trim()) {
         if (!j.title?.toLowerCase().includes(reqFilters.title.toLowerCase())) return false
       }
-
-      // Skills filter
       if (reqFilters.skills.trim()) {
         const skillsStr = Array.isArray(j.skills) ? j.skills.join(' ').toLowerCase() : ''
         if (!skillsStr.includes(reqFilters.skills.toLowerCase())) return false
       }
-
-      // City filter
       if (reqFilters.city.trim()) {
         const loc = (j.location || '').toLowerCase()
         if (!loc.includes(reqFilters.city.toLowerCase())) return false
       }
-
-      // State filter
       if (reqFilters.state !== 'Select State') {
         const loc = (j.location || '').toLowerCase()
         if (!loc.includes(reqFilters.state.toLowerCase())) return false
       }
-
-      // Status filter
       if (reqFilters.status !== 'Select Status' && reqFilters.status !== 'All') {
         const stat = (j.status || '').toLowerCase()
         if (reqFilters.status === 'In-Progress' && stat !== 'active' && stat !== 'in-progress' && stat !== 'posted') return false
         if (reqFilters.status === 'Ready' && stat !== 'ready') return false
         if (reqFilters.status === 'Closed' && stat !== 'closed') return false
       }
-
-      // End Client filter
       if (reqFilters.endClient !== 'Any') {
         const client = (j.client || '').toLowerCase()
         if (!client.includes(reqFilters.endClient.toLowerCase())) return false
       }
-
-      // Req Type filter
       if (reqFilters.reqType !== 'Select Req Type') {
         const type = (j.type || '').toLowerCase()
         if (!type.includes(reqFilters.reqType.toLowerCase())) return false
       }
-
       return true
     })
   }, [jobs, reqFilters])
@@ -604,15 +718,80 @@ function RecruiterDashboard() {
 
   const totalPages = Math.ceil(filteredJobs.length / pageSize) || 1
 
+  // ─── FILTER CANDIDATES LIST (ROLE-BASED & SEARCH FILTERS) ───
+  const filteredCandidates = useMemo(() => {
+    return candidates.filter(c => {
+      if (!c) return false
+
+      // Role-Based Assigned Recruiter Filter:
+      if (candFilters.assignedTo !== 'Any' && candFilters.assignedTo !== 'All') {
+        const assigned = (c.assignedTo || '').toLowerCase()
+        const filterVal = candFilters.assignedTo.toLowerCase()
+        if (!assigned.includes(filterVal) && !filterVal.includes(assigned)) return false
+      }
+
+      // Candidate ID Filter
+      if (candFilters.candidateId.trim()) {
+        if (!c.id.toLowerCase().includes(candFilters.candidateId.toLowerCase())) return false
+      }
+
+      // Name Filter
+      if (candFilters.name.trim()) {
+        if (!c.name.toLowerCase().includes(candFilters.name.toLowerCase())) return false
+      }
+
+      // Email Filter
+      if (candFilters.email.trim()) {
+        if (!c.email.toLowerCase().includes(candFilters.email.toLowerCase())) return false
+      }
+
+      // Skills Filter
+      if (candFilters.skills.trim()) {
+        const skillsStr = Array.isArray(c.skills) ? c.skills.join(' ').toLowerCase() : ''
+        if (!skillsStr.includes(candFilters.skills.toLowerCase())) return false
+      }
+
+      // City Filter
+      if (candFilters.city.trim()) {
+        const loc = (c.location || c.city || '').toLowerCase()
+        if (!loc.includes(candFilters.city.toLowerCase())) return false
+      }
+
+      // State Filter
+      if (candFilters.state !== 'Select') {
+        const loc = (c.location || c.state || '').toLowerCase()
+        if (!loc.includes(candFilters.state.toLowerCase())) return false
+      }
+
+      // Job Title Filter
+      if (candFilters.jobTitle.trim()) {
+        const title = (c.role || '').toLowerCase()
+        if (!title.includes(candFilters.jobTitle.toLowerCase())) return false
+      }
+
+      // Work Auth Filter
+      if (candFilters.workAuth !== 'Any') {
+        if (c.workAuth !== candFilters.workAuth) return false
+      }
+
+      // Screened Status Filter
+      if (candFilters.screenedStatus !== 'All') {
+        if (c.screened !== candFilters.screenedStatus) return false
+      }
+
+      return true
+    })
+  }, [candidates, candFilters])
+
   return (
     <SiteLayout>
       <div style={{ background: '#f1f5f9', minHeight: '92vh', paddingBottom: '30px', fontFamily: 'Arial, sans-serif' }}>
         
-        {/* ═══════════ TOP HEADER USER INFO STRIP (NEW SCREENSHOT) ═══════════ */}
+        {/* ═══════════ TOP HEADER USER INFO STRIP ═══════════ */}
         <div style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', padding: '4px 16px', fontSize: '11px', color: '#475569' }}>
           <div className="container-wide" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', gap: '14px' }}>
-              <span onClick={() => setViewMode('portal')} style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>Home</span>
+              <span onClick={() => { setActiveMainTab('requisitions'); setViewMode('portal'); }} style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>Home</span>
               <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>About Us</span>
               <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>My Account</span>
               <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>Logout</span>
@@ -633,18 +812,25 @@ function RecruiterDashboard() {
                 COOLWORKS
               </div>
               {[
-                { name: 'Requisitions', active: true },
-                { name: 'Candidates', active: false, link: '/ats' },
-                { name: 'Administration', active: false, link: '/ats' },
-                { name: 'Reports', active: false, link: '/reports' },
-                { name: 'Process', active: false, link: '/ats' }
+                { id: 'requisitions', name: 'Requisitions' },
+                { id: 'candidates', name: 'Candidates' },
+                { id: 'admin', name: 'Administration', link: '/ats' },
+                { id: 'reports', name: 'Reports', link: '/reports' },
+                { id: 'process', name: 'Process', link: '/ats' }
               ].map(t => (
                 <div
-                  key={t.name}
-                  onClick={() => { if (!t.active && t.link) window.location.href = t.link; else setViewMode('portal'); }}
+                  key={t.id}
+                  onClick={() => {
+                    if (t.link) {
+                      window.location.href = t.link
+                    } else {
+                      setActiveMainTab(t.id)
+                      setViewMode('portal')
+                    }
+                  }}
                   style={{
                     display: 'flex', alignItems: 'center', padding: '0 16px', fontSize: '12.5px', fontWeight: 'bold',
-                    background: t.active && viewMode === 'portal' ? '#d97706' : 'transparent',
+                    background: activeMainTab === t.id && viewMode === 'portal' ? '#d97706' : 'transparent',
                     borderRight: '1px solid rgba(255,255,255,0.2)',
                     cursor: 'pointer'
                   }}
@@ -678,7 +864,279 @@ function RecruiterDashboard() {
         <div className="container-wide" style={{ padding: '16px', maxWidth: '1360px', margin: '0 auto' }}>
 
           {/* ─────────────────────────────────────────────────────────────
-              VIEW MODE 1: STEP 1 - RESUME SEARCH & ADD CANDIDATE FORM (IMAGE 1)
+              TAB 2: CANDIDATES SEARCH & LIST VIEW (NEW UPLOADED SCREENSHOT)
+              ───────────────────────────────────────────────────────────── */}
+          {activeMainTab === 'candidates' && viewMode === 'portal' && (
+            <div>
+              {/* Breadcrumbs */}
+              <div style={{ fontSize: '11px', color: '#1e3a8a', fontWeight: 'bold', marginBottom: '8px' }}>
+                You are here: <span style={{ color: '#0066cc', cursor: 'pointer' }}>Home</span> &gt; Candidates
+              </div>
+
+              {/* ─── SEARCH CANDIDATE 3-COLUMN PANEL (IMAGE 1787312030395) ─── */}
+              <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 18px', marginBottom: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                
+                {/* Title & Add new Candidate Link */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <h2 style={{ margin: 0, fontSize: '15px', color: '#1e3a8a', fontWeight: 'bold' }}>
+                    Search Candidate
+                  </h2>
+                  <span
+                    onClick={() => {
+                      setViewMode('resumeSearch')
+                    }}
+                    style={{ color: '#0066cc', fontWeight: 'bold', fontSize: '12px', textDecoration: 'underline', cursor: 'pointer' }}
+                  >
+                    Add new Candidate
+                  </span>
+                </div>
+
+                {/* 3-Column Search Candidate Form */}
+                <form onSubmit={e => e.preventDefault()} style={{ border: '1px solid #fed7aa', background: '#fffaf5', padding: '14px 18px', borderRadius: '3px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.2fr 1fr', gap: '14px 24px', fontSize: '11.5px' }}>
+                    
+                    {/* Column 1 */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '6px 8px', alignItems: 'center' }}>
+                      <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Candidate #:</label>
+                      <input type="text" value={candFilters.candidateId} onChange={e => setCandFilters({ ...candFilters, candidateId: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+
+                      <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Name:</label>
+                      <input type="text" value={candFilters.name} onChange={e => setCandFilters({ ...candFilters, name: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+
+                      <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>E-mail:</label>
+                      <input type="text" value={candFilters.email} onChange={e => setCandFilters({ ...candFilters, email: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+
+                      <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Skills:</label>
+                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                        <input type="text" value={candFilters.skills} onChange={e => setCandFilters({ ...candFilters, skills: e.target.value })} style={{ flex: 1, padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                        <span style={{ fontSize: '12px', cursor: 'pointer', color: '#0066cc' }}>❓</span>
+                      </div>
+
+                      <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>City:</label>
+                      <input type="text" value={candFilters.city} onChange={e => setCandFilters({ ...candFilters, city: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+
+                      <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>State:</label>
+                      <select value={candFilters.state} onChange={e => setCandFilters({ ...candFilters, state: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
+                        <option>Select</option>
+                        <option>SC</option>
+                        <option>VA</option>
+                        <option>TX</option>
+                        <option>NC</option>
+                        <option>GA</option>
+                        <option>FL</option>
+                      </select>
+
+                      <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Job Title :</label>
+                      <input type="text" value={candFilters.jobTitle} onChange={e => setCandFilters({ ...candFilters, jobTitle: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+
+                      <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Zipcode:</label>
+                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                        <input type="text" value={candFilters.zipCode} onChange={e => setCandFilters({ ...candFilters, zipCode: e.target.value })} style={{ width: '60px', padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                        <select value={candFilters.radius} onChange={e => setCandFilters({ ...candFilters, radius: e.target.value })} style={{ padding: '3px 4px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
+                          <option>Select Miles</option>
+                          <option>10</option>
+                          <option>25</option>
+                          <option>50</option>
+                          <option>100</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Column 2 */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr', gap: '6px 8px', alignItems: 'center' }}>
+                      <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Experience:</label>
+                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                        <input type="text" value={candFilters.experience} onChange={e => setCandFilters({ ...candFilters, experience: e.target.value })} style={{ width: '45px', padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                        <span>years</span>
+                      </div>
+
+                      <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Work Auth:</label>
+                      <select value={candFilters.workAuth} onChange={e => setCandFilters({ ...candFilters, workAuth: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
+                        <option>Any</option>
+                        <option>US Citizen</option>
+                        <option>GC</option>
+                        <option>H1B</option>
+                        <option>EAD</option>
+                      </select>
+
+                      <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Assigned To:</label>
+                      <select value={candFilters.assignedTo} onChange={e => setCandFilters({ ...candFilters, assignedTo: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
+                        <option value="Any">Any (All Pool)</option>
+                        <option value={userName}>{userName} (My Candidates)</option>
+                        <option value="Vaibhav Bisen">Vaibhav Bisen</option>
+                        <option value="Nitin Bhosale">Nitin Bhosale</option>
+                        <option value="Prudhvi">Prudhvi</option>
+                      </select>
+
+                      <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Sub-Vendor :</label>
+                      <select value={candFilters.subVendor} onChange={e => setCandFilters({ ...candFilters, subVendor: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
+                        <option>Select</option>
+                        <option>Talent9 Inc</option>
+                        <option>Direct</option>
+                        <option>CoolSoft Tech</option>
+                      </select>
+
+                      <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Availability Date :</label>
+                      <select value={candFilters.availabilityDate} onChange={e => setCandFilters({ ...candFilters, availabilityDate: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
+                        <option>Any</option>
+                        <option>Immediate</option>
+                        <option>2 Weeks</option>
+                        <option>30 Days</option>
+                      </select>
+
+                      <div style={{ gridColumn: 'span 2', marginTop: '2px' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1e3a8a', fontWeight: 'bold' }}>
+                          <input type="checkbox" checked={candFilters.securityClearance} onChange={e => setCandFilters({ ...candFilters, securityClearance: e.target.checked })} />
+                          Security Clearance / Federal clearance
+                        </label>
+                      </div>
+
+                      <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Rating:</label>
+                      <div>⛔ ⭐️⭐️⭐️⭐️⭐️</div>
+
+                      <div style={{ gridColumn: 'span 2' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1e3a8a', fontWeight: 'bold' }}>
+                          <input type="checkbox" checked={candFilters.currentEmployees} onChange={e => setCandFilters({ ...candFilters, currentEmployees: e.target.checked })} />
+                          Current Employees:
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Column 3 */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '6px 8px', alignContent: 'start', alignItems: 'center' }}>
+                      <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Work Permit:</label>
+                      <select value={candFilters.workPermit} onChange={e => setCandFilters({ ...candFilters, workPermit: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
+                        <option>All</option>
+                        <option>US Citizen</option>
+                        <option>Green Card</option>
+                        <option>H1B</option>
+                      </select>
+
+                      <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Office Location</label>
+                      <select value={candFilters.officeLocation} onChange={e => setCandFilters({ ...candFilters, officeLocation: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
+                        <option>All</option>
+                        <option>Columbia</option>
+                        <option>Richmond</option>
+                        <option>Austin</option>
+                      </select>
+
+                      <div style={{ gridColumn: 'span 2', margin: '4px 0' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1e3a8a', fontWeight: 'bold' }}>
+                          <input type="checkbox" checked={candFilters.skyped} onChange={e => setCandFilters({ ...candFilters, skyped: e.target.checked })} />
+                          Skyped
+                        </label>
+                      </div>
+
+                      <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Screened Status:</label>
+                      <select value={candFilters.screenedStatus} onChange={e => setCandFilters({ ...candFilters, screenedStatus: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
+                        <option>All</option>
+                        <option>Yes</option>
+                        <option>Pending</option>
+                        <option>No</option>
+                      </select>
+
+                      <div style={{ gridColumn: 'span 2', display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+                        <button
+                          type="submit"
+                          style={{ background: '#f1f5f9', border: '1px solid #94a3b8', padding: '3px 18px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
+                          Search
+                        </button>
+                      </div>
+                    </div>
+
+                  </div>
+                </form>
+              </div>
+
+              {/* ─── CANDIDATES LIST TABLE (ROLE-BASED VIEW) ─── */}
+              <div style={{ background: '#ffffff', padding: '14px 18px', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                <div style={{
+                  background: '#bfdbfe', border: '1px solid #93c5fd', padding: '6px 12px',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  borderRadius: '3px 3px 0 0'
+                }}>
+                  <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#1e3a8a' }}>
+                    Candidate Pool {candFilters.assignedTo !== 'Any' ? `(Assigned to: ${candFilters.assignedTo})` : '(All Candidates)'}
+                  </span>
+                  <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#1e3a8a' }}>
+                    Total Found: {filteredCandidates.length} candidate(s)
+                  </span>
+                </div>
+
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ background: '#94a3b8', color: '#ffffff', borderBottom: '1px solid #cbd5e1' }}>
+                        <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Candidate #</th>
+                        <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Name</th>
+                        <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Job Title / Skills</th>
+                        <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Email</th>
+                        <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Phone</th>
+                        <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Location</th>
+                        <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Experience</th>
+                        <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Work Auth</th>
+                        <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Assigned To</th>
+                        <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Screened</th>
+                        <th style={{ padding: '7px 9px', fontWeight: 'bold' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredCandidates.length === 0 ? (
+                        <tr>
+                          <td colSpan="11" style={{ padding: '36px', textAlign: 'center', color: '#64748b' }}>
+                            No candidates found for selected filters. (Try setting Assigned To: "Any" to view the full pool)
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredCandidates.map((c, idx) => (
+                          <tr key={c.id || idx} style={{
+                            background: idx % 2 === 0 ? '#ffffff' : '#f8fafc',
+                            borderBottom: '1px solid #e2e8f0'
+                          }}>
+                            <td style={{ padding: '7px 9px', fontWeight: 'bold' }}>
+                              <span onClick={() => handleSelectExistingCandidate(c)} style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>
+                                {c.id}
+                              </span>
+                            </td>
+                            <td style={{ padding: '7px 9px', fontWeight: 'bold' }}>
+                              <span onClick={() => handleSelectExistingCandidate(c)} style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>
+                                {c.name}
+                              </span>
+                            </td>
+                            <td style={{ padding: '7px 9px', color: '#334155' }}>
+                              <div><strong>{c.role}</strong></div>
+                              <div style={{ color: '#64748b', fontSize: '10.5px' }}>{Array.isArray(c.skills) ? c.skills.slice(0, 3).join(', ') : ''}</div>
+                            </td>
+                            <td style={{ padding: '7px 9px', color: '#475569' }}>{c.email}</td>
+                            <td style={{ padding: '7px 9px', color: '#475569' }}>{c.phone}</td>
+                            <td style={{ padding: '7px 9px', color: '#475569' }}>{c.location}</td>
+                            <td style={{ padding: '7px 9px', color: '#475569' }}>{c.experience}</td>
+                            <td style={{ padding: '7px 9px', color: '#475569' }}>{c.workAuth}</td>
+                            <td style={{ padding: '7px 9px', color: '#16a34a', fontWeight: 'bold' }}>
+                              {c.assignedTo || userName}
+                            </td>
+                            <td style={{ padding: '7px 9px', color: c.screened === 'Yes' ? '#16a34a' : '#d97706', fontWeight: 'bold' }}>
+                              {c.screened}
+                            </td>
+                            <td style={{ padding: '7px 9px' }}>
+                              <span onClick={() => handleSelectExistingCandidate(c)} style={{ color: '#0066cc', textDecoration: 'underline', cursor: 'pointer', fontWeight: 'bold' }}>
+                                Submit to Req &gt;&gt;
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* ─────────────────────────────────────────────────────────────
+              VIEW MODE 1: STEP 1 - RESUME SEARCH & ADD CANDIDATE FORM
               ───────────────────────────────────────────────────────────── */}
           {viewMode === 'resumeSearch' && (
             <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
@@ -755,7 +1213,7 @@ function RecruiterDashboard() {
                     <select value={searchCandFilter.workAuth} onChange={e => setSearchCandFilter({ ...searchCandFilter, workAuth: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
                       <option>Any</option>
                       <option>US Citizen</option>
-                      <option>Green Card</option>
+                      <option>GC</option>
                       <option>H1B</option>
                     </select>
 
@@ -769,6 +1227,7 @@ function RecruiterDashboard() {
                     <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Assigned To:</label>
                     <select value={searchCandFilter.assignedTo} onChange={e => setSearchCandFilter({ ...searchCandFilter, assignedTo: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
                       <option>Any</option>
+                      <option>{userName}</option>
                       <option>Vaibhav Bisen</option>
                       <option>Nitin Bhosale</option>
                     </select>
@@ -889,7 +1348,7 @@ function RecruiterDashboard() {
           )}
 
           {/* ─────────────────────────────────────────────────────────────
-              VIEW MODE 2: STEP 2 - RESUME SUBMISSION FORM (IMAGES 2, 3, 4)
+              VIEW MODE 2: STEP 2 - RESUME SUBMISSION FORM
               ───────────────────────────────────────────────────────────── */}
           {viewMode === 'resumeSubmission' && (
             <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
@@ -1129,97 +1588,12 @@ function RecruiterDashboard() {
                     </div>
                   </div>
                 )}
-
-                {activeSubTab === 'notes' && (
-                  <div style={{ fontSize: '11.5px' }}>
-                    <div style={{ marginBottom: '16px' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
-                        <thead>
-                          <tr style={{ background: '#94a3b8', color: '#ffffff' }}>
-                            <th style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 'bold' }}>Notes</th>
-                            <th style={{ padding: '6px 10px', width: '220px', textAlign: 'left', fontWeight: 'bold' }}>Submitted By</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {submissionCandidate.interactionNotes?.map((n, idx) => (
-                            <tr key={n.id || idx} style={{ background: idx % 2 === 0 ? '#f8fafc' : '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
-                              <td style={{ padding: '8px 10px', color: '#1e293b', lineHeight: '1.5' }}>{n.note}</td>
-                              <td style={{ padding: '8px 10px', color: '#475569', fontSize: '11px' }}>
-                                <div>{n.author}</div>
-                                <div>{n.date}</div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <form onSubmit={(e) => {
-                      e.preventDefault()
-                      if (!newNoteText.trim()) return
-                      const newNote = {
-                        id: Date.now(),
-                        note: newNoteText,
-                        author: currentUser?.name || 'Vaibhav Bisen',
-                        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                      }
-                      setSubmissionCandidate(prev => ({
-                        ...prev,
-                        interactionNotes: [newNote, ...(prev.interactionNotes || [])]
-                      }))
-                      setNewNoteText('')
-                      alert('Note added successfully!')
-                    }}>
-                      <label style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#1e3a8a', display: 'block', marginBottom: '4px' }}>Write Note</label>
-                      <textarea rows={3} value={newNoteText} onChange={e => setNewNoteText(e.target.value)} placeholder="Add note or phone screen feedback..." style={{ width: '100%', maxWidth: '640px', padding: '6px', fontSize: '11.5px', border: '1px solid #cbd5e1', marginBottom: '8px' }} />
-                      <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-                        <button type="submit" style={{ background: '#f1f5f9', border: '1px solid #94a3b8', padding: '3px 16px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer' }}>Save Note</button>
-                      </div>
-                    </form>
-                  </div>
-                )}
-
-                {activeSubTab === 'history' && (
-                  <div style={{ fontSize: '11.5px' }}>
-                    <div style={{ fontWeight: 'bold', color: '#1e3a8a', marginBottom: '8px' }}>Candidate was submitted for these requisitions:</div>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
-                      <thead>
-                        <tr style={{ background: '#94a3b8', color: '#ffffff' }}>
-                          <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Requisition#</th>
-                          <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Position Title</th>
-                          <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Start Date</th>
-                          <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>End Date</th>
-                          <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>End Client</th>
-                          <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Bill Rate</th>
-                          <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Pay Rate</th>
-                          <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>History</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {submissionCandidate.submissionHistory?.map((h, idx) => (
-                          <tr key={h.reqId || idx} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                            <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>{h.reqId}</td>
-                            <td style={{ padding: '6px 8px', color: '#0066cc', fontWeight: 'bold' }}>{h.title}</td>
-                            <td style={{ padding: '6px 8px' }}>{h.startDate}</td>
-                            <td style={{ padding: '6px 8px' }}>{h.endDate}</td>
-                            <td style={{ padding: '6px 8px' }}>{h.endClient}</td>
-                            <td style={{ padding: '6px 8px' }}>{h.billRate}</td>
-                            <td style={{ padding: '6px 8px' }}>{h.payRate}</td>
-                            <td style={{ padding: '6px 8px' }}>
-                              <span style={{ color: '#0066cc', textDecoration: 'underline', cursor: 'pointer' }}>View</span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
               </div>
             </div>
           )}
 
           {/* ─────────────────────────────────────────────────────────────
-              VIEW MODE 3: SINGLE REQUISITION DETAIL VIEW (IMAGE 1)
+              VIEW MODE 3: SINGLE REQUISITION DETAIL VIEW
               ───────────────────────────────────────────────────────────── */}
           {viewMode === 'requisition' && selectedReq && (
             <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
@@ -1453,7 +1827,6 @@ function RecruiterDashboard() {
                   </div>
                 )}
 
-                {/* ─── TAB 3: POTENTIAL CANDIDATES ─── */}
                 {activeReqTab === 'potential' && (
                   <div style={{ fontSize: '11.5px' }}>
                     <div style={{ fontWeight: 'bold', color: '#1e3a8a', marginBottom: '10px' }}>
@@ -1534,19 +1907,16 @@ function RecruiterDashboard() {
           )}
 
           {/* ─────────────────────────────────────────────────────────────
-              VIEW MODE 4: ALL OPEN REQUISITIONS (PORTAL HOME + SEARCH REQUISITIONS FILTER)
+              TAB 1: REQUISITIONS VIEW (PORTAL HOME + SEARCH REQUISITIONS)
               ───────────────────────────────────────────────────────────── */}
-          {viewMode === 'portal' && (
+          {activeMainTab === 'requisitions' && viewMode === 'portal' && (
             <div>
-              {/* Breadcrumb path */}
               <div style={{ fontSize: '11px', color: '#1e3a8a', fontWeight: 'bold', marginBottom: '8px' }}>
                 You are here: <span style={{ color: '#0066cc', cursor: 'pointer' }}>Home</span> &gt; Requisitions
               </div>
 
-              {/* ═══════════ SEARCH REQUISITIONS FILTER PANEL (NEW UPLOADED SCREENSHOT) ═══════════ */}
+              {/* Search Requisitions Filter Panel */}
               <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 18px', marginBottom: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                
-                {/* Title & Add New Requisition Link */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <h2 style={{ margin: 0, fontSize: '15px', color: '#1e3a8a', fontWeight: 'bold' }}>
                     Search Requisitions
@@ -1559,7 +1929,6 @@ function RecruiterDashboard() {
                   </span>
                 </div>
 
-                {/* Collapsible Modify Search Banner */}
                 <div
                   onClick={() => setShowFilterPanel(prev => !prev)}
                   style={{
@@ -1572,12 +1941,11 @@ function RecruiterDashboard() {
                   <span>{showFilterPanel ? '▲ Hide Filters' : '▼ Show Filters'}</span>
                 </div>
 
-                {/* Filter Form Body */}
                 {showFilterPanel && (
                   <form onSubmit={e => { e.preventDefault(); setCurrentPage(1); }} style={{ border: '1px solid #cbd5e1', borderTop: 'none', padding: '14px 16px', background: '#fdfdfe' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '14px 30px', fontSize: '11.5px' }}>
                       
-                      {/* Left Filter Column */}
+                      {/* Left Column */}
                       <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '6px 10px', alignItems: 'center' }}>
                         <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Requisition #:</label>
                         <input type="text" value={reqFilters.reqId} onChange={e => setReqFilters({ ...reqFilters, reqId: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
@@ -1600,7 +1968,6 @@ function RecruiterDashboard() {
                           <option>NC</option>
                           <option>GA</option>
                           <option>FL</option>
-                          <option>MI</option>
                         </select>
 
                         <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Office:</label>
@@ -1639,7 +2006,7 @@ function RecruiterDashboard() {
                         </select>
                       </div>
 
-                      {/* Right Filter Column */}
+                      {/* Right Column */}
                       <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '6px 10px', alignItems: 'center' }}>
                         <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Creation Date:</label>
                         <input type="text" placeholder="MM/DD/YYYY" value={reqFilters.creationDate} onChange={e => setReqFilters({ ...reqFilters, creationDate: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
@@ -1704,7 +2071,6 @@ function RecruiterDashboard() {
 
                     </div>
 
-                    {/* Filter Submit Actions */}
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '12px' }}>
                       <button
                         type="button"
@@ -1749,7 +2115,7 @@ function RecruiterDashboard() {
                 )}
               </div>
 
-              {/* ═══════════ ALL OPEN REQUISITIONS TABLE ═══════════ */}
+              {/* All Open Requisitions Table */}
               <div style={{ background: '#ffffff', padding: '14px 18px', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                 <h2 style={{ margin: '0 0 2px', fontSize: '15px', color: '#16a34a', fontWeight: 'bold' }}>
                   COOLSOFT Recruitment Portal Home
