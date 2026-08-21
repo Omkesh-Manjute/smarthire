@@ -425,41 +425,16 @@ function RecruiterDashboard() {
     { name: 'Pankaj Maharwade', role: 'Senior Recruiter', email: 'pankaj.m@smarthire.com' }
   ]
 
-  const getJobAssignedRecruiters = (jobId, title = '') => {
+  const getJobAssignedRecruiters = (jobId) => {
     try {
-      const saved = localStorage.getItem(`smarthire_req_assigned_${jobId}`)
-      if (saved) return JSON.parse(saved)
+      const cleanId = String(jobId || '').replace('J-', '')
+      const saved = localStorage.getItem(`smarthire_req_assigned_${cleanId}`) || localStorage.getItem(`smarthire_req_assigned_J-${cleanId}`)
+      if (saved !== null && saved !== undefined) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed)) return parsed
+      }
     } catch (e) {}
-
-    const cleanId = String(jobId).replace('J-', '')
-    if (cleanId === '158938' || title.toLowerCase().includes('project manager')) {
-      return ['Vaibhav Bisen', 'Omkesh Manjute']
-    }
-    if (cleanId === '158766' || title.toLowerCase().includes('network admin')) {
-      return ['Vaibhav Bisen', 'Nitin Bhosale']
-    }
-    if (cleanId === '158420' || title.toLowerCase().includes('architect')) {
-      return ['Prudhvi Sevveti']
-    }
-    if (cleanId === '158310' || title.toLowerCase().includes('data engineer') || title.toLowerCase().includes('snowflake')) {
-      return ['Omkesh Manjute', 'Sukamal Chatterjee']
-    }
-    if (cleanId === '158204' || title.toLowerCase().includes('oracle') || title.toLowerCase().includes('dba')) {
-      return ['Vaibhav Bisen']
-    }
-    if (cleanId === '158112' || title.toLowerCase().includes('systems analyst')) {
-      return ['Vaibhav Bisen', 'Raj Barve']
-    }
-    if (cleanId === '157980' || title.toLowerCase().includes('.net')) {
-      return ['Sukamal Chatterjee']
-    }
-    if (cleanId === '157890' || title.toLowerCase().includes('dynamics') || title.toLowerCase().includes('power platform')) {
-      return ['Sukamal Chatterjee', 'Ajay Arya']
-    }
-    if (cleanId === '157812' || title.toLowerCase().includes('java')) {
-      return ['Nishant Kathane', 'Naveen Korimelli']
-    }
-    return ['Vaibhav Bisen']
+    return [] // Default is completely empty if not assigned
   }
 
   // Fetch jobs
@@ -473,12 +448,45 @@ function RecruiterDashboard() {
         const list = Array.isArray(data) ? data : data.jobs || data.data || []
         const mapped = list.map(j => ({
           ...j,
-          assignedRecruiters: getJobAssignedRecruiters(j.id, j.title)
+          assignedRecruiters: getJobAssignedRecruiters(j.id)
         }))
         setJobs(mapped)
       })
       .catch(err => console.error('Failed to load jobs:', err))
   }, [])
+
+  // Handler to save recruiter assignments specifically
+  const handleSaveRecruiterAssignments = (customList) => {
+    const assignedList = customList !== undefined ? customList : (editingFields.assignedRecruiters || [])
+    const cleanId = String(selectedReq?.id || '158938').replace('J-', '')
+    const fullId = selectedReq?.id ? (selectedReq.id.startsWith('J-') ? selectedReq.id : `J-${selectedReq.id}`) : `J-${cleanId}`
+
+    try {
+      localStorage.setItem(`smarthire_req_assigned_${cleanId}`, JSON.stringify(assignedList))
+      localStorage.setItem(`smarthire_req_assigned_${fullId}`, JSON.stringify(assignedList))
+    } catch (e) {}
+
+    // Update selectedReq
+    setSelectedReq(prev => prev ? ({ ...prev, assignedRecruiters: assignedList }) : prev)
+
+    // Update editingFields
+    setEditingFields(prev => ({ ...prev, assignedRecruiters: assignedList }))
+
+    // Update jobs list in state
+    setJobs(prev => prev.map(j => {
+      const jClean = String(j.id || '').replace('J-', '')
+      if (jClean === cleanId || j.id === fullId || j.id === `J-${cleanId}`) {
+        return {
+          ...j,
+          assignedRecruiters: assignedList
+        }
+      }
+      return j
+    }))
+
+    setSaveToastMessage(`✅ Assigned recruiters (${assignedList.length}) saved successfully for Requisition #${cleanId}!`)
+    setTimeout(() => setSaveToastMessage(null), 4500)
+  }
 
   // Open Requisition Detail
   const handleOpenReq = (job) => {
@@ -486,9 +494,7 @@ function RecruiterDashboard() {
     setViewMode('requisition')
     setActiveReqTab('details')
     const fullDesc = getFullDescriptionText(job)
-    const assigned = Array.isArray(job.assignedRecruiters) && job.assignedRecruiters.length > 0 
-      ? job.assignedRecruiters 
-      : getJobAssignedRecruiters(job.id, job.title)
+    const assigned = Array.isArray(job.assignedRecruiters) ? job.assignedRecruiters : getJobAssignedRecruiters(job.id)
 
     setEditingFields({
       title: job.title || '',
@@ -2030,7 +2036,7 @@ function RecruiterDashboard() {
                       </div>
 
                       {/* Quick Action Buttons */}
-                      <div style={{ display: 'flex', gap: '6px' }}>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                         <button
                           type="button"
                           onClick={() => {
@@ -2070,6 +2076,13 @@ function RecruiterDashboard() {
                         >
                           + Assign to Me ({userName})
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSaveRecruiterAssignments()}
+                          style={{ background: '#16a34a', color: '#ffffff', border: 'none', padding: '4px 16px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '2px', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
+                        >
+                          💾 Save Assignments
+                        </button>
                       </div>
                     </div>
 
@@ -2089,7 +2102,7 @@ function RecruiterDashboard() {
                         Currently Assigned ({editingFields.assignedRecruiters?.length || 0}):
                       </span>
                       {(!editingFields.assignedRecruiters || editingFields.assignedRecruiters.length === 0) ? (
-                        <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '11px' }}>No recruiters assigned yet</span>
+                        <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '11px' }}>No recruiters assigned yet (empty)</span>
                       ) : (
                         editingFields.assignedRecruiters.map(recName => (
                           <span
@@ -2127,7 +2140,7 @@ function RecruiterDashboard() {
                     </div>
 
                     {/* Recruiters Selection Table */}
-                    <div style={{ overflowX: 'auto', border: '1px solid #cbd5e1', borderRadius: '3px' }}>
+                    <div style={{ overflowX: 'auto', border: '1px solid #cbd5e1', borderRadius: '3px', marginBottom: '12px' }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left' }}>
                         <thead>
                           <tr style={{ background: '#94a3b8', color: '#ffffff' }}>
@@ -2202,6 +2215,20 @@ function RecruiterDashboard() {
                           })}
                         </tbody>
                       </table>
+                    </div>
+
+                    {/* Bottom Save Action Bar inside Tab */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', border: '1px solid #cbd5e1', padding: '8px 12px', borderRadius: '3px' }}>
+                      <span style={{ color: '#475569', fontSize: '11px', fontWeight: 'bold' }}>
+                        Selected: <span style={{ color: '#0284c7' }}>{editingFields.assignedRecruiters?.length || 0}</span> recruiter(s)
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleSaveRecruiterAssignments()}
+                        style={{ background: '#16a34a', color: '#ffffff', border: 'none', padding: '5px 20px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '2px', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
+                      >
+                        💾 Save Assigned Recruiters
+                      </button>
                     </div>
                   </div>
                 )}
@@ -2360,17 +2387,24 @@ function RecruiterDashboard() {
                 <button
                   type="button"
                   onClick={() => {
-                    const reqId = selectedReq?.id || 'J-158938'
+                    const cleanId = String(selectedReq?.id || '158938').replace('J-', '')
+                    const fullId = selectedReq?.id ? (selectedReq.id.startsWith('J-') ? selectedReq.id : `J-${selectedReq.id}`) : `J-${cleanId}`
                     const updatedAssigned = editingFields.assignedRecruiters || []
+
                     try {
-                      localStorage.setItem('smarthire_potential_candidates_158938', JSON.stringify(potentialCandidates))
-                      localStorage.setItem('smarthire_req_158938', JSON.stringify(editingFields))
-                      localStorage.setItem(`smarthire_req_assigned_${reqId}`, JSON.stringify(updatedAssigned))
+                      localStorage.setItem(`smarthire_potential_candidates_${cleanId}`, JSON.stringify(potentialCandidates))
+                      localStorage.setItem(`smarthire_req_${cleanId}`, JSON.stringify(editingFields))
+                      localStorage.setItem(`smarthire_req_assigned_${cleanId}`, JSON.stringify(updatedAssigned))
+                      localStorage.setItem(`smarthire_req_assigned_${fullId}`, JSON.stringify(updatedAssigned))
                     } catch (e) {}
+
+                    // Update selectedReq
+                    setSelectedReq(prev => prev ? ({ ...prev, title: editingFields.title || prev.title, assignedRecruiters: updatedAssigned }) : prev)
 
                     // Update jobs list in state
                     setJobs(prev => prev.map(j => {
-                      if (j.id === reqId) {
+                      const jClean = String(j.id || '').replace('J-', '')
+                      if (jClean === cleanId || j.id === fullId || j.id === `J-${cleanId}`) {
                         return {
                           ...j,
                           title: editingFields.title || j.title,
@@ -2380,7 +2414,7 @@ function RecruiterDashboard() {
                       return j
                     }))
 
-                    setSaveToastMessage(`✅ Requisition #${reqId.replace('J-', '')} updated successfully! Candidate statuses and assigned recruiters (${updatedAssigned.length}) saved.`)
+                    setSaveToastMessage(`✅ Requisition #${cleanId} updated successfully! Candidate statuses and assigned recruiters (${updatedAssigned.length}) saved.`)
                     setTimeout(() => setSaveToastMessage(null), 5000)
                   }}
                   style={{ background: '#e2e8f0', color: '#0f172a', border: '1px solid #94a3b8', padding: '5px 22px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '2px', boxShadow: 'inset 0 1px 0 #ffffff, 0 1px 2px rgba(0,0,0,0.05)' }}
@@ -2675,7 +2709,7 @@ function RecruiterDashboard() {
                             <td style={{ padding: '7px 9px', color: '#1e3a8a', fontWeight: 'bold' }}>
                               {Array.isArray(job.assignedRecruiters) && job.assignedRecruiters.length > 0
                                 ? job.assignedRecruiters.join(', ')
-                                : (job.postedByName || job.recruiter || 'Unassigned')}
+                                : ''}
                             </td>
                             <td style={{ padding: '7px 9px', color: '#16a34a', fontWeight: 'bold' }}>{job.status === 'Active' ? 'In-Progress' : (job.status || 'In-Progress')}</td>
                             <td style={{ padding: '7px 9px', color: '#475569' }}>SP</td>
