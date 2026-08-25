@@ -140,6 +140,7 @@ function RecruiterDashboard() {
     { id: 'rec-3', name: 'Raj', email: 'raj@coolsofttech.com', role: 'recruiter', refCode: 'raj', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
     { id: 'rec-4', name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com', role: 'recruiter', refCode: 'vaibhav-bisen', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
     { id: 'rec-5', name: 'Pankaj', email: 'pankajm@coolsofttech.com', role: 'recruiter', refCode: 'pankaj', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
+    { id: 'mgr-1', name: 'Alok Manager', email: 'manager@coolsofttech.com', role: 'manager', refCode: 'alok-manager', company: 'SmartHire LLC', isActive: true, password: 'manager123' },
     { id: 'emp-1', name: 'Rahul Sharma', email: 'rahul.s@coolsofttech.com', role: 'employee', parentRecruiterName: 'Vaibhav Bisen', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
     { id: 'emp-2', name: 'Priya Verma', email: 'priya.v@coolsofttech.com', role: 'employee', parentRecruiterName: 'Sukamal Chatterjee', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' }
   ]
@@ -191,9 +192,12 @@ function RecruiterDashboard() {
   const userRole = activeRoleOverride || currentUser?.role || (userName.toLowerCase().includes('omkesh') ? 'superadmin' : 'recruiter')
   
   const isAdmin = userRole === 'superadmin' || userRole === 'admin'
+  const isManager = userRole === 'manager'
   const isRecruiter = userRole === 'recruiter'
   const isEmployee = userRole === 'employee'
-  const isRecruiterRole = !isAdmin // True for recruiters and employees
+  const canReviewAndUseAI = isAdmin || isManager // AI Fit and Resume Review strictly restricted to Admin & Manager
+  const canAccessAdminPanel = isAdmin
+  const isRecruiterRole = isRecruiter || isEmployee
 
   // Top Nav Tab: 'requisitions' | 'candidates' | 'admin'
   const [activeMainTab, setActiveMainTab] = useState('requisitions')
@@ -207,6 +211,12 @@ function RecruiterDashboard() {
   const [quickSearchId, setQuickSearchId] = useState('')
   const [showFilterPanel, setShowFilterPanel] = useState(false)
 
+  // AI Fit & Resume Modal State (Admin & Manager Only)
+  const [showAiFitModal, setShowAiFitModal] = useState(false)
+  const [aiCandidate, setAiCandidate] = useState(null)
+  const [aiAnalysisResult, setAiAnalysisResult] = useState(null)
+  const [isAnalyzingAi, setIsAnalyzingAi] = useState(false)
+
   // User Management Modal State (Admin / Recruiter adding employee)
   const [showUserModal, setShowUserModal] = useState(false)
   const [editingUser, setEditingUser] = useState(null)
@@ -214,7 +224,7 @@ function RecruiterDashboard() {
     name: '',
     email: '',
     password: '',
-    role: 'recruiter',
+    role: 'employee',
     parentRecruiterName: '',
     company: 'SmartHire LLC',
     isActive: true
@@ -629,6 +639,24 @@ function RecruiterDashboard() {
       console.error('Failed saving requisition data to localStorage:', e)
     }
 
+    // 5. Save to backend database API so all devices and employees receive the update
+    try {
+      const token = localStorage.getItem('smarthire_token') || ''
+      const headers = { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
+      
+      fetch(`/api/jobs/${cleanId}/assign`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          jobId: cleanId,
+          title: editingFields.title || selectedReq?.title,
+          client: editingFields.customer || editingFields.endClient || selectedReq?.client,
+          status: editingFields.status || selectedReq?.status || 'In-Progress',
+          assignedRecruiters: assignedList
+        })
+      }).catch(e => console.warn('Background assignment sync notice:', e))
+    } catch (e) {}
+
     // Update selectedReq in state
     setSelectedReq(prev => prev ? ({
       ...prev,
@@ -661,6 +689,76 @@ function RecruiterDashboard() {
 
   // Alias for backward compatibility
   const handleSaveRecruiterAssignments = handleSaveRequisition
+
+  // Open Candidate Resume & AI Fit Modal (Strictly Admin & Manager)
+  const handleOpenAiFitModal = (candidate) => {
+    setAiCandidate(candidate)
+    setAiAnalysisResult(candidate.aiAnalysis || null)
+    setShowAiFitModal(true)
+    if (!candidate.aiAnalysis) {
+      handleRunAiAnalysis(candidate)
+    }
+  }
+
+  // Run AI Fit & Match Analysis for candidate vs current requisition
+  const handleRunAiAnalysis = async (candidateObj) => {
+    const cand = candidateObj || aiCandidate
+    if (!cand || !selectedReq) return
+
+    setIsAnalyzingAi(true)
+    try {
+      const token = localStorage.getItem('smarthire_token') || ''
+      const res = await fetch('/api/candidates/ai-fit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          candidate: {
+            name: cand.name,
+            role: cand.role || editingFields.title || selectedReq?.title || 'Consultant',
+            experience: cand.exp || editingFields.experience || selectedReq?.experience || '6 years',
+            skills: cand.skills || editingFields.skills || selectedReq?.skills || [],
+            payRate: cand.payRate || editingFields.payRate || selectedReq?.budget || '$74/hr',
+            payRateType: cand.payRateType || 'C2C',
+            workAuth: cand.workAuth || 'US Citizen / Authorized',
+            resumeText: cand.resumeText || cand.statusComments || `Senior professional candidate with extensive hands-on experience in ${Array.isArray(editingFields.skills) ? editingFields.skills.join(', ') : 'software engineering, enterprise delivery, and technology solutions'}. Submitted rate: ${cand.payRate}. Location: ${selectedReq.location || 'Remote / Hybrid'}.`
+          },
+          job: {
+            title: editingFields.title || selectedReq.title,
+            client: editingFields.customer || editingFields.endClient || selectedReq.client,
+            skills: editingFields.skills || selectedReq.skills || [],
+            desiredSkills: editingFields.desiredSkills || selectedReq.desiredSkills || [],
+            experience: editingFields.experience || selectedReq.experience || '5+ years',
+            budget: editingFields.payRate ? `$${editingFields.payRate}/hr` : (selectedReq.budget || '$75/hr'),
+            description: selectedReq.description || ''
+          }
+        })
+      })
+
+      const data = await res.json()
+      if (data.success && data.analysis) {
+        setAiAnalysisResult(data.analysis)
+        // Persist analysis onto potential candidate
+        setPotentialCandidates(prev => prev.map(c => c.id === cand.id ? { ...c, aiAnalysis: data.analysis } : c))
+      } else {
+        console.warn('AI analysis returned status:', data)
+      }
+    } catch (e) {
+      console.error('AI analysis request error:', e)
+    } finally {
+      setIsAnalyzingAi(false)
+    }
+  }
+
+  // Manager 1-Click Candidate Status Updater
+  const handleManagerUpdateStatus = (candidateId, newStatus) => {
+    const dateStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    handleUpdatePotentialCandidate(candidateId, 'status', newStatus)
+    setSaveToastMessage(`⚡ Candidate status updated to "${newStatus}" by ${userName} (${isManager ? 'Manager' : 'Admin'})!`)
+    setTimeout(() => setSaveToastMessage(null), 4000)
+  }
 
   // Open Requisition Detail
   const handleOpenReq = (job) => {
@@ -944,13 +1042,20 @@ function RecruiterDashboard() {
 
       // ─── STRICT ROLE-BASED ACCESS CONTROL (RBAC) ───
       // If user is an Employee (Sub-recruiter), show ONLY requirements assigned directly to them!
-      // Lead Recruiters and Admins have full access to view all open requisitions to manage & assign.
+      // Lead Recruiters, Managers, and Admins have full access to view all open requisitions.
       if (isEmployee) {
         const assignedList = Array.isArray(j.assignedRecruiters) ? j.assignedRecruiters.map(r => String(r || '').toLowerCase().trim()) : []
         const userIdent = userName.toLowerCase().trim()
         const userEmailIdent = (currentUser?.email || '').toLowerCase().trim()
+        const firstNameIdent = (userName.split(' ')[0] || '').toLowerCase().trim()
+        const uidIdent = (currentUser?.uid || '').toLowerCase().trim()
 
-        const isDirectlyAssigned = assignedList.some(r => r.includes(userIdent) || userIdent.includes(r) || (userEmailIdent && r.includes(userEmailIdent)))
+        const isDirectlyAssigned = assignedList.some(r =>
+          r.includes(userIdent) || userIdent.includes(r) ||
+          (userEmailIdent && (r.includes(userEmailIdent) || userEmailIdent.includes(r))) ||
+          (firstNameIdent && (r.includes(firstNameIdent) || firstNameIdent.includes(r))) ||
+          (uidIdent && r.includes(uidIdent))
+        )
         if (!isDirectlyAssigned) {
           return false
         }
@@ -1092,6 +1197,14 @@ function RecruiterDashboard() {
         { id: 'process', name: 'Process', link: '/ats' }
       ]
     }
+    if (isManager) {
+      return [
+        { id: 'requisitions', name: 'Requisitions (Review)' },
+        { id: 'candidates', name: 'Candidates & AI Fit' },
+        { id: 'reports', name: 'Reports', link: '/reports' },
+        { id: 'process', name: 'Process', link: '/ats' }
+      ]
+    }
     if (isRecruiter) {
       return [
         { id: 'requisitions', name: 'My Requisitions' },
@@ -1099,11 +1212,11 @@ function RecruiterDashboard() {
         { id: 'candidates', name: 'My Candidates' }
       ]
     }
-    // Employee
+    // Employee (Restricted Workspace: strictly Requisitions)
     return [
       { id: 'requisitions', name: 'My Requisitions' }
     ]
-  }, [isAdmin, isRecruiter, isEmployee])
+  }, [isAdmin, isManager, isRecruiter, isEmployee])
 
   return (
     <SiteLayout>
@@ -2537,7 +2650,10 @@ function RecruiterDashboard() {
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
                         <thead>
                           <tr style={{ background: '#94a3b8', color: '#ffffff' }}>
-                            <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Name</th>
+                            <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Candidate Name</th>
+                            {canReviewAndUseAI && (
+                              <th style={{ padding: '6px 8px', fontWeight: 'bold', textAlign: 'center', background: '#0284c7' }}>🤖 AI Fit Review</th>
+                            )}
                             <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Pay Rate</th>
                             <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Pay Rate Type</th>
                             <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Assigned By</th>
@@ -2551,7 +2667,7 @@ function RecruiterDashboard() {
                         <tbody>
                           {potentialCandidates.length === 0 ? (
                             <tr>
-                              <td colSpan="9" style={{ padding: '24px', textAlign: 'center', color: '#64748b', background: '#f8fafc' }}>
+                              <td colSpan={canReviewAndUseAI ? "10" : "9"} style={{ padding: '24px', textAlign: 'center', color: '#64748b', background: '#f8fafc' }}>
                                 No candidates submitted to this requisition yet.{' '}
                                 <span
                                   onClick={() => setShowAddCandidateModal(true)}
@@ -2565,22 +2681,60 @@ function RecruiterDashboard() {
                             potentialCandidates.map((pc, idx) => (
                               <tr key={pc.id} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                                 <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>
-                                  <span onClick={() => {
-                                    const parts = pc.name.split(' ')
-                                    setSubmissionCandidate(prev => ({
-                                      ...prev,
-                                      id: pc.id,
-                                      firstName: parts[0] || 'Candidate',
-                                      lastName: parts.slice(1).join(' ') || '',
-                                      proposedPayRate: pc.payRate.replace(/[^0-9]/g, '') || '74',
-                                      proposedRateType: pc.payRateType || 'C2C'
-                                    }))
-                                    setViewMode('resumeSubmission')
-                                    setActiveSubTab('details')
-                                  }} style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>
-                                    {pc.name}
-                                  </span>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    <span onClick={() => {
+                                      if (canReviewAndUseAI) {
+                                        handleOpenAiFitModal(pc)
+                                      } else {
+                                        const parts = pc.name.split(' ')
+                                        setSubmissionCandidate(prev => ({
+                                          ...prev,
+                                          id: pc.id,
+                                          firstName: parts[0] || 'Candidate',
+                                          lastName: parts.slice(1).join(' ') || '',
+                                          proposedPayRate: pc.payRate.replace(/[^0-9]/g, '') || '74',
+                                          proposedRateType: pc.payRateType || 'C2C'
+                                        }))
+                                        setViewMode('resumeSubmission')
+                                        setActiveSubTab('details')
+                                      }
+                                    }} style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>
+                                      {pc.name}
+                                    </span>
+                                    {canReviewAndUseAI && (
+                                      <span
+                                        onClick={() => handleOpenAiFitModal(pc)}
+                                        style={{ fontSize: '10px', color: '#0284c7', cursor: 'pointer', fontWeight: 'bold' }}
+                                      >
+                                        📄 View Resume & Profile
+                                      </span>
+                                    )}
+                                  </div>
                                 </td>
+                                {canReviewAndUseAI && (
+                                  <td style={{ padding: '6px 8px', textAlign: 'center' }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenAiFitModal(pc)}
+                                      style={{
+                                        background: pc.aiAnalysis ? 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)' : 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                                        color: '#ffffff',
+                                        border: 'none',
+                                        padding: '4px 10px',
+                                        fontSize: '10.5px',
+                                        fontWeight: 'bold',
+                                        borderRadius: '3px',
+                                        cursor: 'pointer',
+                                        boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                      }}
+                                    >
+                                      <span>{pc.aiAnalysis ? `🎯 ${pc.aiAnalysis.fitScore}% Match` : '🤖 AI Fit'}</span>
+                                    </button>
+                                  </td>
+                                )}
                                 <td style={{ padding: '6px 8px', color: '#1e293b' }}>{pc.payRate}</td>
                                 <td style={{ padding: '6px 8px', color: '#1e293b' }}>{pc.payRateType}</td>
                                 <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{pc.assignedBy}</td>
@@ -3770,6 +3924,261 @@ function RecruiterDashboard() {
                 </div>
 
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* ═══════════ MODAL 3: CANDIDATE RESUME & AI FIT MATCH SUMMARIZER (ADMIN & MANAGER ONLY) ═══════════ */}
+        {showAiFitModal && canReviewAndUseAI && aiCandidate && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(3px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '16px'
+          }}>
+            <div style={{
+              background: '#ffffff', borderRadius: '8px', width: '100%', maxWidth: '850px', maxHeight: '90vh',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflowY: 'auto', border: '1px solid #94a3b8',
+              display: 'flex', flexDirection: 'column'
+            }}>
+              
+              {/* Modal Header */}
+              <div style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', color: '#ffffff', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '18px' }}>🤖</span>
+                    <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold' }}>
+                      AI Candidate Resume & Job-Fit Summarizer
+                    </h3>
+                    <span style={{ background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 'bold' }}>
+                      {isAdmin ? 'ADMIN ACCESS' : 'MANAGER ACCESS'}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#e0f2fe', marginTop: '3px' }}>
+                    Evaluating candidate against Requisition #{selectedReq?.id?.replace('J-', '') || '158938'} ({selectedReq?.title || 'Open Position'})
+                  </div>
+                </div>
+                <span
+                  onClick={() => setShowAiFitModal(false)}
+                  style={{ color: '#ffffff', fontSize: '24px', fontWeight: 'bold', cursor: 'pointer', lineHeight: '1' }}
+                >
+                  &times;
+                </span>
+              </div>
+
+              {/* Modal Body */}
+              <div style={{ padding: '20px', fontSize: '12px', flex: 1 }}>
+
+                {/* Candidate Quick Header Strip */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', background: '#f8fafc', padding: '12px 16px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+                  <div>
+                    <span style={{ color: '#64748b', fontSize: '10.5px', display: 'block' }}>Candidate Full Name</span>
+                    <strong style={{ color: '#1e3a8a', fontSize: '13px' }}>{aiCandidate.name}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: '#64748b', fontSize: '10.5px', display: 'block' }}>Proposed Pay Rate</span>
+                    <strong style={{ color: '#166534', fontSize: '13px' }}>{aiCandidate.payRate} ({aiCandidate.payRateType || 'C2C'})</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: '#64748b', fontSize: '10.5px', display: 'block' }}>Current Status</span>
+                    <span style={{ background: '#dbeafe', color: '#1e40af', padding: '2px 6px', borderRadius: '3px', fontWeight: 'bold', fontSize: '11px' }}>
+                      {aiCandidate.status}
+                    </span>
+                  </div>
+                  <div>
+                    <span style={{ color: '#64748b', fontSize: '10.5px', display: 'block' }}>Assigned By</span>
+                    <strong style={{ color: '#0f172a' }}>{aiCandidate.assignedBy || userName}</strong>
+                  </div>
+                </div>
+
+                {/* AI Fit Analysis Control & Results */}
+                <div style={{ border: '1px solid #bfdbfe', borderRadius: '6px', background: '#eff6ff', padding: '16px', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '16px' }}>⚡</span>
+                      <strong style={{ color: '#1e3a8a', fontSize: '13.5px' }}>AI Match & Relevance Intelligence</strong>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={isAnalyzingAi}
+                      onClick={() => handleRunAiAnalysis(aiCandidate)}
+                      style={{
+                        background: isAnalyzingAi ? '#94a3b8' : 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)',
+                        color: '#ffffff',
+                        border: 'none',
+                        padding: '6px 14px',
+                        fontSize: '11.5px',
+                        fontWeight: 'bold',
+                        borderRadius: '4px',
+                        cursor: isAnalyzingAi ? 'not-allowed' : 'pointer',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                      }}
+                    >
+                      {isAnalyzingAi ? '⏳ Analyzing Resume Fit...' : '🔄 Re-Analyze with AI'}
+                    </button>
+                  </div>
+
+                  {isAnalyzingAi ? (
+                    <div style={{ textAlign: 'center', padding: '24px', color: '#0369a1' }}>
+                      <div style={{ fontSize: '28px', marginBottom: '8px' }}>🤖 ⚙️</div>
+                      <div style={{ fontWeight: 'bold', fontSize: '13px' }}>Groq AI is comparing candidate skills against requisition criteria...</div>
+                      <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>Evaluating technical proficiencies, rate margin, and interview suitability</div>
+                    </div>
+                  ) : aiAnalysisResult ? (
+                    <div>
+                      {/* Fit Score Banner */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '12px 16px', marginBottom: '14px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                          <div style={{
+                            width: '54px', height: '54px', borderRadius: '50%',
+                            background: aiAnalysisResult.fitScore >= 85 ? 'linear-gradient(135deg, #16a34a, #15803d)' : 'linear-gradient(135deg, #0284c7, #0369a1)',
+                            color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '18px', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.15)'
+                          }}>
+                            {aiAnalysisResult.fitScore}%
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '14px', fontWeight: 'bold', color: aiAnalysisResult.fitScore >= 85 ? '#166534' : '#0369a1' }}>
+                              {aiAnalysisResult.fitLevel || 'Strong Match'}
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#64748b' }}>
+                              Recommendation: <strong style={{ color: '#0f172a' }}>{aiAnalysisResult.interviewRecommendation || 'Recommend for Technical Round'}</strong>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{ textAlign: 'right', fontSize: '11px', color: '#475569' }}>
+                          <div>Experience: <strong style={{ color: '#0f172a' }}>{aiAnalysisResult.experienceMatch}</strong></div>
+                          <div>Budget / Rate: <strong style={{ color: '#0f172a' }}>{aiAnalysisResult.rateMatch}</strong></div>
+                        </div>
+                      </div>
+
+                      {/* Skills Grid: Matched vs Missing */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '10px 12px' }}>
+                          <div style={{ fontWeight: 'bold', color: '#166534', fontSize: '11.5px', marginBottom: '6px' }}>
+                            ✅ Matched Technical Skills
+                          </div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                            {Array.isArray(aiAnalysisResult.matchedSkills) && aiAnalysisResult.matchedSkills.length > 0 ? (
+                              aiAnalysisResult.matchedSkills.map((s, i) => (
+                                <span key={i} style={{ background: '#dcfce7', color: '#15803d', border: '1px solid #86efac', padding: '2px 8px', borderRadius: '12px', fontSize: '10.5px', fontWeight: 'bold' }}>
+                                  ✓ {s}
+                                </span>
+                              ))
+                            ) : (
+                              <span style={{ color: '#64748b', fontSize: '11px' }}>Core skills aligned</span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '6px', padding: '10px 12px' }}>
+                          <div style={{ fontWeight: 'bold', color: '#c2410c', fontSize: '11.5px', marginBottom: '6px' }}>
+                            ⚠️ Skill Gaps / Areas to Probe
+                          </div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                            {Array.isArray(aiAnalysisResult.missingSkills) && aiAnalysisResult.missingSkills.length > 0 ? (
+                              aiAnalysisResult.missingSkills.map((s, i) => (
+                                <span key={i} style={{ background: '#ffedd5', color: '#9a3412', border: '1px solid #fdba74', padding: '2px 8px', borderRadius: '12px', fontSize: '10.5px', fontWeight: 'bold' }}>
+                                  ? {s}
+                                </span>
+                              ))
+                            ) : (
+                              <span style={{ color: '#166534', fontSize: '11px' }}>No critical gaps identified</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Strengths & Interview Notes */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px' }}>
+                          <strong style={{ color: '#1e3a8a', fontSize: '11.5px', display: 'block', marginBottom: '4px' }}>Candidate Strengths:</strong>
+                          <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '11px', color: '#334155' }}>
+                            {Array.isArray(aiAnalysisResult.strengths) && aiAnalysisResult.strengths.map((st, i) => (
+                              <li key={i} style={{ marginBottom: '3px' }}>{st}</li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px' }}>
+                          <strong style={{ color: '#b45309', fontSize: '11.5px', display: 'block', marginBottom: '4px' }}>Interview Probing Points:</strong>
+                          <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '11px', color: '#334155' }}>
+                            {Array.isArray(aiAnalysisResult.concerns) && aiAnalysisResult.concerns.map((cn, i) => (
+                              <li key={i} style={{ marginBottom: '3px' }}>{cn}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+
+                      {/* Executive Summary */}
+                      <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '10px 14px' }}>
+                        <strong style={{ color: '#1e3a8a', fontSize: '11.5px', display: 'block', marginBottom: '3px' }}>AI Executive Summary:</strong>
+                        <p style={{ margin: 0, color: '#334155', lineHeight: '1.4', fontSize: '11.5px' }}>
+                          {aiAnalysisResult.summary}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ textAlign: 'center', padding: '14px', color: '#64748b' }}>
+                      Click <strong>"Re-Analyze with AI"</strong> to generate a complete match report.
+                    </div>
+                  )}
+                </div>
+
+                {/* Candidate Resume & Profile Details Section */}
+                <div style={{ border: '1px solid #cbd5e1', borderRadius: '6px', background: '#ffffff', padding: '14px' }}>
+                  <div style={{ fontWeight: 'bold', color: '#1e3a8a', fontSize: '13px', marginBottom: '8px' }}>
+                    📄 Candidate Profile & Formatted Resume Text
+                  </div>
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '12px', maxHeight: '200px', overflowY: 'auto', fontFamily: 'monospace', fontSize: '11px', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>
+                    {aiCandidate.resumeText || aiCandidate.statusComments || `NAME: ${aiCandidate.name}
+ROLE: ${aiCandidate.role || editingFields.title || selectedReq?.title || 'Senior Engineer'}
+EXPERIENCE: ${aiCandidate.exp || '6+ Years'}
+SKILLS: ${Array.isArray(editingFields.skills) ? editingFields.skills.join(', ') : 'React, Node.js, SQL, REST APIs'}
+PAY RATE: ${aiCandidate.payRate} (${aiCandidate.payRateType || 'C2C'})
+WORK AUTHORIZATION: ${aiCandidate.workAuth || 'US Citizen / Authorized'}
+
+SUMMARY:
+Results-driven technology consultant with proven track record of successful enterprise deliveries and technical problem solving. Highly experienced in modern application architecture, responsive design, and agile team collaboration.`}
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Modal Footer with Manager 1-Click Status Actions */}
+              <div style={{ background: '#f8fafc', borderTop: '1px solid #cbd5e1', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleManagerUpdateStatus(aiCandidate.id, 'Int-ApprovedByManager')
+                      setShowAiFitModal(false)
+                    }}
+                    style={{ background: '#16a34a', color: '#ffffff', border: 'none', padding: '6px 14px', fontSize: '11.5px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer' }}
+                  >
+                    ✅ Approve Candidate (Manager Review)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleManagerUpdateStatus(aiCandidate.id, 'Client-InterviewScheduled')
+                      setShowAiFitModal(false)
+                    }}
+                    style={{ background: '#0284c7', color: '#ffffff', border: 'none', padding: '6px 14px', fontSize: '11.5px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer' }}
+                  >
+                    📅 Schedule Interview
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowAiFitModal(false)}
+                  style={{ background: '#64748b', color: '#ffffff', border: 'none', padding: '6px 16px', fontSize: '11.5px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer' }}
+                >
+                  ✕ Close
+                </button>
+              </div>
+
             </div>
           </div>
         )}

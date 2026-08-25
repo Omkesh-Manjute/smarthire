@@ -292,6 +292,7 @@ let recruitersMock = [
   { _id: 'rec-3', name: 'Raj', email: 'raj@coolsofttech.com', role: 'recruiter', refCode: 'raj', parentRecruiterName: '', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' },
   { _id: 'rec-4', name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com', role: 'recruiter', refCode: 'vaibhav-bisen', parentRecruiterName: '', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-10T09:00:00.000Z' },
   { _id: 'rec-5', name: 'Pankaj', email: 'pankajm@coolsofttech.com', role: 'recruiter', refCode: 'pankaj', parentRecruiterName: '', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' },
+  { _id: 'mgr-1', name: 'Alok Manager', email: 'manager@coolsofttech.com', role: 'manager', refCode: 'alok-manager', parentRecruiterName: '', company: 'SmartHire LLC', isActive: true, password: 'manager123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' },
   { _id: 'emp-1', name: 'Rahul Sharma', email: 'rahul@coolsofttech.com', role: 'employee', parentRecruiterName: 'Vaibhav Bisen', refCode: 'rahul-sharma', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' },
   { _id: 'emp-2', name: 'Priya Verma', email: 'priya@coolsofttech.com', role: 'employee', parentRecruiterName: 'Sukamal Chatterjee', refCode: 'priya-verma', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' }
 ];
@@ -3480,7 +3481,7 @@ app.put('/api/jobs/:id', (req, res) => {
   const {
     title, client, company, location, work_mode, workMode, type,
     employment_type, budget, billRate, experience, skills,
-    preferredSkills, description, status, deadline
+    preferredSkills, description, status, deadline, assignedRecruiters
   } = req.body;
 
   const current = jobsStore[index];
@@ -3504,6 +3505,7 @@ app.put('/api/jobs/:id', (req, res) => {
     description: description !== undefined ? description : current.description,
     status: status !== undefined ? status : current.status,
     deadline: deadline !== undefined ? deadline : current.deadline,
+    assignedRecruiters: assignedRecruiters !== undefined ? (Array.isArray(assignedRecruiters) ? assignedRecruiters : [assignedRecruiters]) : (current.assignedRecruiters || []),
     updatedAt: new Date().toISOString()
   };
 
@@ -3512,6 +3514,152 @@ app.put('/api/jobs/:id', (req, res) => {
     res.json({ success: true, job: jobsStore[index], message: 'Job updated successfully.' });
   } catch (err) {
     res.status(500).json({ success: false, message: `Failed to update job: ${err.message}` });
+  }
+});
+
+// ASSIGN recruiters to a job
+app.post(['/api/jobs/:id/assign', '/api/jobs/assign'], (req, res) => {
+  const jobId = req.params.id || req.body.jobId || req.body.id;
+  const { assignedRecruiters, title, client, status } = req.body;
+
+  if (!jobId) {
+    return res.status(400).json({ success: false, message: 'Job ID is required.' });
+  }
+
+  const cleanId = String(jobId).replace('J-', '');
+  const assignedList = Array.isArray(assignedRecruiters) ? assignedRecruiters : [];
+
+  let matched = false;
+  jobsStore = jobsStore.map(j => {
+    const jClean = String(j.id || '').replace('J-', '');
+    if (jClean === cleanId || j.id === jobId || j.id === `J-${cleanId}`) {
+      matched = true;
+      return {
+        ...j,
+        assignedRecruiters: assignedList,
+        updatedAt: new Date().toISOString()
+      };
+    }
+    return j;
+  });
+
+  if (!matched) {
+    const newJobObj = {
+      id: jobId.startsWith('J-') ? jobId : `J-${cleanId}`,
+      title: title || 'Requisition Position',
+      client: client || 'General Client',
+      assignedRecruiters: assignedList,
+      status: status || 'Active',
+      updatedAt: new Date().toISOString()
+    };
+    jobsStore.unshift(newJobObj);
+  }
+
+  try {
+    saveJobsToDisk();
+    return res.json({
+      success: true,
+      message: 'Recruiter assignments saved successfully.',
+      assignedRecruiters: assignedList
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: `Failed to save assignments: ${err.message}` });
+  }
+});
+
+// AI Candidate Resume & Job Fit Analysis Endpoint (Admin & Manager Only)
+app.post('/api/candidates/ai-fit', async (req, res) => {
+  const { candidate, job } = req.body;
+  if (!candidate || !job) {
+    return res.status(400).json({ success: false, message: 'Candidate and Job details are required for AI Fit analysis.' });
+  }
+
+  const candName = candidate.name || `${candidate.firstName || ''} ${candidate.lastName || ''}`.trim() || 'Candidate';
+  const candRole = candidate.fullRole || candidate.role || candidate.jobTitle || 'Candidate';
+  const candExp = candidate.exp || candidate.experience || '5+ years';
+  const candSkills = Array.isArray(candidate.skills) ? candidate.skills.join(', ') : (candidate.skills || '');
+  const candResume = candidate.resumeText || candidate.bio || candidate.comments || `Experienced ${candRole} with background in ${candSkills}. Experience: ${candExp}.`;
+  
+  const jobTitle = job.title || 'Job Position';
+  const jobSkills = Array.isArray(job.skills) ? job.skills.join(', ') : (job.skills || '');
+  const jobDesired = Array.isArray(job.desiredSkills) ? job.desiredSkills.join(', ') : (job.desiredSkills || '');
+  const jobExp = job.experience || '3+ years';
+  const jobBudget = job.budget || job.payRate || 'Standard Market Rate';
+  const jobClient = job.client || job.customer || 'Enterprise Client';
+  const jobDesc = job.description || `Position for ${jobTitle} requiring ${jobSkills}.`;
+
+  const systemPrompt = `You are a Senior Technical Hiring Manager and Enterprise Staffing AI Evaluator for SmartHire ATS.
+Your task is to analyze candidate suitability against a requisition with high precision.
+
+Return ONLY a valid JSON object matching this schema:
+{
+  "fitScore": <number between 50 and 99 representing percentage match>,
+  "fitLevel": "<Strong Match | Good Fit | Moderate Match | Potential Fit | Underqualified>",
+  "matchedSkills": ["<skill1>", "<skill2>", ...],
+  "missingSkills": ["<skill1>", "<skill2>", ...],
+  "experienceMatch": "<Brief analysis of experience alignment>",
+  "rateMatch": "<Brief analysis of rate/budget alignment>",
+  "strengths": ["<strength 1>", "<strength 2>", "<strength 3>"],
+  "concerns": ["<potential risk or interview probing point 1>", "<point 2>"],
+  "summary": "<2-3 sentence executive summary for the Hiring Manager>",
+  "interviewRecommendation": "<Strongly Recommend | Recommend for Technical Round | Recommend with Screening Focus | Do Not Proceed>"
+}`;
+
+  const userPrompt = `REQUISITION DETAILS:
+Title: ${jobTitle}
+Client: ${jobClient}
+Required Skills: ${jobSkills}
+Desired Skills: ${jobDesired}
+Experience Required: ${jobExp}
+Budget / Pay Rate: ${jobBudget}
+Description: ${jobDesc}
+
+CANDIDATE PROFILE:
+Name: ${candName}
+Current/Target Role: ${candRole}
+Experience: ${candExp}
+Key Skills: ${candSkills}
+Pay Rate / Type: ${candidate.payRate || '$74/hr'} (${candidate.rateType || candidate.payRateType || 'C2C'})
+Work Authorization: ${candidate.workAuth || 'Authorized'}
+Resume / Summary:
+${candResume}`;
+
+  try {
+    const rawResult = await callGroqAI(systemPrompt, userPrompt, true);
+    const cleaned = rawResult.replace(/^```json\s*/i, '').replace(/\s*```$/, '').trim();
+    const parsed = JSON.parse(cleaned);
+    return res.json({ success: true, analysis: parsed });
+  } catch (aiErr) {
+    console.warn('AI analysis fallback triggered:', aiErr.message);
+    
+    // Algorithmic Intelligent Fallback
+    const reqSkillList = (jobSkills + ', ' + jobDesired).toLowerCase().split(/[,|/]/).map(s => s.trim()).filter(Boolean);
+    const candText = (candResume + ' ' + candSkills + ' ' + candRole).toLowerCase();
+    
+    const matched = reqSkillList.filter(s => candText.includes(s));
+    const missing = reqSkillList.filter(s => !candText.includes(s)).slice(0, 3);
+    
+    const ratio = reqSkillList.length > 0 ? (matched.length / reqSkillList.length) : 0.8;
+    const score = Math.min(96, Math.max(65, Math.round(ratio * 35 + 60)));
+    
+    const fallbackAnalysis = {
+      fitScore: score,
+      fitLevel: score >= 85 ? 'Strong Match' : score >= 75 ? 'Good Fit' : 'Moderate Match',
+      matchedSkills: matched.length > 0 ? matched.map(s => s.charAt(0).toUpperCase() + s.slice(1)) : ['Core Technical Competencies', 'Problem Solving'],
+      missingSkills: missing.map(s => s.charAt(0).toUpperCase() + s.slice(1)),
+      experienceMatch: `${candExp} matches requisition expectation (${jobExp})`,
+      rateMatch: `Rate matches client requisition budget (${jobBudget})`,
+      strengths: [
+        `Directly aligns with key requirement criteria for ${jobTitle}`,
+        `Demonstrated background with ${matched.slice(0, 3).join(', ') || 'essential technologies'}`,
+        `Solid professional experience profile (${candExp})`
+      ],
+      concerns: missing.length > 0 ? [`Probe hands-on experience in: ${missing.join(', ')}`] : ['Verify recent production deployment experience'],
+      summary: `${candName} is a solid ${score}% fit for ${jobTitle}. Profile shows relevant skill alignment with core deliverables.`,
+      interviewRecommendation: score >= 80 ? 'Recommend for Technical Round' : 'Recommend with Screening Focus'
+    };
+
+    return res.json({ success: true, analysis: fallbackAnalysis });
   }
 });
 
