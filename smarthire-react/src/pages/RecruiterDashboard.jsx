@@ -133,17 +133,52 @@ function RecruiterDashboard() {
   const [jobs, setJobs] = useState([])
   const [candidates, setCandidates] = useState(legacyCandidateData)
   
-  // User auth state
+  // ─── DYNAMIC TEAM USERS & MULTI-LEVEL RBAC ───
+  const DEFAULT_USERS_LIST = [
+    { id: 'rec-1', name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', company: 'SmartHire LLC', isActive: true, password: 'admin' },
+    { id: 'rec-2', name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com', role: 'recruiter', refCode: 'sukamal-chatterjee', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
+    { id: 'rec-3', name: 'Raj', email: 'raj@coolsofttech.com', role: 'recruiter', refCode: 'raj', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
+    { id: 'rec-4', name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com', role: 'recruiter', refCode: 'vaibhav-bisen', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
+    { id: 'rec-5', name: 'Pankaj', email: 'pankajm@coolsofttech.com', role: 'recruiter', refCode: 'pankaj', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
+    { id: 'emp-1', name: 'Rahul Sharma', email: 'rahul.s@coolsofttech.com', role: 'employee', parentRecruiterName: 'Vaibhav Bisen', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
+    { id: 'emp-2', name: 'Priya Verma', email: 'priya.v@coolsofttech.com', role: 'employee', parentRecruiterName: 'Sukamal Chatterjee', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' }
+  ]
+
+  const [teamUsers, setTeamUsers] = useState(() => {
+    try {
+      const saved = localStorage.getItem('smarthire_recruiters')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+    } catch (e) {}
+    return DEFAULT_USERS_LIST
+  })
+
+  const saveTeamUsers = (updatedList) => {
+    setTeamUsers(updatedList)
+    try {
+      localStorage.setItem('smarthire_recruiters', JSON.stringify(updatedList))
+    } catch (e) {}
+  }
+
+  // User auth state & RBAC detection
   const userStr = localStorage.getItem('smarthire_user') || localStorage.getItem('verifyhire_user')
   let currentUser = null
   try {
     if (userStr) currentUser = JSON.parse(userStr)
   } catch (e) {}
 
-  const userName = currentUser?.name || currentUser?.displayName || 'Omkesh Manjute'
-  const isRecruiterRole = currentUser?.role === 'recruiter' || !currentUser?.role || currentUser?.role !== 'admin'
+  const userName = currentUser?.name || currentUser?.displayName || 'Omkesh'
+  const activeRoleOverride = localStorage.getItem('smarthire_active_role')
+  const userRole = activeRoleOverride || currentUser?.role || (userName.toLowerCase().includes('omkesh') ? 'superadmin' : 'recruiter')
+  
+  const isAdmin = userRole === 'superadmin' || userRole === 'admin'
+  const isRecruiter = userRole === 'recruiter'
+  const isEmployee = userRole === 'employee'
+  const isRecruiterRole = !isAdmin // True for recruiters and employees
 
-  // Top Nav Tab: 'requisitions' | 'candidates'
+  // Top Nav Tab: 'requisitions' | 'candidates' | 'admin'
   const [activeMainTab, setActiveMainTab] = useState('requisitions')
 
   // Navigation Flow State: 'portal' | 'requisition' | 'resumeSearch' | 'resumeSubmission'
@@ -154,6 +189,37 @@ function RecruiterDashboard() {
   const [pageSize, setPageSize] = useState(25)
   const [quickSearchId, setQuickSearchId] = useState('')
   const [showFilterPanel, setShowFilterPanel] = useState(true)
+
+  // User Management Modal State (Admin / Recruiter adding employee)
+  const [showUserModal, setShowUserModal] = useState(false)
+  const [editingUser, setEditingUser] = useState(null)
+  const [userFormData, setUserFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'recruiter',
+    parentRecruiterName: '',
+    company: 'SmartHire LLC',
+    isActive: true
+  })
+  const [userSearchQuery, setUserSearchQuery] = useState('')
+  const [userRoleFilter, setUserRoleFilter] = useState('All')
+
+  // Candidate Quick Add Modal State for Requisition Detail
+  const [showAddCandidateModal, setShowAddCandidateModal] = useState(false)
+  const [newCandReqForm, setNewCandReqForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    payRate: '70',
+    payRateType: 'C2C',
+    workAuth: 'US Citizen',
+    exp: '6',
+    skills: '',
+    comments: 'Sourced directly for this requirement',
+    status: 'Int-SubmittedToManager'
+  })
 
   // ─── SEARCH REQUISITIONS FILTER STATE ───
   const [reqFilters, setReqFilters] = useState({
@@ -411,19 +477,17 @@ function RecruiterDashboard() {
   })
   const [newNoteText, setNewNoteText] = useState('')
 
-  // All Available Recruiters
-  const allRecruitersList = [
-    { name: 'Omkesh Manjute', role: 'Manager / Superadmin', email: 'omkesh.manjute@smarthire.com' },
-    { name: 'Vaibhav Bisen', role: 'Senior Recruiter', email: 'vaibhav.bisen@smarthire.com' },
-    { name: 'Sukamal Chatterjee', role: 'Technical Recruiter', email: 'sukamal.c@smarthire.com' },
-    { name: 'Prudhvi Sevveti', role: 'Lead Recruiter', email: 'prudhvi.s@smarthire.com' },
-    { name: 'Nitin Bhosale', role: 'Sr. IT Recruiter', email: 'nitin.bhosale@smarthire.com' },
-    { name: 'Raj Barve', role: 'Technical Recruiter', email: 'raj.barve@smarthire.com' },
-    { name: 'Ajay Arya', role: 'Senior Recruiter', email: 'ajay.arya@smarthire.com' },
-    { name: 'Nishant Kathane', role: 'IT Recruiter', email: 'nishant.k@smarthire.com' },
-    { name: 'Naveen Korimelli', role: 'Lead Sourcing Specialist', email: 'naveen.k@smarthire.com' },
-    { name: 'Pankaj Maharwade', role: 'Senior Recruiter', email: 'pankaj.m@smarthire.com' }
-  ]
+  // All Available Recruiters & Employees (Dynamically derived from managed team)
+  const allRecruitersList = useMemo(() => {
+    return teamUsers.filter(u => u.isActive !== false).map(u => ({
+      id: u.id,
+      name: u.name,
+      role: u.role === 'superadmin' || u.role === 'admin' ? 'Manager / Superadmin' : u.role === 'employee' ? `Employee (${u.parentRecruiterName ? 'reports to ' + u.parentRecruiterName : 'Team Member'})` : 'Recruiter',
+      email: u.email,
+      parentRecruiterName: u.parentRecruiterName,
+      rawRole: u.role
+    }))
+  }, [teamUsers])
 
   const getJobAssignedRecruiters = (jobId) => {
     try {
@@ -495,6 +559,34 @@ function RecruiterDashboard() {
     setActiveReqTab('details')
     const fullDesc = getFullDescriptionText(job)
     const assigned = Array.isArray(job.assignedRecruiters) ? job.assignedRecruiters : getJobAssignedRecruiters(job.id)
+    const cleanId = String(job.id || '158938').replace('J-', '')
+
+    // Load candidates specifically for this requisition
+    try {
+      const savedCand = localStorage.getItem(`smarthire_potential_candidates_${cleanId}`)
+      if (savedCand) {
+        setPotentialCandidates(JSON.parse(savedCand))
+      } else {
+        // Default candidate if not set
+        setPotentialCandidates([
+          {
+            id: '87534',
+            name: 'Ashok Ganta',
+            payRate: '74/hr',
+            payRateType: 'C2C',
+            assignedBy: assigned[0] || userName,
+            assignedOn: 'Aug 20, 2026 04:40 PM',
+            status: 'Int-SubmittedToManager',
+            statusComments: 'Submitted',
+            interview: 'Select',
+            rejectedReason: 'Select',
+            lastChangedBy: assigned[0] || userName,
+            lastChangedRole: 'Recruiter',
+            lastChangedOn: 'Aug 20, 2026 04:40 PM'
+          }
+        ])
+      }
+    } catch (e) {}
 
     setEditingFields({
       title: job.title || '',
@@ -735,10 +827,31 @@ function RecruiterDashboard() {
     setActiveReqTab('potential')
   }
 
-  // ─── FILTER REQUISITIONS LIST ───
+  // ─── FILTER REQUISITIONS LIST (STRICT MULTI-LEVEL RBAC + SEARCH FILTERS) ───
   const filteredJobs = useMemo(() => {
     return jobs.filter(j => {
       if (!j) return false
+
+      // ─── STRICT ROLE-BASED ACCESS CONTROL (RBAC) ───
+      if (!isAdmin) {
+        const assignedList = Array.isArray(j.assignedRecruiters) ? j.assignedRecruiters.map(r => String(r || '').toLowerCase().trim()) : []
+        const userIdent = userName.toLowerCase().trim()
+        const userEmailIdent = (currentUser?.email || '').toLowerCase().trim()
+
+        // Subordinate employees reporting to this recruiter
+        const mySubordinates = teamUsers
+          .filter(u => u.parentRecruiterName && u.parentRecruiterName.toLowerCase().trim() === userIdent)
+          .map(u => u.name.toLowerCase().trim())
+
+        const isDirectlyAssigned = assignedList.some(r => r.includes(userIdent) || userIdent.includes(r) || (userEmailIdent && r.includes(userEmailIdent)))
+        const isAssignedToSubordinate = isRecruiter && assignedList.some(r => mySubordinates.some(sub => r.includes(sub) || sub.includes(r)))
+
+        // If neither directly assigned nor assigned to an employee under this recruiter, HIDE this requisition!
+        if (!isDirectlyAssigned && !isAssignedToSubordinate) {
+          return false
+        }
+      }
+
       if (reqFilters.reqId.trim()) {
         const cleanId = j.id.replace('J-', '')
         if (!cleanId.toLowerCase().includes(reqFilters.reqId.toLowerCase())) return false
@@ -778,7 +891,7 @@ function RecruiterDashboard() {
       }
       return true
     })
-  }, [jobs, reqFilters])
+  }, [jobs, reqFilters, isAdmin, isRecruiter, isEmployee, userName, currentUser, teamUsers])
 
   const paginatedJobs = useMemo(() => {
     const start = (currentPage - 1) * pageSize
@@ -864,6 +977,30 @@ function RecruiterDashboard() {
 
   const totalCandPages = Math.ceil(filteredCandidates.length / pageSize) || 1
 
+  // SmartWorks Header Navigation Tabs based on RBAC Role
+  const navTabs = useMemo(() => {
+    if (isAdmin) {
+      return [
+        { id: 'requisitions', name: 'Requisitions' },
+        { id: 'candidates', name: 'Candidates' },
+        { id: 'admin', name: 'Administration' },
+        { id: 'reports', name: 'Reports', link: '/reports' },
+        { id: 'process', name: 'Process', link: '/ats' }
+      ]
+    }
+    if (isRecruiter) {
+      return [
+        { id: 'requisitions', name: 'My Requisitions' },
+        { id: 'admin', name: 'My Team (Manage Employees)' },
+        { id: 'candidates', name: 'My Candidates' }
+      ]
+    }
+    // Employee
+    return [
+      { id: 'requisitions', name: 'My Requisitions' }
+    ]
+  }, [isAdmin, isRecruiter, isEmployee])
+
   return (
     <SiteLayout>
       <div style={{ background: '#f1f5f9', minHeight: '92vh', paddingBottom: '30px', fontFamily: 'Arial, sans-serif' }}>
@@ -892,13 +1029,7 @@ function RecruiterDashboard() {
               <div style={{ display: 'flex', alignItems: 'center', padding: '0 12px', fontWeight: 'bold', fontSize: '15px', letterSpacing: '0.02em', background: '#c2410c' }}>
                 SmartWorks
               </div>
-              {[
-                { id: 'requisitions', name: 'Requisitions' },
-                { id: 'candidates', name: 'Candidates' },
-                { id: 'admin', name: 'Administration', link: '/ats' },
-                { id: 'reports', name: 'Reports', link: '/reports' },
-                { id: 'process', name: 'Process', link: '/ats' }
-              ].map(t => (
+              {navTabs.map(t => (
                 <div
                   key={t.id}
                   onClick={() => {
@@ -2233,10 +2364,73 @@ function RecruiterDashboard() {
                   </div>
                 )}
 
+                {/* ─── TAB 3: POTENTIAL CANDIDATES ─── */}
                 {activeReqTab === 'potential' && (
                   <div style={{ fontSize: '11.5px' }}>
-                    <div style={{ fontWeight: 'bold', color: '#1e3a8a', marginBottom: '10px' }}>
-                      Candidates available for this view:
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
+                      <div>
+                        <div style={{ fontWeight: 'bold', color: '#1e3a8a', fontSize: '13px' }}>
+                          Candidates Assigned to Requisition #{selectedReq?.id?.replace('J-', '') || '158938'} ({potentialCandidates.length})
+                        </div>
+                        <div style={{ color: '#64748b', fontSize: '11px', marginTop: '2px' }}>
+                          Manage submissions, rate negotiations, internal/client statuses, and add new candidates for this specific requirement.
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewCandReqForm({
+                              firstName: '',
+                              lastName: '',
+                              email: '',
+                              phone: '',
+                              payRate: editingFields.payRate || '70',
+                              payRateType: 'C2C',
+                              workAuth: editingFields.workAuth !== 'Select' ? editingFields.workAuth : 'US Citizen',
+                              exp: editingFields.experience || '5',
+                              skills: Array.isArray(editingFields.skills) ? editingFields.skills.join(', ') : '',
+                              comments: `Sourced by ${userName} for Requisition #${selectedReq?.id?.replace('J-', '')}`,
+                              status: 'Int-SubmittedToManager'
+                            })
+                            setShowAddCandidateModal(true)
+                          }}
+                          style={{
+                            background: '#ea580c',
+                            color: '#ffffff',
+                            border: 'none',
+                            padding: '6px 16px',
+                            fontSize: '11.5px',
+                            fontWeight: 'bold',
+                            borderRadius: '3px',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            boxShadow: '0 1px 3px rgba(234, 88, 12, 0.3)'
+                          }}
+                        >
+                          <span>+ Add Candidate to this Requisition</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setViewMode('resumeSearch')}
+                          style={{
+                            background: '#f1f5f9',
+                            border: '1px solid #cbd5e1',
+                            padding: '6px 12px',
+                            fontSize: '11px',
+                            fontWeight: 'bold',
+                            borderRadius: '3px',
+                            cursor: 'pointer',
+                            color: '#1e3a8a'
+                          }}
+                        >
+                          🔍 Search Talent Directory
+                        </button>
+                      </div>
                     </div>
 
                     <div style={{ overflowX: 'auto', marginBottom: '12px' }}>
@@ -2255,129 +2449,150 @@ function RecruiterDashboard() {
                           </tr>
                         </thead>
                         <tbody>
-                          {potentialCandidates.map((pc, idx) => (
-                            <tr key={pc.id} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                              <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>
-                                <span onClick={() => {
-                                  const parts = pc.name.split(' ')
-                                  setSubmissionCandidate(prev => ({
-                                    ...prev,
-                                    id: pc.id,
-                                    firstName: parts[0] || 'Candidate',
-                                    lastName: parts.slice(1).join(' ') || '',
-                                    proposedPayRate: pc.payRate.replace(/[^0-9]/g, '') || '74',
-                                    proposedRateType: pc.payRateType || 'C2C'
-                                  }))
-                                  setViewMode('resumeSubmission')
-                                  setActiveSubTab('details')
-                                }} style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>
-                                  {pc.name}
+                          {potentialCandidates.length === 0 ? (
+                            <tr>
+                              <td colSpan="9" style={{ padding: '24px', textAlign: 'center', color: '#64748b', background: '#f8fafc' }}>
+                                No candidates submitted to this requisition yet.{' '}
+                                <span
+                                  onClick={() => setShowAddCandidateModal(true)}
+                                  style={{ color: '#ea580c', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline' }}
+                                >
+                                  + Click here to add the first candidate
                                 </span>
                               </td>
-                              <td style={{ padding: '6px 8px', color: '#1e293b' }}>{pc.payRate}</td>
-                              <td style={{ padding: '6px 8px', color: '#1e293b' }}>{pc.payRateType}</td>
-                              <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{pc.assignedBy}</td>
-                              <td style={{ padding: '6px 8px', color: '#475569', fontSize: '10.5px' }}>{pc.assignedOn}</td>
-                              <td style={{ padding: '6px 8px', minWidth: '190px' }}>
-                                <select
-                                  value={pc.status}
-                                  onChange={e => handleUpdatePotentialCandidate(pc.id, 'status', e.target.value)}
-                                  style={{
-                                    fontSize: '11px',
-                                    padding: '3px 6px',
-                                    border: '1px solid #cbd5e1',
-                                    borderRadius: '2px',
-                                    background: '#ffffff',
-                                    fontWeight: 'bold',
-                                    width: '100%',
-                                    color: pc.status === 'Placed' ? '#166534' : pc.status.includes('Interview') ? '#1d4ed8' : pc.status.includes('Rejected') ? '#dc2626' : '#1e3a8a'
-                                  }}
-                                >
-                                  <option value="Int-SubmittedToManager">Int-SubmittedToManager</option>
-                                  <option value="Int-ApprovedByManager">Int-ApprovedByManager</option>
-                                  <option value="Int-RejectedByManager">Int-RejectedByManager</option>
-                                  <option value="Agency-Submitted">Agency-Submitted</option>
-                                  <option value="Agency-InterviewScheduled">Agency-InterviewScheduled</option>
-                                  <option value="Agency-Approved">Agency-Approved</option>
-                                  <option value="Agency-Rejected">Agency-Rejected</option>
-                                  <option value="Client-SubmittedToCustomer">Client-SubmittedToCustomer</option>
-                                  <option value="Client-InterviewScheduled">Client-InterviewScheduled</option>
-                                  <option value="Client-Selected">Client-Selected</option>
-                                  <option value="Client-Rejected">Client-Rejected</option>
-                                  <option value="Offer Extended">Offer Extended</option>
-                                  <option value="Placed">Placed</option>
-                                </select>
-                                
-                                {/* Audit Info Strip */}
-                                {pc.lastChangedBy && (
-                                  <div style={{ fontSize: '9.5px', color: '#475569', marginTop: '3px', lineHeight: '1.2' }}>
-                                    <span style={{ fontWeight: 'bold' }}>Changed by:</span>{' '}
-                                    <span style={{ color: pc.lastChangedRole === 'Manager' || pc.lastChangedRole === 'superadmin' ? '#b45309' : '#0284c7', fontWeight: 'bold' }}>
-                                      {pc.lastChangedRole || 'Recruiter'} ({pc.lastChangedBy})
-                                    </span>
-                                    <br />
-                                    <span style={{ color: '#94a3b8' }}>{pc.lastChangedOn}</span>
-                                  </div>
-                                )}
-                              </td>
-                              <td style={{ padding: '6px 8px' }}>
-                                <textarea
-                                  rows={2}
-                                  value={pc.statusComments || ''}
-                                  onChange={e => handleUpdatePotentialCandidate(pc.id, 'statusComments', e.target.value)}
-                                  placeholder="Status comments..."
-                                  style={{
-                                    fontSize: '11px',
-                                    padding: '3px 6px',
-                                    width: '130px',
-                                    border: '1px solid #cbd5e1',
-                                    borderRadius: '2px',
-                                    fontFamily: 'inherit',
-                                    resize: 'vertical'
-                                  }}
-                                />
-                              </td>
-                              <td style={{ padding: '6px 8px' }}>
-                                <select
-                                  value={pc.interview || 'Select'}
-                                  onChange={e => handleUpdatePotentialCandidate(pc.id, 'interview', e.target.value)}
-                                  style={{ fontSize: '11px', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '2px', background: '#ffffff', minWidth: '110px' }}
-                                >
-                                  <option value="Select">Select</option>
-                                  <option value="Round 1 (Virtual)">Round 1 (Virtual)</option>
-                                  <option value="Technical Panel">Technical Panel</option>
-                                  <option value="Client Manager Round">Client Manager Round</option>
-                                  <option value="Final Round">Final Round</option>
-                                </select>
-                              </td>
-                              <td style={{ padding: '6px 8px' }}>
-                                <select
-                                  value={pc.rejectedReason || 'Select'}
-                                  onChange={e => handleUpdatePotentialCandidate(pc.id, 'rejectedReason', e.target.value)}
-                                  style={{ fontSize: '11px', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '2px', background: '#ffffff', minWidth: '110px' }}
-                                >
-                                  <option value="Select">Select</option>
-                                  <option value="Rate High">Rate High</option>
-                                  <option value="Skill Gap">Skill Gap</option>
-                                  <option value="Client Selected Another">Client Selected Another</option>
-                                  <option value="Not Local">Not Local</option>
-                                  <option value="Failed Tech Round">Failed Tech Round</option>
-                                  <option value="Candidate Withdrew">Candidate Withdrew</option>
-                                </select>
-                              </td>
                             </tr>
-                          ))}
+                          ) : (
+                            potentialCandidates.map((pc, idx) => (
+                              <tr key={pc.id} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                                <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>
+                                  <span onClick={() => {
+                                    const parts = pc.name.split(' ')
+                                    setSubmissionCandidate(prev => ({
+                                      ...prev,
+                                      id: pc.id,
+                                      firstName: parts[0] || 'Candidate',
+                                      lastName: parts.slice(1).join(' ') || '',
+                                      proposedPayRate: pc.payRate.replace(/[^0-9]/g, '') || '74',
+                                      proposedRateType: pc.payRateType || 'C2C'
+                                    }))
+                                    setViewMode('resumeSubmission')
+                                    setActiveSubTab('details')
+                                  }} style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>
+                                    {pc.name}
+                                  </span>
+                                </td>
+                                <td style={{ padding: '6px 8px', color: '#1e293b' }}>{pc.payRate}</td>
+                                <td style={{ padding: '6px 8px', color: '#1e293b' }}>{pc.payRateType}</td>
+                                <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0066cc' }}>{pc.assignedBy}</td>
+                                <td style={{ padding: '6px 8px', color: '#475569', fontSize: '10.5px' }}>{pc.assignedOn}</td>
+                                <td style={{ padding: '6px 8px', minWidth: '190px' }}>
+                                  <select
+                                    value={pc.status}
+                                    onChange={e => handleUpdatePotentialCandidate(pc.id, 'status', e.target.value)}
+                                    style={{
+                                      fontSize: '11px',
+                                      padding: '3px 6px',
+                                      border: '1px solid #cbd5e1',
+                                      borderRadius: '2px',
+                                      background: '#ffffff',
+                                      fontWeight: 'bold',
+                                      width: '100%',
+                                      color: pc.status === 'Placed' ? '#166534' : pc.status.includes('Interview') ? '#1d4ed8' : pc.status.includes('Rejected') ? '#dc2626' : '#1e3a8a'
+                                    }}
+                                  >
+                                    <option value="Int-SubmittedToManager">Int-SubmittedToManager</option>
+                                    <option value="Int-ApprovedByManager">Int-ApprovedByManager</option>
+                                    <option value="Int-RejectedByManager">Int-RejectedByManager</option>
+                                    <option value="Agency-Submitted">Agency-Submitted</option>
+                                    <option value="Agency-InterviewScheduled">Agency-InterviewScheduled</option>
+                                    <option value="Agency-Approved">Agency-Approved</option>
+                                    <option value="Agency-Rejected">Agency-Rejected</option>
+                                    <option value="Client-SubmittedToCustomer">Client-SubmittedToCustomer</option>
+                                    <option value="Client-InterviewScheduled">Client-InterviewScheduled</option>
+                                    <option value="Client-Selected">Client-Selected</option>
+                                    <option value="Client-Rejected">Client-Rejected</option>
+                                    <option value="Offer Extended">Offer Extended</option>
+                                    <option value="Placed">Placed</option>
+                                  </select>
+                                  
+                                  {/* Audit Info Strip */}
+                                  {pc.lastChangedBy && (
+                                    <div style={{ fontSize: '9.5px', color: '#475569', marginTop: '3px', lineHeight: '1.2' }}>
+                                      <span style={{ fontWeight: 'bold' }}>Changed by:</span>{' '}
+                                      <span style={{ color: pc.lastChangedRole === 'Manager' || pc.lastChangedRole === 'superadmin' ? '#b45309' : '#0284c7', fontWeight: 'bold' }}>
+                                        {pc.lastChangedRole || 'Recruiter'} ({pc.lastChangedBy})
+                                      </span>
+                                      <br />
+                                      <span style={{ color: '#94a3b8' }}>{pc.lastChangedOn}</span>
+                                    </div>
+                                  )}
+                                </td>
+                                <td style={{ padding: '6px 8px' }}>
+                                  <textarea
+                                    rows={2}
+                                    value={pc.statusComments || ''}
+                                    onChange={e => handleUpdatePotentialCandidate(pc.id, 'statusComments', e.target.value)}
+                                    placeholder="Status comments..."
+                                    style={{
+                                      fontSize: '11px',
+                                      padding: '3px 6px',
+                                      width: '130px',
+                                      border: '1px solid #cbd5e1',
+                                      borderRadius: '2px',
+                                      fontFamily: 'inherit',
+                                      resize: 'vertical'
+                                    }}
+                                  />
+                                </td>
+                                <td style={{ padding: '6px 8px' }}>
+                                  <select
+                                    value={pc.interview || 'Select'}
+                                    onChange={e => handleUpdatePotentialCandidate(pc.id, 'interview', e.target.value)}
+                                    style={{ fontSize: '11px', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '2px', background: '#ffffff', minWidth: '110px' }}
+                                  >
+                                    <option value="Select">Select</option>
+                                    <option value="Round 1 (Virtual)">Round 1 (Virtual)</option>
+                                    <option value="Technical Panel">Technical Panel</option>
+                                    <option value="Client Manager Round">Client Manager Round</option>
+                                    <option value="Final Round">Final Round</option>
+                                  </select>
+                                </td>
+                                <td style={{ padding: '6px 8px' }}>
+                                  <select
+                                    value={pc.rejectedReason || 'Select'}
+                                    onChange={e => handleUpdatePotentialCandidate(pc.id, 'rejectedReason', e.target.value)}
+                                    style={{ fontSize: '11px', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '2px', background: '#ffffff', minWidth: '110px' }}
+                                  >
+                                    <option value="Select">Select</option>
+                                    <option value="Rate High">Rate High</option>
+                                    <option value="Skill Gap">Skill Gap</option>
+                                    <option value="Client Selected Another">Client Selected Another</option>
+                                    <option value="Not Local">Not Local</option>
+                                    <option value="Failed Tech Round">Failed Tech Round</option>
+                                    <option value="Candidate Withdrew">Candidate Withdrew</option>
+                                  </select>
+                                </td>
+                              </tr>
+                            ))
+                          )}
                         </tbody>
                       </table>
                     </div>
 
-                    <div style={{ marginTop: '10px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
                       <span
                         onClick={() => setViewMode('resumeSearch')}
                         style={{ color: '#0066cc', fontWeight: 'bold', fontSize: '11.5px', textDecoration: 'underline', cursor: 'pointer' }}
                       >
-                        Select Candidate
+                        Search Candidates Directory &gt;&gt;
                       </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowAddCandidateModal(true)}
+                        style={{ background: '#0284c7', color: '#ffffff', border: 'none', padding: '4px 12px', fontSize: '11px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer' }}
+                      >
+                        + Add Candidate
+                      </button>
                     </div>
                   </div>
                 )}
@@ -2421,6 +2636,275 @@ function RecruiterDashboard() {
                 >
                   Save
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* ─────────────────────────────────────────────────────────────
+              TAB 3: ADMINISTRATION & TEAM / EMPLOYEE MANAGEMENT PANEL
+              ───────────────────────────────────────────────────────────── */}
+          {activeMainTab === 'admin' && viewMode === 'portal' && (
+            <div>
+              <div style={{ fontSize: '11px', color: '#1e3a8a', fontWeight: 'bold', marginBottom: '8px' }}>
+                You are here: <span style={{ color: '#0066cc', cursor: 'pointer' }} onClick={() => setActiveMainTab('requisitions')}>Home</span> &gt; Administration &gt; Team & Employee Management
+              </div>
+
+              <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '16px 20px', marginBottom: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                {/* Header Strip */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #ea580c', paddingBottom: '8px', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+                  <div>
+                    <h2 style={{ margin: 0, fontSize: '16px', color: '#1e3a8a', fontWeight: 'bold' }}>
+                      {isAdmin ? 'SmartWorks Administration — Team & Recruiter Management' : `My Team — Employees & Sourcing Specialists under ${userName}`}
+                    </h2>
+                    <p style={{ margin: '3px 0 0', fontSize: '11.5px', color: '#64748b' }}>
+                      {isAdmin
+                        ? 'Create and manage recruiters, add employees under recruiters, set credentials, and manage requirement permissions.'
+                        : 'Add sub-users/employees under your recruiter account, assign them requirements, and manage their access.'}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingUser(null)
+                      setUserFormData({
+                        name: '',
+                        email: '',
+                        password: 'recruiter123',
+                        role: isAdmin ? 'recruiter' : 'employee',
+                        parentRecruiterName: isAdmin ? '' : userName,
+                        company: 'SmartHire LLC',
+                        isActive: true
+                      })
+                      setShowUserModal(true)
+                    }}
+                    style={{
+                      background: '#ea580c',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '7px 18px',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      borderRadius: '3px',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      boxShadow: '0 1px 3px rgba(234, 88, 12, 0.3)'
+                    }}
+                  >
+                    <span>+ {isAdmin ? 'Add New Team Member / Recruiter' : 'Add Employee Under Me'}</span>
+                  </button>
+                </div>
+
+                {/* 4 Key Metric Cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+                  <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '4px', padding: '12px 14px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#1d4ed8' }}>TOTAL TEAM USERS</div>
+                    <div style={{ fontSize: '22px', fontWeight: '800', color: '#1e3a8a', marginTop: '2px' }}>
+                      {isAdmin ? teamUsers.length : teamUsers.filter(u => u.name === userName || (u.parentRecruiterName && u.parentRecruiterName.toLowerCase() === userName.toLowerCase())).length}
+                    </div>
+                    <div style={{ fontSize: '10.5px', color: '#60a5fa', marginTop: '2px' }}>Registered in portal</div>
+                  </div>
+
+                  <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '4px', padding: '12px 14px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#047857' }}>ACTIVE RECRUITERS</div>
+                    <div style={{ fontSize: '22px', fontWeight: '800', color: '#065f46', marginTop: '2px' }}>
+                      {teamUsers.filter(u => u.role === 'recruiter' && u.isActive !== false).length}
+                    </div>
+                    <div style={{ fontSize: '10.5px', color: '#34d399', marginTop: '2px' }}>Lead talent acquisition</div>
+                  </div>
+
+                  <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '4px', padding: '12px 14px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#b45309' }}>EMPLOYEES / SOURCERS</div>
+                    <div style={{ fontSize: '22px', fontWeight: '800', color: '#78350f', marginTop: '2px' }}>
+                      {teamUsers.filter(u => u.role === 'employee' && u.isActive !== false).length}
+                    </div>
+                    <div style={{ fontSize: '10.5px', color: '#f59e0b', marginTop: '2px' }}>Subordinate members</div>
+                  </div>
+
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '12px 14px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>ASSIGNED REQUISITIONS</div>
+                    <div style={{ fontSize: '22px', fontWeight: '800', color: '#0f172a', marginTop: '2px' }}>
+                      {jobs.filter(j => Array.isArray(j.assignedRecruiters) && j.assignedRecruiters.length > 0).length}
+                    </div>
+                    <div style={{ fontSize: '10.5px', color: '#94a3b8', marginTop: '2px' }}>Active requirements</div>
+                  </div>
+                </div>
+
+                {/* Filter and Search Bar */}
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '10px 14px', borderRadius: '4px', marginBottom: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <span style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#1e3a8a' }}>Filter Team:</span>
+                    <input
+                      type="text"
+                      placeholder="Search name, email..."
+                      value={userSearchQuery}
+                      onChange={e => setUserSearchQuery(e.target.value)}
+                      style={{ padding: '4px 8px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '2px', width: '180px' }}
+                    />
+                    {isAdmin && (
+                      <select
+                        value={userRoleFilter}
+                        onChange={e => setUserRoleFilter(e.target.value)}
+                        style={{ padding: '4px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '2px' }}
+                      >
+                        <option value="All">All Roles</option>
+                        <option value="superadmin">Super Admin / Managers</option>
+                        <option value="recruiter">Recruiters</option>
+                        <option value="employee">Employees (Sub-Recruiters)</option>
+                      </select>
+                    )}
+                  </div>
+
+                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold' }}>
+                    Showing users for: <span style={{ color: '#0284c7' }}>{isAdmin ? 'Entire Organization' : `Team of ${userName}`}</span>
+                  </span>
+                </div>
+
+                {/* Team Users Table */}
+                <div style={{ overflowX: 'auto', border: '1px solid #cbd5e1', borderRadius: '3px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ background: '#94a3b8', color: '#ffffff' }}>
+                        <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Member Name</th>
+                        <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Role / Designation</th>
+                        <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Reports To (Lead Recruiter)</th>
+                        <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Corporate Email (Login ID)</th>
+                        <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Password</th>
+                        <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Assigned Requirements</th>
+                        <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Account Status</th>
+                        <th style={{ padding: '8px 10px', fontWeight: 'bold', textAlign: 'center' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {teamUsers
+                        .filter(u => {
+                          if (!isAdmin) {
+                            // Non-admins only see themselves and their subordinates
+                            const isMe = u.name.toLowerCase() === userName.toLowerCase()
+                            const isMySub = u.parentRecruiterName && u.parentRecruiterName.toLowerCase() === userName.toLowerCase()
+                            if (!isMe && !isMySub) return false
+                          }
+                          if (userRoleFilter !== 'All' && u.role !== userRoleFilter) return false
+                          if (userSearchQuery.trim()) {
+                            const q = userSearchQuery.toLowerCase()
+                            return u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q) || u.parentRecruiterName?.toLowerCase().includes(q)
+                          }
+                          return true
+                        })
+                        .map((u, idx) => {
+                          const assignedReqsCount = jobs.filter(j => Array.isArray(j.assignedRecruiters) && j.assignedRecruiters.some(r => r.toLowerCase().includes(u.name.toLowerCase()))).length
+                          const isCurrentUser = u.name.toLowerCase() === userName.toLowerCase() || u.email?.toLowerCase() === currentUser?.email?.toLowerCase()
+
+                          return (
+                            <tr key={u.id || idx} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                              <td style={{ padding: '8px 10px', fontWeight: 'bold', color: '#0f172a' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <div style={{
+                                    width: '26px', height: '26px', borderRadius: '50%',
+                                    background: u.role === 'superadmin' || u.role === 'admin' ? '#0284c7' : u.role === 'recruiter' ? '#ea580c' : '#10b981',
+                                    color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold'
+                                  }}>
+                                    {u.name?.slice(0, 2).toUpperCase() || 'U'}
+                                  </div>
+                                  <span>{u.name} {isCurrentUser ? '(You)' : ''}</span>
+                                </div>
+                              </td>
+
+                              <td style={{ padding: '8px 10px' }}>
+                                <span style={{
+                                  background: u.role === 'superadmin' || u.role === 'admin' ? '#e0f2fe' : u.role === 'recruiter' ? '#ffedd5' : '#dcfce7',
+                                  color: u.role === 'superadmin' || u.role === 'admin' ? '#0369a1' : u.role === 'recruiter' ? '#c2410c' : '#15803d',
+                                  border: '1px solid',
+                                  borderColor: u.role === 'superadmin' || u.role === 'admin' ? '#bae6fd' : u.role === 'recruiter' ? '#fed7aa' : '#bbf7d0',
+                                  borderRadius: '12px', padding: '2px 8px', fontSize: '10.5px', fontWeight: 'bold'
+                                }}>
+                                  {u.role === 'superadmin' || u.role === 'admin' ? '👑 Admin / Manager' : u.role === 'recruiter' ? '💼 Lead Recruiter' : '👤 Employee (Sourcing)'}
+                                </span>
+                              </td>
+
+                              <td style={{ padding: '8px 10px', color: '#475569' }}>
+                                {u.parentRecruiterName ? (
+                                  <span style={{ color: '#0284c7', fontWeight: 'bold' }}>
+                                    Reports to {u.parentRecruiterName}
+                                  </span>
+                                ) : (
+                                  <span style={{ color: '#94a3b8' }}>Independent</span>
+                                )}
+                              </td>
+
+                              <td style={{ padding: '8px 10px', color: '#0066cc', fontFamily: 'monospace' }}>
+                                {u.email}
+                              </td>
+
+                              <td style={{ padding: '8px 10px', color: '#475569', fontFamily: 'monospace' }}>
+                                <span style={{ background: '#f1f5f9', padding: '2px 6px', borderRadius: '3px', border: '1px solid #cbd5e1' }}>
+                                  {u.password || '••••••••'}
+                                </span>
+                              </td>
+
+                              <td style={{ padding: '8px 10px' }}>
+                                <span style={{
+                                  background: assignedReqsCount > 0 ? '#dbeafe' : '#f1f5f9',
+                                  color: assignedReqsCount > 0 ? '#1e40af' : '#64748b',
+                                  fontWeight: 'bold', borderRadius: '10px', padding: '2px 8px', fontSize: '11px'
+                                }}>
+                                  {assignedReqsCount} Req{assignedReqsCount === 1 ? '' : 's'} Assigned
+                                </span>
+                              </td>
+
+                              <td style={{ padding: '8px 10px' }}>
+                                <span style={{
+                                  color: u.isActive !== false ? '#16a34a' : '#dc2626',
+                                  fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px'
+                                }}>
+                                  {u.isActive !== false ? '🟢 Active' : '🔴 Inactive'}
+                                </span>
+                              </td>
+
+                              <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                                <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setEditingUser(u)
+                                      setUserFormData({
+                                        name: u.name || '',
+                                        email: u.email || '',
+                                        password: u.password || '',
+                                        role: u.role || 'recruiter',
+                                        parentRecruiterName: u.parentRecruiterName || '',
+                                        company: u.company || 'SmartHire LLC',
+                                        isActive: u.isActive !== false
+                                      })
+                                      setShowUserModal(true)
+                                    }}
+                                    style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '2px 8px', fontSize: '10.5px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer' }}
+                                  >
+                                    Edit
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = teamUsers.map(item => item.id === u.id || item.email === u.email ? { ...item, isActive: !item.isActive } : item)
+                                      saveTeamUsers(updated)
+                                      setSaveToastMessage(`User ${u.name} status toggled!`)
+                                      setTimeout(() => setSaveToastMessage(null), 3000)
+                                    }}
+                                    style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '2px 8px', fontSize: '10.5px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer' }}
+                                  >
+                                    {u.isActive !== false ? 'Deactivate' : 'Activate'}
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
@@ -2768,6 +3252,432 @@ function RecruiterDashboard() {
           )}
 
         </div>
+
+        {/* ═══════════ MODAL 1: ADD / EDIT TEAM USER (RECRUITER / EMPLOYEE / ADMIN) ═══════════ */}
+        {showUserModal && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(2px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '16px'
+          }}>
+            <div style={{
+              background: '#ffffff', borderRadius: '6px', width: '100%', maxWidth: '520px',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1)',
+              overflow: 'hidden', border: '1px solid #cbd5e1'
+            }}>
+              {/* Modal Header */}
+              <div style={{ background: '#ea580c', color: '#ffffff', padding: '12px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold' }}>
+                  {editingUser ? '✏️ Edit Team Member' : (isAdmin ? '➕ Add New Recruiter / Employee' : '➕ Add Employee Under My Account')}
+                </h3>
+                <span
+                  onClick={() => setShowUserModal(false)}
+                  style={{ color: '#ffffff', fontSize: '20px', fontWeight: 'bold', cursor: 'pointer', lineHeight: '1' }}
+                >
+                  &times;
+                </span>
+              </div>
+
+              {/* Modal Body Form */}
+              <form onSubmit={e => {
+                e.preventDefault()
+                if (!userFormData.name.trim() || !userFormData.email.trim()) {
+                  alert('Please enter both Name and Email.')
+                  return
+                }
+
+                let updatedList
+                if (editingUser) {
+                  updatedList = teamUsers.map(u => {
+                    if (u.id === editingUser.id || u.email === editingUser.email) {
+                      return {
+                        ...u,
+                        name: userFormData.name.trim(),
+                        email: userFormData.email.trim(),
+                        password: userFormData.password.trim(),
+                        role: userFormData.role,
+                        parentRecruiterName: userFormData.role === 'employee' ? (userFormData.parentRecruiterName || (isRecruiter ? userName : '')) : '',
+                        company: userFormData.company || 'SmartHire LLC',
+                        isActive: userFormData.isActive !== false
+                      }
+                    }
+                    return u
+                  })
+                  setSaveToastMessage(`✅ Updated profile for ${userFormData.name}!`)
+                } else {
+                  const newUserId = userFormData.role === 'employee' ? `emp-${Date.now().toString().slice(-4)}` : `rec-${Date.now().toString().slice(-4)}`
+                  const newUser = {
+                    id: newUserId,
+                    name: userFormData.name.trim(),
+                    email: userFormData.email.trim(),
+                    password: userFormData.password.trim() || 'recruiter123',
+                    role: userFormData.role,
+                    parentRecruiterName: userFormData.role === 'employee' ? (userFormData.parentRecruiterName || (isRecruiter ? userName : '')) : '',
+                    company: userFormData.company || 'SmartHire LLC',
+                    isActive: userFormData.isActive !== false
+                  }
+                  updatedList = [...teamUsers, newUser]
+                  setSaveToastMessage(`🎉 User ${newUser.name} created successfully as ${newUser.role}!`)
+                }
+
+                saveTeamUsers(updatedList)
+                setShowUserModal(false)
+                setTimeout(() => setSaveToastMessage(null), 4000)
+              }} style={{ padding: '18px 20px', fontSize: '12px' }}>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Full Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Sarah Jenkins"
+                      value={userFormData.name}
+                      onChange={e => setUserFormData(prev => ({ ...prev, name: e.target.value }))}
+                      style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Corporate Email (Login ID) *</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="sarah@smarthire.io"
+                      value={userFormData.email}
+                      onChange={e => setUserFormData(prev => ({ ...prev, email: e.target.value }))}
+                      style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Password *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Password"
+                      value={userFormData.password}
+                      onChange={e => setUserFormData(prev => ({ ...prev, password: e.target.value }))}
+                      style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box', fontFamily: 'monospace' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Role / Level *</label>
+                    {isAdmin ? (
+                      <select
+                        value={userFormData.role}
+                        onChange={e => setUserFormData(prev => ({ ...prev, role: e.target.value }))}
+                        style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box', background: '#ffffff' }}
+                      >
+                        <option value="recruiter">Lead Recruiter</option>
+                        <option value="employee">Employee / Sourcing Specialist</option>
+                        <option value="superadmin">Administrator / Manager</option>
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        readOnly
+                        value="Employee (Reporting to You)"
+                        style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box', background: '#f1f5f9', color: '#64748b', fontWeight: 'bold' }}
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* Reports To (Only relevant if role is employee) */}
+                {userFormData.role === 'employee' && (
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>
+                      Reporting Manager / Lead Recruiter
+                    </label>
+                    {isAdmin ? (
+                      <select
+                        value={userFormData.parentRecruiterName || ''}
+                        onChange={e => setUserFormData(prev => ({ ...prev, parentRecruiterName: e.target.value }))}
+                        style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box', background: '#ffffff' }}
+                      >
+                        <option value="">None (Independent Employee)</option>
+                        {teamUsers
+                          .filter(u => u.role === 'recruiter' || u.role === 'superadmin')
+                          .map(u => (
+                            <option key={u.id || u.name} value={u.name}>
+                              {u.name} ({u.role})
+                            </option>
+                          ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        readOnly
+                        value={userName}
+                        style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box', background: '#f1f5f9', color: '#1e3a8a', fontWeight: 'bold' }}
+                      />
+                    )}
+                    <div style={{ fontSize: '10.5px', color: '#64748b', marginTop: '3px' }}>
+                      Requisitions assigned to this employee will automatically be visible to the reporting recruiter.
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', marginTop: '8px' }}>
+                  <input
+                    type="checkbox"
+                    id="isActiveCheck"
+                    checked={userFormData.isActive !== false}
+                    onChange={e => setUserFormData(prev => ({ ...prev, isActive: e.target.checked }))}
+                  />
+                  <label htmlFor="isActiveCheck" style={{ fontWeight: 'bold', color: '#334155', cursor: 'pointer' }}>
+                    Account is Active (Can log in to portal)
+                  </label>
+                </div>
+
+                {/* Buttons */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', borderTop: '1px solid #e2e8f0', paddingTop: '12px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowUserModal(false)}
+                    style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 14px', fontSize: '12px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer' }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    style={{ background: '#ea580c', color: '#ffffff', border: 'none', padding: '6px 18px', fontSize: '12px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
+                  >
+                    {editingUser ? 'Save Changes' : 'Create User'}
+                  </button>
+                </div>
+
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ═══════════ MODAL 2: ADD / SUBMIT CANDIDATE DIRECTLY TO REQUISITION ═══════════ */}
+        {showAddCandidateModal && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(2px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '16px'
+          }}>
+            <div style={{
+              background: '#ffffff', borderRadius: '6px', width: '100%', maxWidth: '600px',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1)',
+              overflow: 'hidden', border: '1px solid #cbd5e1'
+            }}>
+              {/* Modal Header */}
+              <div style={{ background: '#ea580c', color: '#ffffff', padding: '12px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold' }}>
+                    ➕ Add Candidate to Requisition #{selectedReq?.id?.replace('J-', '') || '158938'}
+                  </h3>
+                  <div style={{ fontSize: '11px', color: '#ffedd5', marginTop: '2px' }}>
+                    {selectedReq?.title || 'Senior Software Engineer'}
+                  </div>
+                </div>
+                <span
+                  onClick={() => setShowAddCandidateModal(false)}
+                  style={{ color: '#ffffff', fontSize: '20px', fontWeight: 'bold', cursor: 'pointer', lineHeight: '1' }}
+                >
+                  &times;
+                </span>
+              </div>
+
+              {/* Form Body */}
+              <form onSubmit={e => {
+                e.preventDefault()
+                if (!newCandReqForm.firstName.trim() || !newCandReqForm.lastName.trim()) {
+                  alert('Please enter both First Name and Last Name.')
+                  return
+                }
+
+                const cleanId = String(selectedReq?.id || '158938').replace('J-', '')
+                const fullName = `${newCandReqForm.firstName.trim()} ${newCandReqForm.lastName.trim()}`
+                const newCandId = `CAND-${Date.now().toString().slice(-5)}`
+                const dateStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
+                const newCandObj = {
+                  id: newCandId,
+                  name: fullName,
+                  payRate: `$${newCandReqForm.payRate}/hr`,
+                  payRateType: newCandReqForm.payRateType || 'C2C',
+                  assignedBy: userName,
+                  assignedOn: dateStr,
+                  status: newCandReqForm.status || 'Int-SubmittedToManager',
+                  statusComments: newCandReqForm.comments || 'Direct submission',
+                  interview: 'Select',
+                  rejectedReason: '',
+                  lastChangedBy: userName,
+                  lastChangedRole: isAdmin ? 'superadmin' : (isRecruiter ? 'Recruiter' : 'Employee'),
+                  lastChangedOn: dateStr
+                }
+
+                const updatedCandidates = [newCandObj, ...potentialCandidates]
+                setPotentialCandidates(updatedCandidates)
+
+                try {
+                  localStorage.setItem(`smarthire_potential_candidates_${cleanId}`, JSON.stringify(updatedCandidates))
+                } catch (err) {}
+
+                setShowAddCandidateModal(false)
+                setSaveToastMessage(`🎉 Candidate ${fullName} successfully added to Requisition #${cleanId}!`)
+                setTimeout(() => setSaveToastMessage(null), 4000)
+              }} style={{ padding: '18px 20px', fontSize: '12px' }}>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>First Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="First Name"
+                      value={newCandReqForm.firstName}
+                      onChange={e => setNewCandReqForm(prev => ({ ...prev, firstName: e.target.value }))}
+                      style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Last Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Last Name"
+                      value={newCandReqForm.lastName}
+                      onChange={e => setNewCandReqForm(prev => ({ ...prev, lastName: e.target.value }))}
+                      style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Email Address</label>
+                    <input
+                      type="email"
+                      placeholder="candidate@email.com"
+                      value={newCandReqForm.email}
+                      onChange={e => setNewCandReqForm(prev => ({ ...prev, email: e.target.value }))}
+                      style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Phone Number</label>
+                    <input
+                      type="tel"
+                      placeholder="(555) 000-0000"
+                      value={newCandReqForm.phone}
+                      onChange={e => setNewCandReqForm(prev => ({ ...prev, phone: e.target.value }))}
+                      style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Proposed Pay Rate ($/hr) *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="75"
+                      value={newCandReqForm.payRate}
+                      onChange={e => setNewCandReqForm(prev => ({ ...prev, payRate: e.target.value }))}
+                      style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Rate Type</label>
+                    <select
+                      value={newCandReqForm.payRateType}
+                      onChange={e => setNewCandReqForm(prev => ({ ...prev, payRateType: e.target.value }))}
+                      style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box', background: '#ffffff' }}
+                    >
+                      <option value="C2C">C2C</option>
+                      <option value="W2">W2</option>
+                      <option value="1099">1099</option>
+                      <option value="Fulltime">Fulltime</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Work Authorization</label>
+                    <select
+                      value={newCandReqForm.workAuth}
+                      onChange={e => setNewCandReqForm(prev => ({ ...prev, workAuth: e.target.value }))}
+                      style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box', background: '#ffffff' }}
+                    >
+                      <option value="US Citizen">US Citizen</option>
+                      <option value="Green Card">Green Card</option>
+                      <option value="H1B">H1B</option>
+                      <option value="EAD - GC">EAD - GC</option>
+                      <option value="OPT/CPT">OPT/CPT</option>
+                      <option value="TN Visa">TN Visa</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Initial Submission Status</label>
+                    <select
+                      value={newCandReqForm.status}
+                      onChange={e => setNewCandReqForm(prev => ({ ...prev, status: e.target.value }))}
+                      style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box', background: '#ffffff', fontWeight: 'bold' }}
+                    >
+                      <option value="Int-SubmittedToManager">Int-SubmittedToManager</option>
+                      <option value="Int-ApprovedByManager">Int-ApprovedByManager</option>
+                      <option value="Agency-Submitted">Agency-Submitted</option>
+                      <option value="Client-SubmittedToCustomer">Client-SubmittedToCustomer</option>
+                      <option value="Placed">Placed</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Key Skills</label>
+                    <input
+                      type="text"
+                      placeholder="React, Java, AWS, Python"
+                      value={newCandReqForm.skills}
+                      onChange={e => setNewCandReqForm(prev => ({ ...prev, skills: e.target.value }))}
+                      style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Submission Notes / Comments</label>
+                  <textarea
+                    rows={2}
+                    placeholder="Candidate profile summary, availability, and screening notes..."
+                    value={newCandReqForm.comments}
+                    onChange={e => setNewCandReqForm(prev => ({ ...prev, comments: e.target.value }))}
+                    style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                  />
+                </div>
+
+                <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '4px', border: '1px solid #e2e8f0', marginBottom: '14px', fontSize: '11px', color: '#475569' }}>
+                  👤 Submitting as: <strong style={{ color: '#0284c7' }}>{userName}</strong> ({isAdmin ? 'Administrator' : (isRecruiter ? 'Lead Recruiter' : 'Employee')})
+                </div>
+
+                {/* Action Buttons */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', borderTop: '1px solid #e2e8f0', paddingTop: '12px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddCandidateModal(false)}
+                    style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 14px', fontSize: '12px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer' }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    style={{ background: '#ea580c', color: '#ffffff', border: 'none', padding: '6px 20px', fontSize: '12px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
+                  >
+                    Submit to Requisition
+                  </button>
+                </div>
+
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* ═══════════ SMARTHIRE ORANGE FOOTER ═══════════ */}
         <footer style={{ background: '#ea580c', borderTop: '2px solid #c2410c', color: '#ffffff', textAlign: 'center', padding: '10px', marginTop: '30px', fontSize: '11px', fontWeight: 'bold' }}>

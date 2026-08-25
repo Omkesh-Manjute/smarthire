@@ -59,13 +59,21 @@ function Login() {
         { id: 'rec-2', name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com', role: 'recruiter', refCode: 'sukamal-chatterjee', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
         { id: 'rec-3', name: 'Raj', email: 'raj@coolsofttech.com', role: 'recruiter', refCode: 'raj', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
         { id: 'rec-4', name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com', role: 'recruiter', refCode: 'vaibhav-bisen', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
-        { id: 'rec-5', name: 'Pankaj', email: 'pankajm@coolsofttech.com', role: 'recruiter', refCode: 'pankaj', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' }
+        { id: 'rec-5', name: 'Pankaj', email: 'pankajm@coolsofttech.com', role: 'recruiter', refCode: 'pankaj', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
+        { id: 'emp-1', name: 'Rahul Sharma', email: 'rahul@coolsofttech.com', role: 'employee', parentRecruiterName: 'Vaibhav Bisen', refCode: 'rahul-sharma', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
+        { id: 'emp-2', name: 'Priya Verma', email: 'priya@coolsofttech.com', role: 'employee', parentRecruiterName: 'Sukamal Chatterjee', refCode: 'priya-verma', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' }
       ]
 
       let recruitersList = defaultRecs
       if (savedRecruitersRaw) {
         try {
-          recruitersList = JSON.parse(savedRecruitersRaw)
+          const parsed = JSON.parse(savedRecruitersRaw)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            // merge in any missing default records
+            const existingEmails = new Set(parsed.map(p => (p.email || '').toLowerCase()))
+            const missing = defaultRecs.filter(d => !existingEmails.has(d.email.toLowerCase()))
+            recruitersList = [...parsed, ...missing]
+          }
         } catch (e) {}
       }
 
@@ -98,6 +106,7 @@ function Login() {
         name: matchedUser.name,
         email: matchedUser.email,
         role: matchedUser.role,
+        parentRecruiterName: matchedUser.parentRecruiterName || '',
         refCode: matchedUser.refCode,
         company: matchedUser.company
       }))
