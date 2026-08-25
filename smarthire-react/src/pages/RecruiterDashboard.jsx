@@ -188,7 +188,7 @@ function RecruiterDashboard() {
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(25)
   const [quickSearchId, setQuickSearchId] = useState('')
-  const [showFilterPanel, setShowFilterPanel] = useState(true)
+  const [showFilterPanel, setShowFilterPanel] = useState(false)
 
   // User Management Modal State (Admin / Recruiter adding employee)
   const [showUserModal, setShowUserModal] = useState(false)
@@ -491,8 +491,11 @@ function RecruiterDashboard() {
 
   const getJobAssignedRecruiters = (jobId) => {
     try {
-      const cleanId = String(jobId || '').replace('J-', '')
-      const saved = localStorage.getItem(`smarthire_req_assigned_${cleanId}`) || localStorage.getItem(`smarthire_req_assigned_J-${cleanId}`)
+      const rawId = String(jobId || '')
+      const cleanId = rawId.replace('J-', '')
+      const saved = localStorage.getItem(`smarthire_req_assigned_${cleanId}`) ||
+                    localStorage.getItem(`smarthire_req_assigned_${rawId}`) ||
+                    localStorage.getItem(`smarthire_req_assigned_J-${cleanId}`)
       if (saved !== null && saved !== undefined) {
         const parsed = JSON.parse(saved)
         if (Array.isArray(parsed)) return parsed
@@ -501,7 +504,7 @@ function RecruiterDashboard() {
     return [] // Default is completely empty if not assigned
   }
 
-  // Fetch jobs
+  // Fetch jobs & merge persistent local custom assignments
   useEffect(() => {
     const token = localStorage.getItem('smarthire_token') || ''
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
@@ -510,28 +513,95 @@ function RecruiterDashboard() {
       .then(res => res.json())
       .then(data => {
         const list = Array.isArray(data) ? data : data.jobs || data.data || []
-        const mapped = list.map(j => ({
-          ...j,
-          assignedRecruiters: getJobAssignedRecruiters(j.id)
-        }))
+        
+        let savedJobsMap = {}
+        try {
+          const savedJobsRaw = localStorage.getItem('smarthire_saved_custom_jobs')
+          if (savedJobsRaw) savedJobsMap = JSON.parse(savedJobsRaw)
+        } catch (e) {}
+
+        const mapped = list.map(j => {
+          const rawId = String(j.id || '')
+          const cleanId = rawId.replace('J-', '')
+          const customOverride = savedJobsMap[rawId] || savedJobsMap[`J-${cleanId}`] || savedJobsMap[cleanId]
+          const assigned = (customOverride && Array.isArray(customOverride.assignedRecruiters) && customOverride.assignedRecruiters.length > 0)
+            ? customOverride.assignedRecruiters
+            : getJobAssignedRecruiters(j.id)
+
+          return {
+            ...j,
+            ...(customOverride || {}),
+            assignedRecruiters: assigned
+          }
+        })
         setJobs(mapped)
       })
       .catch(err => console.error('Failed to load jobs:', err))
   }, [])
 
-  // Handler to save recruiter assignments specifically
-  const handleSaveRecruiterAssignments = (customList) => {
+  // Toggle recruiter selection for current requisition
+  const toggleRecruiterAssignment = (recName) => {
+    setEditingFields(prev => {
+      const current = prev.assignedRecruiters || []
+      const exists = current.includes(recName)
+      const next = exists ? current.filter(r => r !== recName) : [...current, recName]
+      return { ...prev, assignedRecruiters: next }
+    })
+  }
+
+  // Universal Handler to save recruiter assignments, requisition details, and candidates
+  const handleSaveRequisition = (customList) => {
     const assignedList = customList !== undefined ? customList : (editingFields.assignedRecruiters || [])
     const cleanId = String(selectedReq?.id || '158938').replace('J-', '')
     const fullId = selectedReq?.id ? (selectedReq.id.startsWith('J-') ? selectedReq.id : `J-${selectedReq.id}`) : `J-${cleanId}`
+    const rawId = String(selectedReq?.id || '')
 
     try {
+      // 1. Save assigned recruiters
       localStorage.setItem(`smarthire_req_assigned_${cleanId}`, JSON.stringify(assignedList))
       localStorage.setItem(`smarthire_req_assigned_${fullId}`, JSON.stringify(assignedList))
-    } catch (e) {}
+      if (rawId) localStorage.setItem(`smarthire_req_assigned_${rawId}`, JSON.stringify(assignedList))
 
-    // Update selectedReq
-    setSelectedReq(prev => prev ? ({ ...prev, assignedRecruiters: assignedList }) : prev)
+      // 2. Save potential candidates for this requisition
+      localStorage.setItem(`smarthire_potential_candidates_${cleanId}`, JSON.stringify(potentialCandidates))
+      if (rawId) localStorage.setItem(`smarthire_potential_candidates_${rawId}`, JSON.stringify(potentialCandidates))
+
+      // 3. Save requisition fields
+      const updatedReqData = { ...editingFields, assignedRecruiters: assignedList }
+      localStorage.setItem(`smarthire_req_${cleanId}`, JSON.stringify(updatedReqData))
+      if (rawId) localStorage.setItem(`smarthire_req_${rawId}`, JSON.stringify(updatedReqData))
+
+      // 4. Save to master map of all custom / edited jobs in localStorage
+      const savedJobsRaw = localStorage.getItem('smarthire_saved_custom_jobs')
+      let savedJobsMap = {}
+      if (savedJobsRaw) {
+        try { savedJobsMap = JSON.parse(savedJobsRaw) } catch (e) {}
+      }
+      savedJobsMap[rawId || fullId] = {
+        id: rawId || fullId,
+        title: editingFields.title || selectedReq?.title,
+        client: editingFields.customer || editingFields.endClient || selectedReq?.client,
+        skills: Array.isArray(editingFields.skills) ? editingFields.skills : (editingFields.skills ? String(editingFields.skills).split(',').map(s => s.trim()) : (selectedReq?.skills || [])),
+        budget: editingFields.payRate ? `${editingFields.payRate}/hr` : (selectedReq?.budget || '75/hr'),
+        location: editingFields.location || selectedReq?.location,
+        type: editingFields.reqType || selectedReq?.type,
+        status: editingFields.status || selectedReq?.status || 'In-Progress',
+        assignedRecruiters: assignedList,
+        creationDate: editingFields.startDate || selectedReq?.creationDate,
+        deadline: editingFields.deadline || selectedReq?.deadline
+      }
+      localStorage.setItem('smarthire_saved_custom_jobs', JSON.stringify(savedJobsMap))
+    } catch (e) {
+      console.error('Failed saving requisition data to localStorage:', e)
+    }
+
+    // Update selectedReq in state
+    setSelectedReq(prev => prev ? ({
+      ...prev,
+      title: editingFields.title || prev.title,
+      status: editingFields.status || prev.status,
+      assignedRecruiters: assignedList
+    }) : prev)
 
     // Update editingFields
     setEditingFields(prev => ({ ...prev, assignedRecruiters: assignedList }))
@@ -539,18 +609,24 @@ function RecruiterDashboard() {
     // Update jobs list in state
     setJobs(prev => prev.map(j => {
       const jClean = String(j.id || '').replace('J-', '')
-      if (jClean === cleanId || j.id === fullId || j.id === `J-${cleanId}`) {
+      if (jClean === cleanId || j.id === fullId || j.id === rawId || j.id === `J-${cleanId}` || (rawId && String(j.id) === rawId)) {
         return {
           ...j,
+          title: editingFields.title || j.title,
+          status: editingFields.status || j.status,
+          client: editingFields.customer || editingFields.endClient || j.client,
           assignedRecruiters: assignedList
         }
       }
       return j
     }))
 
-    setSaveToastMessage(`✅ Assigned recruiters (${assignedList.length}) saved successfully for Requisition #${cleanId}!`)
+    setSaveToastMessage(`✅ Requisition #${cleanId} saved successfully! (${assignedList.length} recruiter(s) assigned)`)
     setTimeout(() => setSaveToastMessage(null), 4500)
   }
+
+  // Alias for backward compatibility
+  const handleSaveRecruiterAssignments = handleSaveRequisition
 
   // Open Requisition Detail
   const handleOpenReq = (job) => {
@@ -833,21 +909,15 @@ function RecruiterDashboard() {
       if (!j) return false
 
       // ─── STRICT ROLE-BASED ACCESS CONTROL (RBAC) ───
-      if (!isAdmin) {
+      // If user is an Employee (Sub-recruiter), show ONLY requirements assigned directly to them!
+      // Lead Recruiters and Admins have full access to view all open requisitions to manage & assign.
+      if (isEmployee) {
         const assignedList = Array.isArray(j.assignedRecruiters) ? j.assignedRecruiters.map(r => String(r || '').toLowerCase().trim()) : []
         const userIdent = userName.toLowerCase().trim()
         const userEmailIdent = (currentUser?.email || '').toLowerCase().trim()
 
-        // Subordinate employees reporting to this recruiter
-        const mySubordinates = teamUsers
-          .filter(u => u.parentRecruiterName && u.parentRecruiterName.toLowerCase().trim() === userIdent)
-          .map(u => u.name.toLowerCase().trim())
-
         const isDirectlyAssigned = assignedList.some(r => r.includes(userIdent) || userIdent.includes(r) || (userEmailIdent && r.includes(userEmailIdent)))
-        const isAssignedToSubordinate = isRecruiter && assignedList.some(r => mySubordinates.some(sub => r.includes(sub) || sub.includes(r)))
-
-        // If neither directly assigned nor assigned to an employee under this recruiter, HIDE this requisition!
-        if (!isDirectlyAssigned && !isAssignedToSubordinate) {
+        if (!isDirectlyAssigned) {
           return false
         }
       }
@@ -2300,14 +2370,7 @@ function RecruiterDashboard() {
                             return (
                               <tr
                                 key={rec.name}
-                                onClick={() => {
-                                  const current = editingFields.assignedRecruiters || []
-                                  if (isAssigned) {
-                                    setEditingFields(prev => ({ ...prev, assignedRecruiters: current.filter(r => r !== rec.name) }))
-                                  } else {
-                                    setEditingFields(prev => ({ ...prev, assignedRecruiters: [...current, rec.name] }))
-                                  }
-                                }}
+                                onClick={() => toggleRecruiterAssignment(rec.name)}
                                 style={{
                                   background: isAssigned ? '#eff6ff' : (idx % 2 === 0 ? '#ffffff' : '#f8fafc'),
                                   borderBottom: '1px solid #e2e8f0',
@@ -2318,7 +2381,10 @@ function RecruiterDashboard() {
                                   <input
                                     type="checkbox"
                                     checked={isAssigned}
-                                    onChange={() => {}} // handled by row onClick
+                                    onChange={(e) => {
+                                      e.stopPropagation()
+                                      toggleRecruiterAssignment(rec.name)
+                                    }}
                                   />
                                 </td>
                                 <td style={{ padding: '7px 10px', fontWeight: 'bold', color: isAssigned ? '#0284c7' : '#0f172a' }}>
@@ -2355,7 +2421,7 @@ function RecruiterDashboard() {
                       </span>
                       <button
                         type="button"
-                        onClick={() => handleSaveRecruiterAssignments()}
+                        onClick={() => handleSaveRequisition()}
                         style={{ background: '#16a34a', color: '#ffffff', border: 'none', padding: '5px 20px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '2px', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
                       >
                         💾 Save Assigned Recruiters
@@ -2601,40 +2667,30 @@ function RecruiterDashboard() {
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '14px', gap: '10px' }}>
                 <button
                   type="button"
-                  onClick={() => {
-                    const cleanId = String(selectedReq?.id || '158938').replace('J-', '')
-                    const fullId = selectedReq?.id ? (selectedReq.id.startsWith('J-') ? selectedReq.id : `J-${selectedReq.id}`) : `J-${cleanId}`
-                    const updatedAssigned = editingFields.assignedRecruiters || []
-
-                    try {
-                      localStorage.setItem(`smarthire_potential_candidates_${cleanId}`, JSON.stringify(potentialCandidates))
-                      localStorage.setItem(`smarthire_req_${cleanId}`, JSON.stringify(editingFields))
-                      localStorage.setItem(`smarthire_req_assigned_${cleanId}`, JSON.stringify(updatedAssigned))
-                      localStorage.setItem(`smarthire_req_assigned_${fullId}`, JSON.stringify(updatedAssigned))
-                    } catch (e) {}
-
-                    // Update selectedReq
-                    setSelectedReq(prev => prev ? ({ ...prev, title: editingFields.title || prev.title, assignedRecruiters: updatedAssigned }) : prev)
-
-                    // Update jobs list in state
-                    setJobs(prev => prev.map(j => {
-                      const jClean = String(j.id || '').replace('J-', '')
-                      if (jClean === cleanId || j.id === fullId || j.id === `J-${cleanId}`) {
-                        return {
-                          ...j,
-                          title: editingFields.title || j.title,
-                          assignedRecruiters: updatedAssigned
-                        }
-                      }
-                      return j
-                    }))
-
-                    setSaveToastMessage(`✅ Requisition #${cleanId} updated successfully! Candidate statuses and assigned recruiters (${updatedAssigned.length}) saved.`)
-                    setTimeout(() => setSaveToastMessage(null), 5000)
-                  }}
-                  style={{ background: '#e2e8f0', color: '#0f172a', border: '1px solid #94a3b8', padding: '5px 22px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '2px', boxShadow: 'inset 0 1px 0 #ffffff, 0 1px 2px rgba(0,0,0,0.05)' }}
+                  onClick={() => setViewMode('portal')}
+                  style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '6px 18px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '3px' }}
                 >
-                  Save
+                  Cancel / Back
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSaveRequisition()}
+                  style={{
+                    background: '#ea580c',
+                    color: '#ffffff',
+                    border: 'none',
+                    padding: '6px 26px',
+                    fontSize: '12.5px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    borderRadius: '3px',
+                    boxShadow: '0 1px 3px rgba(234, 88, 12, 0.4)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  💾 Save Requisition
                 </button>
               </div>
             </div>
