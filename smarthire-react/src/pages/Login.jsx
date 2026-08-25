@@ -18,40 +18,10 @@ function Login() {
     setAuthError('')
 
     try {
-      // 1. Try real backend login endpoint
-      try {
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        })
+      const inputEmail = email.toLowerCase().trim()
+      const inputPass = password.trim()
 
-        const data = await res.json()
-        if (res.ok && data.success) {
-          const u = data.user
-          localStorage.setItem('smarthire_authenticated', 'true')
-          localStorage.setItem('smarthire_user', JSON.stringify({
-            uid: u.id,
-            name: u.name,
-            email: u.email,
-            role: u.role,
-            refCode: u.refCode,
-            company: u.company
-          }))
-          localStorage.setItem('smarthire_active_role', u.role)
-          localStorage.setItem('smarthire_token', data.token || 'mock-token-' + u.id)
-          window.location.href = '/ats'
-          return
-        } else if (res.status === 401 || res.status === 403) {
-          setAuthError(data.message || 'Invalid email or password.')
-          setIsDemoSigningIn(false)
-          return
-        }
-      } catch (backendErr) {
-        console.warn('Backend login connection failed, falling back to local database:', backendErr.message)
-      }
-
-      // 2. Fallback to localStorage (ensures offline robustness)
+      // 1. Check local recruiters / employees list first (ensures newly added team members can log in immediately)
       const savedRecruitersRaw = localStorage.getItem('smarthire_recruiters')
       
       const defaultRecs = [
@@ -70,50 +40,79 @@ function Login() {
           const parsed = JSON.parse(savedRecruitersRaw)
           if (Array.isArray(parsed) && parsed.length > 0) {
             // merge in any missing default records
-            const existingEmails = new Set(parsed.map(p => (p.email || '').toLowerCase()))
-            const missing = defaultRecs.filter(d => !existingEmails.has(d.email.toLowerCase()))
+            const existingEmails = new Set(parsed.map(p => (p.email || '').toLowerCase().trim()))
+            const missing = defaultRecs.filter(d => !existingEmails.has(d.email.toLowerCase().trim()))
             recruitersList = [...parsed, ...missing]
           }
         } catch (e) {}
       }
 
-      // Validate credentials
+      // Validate credentials against local roster (Admin, Recruiters, and Employees)
       const matchedUser = recruitersList.find(
-        r => r.email.toLowerCase().trim() === email.toLowerCase().trim() && r.password === password
+        r => (r.email || '').toLowerCase().trim() === inputEmail && (r.password || '').trim() === inputPass
       )
 
-      if (!matchedUser) {
-        setAuthError('Invalid email or password.')
-        setIsDemoSigningIn(false)
+      if (matchedUser) {
+        if (!matchedUser.isActive) {
+          setAuthError('Your account has been deactivated. Please contact support.')
+          setIsDemoSigningIn(false)
+          return
+        }
+
+        // Update last active login time in localStorage
+        matchedUser.lastLogin = new Date().toISOString()
+        const updatedRecruiters = recruitersList.map(r => r.id === matchedUser.id ? matchedUser : r)
+        localStorage.setItem('smarthire_recruiters', JSON.stringify(updatedRecruiters))
+
+        // Set session
+        localStorage.setItem('smarthire_authenticated', 'true')
+        localStorage.setItem('smarthire_user', JSON.stringify({
+          uid: matchedUser.id,
+          name: matchedUser.name,
+          email: matchedUser.email,
+          role: matchedUser.role,
+          parentRecruiterName: matchedUser.parentRecruiterName || '',
+          refCode: matchedUser.refCode || matchedUser.name.toLowerCase().replace(/\s+/g, '-'),
+          company: matchedUser.company || 'SmartHire LLC'
+        }))
+        localStorage.setItem('smarthire_active_role', matchedUser.role)
+        localStorage.setItem('smarthire_token', 'mock-token-' + matchedUser.id)
+
+        window.location.href = '/ats'
         return
       }
 
-      if (!matchedUser.isActive) {
-        setAuthError('Your account has been deactivated. Please contact support.')
-        setIsDemoSigningIn(false)
-        return
+      // 2. Secondary: If not found in local team roster, attempt backend API login
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: inputEmail, password: inputPass })
+        })
+
+        const data = await res.json()
+        if (res.ok && data.success) {
+          const u = data.user
+          localStorage.setItem('smarthire_authenticated', 'true')
+          localStorage.setItem('smarthire_user', JSON.stringify({
+            uid: u.id,
+            name: u.name,
+            email: u.email,
+            role: u.role,
+            refCode: u.refCode,
+            company: u.company
+          }))
+          localStorage.setItem('smarthire_active_role', u.role)
+          localStorage.setItem('smarthire_token', data.token || 'mock-token-' + u.id)
+          window.location.href = '/ats'
+          return
+        }
+      } catch (backendErr) {
+        console.warn('Backend login connection attempt failed:', backendErr.message)
       }
 
-      // Update last active login time in localStorage
-      matchedUser.lastLogin = new Date().toISOString()
-      const updatedRecruiters = recruitersList.map(r => r.id === matchedUser.id ? matchedUser : r)
-      localStorage.setItem('smarthire_recruiters', JSON.stringify(updatedRecruiters))
-
-      // Set session
-      localStorage.setItem('smarthire_authenticated', 'true')
-      localStorage.setItem('smarthire_user', JSON.stringify({
-        uid: matchedUser.id,
-        name: matchedUser.name,
-        email: matchedUser.email,
-        role: matchedUser.role,
-        parentRecruiterName: matchedUser.parentRecruiterName || '',
-        refCode: matchedUser.refCode,
-        company: matchedUser.company
-      }))
-      localStorage.setItem('smarthire_active_role', matchedUser.role)
-      localStorage.setItem('smarthire_token', 'mock-token-' + matchedUser.id)
-
-      window.location.href = '/ats'
+      // 3. If neither matched
+      setAuthError('Invalid email or password. Please check your credentials.')
     } catch (err) {
       setAuthError('Login error: ' + err.message)
     } finally {
