@@ -276,25 +276,54 @@ const RecruiterDoc = mongoose.models.RecruiterStore || mongoose.model('Recruiter
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   role: { type: String, required: true },
-  refCode: { type: String, required: true },
+  refCode: { type: String, default: '' },
+  parentRecruiterName: { type: String, default: '' },
   company: { type: String, default: 'SmartHire LLC' },
   isActive: { type: Boolean, default: true },
   lastLogin: { type: String, default: null },
   createdAt: { type: String, default: () => new Date().toISOString() }
 }));
 
+const recruitersDbPath = path.resolve(__dirname, 'recruiters.json');
 let recruitersMock = [
-  { _id: 'rec-1', name: 'Omkesh Manjute', email: 'omkesh.manjute@smarthire.com', role: 'superadmin', refCode: 'omkesh', company: 'SmartHire LLC', isActive: true, password: 'admin', lastLogin: '2026-08-17T18:45:00.000Z', createdAt: '2026-01-10T10:00:00.000Z' },
-  { _id: 'rec-2', name: 'Vaibhav Bisen', email: 'vaibhav.bisen@smarthire.com', role: 'recruiter', refCode: 'vaibhav-bisen', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-10T09:00:00.000Z' },
-  { _id: 'rec-3', name: 'Sukamal Chatterjee', email: 'sukamal.c@smarthire.com', role: 'recruiter', refCode: 'sukamal-chatterjee', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-02-15T11:30:00.000Z' },
-  { _id: 'rec-4', name: 'Prudhvi Sevveti', email: 'prudhvi.s@smarthire.com', role: 'recruiter', refCode: 'prudhvi-sevveti', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' },
-  { _id: 'rec-5', name: 'Nitin Bhosale', email: 'nitin.b@smarthire.com', role: 'recruiter', refCode: 'nitin-bhosale', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' },
-  { _id: 'rec-6', name: 'Naveen Korimelli', email: 'naveen.k@smarthire.com', role: 'recruiter', refCode: 'naveen-korimelli', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' },
-  { _id: 'rec-7', name: 'Ajay Arya', email: 'ajay.a@smarthire.com', role: 'recruiter', refCode: 'ajay-arya', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' },
-  { _id: 'rec-8', name: 'Raj Barve', email: 'raj.b@smarthire.com', role: 'recruiter', refCode: 'raj-barve', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' },
-  { _id: 'rec-9', name: 'Pankaj Maharwade', email: 'pankaj.m@smarthire.com', role: 'recruiter', refCode: 'pankaj-maharwade', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' },
-  { _id: 'rec-10', name: 'Nishant Kathane', email: 'nishant.k@smarthire.com', role: 'recruiter', refCode: 'nishant-kathane', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' }
+  { _id: 'rec-1', name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', parentRecruiterName: '', company: 'SmartHire LLC', isActive: true, password: 'admin', lastLogin: '2026-08-17T18:45:00.000Z', createdAt: '2026-01-10T10:00:00.000Z' },
+  { _id: 'rec-1b', name: 'Omkesh Manjute', email: 'omkesh.manjute@smarthire.com', role: 'superadmin', refCode: 'omkesh', parentRecruiterName: '', company: 'SmartHire LLC', isActive: true, password: 'admin', lastLogin: '2026-08-17T18:45:00.000Z', createdAt: '2026-01-10T10:00:00.000Z' },
+  { _id: 'rec-2', name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com', role: 'recruiter', refCode: 'sukamal-chatterjee', parentRecruiterName: '', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-02-15T11:30:00.000Z' },
+  { _id: 'rec-3', name: 'Raj', email: 'raj@coolsofttech.com', role: 'recruiter', refCode: 'raj', parentRecruiterName: '', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' },
+  { _id: 'rec-4', name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com', role: 'recruiter', refCode: 'vaibhav-bisen', parentRecruiterName: '', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-10T09:00:00.000Z' },
+  { _id: 'rec-5', name: 'Pankaj', email: 'pankajm@coolsofttech.com', role: 'recruiter', refCode: 'pankaj', parentRecruiterName: '', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' },
+  { _id: 'emp-1', name: 'Rahul Sharma', email: 'rahul@coolsofttech.com', role: 'employee', parentRecruiterName: 'Vaibhav Bisen', refCode: 'rahul-sharma', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' },
+  { _id: 'emp-2', name: 'Priya Verma', email: 'priya@coolsofttech.com', role: 'employee', parentRecruiterName: 'Sukamal Chatterjee', refCode: 'priya-verma', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' }
 ];
+
+function loadRecruitersFromDisk() {
+  try {
+    if (fs.existsSync(recruitersDbPath)) {
+      const raw = fs.readFileSync(recruitersDbPath, 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const existingEmails = new Set(parsed.map(p => (p.email || '').toLowerCase().trim()));
+        const missing = recruitersMock.filter(d => !existingEmails.has(d.email.toLowerCase().trim()));
+        recruitersMock = [...parsed, ...missing];
+        console.log(`📂 Loaded ${recruitersMock.length} recruiter(s) from disk.`);
+        return;
+      }
+    }
+    saveRecruitersToDisk();
+  } catch (e) {
+    console.error('Failed to load recruiters from disk:', e.message);
+  }
+}
+
+function saveRecruitersToDisk() {
+  try {
+    fs.writeFileSync(recruitersDbPath, JSON.stringify(recruitersMock, null, 2), 'utf-8');
+  } catch (e) {
+    console.error('Failed to save recruiters to disk:', e.message);
+  }
+}
+
+loadRecruitersFromDisk();
 
 async function resolveRecruiterEmailFromRefCode(refCode) {
   if (!refCode) return 'omkesh.manjute@smarthire.com';
@@ -5358,64 +5387,59 @@ app.post('/api/auth/login', async (req, res) => {
   if (!email || !password) {
     return res.status(400).json({ success: false, message: 'Email and password are required.' });
   }
+  const cleanEmail = email.toLowerCase().trim();
+  const cleanPassword = password.trim();
+
   try {
+    let user = null;
+    let isMongoUser = false;
+
     if (isMongoConnected) {
-      const user = await RecruiterDoc.findOne({ email: email.toLowerCase().trim() });
-      if (!user || user.password !== password) {
-        return res.status(401).json({ success: false, message: 'Invalid email or password.' });
-      }
-      if (!user.isActive) {
-        return res.status(403).json({ success: false, message: 'Your account has been deactivated. Please contact support.' });
-      }
-      user.lastLogin = new Date().toISOString();
-      await user.save();
-      const token = jwt.sign(
-        { id: user._id, email: user.email, role: user.role, name: user.name },
-        JWT_SECRET,
-        { expiresIn: '24h' }
-      );
-      return res.json({
-        success: true,
-        token,
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          refCode: user.refCode,
-          company: user.company,
-          lastLogin: user.lastLogin
-        }
-      });
-    } else {
-      const user = recruitersMock.find(r => r.email.toLowerCase().trim() === email.toLowerCase().trim() && r.password === password);
-      if (!user) {
-        return res.status(401).json({ success: false, message: 'Invalid email or password.' });
-      }
-      if (!user.isActive) {
-        return res.status(403).json({ success: false, message: 'Your account has been deactivated. Please contact support.' });
-      }
-      user.lastLogin = new Date().toISOString();
-      const token = jwt.sign(
-        { id: user._id, email: user.email, role: user.role, name: user.name },
-        JWT_SECRET,
-        { expiresIn: '24h' }
-      );
-      return res.json({
-        success: true,
-        token,
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          refCode: user.refCode,
-          company: user.company,
-          lastLogin: user.lastLogin
-        }
-      });
+      user = await RecruiterDoc.findOne({ email: cleanEmail });
+      if (user) isMongoUser = true;
     }
+
+    if (!user) {
+      user = recruitersMock.find(r => (r.email || '').toLowerCase().trim() === cleanEmail);
+    }
+
+    if (!user || user.password.trim() !== cleanPassword) {
+      return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+    }
+
+    if (user.isActive === false) {
+      return res.status(403).json({ success: false, message: 'Your account has been deactivated. Please contact support.' });
+    }
+
+    user.lastLogin = new Date().toISOString();
+    if (isMongoUser) {
+      await user.save();
+    } else {
+      saveRecruitersToDisk();
+    }
+
+    const token = jwt.sign(
+      { id: user._id || user.id, email: user.email, role: user.role, name: user.name },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    return res.json({
+      success: true,
+      token,
+      user: {
+        id: user._id || user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        parentRecruiterName: user.parentRecruiterName || '',
+        refCode: user.refCode || user.name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+        company: user.company || 'SmartHire LLC',
+        lastLogin: user.lastLogin
+      }
+    });
   } catch (err) {
+    console.error('Login error:', err);
     res.status(500).json({ success: false, message: err.message });
   }
 });
@@ -5425,21 +5449,22 @@ app.get('/api/admin/recruiters', async (req, res) => {
     if (isMongoConnected) {
       const recruiters = await RecruiterDoc.find().sort({ createdAt: -1 });
       const list = recruiters.map(r => ({
-        id: r._id,
+        id: r._id.toString(),
         name: r.name,
         email: r.email,
         password: r.password,
         role: r.role,
+        parentRecruiterName: r.parentRecruiterName || '',
         refCode: r.refCode,
         company: r.company,
         isActive: r.isActive,
         lastLogin: r.lastLogin,
         createdAt: r.createdAt
       }));
-      res.json({ success: true, recruiters: list });
+      return res.json({ success: true, recruiters: list });
     } else {
-      const list = recruitersMock.map(r => ({ ...r, id: r._id }));
-      res.json({ success: true, recruiters: list });
+      const list = recruitersMock.map(r => ({ ...r, id: r._id || r.id }));
+      return res.json({ success: true, recruiters: list });
     }
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -5447,55 +5472,176 @@ app.get('/api/admin/recruiters', async (req, res) => {
 });
 
 app.post('/api/admin/recruiters', async (req, res) => {
-  const { name, email, password, role, refCode, company } = req.body;
-  if (!name || !email || !password || !role || !refCode) {
-    return res.status(400).json({ success: false, message: 'Required fields missing.' });
+  const { name, email, password, role, refCode, company, parentRecruiterName, isActive } = req.body;
+  if (!name || !email) {
+    return res.status(400).json({ success: false, message: 'Name and email are required.' });
   }
+  const cleanEmail = email.toLowerCase().trim();
+  const cleanName = name.trim();
+  const cleanPassword = (password || 'recruiter123').trim();
+  const cleanRole = role || 'employee';
+  const cleanRef = refCode || cleanName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+  const cleanCompany = company || 'SmartHire LLC';
+  const cleanParent = parentRecruiterName || '';
+
   try {
     if (isMongoConnected) {
-      const existing = await RecruiterDoc.findOne({ email: email.toLowerCase().trim() });
+      let existing = await RecruiterDoc.findOne({ email: cleanEmail });
       if (existing) {
-        return res.status(400).json({ success: false, message: 'A user with this email already exists.' });
+        existing.name = cleanName;
+        existing.password = cleanPassword;
+        existing.role = cleanRole;
+        existing.refCode = cleanRef;
+        existing.company = cleanCompany;
+        existing.parentRecruiterName = cleanParent;
+        if (typeof isActive === 'boolean') existing.isActive = isActive;
+        await existing.save();
+        return res.json({
+          success: true,
+          recruiter: {
+            id: existing._id.toString(),
+            name: existing.name,
+            email: existing.email,
+            role: existing.role,
+            parentRecruiterName: existing.parentRecruiterName,
+            refCode: existing.refCode,
+            company: existing.company,
+            isActive: existing.isActive
+          }
+        });
       }
+
       const newRec = await RecruiterDoc.create({
-        name,
-        email: email.toLowerCase().trim(),
-        password,
-        role,
-        refCode,
-        company: company || 'Coolsoft LLC'
+        name: cleanName,
+        email: cleanEmail,
+        password: cleanPassword,
+        role: cleanRole,
+        parentRecruiterName: cleanParent,
+        refCode: cleanRef,
+        company: cleanCompany,
+        isActive: isActive !== false
       });
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
         recruiter: {
-          id: newRec._id,
+          id: newRec._id.toString(),
           name: newRec.name,
           email: newRec.email,
           role: newRec.role,
+          parentRecruiterName: newRec.parentRecruiterName,
           refCode: newRec.refCode,
           company: newRec.company,
           isActive: newRec.isActive
         }
       });
     } else {
-      if (recruitersMock.some(r => r.email.toLowerCase() === email.toLowerCase().trim())) {
-        return res.status(400).json({ success: false, message: 'A user with this email already exists.' });
+      const existingIdx = recruitersMock.findIndex(r => (r.email || '').toLowerCase().trim() === cleanEmail);
+      if (existingIdx >= 0) {
+        recruitersMock[existingIdx] = {
+          ...recruitersMock[existingIdx],
+          name: cleanName,
+          password: cleanPassword,
+          role: cleanRole,
+          parentRecruiterName: cleanParent,
+          refCode: cleanRef,
+          company: cleanCompany,
+          isActive: isActive !== false
+        };
+        saveRecruitersToDisk();
+        return res.json({ success: true, recruiter: { ...recruitersMock[existingIdx], id: recruitersMock[existingIdx]._id } });
       }
+
       const newRec = {
         _id: 'rec-' + Date.now(),
-        name,
-        email: email.toLowerCase().trim(),
-        password,
-        role,
-        refCode,
-        company: company || 'Coolsoft LLC',
-        isActive: true,
+        name: cleanName,
+        email: cleanEmail,
+        password: cleanPassword,
+        role: cleanRole,
+        parentRecruiterName: cleanParent,
+        refCode: cleanRef,
+        company: cleanCompany,
+        isActive: isActive !== false,
         lastLogin: null,
         createdAt: new Date().toISOString()
       };
       recruitersMock.unshift(newRec);
-      res.status(201).json({ success: true, recruiter: { ...newRec, id: newRec._id } });
+      saveRecruitersToDisk();
+      return res.status(201).json({ success: true, recruiter: { ...newRec, id: newRec._id } });
     }
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Bulk sync team members endpoint
+app.post('/api/admin/recruiters/sync', async (req, res) => {
+  const { recruiters } = req.body;
+  if (!Array.isArray(recruiters)) {
+    return res.status(400).json({ success: false, message: 'Array of recruiters expected.' });
+  }
+  try {
+    for (const r of recruiters) {
+      if (!r.email || !r.name) continue;
+      const cleanEmail = r.email.toLowerCase().trim();
+      const cleanName = r.name.trim();
+      const cleanPassword = (r.password || 'recruiter123').trim();
+      const cleanRole = r.role || 'employee';
+      const cleanRef = r.refCode || cleanName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      const cleanCompany = r.company || 'SmartHire LLC';
+      const cleanParent = r.parentRecruiterName || '';
+
+      if (isMongoConnected) {
+        let existing = await RecruiterDoc.findOne({ email: cleanEmail });
+        if (existing) {
+          existing.name = cleanName;
+          existing.password = cleanPassword;
+          existing.role = cleanRole;
+          existing.parentRecruiterName = cleanParent;
+          existing.company = cleanCompany;
+          await existing.save();
+        } else {
+          await RecruiterDoc.create({
+            name: cleanName,
+            email: cleanEmail,
+            password: cleanPassword,
+            role: cleanRole,
+            parentRecruiterName: cleanParent,
+            refCode: cleanRef,
+            company: cleanCompany,
+            isActive: r.isActive !== false
+          });
+        }
+      } else {
+        const idx = recruitersMock.findIndex(m => (m.email || '').toLowerCase().trim() === cleanEmail);
+        if (idx >= 0) {
+          recruitersMock[idx] = {
+            ...recruitersMock[idx],
+            name: cleanName,
+            password: cleanPassword,
+            role: cleanRole,
+            parentRecruiterName: cleanParent,
+            company: cleanCompany,
+            isActive: r.isActive !== false
+          };
+        } else {
+          recruitersMock.unshift({
+            _id: r.id || 'rec-' + Date.now(),
+            name: cleanName,
+            email: cleanEmail,
+            password: cleanPassword,
+            role: cleanRole,
+            parentRecruiterName: cleanParent,
+            refCode: cleanRef,
+            company: cleanCompany,
+            isActive: r.isActive !== false,
+            lastLogin: null,
+            createdAt: new Date().toISOString()
+          });
+        }
+      }
+    }
+    if (!isMongoConnected) saveRecruitersToDisk();
+    return res.json({ success: true, count: recruiters.length });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

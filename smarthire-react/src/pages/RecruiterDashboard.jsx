@@ -155,10 +155,27 @@ function RecruiterDashboard() {
     return DEFAULT_USERS_LIST
   })
 
-  const saveTeamUsers = (updatedList) => {
+  const saveTeamUsers = (updatedList, createdOrEditedUser = null) => {
     setTeamUsers(updatedList)
     try {
       localStorage.setItem('smarthire_recruiters', JSON.stringify(updatedList))
+    } catch (e) {}
+
+    // Sync to backend database immediately
+    try {
+      if (createdOrEditedUser) {
+        fetch('/api/admin/recruiters', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(createdOrEditedUser)
+        }).catch(err => console.warn('Background user sync notice:', err))
+      } else {
+        fetch('/api/admin/recruiters/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recruiters: updatedList })
+        }).catch(err => console.warn('Background users bulk sync notice:', err))
+      }
     } catch (e) {}
   }
 
@@ -504,7 +521,7 @@ function RecruiterDashboard() {
     return [] // Default is completely empty if not assigned
   }
 
-  // Fetch jobs & merge persistent local custom assignments
+  // Fetch jobs & merge persistent local custom assignments, and sync team roster
   useEffect(() => {
     const token = localStorage.getItem('smarthire_token') || ''
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
@@ -537,6 +554,23 @@ function RecruiterDashboard() {
         setJobs(mapped)
       })
       .catch(err => console.error('Failed to load jobs:', err))
+
+    // Sync team members from backend server
+    fetch('/api/admin/recruiters', { headers })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.recruiters) && data.recruiters.length > 0) {
+          const serverRecs = data.recruiters
+          setTeamUsers(prev => {
+            const existingEmails = new Set(serverRecs.map(u => (u.email || '').toLowerCase().trim()))
+            const localOnly = prev.filter(u => !existingEmails.has((u.email || '').toLowerCase().trim()))
+            const merged = [...serverRecs, ...localOnly]
+            try { localStorage.setItem('smarthire_recruiters', JSON.stringify(merged)) } catch (e) {}
+            return merged
+          })
+        }
+      })
+      .catch(err => console.warn('Backend team sync notice:', err))
   }, [])
 
   // Toggle recruiter selection for current requisition
@@ -3343,18 +3377,23 @@ function RecruiterDashboard() {
                 }
 
                 let updatedList
+                let targetUser
                 if (editingUser) {
+                  targetUser = {
+                    id: editingUser.id,
+                    name: userFormData.name.trim(),
+                    email: userFormData.email.trim(),
+                    password: userFormData.password.trim(),
+                    role: userFormData.role,
+                    parentRecruiterName: userFormData.role === 'employee' ? (userFormData.parentRecruiterName || (isRecruiter ? userName : '')) : '',
+                    company: userFormData.company || 'SmartHire LLC',
+                    isActive: userFormData.isActive !== false
+                  }
                   updatedList = teamUsers.map(u => {
                     if (u.id === editingUser.id || u.email === editingUser.email) {
                       return {
                         ...u,
-                        name: userFormData.name.trim(),
-                        email: userFormData.email.trim(),
-                        password: userFormData.password.trim(),
-                        role: userFormData.role,
-                        parentRecruiterName: userFormData.role === 'employee' ? (userFormData.parentRecruiterName || (isRecruiter ? userName : '')) : '',
-                        company: userFormData.company || 'SmartHire LLC',
-                        isActive: userFormData.isActive !== false
+                        ...targetUser
                       }
                     }
                     return u
@@ -3362,7 +3401,7 @@ function RecruiterDashboard() {
                   setSaveToastMessage(`✅ Updated profile for ${userFormData.name}!`)
                 } else {
                   const newUserId = userFormData.role === 'employee' ? `emp-${Date.now().toString().slice(-4)}` : `rec-${Date.now().toString().slice(-4)}`
-                  const newUser = {
+                  targetUser = {
                     id: newUserId,
                     name: userFormData.name.trim(),
                     email: userFormData.email.trim(),
@@ -3372,11 +3411,11 @@ function RecruiterDashboard() {
                     company: userFormData.company || 'SmartHire LLC',
                     isActive: userFormData.isActive !== false
                   }
-                  updatedList = [...teamUsers, newUser]
-                  setSaveToastMessage(`🎉 User ${newUser.name} created successfully as ${newUser.role}!`)
+                  updatedList = [...teamUsers, targetUser]
+                  setSaveToastMessage(`🎉 User ${targetUser.name} created successfully as ${targetUser.role}!`)
                 }
 
-                saveTeamUsers(updatedList)
+                saveTeamUsers(updatedList, targetUser)
                 setShowUserModal(false)
                 setTimeout(() => setSaveToastMessage(null), 4000)
               }} style={{ padding: '18px 20px', fontSize: '12px' }}>

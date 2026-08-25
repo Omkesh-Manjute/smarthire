@@ -99,12 +99,27 @@ function Login() {
             name: u.name,
             email: u.email,
             role: u.role,
-            refCode: u.refCode,
-            company: u.company
+            parentRecruiterName: u.parentRecruiterName || '',
+            refCode: u.refCode || u.name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+            company: u.company || 'SmartHire LLC'
           }))
           localStorage.setItem('smarthire_active_role', u.role)
           localStorage.setItem('smarthire_token', data.token || 'mock-token-' + u.id)
+
+          // Save to local recruiters list if not already present
+          try {
+            const raw = localStorage.getItem('smarthire_recruiters')
+            const list = raw ? JSON.parse(raw) : []
+            if (Array.isArray(list) && !list.some(r => (r.email || '').toLowerCase().trim() === inputEmail)) {
+              list.push({ ...u, isActive: true, password: inputPass })
+              localStorage.setItem('smarthire_recruiters', JSON.stringify(list))
+            }
+          } catch (e) {}
+
           window.location.href = '/ats'
+          return
+        } else if (data.message) {
+          setAuthError(data.message)
           return
         }
       } catch (backendErr) {
