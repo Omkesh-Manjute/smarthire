@@ -560,339 +560,163 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
         </div>
       </div>
 
-      {/* Job Cards Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
-        {filteredJobs.map(job => {
-          const workMode = job.work_mode || job.workMode || job.type || 'Onsite'
-          const isClosed = (() => {
-            const dl = job.deadline || job.submissionDeadline
-            if (!dl) return false
-            const d = new Date(dl); if (isNaN(d)) return false
-            const t = new Date(); t.setHours(0,0,0,0); d.setHours(0,0,0,0)
-            return t > d
-          })()
-          
-          const fullDesc = getFullDescriptionText(job)
-          const isExpanded = expandedJobId === job.id
-          
-          const modeBadge = workMode === 'Remote' 
-            ? { bg: '#dcfce7', text: '#15803d', border: '#bbf7d0' } 
-            : workMode === 'Hybrid' 
-            ? { bg: '#fef3c7', text: '#b45309', border: '#fde68a' } 
-            : { bg: '#eff6ff', text: '#1d4ed8', border: '#bfdbfe' }
-          
-          const isReformatting = reformattingJobId === job.id
-          const jobCandidates = safeCandidates.filter(c => c && c.job_id === job.id)
-          const locationText = job.location || 'Remote, US'
-
-          return (
-            <div key={job.id} style={{
-              background: '#ffffff',
-              border: `1px solid ${isExpanded ? '#2563eb' : isClosed ? '#fca5a5' : '#e2e8f0'}`,
-              borderRadius: 14,
-              padding: 18,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 12,
-              boxShadow: isExpanded ? '0 8px 24px rgba(37,99,235,0.12)' : '0 1px 3px rgba(0,0,0,0.05)',
-              opacity: isClosed ? 0.8 : 1,
-              transition: 'all 0.2s',
-            }}>
-              {/* Card Top Row */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 12, color: '#2563eb', fontWeight: 700 }}>📍 {locationText}</span>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: modeBadge.bg, color: modeBadge.text, border: `1px solid ${modeBadge.border}`, fontWeight: 700 }}>
-                    {workMode === 'Remote' ? '🏠' : workMode === 'Hybrid' ? '🏢' : '📍'} {workMode}
-                  </span>
-                  {isClosed
-                    ? <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', fontWeight: 700 }}>🔒 Closed</span>
-                    : <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0', fontWeight: 700 }}>{job.status}</span>
-                  }
-                </div>
-              </div>
-
-              {/* Title & Client */}
-              <div
-                onClick={() => toggleExpand(job.id)}
-                style={{ cursor: 'pointer', userSelect: 'none' }}
-                title="Click title to expand/read description"
-              >
-                <h4 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: isExpanded ? '#2563eb' : '#0f172a', fontFamily: 'Plus Jakarta Sans, sans-serif', lineHeight: 1.3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span>{job.title}</span>
-                  <span style={{ fontSize: 12, color: '#2563eb', fontWeight: 700, marginLeft: 8 }}>
-                    {isExpanded ? '▲ Collapse' : '▼ Read Full JD'}
-                  </span>
-                </h4>
-                <div style={{ fontSize: 12, color: '#64748b', marginTop: 3, fontWeight: 600 }}>{job.client || 'Verified Client'} · 📍 {locationText}</div>
-              </div>
-
-              {/* Stats Row */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
-                {[
-                  { label: 'Candidates', val: getJobCandidateCount(job.id) },
-                  { label: 'Submitted', val: getJobSubmittedCount(job.id) },
-                  { label: 'Interview', val: getJobInterviewCount(job.id) },
-                  { label: 'Submissions', val: getJobSubmissionCount(job.id) },
-                ].map(s => (
-                  <div key={s.label} style={{ textAlign: 'center', background: '#f8fafc', border: '1px solid #f1f5f9', borderRadius: 8, padding: '6px 0' }}>
-                    <div style={{ fontSize: 16, fontWeight: 800, color: '#2563eb' }}>{s.val}</div>
-                    <div style={{ fontSize: 9, color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>{s.label}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Brief JD Preview (when collapsed) */}
-              {!isExpanded && fullDesc && (
-                <div style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.5, borderTop: '1px solid #f1f5f9', paddingTop: 10 }}>
-                  {fullDesc.slice(0, 140).trim()}...
-                  <button
-                    onClick={() => toggleExpand(job.id)}
-                    style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: 12, cursor: 'pointer', padding: '0 0 0 4px', fontWeight: 700 }}
-                  >Expand ▼</button>
-                </div>
+      {/* Active Jobs Table (High-Density Clean CoolWorks Layout) */}
+      <div style={{ overflowX: 'auto', border: '1px solid #7f9db9', borderRadius: 0, background: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <table className="coolworks-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', fontFamily: 'Arial, Helvetica, sans-serif', background: '#ffffff' }}>
+          <thead>
+            <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
+              <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Req#</th>
+              <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Position Title</th>
+              <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Client / Customer</th>
+              <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Location</th>
+              <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Work Mode</th>
+              <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Key Skills</th>
+              <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Deadline</th>
+              <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Candidates</th>
+              {isSuperAdmin && (
+                <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>LinkedIn Post</th>
               )}
+              <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap', fontSize: '11px' }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredJobs.length === 0 ? (
+              <tr>
+                <td colSpan={isSuperAdmin ? 10 : 9} style={{ padding: '24px', textAlign: 'center', color: '#64748b' }}>
+                  No active job postings found matching search criteria.
+                </td>
+              </tr>
+            ) : (
+              filteredJobs.map((job) => {
+                const rawId = String(job.id || '').replace('J-', '').trim()
+                let displayReqId = rawId
+                if (!/^\d{5,6}$/.test(rawId)) {
+                  let hash = 0
+                  for (let i = 0; i < rawId.length; i++) hash = (hash * 31 + rawId.charCodeAt(i)) % 900
+                  displayReqId = `158${100 + hash}`
+                }
+                const workMode = job.work_mode || job.workMode || job.type || 'Onsite'
+                const candidateCount = getJobCandidateCount(job.id)
+                const locationText = job.location || 'Remote, US'
+                const skillsList = Array.isArray(job.skills) ? job.skills : []
 
-              {/* INLINE EXPANDED FULL DESCRIPTION SECTION (WHEN CLICKED) */}
-              {isExpanded && (
-                <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 12, marginTop: 4, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                    {/* Left Column: Formatted Job Description */}
-                    <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: 14, maxHeight: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #cbd5e1', paddingBottom: 6 }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📝 Formatted Job Description</span>
+                return (
+                  <tr key={job.id} style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '5px 6px', color: '#0033cc', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                      <span onClick={() => setJdModalJob(job)} style={{ cursor: 'pointer', textDecoration: 'underline' }}>
+                        {displayReqId}
+                      </span>
+                    </td>
+                    <td style={{ padding: '5px 6px', color: '#0033cc', fontWeight: 'bold', maxWidth: '200px' }}>
+                      <span onClick={() => setJdModalJob(job)} style={{ cursor: 'pointer', textDecoration: 'underline' }}>
+                        {job.title}
+                      </span>
+                    </td>
+                    <td style={{ padding: '5px 6px', color: '#000000', whiteSpace: 'nowrap' }}>
+                      {job.client || 'Verified Client'}
+                    </td>
+                    <td style={{ padding: '5px 6px', color: '#000000', whiteSpace: 'nowrap' }}>
+                      {locationText}
+                    </td>
+                    <td style={{ padding: '5px 6px', whiteSpace: 'nowrap' }}>
+                      <span style={{
+                        padding: '1px 6px',
+                        borderRadius: '2px',
+                        fontSize: '10px',
+                        fontWeight: 'bold',
+                        background: workMode === 'Remote' ? '#dcfce7' : workMode === 'Hybrid' ? '#fef3c7' : '#eff6ff',
+                        color: workMode === 'Remote' ? '#15803d' : workMode === 'Hybrid' ? '#b45309' : '#1d4ed8',
+                        border: '1px solid rgba(0,0,0,0.1)'
+                      }}>
+                        {workMode}
+                      </span>
+                    </td>
+                    <td style={{ padding: '5px 6px', color: '#000000', maxWidth: '220px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {skillsList.slice(0, 3).join(', ')}{skillsList.length > 3 ? ` +${skillsList.length - 3}` : ''}
+                    </td>
+                    <td style={{ padding: '5px 6px', color: '#000000', whiteSpace: 'nowrap' }}>
+                      {job.deadline || '—'}
+                    </td>
+                    <td style={{ padding: '5px 6px', textAlign: 'center', fontWeight: 'bold', color: candidateCount > 0 ? '#16a34a' : '#64748b' }}>
+                      {candidateCount}
+                    </td>
+                    {isSuperAdmin && (
+                      <td style={{ padding: '5px 6px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigator.clipboard.writeText(fullDesc);
-                            alert('📋 Job Description copied to clipboard!');
-                          }}
+                          type="button"
+                          onClick={(e) => handleOpenLinkedInModal(e, job)}
                           style={{
-                            padding: '2px 8px', fontSize: 11, background: '#eff6ff', color: '#1d4ed8',
-                            border: '1px solid #bfdbfe', borderRadius: 5, cursor: 'pointer', fontWeight: 700,
-                            transition: 'all 0.1s'
+                            background: '#0a66c2',
+                            color: '#ffffff',
+                            border: 'none',
+                            padding: '2px 8px',
+                            fontSize: '10px',
+                            fontWeight: 'bold',
+                            borderRadius: '2px',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px'
                           }}
+                          title="Open LinkedIn Post Generator"
                         >
-                          📋 Copy JD
+                          <span>🌐 Post</span>
                         </button>
-                      </div>
-                      <div style={{ fontSize: 13, color: '#334155', lineHeight: 1.7, whiteSpace: 'pre-wrap', fontFamily: "'Inter', sans-serif" }}>
-                        {fullDesc}
-                      </div>
-                    </div>
-
-                    {/* Right Column: LinkedIn Post Format */}
-                    <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: 14, maxHeight: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #a7f3d0', paddingBottom: 6 }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: '#15803d', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🌐 LinkedIn Post Format</span>
+                      </td>
+                    )}
+                    <td style={{ padding: '5px 6px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'inline-flex', gap: '4px' }}>
                         <button
+                          type="button"
                           onClick={(e) => {
-                            e.stopPropagation();
-                            navigator.clipboard.writeText(generateLinkedInPost(job));
-                            alert('📋 LinkedIn post format copied to clipboard!');
+                            e.stopPropagation()
+                            const link = getRecruiterJobLink(job.id, selectedRecruiterPoster?.refCode)
+                            navigator.clipboard.writeText(link)
+                            setCopyLinkToast(`✅ Referral link copied for ${selectedRecruiterPoster?.name}!`)
+                            setTimeout(() => setCopyLinkToast(''), 3500)
                           }}
-                          style={{
-                            padding: '2px 8px', fontSize: 11, background: '#dcfce7', color: '#15803d',
-                            border: '1px solid #bbf7d0', borderRadius: 5, cursor: 'pointer', fontWeight: 700,
-                            transition: 'all 0.1s'
-                          }}
+                          style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '1px 5px', fontSize: '10px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer', color: '#0033cc' }}
+                          title="Copy candidate application link"
                         >
-                          📋 Copy Post
+                          🔗 Apply
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => setJdModalJob(job)}
+                          style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '1px 5px', fontSize: '10px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer', color: '#0f172a' }}
+                          title="View Full Job Description"
+                        >
+                          📄 JD
+                        </button>
+                        {isSuperAdmin && (
+                          <button
+                            type="button"
+                            onClick={(e) => handleOpenEdit(e, job)}
+                            style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '1px 5px', fontSize: '10px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer', color: '#0f172a' }}
+                            title="Edit Job"
+                          >
+                            ✏️
+                          </button>
+                        )}
+                        {isSuperAdmin && (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleDeleteJob(job.id) }}
+                            style={{ background: '#fee2e2', border: '1px solid #fca5a5', padding: '1px 5px', fontSize: '10px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer', color: '#b91c1c' }}
+                            title="Delete Job"
+                          >
+                            🗑️
+                          </button>
+                        )}
                       </div>
-                      <div style={{ fontSize: 13, color: '#166534', lineHeight: 1.7, whiteSpace: 'pre-wrap', fontFamily: "'Inter', sans-serif" }}>
-                        {generateLinkedInPost(job)}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Matched candidates mini list */}
-                  {jobCandidates.length > 0 && (
-                    <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: 12 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: '#1d4ed8', marginBottom: 6 }}>👥 Matched Candidates ({jobCandidates.length})</div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        {jobCandidates.slice(0, 4).map((c, idx) => (
-                          <div key={c.id || idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#1e3a8a' }}>
-                            <span>{c.extracted_profile?.name || c.name}</span>
-                            <span style={{ fontWeight: 700, color: '#16a34a' }}>{c.jd_match?.match_score || c.matchScore || 0}% Match</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Meta Row (Location, Exp, Deadline) */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {[
-                  { icon: '📍', val: locationText },
-                  { icon: '💼', val: job.experience || 'Relevant Experience' },
-                  { icon: '📅', val: job.creationDate || '—' },
-                  { icon: '⏰', val: job.deadline || '—', danger: isClosed },
-                ].map(m => (
-                  <span key={m.icon + m.val} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, background: '#f1f5f9', color: m.danger ? '#b91c1c' : '#475569', border: '1px solid #e2e8f0', fontWeight: 500 }}>
-                    {m.icon} {m.val}
-                  </span>
-                ))}
-              </div>
-
-              {/* Skills */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                {(Array.isArray(job.skills) ? job.skills : []).slice(0, 5).map(s => (
-                  <span key={s} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 5, background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', fontWeight: 600 }}>{s}</span>
-                ))}
-                {(Array.isArray(job.skills) ? job.skills : []).length > 5 && (
-                  <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 5, color: '#64748b' }}>+{job.skills.length - 5} more</span>
-                )}
-              </div>
-
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', borderTop: '1px solid #f1f5f9', paddingTop: 12, marginTop: 4 }}>
-                {isSuperAdmin && (
-                  <>
-                    <button onClick={(e) => handleOpenEdit(e, job)}
-                      style={{ flex: 1, background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                      ✏️ Edit
-                    </button>
-                    <button onClick={(e) => handleReformatJob(e, job)} disabled={isReformatting}
-                      style={{ flex: 1, background: '#f5f3ff', color: '#6d28d9', border: '1px solid #ddd6fe', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                      {isReformatting ? '⏳' : '🪄'} {isReformatting ? 'Formatting...' : 'AI Re-format'}
-                    </button>
-                  </>
-                )}
-                <button onClick={() => setJdModalJob(job)}
-                  style={{ flex: 1, background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                  📄 Full JD
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const link = getRecruiterJobLink(job.id, selectedRecruiterPoster.refCode);
-                    navigator.clipboard.writeText(link);
-                    setCopyLinkToast(`✅ Referral link copied for ${selectedRecruiterPoster.name}!`);
-                    setTimeout(() => setCopyLinkToast(''), 3500);
-                  }}
-                  style={{ flex: 1, background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 7, padding: '7px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
-                  title={`Copy application link tagged to ${selectedRecruiterPoster.name}`}
-                >
-                  🔗 Copy Apply Link
-                </button>
-                <button
-                  onClick={(e) => handleOpenLinkedInModal(e, job)}
-                  style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: 7, padding: '7px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
-                  title="Generate formatted LinkedIn post text with recruiter attribution"
-                >
-                  📝 Post
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleAIJobAnalysis(job) }}
-                  disabled={aiAnalysisLoading[job.id || job._id]}
-                  style={{ background: aiAnalysisJobId === (job.id || job._id) ? '#7c3aed' : '#f5f3ff', color: aiAnalysisJobId === (job.id || job._id) ? '#fff' : '#7c3aed', border: '1px solid #ddd6fe', borderRadius: 7, padding: '7px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
-                  title="AI Job Deep Analysis — Candidate persona, boolean search strings, screening questions"
-                >
-                  {aiAnalysisLoading[job.id || job._id] ? '⏳' : '🧠'} AI
-                </button>
-                {isSuperAdmin && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleDeleteJob(job.id) }}
-                    style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fca5a5', borderRadius: 7, padding: '7px 10px', fontSize: 12, cursor: 'pointer' }}>
-                    🗑️
-                  </button>
-                )}
-              </div>
-
-              {/* AI Job Deep Analysis Panel */}
-              {aiAnalysisJobId === (job.id || job._id) && (
-                <div style={{ marginTop: 14, borderTop: '2px solid #7c3aed', paddingTop: 14 }}>
-                  {aiAnalysisLoading[job.id || job._id] ? (
-                    <div style={{ textAlign: 'center', padding: '24px 0', color: '#7c3aed', fontSize: 13, fontWeight: 700 }}>🧠 Generating AI Job Analysis...</div>
-                  ) : aiAnalysisResult[job.id || job._id] ? (() => {
-                    const a = aiAnalysisResult[job.id || job._id]
-                    const jobIdKey = job.id || job._id
-                    return (
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 800, color: '#7c3aed', marginBottom: 12 }}>🧠 AI Job Deep Analysis — {a.jobTitle}</div>
-
-                        {/* Candidate Persona */}
-                        <div style={{ background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 8, padding: '10px 14px', marginBottom: 12 }}>
-                          <div style={{ fontSize: 11, fontWeight: 800, color: '#6d28d9', marginBottom: 6, textTransform: 'uppercase' }}>Ideal Candidate Persona</div>
-                          <p style={{ margin: 0, fontSize: 12, lineHeight: 1.6, color: '#334155' }}>{a.candidatePersona}</p>
-                          <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
-                            <span style={{ background: '#7c3aed', color: '#fff', fontSize: 11, padding: '3px 10px', borderRadius: 12, fontWeight: 700 }}>{a.seniorityLevel}</span>
-                            <span style={{ background: '#2563eb', color: '#fff', fontSize: 11, padding: '3px 10px', borderRadius: 12, fontWeight: 700 }}>{a.workMode}</span>
-                            <span style={{ background: a.isGovernmentClient ? '#dc2626' : '#16a34a', color: '#fff', fontSize: 11, padding: '3px 10px', borderRadius: 12, fontWeight: 700 }}>{a.workAuth.substring(0, 30)}</span>
-                          </div>
-                        </div>
-
-                        {/* Must-Have vs Nice-to-Have */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
-                          <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '10px 12px' }}>
-                            <div style={{ fontSize: 11, fontWeight: 800, color: '#16a34a', marginBottom: 6, textTransform: 'uppercase' }}>Must-Have Skills</div>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                              {a.mustHaveSkills.map(s => <span key={s} style={{ background: '#dcfce7', color: '#15803d', fontSize: 10, padding: '2px 8px', borderRadius: 8, fontWeight: 700 }}>{s}</span>)}
-                            </div>
-                          </div>
-                          <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 8, padding: '10px 12px' }}>
-                            <div style={{ fontSize: 11, fontWeight: 800, color: '#0369a1', marginBottom: 6, textTransform: 'uppercase' }}>Nice-to-Have</div>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                              {a.niceToHaveSkills.slice(0,6).map(s => <span key={s} style={{ background: '#e0f2fe', color: '#0369a1', fontSize: 10, padding: '2px 8px', borderRadius: 8, fontWeight: 700 }}>{s}</span>)}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Screening Questions */}
-                        <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '10px 14px', marginBottom: 12 }}>
-                          <div style={{ fontSize: 11, fontWeight: 800, color: '#92400e', marginBottom: 8, textTransform: 'uppercase' }}>Top 5 Screening Questions</div>
-                          {a.screeningQuestions.map((q, i) => (
-                            <div key={i} style={{ fontSize: 12, color: '#78350f', marginBottom: 6, paddingLeft: 12, borderLeft: '2px solid #f59e0b' }}>
-                              <strong>{i + 1}.</strong> {q}
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Boolean Search Strings */}
-                        <div style={{ background: '#0f172a', borderRadius: 10, padding: '12px 14px' }}>
-                          <div style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Boolean Search Strings</div>
-                          {Object.entries(a.booleanSearches || {}).map(([platform, query]) => (
-                            <div key={platform} style={{ marginBottom: 8 }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-                                <span style={{ fontSize: 10, fontWeight: 700, color: '#7c3aed', textTransform: 'uppercase' }}>{platform.replace('linkedInRecruiter', 'LinkedIn Recruiter').replace('googleXRay', 'Google X-Ray').replace('careerBuilder', 'CareerBuilder')}</span>
-                                <button onClick={() => copyBoolean(jobIdKey, platform, query)} style={{ fontSize: 10, padding: '2px 8px', background: copiedBoolean[jobIdKey + platform] ? '#16a34a' : '#334155', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 700 }}>
-                                  {copiedBoolean[jobIdKey + platform] ? 'Copied!' : 'Copy'}
-                                </button>
-                              </div>
-                              <code style={{ display: 'block', fontSize: 11, color: '#e2e8f0', lineHeight: 1.5, wordBreak: 'break-word' }}>{query}</code>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  })() : (
-                    <div style={{ textAlign: 'center', padding: '12px 0', color: '#7c3aed' }}>
-                      <button onClick={() => handleAIJobAnalysis(job)} style={{ padding: '8px 20px', background: '#7c3aed', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 700 }}>Generate Analysis</button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )
-        })}
+                    </td>
+                  </tr>
+                )
+              })
+            )}
+          </tbody>
+        </table>
       </div>
-
-      {copyLinkToast && (
-        <div style={{ position: 'fixed', bottom: 24, right: 24, background: '#0f172a', color: '#ffffff', padding: '12px 20px', borderRadius: 8, boxShadow: '0 10px 30px rgba(0,0,0,0.25)', zIndex: 9999, fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8, borderLeft: '4px solid #10b981' }}>
-          {copyLinkToast}
-        </div>
-      )}
-
-      {filteredJobs.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: '#64748b' }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>💼</div>
-          <p style={{ fontSize: 16, fontWeight: 600 }}>No jobs found</p>
-          <p style={{ fontSize: 13 }}>Try scraping JobsInHand or paste a JD above</p>
-        </div>
-      )}
 
       {/* LINKEDIN POST FORMAT PREVIEW & GENERATOR MODAL */}
       {linkedinModalJob && (

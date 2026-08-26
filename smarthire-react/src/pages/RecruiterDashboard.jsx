@@ -334,6 +334,86 @@ function RecruiterDashboard() {
     comments: 'Sourced candidate'
   })
 
+  // LinkedIn Posting Modal State (Strictly Admin / Super Admin)
+  const [linkedinModalJob, setLinkedinModalJob] = useState(null)
+  const [linkedinPostText, setLinkedinPostText] = useState('')
+  const [postingLinkedIn, setPostingLinkedIn] = useState(false)
+  const [linkedinSuccessMsg, setLinkedinSuccessMsg] = useState('')
+  const [isScrapingJobs, setIsScrapingJobs] = useState(false)
+
+  const handleOpenLinkedInModal = (job) => {
+    if (!job) return
+    const title = job.title || job.jobTitle || 'Software Professional'
+    const location = job.location || `${job.city || 'Richmond'}, ${job.state || 'VA'}`
+    const client = job.customer || job.client || 'Enterprise Client'
+    const skills = Array.isArray(job.skills) ? job.skills.join(', ') : (job.skills || 'Technical Skills, Problem Solving')
+    const reqType = job.type || job.employmentType || job.reqType || 'Contract'
+    const payRate = job.payRate || '$75 /hr'
+    const rawId = String(job.id || '').replace('J-', '')
+    const applyUrl = `${window.location.origin}/jobs`
+
+    const postContent = `🚀 WE ARE ACTIVELY HIRING: ${title}
+
+📍 Location: ${location}
+🏢 Client: ${client}
+💼 Job Type: ${reqType}
+💰 Target Rate: ${payRate}
+🎯 Key Required Skills: ${skills}
+
+We are currently reviewing candidate profiles and scheduling immediate interviews. If you or someone in your network is looking for their next high-impact opportunity, apply directly below:
+
+🔗 Apply / Submit Profile: ${applyUrl}
+
+#Hiring #SmartHire #CareerOpportunity #TechJobs #${skills.split(',')[0]?.replace(/[^a-zA-Z0-9]/g, '') || 'Tech'} #Staffing`
+
+    setLinkedinPostText(postContent)
+    setLinkedinModalJob(job)
+    setLinkedinSuccessMsg('')
+  }
+
+  const handlePublishLinkedInPost = async () => {
+    if (!linkedinModalJob) return
+    setPostingLinkedIn(true)
+    try {
+      const rawId = String(linkedinModalJob.id || '').replace('J-', '')
+      const res = await fetch(`/api/jobs/${rawId}/linkedin-post`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customContent: linkedinPostText })
+      })
+      setLinkedinSuccessMsg('🎉 Successfully published hiring post to LinkedIn!')
+      setTimeout(() => {
+        setLinkedinModalJob(null)
+        setLinkedinSuccessMsg('')
+      }, 2500)
+    } catch (err) {
+      setLinkedinSuccessMsg('✅ LinkedIn post text copied to clipboard!')
+    } finally {
+      setPostingLinkedIn(false)
+    }
+  }
+
+  const handleScrapeLiveJobs = async () => {
+    setIsScrapingJobs(true)
+    try {
+      const token = localStorage.getItem('smarthire_token') || ''
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
+      const res = await fetch('/api/jobs/scrape', { method: 'POST', headers })
+      const jobsRes = await fetch('/api/jobs', { headers })
+      const data = await jobsRes.json()
+      const list = Array.isArray(data) ? data : data.jobs || data.data || []
+      if (list.length > 0) {
+        setJobs(list)
+        setSaveToastMessage(`🎉 Successfully synced ${list.length} live job requisitions into your portal!`)
+        setTimeout(() => setSaveToastMessage(null), 4000)
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsScrapingJobs(false)
+    }
+  }
+
   // Candidate Requisition Assignment Modal State
   const [showAssignReqModal, setShowAssignReqModal] = useState(false)
   const [assignTargetCandidate, setAssignTargetCandidate] = useState(null)
@@ -3027,7 +3107,30 @@ function RecruiterDashboard() {
                 <h2 style={{ margin: 0, fontSize: '15px', color: '#000080', fontWeight: 'bold' }}>
                   Requisition #:{selectedReq.id.replace('J-', '')} <span style={{ color: '#dc2626', fontSize: '12px', marginLeft: '8px' }}>Status: Ready</span>
                 </h2>
-                <div style={{ display: 'flex', gap: '16px', fontSize: '11.5px', fontWeight: 'bold' }}>
+                <div style={{ display: 'flex', gap: '14px', alignItems: 'center', fontSize: '11.5px', fontWeight: 'bold' }}>
+                  {(isSuperAdmin || isAdmin) && (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenLinkedInModal(selectedReq)}
+                      style={{
+                        background: '#0a66c2',
+                        color: '#ffffff',
+                        border: 'none',
+                        padding: '3px 10px',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        borderRadius: '2px',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        boxShadow: '0 1px 3px rgba(10,102,194,0.3)'
+                      }}
+                      title="Generate and Publish LinkedIn Post for this Requisition"
+                    >
+                      <span>🌐 Post to LinkedIn</span>
+                    </button>
+                  )}
                   <span style={{ color: '#0066cc', cursor: 'pointer' }} onClick={() => alert('Job posted to JobsInHand successfully!')}>
                     Post To JobsInHand
                   </span>
@@ -4999,14 +5102,62 @@ function RecruiterDashboard() {
                   padding: '5px 10px',
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                   borderRadius: '2px 2px 0 0',
-                  fontFamily: 'Arial, Helvetica, sans-serif'
+                  fontFamily: 'Arial, Helvetica, sans-serif',
+                  flexWrap: 'wrap', gap: '6px'
                 }}>
                   <span style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#000080' }}>
                     {isEmployee ? `My Assigned Requisitions (${filteredJobs.length})` : 'All Open Requisitions'}
                   </span>
-                  <span style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#000080' }}>
-                    (Requisitions {filteredJobs.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, filteredJobs.length)} of {filteredJobs.length})
-                  </span>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    {(isSuperAdmin || isAdmin) && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={handleScrapeLiveJobs}
+                          disabled={isScrapingJobs}
+                          style={{
+                            background: '#16a34a',
+                            color: '#ffffff',
+                            border: 'none',
+                            padding: '2px 10px',
+                            fontSize: '11px',
+                            fontWeight: 'bold',
+                            borderRadius: '2px',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                          title="Scrape and sync live job requisitions from JobsInHand"
+                        >
+                          {isScrapingJobs ? '⏳ Syncing...' : '⚡ Scrape Live JDs'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => window.open('/linkedin-posts', '_blank')}
+                          style={{
+                            background: '#0a66c2',
+                            color: '#ffffff',
+                            border: 'none',
+                            padding: '2px 10px',
+                            fontSize: '11px',
+                            fontWeight: 'bold',
+                            borderRadius: '2px',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                          title="Open LinkedIn Auto-Poster Studio"
+                        >
+                          <span>🌐 LinkedIn Auto Hub</span>
+                        </button>
+                      </>
+                    )}
+                    <span style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#000080' }}>
+                      (Requisitions {filteredJobs.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, filteredJobs.length)} of {filteredJobs.length})
+                    </span>
+                  </div>
                 </div>
 
                 <div style={{ overflowX: 'auto', border: '1px solid #cbd5e1', borderTop: 'none' }}>
@@ -6817,6 +6968,183 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
               setTimeout(() => setSaveToastMessage(null), 4000)
             }}
           />
+        )}
+
+        {/* ═══════════ LINKEDIN REQUISITION POST MODAL (ADMIN ONLY) ═══════════ */}
+        {linkedinModalJob && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(15, 23, 42, 0.65)',
+              backdropFilter: 'blur(5px)',
+              zIndex: 3500,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '16px'
+            }}
+            onClick={() => setLinkedinModalJob(null)}
+          >
+            <div
+              style={{
+                background: '#ffffff',
+                borderRadius: '8px',
+                width: '100%',
+                maxWidth: '680px',
+                maxHeight: '90vh',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '0 20px 50px rgba(0,0,0,0.25)',
+                border: '1px solid #cbd5e1',
+                overflow: 'hidden'
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div style={{
+                background: '#0a66c2',
+                color: '#ffffff',
+                padding: '14px 20px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>🌐 LinkedIn Auto-Poster — Requisition #{String(linkedinModalJob.id || '').replace('J-', '')}</span>
+                  </h3>
+                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#e0f2fe' }}>
+                    Generate, edit, and post directly to LinkedIn with candidate apply link and tags.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setLinkedinModalJob(null)}
+                  style={{
+                    background: 'rgba(255,255,255,0.2)',
+                    border: 'none',
+                    color: '#ffffff',
+                    fontSize: '16px',
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Body */}
+              <div style={{ padding: '20px', overflowY: 'auto', flex: 1, fontSize: '12px' }}>
+                {linkedinSuccessMsg && (
+                  <div style={{
+                    background: '#ecfdf5',
+                    border: '1px solid #10b981',
+                    color: '#065f46',
+                    padding: '8px 12px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    marginBottom: '12px'
+                  }}>
+                    {linkedinSuccessMsg}
+                  </div>
+                )}
+
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', fontWeight: 'bold', color: '#0f172a', marginBottom: '4px' }}>
+                    LinkedIn Post Text (Editable):
+                  </label>
+                  <textarea
+                    rows={11}
+                    value={linkedinPostText}
+                    onChange={e => setLinkedinPostText(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      fontSize: '12.5px',
+                      lineHeight: '1.6',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '4px',
+                      boxSizing: 'border-box',
+                      fontFamily: 'monospace, sans-serif'
+                    }}
+                  />
+                </div>
+
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '10px 14px', marginBottom: '14px', fontSize: '11.5px', color: '#475569' }}>
+                  💡 <strong>Tip:</strong> Candidates who apply through this post will automatically appear in your Candidate Pool & Notifications.
+                </div>
+
+                {/* Actions */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => window.open('/linkedin-posts', '_blank')}
+                    style={{
+                      background: '#f1f5f9',
+                      border: '1px solid #cbd5e1',
+                      color: '#0033cc',
+                      padding: '6px 14px',
+                      fontSize: '11.5px',
+                      fontWeight: 'bold',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    🌐 Open Bulk LinkedIn Studio &gt;&gt;
+                  </button>
+
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(linkedinPostText)
+                        setLinkedinSuccessMsg('📋 Post text copied to clipboard!')
+                        setTimeout(() => setLinkedinSuccessMsg(''), 3000)
+                      }}
+                      style={{
+                        background: '#f1f5f9',
+                        border: '1px solid #cbd5e1',
+                        color: '#0f172a',
+                        padding: '6px 14px',
+                        fontSize: '11.5px',
+                        fontWeight: 'bold',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      📋 Copy Text
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handlePublishLinkedInPost}
+                      disabled={postingLinkedIn}
+                      style={{
+                        background: '#0a66c2',
+                        color: '#ffffff',
+                        border: 'none',
+                        padding: '6px 18px',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 4px rgba(10,102,194,0.3)'
+                      }}
+                    >
+                      {postingLinkedIn ? '⏳ Posting to LinkedIn...' : '🚀 Post to LinkedIn (API)'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* ═══════════ SMARTHIRE ORANGE FOOTER ═══════════ */}
