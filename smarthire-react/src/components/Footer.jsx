@@ -7,9 +7,10 @@ function Footer() {
       <div className="container footer-wrap">
         <p>&copy; 2026 SmartHire Enterprise. All rights reserved.</p>
         <div className="footer-links">
+          <Link to="/support">Help & Support</Link>
           <Link to="/privacy">Privacy Policy</Link>
           <Link to="/terms">Terms of Service</Link>
-          <Link to="/contact">Support Contact</Link>
+          <Link to="/contact">Contact Sales</Link>
         </div>
       </div>
     </footer>

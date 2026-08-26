@@ -8,6 +8,7 @@ import About from './pages/About'
 import Contact from './pages/Contact'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import Terms from './pages/Terms'
+import Support from './pages/Support'
 import AtsPlatform from './pages/AtsPlatform'
 import Reports from './pages/Reports'
 import BrandingCenter from './pages/BrandingCenter'
@@ -71,6 +72,7 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/about" element={<About />} />
       <Route path="/contact" element={<Contact />} />
+      <Route path="/support" element={<Support />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/terms" element={<Terms />} />
       <Route path="*" element={<Navigate to="/" replace />} />
