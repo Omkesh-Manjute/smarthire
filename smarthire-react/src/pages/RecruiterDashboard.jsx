@@ -261,6 +261,44 @@ function RecruiterDashboard() {
     status: 'Int-SubmittedToManager'
   })
 
+  // Candidate Intake & Resume Update Modal State (For Candidate Directory)
+  const [showCandidateIntakeModal, setShowCandidateIntakeModal] = useState(false)
+  const [candidateIntakeData, setCandidateIntakeData] = useState({
+    id: null,
+    name: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    role: '',
+    fullRole: '',
+    exp: '5',
+    location: 'Richmond, VA',
+    city: 'Richmond',
+    state: 'VA',
+    payRate: '75',
+    rateType: 'C2C',
+    workAuth: 'US Citizen',
+    skills: '',
+    resumeName: '',
+    resumeFile: null,
+    targetJobId: '',
+    comments: 'Sourced candidate'
+  })
+
+  // Candidate Requisition Assignment Modal State
+  const [showAssignReqModal, setShowAssignReqModal] = useState(false)
+  const [assignTargetCandidate, setAssignTargetCandidate] = useState(null)
+  const [assignTargetJobId, setAssignTargetJobId] = useState('')
+  const [assignProposedRate, setAssignProposedRate] = useState('75')
+  const [assignRateType, setAssignRateType] = useState('C2C')
+  const [assignComments, setAssignComments] = useState('Direct candidate submission')
+
+  // Employee Reports Filter State
+  const [reportSearchQuery, setReportSearchQuery] = useState('')
+  const [reportStatusFilter, setReportStatusFilter] = useState('All')
+  const [reportJobFilter, setReportJobFilter] = useState('All')
+
   // ─── SEARCH REQUISITIONS FILTER STATE ───
   const [reqFilters, setReqFilters] = useState({
     reqId: '',
@@ -1145,12 +1183,19 @@ function RecruiterDashboard() {
       if (!c) return false
 
       // ─── STRICT RBAC FOR CANDIDATES ───
-      // If user is Employee: only show candidates submitted or assigned to this employee
+      // If user is Employee: strictly show ONLY candidates added, submitted, or sourced by this employee
       if (isEmployee) {
         const userIdent = userName.toLowerCase().trim()
         const userEmail = (currentUser?.email || '').toLowerCase().trim()
-        const candRecruiter = (c.recruiter || c.assignedTo || c.assignedBy || '').toLowerCase().trim()
-        const isMyCandidate = candRecruiter === userIdent || candRecruiter.includes(userIdent) || userIdent.includes(candRecruiter) || (userEmail && candRecruiter.includes(userEmail))
+        const firstName = (userName.split(' ')[0] || '').toLowerCase().trim()
+        const candRecruiter = (c.recruiter || c.assignedTo || c.assignedBy || c.addedByName || c.submittedBy || '').toLowerCase().trim()
+        const candEmail = (c.recruiterEmail || '').toLowerCase().trim()
+
+        const isMyCandidate = candRecruiter === userIdent ||
+                              (userIdent.length >= 3 && candRecruiter.includes(userIdent)) ||
+                              (candRecruiter.length >= 3 && userIdent.includes(candRecruiter)) ||
+                              (userEmail && (candRecruiter.includes(userEmail) || candEmail.includes(userEmail))) ||
+                              (firstName.length >= 3 && candRecruiter.includes(firstName))
         if (!isMyCandidate) return false
       }
 
@@ -1161,7 +1206,7 @@ function RecruiterDashboard() {
           .filter(u => u.parentRecruiterName && u.parentRecruiterName.toLowerCase().trim() === userIdent)
           .map(u => u.name.toLowerCase().trim())
         
-        const candRecruiter = (c.recruiter || c.assignedTo || c.assignedBy || '').toLowerCase().trim()
+        const candRecruiter = (c.recruiter || c.assignedTo || c.assignedBy || c.addedByName || c.submittedBy || '').toLowerCase().trim()
         const isMineOrSub = candRecruiter === userIdent || candRecruiter.includes(userIdent) || userIdent.includes(candRecruiter) ||
                             mySubordinates.some(sub => candRecruiter === sub || candRecruiter.includes(sub) || sub.includes(candRecruiter))
 
@@ -1240,6 +1285,90 @@ function RecruiterDashboard() {
 
   const totalCandPages = Math.ceil(filteredCandidates.length / pageSize) || 1
 
+  // ─── ALL SUBMISSIONS & PERFORMANCE TRACKING LOG ───
+  const allSubmissionsList = useMemo(() => {
+    const list = []
+    const seen = new Set()
+
+    jobs.forEach(job => {
+      const cleanId = String(job.id || '').replace('J-', '')
+      let potList = []
+      try {
+        const raw = localStorage.getItem(`smarthire_potential_candidates_${cleanId}`)
+        if (raw) potList = JSON.parse(raw)
+      } catch (e) {}
+
+      if (Array.isArray(potList)) {
+        potList.forEach(cand => {
+          const userIdent = userName.toLowerCase().trim()
+          const by = (cand.assignedBy || cand.recruiter || cand.lastChangedBy || cand.submittedBy || '').toLowerCase().trim()
+          const isMine = by === userIdent || by.includes(userIdent) || userIdent.includes(by)
+          
+          if (!isEmployee || isMine) {
+            const uniqueKey = `${cleanId}_${cand.id}_${cand.name}`
+            if (!seen.has(uniqueKey)) {
+              seen.add(uniqueKey)
+              list.push({
+                ...cand,
+                key: uniqueKey,
+                jobId: job.id,
+                jobReqId: cleanId,
+                jobTitle: job.title,
+                customer: job.customer || 'Direct Client',
+                location: job.location || 'Remote / Hybrid',
+                jobStatus: job.status || 'In-Progress'
+              })
+            }
+          }
+        })
+      }
+    })
+
+    return list
+  }, [jobs, userName, isEmployee, potentialCandidates, candidates])
+
+  // Filtered Submissions for Reports Tab
+  const filteredSubmissions = useMemo(() => {
+    return allSubmissionsList.filter(sub => {
+      if (reportStatusFilter !== 'All') {
+        const s = (sub.status || '').toLowerCase()
+        if (reportStatusFilter === 'Submitted' && !s.includes('submitted')) return false
+        if (reportStatusFilter === 'Interview' && !s.includes('interview')) return false
+        if (reportStatusFilter === 'Selected' && (!s.includes('select') && !s.includes('offer') && !s.includes('placed'))) return false
+        if (reportStatusFilter === 'Rejected' && !s.includes('reject')) return false
+      }
+      if (reportJobFilter !== 'All') {
+        if (String(sub.jobReqId) !== String(reportJobFilter)) return false
+      }
+      if (reportSearchQuery.trim()) {
+        const q = reportSearchQuery.toLowerCase().trim()
+        const matchName = (sub.name || '').toLowerCase().includes(q)
+        const matchTitle = (sub.jobTitle || '').toLowerCase().includes(q)
+        const matchCust = (sub.customer || '').toLowerCase().includes(q)
+        if (!matchName && !matchTitle && !matchCust) return false
+      }
+      return true
+    })
+  }, [allSubmissionsList, reportStatusFilter, reportJobFilter, reportSearchQuery])
+
+  // KPI Metrics for Employee Performance Report
+  const reportMetrics = useMemo(() => {
+    const totalSourced = filteredCandidates.length
+    const totalSubmissions = allSubmissionsList.length
+    const interviews = allSubmissionsList.filter(s => (s.status || '').toLowerCase().includes('interview')).length
+    const selected = allSubmissionsList.filter(s => (s.status || '').toLowerCase().includes('select') || (s.status || '').toLowerCase().includes('offer') || (s.status || '').toLowerCase().includes('placed')).length
+    const rejected = allSubmissionsList.filter(s => (s.status || '').toLowerCase().includes('reject')).length
+    const inReview = totalSubmissions - interviews - selected - rejected
+    return {
+      totalSourced,
+      totalSubmissions,
+      interviews,
+      selected,
+      rejected,
+      inReview: inReview > 0 ? inReview : (totalSubmissions > 0 ? totalSubmissions : 0)
+    }
+  }, [filteredCandidates, allSubmissionsList])
+
   // SmartWorks Header Navigation Tabs based on RBAC Role
   const navTabs = useMemo(() => {
     if (isAdmin) {
@@ -1247,7 +1376,7 @@ function RecruiterDashboard() {
         { id: 'requisitions', name: 'Requisitions' },
         { id: 'candidates', name: 'Candidates' },
         { id: 'admin', name: 'Administration' },
-        { id: 'reports', name: 'Reports', link: '/reports' },
+        { id: 'reports', name: 'Reports' },
         { id: 'process', name: 'Process', link: '/ats' }
       ]
     }
@@ -1256,21 +1385,23 @@ function RecruiterDashboard() {
         { id: 'requisitions', name: 'Requisitions (Review)' },
         { id: 'candidates', name: 'Candidates & AI Fit' },
         { id: 'admin', name: 'Team Management' },
-        { id: 'reports', name: 'Reports', link: '/reports' },
+        { id: 'reports', name: 'Reports' },
         { id: 'process', name: 'Process', link: '/ats' }
       ]
     }
     if (isRecruiter) {
       return [
         { id: 'requisitions', name: 'My Requisitions' },
+        { id: 'candidates', name: 'Team Candidates' },
         { id: 'admin', name: 'My Team (Manage Employees)' },
-        { id: 'candidates', name: 'Team Candidates' }
+        { id: 'reports', name: 'Team Submissions & Reports' }
       ]
     }
-    // Employee (Restricted Workspace: strictly Requisitions & Candidates submitted by them)
+    // Employee (Restricted Workspace: strictly Requisitions, Candidates submitted by them, and Reports)
     return [
       { id: 'requisitions', name: 'My Requisitions' },
-      { id: 'candidates', name: 'My Candidates' }
+      { id: 'candidates', name: 'My Candidates' },
+      { id: 'reports', name: 'My Activity & Reports' }
     ]
   }, [isAdmin, isManager, isRecruiter, isEmployee])
 
@@ -1364,14 +1495,54 @@ function RecruiterDashboard() {
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                   <h2 style={{ margin: 0, fontSize: '15px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                    Search Candidate
+                    {isEmployee ? `🔒 My Sourced Candidates Pool (${filteredCandidates.length})` : 'Search Candidate'}
                   </h2>
-                  <span
-                    onClick={() => setViewMode('resumeSearch')}
-                    style={{ color: '#0066cc', fontWeight: 'bold', fontSize: '12px', textDecoration: 'underline', cursor: 'pointer' }}
-                  >
-                    Add new Candidate
-                  </span>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCandidateIntakeData({
+                          id: null,
+                          name: '',
+                          firstName: '',
+                          lastName: '',
+                          email: '',
+                          phone: '',
+                          role: '',
+                          fullRole: '',
+                          exp: '5',
+                          location: 'Richmond, VA',
+                          city: 'Richmond',
+                          state: 'VA',
+                          payRate: '75',
+                          rateType: 'C2C',
+                          workAuth: 'US Citizen',
+                          skills: '',
+                          resumeName: '',
+                          resumeFile: null,
+                          targetJobId: filteredJobs[0]?.id || '',
+                          comments: 'Direct candidate sourcing'
+                        })
+                        setShowCandidateIntakeModal(true)
+                      }}
+                      style={{
+                        background: '#ea580c',
+                        color: '#ffffff',
+                        border: 'none',
+                        padding: '6px 16px',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        borderRadius: '3px',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 1px 3px rgba(234, 88, 12, 0.3)'
+                      }}
+                    >
+                      <span>➕ Add / Parse Candidate & Resume</span>
+                    </button>
+                  </div>
                 </div>
 
                 <form onSubmit={e => { e.preventDefault(); setCurrentPage(1); }} style={{ border: '1px solid #fed7aa', background: '#fffaf5', padding: '14px 18px', borderRadius: '3px' }}>
@@ -1450,11 +1621,22 @@ function RecruiterDashboard() {
                       </select>
 
                       <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Assigned To:</label>
-                      <select value={candFilters.assignedTo} onChange={e => setCandFilters({ ...candFilters, assignedTo: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
-                        <option value="Any">Any (All Pool)</option>
-                        {allRecruitersList.map(r => (
-                          <option key={r.name} value={r.name}>{r.name} {r.name === userName ? '(You)' : ''}</option>
-                        ))}
+                      <select
+                        value={isEmployee ? userName : candFilters.assignedTo}
+                        disabled={isEmployee}
+                        onChange={e => setCandFilters({ ...candFilters, assignedTo: e.target.value })}
+                        style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1', background: isEmployee ? '#f1f5f9' : '#ffffff' }}
+                      >
+                        {isEmployee ? (
+                          <option value={userName}>{userName} (Your Private Pool)</option>
+                        ) : (
+                          <>
+                            <option value="Any">Any (All Pool)</option>
+                            {allRecruitersList.map(r => (
+                              <option key={r.name} value={r.name}>{r.name} {r.name === userName ? '(You)' : ''}</option>
+                            ))}
+                          </>
+                        )}
                       </select>
 
                       <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Sub-Vendor :</label>
@@ -1544,28 +1726,34 @@ function RecruiterDashboard() {
                 </form>
               </div>
 
-              {/* ─── CANDIDATE SEARCH RESULTS TABLE (EXACT MATCH TO MEDIA_1787312540212.PNG) ─── */}
+              {/* ─── CANDIDATE SEARCH RESULTS TABLE ─── */}
               <div style={{ background: '#ffffff', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
                 
                 {/* Header Strip with Export to Excel Button & Counts */}
                 <div style={{
-                  background: '#bfdbfe', borderBottom: '1px solid #93c5fd', padding: '5px 12px',
-                  display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '14px'
+                  background: isEmployee ? '#dcfce7' : '#bfdbfe', borderBottom: '1px solid',
+                  borderColor: isEmployee ? '#86efac' : '#93c5fd', padding: '5px 12px',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                 }}>
-                  <button
-                    type="button"
-                    onClick={handleExportToExcel}
-                    style={{
-                      background: '#f1f5f9', border: '1px solid #94a3b8', padding: '2px 10px',
-                      fontSize: '11px', fontWeight: 'bold', color: '#0f172a', cursor: 'pointer',
-                      boxShadow: 'inset 0 1px 0 #ffffff, 0 1px 2px rgba(0,0,0,0.1)', borderRadius: '2px'
-                    }}
-                  >
-                    Export Results to Excel
-                  </button>
-                  <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#1e3a8a' }}>
-                    (Candidates {filteredCandidates.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, filteredCandidates.length)} of {filteredCandidates.length})
+                  <span style={{ fontSize: '12px', fontWeight: 'bold', color: isEmployee ? '#166534' : '#1e3a8a' }}>
+                    {isEmployee ? `My Candidate Directory (${filteredCandidates.length})` : 'All Candidates Pool'}
                   </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                    <button
+                      type="button"
+                      onClick={handleExportToExcel}
+                      style={{
+                        background: '#f1f5f9', border: '1px solid #94a3b8', padding: '2px 10px',
+                        fontSize: '11px', fontWeight: 'bold', color: '#0f172a', cursor: 'pointer',
+                        boxShadow: 'inset 0 1px 0 #ffffff, 0 1px 2px rgba(0,0,0,0.1)', borderRadius: '2px'
+                      }}
+                    >
+                      Export Results to Excel
+                    </button>
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: isEmployee ? '#166534' : '#1e3a8a' }}>
+                      (Candidates {filteredCandidates.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, filteredCandidates.length)} of {filteredCandidates.length})
+                    </span>
+                  </div>
                 </div>
 
                 {/* Legacy CoolWorks Candidate Grid */}
@@ -1578,22 +1766,59 @@ function RecruiterDashboard() {
                         <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Job Title</th>
                         <th style={{ padding: '6px 5px', fontWeight: 'bold', textAlign: 'center', width: '35px' }}>Exp</th>
                         <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Location</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Location Preferences</th>
                         <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Pay Rate</th>
                         <th style={{ padding: '6px 6px', fontWeight: 'bold' }}>Rate Type</th>
-                        <th style={{ padding: '6px 6px', fontWeight: 'bold' }}>Rating</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Sub Vendor</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', background: '#475569' }}>Recruiter (Added By)</th>
-                        <th style={{ padding: '6px 5px', fontWeight: 'bold', textAlign: 'center' }}>AgrExists</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Avbl Date</th>
-                        <th style={{ padding: '6px 5px', fontWeight: 'bold', textAlign: 'center', width: '35px' }}>Res</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Work Auth</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', background: '#475569' }}>Sourced By</th>
+                        <th style={{ padding: '6px 5px', fontWeight: 'bold', textAlign: 'center', width: '40px' }}>Resume</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', textAlign: 'center', minWidth: '170px' }}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {paginatedCandidates.length === 0 ? (
                         <tr>
-                          <td colSpan="14" style={{ padding: '36px', textAlign: 'center', color: '#64748b' }}>
-                            No candidates found matching search criteria.
+                          <td colSpan="11" style={{ padding: '36px', textAlign: 'center', color: '#64748b' }}>
+                            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#0f172a', marginBottom: '4px' }}>
+                              {isEmployee ? '📁 Your Candidate Pool is Empty' : 'No candidates found matching search criteria.'}
+                            </div>
+                            <div style={{ fontSize: '11.5px', color: '#64748b', marginBottom: '12px' }}>
+                              {isEmployee
+                                ? 'Add candidates to your pool by uploading their resumes. Once added, you can assign them to your requisitions anytime.'
+                                : 'Try changing your search filters.'}
+                            </div>
+                            {isEmployee && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setCandidateIntakeData({
+                                    id: null,
+                                    name: '',
+                                    firstName: '',
+                                    lastName: '',
+                                    email: '',
+                                    phone: '',
+                                    role: '',
+                                    fullRole: '',
+                                    exp: '5',
+                                    location: 'Richmond, VA',
+                                    city: 'Richmond',
+                                    state: 'VA',
+                                    payRate: '75',
+                                    rateType: 'C2C',
+                                    workAuth: 'US Citizen',
+                                    skills: '',
+                                    resumeName: '',
+                                    resumeFile: null,
+                                    targetJobId: filteredJobs[0]?.id || '',
+                                    comments: 'Direct candidate sourcing'
+                                  })
+                                  setShowCandidateIntakeModal(true)
+                                }}
+                                style={{ background: '#ea580c', color: '#ffffff', border: 'none', padding: '6px 18px', fontSize: '12px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer' }}
+                              >
+                                ➕ Add First Candidate to Pool
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ) : (
@@ -1616,70 +1841,116 @@ function RecruiterDashboard() {
 
                             {/* Job Title */}
                             <td style={{ padding: '5px 8px', color: '#334155' }} title={c.fullRole || c.role}>
-                              {c.role}
+                              {c.fullRole || c.role}
                             </td>
 
                             {/* Exp */}
                             <td style={{ padding: '5px 5px', textAlign: 'center', color: '#334155' }}>
-                              {c.exp}
+                              {c.exp} yrs
                             </td>
 
                             {/* Location */}
                             <td style={{ padding: '5px 8px', color: '#334155' }}>
-                              {c.location}
-                            </td>
-
-                            {/* Location Preferences */}
-                            <td style={{ padding: '5px 8px', color: '#64748b' }}>
-                              {c.locPref || ''}
+                              {c.location || `${c.city || ''}, ${c.state || ''}`}
                             </td>
 
                             {/* Pay Rate */}
-                            <td style={{ padding: '5px 8px', color: '#334155' }}>
+                            <td style={{ padding: '5px 8px', color: '#334155', fontWeight: 'bold' }}>
                               {c.payRate}
                             </td>
 
                             {/* Rate Type */}
                             <td style={{ padding: '5px 6px', color: '#334155' }}>
-                              {c.rateType}
+                              {c.rateType || 'C2C'}
                             </td>
 
-                            {/* Rating Stars */}
-                            <td style={{ padding: '5px 6px' }}>
-                              {c.rating >= 4 ? (
-                                <span style={{ color: '#f59e0b', fontSize: '11px' }}>⭐⭐⭐⭐⭐</span>
-                              ) : (
-                                <span style={{ color: '#cbd5e1', fontSize: '11px' }}>☆☆☆☆☆</span>
-                              )}
-                            </td>
-
-                            {/* Sub Vendor */}
+                            {/* Work Auth */}
                             <td style={{ padding: '5px 8px', color: '#334155' }}>
-                              {c.subVendor}
+                              {c.workAuth || 'US Citizen'}
                             </td>
 
                             {/* Recruiter / Added By */}
                             <td style={{ padding: '5px 8px', fontWeight: 'bold', color: '#1e3a8a', background: idx % 2 === 0 ? '#f1f5f9' : '#e2e8f0' }}>
-                              {c.recruiter || c.assignedTo || 'Unassigned'}
-                            </td>
-
-                            {/* AgrExists */}
-                            <td style={{ padding: '5px 5px', textAlign: 'center' }}>
-                              {c.agrExists && (
-                                <span style={{ color: '#16a34a', fontSize: '12px' }}>🟢</span>
-                              )}
-                            </td>
-
-                            {/* Avbl Date */}
-                            <td style={{ padding: '5px 8px', color: '#334155' }}>
-                              {c.avblDate}
+                              {c.recruiter || c.assignedTo || c.addedByName || userName}
                             </td>
 
                             {/* Resume Icon */}
                             <td style={{ padding: '5px 5px', textAlign: 'center' }}>
                               <span onClick={() => handleSelectExistingCandidate(c)} style={{ cursor: 'pointer', fontSize: '13px' }} title="View / Download Resume">
-                                📎
+                                📄
                               </span>
+                            </td>
+
+                            {/* Actions Column */}
+                            <td style={{ padding: '5px 8px', textAlign: 'center' }}>
+                              <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setAssignTargetCandidate(c)
+                                    setAssignTargetJobId(filteredJobs[0]?.id || '')
+                                    setAssignProposedRate(String(c.payRate || '75').replace(/[^0-9]/g, '') || '75')
+                                    setAssignRateType(c.rateType || 'C2C')
+                                    setAssignComments(`Submitted from candidate pool by ${userName}`)
+                                    setShowAssignReqModal(true)
+                                  }}
+                                  style={{
+                                    background: '#ea580c',
+                                    color: '#ffffff',
+                                    border: 'none',
+                                    padding: '3px 8px',
+                                    fontSize: '10.5px',
+                                    fontWeight: 'bold',
+                                    borderRadius: '3px',
+                                    cursor: 'pointer'
+                                  }}
+                                  title="Submit this candidate to an assigned position"
+                                >
+                                  ➕ Assign to Req
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const parts = (c.name || '').split(' ')
+                                    setCandidateIntakeData({
+                                      id: c.id,
+                                      name: c.name,
+                                      firstName: parts[0] || '',
+                                      lastName: parts.slice(1).join(' ') || '',
+                                      email: c.email || '',
+                                      phone: c.phone || '',
+                                      role: c.role || '',
+                                      fullRole: c.fullRole || c.role || '',
+                                      exp: c.exp || '5',
+                                      location: c.location || '',
+                                      city: c.city || '',
+                                      state: c.state || '',
+                                      payRate: String(c.payRate || '75').replace(/[^0-9]/g, '') || '75',
+                                      rateType: c.rateType || 'C2C',
+                                      workAuth: c.workAuth || 'US Citizen',
+                                      skills: Array.isArray(c.skills) ? c.skills.join(', ') : (c.skills || ''),
+                                      resumeName: c.resumeName || `${c.name}_Resume.pdf`,
+                                      resumeFile: null,
+                                      targetJobId: '',
+                                      comments: c.comments || 'Updated candidate'
+                                    })
+                                    setShowCandidateIntakeModal(true)
+                                  }}
+                                  style={{
+                                    background: '#f1f5f9',
+                                    color: '#1e3a8a',
+                                    border: '1px solid #cbd5e1',
+                                    padding: '3px 8px',
+                                    fontSize: '10.5px',
+                                    fontWeight: 'bold',
+                                    borderRadius: '3px',
+                                    cursor: 'pointer'
+                                  }}
+                                  title="Edit candidate profile or update resume"
+                                >
+                                  ✏️ Edit / Resume
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))
@@ -1688,7 +1959,7 @@ function RecruiterDashboard() {
                   </table>
                 </div>
 
-                {/* Bottom Pagination Bar (Exact to Screenshot) */}
+                {/* Bottom Pagination Bar */}
                 <div style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                   background: '#f8fafc', borderTop: '1px solid #cbd5e1', padding: '6px 14px'
@@ -1715,6 +1986,301 @@ function RecruiterDashboard() {
                       <option value="50">50</option>
                     </select>
                   </div>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* ─────────────────────────────────────────────────────────────
+              TAB 4: REPORTS & ACTIVITY TRACKING PANEL
+              ───────────────────────────────────────────────────────────── */}
+          {activeMainTab === 'reports' && viewMode === 'portal' && (
+            <div>
+              {/* Breadcrumbs */}
+              <div style={{ fontSize: '11px', color: '#1e3a8a', fontWeight: 'bold', marginBottom: '8px' }}>
+                You are here: <span style={{ color: '#0066cc', cursor: 'pointer' }} onClick={() => setActiveMainTab('requisitions')}>Home</span> &gt; Reports &gt; {isEmployee ? 'My Submissions & Activity Report' : 'Recruitment & Performance Reports'}
+              </div>
+
+              {/* Header Card */}
+              <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '16px 20px', marginBottom: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #ea580c', paddingBottom: '8px', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+                  <div>
+                    <h2 style={{ margin: 0, fontSize: '16px', color: '#1e3a8a', fontWeight: 'bold' }}>
+                      {isEmployee ? `📊 My Submission & Activity Report — ${userName}` : `📊 SmartWorks Recruitment & Activity Reports`}
+                    </h2>
+                    <p style={{ margin: '3px 0 0', fontSize: '11.5px', color: '#64748b' }}>
+                      {isEmployee
+                        ? 'Real-time tracking of all candidates you sourced, their submission status across assigned requisitions, interviews, and recruiter reviews.'
+                        : 'Comprehensive analytics on team sourcing velocity, candidate pipeline conversions, client submissions, and offers.'}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const headers = ['Candidate ID', 'Candidate Name', 'Requisition ID', 'Position Title', 'Customer/Client', 'Submitted Date', 'Status', 'Rate', 'Submitted By']
+                      const rows = filteredSubmissions.map(s => [
+                        s.id,
+                        `"${s.name}"`,
+                        s.jobReqId,
+                        `"${s.jobTitle}"`,
+                        `"${s.customer}"`,
+                        `"${s.assignedOn || s.lastChangedOn || 'Recent'}"`,
+                        `"${s.status}"`,
+                        `"${s.payRate || 'N/A'}"`,
+                        `"${s.assignedBy || s.recruiter || userName}"`
+                      ])
+                      const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n')
+                      const encodedUri = encodeURI(csvContent)
+                      const link = document.createElement('a')
+                      link.setAttribute('href', encodedUri)
+                      link.setAttribute('download', `SmartHire_Report_${userName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.csv`)
+                      document.body.appendChild(link)
+                      link.click()
+                      document.body.removeChild(link)
+                    }}
+                    style={{
+                      background: '#16a34a',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '7px 18px',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      borderRadius: '3px',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      boxShadow: '0 1px 3px rgba(22, 163, 74, 0.3)'
+                    }}
+                  >
+                    📥 Export Report (CSV)
+                  </button>
+                </div>
+
+                {/* 6 Key Performance Metric Cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+                  <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '4px', padding: '12px 14px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#1d4ed8' }}>SOURCED CANDIDATES</div>
+                    <div style={{ fontSize: '22px', fontWeight: '800', color: '#1e3a8a', marginTop: '2px' }}>
+                      {reportMetrics.totalSourced}
+                    </div>
+                    <div style={{ fontSize: '10.5px', color: '#60a5fa', marginTop: '2px' }}>In your private pool</div>
+                  </div>
+
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '12px 14px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>TOTAL SUBMISSIONS</div>
+                    <div style={{ fontSize: '22px', fontWeight: '800', color: '#0f172a', marginTop: '2px' }}>
+                      {reportMetrics.totalSubmissions}
+                    </div>
+                    <div style={{ fontSize: '10.5px', color: '#94a3b8', marginTop: '2px' }}>Across assigned reqs</div>
+                  </div>
+
+                  <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '4px', padding: '12px 14px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#b45309' }}>UNDER REVIEW</div>
+                    <div style={{ fontSize: '22px', fontWeight: '800', color: '#78350f', marginTop: '2px' }}>
+                      {reportMetrics.inReview}
+                    </div>
+                    <div style={{ fontSize: '10.5px', color: '#f59e0b', marginTop: '2px' }}>Lead/Manager screening</div>
+                  </div>
+
+                  <div style={{ background: '#e0f2fe', border: '1px solid #bae6fd', borderRadius: '4px', padding: '12px 14px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#0369a1' }}>CLIENT INTERVIEWS</div>
+                    <div style={{ fontSize: '22px', fontWeight: '800', color: '#0c4a6e', marginTop: '2px' }}>
+                      {reportMetrics.interviews}
+                    </div>
+                    <div style={{ fontSize: '10.5px', color: '#38bdf8', marginTop: '2px' }}>Shortlisted for client</div>
+                  </div>
+
+                  <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '4px', padding: '12px 14px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#047857' }}>SELECTED / HIRED</div>
+                    <div style={{ fontSize: '22px', fontWeight: '800', color: '#065f46', marginTop: '2px' }}>
+                      {reportMetrics.selected}
+                    </div>
+                    <div style={{ fontSize: '10.5px', color: '#34d399', marginTop: '2px' }}>Successful placements</div>
+                  </div>
+
+                  <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '4px', padding: '12px 14px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#b91c1c' }}>REJECTED</div>
+                    <div style={{ fontSize: '22px', fontWeight: '800', color: '#991b1b', marginTop: '2px' }}>
+                      {reportMetrics.rejected}
+                    </div>
+                    <div style={{ fontSize: '10.5px', color: '#f87171', marginTop: '2px' }}>Not selected</div>
+                  </div>
+                </div>
+
+                {/* Filter and Search Bar */}
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '10px 14px', borderRadius: '4px', marginBottom: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#1e3a8a' }}>Filter Activity:</span>
+                    <input
+                      type="text"
+                      placeholder="Search Candidate, Requisition, Client..."
+                      value={reportSearchQuery}
+                      onChange={e => setReportSearchQuery(e.target.value)}
+                      style={{ padding: '4px 8px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '2px', width: '220px' }}
+                    />
+
+                    <select
+                      value={reportStatusFilter}
+                      onChange={e => setReportStatusFilter(e.target.value)}
+                      style={{ padding: '4px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '2px' }}
+                    >
+                      <option value="All">All Stages / Statuses</option>
+                      <option value="Submitted">Submitted (Under Review)</option>
+                      <option value="Interview">Client Interview</option>
+                      <option value="Selected">Selected / Hired</option>
+                      <option value="Rejected">Rejected</option>
+                    </select>
+
+                    <select
+                      value={reportJobFilter}
+                      onChange={e => setReportJobFilter(e.target.value)}
+                      style={{ padding: '4px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '2px', maxWidth: '200px' }}
+                    >
+                      <option value="All">All Assigned Positions</option>
+                      {filteredJobs.map(j => {
+                        const cId = String(j.id || '').replace('J-', '')
+                        return (
+                          <option key={j.id} value={cId}>
+                            Req #{cId} - {j.title.slice(0, 25)}...
+                          </option>
+                        )
+                      })}
+                    </select>
+                  </div>
+
+                  <span style={{ fontSize: '11.5px', color: '#1e3a8a', fontWeight: 'bold' }}>
+                    Showing <span style={{ color: '#ea580c' }}>{filteredSubmissions.length}</span> submission record(s)
+                  </span>
+                </div>
+
+                {/* Submissions Activity Table */}
+                <div style={{ overflowX: 'auto', border: '1px solid #cbd5e1', borderRadius: '3px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ background: '#94a3b8', color: '#ffffff' }}>
+                        <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Candidate Name</th>
+                        <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Requisition # & Title</th>
+                        <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Customer / Client</th>
+                        <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Proposed Pay Rate</th>
+                        <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Submitted Date</th>
+                        <th style={{ padding: '8px 10px', fontWeight: 'bold', textAlign: 'center' }}>Current Submission Status</th>
+                        <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Feedback / Status Notes</th>
+                        <th style={{ padding: '8px 10px', fontWeight: 'bold', textAlign: 'center' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredSubmissions.length === 0 ? (
+                        <tr>
+                          <td colSpan="8" style={{ padding: '36px', textAlign: 'center', color: '#64748b' }}>
+                            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#0f172a', marginBottom: '4px' }}>
+                              📝 No Submissions Found
+                            </div>
+                            <div style={{ fontSize: '11.5px', color: '#64748b', marginBottom: '12px' }}>
+                              {isEmployee
+                                ? 'You have not submitted candidates to any requisition yet. Go to "My Candidates" or "My Requisitions" to submit candidates.'
+                                : 'No submissions found matching your filter criteria.'}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setActiveMainTab('candidates')}
+                              style={{ background: '#ea580c', color: '#ffffff', border: 'none', padding: '6px 16px', fontSize: '12px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer' }}
+                            >
+                              + Go to My Candidates Pool
+                            </button>
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredSubmissions.map((sub, idx) => {
+                          const statusLower = (sub.status || '').toLowerCase()
+                          let badgeBg = '#eff6ff'
+                          let badgeColor = '#1d4ed8'
+                          let badgeBorder = '#bfdbfe'
+
+                          if (statusLower.includes('select') || statusLower.includes('offer') || statusLower.includes('placed')) {
+                            badgeBg = '#ecfdf5'
+                            badgeColor = '#065f46'
+                            badgeBorder = '#a7f3d0'
+                          } else if (statusLower.includes('interview')) {
+                            badgeBg = '#e0f2fe'
+                            badgeColor = '#0369a1'
+                            badgeBorder = '#bae6fd'
+                          } else if (statusLower.includes('reject')) {
+                            badgeBg = '#fef2f2'
+                            badgeColor = '#991b1b'
+                            badgeBorder = '#fecaca'
+                          } else if (statusLower.includes('submit') || statusLower.includes('manager')) {
+                            badgeBg = '#fef3c7'
+                            badgeColor = '#92400e'
+                            badgeBorder = '#fde68a'
+                          }
+
+                          return (
+                            <tr key={sub.key || idx} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                              <td style={{ padding: '8px 10px', fontWeight: 'bold' }}>
+                                <span style={{ color: '#0066cc', cursor: 'pointer' }} onClick={() => {
+                                  const c = candidates.find(item => item.id === sub.id || item.name === sub.name) || sub
+                                  handleSelectExistingCandidate(c)
+                                }}>
+                                  {sub.name}
+                                </span>
+                              </td>
+                              <td style={{ padding: '8px 10px' }}>
+                                <div>
+                                  <span style={{ fontWeight: 'bold', color: '#ea580c' }}>#{sub.jobReqId}</span>
+                                  <span style={{ marginLeft: '6px', color: '#1e3a8a', fontWeight: 'bold' }}>{sub.jobTitle}</span>
+                                </div>
+                              </td>
+                              <td style={{ padding: '8px 10px', color: '#334155' }}>
+                                {sub.customer}
+                              </td>
+                              <td style={{ padding: '8px 10px', color: '#334155', fontWeight: 'bold' }}>
+                                {sub.payRate || '$75/hr'} ({sub.payRateType || sub.rateType || 'C2C'})
+                              </td>
+                              <td style={{ padding: '8px 10px', color: '#64748b' }}>
+                                {sub.assignedOn || sub.lastChangedOn || 'Today'}
+                              </td>
+                              <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                                <span style={{
+                                  display: 'inline-block',
+                                  padding: '3px 8px',
+                                  borderRadius: '12px',
+                                  fontSize: '10.5px',
+                                  fontWeight: 'bold',
+                                  background: badgeBg,
+                                  color: badgeColor,
+                                  border: `1px solid ${badgeBorder}`
+                                }}>
+                                  {sub.status || 'Int-SubmittedToManager'}
+                                </span>
+                              </td>
+                              <td style={{ padding: '8px 10px', color: '#475569', fontSize: '11px', maxWidth: '220px' }}>
+                                {sub.statusComments || 'Direct employee submission'}
+                              </td>
+                              <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const matchingJob = jobs.find(j => String(j.id).includes(sub.jobReqId))
+                                    if (matchingJob) {
+                                      handleSelectJob(matchingJob)
+                                    } else {
+                                      setActiveMainTab('requisitions')
+                                    }
+                                  }}
+                                  style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '3px 8px', fontSize: '10.5px', fontWeight: 'bold', color: '#0066cc', cursor: 'pointer', borderRadius: '3px' }}
+                                >
+                                  View Req &gt;&gt;
+                                </button>
+                              </td>
+                            </tr>
+                          )
+                        })
+                      )}
+                    </tbody>
+                  </table>
                 </div>
 
               </div>
@@ -4568,6 +5134,523 @@ Results-driven technology consultant with proven track record of successful ente
                 </button>
               </div>
 
+            </div>
+          </div>
+        )}
+
+        {/* ═══════════ MODAL 4: CANDIDATE INTAKE & RESUME UPDATE MODAL ═══════════ */}
+        {showCandidateIntakeModal && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(2px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '16px'
+          }}>
+            <div style={{
+              background: '#ffffff', borderRadius: '6px', width: '100%', maxWidth: '650px',
+              maxHeight: '92vh', overflowY: 'auto',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1)',
+              border: '1px solid #cbd5e1'
+            }}>
+              {/* Header */}
+              <div style={{ background: '#ea580c', color: '#ffffff', padding: '12px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold' }}>
+                    {candidateIntakeData.id ? '✏️ Edit Candidate & Update Resume' : '➕ Add Sourced Candidate to Pool'}
+                  </h3>
+                  <div style={{ fontSize: '11px', color: '#ffedd5', marginTop: '2px' }}>
+                    Sourced by: <strong>{userName}</strong> ({isEmployee ? 'Employee' : 'Recruiter'})
+                  </div>
+                </div>
+                <span
+                  onClick={() => setShowCandidateIntakeModal(false)}
+                  style={{ color: '#ffffff', fontSize: '20px', fontWeight: 'bold', cursor: 'pointer', lineHeight: '1' }}
+                >
+                  &times;
+                </span>
+              </div>
+
+              {/* Body Form */}
+              <form onSubmit={e => {
+                e.preventDefault()
+                const fullName = `${candidateIntakeData.firstName.trim()} ${candidateIntakeData.lastName.trim()}`.trim() || candidateIntakeData.name.trim()
+                if (!fullName) {
+                  alert('Please enter candidate name.')
+                  return
+                }
+
+                const candId = candidateIntakeData.id || `875${Date.now().toString().slice(-4)}`
+                const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+
+                const updatedCandObj = {
+                  id: candId,
+                  name: fullName,
+                  fullRole: candidateIntakeData.fullRole || candidateIntakeData.role || 'Software Consultant',
+                  role: candidateIntakeData.role || candidateIntakeData.fullRole || 'Consultant',
+                  exp: candidateIntakeData.exp || '5',
+                  location: candidateIntakeData.location || `${candidateIntakeData.city || 'Richmond'}, ${candidateIntakeData.state || 'VA'}`,
+                  city: candidateIntakeData.city || 'Richmond',
+                  state: candidateIntakeData.state || 'VA',
+                  payRate: `$${String(candidateIntakeData.payRate).replace(/[^0-9]/g, '') || '75'} /hr`,
+                  rateType: candidateIntakeData.rateType || 'C2C',
+                  rating: 5,
+                  subVendor: 'Direct Sourcing',
+                  recruiter: userName,
+                  addedByName: userName,
+                  submittedBy: userName,
+                  assignedTo: userName,
+                  recruiterEmail: currentUser?.email || '',
+                  parentRecruiterName: currentUser?.parentRecruiterName || '',
+                  agrExists: false,
+                  avblDate: 'Immediate',
+                  email: candidateIntakeData.email || `${candidateIntakeData.firstName.toLowerCase() || 'cand'}@example.com`,
+                  phone: candidateIntakeData.phone || '571-555-0199',
+                  workAuth: candidateIntakeData.workAuth || 'US Citizen',
+                  skills: candidateIntakeData.skills ? candidateIntakeData.skills.split(',').map(s => s.trim()).filter(Boolean) : ['Java', 'Cloud', 'SQL'],
+                  resumeName: candidateIntakeData.resumeName || `${fullName.replace(/\s+/g, '_')}_Resume.pdf`,
+                  screened: 'Yes',
+                  dateAdded: dateStr
+                }
+
+                // Update or Add to Candidates State
+                setCandidates(prev => {
+                  const filtered = prev.filter(c => c.id !== candId && c.name.toLowerCase() !== fullName.toLowerCase())
+                  const merged = [updatedCandObj, ...filtered]
+                  try {
+                    localStorage.setItem('smarthire_all_candidates', JSON.stringify(merged))
+                  } catch (err) {}
+                  return merged
+                })
+
+                // Optional: Submit directly to selected requisition
+                if (candidateIntakeData.targetJobId) {
+                  const cleanReqId = String(candidateIntakeData.targetJobId).replace('J-', '')
+                  let existingSubmissions = []
+                  try {
+                    const raw = localStorage.getItem(`smarthire_potential_candidates_${cleanReqId}`)
+                    if (raw) existingSubmissions = JSON.parse(raw)
+                  } catch (err) {}
+
+                  const subObj = {
+                    id: `CAND-${Date.now().toString().slice(-5)}`,
+                    name: fullName,
+                    payRate: `$${String(candidateIntakeData.payRate).replace(/[^0-9]/g, '') || '75'}/hr`,
+                    payRateType: candidateIntakeData.rateType || 'C2C',
+                    assignedBy: userName,
+                    assignedOn: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    status: 'Int-SubmittedToManager',
+                    statusComments: candidateIntakeData.comments || 'Direct candidate sourcing',
+                    interview: 'Select',
+                    rejectedReason: '',
+                    lastChangedBy: userName,
+                    lastChangedRole: isEmployee ? 'Employee' : 'Recruiter',
+                    lastChangedOn: new Date().toLocaleDateString()
+                  }
+
+                  const updatedSubmissions = [subObj, ...existingSubmissions]
+                  try {
+                    localStorage.setItem(`smarthire_potential_candidates_${cleanReqId}`, JSON.stringify(updatedSubmissions))
+                  } catch (err) {}
+
+                  if (String(selectedReq?.id || '').replace('J-', '') === cleanReqId) {
+                    setPotentialCandidates(updatedSubmissions)
+                  }
+                }
+
+                setShowCandidateIntakeModal(false)
+                setSaveToastMessage(`🎉 Candidate ${fullName} successfully ${candidateIntakeData.id ? 'updated' : 'saved to your candidate pool'}!`)
+                setTimeout(() => setSaveToastMessage(null), 4000)
+              }} style={{ padding: '16px 20px', fontSize: '12px' }}>
+
+                {/* Resume Upload Box */}
+                <div style={{ background: '#f0fdf4', border: '1px dashed #22c55e', borderRadius: '4px', padding: '12px 14px', marginBottom: '14px' }}>
+                  <div style={{ fontWeight: 'bold', color: '#166534', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>📄 Smart Resume Upload (*.pdf, *.docx, *.doc)</span>
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#475569', marginBottom: '8px' }}>
+                    Upload or replace candidate resume to auto-fill candidate name, skills, and contact details:
+                  </div>
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={e => {
+                      const file = e.target.files[0]
+                      if (!file) return
+                      const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ')
+                      const words = cleanName.split(' ').filter(w => !['resume', 'cv', 'profile', 'latest', 'updated'].includes(w.toLowerCase()))
+                      const fName = words[0] || 'Candidate'
+                      const lName = words.slice(1).join(' ') || 'Profile'
+
+                      setCandidateIntakeData(prev => ({
+                        ...prev,
+                        resumeName: file.name,
+                        resumeFile: file,
+                        firstName: prev.firstName || fName,
+                        lastName: prev.lastName || lName,
+                        name: `${prev.firstName || fName} ${prev.lastName || lName}`,
+                        email: prev.email || `${fName.toLowerCase()}.${lName.toLowerCase()}@gmail.com`
+                      }))
+                    }}
+                    style={{ fontSize: '11.5px' }}
+                  />
+                  {candidateIntakeData.resumeName && (
+                    <div style={{ marginTop: '6px', fontSize: '11.5px', color: '#166534', fontWeight: 'bold' }}>
+                      Attached File: 📎 {candidateIntakeData.resumeName}
+                    </div>
+                  )}
+                </div>
+
+                {/* First Name & Last Name */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>First Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Rahul"
+                      value={candidateIntakeData.firstName}
+                      onChange={e => setCandidateIntakeData(prev => ({ ...prev, firstName: e.target.value }))}
+                      style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Last Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Sharma"
+                      value={candidateIntakeData.lastName}
+                      onChange={e => setCandidateIntakeData(prev => ({ ...prev, lastName: e.target.value }))}
+                      style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+
+                {/* Email & Phone */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Email Address *</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="candidate@email.com"
+                      value={candidateIntakeData.email}
+                      onChange={e => setCandidateIntakeData(prev => ({ ...prev, email: e.target.value }))}
+                      style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Phone Number</label>
+                    <input
+                      type="tel"
+                      placeholder="(555) 000-0000"
+                      value={candidateIntakeData.phone}
+                      onChange={e => setCandidateIntakeData(prev => ({ ...prev, phone: e.target.value }))}
+                      style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+
+                {/* Primary Role & Experience */}
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Job Title / Designation *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Senior Java Fullstack Developer"
+                      value={candidateIntakeData.fullRole || candidateIntakeData.role}
+                      onChange={e => setCandidateIntakeData(prev => ({ ...prev, fullRole: e.target.value, role: e.target.value }))}
+                      style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Experience (Yrs)</label>
+                    <input
+                      type="text"
+                      placeholder="6"
+                      value={candidateIntakeData.exp}
+                      onChange={e => setCandidateIntakeData(prev => ({ ...prev, exp: e.target.value }))}
+                      style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+
+                {/* Pay Rate, Rate Type & Work Auth */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Pay Rate ($/hr) *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="75"
+                      value={candidateIntakeData.payRate}
+                      onChange={e => setCandidateIntakeData(prev => ({ ...prev, payRate: e.target.value }))}
+                      style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Rate Type</label>
+                    <select
+                      value={candidateIntakeData.rateType}
+                      onChange={e => setCandidateIntakeData(prev => ({ ...prev, rateType: e.target.value }))}
+                      style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box', background: '#ffffff' }}
+                    >
+                      <option value="C2C">C2C</option>
+                      <option value="W2">W2</option>
+                      <option value="1099">1099</option>
+                      <option value="Fulltime">Fulltime</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Work Auth</label>
+                    <select
+                      value={candidateIntakeData.workAuth}
+                      onChange={e => setCandidateIntakeData(prev => ({ ...prev, workAuth: e.target.value }))}
+                      style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box', background: '#ffffff' }}
+                    >
+                      <option value="US Citizen">US Citizen</option>
+                      <option value="Green Card">Green Card</option>
+                      <option value="H1B">H1B</option>
+                      <option value="EAD - GC">EAD - GC</option>
+                      <option value="OPT/CPT">OPT/CPT</option>
+                      <option value="TN Visa">TN Visa</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Skills & Location */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Key Skills (Comma Separated)</label>
+                    <input
+                      type="text"
+                      placeholder="React, Node.js, AWS, TypeScript"
+                      value={candidateIntakeData.skills}
+                      onChange={e => setCandidateIntakeData(prev => ({ ...prev, skills: e.target.value }))}
+                      style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Location (City, State)</label>
+                    <input
+                      type="text"
+                      placeholder="Richmond, VA"
+                      value={candidateIntakeData.location}
+                      onChange={e => setCandidateIntakeData(prev => ({ ...prev, location: e.target.value }))}
+                      style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+
+                {/* Optional Requisition Direct Assignment */}
+                <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '10px 12px', marginBottom: '14px' }}>
+                  <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>
+                    🎯 Assign Directly to Requisition (Optional)
+                  </label>
+                  <select
+                    value={candidateIntakeData.targetJobId}
+                    onChange={e => setCandidateIntakeData(prev => ({ ...prev, targetJobId: e.target.value }))}
+                    style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box', background: '#ffffff' }}
+                  >
+                    <option value="">-- Do not assign now (Save in pool only) --</option>
+                    {filteredJobs.map(j => {
+                      const cId = String(j.id || '').replace('J-', '')
+                      return (
+                        <option key={j.id} value={cId}>
+                          Req #{cId} — {j.title} ({j.customer})
+                        </option>
+                      )
+                    })}
+                  </select>
+                </div>
+
+                {/* Action Buttons */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', borderTop: '1px solid #e2e8f0', paddingTop: '12px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowCandidateIntakeModal(false)}
+                    style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 16px', fontSize: '12px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer' }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    style={{ background: '#ea580c', color: '#ffffff', border: 'none', padding: '6px 22px', fontSize: '12px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer', boxShadow: '0 1px 3px rgba(234, 88, 12, 0.4)' }}
+                  >
+                    {candidateIntakeData.targetJobId ? '💾 Save & Submit to Req' : '💾 Save to My Candidate Pool'}
+                  </button>
+                </div>
+
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ═══════════ MODAL 5: ASSIGN CANDIDATE TO REQUISITION MODAL ═══════════ */}
+        {showAssignReqModal && assignTargetCandidate && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(2px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '16px'
+          }}>
+            <div style={{
+              background: '#ffffff', borderRadius: '6px', width: '100%', maxWidth: '560px',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1)',
+              overflow: 'hidden', border: '1px solid #cbd5e1'
+            }}>
+              {/* Header */}
+              <div style={{ background: '#ea580c', color: '#ffffff', padding: '12px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold' }}>
+                    ➕ Assign Candidate to Requisition
+                  </h3>
+                  <div style={{ fontSize: '11px', color: '#ffedd5', marginTop: '2px' }}>
+                    Candidate: <strong>{assignTargetCandidate.name}</strong> ({assignTargetCandidate.fullRole || assignTargetCandidate.role})
+                  </div>
+                </div>
+                <span
+                  onClick={() => setShowAssignReqModal(false)}
+                  style={{ color: '#ffffff', fontSize: '20px', fontWeight: 'bold', cursor: 'pointer', lineHeight: '1' }}
+                >
+                  &times;
+                </span>
+              </div>
+
+              {/* Form Body */}
+              <form onSubmit={e => {
+                e.preventDefault()
+                if (!assignTargetJobId) {
+                  alert('Please select an assigned requisition.')
+                  return
+                }
+
+                const cleanReqId = String(assignTargetJobId).replace('J-', '')
+                let existingList = []
+                try {
+                  const raw = localStorage.getItem(`smarthire_potential_candidates_${cleanReqId}`)
+                  if (raw) existingList = JSON.parse(raw)
+                } catch (err) {}
+
+                const dateStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                const newSubObj = {
+                  id: `CAND-${Date.now().toString().slice(-5)}`,
+                  name: assignTargetCandidate.name,
+                  payRate: `$${String(assignProposedRate).replace(/[^0-9]/g, '') || '75'}/hr`,
+                  payRateType: assignRateType || 'C2C',
+                  assignedBy: userName,
+                  assignedOn: dateStr,
+                  status: 'Int-SubmittedToManager',
+                  statusComments: assignComments || `Submitted by ${userName}`,
+                  interview: 'Select',
+                  rejectedReason: '',
+                  lastChangedBy: userName,
+                  lastChangedRole: isEmployee ? 'Employee' : 'Recruiter',
+                  lastChangedOn: dateStr
+                }
+
+                const merged = [newSubObj, ...existingList]
+                try {
+                  localStorage.setItem(`smarthire_potential_candidates_${cleanReqId}`, JSON.stringify(merged))
+                } catch (err) {}
+
+                if (String(selectedReq?.id || '').replace('J-', '') === cleanReqId) {
+                  setPotentialCandidates(merged)
+                }
+
+                setShowAssignReqModal(false)
+                setSaveToastMessage(`🎉 Candidate ${assignTargetCandidate.name} successfully submitted to Requisition #${cleanReqId}!`)
+                setTimeout(() => setSaveToastMessage(null), 4000)
+              }} style={{ padding: '16px 20px', fontSize: '12px' }}>
+
+                {/* Candidate Info Strip */}
+                <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '4px', padding: '8px 12px', marginBottom: '14px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                  <div><strong>Email:</strong> {assignTargetCandidate.email || 'N/A'}</div>
+                  <div><strong>Phone:</strong> {assignTargetCandidate.phone || 'N/A'}</div>
+                  <div><strong>Location:</strong> {assignTargetCandidate.location || 'Richmond, VA'}</div>
+                  <div><strong>Work Auth:</strong> {assignTargetCandidate.workAuth || 'US Citizen'}</div>
+                </div>
+
+                {/* Target Requisition Dropdown */}
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>
+                    Select Assigned Requisition *
+                  </label>
+                  <select
+                    required
+                    value={assignTargetJobId}
+                    onChange={e => setAssignTargetJobId(e.target.value)}
+                    style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box', background: '#ffffff', fontWeight: 'bold' }}
+                  >
+                    <option value="">-- Choose Assigned Position --</option>
+                    {filteredJobs.map(j => {
+                      const cId = String(j.id || '').replace('J-', '')
+                      return (
+                        <option key={j.id} value={cId}>
+                          Req #{cId} — {j.title} ({j.customer || 'Client'})
+                        </option>
+                      )
+                    })}
+                  </select>
+                </div>
+
+                {/* Proposed Rate & Rate Type */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Proposed Pay Rate ($/hr) *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="75"
+                      value={assignProposedRate}
+                      onChange={e => setAssignProposedRate(e.target.value)}
+                      style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Rate Type</label>
+                    <select
+                      value={assignRateType}
+                      onChange={e => setAssignRateType(e.target.value)}
+                      style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box', background: '#ffffff' }}
+                    >
+                      <option value="C2C">C2C</option>
+                      <option value="W2">W2</option>
+                      <option value="1099">1099</option>
+                      <option value="Fulltime">Fulltime</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Submission Notes */}
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Submission Notes / Comments</label>
+                  <textarea
+                    rows={2}
+                    placeholder="Why this candidate fits this requirement..."
+                    value={assignComments}
+                    onChange={e => setAssignComments(e.target.value)}
+                    style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '3px', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                  />
+                </div>
+
+                {/* Action Buttons */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', borderTop: '1px solid #e2e8f0', paddingTop: '12px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowAssignReqModal(false)}
+                    style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 14px', fontSize: '12px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer' }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    style={{ background: '#ea580c', color: '#ffffff', border: 'none', padding: '6px 20px', fontSize: '12px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer', boxShadow: '0 1px 3px rgba(234, 88, 12, 0.4)' }}
+                  >
+                    🚀 Submit Candidate to Requisition
+                  </button>
+                </div>
+
+              </form>
             </div>
           </div>
         )}
