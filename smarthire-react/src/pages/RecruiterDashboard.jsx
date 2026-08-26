@@ -1694,17 +1694,6 @@ function RecruiterDashboard() {
               <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>Logout</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <ActivityNotificationBell theme="default" onSelectNotification={(n) => {
-                if (n.reqId) {
-                  const targetJob = jobs.find(j => j.id === `J-${n.reqId}` || j.id === n.reqId)
-                  if (targetJob) {
-                    handleOpenReq(targetJob)
-                    if (n.type === 'ai_match' || n.category === 'ai') {
-                      setTimeout(() => handleOpenAiMatchModalForJob(targetJob), 200)
-                    }
-                  }
-                }
-              }} />
               <span>Theme: <select style={{ fontSize: '11px', padding: '1px 3px' }}><option>Default</option></select></span>
               <span style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Welcome: {userName}</span>
             </div>
@@ -1743,37 +1732,23 @@ function RecruiterDashboard() {
               ))}
             </div>
 
-            {/* Quick Search Input & Real-Time Notification Bell */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <ActivityNotificationBell theme="orange" onSelectNotification={(n) => {
-                if (n.reqId) {
-                  const targetJob = jobs.find(j => j.id === `J-${n.reqId}` || j.id === n.reqId)
-                  if (targetJob) {
-                    handleOpenReq(targetJob)
-                    if (n.type === 'ai_match' || n.category === 'ai') {
-                      setTimeout(() => handleOpenAiMatchModalForJob(targetJob), 200)
-                    }
-                  }
-                }
-              }} />
-
-              <form onSubmit={handleQuickSearch} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 'bold' }}>Requisition #</span>
-                <input
-                  type="text"
-                  value={quickSearchId}
-                  onChange={e => setQuickSearchId(e.target.value)}
-                  placeholder="Req ID / Title"
-                  style={{ padding: '2px 6px', fontSize: '11px', width: '130px', border: '1px solid #ffffff', borderRadius: '2px' }}
-                />
-                <button
-                  type="submit"
-                  style={{ background: '#f8fafc', color: '#0f172a', border: 'none', padding: '3px 10px', fontSize: '11px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer' }}
-                >
-                  Quick Search
-                </button>
-              </form>
-            </div>
+            {/* Quick Search Input */}
+            <form onSubmit={handleQuickSearch} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 'bold' }}>Requisition #</span>
+              <input
+                type="text"
+                value={quickSearchId}
+                onChange={e => setQuickSearchId(e.target.value)}
+                placeholder="Req ID / Title"
+                style={{ padding: '2px 6px', fontSize: '11px', width: '130px', border: '1px solid #ffffff', borderRadius: '2px' }}
+              />
+              <button
+                type="submit"
+                style={{ background: '#f8fafc', color: '#0f172a', border: 'none', padding: '3px 10px', fontSize: '11px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer' }}
+              >
+                Quick Search
+              </button>
+            </form>
           </div>
         </header>
 
@@ -4904,33 +4879,30 @@ function RecruiterDashboard() {
                 </div>
 
                 <div style={{ overflowX: 'auto', border: '1px solid #cbd5e1', borderTop: 'none' }}>
-                  <table className="coolworks-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', fontFamily: 'Arial, Helvetica, sans-serif', background: '#ffffff' }}>
+                  <table className="coolworks-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', fontFamily: 'Arial, Helvetica, sans-serif', background: '#ffffff' }}>
                     <thead>
-                      <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
-                        <th style={{ padding: '5px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Req#</th>
-                        <th style={{ padding: '5px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Position</th>
-                        <th style={{ padding: '5px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Skills</th>
-                        <th style={{ padding: '5px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Customer</th>
-                        <th style={{ padding: '5px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Location</th>
-                        <th style={{ padding: '5px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Deadline</th>
-                        <th style={{ padding: '5px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Pay Rate</th>
-                        <th style={{ padding: '5px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Recruiters</th>
-                        <th style={{ padding: '5px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Status</th>
-                        <th style={{ padding: '5px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Req Ctg</th>
-                        <th style={{ padding: '5px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Req Type</th>
-                        <th style={{ padding: '5px 5px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Sub</th>
-                        <th style={{ padding: '5px 5px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Max sub</th>
-                        <th style={{ padding: '5px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Creation Date</th>
-                        <th style={{ padding: '5px 5px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Duration</th>
-                        <th style={{ padding: '5px 4px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', width: '22px', borderRight: '1px solid rgba(255,255,255,0.2)' }} title="Working (W)">W</th>
-                        <th style={{ padding: '5px 4px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', width: '22px', borderRight: '1px solid rgba(255,255,255,0.2)' }} title="Key Req (K)">K</th>
-                        <th style={{ padding: '5px 4px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', width: '26px' }} title="Subcontractable (Cont)">Cont</th>
+                      <tr style={{ background: '#000080', color: '#ffffff', borderBottom: '2px solid #000066' }}>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Req#</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Position</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Skills</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Customer</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Location</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Deadline</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Pay Rate</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Recruiters</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Status</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Req Ctg</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Req Type</th>
+                        <th style={{ padding: '6px 6px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Sub</th>
+                        <th style={{ padding: '6px 6px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Max sub</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Creation Date</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', whiteSpace: 'nowrap' }}>Duration</th>
                       </tr>
                     </thead>
                     <tbody>
                       {paginatedJobs.length === 0 ? (
                         <tr>
-                          <td colSpan="18" style={{ padding: '30px', textAlign: 'center', color: '#64748b' }}>
+                          <td colSpan="15" style={{ padding: '30px', textAlign: 'center', color: '#64748b' }}>
                             {isEmployee ? (
                               <div>
                                 <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#0f172a', marginBottom: '4px' }}>
@@ -4949,10 +4921,10 @@ function RecruiterDashboard() {
                         paginatedJobs.map((job, idx) => {
                           const cleanId = String(job.id || '').replace('J-', '')
                           const rawTitle = job.title || 'Consultant'
-                          const truncatedTitle = rawTitle.length > 12 ? rawTitle.slice(0, 10) + '..' : rawTitle
+                          const truncatedTitle = rawTitle.length > 14 ? rawTitle.slice(0, 12) + '..' : rawTitle
                           
                           const allSkills = Array.isArray(job.skills) ? job.skills.join(', ') : (job.skills || 'Troubleshooting, Project Management')
-                          const truncatedSkills = allSkills.length > 11 ? allSkills.slice(0, 9) + '..' : allSkills
+                          const truncatedSkills = allSkills.length > 14 ? allSkills.slice(0, 12) + '..' : allSkills
 
                           const custName = job.client || job.customer || 'State Of SC'
                           const locName = job.location || 'Columbia,SC'
@@ -4984,7 +4956,7 @@ function RecruiterDashboard() {
                           const recList = Array.isArray(job.assignedRecruiters) && job.assignedRecruiters.length > 0
                             ? job.assignedRecruiters.join(', ')
                             : (job.postedByName || '')
-                          const truncatedRec = recList.length > 10 ? recList.slice(0, 8) + '..' : recList
+                          const truncatedRec = recList.length > 12 ? recList.slice(0, 10) + '..' : recList
 
                           const reqStatus = job.status === 'Active' ? 'Open' : (job.status || 'Open')
                           const reqCategory = job.category || 'SP'
@@ -5007,16 +4979,16 @@ function RecruiterDashboard() {
                             <tr
                               key={job.id}
                               style={{
-                                background: idx % 2 === 0 ? '#ffffff' : '#f9fafb',
+                                background: idx % 2 === 0 ? '#ffffff' : '#f8fafc',
                                 borderBottom: '1px solid #e2e8f0',
                                 transition: 'background-color 0.12s ease'
                               }}
                             >
                               {/* 1. Req# (Blue Link) */}
-                              <td style={{ padding: '3px 6px', fontWeight: 'bold' }}>
+                              <td style={{ padding: '4px 8px', fontWeight: 'bold' }}>
                                 <span
                                   onClick={() => handleOpenReq(job)}
-                                  style={{ color: '#0033cc', cursor: 'pointer', textDecoration: 'underline' }}
+                                  style={{ color: '#000080', cursor: 'pointer', textDecoration: 'underline' }}
                                   title={`Requisition #${cleanId}\nClick to View Requisition Details`}
                                 >
                                   {cleanId}
@@ -5024,7 +4996,7 @@ function RecruiterDashboard() {
                               </td>
 
                               {/* 2. Position (Blue Link with Hover Tooltip) */}
-                              <td style={{ padding: '3px 6px', fontWeight: 'bold' }}>
+                              <td style={{ padding: '4px 8px', fontWeight: 'bold' }}>
                                 <span
                                   onClick={() => handleOpenReq(job)}
                                   style={{ color: '#0033cc', cursor: 'pointer', textDecoration: 'underline' }}
@@ -5034,104 +5006,96 @@ function RecruiterDashboard() {
                                 </span>
                               </td>
 
-                              {/* 3. Skills (Red text with Hover Tooltip) */}
-                              <td style={{ padding: '3px 6px', color: '#cc0000' }}>
+                              {/* 3. Skills (Readable Dark Slate) */}
+                              <td style={{ padding: '4px 8px', color: '#1e293b' }}>
                                 <span title={`Required Skills:\n${allSkills}`}>
                                   {truncatedSkills}
                                 </span>
                               </td>
 
-                              {/* 4. Customer (Short Form with Hover Tooltip) */}
-                              <td style={{ padding: '3px 6px', color: '#cc0000', lineHeight: '1.2', whiteSpace: 'pre-line' }}>
+                              {/* 4. Customer */}
+                              <td style={{ padding: '4px 8px', color: '#0f172a', fontWeight: 'bold', lineHeight: '1.2', whiteSpace: 'pre-line' }}>
                                 <span title={`Customer / Client Department:\n${custName}`}>
                                   {shortCustomer}
                                 </span>
                               </td>
 
-                              {/* 5. Location (Red text with Hover Tooltip) */}
-                              <td style={{ padding: '3px 6px', color: '#cc0000' }}>
+                              {/* 5. Location */}
+                              <td style={{ padding: '4px 8px', color: '#334155' }}>
                                 <span title={`Job Location:\n${locName}`}>
                                   {locName}
                                 </span>
                               </td>
 
-                              {/* 6. Deadline (Red text with Hover Tooltip) */}
-                              <td style={{ padding: '3px 6px', color: '#cc0000', whiteSpace: 'nowrap' }}>
+                              {/* 6. Deadline */}
+                              <td style={{ padding: '4px 8px', color: '#b91c1c', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
                                 <span title={`Submission Deadline:\n${deadDate}`}>
                                   {deadDate}
                                 </span>
                               </td>
 
                               {/* 7. Pay Rate */}
-                              <td style={{ padding: '3px 6px', color: '#cc0000' }}>
-                                {rateStr}
+                              <td style={{ padding: '4px 8px', color: '#0f172a', fontWeight: 'bold' }}>
+                                {rateStr ? `$${rateStr}` : '$75'}
                               </td>
 
                               {/* 8. Recruiters (Distinct Deep Navy Blue Color) */}
-                              <td style={{ padding: '3px 6px', color: '#000080', fontWeight: recList ? 'bold' : 'normal' }}>
+                              <td style={{ padding: '4px 8px', color: '#000080', fontWeight: recList ? 'bold' : 'normal' }}>
                                 <span title={`Assigned Recruiters:\n${recList || 'None Assigned'}`}>
-                                  {truncatedRec}
+                                  {truncatedRec || 'Team'}
                                 </span>
                               </td>
 
-                              {/* 9. Status (Red text with Hover Tooltip) */}
-                              <td style={{ padding: '3px 6px', color: '#cc0000' }}>
-                                <span title={`Requisition Status: ${reqStatus}`}>
+                              {/* 9. Status */}
+                              <td style={{ padding: '4px 8px' }}>
+                                <span style={{
+                                  color: reqStatus === 'Open' || reqStatus === 'Ready' ? '#166534' : '#b45309',
+                                  fontWeight: 'bold',
+                                  background: reqStatus === 'Open' || reqStatus === 'Ready' ? '#dcfce7' : '#fef3c7',
+                                  padding: '1px 6px',
+                                  borderRadius: '2px',
+                                  fontSize: '10px'
+                                }} title={`Requisition Status: ${reqStatus}`}>
                                   {reqStatus}
                                 </span>
                               </td>
 
                               {/* 10. Req Ctg */}
-                              <td style={{ padding: '3px 6px', color: '#cc0000' }}>
+                              <td style={{ padding: '4px 8px', color: '#475569' }}>
                                 {reqCategory}
                               </td>
 
                               {/* 11. Req Type */}
-                              <td style={{ padding: '3px 6px', color: '#cc0000' }}>
+                              <td style={{ padding: '4px 8px', color: '#475569' }}>
                                 {reqTypeVal}
                               </td>
 
                               {/* 12. Sub (Submissions count) */}
-                              <td style={{ padding: '3px 5px', textAlign: 'center', color: '#cc0000' }}>
+                              <td style={{ padding: '4px 6px', textAlign: 'center', color: '#0f172a', fontWeight: 'bold' }}>
                                 <span title={`Total Submissions: ${subCount}`}>
                                   {subCount}
                                 </span>
                               </td>
 
                               {/* 13. Max sub */}
-                              <td style={{ padding: '3px 5px', textAlign: 'center', color: '#cc0000' }}>
+                              <td style={{ padding: '4px 6px', textAlign: 'center', color: '#64748b' }}>
                                 <span title={`Maximum Allowed Submissions: ${maxSub}`}>
                                   {maxSub}
                                 </span>
                               </td>
 
                               {/* 14. Creation Date */}
-                              <td style={{ padding: '3px 6px', color: '#cc0000', whiteSpace: 'nowrap' }}>
+                              <td style={{ padding: '4px 8px', color: '#475569', whiteSpace: 'nowrap' }}>
                                 <span title={`Requisition Creation Date:\n${createdDateStr}`}>
                                   {createdDateStr}
                                 </span>
                               </td>
 
                               {/* 15. Duration */}
-                              <td style={{ padding: '3px 5px', textAlign: 'center', color: '#cc0000' }}>
+                              <td style={{ padding: '4px 8px', textAlign: 'center', color: '#0f172a', fontWeight: 'bold' }}>
                                 <span title={`Contract Duration: ${durationMonths} Months`}>
-                                  {durationMonths}
+                                  {durationMonths}M
                                 </span>
-                              </td>
-
-                              {/* 16. W */}
-                              <td style={{ padding: '3px 4px', textAlign: 'center' }}>
-                                <input type="checkbox" readOnly checked={Boolean(job.working)} style={{ margin: 0, cursor: 'default' }} title="Working Requisition (W)" />
-                              </td>
-
-                              {/* 17. K */}
-                              <td style={{ padding: '3px 4px', textAlign: 'center' }}>
-                                <input type="checkbox" readOnly checked={Boolean(job.keyReq)} style={{ margin: 0, cursor: 'default' }} title="Key Requisition (K)" />
-                              </td>
-
-                              {/* 18. Cont */}
-                              <td style={{ padding: '3px 4px', textAlign: 'center' }}>
-                                <input type="checkbox" readOnly checked={reqTypeVal !== 'Permanent'} style={{ margin: 0, cursor: 'default' }} title="Subcontractable (Cont)" />
                               </td>
                             </tr>
                           )

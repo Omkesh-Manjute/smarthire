@@ -546,13 +546,6 @@ function Navigation() {
                   </div>
                 )}
 
-                {/* Live Activity Notification Bell */}
-                <div style={{ display: 'inline-flex', alignItems: 'center' }}>
-                  <ActivityNotificationBell theme="default" onSelectNotification={(n) => {
-                    navigate('/dashboard')
-                  }} />
-                </div>
-
                 {/* Inbox / Messages Icon - Hidden for Employee */}
                 {!isEmployee && (
                   <Link
@@ -579,6 +572,13 @@ function Navigation() {
                     <span className="role-switch-badge">⇄</span>
                   </button>
                 )}
+
+                {/* Single Live Activity Notification Bell (Right next to User Profile) */}
+                <div style={{ display: 'inline-flex', alignItems: 'center', margin: '0 2px' }}>
+                  <ActivityNotificationBell theme="default" onSelectNotification={(n) => {
+                    navigate('/dashboard')
+                  }} />
+                </div>
 
                 {/* User Profile Avatar & Dropdown */}
                 <div className="nav-dropdown-wrapper" ref={profileMenuRef}>
