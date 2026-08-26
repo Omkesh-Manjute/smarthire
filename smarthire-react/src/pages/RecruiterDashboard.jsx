@@ -3765,9 +3765,56 @@ function RecruiterDashboard() {
                 {/* ─── TAB 3: POTENTIAL CANDIDATES (NO AI FIT COLUMN IN ROW) ─── */}
                 {activeReqTab === 'potential' && (
                   <div style={{ fontSize: '11px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap', gap: '6px' }}>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <span
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCandidateIntakeData({
+                              id: null,
+                              name: '',
+                              firstName: '',
+                              lastName: '',
+                              email: '',
+                              phone: '',
+                              role: editingFields.jobTitle || editingFields.title || selectedReq?.title || '',
+                              fullRole: editingFields.jobTitle || editingFields.title || selectedReq?.title || '',
+                              exp: editingFields.experience || '5',
+                              location: editingFields.location || 'Richmond, VA',
+                              city: editingFields.city || 'Richmond',
+                              state: editingFields.state || 'VA',
+                              payRate: editingFields.payRate || '75',
+                              rateType: editingFields.rateType || 'C2C',
+                              workAuth: editingFields.workAuth !== 'Select' ? editingFields.workAuth : 'US Citizen',
+                              skills: Array.isArray(editingFields.skills) ? editingFields.skills.join(', ') : (editingFields.skills || ''),
+                              resumeName: '',
+                              resumeFile: null,
+                              targetJobId: selectedReq?.id || '',
+                              comments: `Direct sourcing for Requisition #${selectedReq?.id?.replace('J-', '')}`
+                            })
+                            setShowCandidateIntakeModal(true)
+                          }}
+                          style={{
+                            background: '#ea580c',
+                            color: '#ffffff',
+                            border: 'none',
+                            padding: '4px 12px',
+                            fontSize: '11px',
+                            fontWeight: 'bold',
+                            borderRadius: '3px',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            boxShadow: '0 1px 2px rgba(234, 88, 12, 0.25)'
+                          }}
+                          title="Upload/Parse resume and add candidate directly to this requisition and your candidate pool"
+                        >
+                          <span>➕ Add / Parse Candidate</span>
+                        </button>
+
+                        <button
+                          type="button"
                           onClick={() => {
                             setNewCandReqForm({
                               firstName: '',
@@ -3784,18 +3831,30 @@ function RecruiterDashboard() {
                             })
                             setShowAddCandidateModal(true)
                           }}
-                          style={{ color: '#000080', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer' }}
+                          style={{
+                            background: '#f1f5f9',
+                            color: '#0033cc',
+                            border: '1px solid #cbd5e1',
+                            padding: '3px 10px',
+                            fontSize: '11px',
+                            fontWeight: 'bold',
+                            borderRadius: '3px',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
                         >
-                          + Add Candidate to this Requisition
-                        </span>
+                          <span>📋 Select from Pool</span>
+                        </button>
 
-                        <span style={{ color: '#94a3b8' }}>|</span>
+                        <span style={{ color: '#cbd5e1' }}>|</span>
 
                         <span
                           onClick={() => setViewMode('resumeSearch')}
-                          style={{ color: '#000080', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer' }}
+                          style={{ color: '#0033cc', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer', textDecoration: 'underline' }}
                         >
-                          Search Talent Directory &gt;&gt;
+                          🔍 Search Talent Directory &gt;&gt;
                         </span>
                       </div>
 
@@ -3805,10 +3864,10 @@ function RecruiterDashboard() {
                         style={{
                           background: '#f8fafc',
                           border: '1px solid #7f9db9',
-                          padding: '2px 8px',
+                          padding: '3px 8px',
                           fontSize: '10.5px',
                           fontWeight: 'bold',
-                          borderRadius: 0,
+                          borderRadius: '2px',
                           cursor: 'pointer',
                           color: '#000080'
                         }}
@@ -3835,14 +3894,70 @@ function RecruiterDashboard() {
                         <tbody>
                           {potentialCandidates.length === 0 ? (
                             <tr>
-                              <td colSpan="9" style={{ padding: '20px', textAlign: 'center', color: '#000080', background: '#ffffff', fontSize: '11.5px' }}>
-                                <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Candidates are not available for this view!</div>
-                                <span
-                                  onClick={() => setShowAddCandidateModal(true)}
-                                  style={{ color: '#0033cc', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline' }}
-                                >
-                                  Select Candidate
-                                </span>
+                              <td colSpan="9" style={{ padding: '24px', textAlign: 'center', color: '#000080', background: '#ffffff', fontSize: '11.5px' }}>
+                                <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#0f172a', fontSize: '12px' }}>
+                                  No candidates assigned to this requisition yet.
+                                </div>
+                                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', alignItems: 'center' }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setCandidateIntakeData({
+                                        id: null,
+                                        name: '',
+                                        firstName: '',
+                                        lastName: '',
+                                        email: '',
+                                        phone: '',
+                                        role: editingFields.jobTitle || editingFields.title || selectedReq?.title || '',
+                                        fullRole: editingFields.jobTitle || editingFields.title || selectedReq?.title || '',
+                                        exp: editingFields.experience || '5',
+                                        location: editingFields.location || 'Richmond, VA',
+                                        city: editingFields.city || 'Richmond',
+                                        state: editingFields.state || 'VA',
+                                        payRate: editingFields.payRate || '75',
+                                        rateType: editingFields.rateType || 'C2C',
+                                        workAuth: editingFields.workAuth !== 'Select' ? editingFields.workAuth : 'US Citizen',
+                                        skills: Array.isArray(editingFields.skills) ? editingFields.skills.join(', ') : (editingFields.skills || ''),
+                                        resumeName: '',
+                                        resumeFile: null,
+                                        targetJobId: selectedReq?.id || '',
+                                        comments: `Direct sourcing for Requisition #${selectedReq?.id?.replace('J-', '')}`
+                                      })
+                                      setShowCandidateIntakeModal(true)
+                                    }}
+                                    style={{
+                                      background: '#ea580c',
+                                      color: '#ffffff',
+                                      border: 'none',
+                                      padding: '4px 14px',
+                                      fontSize: '11px',
+                                      fontWeight: 'bold',
+                                      borderRadius: '3px',
+                                      cursor: 'pointer',
+                                      boxShadow: '0 1px 2px rgba(234, 88, 12, 0.25)'
+                                    }}
+                                  >
+                                    ➕ Add / Parse Candidate
+                                  </button>
+                                  <span style={{ color: '#94a3b8' }}>or</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowAddCandidateModal(true)}
+                                    style={{
+                                      background: '#f1f5f9',
+                                      color: '#0033cc',
+                                      border: '1px solid #cbd5e1',
+                                      padding: '4px 12px',
+                                      fontSize: '11px',
+                                      fontWeight: 'bold',
+                                      borderRadius: '3px',
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    📋 Select from Pool
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           ) : (
