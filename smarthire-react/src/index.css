@@ -40,11 +40,37 @@ a { color: inherit; text-decoration: none; }
 .container-full { width: min(1760px, 96%); margin: 0 auto; max-width: 100%; }
 .narrow { width: min(760px, 92%); }
 
-/* Tooltip & Text Truncation Utility */
-.coolworks-table th, .coolworks-table td {
+/* CoolWorks Enterprise VMS Tables */
+.coolworks-table {
+  width: 100%;
+  border-collapse: collapse;
   font-family: Arial, Helvetica, sans-serif !important;
+  font-size: 11px;
 }
-.coolworks-table tr:hover {
+.coolworks-table thead tr {
+  background: #708090 !important;
+  color: #ffffff !important;
+}
+.coolworks-table thead th {
+  background: #708090 !important;
+  color: #ffffff !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: 11px !important;
+  font-weight: bold !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  padding: 5px 6px !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.25) !important;
+  border-bottom: 1px solid #4a5568 !important;
+  white-space: nowrap !important;
+}
+.coolworks-table tbody td {
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: 11px !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  color: #000000;
+}
+.coolworks-table tr:hover td {
   background-color: #fefce8 !important;
 }
 

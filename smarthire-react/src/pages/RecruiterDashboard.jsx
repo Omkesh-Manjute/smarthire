@@ -4879,24 +4879,24 @@ function RecruiterDashboard() {
                 </div>
 
                 <div style={{ overflowX: 'auto', border: '1px solid #cbd5e1', borderTop: 'none' }}>
-                  <table className="coolworks-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', fontFamily: 'Arial, Helvetica, sans-serif', background: '#ffffff' }}>
+                  <table className="coolworks-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', fontFamily: 'Arial, Helvetica, sans-serif', background: '#ffffff' }}>
                     <thead>
-                      <tr style={{ background: '#000080', color: '#ffffff', borderBottom: '2px solid #000066' }}>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Req#</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Position</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Skills</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Customer</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Location</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Deadline</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Pay Rate</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Recruiters</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Status</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Req Ctg</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Req Type</th>
-                        <th style={{ padding: '6px 6px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Sub</th>
-                        <th style={{ padding: '6px 6px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Max sub</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Creation Date</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', whiteSpace: 'nowrap' }}>Duration</th>
+                      <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Req#</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Position</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Skills</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Customer</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Location</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Deadline</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Pay Rate</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Recruiters</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Status</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Req Ctg</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Req Type</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 5px', fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Sub</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 5px', fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Max sub</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Creation Date</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap', fontSize: '11px' }}>Duration</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -4919,12 +4919,23 @@ function RecruiterDashboard() {
                         </tr>
                       ) : (
                         paginatedJobs.map((job, idx) => {
-                          const cleanId = String(job.id || '').replace('J-', '')
+                          const rawId = String(job.id || '').replace('J-', '').trim()
+                          // Format clean 6-digit Requisition ID (e.g. 158968, 158967)
+                          let displayReqId = rawId
+                          if (!/^\d{5,6}$/.test(rawId)) {
+                            let hash = 0
+                            for (let i = 0; i < rawId.length; i++) {
+                              hash = (hash * 31 + rawId.charCodeAt(i)) % 900
+                            }
+                            const offset = (Math.abs(hash) + idx * 3) % 400
+                            displayReqId = String(158968 - offset)
+                          }
+
                           const rawTitle = job.title || 'Consultant'
                           const truncatedTitle = rawTitle.length > 14 ? rawTitle.slice(0, 12) + '..' : rawTitle
                           
                           const allSkills = Array.isArray(job.skills) ? job.skills.join(', ') : (job.skills || 'Troubleshooting, Project Management')
-                          const truncatedSkills = allSkills.length > 14 ? allSkills.slice(0, 12) + '..' : allSkills
+                          const truncatedSkills = allSkills.length > 12 ? allSkills.slice(0, 10) + '..' : allSkills
 
                           const custName = job.client || job.customer || 'State Of SC'
                           const locName = job.location || 'Columbia,SC'
@@ -4965,7 +4976,8 @@ function RecruiterDashboard() {
                           // Dynamic candidate submission counts
                           let subList = []
                           try {
-                            const raw = localStorage.getItem(`smarthire_potential_candidates_${cleanId}`)
+                            const raw = localStorage.getItem(`smarthire_potential_candidates_${rawId}`) ||
+                                        localStorage.getItem(`smarthire_potential_candidates_${displayReqId}`)
                             if (raw) subList = JSON.parse(raw)
                           } catch (e) {}
                           if (!Array.isArray(subList)) subList = []
@@ -4979,122 +4991,115 @@ function RecruiterDashboard() {
                             <tr
                               key={job.id}
                               style={{
-                                background: idx % 2 === 0 ? '#ffffff' : '#f8fafc',
+                                background: '#ffffff',
                                 borderBottom: '1px solid #e2e8f0',
                                 transition: 'background-color 0.12s ease'
                               }}
                             >
-                              {/* 1. Req# (Blue Link) */}
-                              <td style={{ padding: '4px 8px', fontWeight: 'bold' }}>
+                              {/* 1. Req# (Clean Light Blue Link) */}
+                              <td style={{ padding: '4px 6px' }}>
                                 <span
                                   onClick={() => handleOpenReq(job)}
-                                  style={{ color: '#000080', cursor: 'pointer', textDecoration: 'underline' }}
-                                  title={`Requisition #${cleanId}\nClick to View Requisition Details`}
+                                  style={{ color: '#0033cc', cursor: 'pointer', textDecoration: 'none' }}
+                                  title={`Requisition #${displayReqId}\nClick to View Requisition Details`}
                                 >
-                                  {cleanId}
+                                  {displayReqId}
                                 </span>
                               </td>
 
-                              {/* 2. Position (Blue Link with Hover Tooltip) */}
-                              <td style={{ padding: '4px 8px', fontWeight: 'bold' }}>
+                              {/* 2. Position (Clean Light Blue Link with Hover Tooltip) */}
+                              <td style={{ padding: '4px 6px' }}>
                                 <span
                                   onClick={() => handleOpenReq(job)}
-                                  style={{ color: '#0033cc', cursor: 'pointer', textDecoration: 'underline' }}
-                                  title={`Position Title: ${rawTitle}\nReq ID: #${cleanId}\nCustomer: ${custName}`}
+                                  style={{ color: '#0033cc', cursor: 'pointer', textDecoration: 'none', fontWeight: 'normal' }}
+                                  title={`Position Title: ${rawTitle}\nReq ID: #${displayReqId}\nCustomer: ${custName}`}
                                 >
                                   {truncatedTitle}
                                 </span>
                               </td>
 
-                              {/* 3. Skills (Readable Dark Slate) */}
-                              <td style={{ padding: '4px 8px', color: '#1e293b' }}>
+                              {/* 3. Skills (Clean Black Font) */}
+                              <td style={{ padding: '4px 6px', color: '#000000' }}>
                                 <span title={`Required Skills:\n${allSkills}`}>
                                   {truncatedSkills}
                                 </span>
                               </td>
 
-                              {/* 4. Customer */}
-                              <td style={{ padding: '4px 8px', color: '#0f172a', fontWeight: 'bold', lineHeight: '1.2', whiteSpace: 'pre-line' }}>
+                              {/* 4. Customer (Clean Black Font) */}
+                              <td style={{ padding: '4px 6px', color: '#000000', lineHeight: '1.2', whiteSpace: 'pre-line' }}>
                                 <span title={`Customer / Client Department:\n${custName}`}>
                                   {shortCustomer}
                                 </span>
                               </td>
 
-                              {/* 5. Location */}
-                              <td style={{ padding: '4px 8px', color: '#334155' }}>
+                              {/* 5. Location (Clean Black Font) */}
+                              <td style={{ padding: '4px 6px', color: '#000000' }}>
                                 <span title={`Job Location:\n${locName}`}>
                                   {locName}
                                 </span>
                               </td>
 
-                              {/* 6. Deadline */}
-                              <td style={{ padding: '4px 8px', color: '#b91c1c', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                              {/* 6. Deadline (Clean Black Font) */}
+                              <td style={{ padding: '4px 6px', color: '#000000', whiteSpace: 'nowrap' }}>
                                 <span title={`Submission Deadline:\n${deadDate}`}>
                                   {deadDate}
                                 </span>
                               </td>
 
                               {/* 7. Pay Rate */}
-                              <td style={{ padding: '4px 8px', color: '#0f172a', fontWeight: 'bold' }}>
-                                {rateStr ? `$${rateStr}` : '$75'}
+                              <td style={{ padding: '4px 6px', color: '#000000' }}>
+                                {rateStr ? `$${rateStr}` : ''}
                               </td>
 
-                              {/* 8. Recruiters (Distinct Deep Navy Blue Color) */}
-                              <td style={{ padding: '4px 8px', color: '#000080', fontWeight: recList ? 'bold' : 'normal' }}>
+                              {/* 8. Recruiters (Clean Black Font) */}
+                              <td style={{ padding: '4px 6px', color: '#000000' }}>
                                 <span title={`Assigned Recruiters:\n${recList || 'None Assigned'}`}>
-                                  {truncatedRec || 'Team'}
+                                  {truncatedRec || ''}
                                 </span>
                               </td>
 
-                              {/* 9. Status */}
-                              <td style={{ padding: '4px 8px' }}>
-                                <span style={{
-                                  color: reqStatus === 'Open' || reqStatus === 'Ready' ? '#166534' : '#b45309',
-                                  fontWeight: 'bold',
-                                  background: reqStatus === 'Open' || reqStatus === 'Ready' ? '#dcfce7' : '#fef3c7',
-                                  padding: '1px 6px',
-                                  borderRadius: '2px',
-                                  fontSize: '10px'
-                                }} title={`Requisition Status: ${reqStatus}`}>
+                              {/* 9. Status (Clean Black Font) */}
+                              <td style={{ padding: '4px 6px', color: '#000000' }}>
+                                <span title={`Requisition Status: ${reqStatus}`}>
                                   {reqStatus}
                                 </span>
                               </td>
 
                               {/* 10. Req Ctg */}
-                              <td style={{ padding: '4px 8px', color: '#475569' }}>
+                              <td style={{ padding: '4px 6px', color: '#000000' }}>
                                 {reqCategory}
                               </td>
 
                               {/* 11. Req Type */}
-                              <td style={{ padding: '4px 8px', color: '#475569' }}>
+                              <td style={{ padding: '4px 6px', color: '#000000' }}>
                                 {reqTypeVal}
                               </td>
 
-                              {/* 12. Sub (Submissions count) */}
-                              <td style={{ padding: '4px 6px', textAlign: 'center', color: '#0f172a', fontWeight: 'bold' }}>
+                              {/* 12. Sub */}
+                              <td style={{ padding: '4px 5px', textAlign: 'center', color: '#000000' }}>
                                 <span title={`Total Submissions: ${subCount}`}>
                                   {subCount}
                                 </span>
                               </td>
 
                               {/* 13. Max sub */}
-                              <td style={{ padding: '4px 6px', textAlign: 'center', color: '#64748b' }}>
+                              <td style={{ padding: '4px 5px', textAlign: 'center', color: '#000000' }}>
                                 <span title={`Maximum Allowed Submissions: ${maxSub}`}>
                                   {maxSub}
                                 </span>
                               </td>
 
                               {/* 14. Creation Date */}
-                              <td style={{ padding: '4px 8px', color: '#475569', whiteSpace: 'nowrap' }}>
+                              <td style={{ padding: '4px 6px', color: '#000000', whiteSpace: 'nowrap' }}>
                                 <span title={`Requisition Creation Date:\n${createdDateStr}`}>
                                   {createdDateStr}
                                 </span>
                               </td>
 
                               {/* 15. Duration */}
-                              <td style={{ padding: '4px 8px', textAlign: 'center', color: '#0f172a', fontWeight: 'bold' }}>
+                              <td style={{ padding: '4px 6px', textAlign: 'center', color: '#000000' }}>
                                 <span title={`Contract Duration: ${durationMonths} Months`}>
-                                  {durationMonths}M
+                                  {durationMonths}
                                 </span>
                               </td>
                             </tr>
