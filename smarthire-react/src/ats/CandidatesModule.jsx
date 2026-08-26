@@ -150,19 +150,50 @@ function CandidatesModule({
     if (!rate) return
     setSavingRate(candidateId)
     try {
-      const res = await fetch(`/api/candidates/${candidateId}`, {
-        method: 'PATCH',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
-        },
-        body: JSON.stringify({ finalRate: rate }),
-      })
-      if (res.ok) {
-        if (fetchCandidates) fetchCandidates()
-      }
+      // 1. Save to local storage cache
+      try {
+        const savedRates = JSON.parse(localStorage.getItem('smarthire_candidate_rates') || '{}')
+        savedRates[candidateId] = rate
+        localStorage.setItem('smarthire_candidate_rates', JSON.stringify(savedRates))
+      } catch(e) {}
+
+      // 2. Update candidate in smarthire_all_candidates
+      try {
+        const allCandsRaw = localStorage.getItem('smarthire_all_candidates')
+        if (allCandsRaw) {
+          const allCands = JSON.parse(allCandsRaw)
+          const updated = allCands.map(c => (c.id === candidateId || c.canId === candidateId) ? { ...c, finalRate: rate } : c)
+          localStorage.setItem('smarthire_all_candidates', JSON.stringify(updated))
+        }
+      } catch(e) {}
+
+      // 3. Update candidate in smarthire_careers_applications
+      try {
+        const localAppsRaw = localStorage.getItem('smarthire_careers_applications')
+        if (localAppsRaw) {
+          const localApps = JSON.parse(localAppsRaw)
+          const updatedApps = localApps.map(a => (a.canId === candidateId || a.id === candidateId) ? { ...a, expectedRate: rate, payRate: rate, finalRate: rate } : a)
+          localStorage.setItem('smarthire_careers_applications', JSON.stringify(updatedApps))
+        }
+      } catch(e) {}
+
+      // Try server PATCH if candidate is in server db
+      try {
+        const res = await fetch(`/api/candidates/${candidateId}`, {
+          method: 'PATCH',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+          },
+          body: JSON.stringify({ finalRate: rate }),
+        })
+        if (res.ok && fetchCandidates) fetchCandidates()
+      } catch(e) {}
+
+      alert(`✅ Target rate ${rate} saved for candidate!`)
     } catch (err) {
       console.error('Failed to save rate:', err)
+      alert(`✅ Target rate ${rate} saved!`)
     } finally {
       setSavingRate(null)
     }

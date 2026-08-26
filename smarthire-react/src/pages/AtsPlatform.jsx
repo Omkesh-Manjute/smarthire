@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import SiteLayout from '../components/SiteLayout'
 import CandidateMessengerWidget from '../components/CandidateMessengerWidget'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import {
   DashboardModule,
-  JobsModule,
   CandidatesModule,
   PipelineModule,
   SubmissionModule,
@@ -139,24 +138,29 @@ export default function AtsPlatform() {
   const getTabFromUrl = () => {
     try {
       const params = new URLSearchParams(window.location.search)
-      return params.get('tab')
+      const tab = params.get('tab')
+      if (tab === 'jobs' || tab === 'dashboard') return 'candidates'
+      return tab
     } catch (e) {
       return null
     }
   }
+
+  const navigate = useNavigate()
+  const location = useLocation()
 
   const [activeTab, setActiveTab] = useState(() => {
     const urlTab = getTabFromUrl()
     if (urlTab && urlTab !== 'dashboard' && urlTab !== 'jobs') return urlTab
     return 'candidates'
   })
-  const navigate = useNavigate()
 
   // Listen for navigation tab switch events from top navbar
   useEffect(() => {
     const handleTabSwitch = (e) => {
       if (e.detail?.tab) {
-        setActiveTab(e.detail.tab)
+        const nextTab = (e.detail.tab === 'jobs' || e.detail.tab === 'dashboard') ? 'candidates' : e.detail.tab
+        setActiveTab(nextTab)
       }
     }
     const handlePopState = () => {
@@ -177,7 +181,7 @@ export default function AtsPlatform() {
     if (urlTab && urlTab !== activeTab) {
       setActiveTab(urlTab)
     }
-  }, [location.search])
+  }, [location?.search])
   
   // Layout mode state: 'topbar' or 'sidebar' (saved in localStorage, default topbar)
   const [navLayout, setNavLayout] = useState(() => {
@@ -692,7 +696,7 @@ export default function AtsPlatform() {
           {/* ─── MAIN CONTENT AREA ─────────────────────────────── */}
           <div style={{ flex: 1, padding: '28px 32px', overflowX: 'hidden', minWidth: 0 }}>
 
-            {activeTab === 'candidates' && (
+            {(activeTab === 'candidates' || activeTab === 'jobs' || activeTab === 'dashboard' || !['pipeline', 'screening', 'submissions', 'reports', 'audit', 'automation', 'settings', 'users'].includes(activeTab)) && (
               <CandidatesModule
                 allCandidates={safeCandidates}
                 filteredCandidates={filteredCandidates}
