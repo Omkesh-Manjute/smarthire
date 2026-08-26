@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import SiteLayout from '../components/SiteLayout'
 import CandidatePdfReportModal from '../components/CandidatePdfReportModal'
 import CandidateDetailViewModal from '../components/CandidateDetailViewModal'
+import AiMatchingCandidatesModal from '../components/AiMatchingCandidatesModal'
 import ActivityNotificationBell, { pushActivityNotification } from '../components/ActivityNotificationBell'
 import { AuditActivityLogModule, logAuditEvent } from '../ats'
 
@@ -236,6 +237,11 @@ function RecruiterDashboard() {
   const [aiCandidate, setAiCandidate] = useState(null)
   const [aiAnalysisResult, setAiAnalysisResult] = useState(null)
   const [isAnalyzingAi, setIsAnalyzingAi] = useState(false)
+
+  // AI Proactive Candidate Matcher Modal State
+  const [showAiMatchModal, setShowAiMatchModal] = useState(false)
+  const [aiMatchTargetJob, setAiMatchTargetJob] = useState(null)
+  const [aiMatchingCandidatesList, setAiMatchingCandidatesList] = useState([])
 
   // User Management Modal State (Admin / Recruiter adding employee)
   const [showUserModal, setShowUserModal] = useState(false)
@@ -1012,7 +1018,89 @@ function RecruiterDashboard() {
     })
   }
 
-  // Create / Add New Requisition
+  // ─── AI PROACTIVE CANDIDATE MATCHMAKER & RECRUITER ALERT ENGINE ───
+  const runAiMatchForJob = (jobObj, options = { notifyRecruiter: true }) => {
+    if (!jobObj) return []
+    const jSkills = Array.isArray(jobObj.skills) && jobObj.skills.length > 0
+      ? jobObj.skills.map(s => String(s).toLowerCase().trim())
+      : ['cisco', 'network', 'routing', 'security', 'cloud', 'aws', 'python', 'sql']
+    const jTitle = (jobObj.title || '').toLowerCase()
+    const jLocation = (jobObj.location || '').toLowerCase()
+    const jCleanId = String(jobObj.id || '158938').replace('J-', '')
+
+    // Score candidates from the master candidate pool
+    const scored = candidates.map(cand => {
+      const cSkills = Array.isArray(cand.skills)
+        ? cand.skills.map(s => String(s).toLowerCase().trim())
+        : String(cand.skills || '').toLowerCase().split(',').map(s => s.trim())
+      const cRole = (cand.fullRole || cand.role || '').toLowerCase()
+      const cLoc = (cand.location || cand.city || '').toLowerCase()
+
+      // Skill overlap match
+      const skillMatches = jSkills.filter(js =>
+        cSkills.some(cs => cs.includes(js) || js.includes(cs)) ||
+        cRole.includes(js) ||
+        (cand.resumeText && cand.resumeText.toLowerCase().includes(js))
+      )
+      const skillRatio = jSkills.length > 0 ? (skillMatches.length / jSkills.length) : 0.65
+
+      // Role title match
+      const roleMatch = jTitle.split(' ').some(w => w.length > 3 && cRole.includes(w)) ? 15 : 0
+
+      // Location match
+      const locMatch = jLocation && cLoc && (jLocation.includes(cLoc) || cLoc.includes(jLocation.slice(0, 3))) ? 10 : 5
+
+      const calculatedScore = Math.min(98, Math.max(68, Math.round(skillRatio * 70 + roleMatch + locMatch)))
+      return {
+        ...cand,
+        matchScore: calculatedScore,
+        matchedSkillsList: skillMatches
+      }
+    })
+
+    // Filter >= 75% match
+    const matches = scored.filter(c => c.matchScore >= 75).sort((a, b) => b.matchScore - a.matchScore)
+
+    // Notify the recruiters who sourced each candidate
+    if (options.notifyRecruiter && matches.length > 0) {
+      const byRecruiter = {}
+      matches.forEach(m => {
+        const rec = m.recruiter || m.assignedTo || m.addedByName || 'Recruiter Team'
+        if (!byRecruiter[rec]) byRecruiter[rec] = []
+        byRecruiter[rec].push(m)
+      })
+
+      Object.entries(byRecruiter).forEach(([recName, list]) => {
+        const topNames = list.slice(0, 3).map(c => c.name).join(', ')
+        const bestScore = list[0]?.matchScore || 92
+        pushActivityNotification({
+          title: `🎯 ${list.length} Candidate${list.length > 1 ? 's' : ''} Matched for Req #${jCleanId}`,
+          message: `Hey ${recName}! ${list.length} of your sourced candidate(s) (${topNames}) are a ${bestScore}% Match for Req #${jCleanId} "${jobObj.title}". Check availability & submit!`,
+          type: 'ai_match',
+          category: 'ai',
+          actor: 'SmartHire AI Matchmaker',
+          actorRole: 'AI Agent',
+          reqId: jCleanId,
+          candidateName: topNames,
+          jobTitle: jobObj.title
+        })
+      })
+    }
+
+    return matches
+  }
+
+  // Open AI Matchmaker Modal for a Requisition
+  const handleOpenAiMatchModalForJob = (targetJob) => {
+    const theJob = targetJob || selectedReq
+    if (!theJob) return
+    const matches = runAiMatchForJob(theJob, { notifyRecruiter: false })
+    setAiMatchTargetJob(theJob)
+    setAiMatchingCandidatesList(matches)
+    setShowAiMatchModal(true)
+  }
+
+  // Create / Add New Requisition with auto AI candidate matching
   const handleAddNewRequisition = () => {
     const newReqId = `1589${Math.floor(40 + Math.random() * 50)}`
     const newJobObj = {
@@ -1029,6 +1117,10 @@ function RecruiterDashboard() {
       deadline: 'Aug 28, 2026'
     }
     handleOpenReq(newJobObj)
+    // Run AI Matchmaker automatically in background to alert recruiters
+    setTimeout(() => {
+      runAiMatchForJob(newJobObj, { notifyRecruiter: true })
+    }, 1000)
   }
 
   // Quick Search handler
@@ -1535,7 +1627,12 @@ function RecruiterDashboard() {
               <ActivityNotificationBell theme="default" onSelectNotification={(n) => {
                 if (n.reqId) {
                   const targetJob = jobs.find(j => j.id === `J-${n.reqId}` || j.id === n.reqId)
-                  if (targetJob) handleOpenReq(targetJob)
+                  if (targetJob) {
+                    handleOpenReq(targetJob)
+                    if (n.type === 'ai_match' || n.category === 'ai') {
+                      setTimeout(() => handleOpenAiMatchModalForJob(targetJob), 200)
+                    }
+                  }
                 }
               }} />
               <span>Theme: <select style={{ fontSize: '11px', padding: '1px 3px' }}><option>Default</option></select></span>
@@ -1581,7 +1678,12 @@ function RecruiterDashboard() {
               <ActivityNotificationBell theme="orange" onSelectNotification={(n) => {
                 if (n.reqId) {
                   const targetJob = jobs.find(j => j.id === `J-${n.reqId}` || j.id === n.reqId)
-                  if (targetJob) handleOpenReq(targetJob)
+                  if (targetJob) {
+                    handleOpenReq(targetJob)
+                    if (n.type === 'ai_match' || n.category === 'ai') {
+                      setTimeout(() => handleOpenAiMatchModalForJob(targetJob), 200)
+                    }
+                  }
                 }
               }} />
 
@@ -3092,41 +3194,67 @@ function RecruiterDashboard() {
                 </div>
               </div>
 
-              {/* Sub Tabs Bar (Clean Square Tabs, No Underline) */}
-              <div style={{ display: 'flex', borderBottom: '1px solid #7f9db9', background: 'transparent', gap: '2px', paddingLeft: '2px', marginBottom: '0' }}>
-                {[
-                  { id: 'details', label: 'Details' },
-                  ...(!isEmployee ? [{ id: 'assign', label: 'Assign to Recruiters' }] : []),
-                  { id: 'potential', label: `Potential Candidates (${potentialCandidates.length})` },
-                  ...(canReviewAndUseAI ? [{ id: 'aiFit', label: 'AI Fit Review' }] : []),
-                  { id: 'attachments', label: `Attachments (${attachments.length})` },
-                  { id: 'newCandidates', label: 'New Candidates (0)' }
-                ].map(tab => {
-                  const isActive = activeReqTab === tab.id
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => setActiveReqTab(tab.id)}
-                      style={{
-                        border: '1px solid #7f9db9',
-                        borderBottom: isActive ? '1px solid #ffffff' : '1px solid #7f9db9',
-                        background: isActive ? '#ffffff' : '#e8e8e8',
-                        color: '#000080',
-                        fontWeight: isActive ? 'bold' : 'normal',
-                        textDecoration: 'none',
-                        fontSize: '11px',
-                        padding: '3px 12px',
-                        cursor: 'pointer',
-                        borderRadius: 0,
-                        marginBottom: isActive ? '-1px' : '0px',
-                        zIndex: isActive ? 2 : 1
-                      }}
-                    >
-                      {tab.label}
-                    </button>
-                  )
-                })}
+              {/* Sub Tabs Bar (Clean Square Tabs, No Underline & AI Match Button) */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid #7f9db9', background: 'transparent', gap: '2px', paddingLeft: '2px', marginBottom: '0' }}>
+                <div style={{ display: 'flex', gap: '2px', alignItems: 'flex-end' }}>
+                  {[
+                    { id: 'details', label: 'Details' },
+                    ...(!isEmployee ? [{ id: 'assign', label: 'Assign to Recruiters' }] : []),
+                    { id: 'potential', label: `Potential Candidates (${potentialCandidates.length})` },
+                    ...(canReviewAndUseAI ? [{ id: 'aiFit', label: 'AI Fit Review' }] : []),
+                    { id: 'attachments', label: `Attachments (${attachments.length})` },
+                    { id: 'newCandidates', label: 'New Candidates (0)' }
+                  ].map(tab => {
+                    const isActive = activeReqTab === tab.id
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setActiveReqTab(tab.id)}
+                        style={{
+                          border: '1px solid #7f9db9',
+                          borderBottom: isActive ? '1px solid #ffffff' : '1px solid #7f9db9',
+                          background: isActive ? '#ffffff' : '#e8e8e8',
+                          color: '#000080',
+                          fontWeight: isActive ? 'bold' : 'normal',
+                          textDecoration: 'none',
+                          fontSize: '11px',
+                          padding: '3px 12px',
+                          cursor: 'pointer',
+                          borderRadius: 0,
+                          marginBottom: isActive ? '-1px' : '0px',
+                          zIndex: isActive ? 2 : 1
+                        }}
+                      >
+                        {tab.label}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {/* 1-Click AI Matchmaker Button */}
+                <button
+                  type="button"
+                  onClick={() => handleOpenAiMatchModalForJob(selectedReq)}
+                  style={{
+                    background: '#16a34a',
+                    color: '#ffffff',
+                    border: '1px solid #15803d',
+                    padding: '3px 12px',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    borderRadius: 0,
+                    marginBottom: '2px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    boxShadow: '0 1px 3px rgba(22, 163, 74, 0.3)'
+                  }}
+                  title="Scan candidate database, calculate match scores, and alert sourcing recruiters"
+                >
+                  <span>🎯 AI Match Finder</span>
+                </button>
               </div>
 
               {/* Tab Panel Content Box (Crisp Square Style) */}
@@ -6425,6 +6553,73 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                 return merged
               })
               setSelectedViewCandidate(updatedCand)
+            }}
+          />
+        )}
+
+        {/* ═══════════ AI PROACTIVE CANDIDATE MATCHMAKER MODAL ═══════════ */}
+        {showAiMatchModal && aiMatchTargetJob && (
+          <AiMatchingCandidatesModal
+            isOpen={showAiMatchModal}
+            job={aiMatchTargetJob}
+            matchingCandidates={aiMatchingCandidatesList}
+            currentUser={currentUser}
+            onClose={() => {
+              setShowAiMatchModal(false)
+              setAiMatchTargetJob(null)
+            }}
+            onOpenCandidateDetails={(cand) => {
+              setSelectedViewCandidate(cand)
+              setShowDetailViewModal(true)
+            }}
+            onAssignCandidate={(cand, targetJob) => {
+              const cleanReqId = String(targetJob?.id || '158938').replace('J-', '')
+              const dateStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+              const newSubObj = {
+                id: cand.id || `875${Math.floor(10 + Math.random() * 90)}`,
+                name: cand.name,
+                payRate: cand.payRate || targetJob.budget || '74/hr',
+                payRateType: cand.rateType || 'C2C',
+                assignedBy: userName,
+                assignedOn: dateStr,
+                status: 'Int-SubmittedToManager',
+                statusComments: `AI Proactive Match - Submitted by ${userName}`,
+                interview: 'Select',
+                rejectedReason: '',
+                lastChangedBy: userName,
+                lastChangedRole: isEmployee ? 'Employee' : 'Recruiter',
+                lastChangedOn: dateStr
+              }
+
+              // Save to requisition potential candidates
+              const existingRaw = localStorage.getItem(`smarthire_potential_candidates_${cleanReqId}`)
+              let existingList = []
+              if (existingRaw) {
+                try { existingList = JSON.parse(existingRaw) } catch (e) {}
+              }
+              const merged = [newSubObj, ...existingList.filter(c => c.name !== cand.name)]
+              try {
+                localStorage.setItem(`smarthire_potential_candidates_${cleanReqId}`, JSON.stringify(merged))
+              } catch (e) {}
+
+              if (String(selectedReq?.id || '').replace('J-', '') === cleanReqId) {
+                setPotentialCandidates(merged)
+              }
+
+              pushActivityNotification({
+                title: 'Candidate Assigned to Requisition',
+                message: `Candidate ${cand.name} assigned to Requisition #${cleanReqId} by ${userName}`,
+                type: 'assignment',
+                category: 'team',
+                actor: userName,
+                actorRole: isEmployee ? 'Employee' : 'Recruiter',
+                reqId: cleanReqId,
+                candidateName: cand.name,
+                candidateId: cand.id
+              })
+
+              setSaveToastMessage(`🎉 Candidate ${cand.name} successfully submitted to Requisition #${cleanReqId}!`)
+              setTimeout(() => setSaveToastMessage(null), 4000)
             }}
           />
         )}

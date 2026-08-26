@@ -221,7 +221,8 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
       case 'interview':
         return { icon: '📅', label: 'Interview', bg: '#fef3c7', color: '#92400e', border: '#fde68a' }
       case 'ai':
-        return { icon: '🤖', label: 'AI Match', bg: '#ede9fe', color: '#6d28d9', border: '#ddd6fe' }
+      case 'ai_match':
+        return { icon: '🎯', label: 'AI Match', bg: '#ede9fe', color: '#6d28d9', border: '#ddd6fe' }
       case 'requisition':
         return { icon: '💼', label: 'Requisition', bg: '#ffedd5', color: '#9a3412', border: '#fed7aa' }
       default:
