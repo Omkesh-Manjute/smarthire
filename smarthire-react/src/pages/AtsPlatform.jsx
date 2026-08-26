@@ -24,7 +24,6 @@ const STATUSES = [
 ]
 
 const ALL_TABS = [
-  { id: 'jobs',        label: '💼 Jobs',          icon: '💼' },
   { id: 'candidates',  label: '👤 Candidates',    icon: '👤' },
   { id: 'pipeline',    label: '📈 Pipeline',      icon: '📈', adminOnly: true },
   { id: 'screening',   label: '🔍 Screening',     icon: '🔍' },
@@ -56,7 +55,6 @@ export default function AtsPlatform() {
   const DEFAULT_PERMISSIONS = {
     superadmin: {
       ats: true,
-      jobs: true,
       candidates: true,
       pipeline: true,
       screening: true,
@@ -70,7 +68,6 @@ export default function AtsPlatform() {
     },
     manager: {
       ats: true,
-      jobs: true,
       candidates: true,
       pipeline: true,
       screening: true,
@@ -84,7 +81,6 @@ export default function AtsPlatform() {
     },
     recruiter: {
       ats: true,
-      jobs: true,
       candidates: true,
       pipeline: false,
       screening: true,
@@ -135,9 +131,9 @@ export default function AtsPlatform() {
       return permissions[roleKey][tab.id] !== false
     }
     if (isManager) {
-      return ['jobs', 'candidates', 'pipeline', 'screening', 'submissions', 'reports', 'audit', 'inbox'].includes(tab.id)
+      return ['candidates', 'pipeline', 'screening', 'submissions', 'reports', 'audit', 'inbox'].includes(tab.id)
     }
-    return ['jobs', 'candidates', 'screening', 'audit', 'inbox'].includes(tab.id)
+    return ['candidates', 'screening', 'audit', 'inbox'].includes(tab.id)
   })
 
   const getTabFromUrl = () => {
@@ -151,8 +147,8 @@ export default function AtsPlatform() {
 
   const [activeTab, setActiveTab] = useState(() => {
     const urlTab = getTabFromUrl()
-    if (urlTab && urlTab !== 'dashboard') return urlTab
-    return 'jobs'
+    if (urlTab && urlTab !== 'dashboard' && urlTab !== 'jobs') return urlTab
+    return 'candidates'
   })
   const navigate = useNavigate()
 
@@ -695,35 +691,6 @@ export default function AtsPlatform() {
 
           {/* ─── MAIN CONTENT AREA ─────────────────────────────── */}
           <div style={{ flex: 1, padding: '28px 32px', overflowX: 'hidden', minWidth: 0 }}>
-
-            {(activeTab === 'jobs' || activeTab === 'dashboard') && (
-              <JobsModule
-                jobsList={safeJobs}
-                allCandidates={safeCandidates}
-                submissions={submissions}
-                rawJdText={rawJdText}
-                setRawJdText={setRawJdText}
-                parsingJd={parsingJd}
-                handleParseJd={handleParseJd}
-                isScraping={isScraping}
-                handleScrapeNow={handleScrapeNow}
-                publishingJobId={publishingJobId}
-                handlePostJobToLinkedIn={handlePostJobToLinkedIn}
-                handleDeleteJob={handleDeleteJob}
-                handleOpenJobPreview={handleOpenJobPreview}
-                fetchJobs={fetchJobs}
-                isSuperAdmin={isSuperAdmin}
-                recruiterInfo={{
-                  id: recruiterUserId,
-                  name: currentUser?.name || currentUser?.displayName || 'Recruiter',
-                  email: recruiterUserEmail,
-                  refCode: currentUser?.refCode || (currentUser?.name
-                    ? currentUser.name.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + (recruiterUserId || '').slice(-3)
-                    : 'recruiter'),
-                }}
-              />
-            )}
-
 
             {activeTab === 'candidates' && (
               <CandidatesModule
