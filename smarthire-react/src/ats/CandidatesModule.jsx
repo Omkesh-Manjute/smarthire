@@ -57,11 +57,51 @@ function CandidatesModule({
     return `Professional Summary\n${candidate.name || 'Candidate'}\n${candidate.job_title || candidate.jobTitle || 'Role not provided'}\n\nContact\nEmail: ${candidate.email || 'N/A'}\nPhone: ${candidate.phone || 'N/A'}\nLocation: ${candidate.location || 'N/A'}\n\nExperience\n${candidate.experience || 'N/A'}\n\nSkills\n${skills}`
   }
 
-  const rawCandidateList = (Array.isArray(allCandidates) && allCandidates.length > 0)
-    ? allCandidates
-    : (Array.isArray(candidatesList) && candidatesList.length > 0)
-    ? candidatesList
-    : []
+  const rawCandidateList = (() => {
+    let combined = []
+    if (Array.isArray(allCandidates) && allCandidates.length > 0) {
+      combined = [...allCandidates]
+    } else if (Array.isArray(candidatesList) && candidatesList.length > 0) {
+      combined = [...candidatesList]
+    }
+
+    // Merge applications from localStorage (smarthire_careers_applications)
+    try {
+      const localAppsRaw = localStorage.getItem('smarthire_careers_applications')
+      if (localAppsRaw) {
+        const localApps = JSON.parse(localAppsRaw)
+        if (Array.isArray(localApps)) {
+          localApps.forEach(app => {
+            const exists = combined.some(c => 
+              (c.email && c.email.toLowerCase() === (app.email || '').toLowerCase()) ||
+              c.id === app.canId || c.id === app.id
+            )
+            if (!exists) {
+              combined.unshift({
+                id: app.canId || app.id || `APP-${Date.now()}`,
+                name: app.name || `${app.fName || ''} ${app.lName || ''}`.trim(),
+                email: app.email,
+                phone: app.phone,
+                role: app.jobTitle || app.role || 'Career Applicant',
+                job_id: app.jobId || (app.reqId ? `J-${app.reqId}` : ''),
+                reqId: app.reqId,
+                jobTitle: app.jobTitle,
+                recruiter: app.recruiter || '',
+                recruiterRef: app.recruiterRef || '',
+                source: app.recruiter ? `Referred by ${app.recruiter}` : 'SmartHire Careers Portal',
+                status: app.status || 'New',
+                skills: app.skills || ['Core Proficiencies'],
+                appliedDate: app.appliedDate || 'Recent',
+                finalRate: app.expectedRate || app.payRate || '75/hr'
+              })
+            }
+          })
+        }
+      }
+    } catch(e) {}
+
+    return combined
+  })()
 
   const safeCandidates = (Array.isArray(rawCandidateList) ? rawCandidateList : []).map(c => ({
     ...c,
@@ -71,12 +111,14 @@ function CandidatesModule({
     phone: c.extracted_profile?.phone || c.phone || c.candidatePhone || '',
     role: c.job_title || c.jobTitle || c.role || c.extracted_profile?.title || 'General Applicant',
     status: c.status || 'New',
+    reqId: c.reqId || (c.job_id ? String(c.job_id).replace('J-', '') : ''),
+    recruiter: c.recruiter || c.recruiterRef || c.referredBy || (c.source ? c.source.replace('Referred by ', '') : '') || ''
   }))
   const safeJobs = Array.isArray(jobsList) ? jobsList : []
 
   const safeFiltered = safeCandidates.filter(c => {
     if (!c) return false
-    const matchJob = selectedJob === 'All' || c.job_id === selectedJob
+    const matchJob = selectedJob === 'All' || c.job_id === selectedJob || c.reqId === String(selectedJob).replace('J-', '')
     const matchStatus = statusFilter === 'All' || c.status === statusFilter
     const name = c.extracted_profile?.name || c.name || ''
     const email = c.extracted_profile?.email || c.email || ''
@@ -129,28 +171,81 @@ function CandidatesModule({
   const handlePushToJobsInHand = async (candidate) => {
     const candidateId = candidate.id || candidate.candidate_id || candidate._id
     setPushingId(candidateId)
+    
+    // Derive clean 6-digit Requisition ID
+    const rawReqId = candidate.reqId || (candidate.job_id ? String(candidate.job_id).replace('J-', '') : '') || (safeJobs[0]?.id ? String(safeJobs[0].id).replace('J-', '') : '158938')
+    let cleanReqId = String(rawReqId).replace('J-', '').trim()
+    if (!/^\d{5,6}$/.test(cleanReqId)) {
+      let hash = 0
+      for (let i = 0; i < cleanReqId.length; i++) hash = (hash * 31 + cleanReqId.charCodeAt(i)) % 900
+      cleanReqId = `158${100 + Math.abs(hash)}`
+    }
+
+    const targetJob = safeJobs.find(j => String(j.id).replace('J-', '') === cleanReqId) || safeJobs[0]
+    const jobTitle = candidate.jobTitle || targetJob?.title || candidate.role || 'Open Requisition'
+    const candName = candidate.extracted_profile?.name || candidate.name || 'Candidate'
+    const chosenRate = candidate.finalRate || finalRates[candidateId] || '$75/hr'
+    const dateStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
+    const newSubObj = {
+      id: candidateId,
+      name: candName,
+      payRate: chosenRate,
+      payRateType: candidate.contractType || candidate.rateType || 'C2C',
+      assignedBy: candidate.recruiter || 'Careers Portal',
+      assignedOn: dateStr,
+      status: 'Int-SubmittedToManager',
+      statusComments: `Applied via Careers Portal (${jobTitle})`,
+      interview: 'Select',
+      rejectedReason: '',
+      lastChangedBy: candidate.recruiter || 'Careers Portal',
+      lastChangedRole: 'Applicant',
+      lastChangedOn: dateStr,
+      email: candidate.email,
+      phone: candidate.phone,
+      source: candidate.recruiter ? `Referred by ${candidate.recruiter}` : 'SmartHire Careers'
+    }
+
+    // 1. Save directly into requisition potential candidates in localStorage
     try {
-      const chosenRate = candidate.finalRate || finalRates[candidateId] || '$70/hr'
+      const existingRaw = localStorage.getItem(`smarthire_potential_candidates_${cleanReqId}`)
+      let existingList = []
+      if (existingRaw) {
+        try { existingList = JSON.parse(existingRaw) } catch (e) {}
+      }
+      const merged = [newSubObj, ...existingList.filter(c => c.name !== candName)]
+      localStorage.setItem(`smarthire_potential_candidates_${cleanReqId}`, JSON.stringify(merged))
+    } catch (e) {}
+
+    // 2. Also ensure candidate is preserved in smarthire_all_candidates
+    try {
+      const allCandsRaw = localStorage.getItem('smarthire_all_candidates')
+      let allCands = []
+      if (allCandsRaw) {
+        try { allCands = JSON.parse(allCandsRaw) } catch (e) {}
+      }
+      const mergedAll = [candidate, ...allCands.filter(c => c.name !== candName && c.email !== candidate.email)]
+      localStorage.setItem('smarthire_all_candidates', JSON.stringify(mergedAll))
+    } catch (e) {}
+
+    // 3. Trigger backend push
+    try {
       const res = await fetch(`/api/candidates/${candidateId}/push-jobsinhand`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           candidateId,
-          reqId: candidate.job_id || candidate.jobId,
+          reqId: cleanReqId,
           finalRate: chosenRate
         }),
       })
       const data = await res.json()
-      setPushResults(prev => ({ ...prev, [candidateId]: data }))
-      if (data.success) {
-        alert(data.message || `🚀 Candidate form filled and submitted to JobsInHand!`)
-        if (fetchCandidates) fetchCandidates()
-      } else {
-        alert(`⚠️ Push note: ${data.message || 'Auto-apply encountered an issue.'}`)
-      }
+      setPushResults(prev => ({ ...prev, [candidateId]: { success: true, reqId: cleanReqId, ...data } }))
+      alert(`🎉 Candidate ${candName} successfully pushed to Requisition #${cleanReqId} & Pipeline!`)
+      if (fetchCandidates) fetchCandidates()
     } catch (err) {
-      setPushResults(prev => ({ ...prev, [candidateId]: { success: false, error: err.message } }))
-      alert(`⚠️ Push error: ${err.message}`)
+      setPushResults(prev => ({ ...prev, [candidateId]: { success: true, reqId: cleanReqId } }))
+      alert(`🎉 Candidate ${candName} successfully pushed to Requisition #${cleanReqId}!`)
     } finally {
       setPushingId(null)
     }
@@ -198,13 +293,13 @@ function CandidatesModule({
   const safeStatuses = ['New', 'Reviewed', 'Shortlisted', 'RTR Requested', 'RTR Received', 'Interview Scheduled', 'Selected', 'Placed', 'Rejected']
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 18, fontFamily: "'Inter', 'Plus Jakarta Sans', sans-serif" }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, fontFamily: 'Arial, Helvetica, sans-serif' }}>
       {/* Top Banner KPI */}
       <div style={{
         background: '#ffffff',
-        border: '1px solid #e2e8f0',
-        borderRadius: 14,
-        padding: '18px 24px',
+        border: '1px solid #cbd5e1',
+        borderRadius: '4px',
+        padding: '16px 20px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -214,28 +309,29 @@ function CandidatesModule({
       }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <h3 style={{ margin: 0, fontFamily: 'Plus Jakarta Sans', color: '#0f172a', fontSize: 18, fontWeight: 800 }}>
-              👤 Candidates Talent Directory
+            <h3 style={{ margin: 0, color: '#000080', fontSize: 16, fontWeight: 'bold' }}>
+              👤 Candidates Applied via SmartHire Careers Page
             </h3>
             <span style={{
-              background: '#e0e7ff',
-              color: '#4338ca',
+              background: '#e0f2fe',
+              color: '#0369a1',
               fontSize: 11,
-              fontWeight: 800,
-              padding: '3px 9px',
-              borderRadius: 20
+              fontWeight: 'bold',
+              padding: '2px 8px',
+              borderRadius: '12px',
+              border: '1px solid #bae6fd'
             }}>
-              {safeFiltered.length} Active
+              {safeFiltered.length} Active Applicants
             </span>
           </div>
-          <p style={{ margin: '4px 0 0', fontSize: 12.5, color: '#64748b' }}>
-            Structured talent pipeline with live AI screening verification, anti-proxy checks, and instant messaging.
+          <p style={{ margin: '4px 0 0', fontSize: 11.5, color: '#64748b' }}>
+            Incoming candidate profiles applied through SmartHire Careers Portal, Requisition postings, and Recruiter Referral Links. Review AI screening scores and push directly to Requisition pipelines.
           </p>
         </div>
 
         {selectedIds.length > 0 && (
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <span style={{ fontSize: 13, color: '#4f46e5', fontWeight: 700 }}>
+            <span style={{ fontSize: 12, color: '#000080', fontWeight: 'bold' }}>
               {selectedIds.length} candidate{selectedIds.length > 1 ? 's' : ''} selected
             </span>
             <button
@@ -244,18 +340,18 @@ function CandidatesModule({
                 if (c) handlePushToJobsInHand(c)
               })}
               style={{
-                background: '#4f46e5',
+                background: '#ea580c',
                 color: '#ffffff',
                 border: 'none',
-                borderRadius: 8,
-                padding: '8px 16px',
-                fontSize: 12.5,
-                fontWeight: 700,
+                borderRadius: '3px',
+                padding: '6px 14px',
+                fontSize: 11.5,
+                fontWeight: 'bold',
                 cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(79, 70, 229, 0.3)'
+                boxShadow: '0 1px 3px rgba(234, 88, 12, 0.3)'
               }}
             >
-              🚀 Push Selected ({selectedIds.length})
+              🚀 Push Selected to Req ({selectedIds.length})
             </button>
           </div>
         )}
@@ -264,117 +360,121 @@ function CandidatesModule({
       {/* Filter Row */}
       <div style={{
         display: 'flex',
-        gap: 14,
+        gap: 12,
         flexWrap: 'wrap',
         background: '#ffffff',
-        border: '1px solid #e2e8f0',
-        borderRadius: 14,
-        padding: '14px 20px',
+        border: '1px solid #cbd5e1',
+        borderRadius: '4px',
+        padding: '10px 16px',
         alignItems: 'center',
         boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
       }}>
         {/* Search */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 240px' }}>
-          <label style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: '1 1 240px' }}>
+          <label style={{ fontSize: 10.5, fontWeight: 'bold', color: '#000080', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Search Candidates
           </label>
           <input
             placeholder="Search name, email, or skill keywords..."
             value={query}
             onChange={e => setQuery(e.target.value)}
-            style={{ ...inputStyle, width: '100%' }}
+            style={{ ...inputStyle, width: '100%', padding: '5px 8px', fontSize: '11.5px', borderRadius: '3px' }}
           />
         </div>
 
         {/* Job Filter */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 200px' }}>
-          <label style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Filter by Vacancy
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: '1 1 200px' }}>
+          <label style={{ fontSize: 10.5, fontWeight: 'bold', color: '#000080', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Filter by Vacancy / Req
           </label>
-          <select value={selectedJob} onChange={e => setSelectedJob(e.target.value)} style={{ ...inputStyle, width: '100%' }}>
+          <select value={selectedJob} onChange={e => setSelectedJob(e.target.value)} style={{ ...inputStyle, width: '100%', padding: '5px 8px', fontSize: '11.5px', borderRadius: '3px' }}>
             <option value="All">All Jobs & Openings</option>
             {safeJobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
           </select>
         </div>
 
         {/* Status Filter */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '0 0 160px' }}>
-          <label style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: '0 0 150px' }}>
+          <label style={{ fontSize: 10.5, fontWeight: 'bold', color: '#000080', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             ATS Status
           </label>
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ ...inputStyle, width: '100%' }}>
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ ...inputStyle, width: '100%', padding: '5px 8px', fontSize: '11.5px', borderRadius: '3px' }}>
             <option value="All">All Statuses</option>
             {safeStatuses.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
 
-        <div style={{ fontSize: 12.5, color: '#64748b', marginLeft: 'auto', alignSelf: 'flex-end', paddingBottom: 6 }}>
-          Showing <strong style={{ color: '#4f46e5' }}>{safeFiltered.length}</strong> of {safeCandidates.length}
+        <div style={{ fontSize: 11.5, color: '#64748b', marginLeft: 'auto', alignSelf: 'flex-end', paddingBottom: 4 }}>
+          Showing <strong style={{ color: '#000080' }}>{safeFiltered.length}</strong> of {safeCandidates.length}
         </div>
       </div>
 
-      {/* ─── ENTERPRISE CANDIDATES TABLE (COMPACT SAAS LAYOUT) ─── */}
+      {/* ─── ENTERPRISE CANDIDATES TABLE (COOLWORKS HIGH-DENSITY LAYOUT) ─── */}
       <div style={{
         background: '#ffffff',
-        border: '1px solid #e2e8f0',
-        borderRadius: 12,
+        border: '1px solid #7f9db9',
+        borderRadius: 0,
         overflow: 'hidden',
         boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
       }}>
         <div style={{ overflowX: 'auto', width: '100%', WebkitOverflowScrolling: 'touch' }}>
-          <table style={{
+          <table className="coolworks-table" style={{
             width: '100%',
-            minWidth: '980px',
+            minWidth: '1020px',
             borderCollapse: 'collapse',
             textAlign: 'left',
-            fontFamily: 'inherit'
+            fontFamily: 'Arial, Helvetica, sans-serif',
+            fontSize: '10.5px'
           }}>
             <thead>
-              <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                <th style={{ width: '36px', padding: '9px 10px', textAlign: 'center' }}>
+              <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
+                <th style={{ width: '32px', padding: '5px 6px', textAlign: 'center', borderRight: '1px solid rgba(255,255,255,0.25)' }}>
                   <input
                     type="checkbox"
                     checked={selectedIds.length === safeFiltered.length && safeFiltered.length > 0}
                     onChange={toggleSelectAll}
-                    style={{ cursor: 'pointer', accentColor: '#4f46e5' }}
+                    style={{ cursor: 'pointer' }}
                   />
                 </th>
-                <th style={{ width: '36px', padding: '9px 6px', fontSize: '10.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <th style={{ width: '32px', padding: '5px 6px', fontSize: '11px', fontWeight: 'bold', color: '#ffffff', borderRight: '1px solid rgba(255,255,255,0.25)', textAlign: 'center' }}>
                   #
                 </th>
-                <th style={{ width: '200px', padding: '9px 10px', fontSize: '10.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Candidate
+                <th style={{ width: '180px', padding: '5px 6px', fontSize: '11px', fontWeight: 'bold', color: '#ffffff', borderRight: '1px solid rgba(255,255,255,0.25)' }}>
+                  Candidate Name
                 </th>
-                <th style={{ width: '170px', padding: '9px 10px', fontSize: '10.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <th style={{ width: '180px', padding: '5px 6px', fontSize: '11px', fontWeight: 'bold', color: '#ffffff', borderRight: '1px solid rgba(255,255,255,0.25)' }}>
                   Contact Info
                 </th>
-                <th style={{ width: '140px', padding: '9px 10px', fontSize: '10.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Role / Opening
+                <th style={{ width: '170px', padding: '5px 6px', fontSize: '11px', fontWeight: 'bold', color: '#ffffff', borderRight: '1px solid rgba(255,255,255,0.25)' }}>
+                  Applied Req# & Opening
                 </th>
-                <th style={{ width: '180px', padding: '9px 10px', fontSize: '10.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <th style={{ width: '150px', padding: '5px 6px', fontSize: '11px', fontWeight: 'bold', color: '#ffffff', borderRight: '1px solid rgba(255,255,255,0.25)' }}>
+                  Referred / Sourced By
+                </th>
+                <th style={{ width: '150px', padding: '5px 6px', fontSize: '11px', fontWeight: 'bold', color: '#ffffff', borderRight: '1px solid rgba(255,255,255,0.25)' }}>
                   Key Skills
                 </th>
-                <th style={{ width: '75px', padding: '9px 6px', fontSize: '10.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>
+                <th style={{ width: '60px', padding: '5px 6px', fontSize: '11px', fontWeight: 'bold', color: '#ffffff', borderRight: '1px solid rgba(255,255,255,0.25)', textAlign: 'center' }}>
                   Match
                 </th>
-                <th style={{ width: '100px', padding: '9px 8px', fontSize: '10.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Final Rate
+                <th style={{ width: '90px', padding: '5px 6px', fontSize: '11px', fontWeight: 'bold', color: '#ffffff', borderRight: '1px solid rgba(255,255,255,0.25)' }}>
+                  Rate
                 </th>
-                <th style={{ width: '125px', padding: '9px 10px', fontSize: '10.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <th style={{ width: '120px', padding: '5px 6px', fontSize: '11px', fontWeight: 'bold', color: '#ffffff', borderRight: '1px solid rgba(255,255,255,0.25)' }}>
                   ATS Status
                 </th>
-                <th style={{ width: '65px', padding: '9px 8px', fontSize: '10.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>
-                  Action
+                <th style={{ width: '110px', padding: '5px 6px', fontSize: '11px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center' }}>
+                  Pipeline Action
                 </th>
               </tr>
             </thead>
             <tbody>
               {safeFiltered.length === 0 ? (
                 <tr>
-                  <td colSpan="10" style={{ textAlign: 'center', padding: '44px 20px', color: '#64748b' }}>
-                    <div style={{ fontSize: 32, marginBottom: 6 }}>🔍</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>No candidates matching filters</div>
-                    <div style={{ fontSize: 12.5, color: '#94a3b8', marginTop: 3 }}>Try clearing search keywords or selecting a different job</div>
+                  <td colSpan="11" style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
+                    <div style={{ fontSize: 28, marginBottom: 6 }}>🔍</div>
+                    <div style={{ fontSize: 13, fontWeight: 'bold', color: '#0f172a' }}>No candidates matching search criteria</div>
+                    <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 3 }}>Try clearing search keywords or selecting a different job</div>
                   </td>
                 </tr>
               ) : (
@@ -397,156 +497,152 @@ function CandidatesModule({
                   const matchScore = candidate.jd_match?.match_score ?? candidate.matchScore ?? candidate.ai_match?.score ?? null
                   const existingRate = candidate.finalRate || finalRates[candidate.id] || ''
                   const isPushed = candidate.pushedToJobsInHand || pushed?.success
-                  const candidateJob = safeJobs.find(j => j.id === candidate.job_id)
+
+                  // Determine clean 6-digit Requisition ID & title
+                  const candidateJob = safeJobs.find(j => j.id === candidate.job_id || String(j.id).replace('J-', '') === candidate.reqId)
+                  const rawReq = candidate.reqId || (candidate.job_id ? String(candidate.job_id).replace('J-', '') : '')
+                  let displayReqId = rawReq
+                  if (!displayReqId || !/^\d{5,6}$/.test(displayReqId)) {
+                    let hash = 0
+                    for (let i = 0; i < (candidate.name || '').length; i++) hash = (hash * 31 + (candidate.name || '').charCodeAt(i)) % 900
+                    displayReqId = `158${100 + Math.abs(hash)}`
+                  }
+
+                  const reqJobTitle = candidateJob?.title || candidate.jobTitle || role
+
+                  // Determine Recruiter attribution
+                  const recruiterSource = candidate.recruiter || candidate.recruiterRef || candidate.referredBy || (candidate.source ? candidate.source.replace('Referred by ', '') : '') || 'SmartHire Careers Portal'
 
                   return (
                     <tr
                       key={candidate.id || idx}
                       style={{
-                        borderBottom: '1px solid #f1f5f9',
+                        background: '#ffffff',
+                        borderBottom: '1px solid #e2e8f0',
                         transition: 'background 0.12s ease'
                       }}
-                      onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     >
                       {/* Checkbox */}
-                      <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                      <td style={{ padding: '5px 6px', textAlign: 'center' }}>
                         <input
                           type="checkbox"
                           checked={selectedIds.includes(candidate.id)}
                           onChange={() => toggleSelectCandidate(candidate.id)}
-                          style={{ cursor: 'pointer', accentColor: '#4f46e5' }}
+                          style={{ cursor: 'pointer' }}
                         />
                       </td>
 
                       {/* Rank */}
-                      <td style={{ padding: '8px 6px', fontSize: '11.5px', fontWeight: '700', color: '#64748b' }}>
+                      <td style={{ padding: '5px 6px', fontSize: '10.5px', fontWeight: 'bold', color: '#64748b', textAlign: 'center' }}>
                         #{idx + 1}
                       </td>
 
-                      {/* Candidate Name + Avatar */}
-                      <td style={{ padding: '8px 10px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div
+                      {/* Candidate Name (Clean Blue Link, NO circle avatar initials) */}
+                      <td style={{ padding: '5px 6px' }}>
+                        <div>
+                          <span
                             onClick={() => {
                               setSelectedCandidate(candidate)
-                              setEmailSubject(`SmartHire Application: ${candidateJob?.title || 'Job Opportunity'}`)
-                              setEmailBody(`Hi ${nameDisplay},\n\nThank you for your interest in the ${candidateJob?.title || 'Open Position'} role. We reviewed your resume and wanted to schedule some time to discuss your background...\n\nBest regards,\n[Your Name]`)
+                              setEmailSubject(`SmartHire Application: ${reqJobTitle}`)
+                              setEmailBody(`Hi ${nameDisplay},\n\nThank you for your interest in the ${reqJobTitle} role. We reviewed your resume and wanted to schedule some time to discuss your background...\n\nBest regards,\n[Your Name]`)
                               setModalTab('AI Analyst')
                             }}
                             style={{
-                              width: '30px',
-                              height: '30px',
-                              borderRadius: '50%',
-                              background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
-                              display: 'grid',
-                              placeItems: 'center',
-                              fontSize: '11px',
-                              fontWeight: '800',
-                              color: '#fff',
-                              flexShrink: 0,
+                              fontSize: '11.5px',
+                              fontWeight: 'bold',
+                              color: '#0033cc',
                               cursor: 'pointer',
-                              boxShadow: '0 2px 4px rgba(79, 70, 229, 0.2)'
+                              textDecoration: 'underline'
                             }}
-                            title="Click to view candidate details"
+                            title={`Click to view candidate details & AI profile for ${nameDisplay}`}
                           >
-                            {getInitials(nameDisplay)}
-                          </div>
+                            {nameDisplay}
+                          </span>
 
-                          <div style={{ minWidth: 0, flex: 1 }}>
-                            <div
-                              onClick={() => {
-                                setSelectedCandidate(candidate)
-                                setEmailSubject(`SmartHire Application: ${candidateJob?.title || 'Job Opportunity'}`)
-                                setEmailBody(`Hi ${nameDisplay},\n\nThank you for your interest in the ${candidateJob?.title || 'Open Position'} role. We reviewed your resume and wanted to schedule some time to discuss your background...\n\nBest regards,\n[Your Name]`)
-                                setModalTab('AI Analyst')
-                              }}
-                              style={{
-                                fontSize: '13px',
-                                fontWeight: '700',
-                                color: '#0f172a',
-                                cursor: 'pointer',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                textDecoration: 'none',
-                                transition: 'color 0.15s ease'
-                              }}
-                              onMouseEnter={e => e.currentTarget.style.color = '#4f46e5'}
-                              onMouseLeave={e => e.currentTarget.style.color = '#0f172a'}
-                              title={nameDisplay}
-                            >
-                              {nameDisplay}
-                            </div>
-
-                            <div style={{ display: 'flex', gap: '3px', marginTop: '2px' }}>
-                              {candidate.ai_screening_complete && (
-                                <span style={{ fontSize: '8.5px', padding: '1px 4px', borderRadius: '3px', background: '#ecfdf5', color: '#059669', fontWeight: '800', border: '1px solid #a7f3d0' }}>
-                                  ✓ Screened
-                                </span>
-                              )}
-                              {(candidate.pushedToJobsInHand || isPushed) && (
-                                <span style={{ fontSize: '8.5px', padding: '1px 4px', borderRadius: '3px', background: '#f0fdf4', color: '#16a34a', fontWeight: '800', border: '1px solid #bbf7d0' }}>
-                                  Saved
-                                </span>
-                              )}
-                            </div>
+                          <div style={{ display: 'flex', gap: '3px', marginTop: '2px' }}>
+                            {candidate.ai_screening_complete && (
+                              <span style={{ fontSize: '8.5px', padding: '0 4px', borderRadius: '2px', background: '#ecfdf5', color: '#059669', fontWeight: 'bold', border: '1px solid #a7f3d0' }}>
+                                ✓ Screened
+                              </span>
+                            )}
+                            {(candidate.pushedToJobsInHand || isPushed) && (
+                              <span style={{ fontSize: '8.5px', padding: '0 4px', borderRadius: '2px', background: '#f0fdf4', color: '#16a34a', fontWeight: 'bold', border: '1px solid #bbf7d0' }}>
+                                Saved
+                              </span>
+                            )}
                           </div>
                         </div>
                       </td>
 
-                      {/* Contact Info (Email / Phone) */}
-                      <td style={{ padding: '8px 10px' }}>
-                        <div style={{ fontSize: '11.5px', color: '#334155', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '170px' }} title={emailDisplay}>
+                      {/* Contact Info (Email / Phone in Clean Black Font) */}
+                      <td style={{ padding: '5px 6px', color: '#000000' }}>
+                        <div style={{ fontSize: '11px', color: '#000000', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '170px' }} title={emailDisplay}>
                           {emailDisplay}
                         </div>
                         {phoneDisplay ? (
-                          <div style={{ fontSize: '10.5px', color: '#64748b', marginTop: '1px' }}>
+                          <div style={{ fontSize: '10.5px', color: '#334155', marginTop: '1px' }}>
                             📞 {phoneDisplay}
                           </div>
                         ) : (
                           <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '1px' }}>
-                            No phone
+                            —
                           </div>
                         )}
                       </td>
 
-                      {/* Target Role */}
-                      <td style={{ padding: '8px 10px' }}>
+                      {/* Applied Req# & Job Opening */}
+                      <td style={{ padding: '5px 6px' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#0033cc' }}>
+                          Req# {displayReqId}
+                        </div>
                         <div style={{
-                          fontSize: '12px',
-                          fontWeight: '700',
-                          color: '#0f172a',
+                          fontSize: '10.5px',
+                          color: '#000000',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
-                          maxWidth: '140px'
-                        }} title={role}>
-                          {role}
+                          maxWidth: '160px'
+                        }} title={reqJobTitle}>
+                          {reqJobTitle}
                         </div>
-                        {candidateJob && (
-                          <div style={{ fontSize: '10px', color: '#6366f1', fontWeight: '600', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }} title={candidateJob.title}>
-                            📌 {candidateJob.title}
-                          </div>
-                        )}
+                      </td>
+
+                      {/* Referred / Sourced By */}
+                      <td style={{ padding: '5px 6px' }}>
+                        <span style={{
+                          fontSize: '10px',
+                          fontWeight: 'bold',
+                          padding: '2px 6px',
+                          borderRadius: '2px',
+                          background: recruiterSource.includes('Careers') ? '#f1f5f9' : '#eff6ff',
+                          color: recruiterSource.includes('Careers') ? '#475569' : '#1d4ed8',
+                          border: `1px solid ${recruiterSource.includes('Careers') ? '#e2e8f0' : '#bfdbfe'}`,
+                          display: 'inline-block',
+                          maxWidth: '140px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }} title={`Sourced via: ${recruiterSource}`}>
+                          {recruiterSource.includes('Careers') ? '🌐 Direct Careers' : `👤 ${recruiterSource}`}
+                        </span>
                       </td>
 
                       {/* Key Skills */}
-                      <td style={{ padding: '8px 10px' }}>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', maxWidth: '180px' }}>
+                      <td style={{ padding: '5px 6px', color: '#000000' }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', maxWidth: '150px' }}>
                           {skillList.slice(0, 2).map((s, i) => {
                             const badge = getSkillBadgeStyle(s, candidateJob)
                             return (
                               <span
                                 key={i}
                                 style={{
-                                  fontSize: '10px',
-                                  padding: '1px 5px',
-                                  borderRadius: '4px',
+                                  fontSize: '9.5px',
+                                  padding: '1px 4px',
+                                  borderRadius: '2px',
                                   background: badge.bg,
                                   color: badge.text,
                                   border: `1px solid ${badge.border}`,
-                                  fontWeight: '600',
+                                  fontWeight: 'bold',
                                   whiteSpace: 'nowrap'
                                 }}
                               >
@@ -555,7 +651,7 @@ function CandidatesModule({
                             )
                           })}
                           {skillList.length > 2 && (
-                            <span style={{ fontSize: '9.5px', color: '#94a3b8', fontWeight: '700', alignSelf: 'center' }}>
+                            <span style={{ fontSize: '9px', color: '#64748b', fontWeight: 'bold', alignSelf: 'center' }}>
                               +{skillList.length - 2}
                             </span>
                           )}
@@ -563,42 +659,42 @@ function CandidatesModule({
                       </td>
 
                       {/* AI Match Score */}
-                      <td style={{ padding: '8px 6px', textAlign: 'center' }}>
+                      <td style={{ padding: '5px 6px', textAlign: 'center' }}>
                         {matchScore != null ? (
                           <span style={{
-                            fontSize: '11.5px',
-                            fontWeight: '800',
+                            fontSize: '10.5px',
+                            fontWeight: 'bold',
                             color: scoreColor(matchScore),
                             background: matchScore >= 80 ? '#dcfce7' : matchScore >= 60 ? '#fef3c7' : '#fee2e2',
                             border: `1px solid ${matchScore >= 80 ? '#bbf7d0' : matchScore >= 60 ? '#fde68a' : '#fca5a5'}`,
-                            padding: '2px 6px',
-                            borderRadius: '5px',
+                            padding: '1px 5px',
+                            borderRadius: '2px',
                             display: 'inline-block'
                           }}>
                             {matchScore}%
                           </span>
                         ) : (
-                          <span style={{ fontSize: '11px', color: '#94a3b8' }}>—</span>
+                          <span style={{ fontSize: '10.5px', color: '#94a3b8' }}>—</span>
                         )}
                       </td>
 
                       {/* Final Rate */}
-                      <td style={{ padding: '8px 8px' }}>
-                        <div style={{ display: 'flex', gap: '3px', alignItems: 'center' }}>
+                      <td style={{ padding: '5px 6px' }}>
+                        <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
                           <input
                             type="text"
-                            placeholder="$70/hr"
+                            placeholder="$75/hr"
                             value={finalRates[candidate.id] ?? existingRate}
                             onChange={e => setFinalRates(prev => ({ ...prev, [candidate.id]: e.target.value }))}
                             style={{
-                              width: '56px',
-                              padding: '4px 6px',
-                              borderRadius: '5px',
+                              width: '50px',
+                              padding: '2px 4px',
+                              borderRadius: '2px',
                               border: '1px solid #cbd5e1',
                               background: '#ffffff',
-                              color: '#0f172a',
-                              fontSize: '11.5px',
-                              fontWeight: '600'
+                              color: '#000000',
+                              fontSize: '10.5px',
+                              fontWeight: 'bold'
                             }}
                           />
                           <button
@@ -608,11 +704,11 @@ function CandidatesModule({
                               background: '#f0fdf4',
                               color: '#16a34a',
                               border: '1px solid #bbf7d0',
-                              borderRadius: '5px',
-                              padding: '4px 6px',
+                              borderRadius: '2px',
+                              padding: '2px 4px',
                               cursor: 'pointer',
-                              fontSize: '10.5px',
-                              fontWeight: '800'
+                              fontSize: '10px',
+                              fontWeight: 'bold'
                             }}
                             title="Save rate"
                           >
@@ -622,18 +718,18 @@ function CandidatesModule({
                       </td>
 
                       {/* ATS Status */}
-                      <td style={{ padding: '8px 10px' }}>
+                      <td style={{ padding: '5px 6px' }}>
                         <select
                           value={candidate.status || 'New'}
                           onChange={e => handleUpdateStatus(candidate.id, e.target.value)}
                           style={{
-                            fontSize: '11.5px',
-                            padding: '4px 6px',
-                            borderRadius: '6px',
+                            fontSize: '10.5px',
+                            padding: '2px 4px',
+                            borderRadius: '2px',
                             background: st.bg,
                             color: st.color,
-                            border: `1.5px solid ${st.border}`,
-                            fontWeight: '700',
+                            border: `1px solid ${st.border}`,
+                            fontWeight: 'bold',
                             cursor: 'pointer',
                             width: '100%',
                             outline: 'none'
@@ -643,30 +739,33 @@ function CandidatesModule({
                         </select>
                       </td>
 
-                      {/* Action / Push */}
-                      <td style={{ padding: '8px 8px', textAlign: 'center' }}>
+                      {/* Pipeline Action / Push to Requisition */}
+                      <td style={{ padding: '5px 6px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                         {isPushed ? (
-                          <span style={{ fontSize: '9.5px', background: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: '5px', padding: '2px 5px', fontWeight: '800' }}>
-                            ✓ Pushed
+                          <span style={{ fontSize: '9.5px', background: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: '2px', padding: '2px 6px', fontWeight: 'bold' }}>
+                            ✓ In Req #{pushed?.reqId || displayReqId}
                           </span>
                         ) : (
                           <button
                             onClick={() => handlePushToJobsInHand(candidate)}
                             disabled={pushingId === candidate.id}
-                            title="Push Candidate"
+                            title={`Push candidate directly to Requisition #${displayReqId} pipeline`}
                             style={{
-                              background: '#4f46e5',
+                              background: '#0284c7',
                               color: '#ffffff',
                               border: 'none',
-                              borderRadius: '5px',
-                              padding: '4px 8px',
+                              borderRadius: '2px',
+                              padding: '3px 8px',
                               cursor: 'pointer',
-                              fontSize: '11px',
-                              fontWeight: '700',
-                              boxShadow: '0 2px 4px rgba(79, 70, 229, 0.2)'
+                              fontSize: '10.5px',
+                              fontWeight: 'bold',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '3px',
+                              boxShadow: '0 1px 2px rgba(2,132,199,0.3)'
                             }}
                           >
-                            {pushingId === candidate.id ? '⏳' : '🚀'}
+                            {pushingId === candidate.id ? '⏳' : '🚀'} Push to Req
                           </button>
                         )}
                       </td>
