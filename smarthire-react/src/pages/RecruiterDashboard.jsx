@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import SiteLayout from '../components/SiteLayout'
 import CandidatePdfReportModal from '../components/CandidatePdfReportModal'
 import CandidateDetailViewModal from '../components/CandidateDetailViewModal'
+import ActivityNotificationBell, { pushActivityNotification } from '../components/ActivityNotificationBell'
 import { AuditActivityLogModule, logAuditEvent } from '../ats'
 
 function getFullDescriptionText(job) {
@@ -205,6 +206,7 @@ function RecruiterDashboard() {
   const isAdmin = userRole === 'superadmin' || userRole === 'admin'
   const isManager = userRole === 'manager'
   const isRecruiter = userRole === 'recruiter'
+  const isEmployee = userRole === 'employee'
   const canEditRequirement = !isEmployee // Admin, Manager & Recruiters can edit position title, client, rates, contact, specs
   const canCreateRequisition = !isEmployee // Admin, Manager & Recruiters can add new requisitions
   const canChangeReqStatus = isAdmin || isManager || isRecruiter // Recruiters can change Status
@@ -460,7 +462,7 @@ function RecruiterDashboard() {
         localStorage.setItem('smarthire_potential_candidates_158938', JSON.stringify(updated))
       } catch (e) {}
 
-      // Log status transitions into global audit activity log
+      // Log status transitions into global audit activity log and trigger live notification
       if (field === 'status' && targetCandidate && oldStatus !== value) {
         let actionType = 'STATUS_CHANGE'
         if (value.includes('Approved')) actionType = 'MANAGER_APPROVAL'
@@ -482,6 +484,19 @@ function RecruiterDashboard() {
           userRole: isManager ? 'manager' : isEmployee ? 'employee' : isSuperAdmin ? 'superadmin' : 'recruiter',
           note: targetCandidate.statusComments || `Status transitioned from "${oldStatus}" to "${value}" by ${userName} (${userRoleDisplay}).`,
           rejectedReason: targetCandidate.rejectedReason || ''
+        })
+
+        pushActivityNotification({
+          title: value.includes('Approved') ? 'Manager Candidate Approval' : value.includes('Interview') ? 'Client Interview Scheduled' : 'Candidate Status Update',
+          message: `${userRoleDisplay} ${userName} updated Candidate ${targetCandidate.name} to "${value}" for Req #${selectedReq?.id?.replace('J-', '') || '158938'}`,
+          type: value.includes('Approved') ? 'approval' : value.includes('Interview') ? 'interview' : 'status',
+          category: 'status',
+          actor: userName,
+          actorRole: userRoleDisplay,
+          reqId: selectedReq?.id?.replace('J-', '') || '158938',
+          candidateName: targetCandidate.name,
+          candidateId: candId,
+          statusText: value
         })
       }
 
@@ -1517,6 +1532,12 @@ function RecruiterDashboard() {
               <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>Logout</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <ActivityNotificationBell theme="default" onSelectNotification={(n) => {
+                if (n.reqId) {
+                  const targetJob = jobs.find(j => j.id === `J-${n.reqId}` || j.id === n.reqId)
+                  if (targetJob) handleOpenReq(targetJob)
+                }
+              }} />
               <span>Theme: <select style={{ fontSize: '11px', padding: '1px 3px' }}><option>Default</option></select></span>
               <span style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Welcome: {userName}</span>
             </div>
@@ -1555,23 +1576,32 @@ function RecruiterDashboard() {
               ))}
             </div>
 
-            {/* Quick Search Input */}
-            <form onSubmit={handleQuickSearch} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 'bold' }}>Requisition #</span>
-              <input
-                type="text"
-                value={quickSearchId}
-                onChange={e => setQuickSearchId(e.target.value)}
-                placeholder="Req ID / Title"
-                style={{ padding: '2px 6px', fontSize: '11px', width: '130px', border: '1px solid #ffffff', borderRadius: '2px' }}
-              />
-              <button
-                type="submit"
-                style={{ background: '#f8fafc', color: '#0f172a', border: 'none', padding: '3px 10px', fontSize: '11px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer' }}
-              >
-                Quick Search
-              </button>
-            </form>
+            {/* Quick Search Input & Real-Time Notification Bell */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <ActivityNotificationBell theme="orange" onSelectNotification={(n) => {
+                if (n.reqId) {
+                  const targetJob = jobs.find(j => j.id === `J-${n.reqId}` || j.id === n.reqId)
+                  if (targetJob) handleOpenReq(targetJob)
+                }
+              }} />
+
+              <form onSubmit={handleQuickSearch} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 'bold' }}>Requisition #</span>
+                <input
+                  type="text"
+                  value={quickSearchId}
+                  onChange={e => setQuickSearchId(e.target.value)}
+                  placeholder="Req ID / Title"
+                  style={{ padding: '2px 6px', fontSize: '11px', width: '130px', border: '1px solid #ffffff', borderRadius: '2px' }}
+                />
+                <button
+                  type="submit"
+                  style={{ background: '#f8fafc', color: '#0f172a', border: 'none', padding: '3px 10px', fontSize: '11px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer' }}
+                >
+                  Quick Search
+                </button>
+              </form>
+            </div>
           </div>
         </header>
 
@@ -5231,6 +5261,18 @@ function RecruiterDashboard() {
                   localStorage.setItem(`smarthire_potential_candidates_${cleanId}`, JSON.stringify(updatedCandidates))
                 } catch (err) {}
 
+                pushActivityNotification({
+                  title: 'New Candidate Assigned to Requisition',
+                  message: `New candidate ${fullName} assigned to Requisition #${cleanId} by ${userName}`,
+                  type: 'assignment',
+                  category: 'team',
+                  actor: userName,
+                  actorRole: userRole,
+                  reqId: cleanId,
+                  candidateName: fullName,
+                  candidateId: newId
+                })
+
                 setShowAddCandidateModal(false)
                 setSaveToastMessage(`🎉 Candidate ${fullName} successfully added to Requisition #${cleanId}!`)
                 setTimeout(() => setSaveToastMessage(null), 4000)
@@ -6170,6 +6212,18 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                 try {
                   localStorage.setItem(`smarthire_potential_candidates_${cleanReqId}`, JSON.stringify(merged))
                 } catch (err) {}
+
+                pushActivityNotification({
+                  title: 'Candidate Assigned to Requisition',
+                  message: `Candidate ${assignTargetCandidate.name} assigned to Requisition #${cleanReqId} by ${userName}`,
+                  type: 'assignment',
+                  category: 'team',
+                  actor: userName,
+                  actorRole: isEmployee ? 'Employee' : 'Recruiter',
+                  reqId: cleanReqId,
+                  candidateName: assignTargetCandidate.name,
+                  candidateId: assignTargetCandidate.id
+                })
 
                 if (String(selectedReq?.id || '').replace('J-', '') === cleanReqId) {
                   setPotentialCandidates(merged)

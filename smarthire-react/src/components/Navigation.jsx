@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import QuickSearchModal from './QuickSearchModal'
+import ActivityNotificationBell from './ActivityNotificationBell'
 
 function Navigation() {
   const location = useLocation()
@@ -544,6 +545,13 @@ function Navigation() {
                     <span className="status-text">{apiOnline ? 'Live' : 'Offline'}</span>
                   </div>
                 )}
+
+                {/* Live Activity Notification Bell */}
+                <div style={{ display: 'inline-flex', alignItems: 'center' }}>
+                  <ActivityNotificationBell theme="default" onSelectNotification={(n) => {
+                    navigate('/dashboard')
+                  }} />
+                </div>
 
                 {/* Inbox / Messages Icon - Hidden for Employee */}
                 {!isEmployee && (
