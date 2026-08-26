@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import SiteLayout from '../components/SiteLayout'
 import CandidatePdfReportModal from '../components/CandidatePdfReportModal'
+import CandidateDetailViewModal from '../components/CandidateDetailViewModal'
 import { AuditActivityLogModule, logAuditEvent } from '../ats'
 
 function getFullDescriptionText(job) {
@@ -224,6 +225,10 @@ function RecruiterDashboard() {
   const [pageSize, setPageSize] = useState(25)
   const [quickSearchId, setQuickSearchId] = useState('')
   const [showFilterPanel, setShowFilterPanel] = useState(false)
+
+  // Full Candidate Detail & Submission/Resume History Modal
+  const [selectedViewCandidate, setSelectedViewCandidate] = useState(null)
+  const [showDetailViewModal, setShowDetailViewModal] = useState(false)
 
   // AI Fit & Resume Modal State (Admin & Manager Only)
   const [showAiFitModal, setShowAiFitModal] = useState(false)
@@ -1458,7 +1463,7 @@ function RecruiterDashboard() {
     if (isManager) {
       return [
         { id: 'requisitions', name: 'Requisitions (Review)' },
-        { id: 'candidates', name: 'Candidates & AI Fit' },
+        { id: 'candidates', name: 'Candidates' },
         { id: 'admin', name: 'Team Management' },
         { id: 'reports', name: 'Reports' },
         { id: 'process', name: 'Process', link: '/ats' }
@@ -1909,7 +1914,10 @@ function RecruiterDashboard() {
 
                             {/* Name Link */}
                             <td style={{ padding: '5px 8px', fontWeight: 'bold' }}>
-                              <span onClick={() => handleSelectExistingCandidate(c)} style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>
+                              <span onClick={() => {
+                                setSelectedViewCandidate(c)
+                                setShowDetailViewModal(true)
+                              }} style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>
                                 {c.name}
                               </span>
                             </td>
@@ -1951,7 +1959,10 @@ function RecruiterDashboard() {
 
                             {/* Resume Icon */}
                             <td style={{ padding: '5px 5px', textAlign: 'center' }}>
-                              <span onClick={() => handleSelectExistingCandidate(c)} style={{ cursor: 'pointer', fontSize: '13px' }} title="View / Download Resume">
+                              <span onClick={() => {
+                                setSelectedViewCandidate(c)
+                                setShowDetailViewModal(true)
+                              }} style={{ cursor: 'pointer', fontSize: '13px' }} title="View Details, Submission & Resume History">
                                 📄
                               </span>
                             </td>
@@ -1959,116 +1970,29 @@ function RecruiterDashboard() {
                             {/* Actions Column */}
                             <td style={{ padding: '5px 8px', textAlign: 'center' }}>
                               <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', alignItems: 'center' }}>
-                                {canReviewAndUseAI && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const targetReq = selectedReq || filteredJobs[0] || jobs[0]
-                                      setSelectedReq(targetReq)
-                                      handleOpenAiFitModal({
-                                        id: c.id,
-                                        name: c.name,
-                                        payRate: `${c.payRate || '75'}/hr`,
-                                        payRateType: c.rateType || 'C2C',
-                                        status: 'Int-SubmittedToManager',
-                                        assignedBy: c.recruiter || c.addedByName || userName,
-                                        role: c.fullRole || c.role || 'Consultant',
-                                        exp: c.exp || '5',
-                                        skills: Array.isArray(c.skills) ? c.skills : (c.skills ? c.skills.split(',').map(s => s.trim()) : ['Java', 'SQL']),
-                                        workAuth: c.workAuth || 'US Citizen',
-                                        resumeText: c.resumeText || `NAME: ${c.name}
-ROLE: ${c.fullRole || c.role || 'Consultant'}
-EXPERIENCE: ${c.exp || 5} Years
-SKILLS: ${Array.isArray(c.skills) ? c.skills.join(', ') : (c.skills || 'Java, SQL, Agile, AWS, Cloud Security')}
-LOCATION: ${c.location || 'Richmond, VA'}
-
-PROFESSIONAL SUMMARY:
-Experienced technology professional with hands-on expertise in software engineering, cloud integration, database optimization, and agile project execution.`
-                                      })
-                                    }}
-                                    style={{
-                                      background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-                                      color: '#ffffff',
-                                      border: 'none',
-                                      padding: '3px 8px',
-                                      fontSize: '10.5px',
-                                      fontWeight: 'bold',
-                                      borderRadius: '3px',
-                                      cursor: 'pointer',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '3px'
-                                    }}
-                                    title="Open Smart Resume Viewer & AI Fit Analysis"
-                                  >
-                                    <span>🧠 AI Fit</span>
-                                  </button>
-                                )}
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    setAssignTargetCandidate(c)
-                                    setAssignTargetJobId(filteredJobs[0]?.id || '')
-                                    setAssignProposedRate(String(c.payRate || '75').replace(/[^0-9]/g, '') || '75')
-                                    setAssignRateType(c.rateType || 'C2C')
-                                    setAssignComments(`Submitted from candidate pool by ${userName}`)
-                                    setShowAssignReqModal(true)
+                                    setSelectedViewCandidate(c)
+                                    setShowDetailViewModal(true)
                                   }}
                                   style={{
-                                    background: '#ea580c',
+                                    background: '#0284c7',
                                     color: '#ffffff',
                                     border: 'none',
-                                    padding: '3px 8px',
-                                    fontSize: '10.5px',
+                                    padding: '4px 12px',
+                                    fontSize: '11px',
                                     fontWeight: 'bold',
                                     borderRadius: '3px',
-                                    cursor: 'pointer'
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
                                   }}
-                                  title="Submit this candidate to an assigned position"
+                                  title="View candidate details, submission history, and resume versions"
                                 >
-                                  ➕ Assign to Req
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const parts = (c.name || '').split(' ')
-                                    setCandidateIntakeData({
-                                      id: c.id,
-                                      name: c.name,
-                                      firstName: parts[0] || '',
-                                      lastName: parts.slice(1).join(' ') || '',
-                                      email: c.email || '',
-                                      phone: c.phone || '',
-                                      role: c.role || '',
-                                      fullRole: c.fullRole || c.role || '',
-                                      exp: c.exp || '5',
-                                      location: c.location || '',
-                                      city: c.city || '',
-                                      state: c.state || '',
-                                      payRate: String(c.payRate || '75').replace(/[^0-9]/g, '') || '75',
-                                      rateType: c.rateType || 'C2C',
-                                      workAuth: c.workAuth || 'US Citizen',
-                                      skills: Array.isArray(c.skills) ? c.skills.join(', ') : (c.skills || ''),
-                                      resumeName: c.resumeName || `${c.name}_Resume.pdf`,
-                                      resumeFile: null,
-                                      targetJobId: '',
-                                      comments: c.comments || 'Updated candidate'
-                                    })
-                                    setShowCandidateIntakeModal(true)
-                                  }}
-                                  style={{
-                                    background: '#f1f5f9',
-                                    color: '#1e3a8a',
-                                    border: '1px solid #cbd5e1',
-                                    padding: '3px 8px',
-                                    fontSize: '10.5px',
-                                    fontWeight: 'bold',
-                                    borderRadius: '3px',
-                                    cursor: 'pointer'
-                                  }}
-                                  title="Edit candidate profile or update resume"
-                                >
-                                  ✏️ Edit / Resume
+                                  👁️ View
                                 </button>
                               </div>
                             </td>
@@ -3720,32 +3644,20 @@ Experienced technology professional with hands-on expertise in software engineer
                                 <td style={{ padding: '6px 8px', fontWeight: 'bold' }}>
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                     <span onClick={() => {
-                                      if (canReviewAndUseAI) {
-                                        handleOpenAiFitModal(pc)
-                                      } else {
-                                        const parts = pc.name.split(' ')
-                                        setSubmissionCandidate(prev => ({
-                                          ...prev,
-                                          id: pc.id,
-                                          firstName: parts[0] || 'Candidate',
-                                          lastName: parts.slice(1).join(' ') || '',
-                                          proposedPayRate: pc.payRate.replace(/[^0-9]/g, '') || '74',
-                                          proposedRateType: pc.payRateType || 'C2C'
-                                        }))
-                                        setViewMode('resumeSubmission')
-                                        setActiveSubTab('details')
-                                      }
+                                      setSelectedViewCandidate(pc)
+                                      setShowDetailViewModal(true)
                                     }} style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>
                                       {pc.name}
                                     </span>
-                                    {canReviewAndUseAI && (
-                                      <span
-                                        onClick={() => handleOpenAiFitModal(pc)}
-                                        style={{ fontSize: '10px', color: '#0284c7', cursor: 'pointer', fontWeight: 'bold' }}
-                                      >
-                                        📄 View Resume & Profile
-                                      </span>
-                                    )}
+                                    <span
+                                      onClick={() => {
+                                        setSelectedViewCandidate(pc)
+                                        setShowDetailViewModal(true)
+                                      }}
+                                      style={{ fontSize: '10px', color: '#0284c7', cursor: 'pointer', fontWeight: 'bold' }}
+                                    >
+                                      📄 View Details & History
+                                    </span>
                                   </div>
                                 </td>
                                 {canReviewAndUseAI && (
@@ -6135,6 +6047,30 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
               </div>
             </div>
           </div>
+        )}
+
+        {/* ═══════════ CANDIDATE DETAIL, SUBMISSIONS & RESUME VERSIONS MODAL ═══════════ */}
+        {showDetailViewModal && selectedViewCandidate && (
+          <CandidateDetailViewModal
+            candidate={selectedViewCandidate}
+            isOpen={showDetailViewModal}
+            onClose={() => {
+              setShowDetailViewModal(false)
+              setSelectedViewCandidate(null)
+            }}
+            allJobs={jobs.length > 0 ? jobs : filteredJobs}
+            currentUser={currentUser}
+            onUpdateCandidate={(updatedCand) => {
+              setCandidates(prev => {
+                const merged = prev.map(c => c.id === updatedCand.id ? updatedCand : c)
+                try {
+                  localStorage.setItem('smarthire_all_candidates', JSON.stringify(merged))
+                } catch (e) {}
+                return merged
+              })
+              setSelectedViewCandidate(updatedCand)
+            }}
+          />
         )}
 
         {/* ═══════════ SMARTHIRE ORANGE FOOTER ═══════════ */}
