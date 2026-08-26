@@ -216,13 +216,48 @@ function RecruiterDashboard() {
   const canAccessAdminPanel = isAdmin || isManager
   const isRecruiterRole = isRecruiter || isEmployee
 
-  // Top Nav Tab: 'requisitions' | 'candidates' | 'admin'
-  const [activeMainTab, setActiveMainTab] = useState('requisitions')
+  // Top Nav Tab: 'requisitions' | 'candidates' | 'admin' | 'reports' (Hydrated from URL and localStorage to persist on refresh)
+  const [activeMainTab, setActiveMainTab] = useState(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search)
+      const tabParam = urlParams.get('tab')
+      if (tabParam && ['requisitions', 'candidates', 'admin', 'reports'].includes(tabParam)) return tabParam
+      const saved = localStorage.getItem('smarthire_active_main_tab')
+      if (saved && ['requisitions', 'candidates', 'admin', 'reports'].includes(saved)) return saved
+    } catch (e) {}
+    return 'requisitions'
+  })
 
   // Navigation Flow State: 'portal' | 'requisition' | 'resumeSearch' | 'resumeSubmission'
-  const [viewMode, setViewMode] = useState('portal')
-  const [selectedReq, setSelectedReq] = useState(null)
-  const [activeReqTab, setActiveReqTab] = useState('details')
+  const [viewMode, setViewMode] = useState(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search)
+      const modeParam = urlParams.get('view')
+      if (modeParam) return modeParam
+      const saved = localStorage.getItem('smarthire_active_view_mode')
+      if (saved) return saved
+    } catch (e) {}
+    return 'portal'
+  })
+
+  const [selectedReq, setSelectedReq] = useState(() => {
+    try {
+      const saved = localStorage.getItem('smarthire_active_selected_req')
+      if (saved) return JSON.parse(saved)
+    } catch (e) {}
+    return null
+  })
+
+  const [activeReqTab, setActiveReqTab] = useState(() => {
+    try {
+      const saved = localStorage.getItem('smarthire_active_req_subtab')
+      if (saved) return saved
+    } catch (e) {}
+    return 'details'
+  })
+
+  // Candidate Search Collapse State (Default collapsed/hidden as requested)
+  const [showCandidateSearchCard, setShowCandidateSearchCard] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(25)
   const [quickSearchId, setQuickSearchId] = useState('')
@@ -641,6 +676,41 @@ function RecruiterDashboard() {
     } catch (e) {}
     return []
   }
+
+  // Synchronize activeMainTab, viewMode, selectedReq to localStorage & URL parameters on change
+  useEffect(() => {
+    try {
+      localStorage.setItem('smarthire_active_main_tab', activeMainTab)
+      const url = new URL(window.location.href)
+      url.searchParams.set('tab', activeMainTab)
+      window.history.replaceState({}, '', url)
+    } catch (e) {}
+  }, [activeMainTab])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('smarthire_active_view_mode', viewMode)
+      const url = new URL(window.location.href)
+      url.searchParams.set('view', viewMode)
+      window.history.replaceState({}, '', url)
+    } catch (e) {}
+  }, [viewMode])
+
+  useEffect(() => {
+    try {
+      if (selectedReq) {
+        localStorage.setItem('smarthire_active_selected_req', JSON.stringify(selectedReq))
+      } else {
+        localStorage.removeItem('smarthire_active_selected_req')
+      }
+    } catch (e) {}
+  }, [selectedReq])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('smarthire_active_req_subtab', activeReqTab)
+    } catch (e) {}
+  }, [activeReqTab])
 
   // Fetch jobs & merge persistent local custom assignments, and sync team roster
   useEffect(() => {
@@ -1720,13 +1790,36 @@ function RecruiterDashboard() {
                 You are here: <span style={{ color: '#0066cc', cursor: 'pointer' }}>Home</span> &gt; Candidates
               </div>
 
-              {/* ─── SEARCH CANDIDATE 3-COLUMN PANEL (IMAGE 1787312030395) ─── */}
-              <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 18px', marginBottom: '14px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+              {/* ─── SEARCH CANDIDATE 3-COLUMN PANEL (COLLAPSIBLE / ACCORDION - DEFAULT COLLAPSED) ─── */}
+              <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '12px 18px', marginBottom: '14px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <h2 style={{ margin: 0, fontSize: '15px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                    {isEmployee ? `🔒 My Sourced Candidates Pool (${filteredCandidates.length})` : 'Search Candidate'}
-                  </h2>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div
+                    onClick={() => setShowCandidateSearchCard(prev => !prev)}
+                    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', userSelect: 'none' }}
+                    title="Click to expand/collapse search filter criteria"
+                  >
+                    <h2 style={{ margin: 0, fontSize: '15px', color: '#1e3a8a', fontWeight: 'bold' }}>
+                      {isEmployee ? `🔒 My Sourced Candidates Pool (${filteredCandidates.length})` : 'Search Candidate'}
+                    </h2>
+
+                    <span style={{
+                      fontSize: '11px',
+                      color: showCandidateSearchCard ? '#c2410c' : '#0369a1',
+                      fontWeight: 'bold',
+                      background: showCandidateSearchCard ? '#fff7ed' : '#f0f9ff',
+                      border: `1px solid ${showCandidateSearchCard ? '#fed7aa' : '#bae6fd'}`,
+                      padding: '3px 10px',
+                      borderRadius: '3px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+                    }}>
+                      <span>{showCandidateSearchCard ? '▲ Hide Search Filters' : '▼ Click to Expand Search Filters'}</span>
+                    </span>
+                  </div>
+
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                     <button
                       type="button"
@@ -1775,7 +1868,8 @@ function RecruiterDashboard() {
                   </div>
                 </div>
 
-                <form onSubmit={e => { e.preventDefault(); setCurrentPage(1); }} style={{ border: '1px solid #fed7aa', background: '#fffaf5', padding: '14px 18px', borderRadius: '3px' }}>
+                {showCandidateSearchCard && (
+                  <form onSubmit={e => { e.preventDefault(); setCurrentPage(1); }} style={{ border: '1px solid #fed7aa', background: '#fffaf5', padding: '14px 18px', borderRadius: '3px', marginTop: '12px' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.2fr 1fr', gap: '14px 24px', fontSize: '11.5px' }}>
                     
                     {/* Column 1 */}
@@ -1954,7 +2048,8 @@ function RecruiterDashboard() {
 
                   </div>
                 </form>
-              </div>
+              )}
+            </div>
 
               {/* ─── CANDIDATE SEARCH RESULTS TABLE ─── */}
               <div style={{ background: '#ffffff', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
