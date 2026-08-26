@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import SiteLayout from '../components/SiteLayout'
 import { loginWithGoogle, loginWithEmail } from '../lib/firebase'
@@ -12,78 +12,75 @@ function Login() {
   const [isDemoSigningIn, setIsDemoSigningIn] = useState(false)
   const [authError, setAuthError] = useState('')
 
+  const defaultRecs = [
+    { id: 'rec-1', name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', company: 'SmartHire LLC', isActive: true, password: 'admin' },
+    { id: 'rec-1b', name: 'Omkesh Manjute', email: 'omkesh.manjute@smarthire.com', role: 'superadmin', refCode: 'omkesh', company: 'SmartHire LLC', isActive: true, password: 'admin' },
+    { id: 'rec-2', name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com', role: 'recruiter', refCode: 'sukamal-chatterjee', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
+    { id: 'rec-3', name: 'Raj', email: 'raj@coolsofttech.com', role: 'recruiter', refCode: 'raj', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
+    { id: 'rec-4', name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com', role: 'recruiter', refCode: 'vaibhav-bisen', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
+    { id: 'rec-5', name: 'Pankaj', email: 'pankajm@coolsofttech.com', role: 'recruiter', refCode: 'pankaj', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
+    { id: 'mgr-1', name: 'Alok Manager', email: 'manager@coolsofttech.com', role: 'manager', refCode: 'alok-manager', company: 'SmartHire LLC', isActive: true, password: 'manager123' },
+    { id: 'emp-1', name: 'Rahul Sharma', email: 'rahul@coolsofttech.com', role: 'employee', parentRecruiterName: 'Vaibhav Bisen', refCode: 'rahul-sharma', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
+    { id: 'emp-2', name: 'Priya Verma', email: 'priya@coolsofttech.com', role: 'employee', parentRecruiterName: 'Sukamal Chatterjee', refCode: 'priya-verma', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' }
+  ]
+
+  // Pre-sync all active team members from the backend server into localStorage on mount
+  useEffect(() => {
+    fetch('/api/admin/recruiters')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.recruiters) && data.recruiters.length > 0) {
+          const serverRecs = data.recruiters
+          try {
+            const raw = localStorage.getItem('smarthire_recruiters')
+            const local = raw ? JSON.parse(raw) : []
+            const existingEmails = new Set(serverRecs.map(u => (u.email || '').toLowerCase().trim()))
+            const localOnly = Array.isArray(local) ? local.filter(u => !existingEmails.has((u.email || '').toLowerCase().trim())) : []
+            const merged = [...serverRecs, ...localOnly]
+            localStorage.setItem('smarthire_recruiters', JSON.stringify(merged))
+          } catch (e) {}
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  const setLoginSession = (u, token = '') => {
+    const userPayload = {
+      uid: u.id || u._id || 'user-' + Date.now(),
+      name: u.name,
+      email: u.email,
+      role: u.role,
+      parentRecruiterName: u.parentRecruiterName || '',
+      refCode: u.refCode || u.name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+      company: u.company || 'SmartHire LLC'
+    }
+
+    localStorage.setItem('smarthire_authenticated', 'true')
+    localStorage.setItem('verifyhire_authenticated', 'true')
+    localStorage.setItem('smarthire_user', JSON.stringify(userPayload))
+    localStorage.setItem('verifyhire_user', JSON.stringify(userPayload))
+    localStorage.setItem('smarthire_active_role', u.role)
+    localStorage.setItem('smarthire_token', token || ('mock-token-' + (u.id || u._id || 'session')))
+
+    window.location.href = '/dashboard'
+  }
+
   const handleDemoSubmit = async (e) => {
     e.preventDefault()
     setIsDemoSigningIn(true)
     setAuthError('')
 
     try {
-      const inputEmail = email.toLowerCase().trim()
-      const inputPass = password.trim()
+      const inputEmail = String(email || '').toLowerCase().trim()
+      const inputPass = String(password || '').trim()
 
-      // 1. Check local recruiters / employees list first (ensures newly added team members can log in immediately)
-      const savedRecruitersRaw = localStorage.getItem('smarthire_recruiters')
-      
-      const defaultRecs = [
-        { id: 'rec-1', name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', company: 'SmartHire LLC', isActive: true, password: 'admin' },
-        { id: 'rec-2', name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com', role: 'recruiter', refCode: 'sukamal-chatterjee', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
-        { id: 'rec-3', name: 'Raj', email: 'raj@coolsofttech.com', role: 'recruiter', refCode: 'raj', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
-        { id: 'rec-4', name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com', role: 'recruiter', refCode: 'vaibhav-bisen', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
-        { id: 'rec-5', name: 'Pankaj', email: 'pankajm@coolsofttech.com', role: 'recruiter', refCode: 'pankaj', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
-        { id: 'mgr-1', name: 'Alok Manager', email: 'manager@coolsofttech.com', role: 'manager', refCode: 'alok-manager', company: 'SmartHire LLC', isActive: true, password: 'manager123' },
-        { id: 'emp-1', name: 'Rahul Sharma', email: 'rahul@coolsofttech.com', role: 'employee', parentRecruiterName: 'Vaibhav Bisen', refCode: 'rahul-sharma', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
-        { id: 'emp-2', name: 'Priya Verma', email: 'priya@coolsofttech.com', role: 'employee', parentRecruiterName: 'Sukamal Chatterjee', refCode: 'priya-verma', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' }
-      ]
-
-      let recruitersList = defaultRecs
-      if (savedRecruitersRaw) {
-        try {
-          const parsed = JSON.parse(savedRecruitersRaw)
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            // merge in any missing default records
-            const existingEmails = new Set(parsed.map(p => (p.email || '').toLowerCase().trim()))
-            const missing = defaultRecs.filter(d => !existingEmails.has(d.email.toLowerCase().trim()))
-            recruitersList = [...parsed, ...missing]
-          }
-        } catch (e) {}
-      }
-
-      // Validate credentials against local roster (Admin, Recruiters, and Employees)
-      const matchedUser = recruitersList.find(
-        r => (r.email || '').toLowerCase().trim() === inputEmail && (r.password || '').trim() === inputPass
-      )
-
-      if (matchedUser) {
-        if (!matchedUser.isActive) {
-          setAuthError('Your account has been deactivated. Please contact support.')
-          setIsDemoSigningIn(false)
-          return
-        }
-
-        // Update last active login time in localStorage
-        matchedUser.lastLogin = new Date().toISOString()
-        const updatedRecruiters = recruitersList.map(r => r.id === matchedUser.id ? matchedUser : r)
-        localStorage.setItem('smarthire_recruiters', JSON.stringify(updatedRecruiters))
-
-        // Set session
-        localStorage.setItem('smarthire_authenticated', 'true')
-        localStorage.setItem('smarthire_user', JSON.stringify({
-          uid: matchedUser.id,
-          name: matchedUser.name,
-          email: matchedUser.email,
-          role: matchedUser.role,
-          parentRecruiterName: matchedUser.parentRecruiterName || '',
-          refCode: matchedUser.refCode || matchedUser.name.toLowerCase().replace(/\s+/g, '-'),
-          company: matchedUser.company || 'SmartHire LLC'
-        }))
-        localStorage.setItem('smarthire_active_role', matchedUser.role)
-        localStorage.setItem('smarthire_token', 'mock-token-' + matchedUser.id)
-
-        window.location.href = '/ats'
+      if (!inputEmail || !inputPass) {
+        setAuthError('Please enter both email and password.')
+        setIsDemoSigningIn(false)
         return
       }
 
-      // 2. Secondary: If not found in local team roster, attempt backend API login
+      // 1. Try Backend API login directly
       try {
         const res = await fetch('/api/auth/login', {
           method: 'POST',
@@ -92,42 +89,79 @@ function Login() {
         })
 
         const data = await res.json()
-        if (res.ok && data.success) {
+        if (res.ok && data.success && data.user) {
           const u = data.user
-          localStorage.setItem('smarthire_authenticated', 'true')
-          localStorage.setItem('smarthire_user', JSON.stringify({
-            uid: u.id,
-            name: u.name,
-            email: u.email,
-            role: u.role,
-            parentRecruiterName: u.parentRecruiterName || '',
-            refCode: u.refCode || u.name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-            company: u.company || 'SmartHire LLC'
-          }))
-          localStorage.setItem('smarthire_active_role', u.role)
-          localStorage.setItem('smarthire_token', data.token || 'mock-token-' + u.id)
-
-          // Save to local recruiters list if not already present
+          // Update local cache
           try {
             const raw = localStorage.getItem('smarthire_recruiters')
             const list = raw ? JSON.parse(raw) : []
-            if (Array.isArray(list) && !list.some(r => (r.email || '').toLowerCase().trim() === inputEmail)) {
-              list.push({ ...u, isActive: true, password: inputPass })
+            if (Array.isArray(list)) {
+              const idx = list.findIndex(r => (r.email || '').toLowerCase().trim() === inputEmail)
+              if (idx >= 0) {
+                list[idx] = { ...list[idx], ...u, password: inputPass, isActive: true }
+              } else {
+                list.push({ ...u, isActive: true, password: inputPass })
+              }
               localStorage.setItem('smarthire_recruiters', JSON.stringify(list))
             }
           } catch (e) {}
 
-          window.location.href = '/ats'
-          return
-        } else if (data.message) {
-          setAuthError(data.message)
+          setLoginSession(u, data.token)
           return
         }
       } catch (backendErr) {
-        console.warn('Backend login connection attempt failed:', backendErr.message)
+        console.warn('Backend login attempt encountered notice:', backendErr.message)
       }
 
-      // 3. If neither matched
+      // 2. Check local recruiters / employees roster in localStorage
+      let recruitersList = defaultRecs
+      const savedRecruitersRaw = localStorage.getItem('smarthire_recruiters')
+      if (savedRecruitersRaw) {
+        try {
+          const parsed = JSON.parse(savedRecruitersRaw)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const existingEmails = new Set(parsed.map(p => (p.email || '').toLowerCase().trim()))
+            const missing = defaultRecs.filter(d => !existingEmails.has(d.email.toLowerCase().trim()))
+            recruitersList = [...parsed, ...missing]
+          }
+        } catch (e) {}
+      }
+
+      let matchedUser = recruitersList.find(
+        r => (r.email || '').toLowerCase().trim() === inputEmail && String(r.password || '').trim() === inputPass
+      )
+
+      // 3. If still not matched, fetch latest recruiters list in real-time from server
+      if (!matchedUser) {
+        try {
+          const res = await fetch('/api/admin/recruiters')
+          const data = await res.json()
+          if (data.success && Array.isArray(data.recruiters)) {
+            const serverRecs = data.recruiters
+            try {
+              localStorage.setItem('smarthire_recruiters', JSON.stringify(serverRecs))
+            } catch (e) {}
+
+            matchedUser = serverRecs.find(
+              r => (r.email || '').toLowerCase().trim() === inputEmail && String(r.password || '').trim() === inputPass
+            )
+          }
+        } catch (e) {}
+      }
+
+      if (matchedUser) {
+        if (matchedUser.isActive === false) {
+          setAuthError('Your account has been deactivated. Please contact support.')
+          setIsDemoSigningIn(false)
+          return
+        }
+
+        matchedUser.lastLogin = new Date().toISOString()
+        setLoginSession(matchedUser)
+        return
+      }
+
+      // 4. If neither matched
       setAuthError('Invalid email or password. Please check your credentials.')
     } catch (err) {
       setAuthError('Login error: ' + err.message)

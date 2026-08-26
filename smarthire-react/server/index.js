@@ -5535,23 +5535,34 @@ app.post('/api/auth/login', async (req, res) => {
   if (!email || !password) {
     return res.status(400).json({ success: false, message: 'Email and password are required.' });
   }
-  const cleanEmail = email.toLowerCase().trim();
-  const cleanPassword = password.trim();
+  const cleanEmail = String(email).toLowerCase().trim();
+  const cleanPassword = String(password).trim();
 
   try {
+    loadRecruitersFromDisk();
     let user = null;
     let isMongoUser = false;
 
     if (isMongoConnected) {
-      user = await RecruiterDoc.findOne({ email: cleanEmail });
-      if (user) isMongoUser = true;
+      try {
+        const emailRegex = new RegExp('^' + cleanEmail.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&') + '$', 'i');
+        user = await RecruiterDoc.findOne({ email: emailRegex });
+        if (user) isMongoUser = true;
+      } catch (mErr) {
+        console.warn('MongoDB user lookup notice:', mErr.message);
+      }
     }
 
     if (!user) {
       user = recruitersMock.find(r => (r.email || '').toLowerCase().trim() === cleanEmail);
     }
 
-    if (!user || user.password.trim() !== cleanPassword) {
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+    }
+
+    const dbPassword = String(user.password || '').trim();
+    if (dbPassword !== cleanPassword) {
       return res.status(401).json({ success: false, message: 'Invalid email or password.' });
     }
 
@@ -5560,11 +5571,12 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     user.lastLogin = new Date().toISOString();
-    if (isMongoUser) {
-      await user.save();
-    } else {
+    try {
+      if (isMongoUser) {
+        await user.save();
+      }
       saveRecruitersToDisk();
-    }
+    } catch (e) {}
 
     const token = jwt.sign(
       { id: user._id || user.id, email: user.email, role: user.role, name: user.name },
@@ -5576,7 +5588,7 @@ app.post('/api/auth/login', async (req, res) => {
       success: true,
       token,
       user: {
-        id: user._id || user.id,
+        id: user._id ? user._id.toString() : user.id,
         name: user.name,
         email: user.email,
         role: user.role,
@@ -5594,26 +5606,48 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.get('/api/admin/recruiters', async (req, res) => {
   try {
+    loadRecruitersFromDisk();
     if (isMongoConnected) {
-      const recruiters = await RecruiterDoc.find().sort({ createdAt: -1 });
-      const list = recruiters.map(r => ({
-        id: r._id.toString(),
-        name: r.name,
-        email: r.email,
-        password: r.password,
-        role: r.role,
-        parentRecruiterName: r.parentRecruiterName || '',
-        refCode: r.refCode,
-        company: r.company,
-        isActive: r.isActive,
-        lastLogin: r.lastLogin,
-        createdAt: r.createdAt
-      }));
-      return res.json({ success: true, recruiters: list });
-    } else {
-      const list = recruitersMock.map(r => ({ ...r, id: r._id || r.id }));
-      return res.json({ success: true, recruiters: list });
+      try {
+        const recruiters = await RecruiterDoc.find().sort({ createdAt: -1 });
+        const mongoEmails = new Set(recruiters.map(r => (r.email || '').toLowerCase().trim()));
+        const diskExtra = recruitersMock.filter(m => !mongoEmails.has((m.email || '').toLowerCase().trim()));
+
+        const list = [
+          ...recruiters.map(r => ({
+            id: r._id.toString(),
+            name: r.name,
+            email: r.email,
+            password: r.password,
+            role: r.role,
+            parentRecruiterName: r.parentRecruiterName || '',
+            refCode: r.refCode,
+            company: r.company,
+            isActive: r.isActive !== false,
+            lastLogin: r.lastLogin,
+            createdAt: r.createdAt
+          })),
+          ...diskExtra.map(r => ({
+            id: r._id || r.id,
+            name: r.name,
+            email: r.email,
+            password: r.password,
+            role: r.role,
+            parentRecruiterName: r.parentRecruiterName || '',
+            refCode: r.refCode,
+            company: r.company,
+            isActive: r.isActive !== false,
+            lastLogin: r.lastLogin,
+            createdAt: r.createdAt
+          }))
+        ];
+        return res.json({ success: true, recruiters: list });
+      } catch (mErr) {
+        console.warn('MongoDB recruiters list fallback to disk:', mErr.message);
+      }
     }
+    const list = recruitersMock.map(r => ({ ...r, id: r._id || r.id }));
+    return res.json({ success: true, recruiters: list });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -5624,42 +5658,23 @@ app.post('/api/admin/recruiters', async (req, res) => {
   if (!name || !email) {
     return res.status(400).json({ success: false, message: 'Name and email are required.' });
   }
-  const cleanEmail = email.toLowerCase().trim();
-  const cleanName = name.trim();
-  const cleanPassword = (password || 'recruiter123').trim();
+  const cleanEmail = String(email).toLowerCase().trim();
+  const cleanName = String(name).trim();
+  const cleanPassword = String(password || 'recruiter123').trim();
   const cleanRole = role || 'employee';
   const cleanRef = refCode || cleanName.toLowerCase().replace(/[^a-z0-9]/g, '-');
   const cleanCompany = company || 'SmartHire LLC';
   const cleanParent = parentRecruiterName || '';
 
   try {
-    if (isMongoConnected) {
-      let existing = await RecruiterDoc.findOne({ email: cleanEmail });
-      if (existing) {
-        existing.name = cleanName;
-        existing.password = cleanPassword;
-        existing.role = cleanRole;
-        existing.refCode = cleanRef;
-        existing.company = cleanCompany;
-        existing.parentRecruiterName = cleanParent;
-        if (typeof isActive === 'boolean') existing.isActive = isActive;
-        await existing.save();
-        return res.json({
-          success: true,
-          recruiter: {
-            id: existing._id.toString(),
-            name: existing.name,
-            email: existing.email,
-            role: existing.role,
-            parentRecruiterName: existing.parentRecruiterName,
-            refCode: existing.refCode,
-            company: existing.company,
-            isActive: existing.isActive
-          }
-        });
-      }
+    loadRecruitersFromDisk();
 
-      const newRec = await RecruiterDoc.create({
+    // 1. Update memory / disk mock roster
+    const existingIdx = recruitersMock.findIndex(r => (r.email || '').toLowerCase().trim() === cleanEmail);
+    let diskRec;
+    if (existingIdx >= 0) {
+      recruitersMock[existingIdx] = {
+        ...recruitersMock[existingIdx],
         name: cleanName,
         email: cleanEmail,
         password: cleanPassword,
@@ -5668,38 +5683,10 @@ app.post('/api/admin/recruiters', async (req, res) => {
         refCode: cleanRef,
         company: cleanCompany,
         isActive: isActive !== false
-      });
-      return res.status(201).json({
-        success: true,
-        recruiter: {
-          id: newRec._id.toString(),
-          name: newRec.name,
-          email: newRec.email,
-          role: newRec.role,
-          parentRecruiterName: newRec.parentRecruiterName,
-          refCode: newRec.refCode,
-          company: newRec.company,
-          isActive: newRec.isActive
-        }
-      });
+      };
+      diskRec = recruitersMock[existingIdx];
     } else {
-      const existingIdx = recruitersMock.findIndex(r => (r.email || '').toLowerCase().trim() === cleanEmail);
-      if (existingIdx >= 0) {
-        recruitersMock[existingIdx] = {
-          ...recruitersMock[existingIdx],
-          name: cleanName,
-          password: cleanPassword,
-          role: cleanRole,
-          parentRecruiterName: cleanParent,
-          refCode: cleanRef,
-          company: cleanCompany,
-          isActive: isActive !== false
-        };
-        saveRecruitersToDisk();
-        return res.json({ success: true, recruiter: { ...recruitersMock[existingIdx], id: recruitersMock[existingIdx]._id } });
-      }
-
-      const newRec = {
+      diskRec = {
         _id: 'rec-' + Date.now(),
         name: cleanName,
         email: cleanEmail,
@@ -5712,10 +5699,81 @@ app.post('/api/admin/recruiters', async (req, res) => {
         lastLogin: null,
         createdAt: new Date().toISOString()
       };
-      recruitersMock.unshift(newRec);
-      saveRecruitersToDisk();
-      return res.status(201).json({ success: true, recruiter: { ...newRec, id: newRec._id } });
+      recruitersMock.unshift(diskRec);
     }
+    saveRecruitersToDisk();
+
+    // 2. Update MongoDB Atlas if connected
+    if (isMongoConnected) {
+      try {
+        const emailRegex = new RegExp('^' + cleanEmail.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&') + '$', 'i');
+        let existing = await RecruiterDoc.findOne({ email: emailRegex });
+        if (existing) {
+          existing.name = cleanName;
+          existing.email = cleanEmail;
+          existing.password = cleanPassword;
+          existing.role = cleanRole;
+          existing.refCode = cleanRef;
+          existing.company = cleanCompany;
+          existing.parentRecruiterName = cleanParent;
+          if (typeof isActive === 'boolean') existing.isActive = isActive;
+          await existing.save();
+          return res.json({
+            success: true,
+            recruiter: {
+              id: existing._id.toString(),
+              name: existing.name,
+              email: existing.email,
+              role: existing.role,
+              parentRecruiterName: existing.parentRecruiterName,
+              refCode: existing.refCode,
+              company: existing.company,
+              isActive: existing.isActive
+            }
+          });
+        }
+
+        const newRec = await RecruiterDoc.create({
+          name: cleanName,
+          email: cleanEmail,
+          password: cleanPassword,
+          role: cleanRole,
+          parentRecruiterName: cleanParent,
+          refCode: cleanRef,
+          company: cleanCompany,
+          isActive: isActive !== false
+        });
+        return res.status(201).json({
+          success: true,
+          recruiter: {
+            id: newRec._id.toString(),
+            name: newRec.name,
+            email: newRec.email,
+            role: newRec.role,
+            parentRecruiterName: newRec.parentRecruiterName,
+            refCode: newRec.refCode,
+            company: newRec.company,
+            isActive: newRec.isActive
+          }
+        });
+      } catch (mErr) {
+        console.warn('MongoDB recruiter write warning, disk was saved:', mErr.message);
+      }
+    }
+
+    return res.status(201).json({
+      success: true,
+      recruiter: {
+        id: diskRec._id || diskRec.id,
+        name: diskRec.name,
+        email: diskRec.email,
+        role: diskRec.role,
+        parentRecruiterName: diskRec.parentRecruiterName,
+        refCode: diskRec.refCode,
+        company: diskRec.company,
+        isActive: diskRec.isActive
+      }
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -5728,68 +5786,75 @@ app.post('/api/admin/recruiters/sync', async (req, res) => {
     return res.status(400).json({ success: false, message: 'Array of recruiters expected.' });
   }
   try {
+    loadRecruitersFromDisk();
     for (const r of recruiters) {
       if (!r.email || !r.name) continue;
-      const cleanEmail = r.email.toLowerCase().trim();
-      const cleanName = r.name.trim();
-      const cleanPassword = (r.password || 'recruiter123').trim();
+      const cleanEmail = String(r.email).toLowerCase().trim();
+      const cleanName = String(r.name).trim();
+      const cleanPassword = String(r.password || 'recruiter123').trim();
       const cleanRole = r.role || 'employee';
       const cleanRef = r.refCode || cleanName.toLowerCase().replace(/[^a-z0-9]/g, '-');
       const cleanCompany = r.company || 'SmartHire LLC';
       const cleanParent = r.parentRecruiterName || '';
 
-      if (isMongoConnected) {
-        let existing = await RecruiterDoc.findOne({ email: cleanEmail });
-        if (existing) {
-          existing.name = cleanName;
-          existing.password = cleanPassword;
-          existing.role = cleanRole;
-          existing.parentRecruiterName = cleanParent;
-          existing.company = cleanCompany;
-          await existing.save();
-        } else {
-          await RecruiterDoc.create({
-            name: cleanName,
-            email: cleanEmail,
-            password: cleanPassword,
-            role: cleanRole,
-            parentRecruiterName: cleanParent,
-            refCode: cleanRef,
-            company: cleanCompany,
-            isActive: r.isActive !== false
-          });
-        }
+      const idx = recruitersMock.findIndex(m => (m.email || '').toLowerCase().trim() === cleanEmail);
+      if (idx >= 0) {
+        recruitersMock[idx] = {
+          ...recruitersMock[idx],
+          name: cleanName,
+          email: cleanEmail,
+          password: cleanPassword,
+          role: cleanRole,
+          parentRecruiterName: cleanParent,
+          company: cleanCompany,
+          isActive: r.isActive !== false
+        };
       } else {
-        const idx = recruitersMock.findIndex(m => (m.email || '').toLowerCase().trim() === cleanEmail);
-        if (idx >= 0) {
-          recruitersMock[idx] = {
-            ...recruitersMock[idx],
-            name: cleanName,
-            password: cleanPassword,
-            role: cleanRole,
-            parentRecruiterName: cleanParent,
-            company: cleanCompany,
-            isActive: r.isActive !== false
-          };
-        } else {
-          recruitersMock.unshift({
-            _id: r.id || 'rec-' + Date.now(),
-            name: cleanName,
-            email: cleanEmail,
-            password: cleanPassword,
-            role: cleanRole,
-            parentRecruiterName: cleanParent,
-            refCode: cleanRef,
-            company: cleanCompany,
-            isActive: r.isActive !== false,
-            lastLogin: null,
-            createdAt: new Date().toISOString()
-          });
-        }
+        recruitersMock.unshift({
+          _id: r.id || 'rec-' + Date.now(),
+          name: cleanName,
+          email: cleanEmail,
+          password: cleanPassword,
+          role: cleanRole,
+          parentRecruiterName: cleanParent,
+          refCode: cleanRef,
+          company: cleanCompany,
+          isActive: r.isActive !== false,
+          lastLogin: null,
+          createdAt: new Date().toISOString()
+        });
+      }
+
+      if (isMongoConnected) {
+        try {
+          const emailRegex = new RegExp('^' + cleanEmail.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&') + '$', 'i');
+          let existing = await RecruiterDoc.findOne({ email: emailRegex });
+          if (existing) {
+            existing.name = cleanName;
+            existing.email = cleanEmail;
+            existing.password = cleanPassword;
+            existing.role = cleanRole;
+            existing.parentRecruiterName = cleanParent;
+            existing.company = cleanCompany;
+            if (typeof r.isActive === 'boolean') existing.isActive = r.isActive;
+            await existing.save();
+          } else {
+            await RecruiterDoc.create({
+              name: cleanName,
+              email: cleanEmail,
+              password: cleanPassword,
+              role: cleanRole,
+              parentRecruiterName: cleanParent,
+              refCode: cleanRef,
+              company: cleanCompany,
+              isActive: r.isActive !== false
+            });
+          }
+        } catch (e) {}
       }
     }
-    if (!isMongoConnected) saveRecruitersToDisk();
-    return res.json({ success: true, count: recruiters.length });
+    saveRecruitersToDisk();
+    return res.json({ success: true, count: recruitersMock.length });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
