@@ -103,17 +103,32 @@ function CandidatesModule({
     return combined
   })()
 
-  const safeCandidates = (Array.isArray(rawCandidateList) ? rawCandidateList : []).map(c => ({
-    ...c,
-    id: c.id || c.candidate_id || c._id || `C-${Math.random().toString(36).slice(2, 7)}`,
-    name: c.extracted_profile?.name || c.name || c.candidateName || 'Candidate',
-    email: c.extracted_profile?.email || c.email || c.candidateEmail || '',
-    phone: c.extracted_profile?.phone || c.phone || c.candidatePhone || '',
-    role: c.job_title || c.jobTitle || c.role || c.extracted_profile?.title || 'General Applicant',
-    status: c.status || 'New',
-    reqId: c.reqId || (c.job_id ? String(c.job_id).replace('J-', '') : ''),
-    recruiter: c.recruiter || c.recruiterRef || c.referredBy || (c.source ? c.source.replace('Referred by ', '') : '') || ''
-  }))
+  const [statusOverrides, setStatusOverrides] = useState(() => {
+    try {
+      const saved = localStorage.getItem('smarthire_candidate_statuses')
+      return saved ? JSON.parse(saved) : {}
+    } catch(e) {
+      return {}
+    }
+  })
+
+  const safeCandidates = (Array.isArray(rawCandidateList) ? rawCandidateList : []).map((c, index) => {
+    // Generate a deterministic, stable ID that never changes across re-renders
+    const candId = c.id || c.canId || c.candidate_id || c._id || (c.email ? `C-${c.email.replace(/[^a-zA-Z0-9]/g, '_')}` : (c.name ? `C-${c.name.replace(/[^a-zA-Z0-9]/g, '_')}` : `C-${index + 1}`))
+    const candStatus = statusOverrides[candId] || c.status || 'New'
+
+    return {
+      ...c,
+      id: candId,
+      name: c.extracted_profile?.name || c.name || c.candidateName || 'Candidate',
+      email: c.extracted_profile?.email || c.email || c.candidateEmail || '',
+      phone: c.extracted_profile?.phone || c.phone || c.candidatePhone || '',
+      role: c.job_title || c.jobTitle || c.role || c.extracted_profile?.title || 'General Applicant',
+      status: candStatus,
+      reqId: c.reqId || (c.job_id ? String(c.job_id).replace('J-', '') : ''),
+      recruiter: c.recruiter || c.recruiterRef || c.referredBy || (c.source ? c.source.replace('Referred by ', '') : '') || ''
+    }
+  })
   const safeJobs = Array.isArray(jobsList) ? jobsList : []
 
   const safeFiltered = safeCandidates.filter(c => {
@@ -140,9 +155,37 @@ function CandidatesModule({
   }
 
   const handleUpdateStatus = async (candidateId, newStatus) => {
-    if (updateStatus) await updateStatus(candidateId, newStatus)
-    else if (updateCandidateStatus) await updateCandidateStatus(candidateId, newStatus)
-    if (fetchCandidates) fetchCandidates()
+    // 1. Instantly update local state so UI never blanks or shifts
+    setStatusOverrides(prev => {
+      const next = { ...prev, [candidateId]: newStatus }
+      try { localStorage.setItem('smarthire_candidate_statuses', JSON.stringify(next)) } catch(e) {}
+      return next
+    })
+
+    // 2. Persist in local candidate caches
+    try {
+      const allCandsRaw = localStorage.getItem('smarthire_all_candidates')
+      if (allCandsRaw) {
+        const allCands = JSON.parse(allCandsRaw)
+        const updated = allCands.map(c => (c.id === candidateId || c.canId === candidateId) ? { ...c, status: newStatus } : c)
+        localStorage.setItem('smarthire_all_candidates', JSON.stringify(updated))
+      }
+    } catch(e) {}
+
+    try {
+      const localAppsRaw = localStorage.getItem('smarthire_careers_applications')
+      if (localAppsRaw) {
+        const localApps = JSON.parse(localAppsRaw)
+        const updatedApps = localApps.map(a => (a.canId === candidateId || a.id === candidateId) ? { ...a, status: newStatus } : a)
+        localStorage.setItem('smarthire_careers_applications', JSON.stringify(updatedApps))
+      }
+    } catch(e) {}
+
+    // 3. Trigger parent update safely
+    try {
+      if (updateStatus) await updateStatus(candidateId, newStatus)
+      else if (updateCandidateStatus) await updateCandidateStatus(candidateId, newStatus)
+    } catch(e) {}
   }
 
   const handleSaveFinalRate = async (candidateId) => {
@@ -294,19 +337,26 @@ function CandidatesModule({
   }
 
   const statusBadge = (status) => {
-    const map = {
-      'New': { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' },
-      'Reviewed': { bg: '#f5f3ff', color: '#6d28d9', border: '#ddd6fe' },
-      'Reviewing': { bg: '#f5f3ff', color: '#6d28d9', border: '#ddd6fe' },
-      'Shortlisted': { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0' },
-      'RTR Requested': { bg: '#fffbeb', color: '#b45309', border: '#fde68a' },
-      'RTR Received': { bg: '#fff7ed', color: '#c2410c', border: '#fed7aa' },
-      'Interview Scheduled': { bg: '#fdf2f8', color: '#be185d', border: '#fbcfe8' },
-      'Selected': { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0' },
-      'Placed': { bg: '#dcfce7', color: '#15803d', border: '#86efac' },
-      'Rejected': { bg: '#fef2f2', color: '#b91c1c', border: '#fecaca' },
+    const s = String(status || '').toLowerCase()
+    if (s.includes('select') || s.includes('placed') || s.includes('hired')) {
+      return { bg: '#dcfce7', color: '#15803d', border: '#86efac' }
     }
-    return map[status] || { bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' }
+    if (s.includes('shortlist') || s.includes('screen')) {
+      return { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0' }
+    }
+    if (s.includes('interview')) {
+      return { bg: '#fdf2f8', color: '#be185d', border: '#fbcfe8' }
+    }
+    if (s.includes('rtr') || s.includes('submit')) {
+      return { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' }
+    }
+    if (s.includes('reject')) {
+      return { bg: '#fef2f2', color: '#b91c1c', border: '#fecaca' }
+    }
+    if (s.includes('review')) {
+      return { bg: '#f5f3ff', color: '#6d28d9', border: '#ddd6fe' }
+    }
+    return { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' }
   }
 
   const inputStyle = {
@@ -321,7 +371,20 @@ function CandidatesModule({
     fontFamily: 'inherit'
   }
 
-  const safeStatuses = ['New', 'Reviewed', 'Shortlisted', 'RTR Requested', 'RTR Received', 'Interview Scheduled', 'Selected', 'Placed', 'Rejected']
+  const safeStatuses = [
+    'New',
+    'Reviewed',
+    'Shortlisted',
+    'Interview Scheduled',
+    'Selected',
+    'Placed',
+    'Rejected',
+    'RTR Requested',
+    'RTR Received',
+    'Int-SubmittedToManager',
+    'Int-ApprovedByManager',
+    'Int-RejectedByManager'
+  ]
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14, fontFamily: 'Arial, Helvetica, sans-serif' }}>
