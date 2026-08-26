@@ -131,7 +131,16 @@ const legacyCandidateData = [
 
 function RecruiterDashboard() {
   const [jobs, setJobs] = useState([])
-  const [candidates, setCandidates] = useState(legacyCandidateData)
+  const [candidates, setCandidates] = useState(() => {
+    try {
+      const saved = localStorage.getItem('smarthire_all_candidates')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+    } catch (e) {}
+    return legacyCandidateData
+  })
   
   // ─── DYNAMIC TEAM USERS & MULTI-LEVEL RBAC ───
   const DEFAULT_USERS_LIST = [
@@ -528,7 +537,7 @@ function RecruiterDashboard() {
         if (Array.isArray(parsed)) return parsed
       }
     } catch (e) {}
-    return [] // Default is completely empty if not assigned
+    return []
   }
 
   // Fetch jobs & merge persistent local custom assignments, and sync team roster
@@ -551,9 +560,18 @@ function RecruiterDashboard() {
           const rawId = String(j.id || '')
           const cleanId = rawId.replace('J-', '')
           const customOverride = savedJobsMap[rawId] || savedJobsMap[`J-${cleanId}`] || savedJobsMap[cleanId]
-          const assigned = (customOverride && Array.isArray(customOverride.assignedRecruiters) && customOverride.assignedRecruiters.length > 0)
-            ? customOverride.assignedRecruiters
-            : getJobAssignedRecruiters(j.id)
+          
+          let assigned = []
+          if (customOverride && Array.isArray(customOverride.assignedRecruiters) && customOverride.assignedRecruiters.length > 0) {
+            assigned = customOverride.assignedRecruiters
+          } else {
+            const localAssigned = getJobAssignedRecruiters(j.id)
+            if (localAssigned && localAssigned.length > 0) {
+              assigned = localAssigned
+            } else if (Array.isArray(j.assignedRecruiters) && j.assignedRecruiters.length > 0) {
+              assigned = j.assignedRecruiters
+            }
+          }
 
           return {
             ...j,
@@ -583,12 +601,16 @@ function RecruiterDashboard() {
       .catch(err => console.warn('Backend team sync notice:', err))
   }, [])
 
-  // Toggle recruiter selection for current requisition
+  // Toggle recruiter selection for current requisition (case-insensitive and trimmed)
   const toggleRecruiterAssignment = (recName) => {
+    if (!recName) return
+    const target = String(recName).trim()
     setEditingFields(prev => {
       const current = prev.assignedRecruiters || []
-      const exists = current.includes(recName)
-      const next = exists ? current.filter(r => r !== recName) : [...current, recName]
+      const exists = current.some(r => String(r || '').toLowerCase().trim() === target.toLowerCase())
+      const next = exists
+        ? current.filter(r => String(r || '').toLowerCase().trim() !== target.toLowerCase())
+        : [...current, target]
       return { ...prev, assignedRecruiters: next }
     })
   }
@@ -634,6 +656,8 @@ function RecruiterDashboard() {
         creationDate: editingFields.startDate || selectedReq?.creationDate,
         deadline: editingFields.deadline || selectedReq?.deadline
       }
+      savedJobsMap[cleanId] = savedJobsMap[rawId || fullId]
+      savedJobsMap[`J-${cleanId}`] = savedJobsMap[rawId || fullId]
       localStorage.setItem('smarthire_saved_custom_jobs', JSON.stringify(savedJobsMap))
     } catch (e) {
       console.error('Failed saving requisition data to localStorage:', e)
@@ -683,7 +707,7 @@ function RecruiterDashboard() {
       return j
     }))
 
-    setSaveToastMessage(`✅ Requisition #${cleanId} saved successfully! (${assignedList.length} recruiter(s) assigned)`)
+    setSaveToastMessage(`✅ Requisition #${cleanId} saved successfully! (${assignedList.length} recruiter(s)/employee(s) assigned)`)
     setTimeout(() => setSaveToastMessage(null), 4500)
   }
 
@@ -1042,18 +1066,20 @@ function RecruiterDashboard() {
 
       // ─── STRICT ROLE-BASED ACCESS CONTROL (RBAC) ───
       // If user is an Employee (Sub-recruiter), show ONLY requirements assigned directly to them!
-      // Lead Recruiters, Managers, and Admins have full access to view all open requisitions.
       if (isEmployee) {
-        const assignedList = Array.isArray(j.assignedRecruiters) ? j.assignedRecruiters.map(r => String(r || '').toLowerCase().trim()) : []
+        const assignedList = Array.isArray(j.assignedRecruiters)
+          ? j.assignedRecruiters.map(r => String(r || '').toLowerCase().trim())
+          : []
         const userIdent = userName.toLowerCase().trim()
         const userEmailIdent = (currentUser?.email || '').toLowerCase().trim()
         const firstNameIdent = (userName.split(' ')[0] || '').toLowerCase().trim()
         const uidIdent = (currentUser?.uid || '').toLowerCase().trim()
 
         const isDirectlyAssigned = assignedList.some(r =>
+          r === userIdent ||
           r.includes(userIdent) || userIdent.includes(r) ||
-          (userEmailIdent && (r.includes(userEmailIdent) || userEmailIdent.includes(r))) ||
-          (firstNameIdent && (r.includes(firstNameIdent) || firstNameIdent.includes(r))) ||
+          (userEmailIdent && (r === userEmailIdent || r.includes(userEmailIdent) || userEmailIdent.includes(r))) ||
+          (firstNameIdent && firstNameIdent.length >= 2 && (r === firstNameIdent || r.includes(firstNameIdent) || firstNameIdent.includes(r))) ||
           (uidIdent && r.includes(uidIdent))
         )
         if (!isDirectlyAssigned) {
@@ -1087,10 +1113,10 @@ function RecruiterDashboard() {
         if (reqFilters.status === 'Closed' && stat !== 'closed') return false
       }
       if (reqFilters.assignedTo && reqFilters.assignedTo !== 'Any' && reqFilters.assignedTo !== 'All') {
-        const targetRec = reqFilters.assignedTo.toLowerCase()
-        const assignedList = Array.isArray(j.assignedRecruiters) ? j.assignedRecruiters.map(r => r.toLowerCase()) : []
-        const postedBy = (j.postedByName || '').toLowerCase()
-        if (!assignedList.some(r => r.includes(targetRec)) && !postedBy.includes(targetRec)) {
+        const targetRec = reqFilters.assignedTo.toLowerCase().trim()
+        const assignedList = Array.isArray(j.assignedRecruiters) ? j.assignedRecruiters.map(r => r.toLowerCase().trim()) : []
+        const postedBy = (j.postedByName || '').toLowerCase().trim()
+        if (!assignedList.some(r => r.includes(targetRec) || targetRec.includes(r)) && !postedBy.includes(targetRec)) {
           return false
         }
       }
@@ -1114,10 +1140,34 @@ function RecruiterDashboard() {
     return candidates.filter(c => {
       if (!c) return false
 
+      // ─── STRICT RBAC FOR CANDIDATES ───
+      // If user is Employee: only show candidates submitted or assigned to this employee
+      if (isEmployee) {
+        const userIdent = userName.toLowerCase().trim()
+        const userEmail = (currentUser?.email || '').toLowerCase().trim()
+        const candRecruiter = (c.recruiter || c.assignedTo || c.assignedBy || '').toLowerCase().trim()
+        const isMyCandidate = candRecruiter === userIdent || candRecruiter.includes(userIdent) || userIdent.includes(candRecruiter) || (userEmail && candRecruiter.includes(userEmail))
+        if (!isMyCandidate) return false
+      }
+
+      // If user is Recruiter (Lead): show candidates submitted by this recruiter OR any employee reporting to this recruiter
+      if (isRecruiter && (!candFilters.assignedTo || candFilters.assignedTo === 'Any' || candFilters.assignedTo === 'All')) {
+        const userIdent = userName.toLowerCase().trim()
+        const mySubordinates = teamUsers
+          .filter(u => u.parentRecruiterName && u.parentRecruiterName.toLowerCase().trim() === userIdent)
+          .map(u => u.name.toLowerCase().trim())
+        
+        const candRecruiter = (c.recruiter || c.assignedTo || c.assignedBy || '').toLowerCase().trim()
+        const isMineOrSub = candRecruiter === userIdent || candRecruiter.includes(userIdent) || userIdent.includes(candRecruiter) ||
+                            mySubordinates.some(sub => candRecruiter === sub || candRecruiter.includes(sub) || sub.includes(candRecruiter))
+
+        if (!isMineOrSub) return false
+      }
+
       // Recruiter Name Filter (Assigned To)
-      if (candFilters.assignedTo !== 'Any' && candFilters.assignedTo !== 'All') {
-        const assigned = (c.recruiter || c.assignedTo || '').toLowerCase()
-        const filterVal = candFilters.assignedTo.toLowerCase()
+      if (candFilters.assignedTo && candFilters.assignedTo !== 'Any' && candFilters.assignedTo !== 'All') {
+        const assigned = (c.recruiter || c.assignedTo || c.assignedBy || '').toLowerCase().trim()
+        const filterVal = candFilters.assignedTo.toLowerCase().trim()
         if (!assigned.includes(filterVal) && !filterVal.includes(assigned)) return false
       }
 
@@ -1177,7 +1227,7 @@ function RecruiterDashboard() {
 
       return true
     })
-  }, [candidates, candFilters])
+  }, [candidates, candFilters, isEmployee, isRecruiter, isAdmin, isManager, userName, currentUser, teamUsers])
 
   const paginatedCandidates = useMemo(() => {
     const start = (currentPage - 1) * pageSize
@@ -1201,6 +1251,7 @@ function RecruiterDashboard() {
       return [
         { id: 'requisitions', name: 'Requisitions (Review)' },
         { id: 'candidates', name: 'Candidates & AI Fit' },
+        { id: 'admin', name: 'Team Management' },
         { id: 'reports', name: 'Reports', link: '/reports' },
         { id: 'process', name: 'Process', link: '/ats' }
       ]
@@ -1209,12 +1260,13 @@ function RecruiterDashboard() {
       return [
         { id: 'requisitions', name: 'My Requisitions' },
         { id: 'admin', name: 'My Team (Manage Employees)' },
-        { id: 'candidates', name: 'My Candidates' }
+        { id: 'candidates', name: 'Team Candidates' }
       ]
     }
-    // Employee (Restricted Workspace: strictly Requisitions)
+    // Employee (Restricted Workspace: strictly Requisitions & Candidates submitted by them)
     return [
-      { id: 'requisitions', name: 'My Requisitions' }
+      { id: 'requisitions', name: 'My Requisitions' },
+      { id: 'candidates', name: 'My Candidates' }
     ]
   }, [isAdmin, isManager, isRecruiter, isEmployee])
 
@@ -2376,10 +2428,10 @@ function RecruiterDashboard() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
                       <div>
                         <div style={{ fontWeight: 'bold', color: '#1e3a8a', fontSize: '13px' }}>
-                          Assign Requisition to Recruiters
+                          Assign Requisition to Recruiters & Team Members
                         </div>
                         <div style={{ color: '#64748b', fontSize: '11px', marginTop: '2px' }}>
-                          Select one or multiple recruiters who are assigned to source, screen, and submit candidates for Requisition #{selectedReq.id.replace('J-', '')}.
+                          Select one or multiple recruiters/employees who are assigned to source, screen, and submit candidates for Requisition #{selectedReq?.id?.replace('J-', '') || '158938'}.
                         </div>
                       </div>
 
@@ -2388,9 +2440,10 @@ function RecruiterDashboard() {
                         <button
                           type="button"
                           onClick={() => {
+                            const allNames = allRecruitersList.map(r => r.name).filter(Boolean)
                             setEditingFields(prev => ({
                               ...prev,
-                              assignedRecruiters: allRecruitersList.map(r => r.name)
+                              assignedRecruiters: Array.from(new Set(allNames))
                             }))
                           }}
                           style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '4px 10px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '2px' }}
@@ -2413,7 +2466,7 @@ function RecruiterDashboard() {
                           type="button"
                           onClick={() => {
                             const current = editingFields.assignedRecruiters || []
-                            if (!current.includes(userName)) {
+                            if (!current.some(r => r.toLowerCase().trim() === userName.toLowerCase().trim())) {
                               setEditingFields(prev => ({
                                 ...prev,
                                 assignedRecruiters: [...current, userName]
@@ -2426,7 +2479,7 @@ function RecruiterDashboard() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleSaveRecruiterAssignments()}
+                          onClick={() => handleSaveRequisition()}
                           style={{ background: '#16a34a', color: '#ffffff', border: 'none', padding: '4px 16px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '2px', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
                         >
                           💾 Save Assignments
@@ -2474,7 +2527,9 @@ function RecruiterDashboard() {
                                 e.stopPropagation()
                                 setEditingFields(prev => ({
                                   ...prev,
-                                  assignedRecruiters: (prev.assignedRecruiters || []).filter(r => r !== recName)
+                                  assignedRecruiters: (prev.assignedRecruiters || []).filter(
+                                    r => String(r || '').toLowerCase().trim() !== String(recName || '').toLowerCase().trim()
+                                  )
                                 }))
                               }}
                               style={{ cursor: 'pointer', color: '#ef4444', fontWeight: 'bold', marginLeft: '2px' }}
@@ -2495,10 +2550,12 @@ function RecruiterDashboard() {
                             <th style={{ padding: '7px 10px', width: '40px', textAlign: 'center' }}>
                               <input
                                 type="checkbox"
-                                checked={allRecruitersList.length > 0 && allRecruitersList.every(r => (editingFields.assignedRecruiters || []).includes(r.name))}
+                                checked={allRecruitersList.length > 0 && allRecruitersList.every(rec => 
+                                  (editingFields.assignedRecruiters || []).some(r => String(r || '').toLowerCase().trim() === String(rec.name || '').toLowerCase().trim())
+                                )}
                                 onChange={e => {
                                   if (e.target.checked) {
-                                    setEditingFields(prev => ({ ...prev, assignedRecruiters: allRecruitersList.map(r => r.name) }))
+                                    setEditingFields(prev => ({ ...prev, assignedRecruiters: Array.from(new Set(allRecruitersList.map(r => r.name).filter(Boolean))) }))
                                   } else {
                                     setEditingFields(prev => ({ ...prev, assignedRecruiters: [] }))
                                   }
@@ -2513,10 +2570,13 @@ function RecruiterDashboard() {
                         </thead>
                         <tbody>
                           {allRecruitersList.map((rec, idx) => {
-                            const isAssigned = (editingFields.assignedRecruiters || []).includes(rec.name)
+                            const isAssigned = (editingFields.assignedRecruiters || []).some(
+                              r => String(r || '').toLowerCase().trim() === String(rec.name || '').toLowerCase().trim() ||
+                                   (rec.email && String(r || '').toLowerCase().trim() === String(rec.email || '').toLowerCase().trim())
+                            )
                             return (
                               <tr
-                                key={rec.name}
+                                key={rec.id || rec.email || rec.name || idx}
                                 onClick={() => toggleRecruiterAssignment(rec.name)}
                                 style={{
                                   background: isAssigned ? '#eff6ff' : (idx % 2 === 0 ? '#ffffff' : '#f8fafc'),
@@ -2524,14 +2584,12 @@ function RecruiterDashboard() {
                                   cursor: 'pointer'
                                 }}
                               >
-                                <td style={{ padding: '7px 10px', textAlign: 'center' }}>
+                                <td style={{ padding: '7px 10px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
                                   <input
                                     type="checkbox"
                                     checked={isAssigned}
-                                    onChange={(e) => {
-                                      e.stopPropagation()
-                                      toggleRecruiterAssignment(rec.name)
-                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onChange={() => toggleRecruiterAssignment(rec.name)}
                                   />
                                 </td>
                                 <td style={{ padding: '7px 10px', fontWeight: 'bold', color: isAssigned ? '#0284c7' : '#0f172a' }}>
@@ -2564,7 +2622,7 @@ function RecruiterDashboard() {
                     {/* Bottom Save Action Bar inside Tab */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', border: '1px solid #cbd5e1', padding: '8px 12px', borderRadius: '3px' }}>
                       <span style={{ color: '#475569', fontSize: '11px', fontWeight: 'bold' }}>
-                        Selected: <span style={{ color: '#0284c7' }}>{editingFields.assignedRecruiters?.length || 0}</span> recruiter(s)
+                        Selected: <span style={{ color: '#0284c7' }}>{editingFields.assignedRecruiters?.length || 0}</span> recruiter(s)/employee(s)
                       </span>
                       <button
                         type="button"
@@ -3366,19 +3424,30 @@ function RecruiterDashboard() {
               {/* All Open Requisitions Table */}
               <div style={{ background: '#ffffff', padding: '14px 18px', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                 <h2 style={{ margin: '0 0 2px', fontSize: '15px', color: '#16a34a', fontWeight: 'bold' }}>
-                  SmartHire Recruitment Portal Home
+                  {isEmployee
+                    ? '🔒 Employee Workspace — Assigned Requisitions'
+                    : isRecruiter
+                    ? `💼 SmartWorks Talent Workspace — ${userName}`
+                    : 'SmartHire Recruitment Portal Home'}
                 </h2>
                 <div style={{ fontSize: '12px', color: '#334155', fontWeight: 'bold', marginBottom: '12px' }}>
-                  Welcome back to SmartWorks. You have {jobs.length} tasks.
+                  {isEmployee
+                    ? `Welcome back, ${userName}. You have ${filteredJobs.length} assigned requisition(s).`
+                    : `Welcome back to SmartWorks, ${userName}. You have ${jobs.length} tasks.`}
                 </div>
 
                 <div style={{
-                  background: '#bfdbfe', border: '1px solid #93c5fd', padding: '6px 12px',
+                  background: isEmployee ? '#dcfce7' : '#bfdbfe',
+                  border: '1px solid',
+                  borderColor: isEmployee ? '#86efac' : '#93c5fd',
+                  padding: '6px 12px',
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                   borderRadius: '3px 3px 0 0'
                 }}>
-                  <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#1e3a8a' }}>All Open Requisitions</span>
-                  <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#1e3a8a' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 'bold', color: isEmployee ? '#166534' : '#1e3a8a' }}>
+                    {isEmployee ? `My Assigned Requisitions (${filteredJobs.length})` : 'All Open Requisitions'}
+                  </span>
+                  <span style={{ fontSize: '12px', fontWeight: 'bold', color: isEmployee ? '#166534' : '#1e3a8a' }}>
                     (Requisitions {filteredJobs.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, filteredJobs.length)} of {filteredJobs.length})
                   </span>
                 </div>
@@ -3408,7 +3477,18 @@ function RecruiterDashboard() {
                       {paginatedJobs.length === 0 ? (
                         <tr>
                           <td colSpan="15" style={{ padding: '36px', textAlign: 'center', color: '#64748b' }}>
-                            No open requisitions found matching search criteria.
+                            {isEmployee ? (
+                              <div>
+                                <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#0f172a', marginBottom: '4px' }}>
+                                  🔒 No Requisitions Assigned Yet
+                                </div>
+                                <div style={{ fontSize: '12px', color: '#64748b' }}>
+                                  You are in Employee restricted mode. When your lead recruiter assigns a requisition to you, it will appear here.
+                                </div>
+                              </div>
+                            ) : (
+                              'No open requisitions found matching search criteria.'
+                            )}
                           </td>
                         </tr>
                       ) : (
@@ -3613,7 +3693,7 @@ function RecruiterDashboard() {
                   </div>
                   <div>
                     <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>Role / Level *</label>
-                    {isAdmin ? (
+                    {isAdmin || isManager ? (
                       <select
                         value={userFormData.role}
                         onChange={e => setUserFormData(prev => ({ ...prev, role: e.target.value }))}
@@ -3621,7 +3701,8 @@ function RecruiterDashboard() {
                       >
                         <option value="recruiter">Lead Recruiter</option>
                         <option value="employee">Employee / Sourcing Specialist</option>
-                        <option value="superadmin">Administrator / Manager</option>
+                        <option value="manager">Manager / Team Lead</option>
+                        <option value="superadmin">Administrator / Superadmin</option>
                       </select>
                     ) : (
                       <input
@@ -3640,7 +3721,7 @@ function RecruiterDashboard() {
                     <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>
                       Reporting Manager / Lead Recruiter
                     </label>
-                    {isAdmin ? (
+                    {isAdmin || isManager ? (
                       <select
                         value={userFormData.parentRecruiterName || ''}
                         onChange={e => setUserFormData(prev => ({ ...prev, parentRecruiterName: e.target.value }))}
@@ -3648,7 +3729,7 @@ function RecruiterDashboard() {
                       >
                         <option value="">None (Independent Employee)</option>
                         {teamUsers
-                          .filter(u => u.role === 'recruiter' || u.role === 'superadmin')
+                          .filter(u => u.role === 'recruiter' || u.role === 'superadmin' || u.role === 'manager' || u.role === 'admin')
                           .map(u => (
                             <option key={u.id || u.name} value={u.name}>
                               {u.name} ({u.role})
@@ -3764,6 +3845,37 @@ function RecruiterDashboard() {
 
                 const updatedCandidates = [newCandObj, ...potentialCandidates]
                 setPotentialCandidates(updatedCandidates)
+
+                const masterCandObj = {
+                  id: newCandId.replace('CAND-', '875'),
+                  name: fullName,
+                  fullRole: selectedReq?.title || 'Consultant',
+                  role: selectedReq?.title || 'Consultant',
+                  exp: newCandReqForm.exp || '5',
+                  location: selectedReq?.location || 'Remote / Hybrid',
+                  city: selectedReq?.city || 'Richmond',
+                  state: selectedReq?.state || 'VA',
+                  payRate: `$${newCandReqForm.payRate} /hr`,
+                  rateType: newCandReqForm.payRateType || 'C2C',
+                  rating: 5,
+                  subVendor: 'Direct Submission',
+                  recruiter: userName,
+                  assignedTo: userName,
+                  agrExists: false,
+                  avblDate: 'Immediate',
+                  email: newCandReqForm.email || `${newCandReqForm.firstName.toLowerCase()}@example.com`,
+                  phone: newCandReqForm.phone || '571-660-5778',
+                  workAuth: newCandReqForm.workAuth || 'US Citizen',
+                  screened: 'Yes'
+                }
+
+                setCandidates(prev => {
+                  const merged = [masterCandObj, ...prev]
+                  try {
+                    localStorage.setItem('smarthire_all_candidates', JSON.stringify(merged))
+                  } catch (e) {}
+                  return merged
+                })
 
                 try {
                   localStorage.setItem(`smarthire_potential_candidates_${cleanId}`, JSON.stringify(updatedCandidates))
