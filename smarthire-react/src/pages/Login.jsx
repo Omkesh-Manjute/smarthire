@@ -183,14 +183,54 @@ function Login() {
                 <p className="login-subtitle">Enter your corporate credentials to access your workspace.</p>
               </div>
 
-              {authError && (
-                <div style={{ padding: '10px 14px', borderRadius: '8px', background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', fontSize: '13px', marginBottom: '16px' }}>
-                  ⚠️ {authError}
+              {/* 1-Click Role Quick Logins */}
+              <div style={{ marginBottom: '16px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px 12px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  ⚡ 1-Click Demo Login Selection:
                 </div>
-              )}
-
-
-
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmail('omkesh@coolsofttech.com')
+                      setPassword('admin')
+                    }}
+                    style={{ background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd', padding: '5px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', textAlign: 'left' }}
+                  >
+                    👑 Super Admin (Omkesh)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmail('manager@coolsofttech.com')
+                      setPassword('manager123')
+                    }}
+                    style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', padding: '5px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', textAlign: 'left' }}
+                  >
+                    🛡️ Manager (Alok Manager)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmail('kamal@coolsofttech.com')
+                      setPassword('recruiter123')
+                    }}
+                    style={{ background: '#ffedd5', color: '#c2410c', border: '1px solid #fed7aa', padding: '5px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', textAlign: 'left' }}
+                  >
+                    💼 Recruiter (Sukamal)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmail('rahul@coolsofttech.com')
+                      setPassword('recruiter123')
+                    }}
+                    style={{ background: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0', padding: '5px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', textAlign: 'left' }}
+                  >
+                    👤 Employee (Rahul)
+                  </button>
+                </div>
+              </div>
 
               {/* Form Input elements */}
               <form className="login-form" onSubmit={handleDemoSubmit}>
