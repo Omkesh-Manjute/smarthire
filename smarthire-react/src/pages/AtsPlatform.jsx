@@ -24,7 +24,6 @@ const STATUSES = [
 ]
 
 const ALL_TABS = [
-  { id: 'dashboard',   label: '📊 Dashboard',    icon: '📊', adminOnly: true },
   { id: 'jobs',        label: '💼 Jobs',          icon: '💼' },
   { id: 'candidates',  label: '👤 Candidates',    icon: '👤' },
   { id: 'pipeline',    label: '📈 Pipeline',      icon: '📈', adminOnly: true },
@@ -57,7 +56,6 @@ export default function AtsPlatform() {
   const DEFAULT_PERMISSIONS = {
     superadmin: {
       ats: true,
-      dashboard: true,
       jobs: true,
       candidates: true,
       pipeline: true,
@@ -72,7 +70,6 @@ export default function AtsPlatform() {
     },
     manager: {
       ats: true,
-      dashboard: true,
       jobs: true,
       candidates: true,
       pipeline: true,
@@ -87,7 +84,6 @@ export default function AtsPlatform() {
     },
     recruiter: {
       ats: true,
-      dashboard: false,
       jobs: true,
       candidates: true,
       pipeline: false,
@@ -139,7 +135,7 @@ export default function AtsPlatform() {
       return permissions[roleKey][tab.id] !== false
     }
     if (isManager) {
-      return ['dashboard', 'jobs', 'candidates', 'pipeline', 'screening', 'submissions', 'reports', 'audit', 'inbox'].includes(tab.id)
+      return ['jobs', 'candidates', 'pipeline', 'screening', 'submissions', 'reports', 'audit', 'inbox'].includes(tab.id)
     }
     return ['jobs', 'candidates', 'screening', 'audit', 'inbox'].includes(tab.id)
   })
@@ -155,9 +151,8 @@ export default function AtsPlatform() {
 
   const [activeTab, setActiveTab] = useState(() => {
     const urlTab = getTabFromUrl()
-    if (urlTab) return urlTab
-    if (roleKey === 'superadmin') return 'dashboard'
-    return TABS[0]?.id || 'jobs'
+    if (urlTab && urlTab !== 'dashboard') return urlTab
+    return 'jobs'
   })
   const navigate = useNavigate()
 
@@ -701,24 +696,7 @@ export default function AtsPlatform() {
           {/* ─── MAIN CONTENT AREA ─────────────────────────────── */}
           <div style={{ flex: 1, padding: '28px 32px', overflowX: 'hidden', minWidth: 0 }}>
 
-            {activeTab === 'dashboard' && (
-              <DashboardModule
-                totalCandidates={safeCandidates.length}
-                liveCount={liveCandidates.length}
-                activeJobs={activeJobs}
-                qualified={qualified}
-                newCandidates={newCandidates}
-                pendingRtr={pendingRtr}
-                allCandidates={safeCandidates}
-                liveCandidates={liveCandidates}
-                jobsList={safeJobs}
-                apiOnline={apiOnline}
-                submissions={submissions}
-                isSuperAdmin={isSuperAdmin}
-              />
-            )}
-
-            {activeTab === 'jobs' && (
+            {(activeTab === 'jobs' || activeTab === 'dashboard') && (
               <JobsModule
                 jobsList={safeJobs}
                 allCandidates={safeCandidates}
