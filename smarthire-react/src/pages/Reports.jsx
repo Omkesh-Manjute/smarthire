@@ -939,8 +939,8 @@ function Reports() {
         )}
 
         {/* ═══════════ ORANGE FOOTER ═══════════ */}
-        <footer style={{ background: '#ea580c', borderTop: '2px solid #c2410c', color: '#ffffff', textAlign: 'center', padding: '10px', marginTop: '40px', fontSize: '11px', fontWeight: 'bold' }}>
-          © SmartHire LLC | All rights reserved | Release 1.9 06-May-2025 (New Server 2023 Aug)
+        <footer style={{ background: '#ea580c', borderTop: '2px solid #c2410c', color: '#ffffff', textAlign: 'center', padding: '8px', marginTop: '30px', fontSize: '11px', fontWeight: 'bold' }}>
+          © SmartHire | All rights reserved | Release 1.0.0 27-Aug-2026
         </footer>
 
       </div>

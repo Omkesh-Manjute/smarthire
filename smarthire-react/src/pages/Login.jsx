@@ -13,15 +13,15 @@ function Login() {
   const [authError, setAuthError] = useState('')
 
   const defaultRecs = [
-    { id: 'rec-1', name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', company: 'SmartHire LLC', isActive: true, password: 'admin' },
-    { id: 'rec-1b', name: 'Omkesh Manjute', email: 'omkesh.manjute@smarthire.com', role: 'superadmin', refCode: 'omkesh', company: 'SmartHire LLC', isActive: true, password: 'admin' },
-    { id: 'rec-2', name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com', role: 'recruiter', refCode: 'sukamal-chatterjee', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
-    { id: 'rec-3', name: 'Raj', email: 'raj@coolsofttech.com', role: 'recruiter', refCode: 'raj', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
-    { id: 'rec-4', name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com', role: 'recruiter', refCode: 'vaibhav-bisen', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
-    { id: 'rec-5', name: 'Pankaj', email: 'pankajm@coolsofttech.com', role: 'recruiter', refCode: 'pankaj', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
-    { id: 'mgr-1', name: 'Alok Manager', email: 'manager@coolsofttech.com', role: 'manager', refCode: 'alok-manager', company: 'SmartHire LLC', isActive: true, password: 'manager123' },
-    { id: 'emp-1', name: 'Rahul Sharma', email: 'rahul@coolsofttech.com', role: 'employee', parentRecruiterName: 'Vaibhav Bisen', refCode: 'rahul-sharma', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
-    { id: 'emp-2', name: 'Priya Verma', email: 'priya@coolsofttech.com', role: 'employee', parentRecruiterName: 'Sukamal Chatterjee', refCode: 'priya-verma', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' }
+    { id: 'rec-1', name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', company: 'SmartHire', isActive: true, password: 'admin' },
+    { id: 'rec-1b', name: 'Omkesh Manjute', email: 'omkesh.manjute@smarthire.com', role: 'superadmin', refCode: 'omkesh', company: 'SmartHire', isActive: true, password: 'admin' },
+    { id: 'rec-2', name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com', role: 'recruiter', refCode: 'sukamal-chatterjee', company: 'SmartHire', isActive: true, password: 'recruiter123' },
+    { id: 'rec-3', name: 'Raj', email: 'raj@coolsofttech.com', role: 'recruiter', refCode: 'raj', company: 'SmartHire', isActive: true, password: 'recruiter123' },
+    { id: 'rec-4', name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com', role: 'recruiter', refCode: 'vaibhav-bisen', company: 'SmartHire', isActive: true, password: 'recruiter123' },
+    { id: 'rec-5', name: 'Pankaj', email: 'pankajm@coolsofttech.com', role: 'recruiter', refCode: 'pankaj', company: 'SmartHire', isActive: true, password: 'recruiter123' },
+    { id: 'mgr-1', name: 'Alok Manager', email: 'manager@coolsofttech.com', role: 'manager', refCode: 'alok-manager', company: 'SmartHire', isActive: true, password: 'manager123' },
+    { id: 'emp-1', name: 'Rahul Sharma', email: 'rahul@coolsofttech.com', role: 'employee', parentRecruiterName: 'Vaibhav Bisen', refCode: 'rahul-sharma', company: 'SmartHire', isActive: true, password: 'recruiter123' },
+    { id: 'emp-2', name: 'Priya Verma', email: 'priya@coolsofttech.com', role: 'employee', parentRecruiterName: 'Sukamal Chatterjee', refCode: 'priya-verma', company: 'SmartHire', isActive: true, password: 'recruiter123' }
   ]
 
   // Pre-sync all active team members from the backend server into localStorage on mount
@@ -52,7 +52,7 @@ function Login() {
       role: u.role,
       parentRecruiterName: u.parentRecruiterName || '',
       refCode: u.refCode || u.name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-      company: u.company || 'SmartHire LLC'
+      company: u.company || 'SmartHire'
     }
 
     localStorage.setItem('smarthire_authenticated', 'true')

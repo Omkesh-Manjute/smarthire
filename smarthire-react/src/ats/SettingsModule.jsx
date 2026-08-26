@@ -432,7 +432,7 @@ function SettingsModule() {
                 rows={5}
                 value={emailCfg.signature}
                 onChange={e => setEmailCfg(p => ({ ...p, signature: e.target.value }))}
-                placeholder={`e.g. (Demo Signature)\nJohn Doe\nTechnical Recruiter | SmartHire LLC\nPhone: (555) 000-0000\nEmail: recruiter@smarthire.com`}
+                placeholder={`e.g. (Demo Signature)\nJohn Doe\nTechnical Recruiter | SmartHire\nPhone: (555) 000-0000\nEmail: recruiter@smarthire.com`}
                 style={{ ...inputStyle, resize: 'vertical' }}
               />
             </div>

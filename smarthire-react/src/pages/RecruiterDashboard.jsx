@@ -113,14 +113,14 @@ const legacyCandidateData = [
   { id: '87507', name: 'Goutham Gantala', role: 'Cloud En..', fullRole: 'Cloud Engineer / AWS Solutions', exp: '11', location: 'Bayonne,NY', city: 'Bayonne', state: 'NY', locPref: '', payRate: '78 /hr', rateType: 'C2C', rating: 1, subVendor: 'Cloud TechnoSoft LLC', recruiter: 'Nitin Bhosale', agrExists: false, avblDate: 'Dec 31, 2025', email: 'goutham.g@technosoft.com', phone: '201-555-9081', workAuth: 'H1B', screened: 'Yes' },
   { id: '87508', name: 'Vamshi Krishna Ganta', role: 'TAX - Sr..', fullRole: 'TAX - Senior Systems Analyst', exp: '8', location: 'Woodbridge,NJ', city: 'Woodbridge', state: 'NJ', locPref: '', payRate: '60 /hr', rateType: 'C2C', rating: 1, subVendor: 'Client Server Technologies', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Dec 31, 2025', email: 'vamshi.ganta@clientserver.com', phone: '732-555-6671', workAuth: 'GC', screened: 'Yes' },
   { id: '87509', name: 'Nagababu Ganta', role: 'Oracle D..', fullRole: 'Oracle DBA / PL-SQL Specialist', exp: '13', location: 'Katy,TX', city: 'Katy', state: 'TX', locPref: '', payRate: '63 /hr', rateType: 'C2C', rating: 5, subVendor: '??????????????.', recruiter: 'Vaibhav Bisen', agrExists: false, avblDate: 'Oct 9, 2025', email: 'nagababu.g@oracletech.net', phone: '281-555-1190', workAuth: 'GC', screened: 'Yes' },
-  { id: '87510', name: 'Ashok Juttu Kannan', role: 'QA', fullRole: 'QA Automation Lead (Selenium/Cypress)', exp: '19', location: 'Louisville,KY', city: 'Louisville', state: 'KY', locPref: '', payRate: '40 /hr', rateType: 'C2C', rating: 1, subVendor: 'SmartHire LLC', recruiter: 'Sukamal Chatterjee', agrExists: false, avblDate: 'Oct 1, 2024', email: 'ashok.jk@smarthire.com', phone: '502-555-8721', workAuth: 'US Citizen', screened: 'Yes' },
+  { id: '87510', name: 'Ashok Juttu Kannan', role: 'QA', fullRole: 'QA Automation Lead (Selenium/Cypress)', exp: '19', location: 'Louisville,KY', city: 'Louisville', state: 'KY', locPref: '', payRate: '40 /hr', rateType: 'C2C', rating: 1, subVendor: 'SmartHire', recruiter: 'Sukamal Chatterjee', agrExists: false, avblDate: 'Oct 1, 2024', email: 'ashok.jk@smarthire.com', phone: '502-555-8721', workAuth: 'US Citizen', screened: 'Yes' },
   { id: '87511', name: 'Naga Babu Ganta', role: 'Database..', fullRole: 'Database Engineer - PostgreSQL / AWS', exp: '13', location: 'Katy,TX', city: 'Katy', state: 'TX', locPref: '', payRate: '70 /hr', rateType: 'C2C', rating: 5, subVendor: '??????????????.', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Oct 3, 2025', email: 'naga.ganta@katytech.io', phone: '281-555-7612', workAuth: 'US Citizen', screened: 'Yes' },
-  { id: '87512', name: 'Cx Avinash Ashokrao Mahajan', role: 'Senior B..', fullRole: 'Senior Business Systems Analyst', exp: '16', location: 'Raleigh,NC', city: 'Raleigh', state: 'NC', locPref: '', payRate: '55 /hr', rateType: 'W2', rating: 1, subVendor: 'SmartHire LLC', recruiter: 'Vaibhav Bisen', agrExists: true, avblDate: 'May 14, 2025', email: 'avinash.mahajan@smarthire.com', phone: '919-555-0918', workAuth: 'US Citizen', screened: 'Yes' },
+  { id: '87512', name: 'Cx Avinash Ashokrao Mahajan', role: 'Senior B..', fullRole: 'Senior Business Systems Analyst', exp: '16', location: 'Raleigh,NC', city: 'Raleigh', state: 'NC', locPref: '', payRate: '55 /hr', rateType: 'W2', rating: 1, subVendor: 'SmartHire', recruiter: 'Vaibhav Bisen', agrExists: true, avblDate: 'May 14, 2025', email: 'avinash.mahajan@smarthire.com', phone: '919-555-0918', workAuth: 'US Citizen', screened: 'Yes' },
   { id: '87513', name: 'Naga Babu Ganta', role: 'Database..', fullRole: 'Database Administrator Senior', exp: '13', location: 'Houston,TX', city: 'Houston', state: 'TX', locPref: '', payRate: '65 /hr', rateType: 'C2C', rating: 1, subVendor: '??????????????.', recruiter: 'Prudhvi', agrExists: false, avblDate: 'Sep 3, 2025', email: 'naga.houston@databasedev.com', phone: '713-555-9921', workAuth: 'GC', screened: 'Yes' },
   { id: '87514', name: 'Ashok Ankalla', role: 'Project ..', fullRole: 'Project Coordinator / Scrum Master', exp: '18', location: 'Bentonville,AR', city: 'Bentonville', state: 'AR', locPref: '', payRate: '60 /hr', rateType: 'C2C', rating: 1, subVendor: '??????????????.', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Aug 29, 2025', email: 'ashok.a.benton@retailtech.com', phone: '479-555-1120', workAuth: 'US Citizen', screened: 'Yes' },
   { id: '87515', name: 'Tirumala Ashok Varmadantuluri', role: 'SCC - Sr..', fullRole: 'SCC - Senior Network Architect', exp: '16', location: 'Ashburn,VA', city: 'Ashburn', state: 'VA', locPref: '', payRate: '71 /hr', rateType: 'C2C', rating: 1, subVendor: 'Ameritech Global INC', recruiter: 'Nitin Bhosale', agrExists: false, avblDate: 'Jun 17, 2025', email: 'tirumala.v@ameritech.com', phone: '571-555-3341', workAuth: 'GC', screened: 'Yes' },
   { id: '87516', name: 'Priyanka Gantareddy', role: 'Senior Q..', fullRole: 'Senior Quality Assurance Lead', exp: '16', location: 'Austin,TX', city: 'Austin', state: 'TX', locPref: '', payRate: '60 /hr', rateType: 'C2C', rating: 5, subVendor: '??????????????.', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Feb 26, 2025', email: 'priyanka.ganta@austintech.com', phone: '512-555-7721', workAuth: 'US Citizen', screened: 'Yes' },
-  { id: '87517', name: 'Nagajyothsna Ch Ganta', role: 'ERFO-ISD..', fullRole: 'ERFO-ISD Developer / Analyst', exp: '10', location: 'Ceref,CA', city: 'Ceref', state: 'CA', locPref: '', payRate: '65 /hr', rateType: 'C2C', rating: 1, subVendor: 'SmartHire LLC', recruiter: 'Vaibhav Bisen', agrExists: false, avblDate: 'Feb 13, 2025', email: 'nagajyothsna@smarthire.com', phone: '408-555-6671', workAuth: 'H1B', screened: 'Yes' },
+  { id: '87517', name: 'Nagajyothsna Ch Ganta', role: 'ERFO-ISD..', fullRole: 'ERFO-ISD Developer / Analyst', exp: '10', location: 'Ceref,CA', city: 'Ceref', state: 'CA', locPref: '', payRate: '65 /hr', rateType: 'C2C', rating: 1, subVendor: 'SmartHire', recruiter: 'Vaibhav Bisen', agrExists: false, avblDate: 'Feb 13, 2025', email: 'nagajyothsna@smarthire.com', phone: '408-555-6671', workAuth: 'H1B', screened: 'Yes' },
   { id: '87518', name: 'Triveni Ganta', role: '.Net Dev..', fullRole: '.Net Core / Angular Full Stack Developer', exp: '8', location: 'Minneapolis,MN', city: 'Minneapolis', state: 'MN', locPref: '', payRate: '55 /hr', rateType: 'C2C', rating: 1, subVendor: 'Origin Tek Solutions', recruiter: 'Sukamal Chatterjee', agrExists: false, avblDate: 'Jan 22, 2025', email: 'triveni.ganta@origintek.com', phone: '612-555-1234', workAuth: 'H1B', screened: 'Yes' },
   { id: '87519', name: 'Ashok Anakalla', role: 'Technica..', fullRole: 'Technical Lead / Solution Architect', exp: '18', location: 'Herndon,VA', city: 'Herndon', state: 'VA', locPref: '', payRate: '68 /hr', rateType: 'C2C', rating: 1, subVendor: '??????????????.', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Jan 13, 2025', email: 'ashok.anakalla@herndontech.com', phone: '703-555-9012', workAuth: 'US Citizen', screened: 'Yes' },
   { id: '87520', name: 'Ashok Kumar Dodda', role: 'Cloud En..', fullRole: 'Cloud Enterprise Solutions Architect', exp: '13', location: 'Dallas,TX', city: 'Dallas', state: 'TX', locPref: '', payRate: '75 /hr', rateType: 'C2C', rating: 1, subVendor: 'E-Solutions Inc', recruiter: 'Vaibhav Bisen', agrExists: false, avblDate: 'Dec 12, 2024', email: 'ashok.dodda@esolutions.com', phone: '214-555-4431', workAuth: 'GC', screened: 'Yes' },
@@ -128,7 +128,7 @@ const legacyCandidateData = [
   { id: '87522', name: 'Ashok Bellala', role: 'Java Dev..', fullRole: 'Java Developer / Microservices', exp: '13', location: 'Columbus,OH', city: 'Columbus', state: 'OH', locPref: '', payRate: '60 /hr', rateType: '1099', rating: 1, subVendor: '48170', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Aug 25, 2020', email: 'ashok.bellala@ohiodata.org', phone: '614-555-0912', workAuth: 'GC', screened: 'Yes' },
   { id: '87523', name: 'Ashok Mundlamuri', role: 'NCDIT - ..', fullRole: 'NCDIT - Systems Security Specialist', exp: '12', location: 'North Brunswick,NJ', city: 'North Brunswick', state: 'NJ', locPref: '', payRate: '65 /hr', rateType: 'C2C', rating: 1, subVendor: '??????????????.', recruiter: 'Vaibhav Bisen', agrExists: false, avblDate: 'Sep 25, 2024', email: 'ashok.mundlamuri@njtech.io', phone: '732-555-1823', workAuth: 'US Citizen', screened: 'Yes' },
   { id: '87524', name: 'Ashok Natarajan', role: 'Project ..', fullRole: 'Project Manager - Enterprise ERP', exp: '17', location: 'Irving,TX', city: 'Irving', state: 'TX', locPref: '', payRate: '80 /hr', rateType: 'C2C', rating: 1, subVendor: 'Paramount Software Solutions', recruiter: 'Nitin Bhosale', agrExists: false, avblDate: 'Aug 28, 2024', email: 'ashok.natarajan@paramount.com', phone: '972-555-6671', workAuth: 'US Citizen', screened: 'Yes' },
-  { id: '87525', name: 'Sri Sai Tejasvi Gantakolla', role: 'Power Pl..', fullRole: 'Power Platform / Dynamics 365 Architect', exp: '10', location: 'Memphis,TN', city: 'Memphis', state: 'TN', locPref: '', payRate: '65 /hr', rateType: 'C2C', rating: 1, subVendor: 'SmartHire LLC', recruiter: 'Sukamal Chatterjee', agrExists: false, avblDate: 'Aug 22, 2024', email: 'tejasvi.ganta@smarthire.com', phone: '901-555-7781', workAuth: 'GC', screened: 'Yes' }
+  { id: '87525', name: 'Sri Sai Tejasvi Gantakolla', role: 'Power Pl..', fullRole: 'Power Platform / Dynamics 365 Architect', exp: '10', location: 'Memphis,TN', city: 'Memphis', state: 'TN', locPref: '', payRate: '65 /hr', rateType: 'C2C', rating: 1, subVendor: 'SmartHire', recruiter: 'Sukamal Chatterjee', agrExists: false, avblDate: 'Aug 22, 2024', email: 'tejasvi.ganta@smarthire.com', phone: '901-555-7781', workAuth: 'GC', screened: 'Yes' }
 ]
 
 function RecruiterDashboard() {
@@ -146,14 +146,14 @@ function RecruiterDashboard() {
   
   // ─── DYNAMIC TEAM USERS & MULTI-LEVEL RBAC ───
   const DEFAULT_USERS_LIST = [
-    { id: 'rec-1', name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', company: 'SmartHire LLC', isActive: true, password: 'admin' },
-    { id: 'rec-2', name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com', role: 'recruiter', refCode: 'sukamal-chatterjee', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
-    { id: 'rec-3', name: 'Raj', email: 'raj@coolsofttech.com', role: 'recruiter', refCode: 'raj', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
-    { id: 'rec-4', name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com', role: 'recruiter', refCode: 'vaibhav-bisen', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
-    { id: 'rec-5', name: 'Pankaj', email: 'pankajm@coolsofttech.com', role: 'recruiter', refCode: 'pankaj', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
-    { id: 'mgr-1', name: 'Alok Manager', email: 'manager@coolsofttech.com', role: 'manager', refCode: 'alok-manager', company: 'SmartHire LLC', isActive: true, password: 'manager123' },
-    { id: 'emp-1', name: 'Rahul Sharma', email: 'rahul.s@coolsofttech.com', role: 'employee', parentRecruiterName: 'Vaibhav Bisen', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
-    { id: 'emp-2', name: 'Priya Verma', email: 'priya.v@coolsofttech.com', role: 'employee', parentRecruiterName: 'Sukamal Chatterjee', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' }
+    { id: 'rec-1', name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', company: 'SmartHire', isActive: true, password: 'admin' },
+    { id: 'rec-2', name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com', role: 'recruiter', refCode: 'sukamal-chatterjee', company: 'SmartHire', isActive: true, password: 'recruiter123' },
+    { id: 'rec-3', name: 'Raj', email: 'raj@coolsofttech.com', role: 'recruiter', refCode: 'raj', company: 'SmartHire', isActive: true, password: 'recruiter123' },
+    { id: 'rec-4', name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com', role: 'recruiter', refCode: 'vaibhav-bisen', company: 'SmartHire', isActive: true, password: 'recruiter123' },
+    { id: 'rec-5', name: 'Pankaj', email: 'pankajm@coolsofttech.com', role: 'recruiter', refCode: 'pankaj', company: 'SmartHire', isActive: true, password: 'recruiter123' },
+    { id: 'mgr-1', name: 'Alok Manager', email: 'manager@coolsofttech.com', role: 'manager', refCode: 'alok-manager', company: 'SmartHire', isActive: true, password: 'manager123' },
+    { id: 'emp-1', name: 'Rahul Sharma', email: 'rahul.s@coolsofttech.com', role: 'employee', parentRecruiterName: 'Vaibhav Bisen', company: 'SmartHire', isActive: true, password: 'recruiter123' },
+    { id: 'emp-2', name: 'Priya Verma', email: 'priya.v@coolsofttech.com', role: 'employee', parentRecruiterName: 'Sukamal Chatterjee', company: 'SmartHire', isActive: true, password: 'recruiter123' }
   ]
 
   const [teamUsers, setTeamUsers] = useState(() => {
@@ -205,9 +205,8 @@ function RecruiterDashboard() {
   const isAdmin = userRole === 'superadmin' || userRole === 'admin'
   const isManager = userRole === 'manager'
   const isRecruiter = userRole === 'recruiter'
-  const isEmployee = userRole === 'employee'
-  const canEditRequirement = isAdmin || isManager // ONLY Admin & Manager can edit position title, client, rates, specs
-  const canCreateRequisition = isAdmin || isManager // ONLY Admin & Manager can add new requisitions
+  const canEditRequirement = !isEmployee // Admin, Manager & Recruiters can edit position title, client, rates, contact, specs
+  const canCreateRequisition = !isEmployee // Admin, Manager & Recruiters can add new requisitions
   const canChangeReqStatus = isAdmin || isManager || isRecruiter // Recruiters can change Status
   const canAssignRecruiters = isAdmin || isManager || isRecruiter
   const canReviewAndUseAI = isAdmin || isManager // AI Fit and Resume Review strictly restricted to Admin & Manager
@@ -245,7 +244,7 @@ function RecruiterDashboard() {
     password: '',
     role: 'employee',
     parentRecruiterName: '',
-    company: 'SmartHire LLC',
+    company: 'SmartHire',
     isActive: true
   })
   const [userSearchQuery, setUserSearchQuery] = useState('')
@@ -991,8 +990,8 @@ function RecruiterDashboard() {
       working: true,
       hotReq: false,
       incumbentVendor: false,
-      createdBy: job.createdBy || 'kautilya',
-      createdOn: job.createdOn || (job.creationDate ? `${job.creationDate} 11:40:14 AM` : '8/26/2026 11:40:14 AM'),
+      createdBy: job.createdBy || 'admin',
+      createdOn: job.createdOn || (job.creationDate ? `${job.creationDate} 11:40:14 AM` : '2026-08-26 11:40:14 AM'),
       lastUpdatedBy: job.lastUpdatedBy || 'kautilya',
       lastUpdatedOn: job.lastUpdatedOn || '8/26/2026 11:43:52 AM'
     })
@@ -1747,7 +1746,7 @@ function RecruiterDashboard() {
                         <option>IConnect</option>
                         <option>Cloud TechnoSoft LLC</option>
                         <option>Client Server Technologies</option>
-                        <option>SmartHire LLC</option>
+                        <option>SmartHire</option>
                         <option>Ameritech Global INC</option>
                         <option>Origin Tek Solutions</option>
                         <option>E-Solutions Inc</option>
@@ -2803,23 +2802,23 @@ function RecruiterDashboard() {
               VIEW MODE 3: SINGLE REQUISITION DETAIL VIEW
               ───────────────────────────────────────────────────────────── */}
           {viewMode === 'requisition' && selectedReq && (
-            <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-              <div style={{ fontSize: '11px', color: '#1e3a8a', fontWeight: 'bold', marginBottom: '10px' }}>
+            <div style={{ background: '#ffffff', border: '1px solid #7f9db9', borderRadius: 0, padding: '14px 18px', fontFamily: 'Arial, Helvetica, sans-serif' }}>
+              <div style={{ fontSize: '11px', color: '#000080', fontWeight: 'bold', marginBottom: '8px' }}>
                 You are here: <span style={{ color: '#0066cc', cursor: 'pointer' }} onClick={() => setViewMode('portal')}>Home</span> &gt; Requisitions &gt; Edit Requisition
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #ea580c', paddingBottom: '6px', marginBottom: '14px', flexWrap: 'wrap', gap: 10 }}>
-                <h2 style={{ margin: 0, fontSize: '16px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                  Requisition #:{selectedReq.id.replace('J-', '')} <span style={{ color: '#dc2626', fontSize: '12.5px', marginLeft: '8px' }}>Status: Ready</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #ea580c', paddingBottom: '5px', marginBottom: '10px', flexWrap: 'wrap', gap: 10 }}>
+                <h2 style={{ margin: 0, fontSize: '15px', color: '#000080', fontWeight: 'bold' }}>
+                  Requisition #:{selectedReq.id.replace('J-', '')} <span style={{ color: '#dc2626', fontSize: '12px', marginLeft: '8px' }}>Status: Ready</span>
                 </h2>
-                <div style={{ display: 'flex', gap: '16px', fontSize: '12px', fontWeight: 'bold' }}>
-                  <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => alert('Job posted to JobsInHand successfully!')}>
+                <div style={{ display: 'flex', gap: '16px', fontSize: '11.5px', fontWeight: 'bold' }}>
+                  <span style={{ color: '#0066cc', cursor: 'pointer' }} onClick={() => alert('Job posted to JobsInHand successfully!')}>
                     Post To JobsInHand
                   </span>
-                  <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => alert('Opening Mass E-mail Dispatcher...')}>
+                  <span style={{ color: '#0066cc', cursor: 'pointer' }} onClick={() => alert('Opening Mass E-mail Dispatcher...')}>
                     Mass E-mail
                   </span>
-                  <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setViewMode('portal')}>
+                  <span style={{ color: '#0066cc', cursor: 'pointer' }} onClick={() => setViewMode('portal')}>
                     &lt;&lt; Back To Search Results
                   </span>
                 </div>
@@ -2831,138 +2830,102 @@ function RecruiterDashboard() {
                   background: '#ecfdf5',
                   border: '1px solid #10b981',
                   color: '#065f46',
-                  padding: '8px 14px',
-                  borderRadius: '3px',
-                  fontSize: '11.5px',
-                  fontWeight: 'bold',
-                  marginBottom: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-                }}>
-                  <span>{saveToastMessage}</span>
-                  <span style={{ cursor: 'pointer', marginLeft: '12px', fontSize: '13px' }} onClick={() => setSaveToastMessage(null)}>✕</span>
-                </div>
-              )}
-
-              {/* 3-Column Header Form */}
-              {!canEditRequirement && (
-                <div style={{
-                  background: '#f0f9ff',
-                  border: '1px solid #bae6fd',
-                  color: '#0369a1',
-                  padding: '7px 14px',
-                  borderRadius: '4px',
-                  fontSize: '11.5px',
+                  padding: '6px 12px',
+                  borderRadius: 0,
+                  fontSize: '11px',
                   fontWeight: 'bold',
                   marginBottom: '10px',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px'
+                  justifyContent: 'space-between'
                 }}>
-                  <span>🔒</span>
-                  <span>
-                    {isEmployee
-                      ? 'Employee Portal: Requirement specifications are read-only. You can view details and submit candidates.'
-                      : 'Recruiter Portal: Position title and client specifications are locked (managed by Admin/Manager). You can update Status and submit candidates.'}
-                  </span>
+                  <span>{saveToastMessage}</span>
+                  <span style={{ cursor: 'pointer', marginLeft: '12px', fontSize: '12px' }} onClick={() => setSaveToastMessage(null)}>✕</span>
                 </div>
               )}
 
+              {/* Upper 3-Column Form (Crisp Square Style) */}
               <div style={{
-                background: '#f8fafc', border: '1px solid #e2e8f0', padding: '12px 16px', borderRadius: '4px', marginBottom: '14px',
-                display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '10px 18px', fontSize: '11.5px'
+                background: '#ffffff', border: '1px solid #7f9db9', padding: '10px 14px', borderRadius: 0, marginBottom: '10px',
+                display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '6px 14px', fontSize: '11px'
               }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr', gap: '6px 8px', alignItems: 'center' }}>
-                  <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}>Position Title:*</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '105px 1fr', gap: '5px 8px', alignItems: 'center' }}>
+                  <label style={{ fontWeight: 'bold', color: '#000080', textAlign: 'right' }}>Position Title:*</label>
                   <input
                     type="text"
                     value={editingFields.title || ''}
-                    disabled={!canEditRequirement}
-                    readOnly={!canEditRequirement}
-                    onChange={e => canEditRequirement && setEditingFields({ ...editingFields, title: e.target.value })}
+                    disabled={isEmployee}
+                    onChange={e => !isEmployee && setEditingFields({ ...editingFields, title: e.target.value })}
                     style={{
-                      padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
-                      background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
-                      color: !canEditRequirement ? '#0f172a' : undefined,
-                      cursor: !canEditRequirement ? 'not-allowed' : undefined
+                      padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: 0,
+                      background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                     }}
                   />
 
-                  <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}>Start Date:*</label>
+                  <label style={{ fontWeight: 'bold', color: '#000080', textAlign: 'right' }}>Start Date:*</label>
                   <input
                     type="text"
                     value={editingFields.startDate || ''}
-                    disabled={!canEditRequirement}
-                    readOnly={!canEditRequirement}
-                    onChange={e => canEditRequirement && setEditingFields({ ...editingFields, startDate: e.target.value })}
+                    disabled={isEmployee}
+                    onChange={e => !isEmployee && setEditingFields({ ...editingFields, startDate: e.target.value })}
                     style={{
-                      padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
-                      background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
-                      cursor: !canEditRequirement ? 'not-allowed' : undefined
+                      padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: 0,
+                      background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                     }}
                   />
 
-                  <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}>Duration:*</label>
+                  <label style={{ fontWeight: 'bold', color: '#000080', textAlign: 'right' }}>Duration:*</label>
                   <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                     <input
                       type="text"
                       value={editingFields.duration || '12'}
-                      disabled={!canEditRequirement}
-                      readOnly={!canEditRequirement}
-                      onChange={e => canEditRequirement && setEditingFields({ ...editingFields, duration: e.target.value })}
+                      disabled={isEmployee}
+                      onChange={e => !isEmployee && setEditingFields({ ...editingFields, duration: e.target.value })}
                       style={{
-                        width: '45px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
-                        background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
-                        cursor: !canEditRequirement ? 'not-allowed' : undefined
+                        width: '45px', padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: 0,
+                        background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                       }}
                     />
-                    <span style={{ fontWeight: 'bold', color: '#1e3a8a' }}>months</span>
+                    <span style={{ fontWeight: 'bold', color: '#000080' }}>months</span>
                   </div>
 
-                  <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}># of Positions:*</label>
+                  <label style={{ fontWeight: 'bold', color: '#000080', textAlign: 'right' }}># of Positions:*</label>
                   <input
                     type="text"
                     value={editingFields.numPositions || '1'}
-                    disabled={!canEditRequirement}
-                    readOnly={!canEditRequirement}
-                    onChange={e => canEditRequirement && setEditingFields({ ...editingFields, numPositions: e.target.value })}
+                    disabled={isEmployee}
+                    onChange={e => !isEmployee && setEditingFields({ ...editingFields, numPositions: e.target.value })}
                     style={{
-                      width: '45px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
-                      background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
-                      cursor: !canEditRequirement ? 'not-allowed' : undefined
+                      width: '45px', padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: 0,
+                      background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                     }}
                   />
 
-                  <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}>Max Submission:*</label>
+                  <label style={{ fontWeight: 'bold', color: '#000080', textAlign: 'right' }}>Max Submission:*</label>
                   <input
                     type="text"
                     value={editingFields.maxSubmissions || '2'}
-                    disabled={!canEditRequirement}
-                    readOnly={!canEditRequirement}
-                    onChange={e => canEditRequirement && setEditingFields({ ...editingFields, maxSubmissions: e.target.value })}
+                    disabled={isEmployee}
+                    onChange={e => !isEmployee && setEditingFields({ ...editingFields, maxSubmissions: e.target.value })}
                     style={{
-                      width: '45px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
-                      background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
-                      cursor: !canEditRequirement ? 'not-allowed' : undefined
+                      width: '45px', padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: 0,
+                      background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                     }}
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '6px 8px', alignItems: 'center' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr', gap: '5px 8px', alignItems: 'center' }}>
                   <div style={{ visibility: 'hidden' }}>spacer</div>
                   <div style={{ visibility: 'hidden' }}>spacer</div>
 
-                  <label style={{ fontWeight: 'bold', color: '#0066cc', textAlign: 'right' }}>Customer:</label>
+                  <label style={{ fontWeight: 'bold', color: '#000080', textAlign: 'right' }}>Customer:</label>
                   <select
-                    value={editingFields.customer || ''}
-                    disabled={!canEditRequirement}
-                    onChange={e => canEditRequirement && setEditingFields({ ...editingFields, customer: e.target.value })}
+                    value={editingFields.customer || 'State Of SC'}
+                    disabled={isEmployee}
+                    onChange={e => !isEmployee && setEditingFields({ ...editingFields, customer: e.target.value })}
                     style={{
-                      padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
-                      background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
-                      cursor: !canEditRequirement ? 'not-allowed' : undefined
+                      padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: 0,
+                      background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                     }}
                   >
                     <option>State Of SC</option>
@@ -2972,44 +2935,42 @@ function RecruiterDashboard() {
                     <option>Texas Health and Human Services Commission</option>
                   </select>
 
-                  <label style={{ fontWeight: 'bold', color: '#0066cc', textAlign: 'right' }}>Contact:</label>
+                  <label style={{ fontWeight: 'bold', color: '#000080', textAlign: 'right' }}>Contact:</label>
                   <select
-                    value={editingFields.contact || ''}
-                    disabled={!canEditRequirement}
-                    onChange={e => canEditRequirement && setEditingFields({ ...editingFields, contact: e.target.value })}
+                    value={editingFields.contact || 'Hustedt Lexi'}
+                    disabled={isEmployee}
+                    onChange={e => !isEmployee && setEditingFields({ ...editingFields, contact: e.target.value })}
                     style={{
-                      padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
-                      background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
-                      cursor: !canEditRequirement ? 'not-allowed' : undefined
+                      padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: 0,
+                      background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                     }}
                   >
                     <option>Hustedt Lexi</option>
                     <option>Miller Sarah</option>
+                    <option>David Wilson</option>
+                    <option>Jessica Taylor</option>
                   </select>
 
-                  <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}>Submission Deadline:*</label>
+                  <label style={{ fontWeight: 'bold', color: '#000080', textAlign: 'right' }}>Submission Deadline:*</label>
                   <input
                     type="text"
-                    value={editingFields.deadline || ''}
-                    disabled={!canEditRequirement}
-                    readOnly={!canEditRequirement}
-                    onChange={e => canEditRequirement && setEditingFields({ ...editingFields, deadline: e.target.value })}
+                    value={editingFields.deadline || '2026-09-01'}
+                    disabled={isEmployee}
+                    onChange={e => !isEmployee && setEditingFields({ ...editingFields, deadline: e.target.value })}
                     style={{
-                      padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
-                      background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
-                      cursor: !canEditRequirement ? 'not-allowed' : undefined
+                      padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: 0,
+                      background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                     }}
                   />
 
-                  <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}>Req Category:*</label>
+                  <label style={{ fontWeight: 'bold', color: '#000080', textAlign: 'right' }}>Req Category:*</label>
                   <select
                     value={editingFields.category || 'SP'}
-                    disabled={!canEditRequirement}
-                    onChange={e => canEditRequirement && setEditingFields({ ...editingFields, category: e.target.value })}
+                    disabled={isEmployee}
+                    onChange={e => !isEmployee && setEditingFields({ ...editingFields, category: e.target.value })}
                     style={{
-                      padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
-                      background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
-                      cursor: !canEditRequirement ? 'not-allowed' : undefined
+                      padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: 0,
+                      background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                     }}
                   >
                     <option>SP</option>
@@ -3018,18 +2979,18 @@ function RecruiterDashboard() {
                   </select>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '6px 8px', alignItems: 'center' }}>
-                  <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}>Status:</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '75px 1fr', gap: '5px 8px', alignItems: 'center' }}>
+                  <label style={{ fontWeight: 'bold', color: '#000080', textAlign: 'right' }}>Status:</label>
                   <select
                     value={editingFields.status || 'In-Progress'}
                     disabled={isEmployee}
                     onChange={e => !isEmployee && setEditingFields({ ...editingFields, status: e.target.value })}
                     style={{
-                      padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
-                      background: isEmployee ? '#f1f5f9' : '#fffbeb',
-                      borderColor: !isEmployee ? '#f59e0b' : '#cbd5e1',
+                      padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: 0,
+                      background: '#ffffff',
                       fontWeight: 'bold',
-                      color: '#0f172a'
+                      color: '#0f172a',
+                      outline: 'none'
                     }}
                   >
                     <option>In-Progress</option>
@@ -3038,61 +2999,61 @@ function RecruiterDashboard() {
                     <option>Closed</option>
                   </select>
 
-                  <label style={{ fontWeight: 'bold', color: '#0066cc', textAlign: 'right' }}>End Client:</label>
+                  <label style={{ fontWeight: 'bold', color: '#000080', textAlign: 'right' }}>End Client:</label>
                   <select
-                    value={editingFields.endClient || ''}
-                    disabled={!canEditRequirement}
-                    onChange={e => canEditRequirement && setEditingFields({ ...editingFields, endClient: e.target.value })}
+                    value={editingFields.endClient || 'State Of SC'}
+                    disabled={isEmployee}
+                    onChange={e => !isEmployee && setEditingFields({ ...editingFields, endClient: e.target.value })}
                     style={{
-                      padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
-                      background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
-                      cursor: !canEditRequirement ? 'not-allowed' : undefined
+                      padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: 0,
+                      background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                     }}
                   >
                     <option>State Of SC</option>
                     <option>DFA</option>
+                    <option>DBHDS</option>
                     <option>Texas Health and Human Services Commission</option>
                   </select>
 
-                  <label style={{ fontWeight: 'bold', color: '#0066cc', textAlign: 'right' }}>Contact:</label>
+                  <label style={{ fontWeight: 'bold', color: '#000080', textAlign: 'right' }}>Contact:</label>
                   <select
-                    value={editingFields.contact || ''}
-                    disabled={!canEditRequirement}
-                    onChange={e => canEditRequirement && setEditingFields({ ...editingFields, contact: e.target.value })}
+                    value={editingFields.contact || 'Hustedt Lexi'}
+                    disabled={isEmployee}
+                    onChange={e => !isEmployee && setEditingFields({ ...editingFields, contact: e.target.value })}
                     style={{
-                      padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
-                      background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
-                      cursor: !canEditRequirement ? 'not-allowed' : undefined
+                      padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: 0,
+                      background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                     }}
                   >
                     <option>Hustedt Lexi</option>
                     <option>Miller Sarah</option>
+                    <option>David Wilson</option>
+                    <option>Jessica Taylor</option>
                   </select>
 
-                  <div style={{ gridColumn: 'span 2', display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '4px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                      <input type="checkbox" disabled={!canEditRequirement} checked={editingFields.keyReq || false} onChange={e => canEditRequirement && setEditingFields({ ...editingFields, keyReq: e.target.checked })} /> Key Req
+                  <div style={{ gridColumn: 'span 2', display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '2px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: '#000080', fontWeight: 'bold' }}>
+                      <input type="checkbox" disabled={isEmployee} checked={editingFields.keyReq || false} onChange={e => !isEmployee && setEditingFields({ ...editingFields, keyReq: e.target.checked })} /> Key Req
                     </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                      <input type="checkbox" disabled={!canEditRequirement} checked={editingFields.working || true} onChange={e => canEditRequirement && setEditingFields({ ...editingFields, working: e.target.checked })} /> Working
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: '#000080', fontWeight: 'bold' }}>
+                      <input type="checkbox" disabled={isEmployee} checked={editingFields.working !== false} onChange={e => !isEmployee && setEditingFields({ ...editingFields, working: e.target.checked })} /> Working
                     </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                      <input type="checkbox" disabled={!canEditRequirement} checked={editingFields.hotReq || false} onChange={e => canEditRequirement && setEditingFields({ ...editingFields, hotReq: e.target.checked })} /> Hot Req
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: '#000080', fontWeight: 'bold' }}>
+                      <input type="checkbox" disabled={isEmployee} checked={editingFields.hotReq || false} onChange={e => !isEmployee && setEditingFields({ ...editingFields, hotReq: e.target.checked })} /> Hot Req
                     </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                      <input type="checkbox" disabled={!canEditRequirement} checked={editingFields.incumbentVendor || false} onChange={e => canEditRequirement && setEditingFields({ ...editingFields, incumbentVendor: e.target.checked })} /> Incumbent Vendor
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: '#000080', fontWeight: 'bold' }}>
+                      <input type="checkbox" disabled={isEmployee} checked={editingFields.incumbentVendor || false} onChange={e => !isEmployee && setEditingFields({ ...editingFields, incumbentVendor: e.target.checked })} /> Incumbent Vendor
                     </label>
                   </div>
 
-                  <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}>Req Type:*</label>
+                  <label style={{ fontWeight: 'bold', color: '#000080', textAlign: 'right' }}>Req Type:*</label>
                   <select
                     value={editingFields.type || 'Contract'}
-                    disabled={!canEditRequirement}
-                    onChange={e => canEditRequirement && setEditingFields({ ...editingFields, type: e.target.value })}
+                    disabled={isEmployee}
+                    onChange={e => !isEmployee && setEditingFields({ ...editingFields, type: e.target.value })}
                     style={{
-                      padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
-                      background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
-                      cursor: !canEditRequirement ? 'not-allowed' : undefined
+                      padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: 0,
+                      background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                     }}
                   >
                     <option>Contract</option>
@@ -3101,8 +3062,8 @@ function RecruiterDashboard() {
                 </div>
               </div>
 
-              {/* Sub Tabs Bar (CoolWorks Styled) */}
-              <div style={{ display: 'flex', borderBottom: '1px solid #7f9db9', background: 'transparent', gap: '2px', paddingLeft: '4px', marginBottom: '0' }}>
+              {/* Sub Tabs Bar (Clean Square Tabs, No Underline) */}
+              <div style={{ display: 'flex', borderBottom: '1px solid #7f9db9', background: 'transparent', gap: '2px', paddingLeft: '2px', marginBottom: '0' }}>
                 {[
                   { id: 'details', label: 'Details' },
                   ...(!isEmployee ? [{ id: 'assign', label: 'Assign to Recruiters' }] : []),
@@ -3123,12 +3084,11 @@ function RecruiterDashboard() {
                         background: isActive ? '#ffffff' : '#e8e8e8',
                         color: '#000080',
                         fontWeight: isActive ? 'bold' : 'normal',
-                        textDecoration: isActive ? 'none' : 'underline',
+                        textDecoration: 'none',
                         fontSize: '11px',
-                        padding: '3px 10px',
+                        padding: '3px 12px',
                         cursor: 'pointer',
-                        borderTopLeftRadius: '2px',
-                        borderTopRightRadius: '2px',
+                        borderRadius: 0,
                         marginBottom: isActive ? '-1px' : '0px',
                         zIndex: isActive ? 2 : 1
                       }}
@@ -3139,25 +3099,23 @@ function RecruiterDashboard() {
                 })}
               </div>
 
-              {/* Tab Panel Content Box */}
-              <div style={{ background: '#ffffff', border: '1px solid #7f9db9', borderTop: 'none', padding: '14px 18px', minHeight: '320px', fontFamily: 'Arial, Helvetica, sans-serif' }}>
+              {/* Tab Panel Content Box (Crisp Square Style) */}
+              <div style={{ background: '#ffffff', border: '1px solid #7f9db9', borderTop: 'none', borderRadius: 0, padding: '12px 16px', minHeight: '300px', fontFamily: 'Arial, Helvetica, sans-serif' }}>
                 
                 {/* ─── TAB 1: DETAILS ─── */}
                 {activeReqTab === 'details' && (
                   <div>
-                    <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-                      <div style={{ flex: '1 1 420px', display: 'grid', gridTemplateColumns: '140px 1fr', gap: '8px 10px', alignContent: 'start', fontSize: '11.5px' }}>
+                    <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                      <div style={{ flex: '1 1 420px', display: 'grid', gridTemplateColumns: '135px 1fr', gap: '6px 8px', alignContent: 'start', fontSize: '11px' }}>
                         <label style={{ fontWeight: 'bold', color: '#000080', textAlign: 'right', alignSelf: 'center' }}>Location Address:</label>
                         <input
                           type="text"
                           value={editingFields.address || ''}
-                          disabled={!canEditRequirement}
-                          readOnly={!canEditRequirement}
-                          onChange={e => canEditRequirement && setEditingFields({ ...editingFields, address: e.target.value })}
+                          disabled={isEmployee}
+                          onChange={e => !isEmployee && setEditingFields({ ...editingFields, address: e.target.value })}
                           style={{
-                            padding: '2px 5px', fontSize: '11px', border: '1px solid #7f9db9',
-                            background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
-                            cursor: !canEditRequirement ? 'not-allowed' : undefined
+                            padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: 0,
+                            background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                           }}
                         />
 
@@ -3166,23 +3124,20 @@ function RecruiterDashboard() {
                           <input
                             type="text"
                             value={editingFields.city || 'Columbia'}
-                            disabled={!canEditRequirement}
-                            readOnly={!canEditRequirement}
-                            onChange={e => canEditRequirement && setEditingFields({ ...editingFields, city: e.target.value })}
+                            disabled={isEmployee}
+                            onChange={e => !isEmployee && setEditingFields({ ...editingFields, city: e.target.value })}
                             style={{
-                              flex: 2, padding: '2px 5px', fontSize: '11px', border: '1px solid #7f9db9',
-                              background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
-                              cursor: !canEditRequirement ? 'not-allowed' : undefined
+                              flex: 2, padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: 0,
+                              background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                             }}
                           />
                           <select
                             value={editingFields.state || 'SC'}
-                            disabled={!canEditRequirement}
-                            onChange={e => canEditRequirement && setEditingFields({ ...editingFields, state: e.target.value })}
+                            disabled={isEmployee}
+                            onChange={e => !isEmployee && setEditingFields({ ...editingFields, state: e.target.value })}
                             style={{
-                              flex: 1, padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9',
-                              background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
-                              cursor: !canEditRequirement ? 'not-allowed' : undefined
+                              flex: 1, padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: 0,
+                              background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                             }}
                           >
                             <option>SC</option>
@@ -3194,13 +3149,11 @@ function RecruiterDashboard() {
                           <input
                             type="text"
                             value={editingFields.zip || '29210'}
-                            disabled={!canEditRequirement}
-                            readOnly={!canEditRequirement}
-                            onChange={e => canEditRequirement && setEditingFields({ ...editingFields, zip: e.target.value })}
+                            disabled={isEmployee}
+                            onChange={e => !isEmployee && setEditingFields({ ...editingFields, zip: e.target.value })}
                             style={{
-                              width: '60px', padding: '2px 5px', fontSize: '11px', border: '1px solid #7f9db9',
-                              background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
-                              cursor: !canEditRequirement ? 'not-allowed' : undefined
+                              width: '60px', padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: 0,
+                              background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                             }}
                           />
                         </div>
@@ -3210,16 +3163,14 @@ function RecruiterDashboard() {
                           <input
                             type="text"
                             value={editingFields.billRate || '90'}
-                            disabled={!canEditRequirement}
-                            readOnly={!canEditRequirement}
-                            onChange={e => canEditRequirement && setEditingFields({ ...editingFields, billRate: e.target.value })}
+                            disabled={isEmployee}
+                            onChange={e => !isEmployee && setEditingFields({ ...editingFields, billRate: e.target.value })}
                             style={{
-                              width: '60px', padding: '2px 5px', fontSize: '11px', border: '1px solid #7f9db9',
-                              background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
-                              cursor: !canEditRequirement ? 'not-allowed' : undefined
+                              width: '60px', padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: 0,
+                              background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                             }}
                           />
-                          <select style={{ fontSize: '11px', padding: '2px 4px', border: '1px solid #7f9db9' }}>
+                          <select style={{ fontSize: '11px', padding: '2px 4px', border: '1px solid #7f9db9', borderRadius: 0, background: '#ffffff' }}>
                             <option>Select</option>
                             <option>Hourly</option>
                             <option>Annual</option>
@@ -3231,16 +3182,14 @@ function RecruiterDashboard() {
                           <input
                             type="text"
                             value={editingFields.payRate || '75'}
-                            disabled={!canEditRequirement}
-                            readOnly={!canEditRequirement}
-                            onChange={e => canEditRequirement && setEditingFields({ ...editingFields, payRate: e.target.value })}
+                            disabled={isEmployee}
+                            onChange={e => !isEmployee && setEditingFields({ ...editingFields, payRate: e.target.value })}
                             style={{
-                              width: '60px', padding: '2px 5px', fontSize: '11px', border: '1px solid #7f9db9',
-                              background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
-                              cursor: !canEditRequirement ? 'not-allowed' : undefined
+                              width: '60px', padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: 0,
+                              background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                             }}
                           />
-                          <select style={{ fontSize: '11px', padding: '2px 4px', border: '1px solid #7f9db9' }}>
+                          <select style={{ fontSize: '11px', padding: '2px 4px', border: '1px solid #7f9db9', borderRadius: 0, background: '#ffffff' }}>
                             <option>Select</option>
                             <option>C2C</option>
                             <option>W2</option>
@@ -3251,12 +3200,11 @@ function RecruiterDashboard() {
                         <label style={{ fontWeight: 'bold', color: '#000080', textAlign: 'right', alignSelf: 'center' }}>Interview:</label>
                         <select
                           value={editingFields.interview || 'Select'}
-                          disabled={!canEditRequirement}
-                          onChange={e => canEditRequirement && setEditingFields({ ...editingFields, interview: e.target.value })}
+                          disabled={isEmployee}
+                          onChange={e => !isEmployee && setEditingFields({ ...editingFields, interview: e.target.value })}
                           style={{
-                            padding: '2px 5px', fontSize: '11px', border: '1px solid #7f9db9',
-                            background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
-                            cursor: !canEditRequirement ? 'not-allowed' : undefined
+                            padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: 0,
+                            background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                           }}
                         >
                           <option>Select</option>
@@ -3267,12 +3215,11 @@ function RecruiterDashboard() {
                         <label style={{ fontWeight: 'bold', color: '#000080', textAlign: 'right', alignSelf: 'center' }}>Work Authorization:</label>
                         <select
                           value={editingFields.workAuth || 'Select'}
-                          disabled={!canEditRequirement}
-                          onChange={e => canEditRequirement && setEditingFields({ ...editingFields, workAuth: e.target.value })}
+                          disabled={isEmployee}
+                          onChange={e => !isEmployee && setEditingFields({ ...editingFields, workAuth: e.target.value })}
                           style={{
-                            padding: '2px 5px', fontSize: '11px', border: '1px solid #7f9db9',
-                            background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
-                            cursor: !canEditRequirement ? 'not-allowed' : undefined
+                            padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: 0,
+                            background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                           }}
                         >
                           <option>Select</option>
@@ -3285,12 +3232,11 @@ function RecruiterDashboard() {
                         <label style={{ fontWeight: 'bold', color: '#000080', textAlign: 'right', alignSelf: 'center' }}>Subcontractable:*</label>
                         <select
                           value={editingFields.subcontractable || 'Yes'}
-                          disabled={!canEditRequirement}
-                          onChange={e => canEditRequirement && setEditingFields({ ...editingFields, subcontractable: e.target.value })}
+                          disabled={isEmployee}
+                          onChange={e => !isEmployee && setEditingFields({ ...editingFields, subcontractable: e.target.value })}
                           style={{
-                            padding: '2px 5px', fontSize: '11px', border: '1px solid #7f9db9',
-                            background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
-                            cursor: !canEditRequirement ? 'not-allowed' : undefined
+                            padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: 0,
+                            background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                           }}
                         >
                           <option>Yes</option>
@@ -3301,13 +3247,11 @@ function RecruiterDashboard() {
                         <input
                           type="text"
                           value={editingFields.employmentType || 'Contract'}
-                          disabled={!canEditRequirement}
-                          readOnly={!canEditRequirement}
-                          onChange={e => canEditRequirement && setEditingFields({ ...editingFields, employmentType: e.target.value })}
+                          disabled={isEmployee}
+                          onChange={e => !isEmployee && setEditingFields({ ...editingFields, employmentType: e.target.value })}
                           style={{
-                            padding: '2px 5px', fontSize: '11px', border: '1px solid #7f9db9',
-                            background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
-                            cursor: !canEditRequirement ? 'not-allowed' : undefined
+                            padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: 0,
+                            background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                           }}
                         />
 
@@ -3316,13 +3260,11 @@ function RecruiterDashboard() {
                           <input
                             type="text"
                             value={editingFields.experience || '6'}
-                            disabled={!canEditRequirement}
-                            readOnly={!canEditRequirement}
-                            onChange={e => canEditRequirement && setEditingFields({ ...editingFields, experience: e.target.value })}
+                            disabled={isEmployee}
+                            onChange={e => !isEmployee && setEditingFields({ ...editingFields, experience: e.target.value })}
                             style={{
-                              width: '45px', padding: '2px 5px', fontSize: '11px', border: '1px solid #7f9db9',
-                              background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
-                              cursor: !canEditRequirement ? 'not-allowed' : undefined
+                              width: '45px', padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: 0,
+                              background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                             }}
                           />
                           <span style={{ color: '#000080', fontWeight: 'bold', fontSize: '11px' }}>years</span>
@@ -3332,29 +3274,28 @@ function RecruiterDashboard() {
                       <div style={{ flex: '1 1 480px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
-                            <label style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#000080' }}>Description:*</label>
-                            <span style={{ fontSize: '13px', cursor: 'pointer' }} title="Print / Format JD">🖨️</span>
+                            <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#000080' }}>Description:*</label>
+                            <span style={{ fontSize: '12px', cursor: 'pointer' }} title="Print / Format JD">🖨️</span>
                           </div>
                           <textarea
                             rows={10}
                             value={editingFields.description || ''}
-                            disabled={!canEditRequirement}
-                            readOnly={!canEditRequirement}
-                            onChange={e => canEditRequirement && setEditingFields({ ...editingFields, description: e.target.value })}
+                            disabled={isEmployee}
+                            onChange={e => !isEmployee && setEditingFields({ ...editingFields, description: e.target.value })}
                             style={{
-                              width: '100%', padding: '6px 8px', fontSize: '11px', lineHeight: '1.5', border: '1px solid #7f9db9',
+                              width: '100%', padding: '6px 8px', fontSize: '11px', lineHeight: '1.5', border: '1px solid #7f9db9', borderRadius: 0,
                               fontFamily: 'monospace',
-                              background: !canEditRequirement ? '#f8fafc' : '#ffffff',
-                              color: !canEditRequirement ? '#334155' : undefined,
-                              cursor: !canEditRequirement ? 'not-allowed' : undefined,
-                              boxSizing: 'border-box'
+                              background: isEmployee ? '#f8fafc' : '#ffffff',
+                              color: '#0f172a',
+                              boxSizing: 'border-box',
+                              outline: 'none'
                             }}
                           />
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                           <div>
-                            <label style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#000080', display: 'block', marginBottom: '3px' }}>Required Skills:*</label>
+                            <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#000080', display: 'block', marginBottom: '3px' }}>Required Skills:*</label>
                             <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '11px', color: '#000080', lineHeight: '1.5' }}>
                               {Array.isArray(editingFields.skills) && editingFields.skills.map((s, idx) => (
                                 <li key={idx}><span style={{ color: '#000080' }}>{s}</span></li>
@@ -3362,7 +3303,7 @@ function RecruiterDashboard() {
                             </ul>
                           </div>
                           <div>
-                            <label style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#000080', display: 'block', marginBottom: '3px' }}>Desired Skills:</label>
+                            <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#000080', display: 'block', marginBottom: '3px' }}>Desired Skills:</label>
                             <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '11px', color: '#000080', lineHeight: '1.5' }}>
                               {Array.isArray(editingFields.desiredSkills) && editingFields.desiredSkills.map((s, idx) => (
                                 <li key={idx}><span style={{ color: '#000080' }}>{s}</span></li>
@@ -3378,19 +3319,19 @@ function RecruiterDashboard() {
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
-                      marginTop: '20px',
-                      paddingTop: '10px',
+                      marginTop: '16px',
+                      paddingTop: '8px',
                       borderTop: '1px solid #e2e8f0',
                       fontSize: '11px',
                       color: '#000080'
                     }}>
                       <div>
                         <span>Created by: </span>
-                        <span style={{ color: '#0f172a' }}>{editingFields.createdBy || 'kautilya'}</span>
+                        <span style={{ color: '#0f172a' }}>{editingFields.createdBy || 'admin'}</span>
                         <span> on: </span>
-                        <span style={{ color: '#0f172a' }}>{editingFields.createdOn || '8/26/2026 11:40:14 AM'}</span>
+                        <span style={{ color: '#0f172a' }}>{editingFields.createdOn || '2026-08-26 11:40:14 AM'}</span>
                         <span style={{ marginLeft: '16px' }}>Last Updated by: </span>
-                        <span style={{ color: '#0f172a' }}>{editingFields.lastUpdatedBy || 'kautilya'}</span>
+                        <span style={{ color: '#0f172a' }}>{editingFields.lastUpdatedBy || userName}</span>
                         <span> on: </span>
                         <span style={{ color: '#0f172a' }}>{editingFields.lastUpdatedOn || '8/26/2026 11:43:52 AM'}</span>
                       </div>
@@ -3401,11 +3342,11 @@ function RecruiterDashboard() {
                           border: '1px solid #71717a',
                           background: '#e4e4e7',
                           color: '#0f172a',
-                          padding: '3px 18px',
-                          fontSize: '11.5px',
+                          padding: '2px 14px',
+                          fontSize: '11px',
                           fontWeight: 'bold',
                           cursor: 'pointer',
-                          borderRadius: '3px'
+                          borderRadius: 0
                         }}
                       >
                         Save
@@ -3414,14 +3355,14 @@ function RecruiterDashboard() {
                   </div>
                 )}
 
-                {/* ─── TAB 2: ASSIGN TO RECRUITERS ─── */}
+                {/* ─── TAB 2: ASSIGN TO RECRUITERS (COMPACT & SQUARE) ─── */}
                 {activeReqTab === 'assign' && (
-                  <div style={{ fontSize: '11.5px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '10px' }}>
-                      <div style={{ fontWeight: 'bold', color: '#000080', fontSize: '12px' }}>
-                        Assign Recruiters to Requisition #{selectedReq?.id?.replace('J-', '') || '158938'}
+                  <div style={{ fontSize: '11px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                      <div style={{ fontWeight: 'bold', color: '#000080', fontSize: '11.5px' }}>
+                        Assign Recruiters to Requisition #{selectedReq?.id?.replace('J-', '') || '158938'} ({editingFields.assignedRecruiters?.length || 0} Assigned)
                       </div>
-                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                         <button
                           type="button"
                           onClick={() => {
@@ -3431,7 +3372,7 @@ function RecruiterDashboard() {
                               assignedRecruiters: Array.from(new Set(allNames))
                             }))
                           }}
-                          style={{ border: '1px solid #71717a', background: '#e4e4e7', padding: '2px 8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '2px' }}
+                          style={{ border: '1px solid #71717a', background: '#e4e4e7', padding: '2px 8px', fontSize: '10.5px', fontWeight: 'bold', cursor: 'pointer', borderRadius: 0 }}
                         >
                           Select All
                         </button>
@@ -3443,7 +3384,7 @@ function RecruiterDashboard() {
                               assignedRecruiters: []
                             }))
                           }}
-                          style={{ border: '1px solid #71717a', background: '#e4e4e7', padding: '2px 8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '2px' }}
+                          style={{ border: '1px solid #71717a', background: '#e4e4e7', padding: '2px 8px', fontSize: '10.5px', fontWeight: 'bold', cursor: 'pointer', borderRadius: 0 }}
                         >
                           Clear All
                         </button>
@@ -3458,19 +3399,19 @@ function RecruiterDashboard() {
                               }))
                             }
                           }}
-                          style={{ border: '1px solid #000080', background: '#000080', color: '#ffffff', padding: '2px 10px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '2px' }}
+                          style={{ border: '1px solid #000080', background: '#000080', color: '#ffffff', padding: '2px 8px', fontSize: '10.5px', fontWeight: 'bold', cursor: 'pointer', borderRadius: 0 }}
                         >
                           + Assign to Me ({userName})
                         </button>
                       </div>
                     </div>
 
-                    {/* Recruiters Selection Table */}
-                    <div style={{ overflowX: 'auto', border: '1px solid #7f9db9', marginBottom: '12px' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
+                    {/* Recruiters Compact Table */}
+                    <div style={{ overflowX: 'auto', border: '1px solid #7f9db9', borderRadius: 0, marginBottom: '8px' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left' }}>
                         <thead>
                           <tr style={{ background: '#708090', color: '#ffffff' }}>
-                            <th style={{ padding: '5px 8px', width: '35px', textAlign: 'center' }}>
+                            <th style={{ padding: '3px 6px', width: '30px', textAlign: 'center' }}>
                               <input
                                 type="checkbox"
                                 checked={allRecruitersList.length > 0 && allRecruitersList.every(rec => 
@@ -3485,10 +3426,10 @@ function RecruiterDashboard() {
                                 }}
                               />
                             </th>
-                            <th style={{ padding: '5px 8px', fontWeight: 'bold' }}>Recruiter Name</th>
-                            <th style={{ padding: '5px 8px', fontWeight: 'bold' }}>Role</th>
-                            <th style={{ padding: '5px 8px', fontWeight: 'bold' }}>Email Address</th>
-                            <th style={{ padding: '5px 8px', fontWeight: 'bold' }}>Assignment Status</th>
+                            <th style={{ padding: '3px 6px', fontWeight: 'bold' }}>Recruiter Name</th>
+                            <th style={{ padding: '3px 6px', fontWeight: 'bold' }}>Role</th>
+                            <th style={{ padding: '3px 6px', fontWeight: 'bold' }}>Email Address</th>
+                            <th style={{ padding: '3px 6px', fontWeight: 'bold' }}>Assignment Status</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -3507,7 +3448,7 @@ function RecruiterDashboard() {
                                   cursor: 'pointer'
                                 }}
                               >
-                                <td style={{ padding: '5px 8px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                                <td style={{ padding: '3px 6px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
                                   <input
                                     type="checkbox"
                                     checked={isAssigned}
@@ -3515,16 +3456,16 @@ function RecruiterDashboard() {
                                     onChange={() => toggleRecruiterAssignment(rec.name)}
                                   />
                                 </td>
-                                <td style={{ padding: '5px 8px', fontWeight: 'bold', color: isAssigned ? '#000080' : '#0f172a' }}>
+                                <td style={{ padding: '3px 6px', fontWeight: 'bold', color: isAssigned ? '#000080' : '#0f172a' }}>
                                   {rec.name} {rec.name === userName ? '(You)' : ''}
                                 </td>
-                                <td style={{ padding: '5px 8px', color: '#475569' }}>
+                                <td style={{ padding: '3px 6px', color: '#475569' }}>
                                   {rec.role}
                                 </td>
-                                <td style={{ padding: '5px 8px', color: '#64748b', fontFamily: 'monospace' }}>
+                                <td style={{ padding: '3px 6px', color: '#64748b', fontFamily: 'monospace' }}>
                                   {rec.email}
                                 </td>
-                                <td style={{ padding: '5px 8px' }}>
+                                <td style={{ padding: '3px 6px' }}>
                                   {isAssigned ? (
                                     <span style={{ color: '#16a34a', fontWeight: 'bold' }}>🟢 Assigned</span>
                                   ) : (
@@ -3543,19 +3484,19 @@ function RecruiterDashboard() {
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
-                      marginTop: '16px',
-                      paddingTop: '10px',
+                      marginTop: '12px',
+                      paddingTop: '8px',
                       borderTop: '1px solid #e2e8f0',
                       fontSize: '11px',
                       color: '#000080'
                     }}>
                       <div>
                         <span>Created by: </span>
-                        <span style={{ color: '#0f172a' }}>{editingFields.createdBy || 'kautilya'}</span>
+                        <span style={{ color: '#0f172a' }}>{editingFields.createdBy || 'admin'}</span>
                         <span> on: </span>
-                        <span style={{ color: '#0f172a' }}>{editingFields.createdOn || '8/26/2026 11:40:14 AM'}</span>
+                        <span style={{ color: '#0f172a' }}>{editingFields.createdOn || '2026-08-26 11:40:14 AM'}</span>
                         <span style={{ marginLeft: '16px' }}>Last Updated by: </span>
-                        <span style={{ color: '#0f172a' }}>{editingFields.lastUpdatedBy || 'kautilya'}</span>
+                        <span style={{ color: '#0f172a' }}>{editingFields.lastUpdatedBy || userName}</span>
                         <span> on: </span>
                         <span style={{ color: '#0f172a' }}>{editingFields.lastUpdatedOn || '8/26/2026 11:43:52 AM'}</span>
                       </div>
@@ -3566,11 +3507,11 @@ function RecruiterDashboard() {
                           border: '1px solid #71717a',
                           background: '#e4e4e7',
                           color: '#0f172a',
-                          padding: '3px 18px',
-                          fontSize: '11.5px',
+                          padding: '2px 14px',
+                          fontSize: '11px',
                           fontWeight: 'bold',
                           cursor: 'pointer',
-                          borderRadius: '3px'
+                          borderRadius: 0
                         }}
                       >
                         Save
@@ -3581,8 +3522,8 @@ function RecruiterDashboard() {
 
                 {/* ─── TAB 3: POTENTIAL CANDIDATES (NO AI FIT COLUMN IN ROW) ─── */}
                 {activeReqTab === 'potential' && (
-                  <div style={{ fontSize: '11.5px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ fontSize: '11px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap', gap: '6px' }}>
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         <span
                           onClick={() => {
@@ -3601,7 +3542,7 @@ function RecruiterDashboard() {
                             })
                             setShowAddCandidateModal(true)
                           }}
-                          style={{ color: '#000080', fontWeight: 'bold', fontSize: '11.5px', textDecoration: 'underline', cursor: 'pointer' }}
+                          style={{ color: '#000080', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer' }}
                         >
                           + Add Candidate to this Requisition
                         </span>
@@ -3610,7 +3551,7 @@ function RecruiterDashboard() {
 
                         <span
                           onClick={() => setViewMode('resumeSearch')}
-                          style={{ color: '#000080', fontWeight: 'bold', fontSize: '11.5px', textDecoration: 'underline', cursor: 'pointer' }}
+                          style={{ color: '#000080', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer' }}
                         >
                           Search Talent Directory &gt;&gt;
                         </span>
@@ -3622,10 +3563,10 @@ function RecruiterDashboard() {
                         style={{
                           background: '#f8fafc',
                           border: '1px solid #7f9db9',
-                          padding: '3px 10px',
-                          fontSize: '11px',
+                          padding: '2px 8px',
+                          fontSize: '10.5px',
                           fontWeight: 'bold',
-                          borderRadius: '2px',
+                          borderRadius: 0,
                           cursor: 'pointer',
                           color: '#000080'
                         }}
@@ -3634,29 +3575,29 @@ function RecruiterDashboard() {
                       </button>
                     </div>
 
-                    <div style={{ overflowX: 'auto', marginBottom: '12px', border: '1px solid #7f9db9' }}>
+                    <div style={{ overflowX: 'auto', marginBottom: '10px', border: '1px solid #7f9db9', borderRadius: 0 }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
                         <thead>
                           <tr style={{ background: '#708090', color: '#ffffff' }}>
-                            <th style={{ padding: '5px 8px', fontWeight: 'bold' }}>Candidate Name</th>
-                            <th style={{ padding: '5px 8px', fontWeight: 'bold' }}>Pay Rate</th>
-                            <th style={{ padding: '5px 8px', fontWeight: 'bold' }}>Pay Rate Type</th>
-                            <th style={{ padding: '5px 8px', fontWeight: 'bold' }}>Assigned By</th>
-                            <th style={{ padding: '5px 8px', fontWeight: 'bold' }}>Assigned On</th>
-                            <th style={{ padding: '5px 8px', fontWeight: 'bold' }}>Status</th>
-                            <th style={{ padding: '5px 8px', fontWeight: 'bold' }}>Status Comments</th>
-                            <th style={{ padding: '5px 8px', fontWeight: 'bold' }}>Schedule Interview</th>
-                            <th style={{ padding: '5px 8px', fontWeight: 'bold' }}>Rejected Reason</th>
+                            <th style={{ padding: '4px 6px', fontWeight: 'bold' }}>Candidate Name</th>
+                            <th style={{ padding: '4px 6px', fontWeight: 'bold' }}>Pay Rate</th>
+                            <th style={{ padding: '4px 6px', fontWeight: 'bold' }}>Pay Rate Type</th>
+                            <th style={{ padding: '4px 6px', fontWeight: 'bold' }}>Assigned By</th>
+                            <th style={{ padding: '4px 6px', fontWeight: 'bold' }}>Assigned On</th>
+                            <th style={{ padding: '4px 6px', fontWeight: 'bold' }}>Status</th>
+                            <th style={{ padding: '4px 6px', fontWeight: 'bold' }}>Status Comments</th>
+                            <th style={{ padding: '4px 6px', fontWeight: 'bold' }}>Schedule Interview</th>
+                            <th style={{ padding: '4px 6px', fontWeight: 'bold' }}>Rejected Reason</th>
                           </tr>
                         </thead>
                         <tbody>
                           {potentialCandidates.length === 0 ? (
                             <tr>
-                              <td colSpan="9" style={{ padding: '24px', textAlign: 'center', color: '#000080', background: '#ffffff', fontSize: '12px' }}>
-                                <div style={{ fontWeight: 'bold', marginBottom: '6px' }}>Candidates are not available for this view!</div>
+                              <td colSpan="9" style={{ padding: '20px', textAlign: 'center', color: '#000080', background: '#ffffff', fontSize: '11.5px' }}>
+                                <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Candidates are not available for this view!</div>
                                 <span
                                   onClick={() => setShowAddCandidateModal(true)}
-                                  style={{ color: '#000080', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline' }}
+                                  style={{ color: '#000080', fontWeight: 'bold', cursor: 'pointer' }}
                                 >
                                   Select Candidate
                                 </span>
@@ -3665,12 +3606,12 @@ function RecruiterDashboard() {
                           ) : (
                             potentialCandidates.map((pc, idx) => (
                               <tr key={pc.id} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                                <td style={{ padding: '5px 8px', fontWeight: 'bold' }}>
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                <td style={{ padding: '4px 6px', fontWeight: 'bold' }}>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
                                     <span onClick={() => {
                                       setSelectedViewCandidate(pc)
                                       setShowDetailViewModal(true)
-                                    }} style={{ color: '#000080', cursor: 'pointer', textDecoration: 'underline' }}>
+                                    }} style={{ color: '#000080', cursor: 'pointer' }}>
                                       {pc.name}
                                     </span>
                                     <span
@@ -3678,28 +3619,29 @@ function RecruiterDashboard() {
                                         setSelectedViewCandidate(pc)
                                         setShowDetailViewModal(true)
                                       }}
-                                      style={{ fontSize: '10px', color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}
+                                      style={{ fontSize: '9.5px', color: '#0066cc', cursor: 'pointer' }}
                                     >
                                       📄 View Details & History
                                     </span>
                                   </div>
                                 </td>
-                                <td style={{ padding: '5px 8px', color: '#1e293b' }}>{pc.payRate}</td>
-                                <td style={{ padding: '5px 8px', color: '#1e293b' }}>{pc.payRateType}</td>
-                                <td style={{ padding: '5px 8px', fontWeight: 'bold', color: '#000080' }}>{pc.assignedBy}</td>
-                                <td style={{ padding: '5px 8px', color: '#475569', fontSize: '10.5px' }}>{pc.assignedOn}</td>
-                                <td style={{ padding: '5px 8px', minWidth: '180px' }}>
+                                <td style={{ padding: '4px 6px', color: '#1e293b' }}>{pc.payRate}</td>
+                                <td style={{ padding: '4px 6px', color: '#1e293b' }}>{pc.payRateType}</td>
+                                <td style={{ padding: '4px 6px', fontWeight: 'bold', color: '#000080' }}>{pc.assignedBy}</td>
+                                <td style={{ padding: '4px 6px', color: '#475569', fontSize: '10px' }}>{pc.assignedOn}</td>
+                                <td style={{ padding: '4px 6px', minWidth: '170px' }}>
                                   <select
                                     value={pc.status}
                                     onChange={e => handleUpdatePotentialCandidate(pc.id, 'status', e.target.value)}
                                     style={{
-                                      fontSize: '11px',
+                                      fontSize: '10.5px',
                                       padding: '2px 4px',
                                       border: '1px solid #7f9db9',
-                                      borderRadius: '2px',
+                                      borderRadius: 0,
                                       background: '#ffffff',
                                       fontWeight: 'bold',
                                       width: '100%',
+                                      outline: 'none',
                                       color: pc.status === 'Placed' ? '#166534' : pc.status.includes('Interview') ? '#1d4ed8' : pc.status.includes('Rejected') ? '#dc2626' : '#000080'
                                     }}
                                   >
@@ -3728,28 +3670,29 @@ function RecruiterDashboard() {
                                     </div>
                                   )}
                                 </td>
-                                <td style={{ padding: '5px 8px' }}>
+                                <td style={{ padding: '4px 6px' }}>
                                   <textarea
                                     rows={1}
                                     value={pc.statusComments || ''}
                                     onChange={e => handleUpdatePotentialCandidate(pc.id, 'statusComments', e.target.value)}
                                     placeholder="Comments..."
                                     style={{
-                                      fontSize: '11px',
+                                      fontSize: '10.5px',
                                       padding: '2px 4px',
-                                      width: '120px',
+                                      width: '110px',
                                       border: '1px solid #7f9db9',
-                                      borderRadius: '2px',
+                                      borderRadius: 0,
                                       fontFamily: 'inherit',
-                                      resize: 'vertical'
+                                      resize: 'vertical',
+                                      outline: 'none'
                                     }}
                                   />
                                 </td>
-                                <td style={{ padding: '5px 8px' }}>
+                                <td style={{ padding: '4px 6px' }}>
                                   <select
                                     value={pc.interview || 'Select'}
                                     onChange={e => handleUpdatePotentialCandidate(pc.id, 'interview', e.target.value)}
-                                    style={{ fontSize: '11px', padding: '2px 4px', border: '1px solid #7f9db9', borderRadius: '2px', background: '#ffffff', minWidth: '100px' }}
+                                    style={{ fontSize: '10.5px', padding: '2px 4px', border: '1px solid #7f9db9', borderRadius: 0, background: '#ffffff', minWidth: '95px', outline: 'none' }}
                                   >
                                     <option value="Select">Select</option>
                                     <option value="Round 1 (Virtual)">Round 1 (Virtual)</option>
@@ -3758,11 +3701,11 @@ function RecruiterDashboard() {
                                     <option value="Final Round">Final Round</option>
                                   </select>
                                 </td>
-                                <td style={{ padding: '5px 8px' }}>
+                                <td style={{ padding: '4px 6px' }}>
                                   <select
                                     value={pc.rejectedReason || 'Select'}
                                     onChange={e => handleUpdatePotentialCandidate(pc.id, 'rejectedReason', e.target.value)}
-                                    style={{ fontSize: '11px', padding: '2px 4px', border: '1px solid #7f9db9', borderRadius: '2px', background: '#ffffff', minWidth: '100px' }}
+                                    style={{ fontSize: '10.5px', padding: '2px 4px', border: '1px solid #7f9db9', borderRadius: 0, background: '#ffffff', minWidth: '95px', outline: 'none' }}
                                   >
                                     <option value="Select">Select</option>
                                     <option value="Rate High">Rate High</option>
@@ -3785,19 +3728,19 @@ function RecruiterDashboard() {
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
-                      marginTop: '16px',
-                      paddingTop: '10px',
+                      marginTop: '12px',
+                      paddingTop: '8px',
                       borderTop: '1px solid #e2e8f0',
                       fontSize: '11px',
                       color: '#000080'
                     }}>
                       <div>
                         <span>Created by: </span>
-                        <span style={{ color: '#0f172a' }}>{editingFields.createdBy || 'kautilya'}</span>
+                        <span style={{ color: '#0f172a' }}>{editingFields.createdBy || 'admin'}</span>
                         <span> on: </span>
-                        <span style={{ color: '#0f172a' }}>{editingFields.createdOn || '8/26/2026 11:40:14 AM'}</span>
+                        <span style={{ color: '#0f172a' }}>{editingFields.createdOn || '2026-08-26 11:40:14 AM'}</span>
                         <span style={{ marginLeft: '16px' }}>Last Updated by: </span>
-                        <span style={{ color: '#0f172a' }}>{editingFields.lastUpdatedBy || 'kautilya'}</span>
+                        <span style={{ color: '#0f172a' }}>{editingFields.lastUpdatedBy || userName}</span>
                         <span> on: </span>
                         <span style={{ color: '#0f172a' }}>{editingFields.lastUpdatedOn || '8/26/2026 11:43:52 AM'}</span>
                       </div>
@@ -3808,11 +3751,11 @@ function RecruiterDashboard() {
                           border: '1px solid #71717a',
                           background: '#e4e4e7',
                           color: '#0f172a',
-                          padding: '3px 18px',
-                          fontSize: '11.5px',
+                          padding: '2px 14px',
+                          fontSize: '11px',
                           fontWeight: 'bold',
                           cursor: 'pointer',
-                          borderRadius: '3px'
+                          borderRadius: 0
                         }}
                       >
                         Save
@@ -3821,23 +3764,23 @@ function RecruiterDashboard() {
                   </div>
                 )}
 
-                {/* ─── TAB 4: AI FIT REVIEW SUBTAB (MOVED TO TOP SUBTAB ROW) ─── */}
+                {/* ─── TAB 4: AI FIT REVIEW SUBTAB ─── */}
                 {activeReqTab === 'aiFit' && (
-                  <div style={{ fontSize: '11.5px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <div style={{ fontSize: '11px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                       <div>
-                        <div style={{ fontWeight: 'bold', color: '#000080', fontSize: '13px' }}>
+                        <div style={{ fontWeight: 'bold', color: '#000080', fontSize: '12px' }}>
                           🧠 AI Candidate Match & Fit Review for Requisition #{selectedReq?.id?.replace('J-', '') || '158938'}
                         </div>
-                        <div style={{ color: '#64748b', fontSize: '11px', marginTop: '2px' }}>
+                        <div style={{ color: '#64748b', fontSize: '10.5px', marginTop: '2px' }}>
                           Instant match evaluation against <strong>{editingFields.title || selectedReq?.title}</strong> ({editingFields.customer || 'State Client'}).
                         </div>
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       {potentialCandidates.length === 0 ? (
-                        <div style={{ padding: '30px', textAlign: 'center', color: '#64748b', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px' }}>
+                        <div style={{ padding: '24px', textAlign: 'center', color: '#64748b', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 0 }}>
                           No candidates submitted to evaluate AI fit for this position yet.
                         </div>
                       ) : (
@@ -3846,43 +3789,43 @@ function RecruiterDashboard() {
                             key={pc.id || idx}
                             style={{
                               background: '#ffffff',
-                              border: '1px solid #cbd5e1',
+                              border: '1px solid #7f9db9',
                               borderLeft: '4px solid #0284c7',
-                              borderRadius: '4px',
-                              padding: '12px 16px',
+                              borderRadius: 0,
+                              padding: '10px 14px',
                               display: 'flex',
                               flexDirection: 'column',
-                              gap: '8px'
+                              gap: '6px'
                             }}
                           >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontWeight: 'bold', fontSize: '13px', color: '#000080', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => {
+                                <span style={{ fontWeight: 'bold', fontSize: '12px', color: '#000080', cursor: 'pointer' }} onClick={() => {
                                   setSelectedViewCandidate(pc)
                                   setShowDetailViewModal(true)
                                 }}>
                                   {pc.name}
                                 </span>
-                                <span style={{ background: '#dcfce7', color: '#166534', padding: '2px 8px', borderRadius: '12px', fontSize: '10.5px', fontWeight: 'bold' }}>
+                                <span style={{ background: '#dcfce7', color: '#166534', padding: '2px 6px', fontSize: '10px', fontWeight: 'bold', borderRadius: 0, border: '1px solid #bbf7d0' }}>
                                   {pc.aiAnalysis ? `🎯 ${pc.aiAnalysis.fitScore}% Match` : '🎯 92% Match (Strong)'}
                                 </span>
-                                <span style={{ color: '#64748b', fontSize: '11px' }}>
+                                <span style={{ color: '#64748b', fontSize: '10.5px' }}>
                                   Rate: <strong>{pc.payRate} ({pc.payRateType || 'C2C'})</strong> | Sourced By: <strong>{pc.assignedBy}</strong>
                                 </span>
                               </div>
 
-                              <div style={{ display: 'flex', gap: '6px' }}>
+                              <div style={{ display: 'flex', gap: '4px' }}>
                                 <button
                                   type="button"
                                   onClick={() => handleOpenAiFitModal(pc)}
                                   style={{
-                                    background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                                    background: '#0284c7',
                                     color: '#ffffff',
-                                    border: 'none',
-                                    padding: '4px 12px',
-                                    fontSize: '11px',
+                                    border: '1px solid #0369a1',
+                                    padding: '3px 10px',
+                                    fontSize: '10.5px',
                                     fontWeight: 'bold',
-                                    borderRadius: '3px',
+                                    borderRadius: 0,
                                     cursor: 'pointer'
                                   }}
                                 >
@@ -3891,23 +3834,23 @@ function RecruiterDashboard() {
                                 <button
                                   type="button"
                                   onClick={() => handleManagerUpdateStatus(pc.id, 'Int-ApprovedByManager')}
-                                  style={{ background: '#16a34a', color: '#ffffff', border: 'none', padding: '4px 10px', fontSize: '11px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer' }}
+                                  style={{ background: '#16a34a', color: '#ffffff', border: '1px solid #15803d', padding: '3px 8px', fontSize: '10.5px', fontWeight: 'bold', borderRadius: 0, cursor: 'pointer' }}
                                 >
                                   ✅ Approve
                                 </button>
                               </div>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', background: '#f8fafc', padding: '8px 12px', borderRadius: '4px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', background: '#f8fafc', padding: '6px 10px', borderRadius: 0, border: '1px solid #e2e8f0' }}>
                               <div>
-                                <span style={{ fontWeight: 'bold', color: '#166534', fontSize: '11px' }}>Matched Required Skills: </span>
-                                <span style={{ color: '#0f172a', fontSize: '11px' }}>
+                                <span style={{ fontWeight: 'bold', color: '#166534', fontSize: '10.5px' }}>Matched Required Skills: </span>
+                                <span style={{ color: '#0f172a', fontSize: '10.5px' }}>
                                   {Array.isArray(editingFields.skills) ? editingFields.skills.slice(0, 3).join(', ') : 'Network Architecture, Routing, Security'}
                                 </span>
                               </div>
                               <div>
-                                <span style={{ fontWeight: 'bold', color: '#b45309', fontSize: '11px' }}>Skill Strengths: </span>
-                                <span style={{ color: '#0f172a', fontSize: '11px' }}>
+                                <span style={{ fontWeight: 'bold', color: '#b45309', fontSize: '10.5px' }}>Skill Strengths: </span>
+                                <span style={{ color: '#0f172a', fontSize: '10.5px' }}>
                                   10+ years experience, State government project alignment
                                 </span>
                               </div>
@@ -3922,19 +3865,19 @@ function RecruiterDashboard() {
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
-                      marginTop: '16px',
-                      paddingTop: '10px',
+                      marginTop: '12px',
+                      paddingTop: '8px',
                       borderTop: '1px solid #e2e8f0',
                       fontSize: '11px',
                       color: '#000080'
                     }}>
                       <div>
                         <span>Created by: </span>
-                        <span style={{ color: '#0f172a' }}>{editingFields.createdBy || 'kautilya'}</span>
+                        <span style={{ color: '#0f172a' }}>{editingFields.createdBy || 'admin'}</span>
                         <span> on: </span>
-                        <span style={{ color: '#0f172a' }}>{editingFields.createdOn || '8/26/2026 11:40:14 AM'}</span>
+                        <span style={{ color: '#0f172a' }}>{editingFields.createdOn || '2026-08-26 11:40:14 AM'}</span>
                         <span style={{ marginLeft: '16px' }}>Last Updated by: </span>
-                        <span style={{ color: '#0f172a' }}>{editingFields.lastUpdatedBy || 'kautilya'}</span>
+                        <span style={{ color: '#0f172a' }}>{editingFields.lastUpdatedBy || userName}</span>
                         <span> on: </span>
                         <span style={{ color: '#0f172a' }}>{editingFields.lastUpdatedOn || '8/26/2026 11:43:52 AM'}</span>
                       </div>
@@ -3945,11 +3888,11 @@ function RecruiterDashboard() {
                           border: '1px solid #71717a',
                           background: '#e4e4e7',
                           color: '#0f172a',
-                          padding: '3px 18px',
-                          fontSize: '11.5px',
+                          padding: '2px 14px',
+                          fontSize: '11px',
                           fontWeight: 'bold',
                           cursor: 'pointer',
-                          borderRadius: '3px'
+                          borderRadius: 0
                         }}
                       >
                         Save
@@ -3960,28 +3903,28 @@ function RecruiterDashboard() {
 
                 {/* ─── TAB 5: ATTACHMENTS (MATCHED TO IMAGE) ─── */}
                 {activeReqTab === 'attachments' && (
-                  <div style={{ fontSize: '11.5px' }}>
-                    <div style={{ textAlign: 'right', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '11px' }}>
+                    <div style={{ textAlign: 'right', marginBottom: '6px' }}>
                       <span
                         onClick={() => setShowAddAttachment(true)}
-                        style={{ color: '#000080', fontWeight: 'bold', textDecoration: 'underline', cursor: 'pointer' }}
+                        style={{ color: '#000080', fontWeight: 'bold', cursor: 'pointer' }}
                       >
                         Add New Attachment
                       </span>
                     </div>
 
-                    <div style={{ border: '1px solid #7f9db9', marginBottom: '14px' }}>
+                    <div style={{ border: '1px solid #7f9db9', borderRadius: 0, marginBottom: '10px' }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
                         <tbody>
                           {attachments.map((att, idx) => (
                             <tr key={att.id || idx} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                              <td style={{ padding: '6px 10px', color: '#0f172a', width: '40%' }}>
+                              <td style={{ padding: '5px 8px', color: '#0f172a', width: '40%' }}>
                                 {att.title}
                               </td>
-                              <td style={{ padding: '6px 10px', color: '#000080', fontWeight: 'bold', textDecoration: 'underline', cursor: 'pointer' }}>
+                              <td style={{ padding: '5px 8px', color: '#000080', fontWeight: 'bold', cursor: 'pointer' }}>
                                 {att.filename}
                               </td>
-                              <td style={{ padding: '6px 10px', textAlign: 'right', width: '70px' }}>
+                              <td style={{ padding: '5px 8px', textAlign: 'right', width: '70px' }}>
                                 <span style={{ cursor: 'pointer', marginRight: '8px' }} title="Edit">✏️</span>
                                 <span
                                   onClick={() => setAttachments(prev => prev.filter(a => a.id !== att.id))}
@@ -3999,21 +3942,21 @@ function RecruiterDashboard() {
 
                     {/* Attach New Document Box */}
                     {showAddAttachment && (
-                      <div style={{ border: '1px solid #7f9db9', background: '#f8fafc', padding: '12px 16px', marginBottom: '14px', position: 'relative' }}>
+                      <div style={{ border: '1px solid #7f9db9', borderRadius: 0, background: '#f8fafc', padding: '10px 14px', marginBottom: '10px', position: 'relative' }}>
                         <span
                           onClick={() => setShowAddAttachment(false)}
-                          style={{ position: 'absolute', top: '8px', right: '12px', color: '#000080', cursor: 'pointer', fontWeight: 'bold' }}
+                          style={{ position: 'absolute', top: '6px', right: '10px', color: '#000080', cursor: 'pointer', fontWeight: 'bold' }}
                         >
                           X
                         </span>
-                        <div style={{ color: '#000080', fontWeight: 'bold', marginBottom: '8px' }}>Attach New Document</div>
+                        <div style={{ color: '#000080', fontWeight: 'bold', marginBottom: '6px' }}>Attach New Document</div>
                         
-                        <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '6px', alignItems: 'center', marginBottom: '6px' }}>
                           <label style={{ color: '#000080', fontWeight: 'bold' }}>Attachment :</label>
                           <input
                             type="file"
                             onChange={e => setNewAttachmentFile(e.target.files[0])}
-                            style={{ fontSize: '11px' }}
+                            style={{ fontSize: '11px', borderRadius: 0 }}
                           />
 
                           <label style={{ color: '#000080', fontWeight: 'bold' }}>Title :</label>
@@ -4021,7 +3964,7 @@ function RecruiterDashboard() {
                             type="text"
                             value={newAttachmentTitle}
                             onChange={e => setNewAttachmentTitle(e.target.value)}
-                            style={{ padding: '2px 5px', fontSize: '11px', border: '1px solid #7f9db9', width: '280px' }}
+                            style={{ padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: 0, width: '260px', outline: 'none' }}
                           />
                         </div>
 
@@ -4043,7 +3986,7 @@ function RecruiterDashboard() {
                                 setShowAddAttachment(false)
                               }
                             }}
-                            style={{ border: '1px solid #71717a', background: '#e4e4e7', color: '#0f172a', padding: '2px 14px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '2px' }}
+                            style={{ border: '1px solid #71717a', background: '#e4e4e7', color: '#0f172a', padding: '2px 12px', fontSize: '10.5px', fontWeight: 'bold', cursor: 'pointer', borderRadius: 0 }}
                           >
                             Save
                           </button>
@@ -4056,19 +3999,19 @@ function RecruiterDashboard() {
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
-                      marginTop: '16px',
-                      paddingTop: '10px',
+                      marginTop: '12px',
+                      paddingTop: '8px',
                       borderTop: '1px solid #e2e8f0',
                       fontSize: '11px',
                       color: '#000080'
                     }}>
                       <div>
                         <span>Created by: </span>
-                        <span style={{ color: '#0f172a' }}>{editingFields.createdBy || 'kautilya'}</span>
+                        <span style={{ color: '#0f172a' }}>{editingFields.createdBy || 'admin'}</span>
                         <span> on: </span>
-                        <span style={{ color: '#0f172a' }}>{editingFields.createdOn || '8/26/2026 11:40:14 AM'}</span>
+                        <span style={{ color: '#0f172a' }}>{editingFields.createdOn || '2026-08-26 11:40:14 AM'}</span>
                         <span style={{ marginLeft: '16px' }}>Last Updated by: </span>
-                        <span style={{ color: '#0f172a' }}>{editingFields.lastUpdatedBy || 'kautilya'}</span>
+                        <span style={{ color: '#0f172a' }}>{editingFields.lastUpdatedBy || userName}</span>
                         <span> on: </span>
                         <span style={{ color: '#0f172a' }}>{editingFields.lastUpdatedOn || '8/26/2026 11:43:52 AM'}</span>
                       </div>
@@ -4079,11 +4022,11 @@ function RecruiterDashboard() {
                           border: '1px solid #71717a',
                           background: '#e4e4e7',
                           color: '#0f172a',
-                          padding: '3px 18px',
-                          fontSize: '11.5px',
+                          padding: '2px 14px',
+                          fontSize: '11px',
                           fontWeight: 'bold',
                           cursor: 'pointer',
-                          borderRadius: '3px'
+                          borderRadius: 0
                         }}
                       >
                         Save
@@ -4094,9 +4037,9 @@ function RecruiterDashboard() {
 
                 {/* ─── TAB 6: NEW CANDIDATES (0) (MATCHED TO IMAGE) ─── */}
                 {activeReqTab === 'newCandidates' && (
-                  <div style={{ fontSize: '11.5px' }}>
-                    <div style={{ padding: '16px 0', fontSize: '12px' }}>
-                      <div style={{ color: '#000080', fontWeight: 'bold', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '11px' }}>
+                    <div style={{ padding: '14px 0', fontSize: '11.5px' }}>
+                      <div style={{ color: '#000080', fontWeight: 'bold', marginBottom: '6px' }}>
                         Candidates are not available for this view!
                       </div>
                       <span
@@ -4116,7 +4059,7 @@ function RecruiterDashboard() {
                           })
                           setShowAddCandidateModal(true)
                         }}
-                        style={{ color: '#000080', textDecoration: 'underline', cursor: 'pointer', fontWeight: 'bold' }}
+                        style={{ color: '#000080', cursor: 'pointer', fontWeight: 'bold' }}
                       >
                         Select Candidate
                       </span>
@@ -4127,19 +4070,19 @@ function RecruiterDashboard() {
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
-                      marginTop: '30px',
-                      paddingTop: '10px',
+                      marginTop: '24px',
+                      paddingTop: '8px',
                       borderTop: '1px solid #e2e8f0',
                       fontSize: '11px',
                       color: '#000080'
                     }}>
                       <div>
                         <span>Created by: </span>
-                        <span style={{ color: '#0f172a' }}>{editingFields.createdBy || 'kautilya'}</span>
+                        <span style={{ color: '#0f172a' }}>{editingFields.createdBy || 'admin'}</span>
                         <span> on: </span>
-                        <span style={{ color: '#0f172a' }}>{editingFields.createdOn || '8/26/2026 11:40:14 AM'}</span>
+                        <span style={{ color: '#0f172a' }}>{editingFields.createdOn || '2026-08-26 11:40:14 AM'}</span>
                         <span style={{ marginLeft: '16px' }}>Last Updated by: </span>
-                        <span style={{ color: '#0f172a' }}>{editingFields.lastUpdatedBy || 'kautilya'}</span>
+                        <span style={{ color: '#0f172a' }}>{editingFields.lastUpdatedBy || userName}</span>
                         <span> on: </span>
                         <span style={{ color: '#0f172a' }}>{editingFields.lastUpdatedOn || '8/26/2026 11:43:52 AM'}</span>
                       </div>
@@ -4150,11 +4093,11 @@ function RecruiterDashboard() {
                           border: '1px solid #71717a',
                           background: '#e4e4e7',
                           color: '#0f172a',
-                          padding: '3px 18px',
-                          fontSize: '11.5px',
+                          padding: '2px 14px',
+                          fontSize: '11px',
                           fontWeight: 'bold',
                           cursor: 'pointer',
-                          borderRadius: '3px'
+                          borderRadius: 0
                         }}
                       >
                         Save
@@ -4166,11 +4109,11 @@ function RecruiterDashboard() {
               </div>
 
               {/* Outside Bottom Action Row */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '14px', gap: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px', gap: '8px' }}>
                 <button
                   type="button"
                   onClick={() => setViewMode('portal')}
-                  style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '4px 16px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '3px' }}
+                  style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #7f9db9', padding: '3px 14px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', borderRadius: 0 }}
                 >
                   &lt;&lt; Back To Search Results
                 </button>
@@ -4181,12 +4124,11 @@ function RecruiterDashboard() {
                     border: '1px solid #71717a',
                     background: '#e4e4e7',
                     color: '#0f172a',
-                    padding: '4px 22px',
-                    fontSize: '12px',
+                    padding: '3px 18px',
+                    fontSize: '11.5px',
                     fontWeight: 'bold',
                     cursor: 'pointer',
-                    borderRadius: '3px',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                    borderRadius: 0
                   }}
                 >
                   Save
@@ -4228,7 +4170,7 @@ function RecruiterDashboard() {
                         password: 'recruiter123',
                         role: isAdmin || isManager ? 'recruiter' : 'employee',
                         parentRecruiterName: isAdmin || isManager ? '' : userName,
-                        company: 'SmartHire LLC',
+                        company: 'SmartHire',
                         isActive: true
                       })
                       setShowUserModal(true)
@@ -4431,7 +4373,7 @@ function RecruiterDashboard() {
                                         password: u.password || '',
                                         role: u.role || 'recruiter',
                                         parentRecruiterName: u.parentRecruiterName || '',
-                                        company: u.company || 'SmartHire LLC',
+                                        company: u.company || 'SmartHire',
                                         isActive: u.isActive !== false
                                       })
                                       setShowUserModal(true)
@@ -5028,7 +4970,7 @@ function RecruiterDashboard() {
                     password: userFormData.password.trim(),
                     role: userFormData.role,
                     parentRecruiterName: userFormData.role === 'employee' ? (userFormData.parentRecruiterName || (isRecruiter ? userName : '')) : '',
-                    company: userFormData.company || 'SmartHire LLC',
+                    company: userFormData.company || 'SmartHire',
                     isActive: userFormData.isActive !== false
                   }
                   updatedList = teamUsers.map(u => {
@@ -5050,7 +4992,7 @@ function RecruiterDashboard() {
                     password: userFormData.password.trim() || 'recruiter123',
                     role: userFormData.role,
                     parentRecruiterName: userFormData.role === 'employee' ? (userFormData.parentRecruiterName || (isRecruiter ? userName : '')) : '',
-                    company: userFormData.company || 'SmartHire LLC',
+                    company: userFormData.company || 'SmartHire',
                     isActive: userFormData.isActive !== false
                   }
                   updatedList = [...teamUsers, targetUser]
@@ -6434,8 +6376,8 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
         )}
 
         {/* ═══════════ SMARTHIRE ORANGE FOOTER ═══════════ */}
-        <footer style={{ background: '#ea580c', borderTop: '2px solid #c2410c', color: '#ffffff', textAlign: 'center', padding: '10px', marginTop: '30px', fontSize: '11px', fontWeight: 'bold' }}>
-          © SmartHire LLC | All rights reserved | Release 1.9 06-May-2025 (New Server 2023 Aug)
+        <footer style={{ background: '#ea580c', borderTop: '2px solid #c2410c', color: '#ffffff', textAlign: 'center', padding: '8px', marginTop: '24px', fontSize: '11px', fontWeight: 'bold' }}>
+          © SmartHire | All rights reserved | Release 1.0.0 27-Aug-2026
         </footer>
 
       </div>

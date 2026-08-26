@@ -8,7 +8,7 @@ const DEFAULT_RECRUITERS = [
     email: 'omkesh@coolsofttech.com',
     role: 'superadmin',
     refCode: 'omkesh',
-    company: 'SmartHire LLC',
+    company: 'SmartHire',
     isActive: true,
     password: 'admin',
     lastLogin: '2026-08-26T18:45:00.000Z',
@@ -20,7 +20,7 @@ const DEFAULT_RECRUITERS = [
     email: 'manager@coolsofttech.com',
     role: 'manager',
     refCode: 'alok-manager',
-    company: 'SmartHire LLC',
+    company: 'SmartHire',
     isActive: true,
     password: 'manager123',
     lastLogin: '2026-08-26T14:15:00.000Z',
@@ -32,7 +32,7 @@ const DEFAULT_RECRUITERS = [
     email: 'kamal@coolsofttech.com',
     role: 'recruiter',
     refCode: 'sukamal-chatterjee',
-    company: 'SmartHire LLC',
+    company: 'SmartHire',
     isActive: true,
     password: 'recruiter123',
     lastLogin: '2026-08-25T11:30:00.000Z',
@@ -44,7 +44,7 @@ const DEFAULT_RECRUITERS = [
     email: 'raj@coolsofttech.com',
     role: 'recruiter',
     refCode: 'raj',
-    company: 'SmartHire LLC',
+    company: 'SmartHire',
     isActive: true,
     password: 'recruiter123',
     lastLogin: null,
@@ -56,7 +56,7 @@ const DEFAULT_RECRUITERS = [
     email: 'vaibhav@coolsofttech.com',
     role: 'recruiter',
     refCode: 'vaibhav-bisen',
-    company: 'SmartHire LLC',
+    company: 'SmartHire',
     isActive: true,
     password: 'recruiter123',
     lastLogin: '2026-08-26T09:00:00.000Z',
@@ -68,7 +68,7 @@ const DEFAULT_RECRUITERS = [
     email: 'pankajm@coolsofttech.com',
     role: 'recruiter',
     refCode: 'pankaj',
-    company: 'SmartHire LLC',
+    company: 'SmartHire',
     isActive: true,
     password: 'recruiter123',
     lastLogin: null,
@@ -80,7 +80,7 @@ const DEFAULT_RECRUITERS = [
     email: 'rahul.s@coolsofttech.com',
     role: 'employee',
     parentRecruiterName: 'Vaibhav Bisen',
-    company: 'SmartHire LLC',
+    company: 'SmartHire',
     isActive: true,
     password: 'recruiter123',
     lastLogin: '2026-08-26T16:20:00.000Z',
@@ -92,7 +92,7 @@ const DEFAULT_RECRUITERS = [
     email: 'priya.v@coolsofttech.com',
     role: 'employee',
     parentRecruiterName: 'Sukamal Chatterjee',
-    company: 'SmartHire LLC',
+    company: 'SmartHire',
     isActive: true,
     password: 'recruiter123',
     lastLogin: '2026-08-25T17:40:00.000Z',
@@ -123,7 +123,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
   const [showAddModal, setShowAddModal] = useState(false)
   const [newRecName, setNewRecName] = useState('')
   const [newRecEmail, setNewRecEmail] = useState('')
-  const [newRecCompany, setNewRecCompany] = useState('SmartHire LLC')
+  const [newRecCompany, setNewRecCompany] = useState('SmartHire')
   const [newRecRef, setNewRecRef] = useState('')
   const [newRecRole, setNewRecRole] = useState('recruiter')
   const [newRecPassword, setNewRecPassword] = useState('recruiter123')
@@ -234,7 +234,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
   const openAddModal = (presetParent = '') => {
     setNewRecName('')
     setNewRecEmail('')
-    setNewRecCompany('SmartHire LLC')
+    setNewRecCompany('SmartHire')
     setNewRecRef('')
     setNewRecRole(presetParent ? 'employee' : 'recruiter')
     setNewRecPassword('recruiter123')
@@ -260,7 +260,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
       email: newRecEmail.trim().toLowerCase(),
       role: newRecRole,
       refCode: newRefCode,
-      company: newRecCompany.trim() || 'SmartHire LLC',
+      company: newRecCompany.trim() || 'SmartHire',
       password: newRecPassword.trim(),
       parentRecruiterName: newRecRole === 'employee' ? newRecParent : '',
       isActive: true,
@@ -284,7 +284,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
     setEditRecruiter(rec)
     setEditRecName(rec.name || '')
     setEditRecEmail(rec.email || '')
-    setEditRecCompany(rec.company || 'SmartHire LLC')
+    setEditRecCompany(rec.company || 'SmartHire')
     setEditRecRef(rec.refCode || '')
     setEditRecRole(rec.role || 'recruiter')
     setEditRecPassword(rec.password || '••••••••')
@@ -310,7 +310,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
           email: editRecEmail.trim().toLowerCase(),
           role: editRecRole,
           refCode: finalRefCode,
-          company: editRecCompany.trim() || 'SmartHire LLC',
+          company: editRecCompany.trim() || 'SmartHire',
           password: editRecPassword.trim(),
           parentRecruiterName: editRecRole === 'employee' ? editRecParent : ''
         }
@@ -330,7 +330,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
           email: editRecEmail.trim().toLowerCase(),
           role: editRecRole,
           refCode: finalRefCode,
-          company: editRecCompany.trim() || 'SmartHire LLC',
+          company: editRecCompany.trim() || 'SmartHire',
           password: editRecPassword.trim(),
           parentRecruiterName: editRecRole === 'employee' ? editRecParent : ''
         })
@@ -679,7 +679,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                                 </td>
 
                                 <td style={{ padding: '10px 12px' }}>
-                                  <div style={{ fontSize: '11.5px', color: '#334155' }}>{rec.company || 'SmartHire LLC'}</div>
+                                  <div style={{ fontSize: '11.5px', color: '#334155' }}>{rec.company || 'SmartHire'}</div>
                                   <code className="ref-code-badge" style={{ fontSize: '10px' }}>{rec.refCode}</code>
                                 </td>
 
@@ -1029,7 +1029,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                 <label>Company</label>
                 <input 
                   type="text" 
-                  placeholder="e.g. SmartHire LLC" 
+                  placeholder="e.g. SmartHire" 
                   value={newRecCompany}
                   onChange={e => setNewRecCompany(e.target.value)}
                 />
