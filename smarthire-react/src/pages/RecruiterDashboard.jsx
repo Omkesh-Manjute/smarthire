@@ -4298,34 +4298,31 @@ function RecruiterDashboard() {
                 <div style={{ overflowX: 'auto', border: '1px solid #cbd5e1', borderTop: 'none' }}>
                   <table className="coolworks-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', fontFamily: 'Arial, Helvetica, sans-serif', background: '#ffffff' }}>
                     <thead>
-                      <tr style={{ background: '#8899a6', color: '#ffffff', borderBottom: '1px solid #64748b' }}>
-                        <th style={{ padding: '4px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap' }}>Req#</th>
-                        <th style={{ padding: '4px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap' }}>Position</th>
-                        <th style={{ padding: '4px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap' }}>Skills</th>
-                        <th style={{ padding: '4px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap' }}>Customer</th>
-                        <th style={{ padding: '4px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap' }}>Location</th>
-                        <th style={{ padding: '4px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap' }}>Deadline</th>
-                        <th style={{ padding: '4px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap' }}>Pay Rate</th>
-                        <th style={{ padding: '4px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap' }}>Recruiters</th>
-                        <th style={{ padding: '4px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap' }}>Status</th>
-                        <th style={{ padding: '4px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap' }}>Req Ctg</th>
-                        <th style={{ padding: '4px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap' }}>Req Type</th>
-                        <th style={{ padding: '4px 5px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', whiteSpace: 'nowrap' }}>Sub</th>
-                        <th style={{ padding: '4px 5px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', whiteSpace: 'nowrap' }}>Max sub</th>
-                        <th style={{ padding: '4px 6px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', whiteSpace: 'nowrap' }} title="Status Count: Submitted to Manager (SM) / Approved by Manager (AM) / Client Interview (CI) / Client Selected (CS)">
-                          Status Count<br/><span style={{ fontSize: '9.5px', fontWeight: 'normal' }}>SM / AM / CI / CS</span>
-                        </th>
-                        <th style={{ padding: '4px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap' }}>Creation Date</th>
-                        <th style={{ padding: '4px 5px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', whiteSpace: 'nowrap' }}>Duration</th>
-                        <th style={{ padding: '4px 4px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', width: '22px' }} title="Working (W)">W</th>
-                        <th style={{ padding: '4px 4px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', width: '22px' }} title="Key Req (K)">K</th>
-                        <th style={{ padding: '4px 4px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', width: '26px' }} title="Subcontractable (Cont)">Cont</th>
+                      <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
+                        <th style={{ padding: '5px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Req#</th>
+                        <th style={{ padding: '5px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Position</th>
+                        <th style={{ padding: '5px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Skills</th>
+                        <th style={{ padding: '5px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Customer</th>
+                        <th style={{ padding: '5px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Location</th>
+                        <th style={{ padding: '5px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Deadline</th>
+                        <th style={{ padding: '5px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Pay Rate</th>
+                        <th style={{ padding: '5px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Recruiters</th>
+                        <th style={{ padding: '5px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Status</th>
+                        <th style={{ padding: '5px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Req Ctg</th>
+                        <th style={{ padding: '5px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Req Type</th>
+                        <th style={{ padding: '5px 5px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Sub</th>
+                        <th style={{ padding: '5px 5px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Max sub</th>
+                        <th style={{ padding: '5px 6px', fontWeight: 'bold', color: '#ffffff', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Creation Date</th>
+                        <th style={{ padding: '5px 5px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Duration</th>
+                        <th style={{ padding: '5px 4px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', width: '22px', borderRight: '1px solid rgba(255,255,255,0.2)' }} title="Working (W)">W</th>
+                        <th style={{ padding: '5px 4px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', width: '22px', borderRight: '1px solid rgba(255,255,255,0.2)' }} title="Key Req (K)">K</th>
+                        <th style={{ padding: '5px 4px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', width: '26px' }} title="Subcontractable (Cont)">Cont</th>
                       </tr>
                     </thead>
                     <tbody>
                       {paginatedJobs.length === 0 ? (
                         <tr>
-                          <td colSpan="19" style={{ padding: '30px', textAlign: 'center', color: '#64748b' }}>
+                          <td colSpan="18" style={{ padding: '30px', textAlign: 'center', color: '#64748b' }}>
                             {isEmployee ? (
                               <div>
                                 <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#0f172a', marginBottom: '4px' }}>
@@ -4354,6 +4351,28 @@ function RecruiterDashboard() {
                           const deadDate = job.deadline || 'Sep 4, 2026'
                           const rateStr = job.budget ? String(job.budget).replace('/hr', '').trim() : ''
 
+                          // Short customer name format helper
+                          let shortCustomer = custName
+                          const cLower = custName.toLowerCase()
+                          const lStr = locName.toUpperCase()
+                          if (cLower.includes('texas') || cLower.includes('hhsc') || lStr.includes('TX') || lStr.includes('AUSTIN')) {
+                            shortCustomer = 'State Of TX'
+                          } else if (cLower.includes('north carolina') || cLower.includes('ncdot') || lStr.includes('NC') || lStr.includes('ROCKY MOUNT')) {
+                            shortCustomer = 'State Of NC'
+                          } else if (cLower.includes('michigan') || cLower.includes('dmva') || lStr.includes('MI') || lStr.includes('LANSING')) {
+                            shortCustomer = 'State Of MI'
+                          } else if (cLower.includes('oregon') || lStr.includes('OR') || lStr.includes('SALEM')) {
+                            shortCustomer = 'State Of OR'
+                          } else if (cLower.includes('virginia') || cLower.includes('dbhds') || cLower.includes('vdot') || lStr.includes('VA') || lStr.includes('RICHMOND')) {
+                            shortCustomer = 'State Of VA'
+                          } else if (cLower.includes('justice') || cLower.includes('doj')) {
+                            shortCustomer = 'DOJ'
+                          } else if (cLower.includes('south carolina') || cLower.includes('sc ') || lStr.includes('SC') || lStr.includes('COLUMBIA')) {
+                            shortCustomer = 'State Of SC'
+                          } else if (shortCustomer.length > 14) {
+                            shortCustomer = shortCustomer.slice(0, 12) + '..'
+                          }
+
                           const recList = Array.isArray(job.assignedRecruiters) && job.assignedRecruiters.length > 0
                             ? job.assignedRecruiters.join(', ')
                             : (job.postedByName || '')
@@ -4371,14 +4390,8 @@ function RecruiterDashboard() {
                           } catch (e) {}
                           if (!Array.isArray(subList)) subList = []
 
-                          const sm = subList.filter(c => (c.status || '').toLowerCase().includes('submit') || (c.status || '').toLowerCase().includes('manager')).length
-                          const am = subList.filter(c => (c.status || '').toLowerCase().includes('approved')).length
-                          const ci = subList.filter(c => (c.status || '').toLowerCase().includes('interview')).length
-                          const cs = subList.filter(c => (c.status || '').toLowerCase().includes('select') || (c.status || '').toLowerCase().includes('placed')).length
-
                           const subCount = subList.length
-                          const maxSub = job.maxSubmissions || 2
-                          const statusCountStr = `${sm} / ${am} / ${ci} / ${cs}`
+                          const maxSub = job.maxSubmissions || (subCount > 2 ? subCount : 2)
                           const createdDateStr = job.creationDate || 'Aug 25, 2026 05:08 PM'
                           const durationMonths = String(job.duration || '12').replace(/[^0-9]/g, '') || '12'
 
@@ -4420,10 +4433,10 @@ function RecruiterDashboard() {
                                 </span>
                               </td>
 
-                              {/* 4. Customer (Red text with Hover Tooltip) */}
-                              <td style={{ padding: '3px 6px', color: '#cc0000', lineHeight: '1.2' }}>
-                                <span title={`Customer / Client Agency:\n${custName}`}>
-                                  {custName}
+                              {/* 4. Customer (Short Form with Hover Tooltip) */}
+                              <td style={{ padding: '3px 6px', color: '#cc0000', lineHeight: '1.2', whiteSpace: 'pre-line' }}>
+                                <span title={`Customer / Client Department:\n${custName}`}>
+                                  {shortCustomer}
                                 </span>
                               </td>
 
@@ -4446,8 +4459,8 @@ function RecruiterDashboard() {
                                 {rateStr}
                               </td>
 
-                              {/* 8. Recruiters (Red text with Hover Tooltip) */}
-                              <td style={{ padding: '3px 6px', color: '#cc0000' }}>
+                              {/* 8. Recruiters (Distinct Deep Navy Blue Color) */}
+                              <td style={{ padding: '3px 6px', color: '#000080', fontWeight: recList ? 'bold' : 'normal' }}>
                                 <span title={`Assigned Recruiters:\n${recList || 'None Assigned'}`}>
                                   {truncatedRec}
                                 </span>
@@ -4484,38 +4497,31 @@ function RecruiterDashboard() {
                                 </span>
                               </td>
 
-                              {/* 14. Status Count SM / AM / CI / CS */}
-                              <td style={{ padding: '3px 6px', textAlign: 'center', color: '#cc0000', whiteSpace: 'nowrap' }}>
-                                <span title={`Status Breakdown for #${cleanId}:\n• Submitted to Manager (SM): ${sm}\n• Approved by Manager (AM): ${am}\n• Client Interview (CI): ${ci}\n• Client Selected (CS): ${cs}`}>
-                                  {statusCountStr}
-                                </span>
-                              </td>
-
-                              {/* 15. Creation Date */}
+                              {/* 14. Creation Date */}
                               <td style={{ padding: '3px 6px', color: '#cc0000', whiteSpace: 'nowrap' }}>
                                 <span title={`Requisition Creation Date:\n${createdDateStr}`}>
                                   {createdDateStr}
                                 </span>
                               </td>
 
-                              {/* 16. Duration */}
+                              {/* 15. Duration */}
                               <td style={{ padding: '3px 5px', textAlign: 'center', color: '#cc0000' }}>
                                 <span title={`Contract Duration: ${durationMonths} Months`}>
                                   {durationMonths}
                                 </span>
                               </td>
 
-                              {/* 17. W */}
+                              {/* 16. W */}
                               <td style={{ padding: '3px 4px', textAlign: 'center' }}>
                                 <input type="checkbox" readOnly checked={Boolean(job.working)} style={{ margin: 0, cursor: 'default' }} title="Working Requisition (W)" />
                               </td>
 
-                              {/* 18. K */}
+                              {/* 17. K */}
                               <td style={{ padding: '3px 4px', textAlign: 'center' }}>
                                 <input type="checkbox" readOnly checked={Boolean(job.keyReq)} style={{ margin: 0, cursor: 'default' }} title="Key Requisition (K)" />
                               </td>
 
-                              {/* 19. Cont */}
+                              {/* 18. Cont */}
                               <td style={{ padding: '3px 4px', textAlign: 'center' }}>
                                 <input type="checkbox" readOnly checked={reqTypeVal !== 'Permanent'} style={{ margin: 0, cursor: 'default' }} title="Subcontractable (Cont)" />
                               </td>
