@@ -716,19 +716,19 @@ function Reports() {
                 </h2>
 
                 <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', border: '1px solid #000000' }}>
+                  <table className="coolworks-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', border: '1px solid #708090', fontFamily: 'Arial, Helvetica, sans-serif', background: '#ffffff' }}>
                     <thead>
-                      <tr style={{ background: '#ffffff', color: '#000000', borderBottom: '1px solid #000000' }}>
-                        <th style={{ padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid #000000', width: '85px' }}>FNAME</th>
-                        <th style={{ padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid #000000', width: '90px' }}>LNAME</th>
-                        <th style={{ padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid #000000' }}>EMAIL</th>
-                        <th style={{ padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid #000000', width: '85px' }}>Phone No</th>
-                        <th style={{ padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid #000000', width: '55px', textAlign: 'center' }}>Can ID</th>
-                        <th style={{ padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid #000000', width: '55px', textAlign: 'center' }}>Req ID</th>
-                        <th style={{ padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid #000000', width: '130px', textAlign: 'center' }}>Applied Date</th>
-                        <th style={{ padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid #000000', width: '135px' }}>Submission Status</th>
-                        <th style={{ padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid #000000', width: '85px' }}>Reject Reason</th>
-                        <th style={{ padding: '5px 8px', fontWeight: 'bold' }}>Comments</th>
+                      <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', width: '85px', fontSize: '11px' }}>FNAME</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', width: '90px', fontSize: '11px' }}>LNAME</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>EMAIL</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', width: '85px', fontSize: '11px' }}>Phone No</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', width: '55px', textAlign: 'center', fontSize: '11px' }}>Can ID</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', width: '55px', textAlign: 'center', fontSize: '11px' }}>Req ID</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', width: '130px', textAlign: 'center', fontSize: '11px' }}>Applied Date</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', width: '135px', fontSize: '11px' }}>Submission Status</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', width: '85px', fontSize: '11px' }}>Reject Reason</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', fontSize: '11px' }}>Comments</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -740,17 +740,17 @@ function Reports() {
                         </tr>
                       ) : (
                         filteredCareersCandidates.map((c, idx) => (
-                          <tr key={`${c.canId}-${c.reqId}-${idx}`} style={{ borderBottom: '1px solid #000000', background: '#ffffff' }}>
-                            <td style={{ padding: '5px 8px', borderRight: '1px solid #000000' }}>{c.fName}</td>
-                            <td style={{ padding: '5px 8px', borderRight: '1px solid #000000' }}>{c.lName}</td>
-                            <td style={{ padding: '5px 8px', borderRight: '1px solid #000000', color: '#0066cc', wordBreak: 'break-all' }}>{c.email}</td>
-                            <td style={{ padding: '5px 8px', borderRight: '1px solid #000000' }}>{c.phone}</td>
-                            <td style={{ padding: '5px 8px', borderRight: '1px solid #000000', textAlign: 'center' }}>{c.canId}</td>
-                            <td style={{ padding: '5px 8px', borderRight: '1px solid #000000', textAlign: 'center', fontWeight: 'bold', color: '#0066cc' }}>{c.reqId}</td>
-                            <td style={{ padding: '5px 8px', borderRight: '1px solid #000000', textAlign: 'center', fontSize: '10.5px' }}>{c.appliedDate}</td>
-                            <td style={{ padding: '5px 8px', borderRight: '1px solid #000000' }}>{c.status}</td>
-                            <td style={{ padding: '5px 8px', borderRight: '1px solid #000000' }}>{c.rejectReason}</td>
-                            <td style={{ padding: '5px 8px', color: '#334155' }}>{c.comments}</td>
+                          <tr key={`${c.canId}-${c.reqId}-${idx}`} style={{ borderBottom: '1px solid #e2e8f0', background: '#ffffff' }}>
+                            <td style={{ padding: '5px 8px', borderRight: '1px solid #e2e8f0', color: '#000000' }}>{c.fName}</td>
+                            <td style={{ padding: '5px 8px', borderRight: '1px solid #e2e8f0', color: '#000000' }}>{c.lName}</td>
+                            <td style={{ padding: '5px 8px', borderRight: '1px solid #e2e8f0', color: '#0033cc', wordBreak: 'break-all' }}>{c.email}</td>
+                            <td style={{ padding: '5px 8px', borderRight: '1px solid #e2e8f0', color: '#000000' }}>{c.phone}</td>
+                            <td style={{ padding: '5px 8px', borderRight: '1px solid #e2e8f0', textAlign: 'center', color: '#000000' }}>{c.canId}</td>
+                            <td style={{ padding: '5px 8px', borderRight: '1px solid #e2e8f0', textAlign: 'center', fontWeight: 'bold', color: '#0033cc' }}>{c.reqId}</td>
+                            <td style={{ padding: '5px 8px', borderRight: '1px solid #e2e8f0', textAlign: 'center', fontSize: '10.5px', color: '#000000' }}>{c.appliedDate}</td>
+                            <td style={{ padding: '5px 8px', borderRight: '1px solid #e2e8f0', color: '#000000' }}>{c.status}</td>
+                            <td style={{ padding: '5px 8px', borderRight: '1px solid #e2e8f0', color: '#000000' }}>{c.rejectReason}</td>
+                            <td style={{ padding: '5px 8px', color: '#000000' }}>{c.comments}</td>
                           </tr>
                         ))
                       )}
@@ -765,7 +765,7 @@ function Reports() {
             {activeSubReport === 'resumes-added' && (
               <div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '18px', marginBottom: '12px' }}>
-                  <h1 style={{ margin: 0, fontSize: '20px', color: '#1d4ed8', fontWeight: 'bold', letterSpacing: '-0.02em' }}>
+                  <h1 style={{ margin: 0, fontSize: '20px', color: '#000080', fontWeight: 'bold', letterSpacing: '-0.02em' }}>
                     Resumes Added
                   </h1>
                   <span style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#0f172a' }}>
@@ -774,40 +774,40 @@ function Reports() {
                 </div>
 
                 <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', maxWidth: '780px', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', border: '1px solid #cbd5e1' }}>
+                  <table className="coolworks-table" style={{ width: '100%', maxWidth: '780px', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', border: '1px solid #708090', fontFamily: 'Arial, Helvetica, sans-serif', background: '#ffffff' }}>
                     <thead>
-                      <tr style={{ background: '#3b82f6', color: '#ffffff' }}>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', width: '110px', borderRight: '1px solid #60a5fa' }}>Submission Date ↕</th>
-                        <th style={{ padding: '6px 12px', fontWeight: 'bold', width: '170px', borderRight: '1px solid #60a5fa' }}>Recruiter Name ↕</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', textAlign: 'center', width: '115px', borderRight: '1px solid #60a5fa' }}>Resumes Submitted</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', textAlign: 'center', width: '45px', borderRight: '1px solid #60a5fa', background: '#2563eb' }}>New</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', textAlign: 'center', width: '45px', borderRight: '1px solid #60a5fa', background: '#2563eb' }}>CW</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', textAlign: 'center', width: '90px', borderRight: '1px solid #60a5fa' }}>Not Performed</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', width: '120px', borderRight: '1px solid #60a5fa' }}>Submitted To Client</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', textAlign: 'center', width: '60px' }}>Action</th>
+                      <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', width: '110px', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Submission Date ↕</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 12px', fontWeight: 'bold', width: '170px', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Recruiter Name ↕</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', textAlign: 'center', width: '115px', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Resumes Submitted</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', textAlign: 'center', width: '45px', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>New</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', textAlign: 'center', width: '45px', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>CW</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', textAlign: 'center', width: '90px', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Not Performed</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', width: '120px', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Submitted To Client</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', textAlign: 'center', width: '60px', fontSize: '11px' }}>Action</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredResumesAdded.map((row, idx) => (
                         <tr key={`${row.date}-${row.recruiter}-${idx}`} style={{
-                          background: idx % 2 === 0 ? '#ffffff' : '#f8fafc',
+                          background: '#ffffff',
                           borderBottom: '1px solid #e2e8f0'
                         }}>
-                          <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', color: '#0f172a' }}>{row.date}</td>
-                          <td style={{ padding: '5px 12px', borderRight: '1px solid #cbd5e1', color: '#0f172a' }}>{row.recruiter}</td>
-                          <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', color: '#0f172a' }}>{row.total}</td>
-                          <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: row.newCount > 0 ? '#16a34a' : '#0f172a', background: row.newCount > 0 ? '#f0fdf4' : 'transparent' }}>
+                          <td style={{ padding: '5px 8px', borderRight: '1px solid #e2e8f0', color: '#000000' }}>{row.date}</td>
+                          <td style={{ padding: '5px 12px', borderRight: '1px solid #e2e8f0', color: '#000000' }}>{row.recruiter}</td>
+                          <td style={{ padding: '5px 8px', borderRight: '1px solid #e2e8f0', textAlign: 'center', color: '#000000' }}>{row.total}</td>
+                          <td style={{ padding: '5px 8px', borderRight: '1px solid #e2e8f0', textAlign: 'center', fontWeight: 'bold', color: row.newCount > 0 ? '#16a34a' : '#000000', background: row.newCount > 0 ? '#f0fdf4' : 'transparent' }}>
                             {row.newCount}
                           </td>
-                          <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: row.poolCount > 0 ? '#0284c7' : '#0f172a', background: row.poolCount > 0 ? '#eff6ff' : 'transparent' }}>
+                          <td style={{ padding: '5px 8px', borderRight: '1px solid #e2e8f0', textAlign: 'center', fontWeight: 'bold', color: row.poolCount > 0 ? '#0033cc' : '#000000', background: row.poolCount > 0 ? '#eff6ff' : 'transparent' }}>
                             {row.poolCount}
                           </td>
-                          <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', color: '#0f172a' }}>{row.notPerf}</td>
-                          <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', color: '#0f172a' }}>{row.submittedClient}</td>
+                          <td style={{ padding: '5px 8px', borderRight: '1px solid #e2e8f0', textAlign: 'center', color: '#000000' }}>{row.notPerf}</td>
+                          <td style={{ padding: '5px 8px', borderRight: '1px solid #e2e8f0', color: '#000000' }}>{row.submittedClient}</td>
                           <td style={{ padding: '5px 8px', textAlign: 'center' }}>
                             <span
                               onClick={() => setDetailsModalData(row)}
-                              style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline', fontWeight: 'bold' }}
+                              style={{ color: '#0033cc', cursor: 'pointer', textDecoration: 'underline', fontWeight: 'bold' }}
                             >
                               Details
                             </span>
@@ -823,19 +823,19 @@ function Reports() {
             {/* ─── 3. REPORT: SUBMISSION SUMMARY (MATCHING MEDIA_1787314976453.PNG) ─── */}
             {activeSubReport === 'submission-summary' && (
               <div>
-                <h3 style={{ margin: '0 0 14px', fontSize: '13px', color: '#0f172a', fontWeight: 'bold' }}>
+                <h3 style={{ margin: '0 0 14px', fontSize: '13px', color: '#000080', fontWeight: 'bold' }}>
                   Report of Candidates submitted by a recruiter for a given period
                 </h3>
 
                 <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', maxWidth: '640px', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', border: '1px solid #cbd5e1' }}>
+                  <table className="coolworks-table" style={{ width: '100%', maxWidth: '640px', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', border: '1px solid #708090', fontFamily: 'Arial, Helvetica, sans-serif', background: '#ffffff' }}>
                     <thead>
-                      <tr style={{ background: '#555555', color: '#ffffff' }}>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', width: '100px', borderRight: '1px solid #777777' }}>Assigned Date</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', width: '110px', borderRight: '1px solid #777777', textAlign: 'center' }}>Submission Date</th>
-                        <th style={{ padding: '6px 12px', fontWeight: 'bold', borderRight: '1px solid #777777', textAlign: 'center' }}>Name</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', width: '70px', borderRight: '1px solid #777777', textAlign: 'center' }}># of Reqs</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', width: '110px', textAlign: 'center' }}>Total Submissions</th>
+                      <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', width: '100px', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Assigned Date</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', width: '110px', borderRight: '1px solid rgba(255,255,255,0.25)', textAlign: 'center', fontSize: '11px' }}>Submission Date</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 12px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', textAlign: 'center', fontSize: '11px' }}>Name</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', width: '70px', borderRight: '1px solid rgba(255,255,255,0.25)', textAlign: 'center', fontSize: '11px' }}># of Reqs</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', width: '110px', textAlign: 'center', fontSize: '11px' }}>Total Submissions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -844,18 +844,18 @@ function Reports() {
                           {group.recruiters.map((rec, rIdx) => (
                             <tr key={`${group.submissionDate}-${rec.name}-${rIdx}`} style={{ borderBottom: '1px solid #e2e8f0', background: '#ffffff' }}>
                               {rIdx === 0 && (
-                                <td rowSpan={group.recruiters.length} style={{ padding: '6px 8px', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
+                                <td rowSpan={group.recruiters.length} style={{ padding: '5px 8px', borderRight: '1px solid #e2e8f0', verticalAlign: 'top', color: '#000000' }}>
                                   {group.assignedDate}
                                 </td>
                               )}
                               {rIdx === 0 && (
-                                <td rowSpan={group.recruiters.length} style={{ padding: '6px 8px', borderRight: '1px solid #cbd5e1', verticalAlign: 'top', textAlign: 'center' }}>
+                                <td rowSpan={group.recruiters.length} style={{ padding: '5px 8px', borderRight: '1px solid #e2e8f0', verticalAlign: 'top', textAlign: 'center', color: '#000000' }}>
                                   {group.submissionDate}
                                 </td>
                               )}
-                              <td style={{ padding: '5px 12px', borderRight: '1px solid #cbd5e1', color: '#0f172a' }}>{rec.name}</td>
-                              <td style={{ padding: '5px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', color: '#475569' }}>{rec.reqs || ''}</td>
-                              <td style={{ padding: '5px 8px', textAlign: 'center', color: '#0f172a' }}>{rec.total}</td>
+                              <td style={{ padding: '5px 12px', borderRight: '1px solid #e2e8f0', color: '#000000' }}>{rec.name}</td>
+                              <td style={{ padding: '5px 8px', borderRight: '1px solid #e2e8f0', textAlign: 'center', color: '#000000' }}>{rec.reqs || ''}</td>
+                              <td style={{ padding: '5px 8px', textAlign: 'center', color: '#000000' }}>{rec.total}</td>
                             </tr>
                           ))}
                         </React.Fragment>

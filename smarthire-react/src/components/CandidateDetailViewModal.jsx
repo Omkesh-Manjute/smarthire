@@ -479,55 +479,57 @@ CORE TECHNICAL COMPETENCIES:
                 </span>
               </div>
 
-              <div style={{ overflowX: 'auto', border: '1px solid #cbd5e1', borderRadius: '6px' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left' }}>
+              <div style={{ overflowX: 'auto', border: '1px solid #708090', borderRadius: '3px' }}>
+                <table className="coolworks-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', background: '#ffffff', fontFamily: 'Arial, Helvetica, sans-serif' }}>
                   <thead>
-                    <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #cbd5e1', color: '#334155' }}>
-                      <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Req # & Position</th>
-                      <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Client / Customer</th>
-                      <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Submitted On</th>
-                      <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Submitted By</th>
-                      <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Proposed Rate</th>
-                      <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Hiring Status</th>
-                      <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Notes / Feedback</th>
+                    <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
+                      <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Req # & Position</th>
+                      <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Client / Customer</th>
+                      <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Submitted On</th>
+                      <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Submitted By</th>
+                      <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Proposed Rate</th>
+                      <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Hiring Status</th>
+                      <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', fontSize: '11px' }}>Notes / Feedback</th>
                     </tr>
                   </thead>
                   <tbody>
                     {submissionHistory.map((sub, idx) => {
-                      let statusBg = '#dbeafe'
-                      let statusColor = '#1e40af'
+                      let statusBg = '#eff6ff'
+                      let statusColor = '#1d4ed8'
+                      let statusBorder = '#bfdbfe'
                       if (sub.status.includes('Approved') || sub.status === 'Placed') {
-                        statusBg = '#dcfce7'
-                        statusColor = '#166534'
+                        statusBg = '#ecfdf5'
+                        statusColor = '#065f46'
+                        statusBorder = '#a7f3d0'
                       } else if (sub.status.includes('Rejected')) {
-                        statusBg = '#fee2e2'
+                        statusBg = '#fef2f2'
                         statusColor = '#991b1b'
+                        statusBorder = '#fecaca'
                       } else if (sub.status.includes('Interview')) {
                         statusBg = '#e0f2fe'
                         statusColor = '#0369a1'
+                        statusBorder = '#bae6fd'
                       }
 
                       return (
-                        <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0', background: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
-                          <td style={{ padding: '8px 10px' }}>
-                            <strong style={{ color: '#0f172a', display: 'block' }}>Req #{sub.reqId}</strong>
-                            <span style={{ fontSize: '11px', color: '#475569' }}>{sub.reqTitle}</span>
+                        <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0', background: '#ffffff' }}>
+                          <td style={{ padding: '5px 8px' }}>
+                            <span style={{ color: '#0033cc', fontWeight: 'bold' }}>Req #{sub.reqId}</span>
+                            <span style={{ fontSize: '10.5px', color: '#000000', marginLeft: '6px' }}>{sub.reqTitle}</span>
                           </td>
-                          <td style={{ padding: '8px 10px' }}>
-                            <span style={{ background: '#eff6ff', color: '#1e40af', padding: '2px 6px', borderRadius: '3px', fontWeight: 'bold', fontSize: '10.5px' }}>
-                              {sub.client}
-                            </span>
+                          <td style={{ padding: '5px 8px', color: '#000000' }}>
+                            {sub.client}
                           </td>
-                          <td style={{ padding: '8px 10px', color: '#475569', whiteSpace: 'nowrap' }}>
+                          <td style={{ padding: '5px 8px', color: '#000000', whiteSpace: 'nowrap' }}>
                             {sub.assignedOn}
                           </td>
-                          <td style={{ padding: '8px 10px', fontWeight: 'bold', color: '#0f172a' }}>
+                          <td style={{ padding: '5px 8px', color: '#000000' }}>
                             {sub.assignedBy}
                           </td>
-                          <td style={{ padding: '8px 10px', fontWeight: 'bold', color: '#166534' }}>
+                          <td style={{ padding: '5px 8px', color: '#000000' }}>
                             {sub.payRate} ({sub.payRateType})
                           </td>
-                          <td style={{ padding: '8px 10px' }}>
+                          <td style={{ padding: '5px 8px' }}>
                             <span style={{ background: statusBg, color: statusColor, padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '10.5px', display: 'inline-block' }}>
                               {sub.status}
                             </span>

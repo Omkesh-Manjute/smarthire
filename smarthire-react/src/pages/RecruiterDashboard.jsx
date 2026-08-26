@@ -2057,21 +2057,21 @@ function RecruiterDashboard() {
                 </div>
 
                 {/* Legacy CoolWorks Candidate Grid */}
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', background: '#ffffff' }}>
+                <div style={{ overflowX: 'auto', border: '1px solid #cbd5e1', borderTop: 'none' }}>
+                  <table className="coolworks-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', background: '#ffffff', fontFamily: 'Arial, Helvetica, sans-serif' }}>
                     <thead>
-                      <tr style={{ background: '#94a3b8', color: '#ffffff', borderBottom: '1px solid #cbd5e1' }}>
-                        <th style={{ padding: '6px 5px', fontWeight: 'bold', textAlign: 'center', width: '35px' }}>Scr?</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Name</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Job Title</th>
-                        <th style={{ padding: '6px 5px', fontWeight: 'bold', textAlign: 'center', width: '35px' }}>Exp</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Location</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Pay Rate</th>
-                        <th style={{ padding: '6px 6px', fontWeight: 'bold' }}>Rate Type</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold' }}>Work Auth</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', color: '#ffffff', background: '#475569' }}>Sourced By</th>
-                        <th style={{ padding: '6px 5px', fontWeight: 'bold', textAlign: 'center', width: '40px' }}>Resume</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 'bold', textAlign: 'center', minWidth: '170px' }}>Actions</th>
+                      <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', textAlign: 'center', width: '35px', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Scr?</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Name</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Job Title</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', textAlign: 'center', width: '35px', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Exp</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Location</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Pay Rate</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Rate Type</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Work Auth</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Sourced By</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', textAlign: 'center', width: '40px', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Resume</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', textAlign: 'center', minWidth: '110px', fontSize: '11px' }}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2124,61 +2124,63 @@ function RecruiterDashboard() {
                       ) : (
                         paginatedCandidates.map((c, idx) => (
                           <tr key={c.id || idx} style={{
-                            background: idx % 2 === 0 ? '#ffffff' : '#f8fafc',
+                            background: '#ffffff',
                             borderBottom: '1px solid #e2e8f0'
                           }}>
                             {/* Scr? Checkmark */}
-                            <td style={{ padding: '5px 5px', textAlign: 'center' }}>
+                            <td style={{ padding: '4px 6px', textAlign: 'center' }}>
                               <span style={{ color: '#16a34a', fontSize: '12px' }} title="Screened">🟢</span>
                             </td>
 
                             {/* Name Link */}
-                            <td style={{ padding: '5px 8px', fontWeight: 'bold' }}>
+                            <td style={{ padding: '4px 8px' }}>
                               <span onClick={() => {
                                 setSelectedViewCandidate(c)
                                 setShowDetailViewModal(true)
-                              }} style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>
+                              }} style={{ color: '#0033cc', cursor: 'pointer', textDecoration: 'none' }}
+                              onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+                              onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}>
                                 {c.name}
                               </span>
                             </td>
 
                             {/* Job Title */}
-                            <td style={{ padding: '5px 8px', color: '#334155' }} title={c.fullRole || c.role}>
+                            <td style={{ padding: '4px 8px', color: '#000000' }} title={c.fullRole || c.role}>
                               {c.fullRole || c.role}
                             </td>
 
                             {/* Exp */}
-                            <td style={{ padding: '5px 5px', textAlign: 'center', color: '#334155' }}>
+                            <td style={{ padding: '4px 6px', textAlign: 'center', color: '#000000' }}>
                               {c.exp} yrs
                             </td>
 
                             {/* Location */}
-                            <td style={{ padding: '5px 8px', color: '#334155' }}>
+                            <td style={{ padding: '4px 8px', color: '#000000' }}>
                               {c.location || `${c.city || ''}, ${c.state || ''}`}
                             </td>
 
                             {/* Pay Rate */}
-                            <td style={{ padding: '5px 8px', color: '#334155', fontWeight: 'bold' }}>
-                              {c.payRate}
+                            <td style={{ padding: '4px 8px', color: '#000000' }}>
+                              {c.payRate ? `$${c.payRate}` : '$75'}
                             </td>
 
                             {/* Rate Type */}
-                            <td style={{ padding: '5px 6px', color: '#334155' }}>
+                            <td style={{ padding: '4px 6px', color: '#000000' }}>
                               {c.rateType || 'C2C'}
                             </td>
 
                             {/* Work Auth */}
-                            <td style={{ padding: '5px 8px', color: '#334155' }}>
+                            <td style={{ padding: '4px 8px', color: '#000000' }}>
                               {c.workAuth || 'US Citizen'}
                             </td>
 
                             {/* Recruiter / Added By */}
-                            <td style={{ padding: '5px 8px', fontWeight: 'bold', color: '#1e3a8a', background: idx % 2 === 0 ? '#f1f5f9' : '#e2e8f0' }}>
+                            <td style={{ padding: '4px 8px', color: '#000000' }}>
                               {c.recruiter || c.assignedTo || c.addedByName || userName}
                             </td>
 
                             {/* Resume Icon */}
-                            <td style={{ padding: '5px 5px', textAlign: 'center' }}>
+                            <td style={{ padding: '4px 6px', textAlign: 'center' }}>
                               <span onClick={() => {
                                 setSelectedViewCandidate(c)
                                 setShowDetailViewModal(true)
@@ -2188,7 +2190,7 @@ function RecruiterDashboard() {
                             </td>
 
                             {/* Actions Column */}
-                            <td style={{ padding: '5px 8px', textAlign: 'center' }}>
+                            <td style={{ padding: '4px 8px', textAlign: 'center' }}>
                               <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', alignItems: 'center' }}>
                                 <button
                                   type="button"
@@ -2197,18 +2199,17 @@ function RecruiterDashboard() {
                                     setShowDetailViewModal(true)
                                   }}
                                   style={{
-                                    background: '#0284c7',
-                                    color: '#ffffff',
-                                    border: 'none',
-                                    padding: '4px 12px',
-                                    fontSize: '11px',
+                                    background: '#f1f5f9',
+                                    color: '#0033cc',
+                                    border: '1px solid #cbd5e1',
+                                    padding: '2px 8px',
+                                    fontSize: '10.5px',
                                     fontWeight: 'bold',
-                                    borderRadius: '3px',
+                                    borderRadius: '2px',
                                     cursor: 'pointer',
                                     display: 'inline-flex',
                                     alignItems: 'center',
-                                    gap: '4px',
-                                    boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                                    gap: '3px'
                                   }}
                                   title="View candidate details, submission history, and resume versions"
                                 >
@@ -2422,17 +2423,17 @@ function RecruiterDashboard() {
 
                 {/* Submissions Activity Table */}
                 <div style={{ overflowX: 'auto', border: '1px solid #cbd5e1', borderRadius: '3px' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left' }}>
+                  <table className="coolworks-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', background: '#ffffff', fontFamily: 'Arial, Helvetica, sans-serif' }}>
                     <thead>
-                      <tr style={{ background: '#94a3b8', color: '#ffffff' }}>
-                        <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Candidate Name</th>
-                        <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Requisition # & Title</th>
-                        <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Customer / Client</th>
-                        <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Proposed Pay Rate</th>
-                        <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Submitted Date</th>
-                        <th style={{ padding: '8px 10px', fontWeight: 'bold', textAlign: 'center' }}>Current Submission Status</th>
-                        <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Feedback / Status Notes</th>
-                        <th style={{ padding: '8px 10px', fontWeight: 'bold', textAlign: 'center' }}>Actions</th>
+                      <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Candidate Name</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Requisition # & Title</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Customer / Client</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Proposed Pay Rate</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Submitted Date</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', textAlign: 'center', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Current Submission Status</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Feedback / Status Notes</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', textAlign: 'center', fontSize: '11px' }}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2482,35 +2483,48 @@ function RecruiterDashboard() {
                           }
 
                           return (
-                            <tr key={sub.key || idx} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                              <td style={{ padding: '8px 10px', fontWeight: 'bold' }}>
-                                <span style={{ color: '#0066cc', cursor: 'pointer' }} onClick={() => {
-                                  const c = candidates.find(item => item.id === sub.id || item.name === sub.name) || sub
-                                  handleSelectExistingCandidate(c)
-                                }}>
+                            <tr key={sub.key || idx} style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
+                              <td style={{ padding: '5px 8px' }}>
+                                <span style={{ color: '#0033cc', cursor: 'pointer', textDecoration: 'none' }}
+                                  onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+                                  onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
+                                  onClick={() => {
+                                    const c = candidates.find(item => item.id === sub.id || item.name === sub.name) || sub
+                                    handleSelectExistingCandidate(c)
+                                  }}
+                                >
                                   {sub.name}
                                 </span>
                               </td>
-                              <td style={{ padding: '8px 10px' }}>
+                              <td style={{ padding: '5px 8px' }}>
                                 <div>
-                                  <span style={{ fontWeight: 'bold', color: '#ea580c' }}>#{sub.jobReqId}</span>
-                                  <span style={{ marginLeft: '6px', color: '#1e3a8a', fontWeight: 'bold' }}>{sub.jobTitle}</span>
+                                  <span style={{ color: '#0033cc', cursor: 'pointer', textDecoration: 'none' }}
+                                    onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+                                    onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
+                                    onClick={() => {
+                                      const matchingJob = jobs.find(j => String(j.id).includes(sub.jobReqId))
+                                      if (matchingJob) handleSelectJob(matchingJob)
+                                    }}
+                                  >
+                                    #{sub.jobReqId}
+                                  </span>
+                                  <span style={{ marginLeft: '6px', color: '#000000' }}>{sub.jobTitle}</span>
                                 </div>
                               </td>
-                              <td style={{ padding: '8px 10px', color: '#334155' }}>
+                              <td style={{ padding: '5px 8px', color: '#000000' }}>
                                 {sub.customer}
                               </td>
-                              <td style={{ padding: '8px 10px', color: '#334155', fontWeight: 'bold' }}>
+                              <td style={{ padding: '5px 8px', color: '#000000' }}>
                                 {sub.payRate || '$75/hr'} ({sub.payRateType || sub.rateType || 'C2C'})
                               </td>
-                              <td style={{ padding: '8px 10px', color: '#64748b' }}>
+                              <td style={{ padding: '5px 8px', color: '#000000' }}>
                                 {sub.assignedOn || sub.lastChangedOn || 'Today'}
                               </td>
-                              <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                              <td style={{ padding: '5px 8px', textAlign: 'center' }}>
                                 <span style={{
                                   display: 'inline-block',
-                                  padding: '3px 8px',
-                                  borderRadius: '12px',
+                                  padding: '2px 8px',
+                                  borderRadius: '2px',
                                   fontSize: '10.5px',
                                   fontWeight: 'bold',
                                   background: badgeBg,
@@ -2520,10 +2534,10 @@ function RecruiterDashboard() {
                                   {sub.status || 'Int-SubmittedToManager'}
                                 </span>
                               </td>
-                              <td style={{ padding: '8px 10px', color: '#475569', fontSize: '11px', maxWidth: '220px' }}>
+                              <td style={{ padding: '5px 8px', color: '#000000', fontSize: '10.5px', maxWidth: '220px' }}>
                                 {sub.statusComments || 'Direct employee submission'}
                               </td>
-                              <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                              <td style={{ padding: '5px 8px', textAlign: 'center' }}>
                                 <button
                                   type="button"
                                   onClick={() => {
@@ -2534,7 +2548,7 @@ function RecruiterDashboard() {
                                       setActiveMainTab('requisitions')
                                     }
                                   }}
-                                  style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '3px 8px', fontSize: '10.5px', fontWeight: 'bold', color: '#0066cc', cursor: 'pointer', borderRadius: '3px' }}
+                                  style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '2px 8px', fontSize: '10.5px', fontWeight: 'bold', color: '#0033cc', cursor: 'pointer', borderRadius: '2px' }}
                                 >
                                   View Req &gt;&gt;
                                 </button>
@@ -3636,14 +3650,14 @@ function RecruiterDashboard() {
 
                     {/* Recruiters Compact Table */}
                     <div style={{ overflowX: 'auto', border: '1px solid #7f9db9', borderRadius: 0, marginBottom: '8px' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left' }}>
+                      <table className="coolworks-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', fontFamily: 'Arial, Helvetica, sans-serif', background: '#ffffff' }}>
                         <thead>
-                          <tr style={{ background: '#708090', color: '#ffffff' }}>
-                            <th style={{ padding: '3px 6px', width: '30px', textAlign: 'center' }}>
+                          <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
+                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', width: '30px', textAlign: 'center', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>
                               <input
                                 type="checkbox"
                                 checked={allRecruitersList.length > 0 && allRecruitersList.every(rec => 
-                                  (editingFields.assignedRecruiters || []).some(r => String(r || '').toLowerCase().trim() === String(rec.name || '').toLowerCase().trim())
+                                   (editingFields.assignedRecruiters || []).some(r => String(r || '').toLowerCase().trim() === String(rec.name || '').toLowerCase().trim())
                                 )}
                                 onChange={e => {
                                   if (e.target.checked) {
@@ -3654,10 +3668,10 @@ function RecruiterDashboard() {
                                 }}
                               />
                             </th>
-                            <th style={{ padding: '3px 6px', fontWeight: 'bold' }}>Recruiter Name</th>
-                            <th style={{ padding: '3px 6px', fontWeight: 'bold' }}>Role</th>
-                            <th style={{ padding: '3px 6px', fontWeight: 'bold' }}>Email Address</th>
-                            <th style={{ padding: '3px 6px', fontWeight: 'bold' }}>Assignment Status</th>
+                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Recruiter Name</th>
+                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Role</th>
+                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Email Address</th>
+                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', fontWeight: 'bold', fontSize: '11px' }}>Assignment Status</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -3671,7 +3685,7 @@ function RecruiterDashboard() {
                                 key={rec.id || rec.email || rec.name || idx}
                                 onClick={() => toggleRecruiterAssignment(rec.name)}
                                 style={{
-                                  background: isAssigned ? '#eff6ff' : (idx % 2 === 0 ? '#ffffff' : '#f8fafc'),
+                                  background: isAssigned ? '#eff6ff' : '#ffffff',
                                   borderBottom: '1px solid #e2e8f0',
                                   cursor: 'pointer'
                                 }}
@@ -3684,13 +3698,13 @@ function RecruiterDashboard() {
                                     onChange={() => toggleRecruiterAssignment(rec.name)}
                                   />
                                 </td>
-                                <td style={{ padding: '3px 6px', fontWeight: 'bold', color: isAssigned ? '#000080' : '#0f172a' }}>
+                                <td style={{ padding: '3px 6px', fontWeight: 'bold', color: isAssigned ? '#0033cc' : '#000000' }}>
                                   {rec.name} {rec.name === userName ? '(You)' : ''}
                                 </td>
-                                <td style={{ padding: '3px 6px', color: '#475569' }}>
+                                <td style={{ padding: '3px 6px', color: '#000000' }}>
                                   {rec.role}
                                 </td>
-                                <td style={{ padding: '3px 6px', color: '#64748b', fontFamily: 'monospace' }}>
+                                <td style={{ padding: '3px 6px', color: '#000000', fontFamily: 'monospace' }}>
                                   {rec.email}
                                 </td>
                                 <td style={{ padding: '3px 6px' }}>
@@ -3804,18 +3818,18 @@ function RecruiterDashboard() {
                     </div>
 
                     <div style={{ overflowX: 'auto', marginBottom: '10px', border: '1px solid #7f9db9', borderRadius: 0 }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
+                      <table className="coolworks-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', fontFamily: 'Arial, Helvetica, sans-serif', background: '#ffffff' }}>
                         <thead>
-                          <tr style={{ background: '#708090', color: '#ffffff' }}>
-                            <th style={{ padding: '4px 6px', fontWeight: 'bold' }}>Candidate Name</th>
-                            <th style={{ padding: '4px 6px', fontWeight: 'bold' }}>Pay Rate</th>
-                            <th style={{ padding: '4px 6px', fontWeight: 'bold' }}>Pay Rate Type</th>
-                            <th style={{ padding: '4px 6px', fontWeight: 'bold' }}>Assigned By</th>
-                            <th style={{ padding: '4px 6px', fontWeight: 'bold' }}>Assigned On</th>
-                            <th style={{ padding: '4px 6px', fontWeight: 'bold' }}>Status</th>
-                            <th style={{ padding: '4px 6px', fontWeight: 'bold' }}>Status Comments</th>
-                            <th style={{ padding: '4px 6px', fontWeight: 'bold' }}>Schedule Interview</th>
-                            <th style={{ padding: '4px 6px', fontWeight: 'bold' }}>Rejected Reason</th>
+                          <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
+                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Candidate Name</th>
+                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Pay Rate</th>
+                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Pay Rate Type</th>
+                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Assigned By</th>
+                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Assigned On</th>
+                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Status</th>
+                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Status Comments</th>
+                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Schedule Interview</th>
+                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', fontWeight: 'bold', fontSize: '11px' }}>Rejected Reason</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -3825,7 +3839,7 @@ function RecruiterDashboard() {
                                 <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Candidates are not available for this view!</div>
                                 <span
                                   onClick={() => setShowAddCandidateModal(true)}
-                                  style={{ color: '#000080', fontWeight: 'bold', cursor: 'pointer' }}
+                                  style={{ color: '#0033cc', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline' }}
                                 >
                                   Select Candidate
                                 </span>
@@ -3833,13 +3847,15 @@ function RecruiterDashboard() {
                             </tr>
                           ) : (
                             potentialCandidates.map((pc, idx) => (
-                              <tr key={pc.id} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                                <td style={{ padding: '4px 6px', fontWeight: 'bold' }}>
+                              <tr key={pc.id} style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
+                                <td style={{ padding: '4px 6px' }}>
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
                                     <span onClick={() => {
                                       setSelectedViewCandidate(pc)
                                       setShowDetailViewModal(true)
-                                    }} style={{ color: '#000080', cursor: 'pointer' }}>
+                                    }} style={{ color: '#0033cc', cursor: 'pointer', textDecoration: 'none', fontWeight: 'normal' }}
+                                    onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+                                    onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}>
                                       {pc.name}
                                     </span>
                                     <span
@@ -3847,16 +3863,16 @@ function RecruiterDashboard() {
                                         setSelectedViewCandidate(pc)
                                         setShowDetailViewModal(true)
                                       }}
-                                      style={{ fontSize: '9.5px', color: '#0066cc', cursor: 'pointer' }}
+                                      style={{ fontSize: '9.5px', color: '#0033cc', cursor: 'pointer' }}
                                     >
                                       📄 View Details & History
                                     </span>
                                   </div>
                                 </td>
-                                <td style={{ padding: '4px 6px', color: '#1e293b' }}>{pc.payRate}</td>
-                                <td style={{ padding: '4px 6px', color: '#1e293b' }}>{pc.payRateType}</td>
-                                <td style={{ padding: '4px 6px', fontWeight: 'bold', color: '#000080' }}>{pc.assignedBy}</td>
-                                <td style={{ padding: '4px 6px', color: '#475569', fontSize: '10px' }}>{pc.assignedOn}</td>
+                                <td style={{ padding: '4px 6px', color: '#000000' }}>{pc.payRate}</td>
+                                <td style={{ padding: '4px 6px', color: '#000000' }}>{pc.payRateType}</td>
+                                <td style={{ padding: '4px 6px', color: '#000000' }}>{pc.assignedBy}</td>
+                                <td style={{ padding: '4px 6px', color: '#000000', fontSize: '10px' }}>{pc.assignedOn}</td>
                                 <td style={{ padding: '4px 6px', minWidth: '170px' }}>
                                   <select
                                     value={pc.status}
@@ -4490,17 +4506,17 @@ function RecruiterDashboard() {
 
                 {/* Team Users Table */}
                 <div style={{ overflowX: 'auto', border: '1px solid #cbd5e1', borderRadius: '3px' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left' }}>
+                  <table className="coolworks-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', background: '#ffffff', fontFamily: 'Arial, Helvetica, sans-serif' }}>
                     <thead>
-                      <tr style={{ background: '#94a3b8', color: '#ffffff' }}>
-                        <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Member Name</th>
-                        <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Role / Designation</th>
-                        <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Reports To (Lead Recruiter)</th>
-                        <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Corporate Email (Login ID)</th>
-                        <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Password</th>
-                        <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Assigned Requirements</th>
-                        <th style={{ padding: '8px 10px', fontWeight: 'bold' }}>Account Status</th>
-                        <th style={{ padding: '8px 10px', fontWeight: 'bold', textAlign: 'center' }}>Actions</th>
+                      <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Member Name</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Role / Designation</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Reports To (Lead Recruiter)</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Corporate Email (Login ID)</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Password</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Assigned Requirements</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Account Status</th>
+                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', textAlign: 'center', fontSize: '11px' }}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -4524,13 +4540,13 @@ function RecruiterDashboard() {
                           const isCurrentUser = u.name.toLowerCase() === userName.toLowerCase() || u.email?.toLowerCase() === currentUser?.email?.toLowerCase()
 
                           return (
-                            <tr key={u.id || idx} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                              <td style={{ padding: '8px 10px', fontWeight: 'bold', color: '#0f172a' }}>
+                            <tr key={u.id || idx} style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
+                              <td style={{ padding: '5px 8px', fontWeight: 'bold', color: '#000000' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                   <div style={{
-                                    width: '26px', height: '26px', borderRadius: '50%',
+                                    width: '24px', height: '24px', borderRadius: '50%',
                                     background: u.role === 'superadmin' || u.role === 'admin' ? '#0284c7' : u.role === 'manager' ? '#d97706' : u.role === 'recruiter' ? '#ea580c' : '#10b981',
-                                    color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold'
+                                    color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold'
                                   }}>
                                     {u.name?.slice(0, 2).toUpperCase() || 'U'}
                                   </div>
@@ -4538,21 +4554,21 @@ function RecruiterDashboard() {
                                 </div>
                               </td>
 
-                              <td style={{ padding: '8px 10px' }}>
+                              <td style={{ padding: '5px 8px' }}>
                                 <span style={{
                                   background: u.role === 'superadmin' || u.role === 'admin' ? '#e0f2fe' : u.role === 'manager' ? '#fef3c7' : u.role === 'recruiter' ? '#ffedd5' : '#dcfce7',
                                   color: u.role === 'superadmin' || u.role === 'admin' ? '#0369a1' : u.role === 'manager' ? '#92400e' : u.role === 'recruiter' ? '#c2410c' : '#15803d',
                                   border: '1px solid',
                                   borderColor: u.role === 'superadmin' || u.role === 'admin' ? '#bae6fd' : u.role === 'manager' ? '#fde68a' : u.role === 'recruiter' ? '#fed7aa' : '#bbf7d0',
-                                  borderRadius: '12px', padding: '2px 8px', fontSize: '10.5px', fontWeight: 'bold'
+                                  borderRadius: '2px', padding: '2px 6px', fontSize: '10px', fontWeight: 'bold'
                                 }}>
                                   {u.role === 'superadmin' || u.role === 'admin' ? '👑 Super Admin' : u.role === 'manager' ? '🛡️ Manager / Lead' : u.role === 'recruiter' ? '💼 Lead Recruiter' : '👤 Employee (Sourcing)'}
                                 </span>
                               </td>
 
-                              <td style={{ padding: '8px 10px', color: '#475569' }}>
+                              <td style={{ padding: '5px 8px', color: '#000000' }}>
                                 {u.parentRecruiterName ? (
-                                  <span style={{ color: '#0284c7', fontWeight: 'bold' }}>
+                                  <span style={{ color: '#0033cc', fontWeight: 'bold' }}>
                                     Reports to {u.parentRecruiterName}
                                   </span>
                                 ) : (
@@ -4560,27 +4576,27 @@ function RecruiterDashboard() {
                                 )}
                               </td>
 
-                              <td style={{ padding: '8px 10px', color: '#0066cc', fontFamily: 'monospace' }}>
+                              <td style={{ padding: '5px 8px', color: '#0033cc', fontFamily: 'monospace' }}>
                                 {u.email}
                               </td>
 
-                              <td style={{ padding: '8px 10px', color: '#475569', fontFamily: 'monospace' }}>
-                                <span style={{ background: '#f1f5f9', padding: '2px 6px', borderRadius: '3px', border: '1px solid #cbd5e1' }}>
+                              <td style={{ padding: '5px 8px', color: '#000000', fontFamily: 'monospace' }}>
+                                <span style={{ background: '#f1f5f9', padding: '1px 5px', borderRadius: '2px', border: '1px solid #cbd5e1' }}>
                                   {u.password || '••••••••'}
                                 </span>
                               </td>
 
-                              <td style={{ padding: '8px 10px' }}>
+                              <td style={{ padding: '5px 8px' }}>
                                 <span style={{
                                   background: assignedReqsCount > 0 ? '#dbeafe' : '#f1f5f9',
                                   color: assignedReqsCount > 0 ? '#1e40af' : '#64748b',
-                                  fontWeight: 'bold', borderRadius: '10px', padding: '2px 8px', fontSize: '11px'
+                                  fontWeight: 'bold', borderRadius: '2px', padding: '2px 6px', fontSize: '10.5px'
                                 }}>
                                   {assignedReqsCount} Req{assignedReqsCount === 1 ? '' : 's'} Assigned
                                 </span>
                               </td>
 
-                              <td style={{ padding: '8px 10px' }}>
+                              <td style={{ padding: '5px 8px' }}>
                                 <span style={{
                                   color: u.isActive !== false ? '#16a34a' : '#dc2626',
                                   fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px'
@@ -4589,7 +4605,7 @@ function RecruiterDashboard() {
                                 </span>
                               </td>
 
-                              <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                              <td style={{ padding: '5px 8px', textAlign: 'center' }}>
                                 <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
                                   <button
                                     type="button"
