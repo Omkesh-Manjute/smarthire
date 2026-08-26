@@ -45,9 +45,18 @@ export default function AtsPlatform() {
 
   const defaultRole = (currentUser && currentUser.role) ? currentUser.role : 'superadmin'
   const realUserRole = currentUser?.role || 'recruiter'
-  const canSwitchRoles = realUserRole === 'superadmin' || realUserRole === 'admin'
+  const isEmployee = realUserRole === 'employee'
+  const isManager = realUserRole === 'manager'
+  const canSwitchRoles = (realUserRole === 'superadmin' || realUserRole === 'admin' || isManager) && !isEmployee
   const activeRole = canSwitchRoles ? (localStorage.getItem('smarthire_active_role') || defaultRole) : defaultRole
-  const isSuperAdmin = activeRole === 'superadmin' || activeRole === 'admin'
+  const isSuperAdmin = (activeRole === 'superadmin' || activeRole === 'admin' || (isManager && activeRole !== 'recruiter')) && !isEmployee
+
+  // Strict employee workspace isolation: redirect employee to dashboard
+  useEffect(() => {
+    if (isEmployee) {
+      window.location.href = '/dashboard'
+    }
+  }, [isEmployee])
 
   const DEFAULT_PERMISSIONS = {
     superadmin: {

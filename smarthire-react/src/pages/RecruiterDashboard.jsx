@@ -199,13 +199,17 @@ function RecruiterDashboard() {
   const userName = currentUser?.name || currentUser?.displayName || 'Omkesh'
   const activeRoleOverride = localStorage.getItem('smarthire_active_role')
   const userRole = activeRoleOverride || currentUser?.role || (userName.toLowerCase().includes('omkesh') ? 'superadmin' : 'recruiter')
-  
+
   const isAdmin = userRole === 'superadmin' || userRole === 'admin'
   const isManager = userRole === 'manager'
   const isRecruiter = userRole === 'recruiter'
   const isEmployee = userRole === 'employee'
+  const canEditRequirement = isAdmin || isManager // ONLY Admin & Manager can edit position title, client, rates, specs
+  const canCreateRequisition = isAdmin || isManager // ONLY Admin & Manager can add new requisitions
+  const canChangeReqStatus = isAdmin || isManager || isRecruiter // Recruiters can change Status
+  const canAssignRecruiters = isAdmin || isManager || isRecruiter
   const canReviewAndUseAI = isAdmin || isManager // AI Fit and Resume Review strictly restricted to Admin & Manager
-  const canAccessAdminPanel = isAdmin
+  const canAccessAdminPanel = isAdmin || isManager
   const isRecruiterRole = isRecruiter || isEmployee
 
   // Top Nav Tab: 'requisitions' | 'candidates' | 'admin'
@@ -2214,53 +2218,171 @@ function RecruiterDashboard() {
               )}
 
               {/* 3-Column Header Form */}
+              {!canEditRequirement && (
+                <div style={{
+                  background: '#f0f9ff',
+                  border: '1px solid #bae6fd',
+                  color: '#0369a1',
+                  padding: '7px 14px',
+                  borderRadius: '4px',
+                  fontSize: '11.5px',
+                  fontWeight: 'bold',
+                  marginBottom: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <span>🔒</span>
+                  <span>
+                    {isEmployee
+                      ? 'Employee Portal: Requirement specifications are read-only. You can view details and submit candidates.'
+                      : 'Recruiter Portal: Position title and client specifications are locked (managed by Admin/Manager). You can update Status and submit candidates.'}
+                  </span>
+                </div>
+              )}
+
               <div style={{
                 background: '#f8fafc', border: '1px solid #e2e8f0', padding: '12px 16px', borderRadius: '4px', marginBottom: '14px',
                 display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '10px 18px', fontSize: '11.5px'
               }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr', gap: '6px 8px', alignItems: 'center' }}>
                   <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}>Position Title:*</label>
-                  <input type="text" value={editingFields.title || ''} onChange={e => setEditingFields({ ...editingFields, title: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
+                  <input
+                    type="text"
+                    value={editingFields.title || ''}
+                    disabled={!canEditRequirement}
+                    readOnly={!canEditRequirement}
+                    onChange={e => canEditRequirement && setEditingFields({ ...editingFields, title: e.target.value })}
+                    style={{
+                      padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
+                      background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
+                      color: !canEditRequirement ? '#0f172a' : undefined,
+                      cursor: !canEditRequirement ? 'not-allowed' : undefined
+                    }}
+                  />
 
                   <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}>Start Date:*</label>
-                  <input type="text" value={editingFields.startDate || ''} onChange={e => setEditingFields({ ...editingFields, startDate: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
+                  <input
+                    type="text"
+                    value={editingFields.startDate || ''}
+                    disabled={!canEditRequirement}
+                    readOnly={!canEditRequirement}
+                    onChange={e => canEditRequirement && setEditingFields({ ...editingFields, startDate: e.target.value })}
+                    style={{
+                      padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
+                      background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
+                      cursor: !canEditRequirement ? 'not-allowed' : undefined
+                    }}
+                  />
 
                   <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}>Duration:*</label>
                   <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                    <input type="text" value={editingFields.duration || '12'} onChange={e => setEditingFields({ ...editingFields, duration: e.target.value })} style={{ width: '45px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
+                    <input
+                      type="text"
+                      value={editingFields.duration || '12'}
+                      disabled={!canEditRequirement}
+                      readOnly={!canEditRequirement}
+                      onChange={e => canEditRequirement && setEditingFields({ ...editingFields, duration: e.target.value })}
+                      style={{
+                        width: '45px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
+                        background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
+                        cursor: !canEditRequirement ? 'not-allowed' : undefined
+                      }}
+                    />
                     <span style={{ fontWeight: 'bold', color: '#1e3a8a' }}>months</span>
                   </div>
 
                   <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}># of Positions:*</label>
-                  <input type="text" value={editingFields.numPositions || '1'} onChange={e => setEditingFields({ ...editingFields, numPositions: e.target.value })} style={{ width: '45px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
+                  <input
+                    type="text"
+                    value={editingFields.numPositions || '1'}
+                    disabled={!canEditRequirement}
+                    readOnly={!canEditRequirement}
+                    onChange={e => canEditRequirement && setEditingFields({ ...editingFields, numPositions: e.target.value })}
+                    style={{
+                      width: '45px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
+                      background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
+                      cursor: !canEditRequirement ? 'not-allowed' : undefined
+                    }}
+                  />
 
                   <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}>Max Submission:*</label>
-                  <input type="text" value={editingFields.maxSubmissions || '2'} onChange={e => setEditingFields({ ...editingFields, maxSubmissions: e.target.value })} style={{ width: '45px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
+                  <input
+                    type="text"
+                    value={editingFields.maxSubmissions || '2'}
+                    disabled={!canEditRequirement}
+                    readOnly={!canEditRequirement}
+                    onChange={e => canEditRequirement && setEditingFields({ ...editingFields, maxSubmissions: e.target.value })}
+                    style={{
+                      width: '45px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
+                      background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
+                      cursor: !canEditRequirement ? 'not-allowed' : undefined
+                    }}
+                  />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '6px 8px', alignItems: 'center' }}>
                   <div style={{ visibility: 'hidden' }}>spacer</div>
                   <div style={{ visibility: 'hidden' }}>spacer</div>
 
-                  <label style={{ fontWeight: 'bold', color: '#0066cc', textAlign: 'right', textDecoration: 'underline', cursor: 'pointer' }}>Customer:</label>
-                  <select value={editingFields.customer || ''} onChange={e => setEditingFields({ ...editingFields, customer: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
+                  <label style={{ fontWeight: 'bold', color: '#0066cc', textAlign: 'right' }}>Customer:</label>
+                  <select
+                    value={editingFields.customer || ''}
+                    disabled={!canEditRequirement}
+                    onChange={e => canEditRequirement && setEditingFields({ ...editingFields, customer: e.target.value })}
+                    style={{
+                      padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
+                      background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
+                      cursor: !canEditRequirement ? 'not-allowed' : undefined
+                    }}
+                  >
                     <option>State Of SC</option>
                     <option>DFA</option>
                     <option>DBHDS</option>
                     <option>VDOT</option>
+                    <option>Texas Health and Human Services Commission</option>
                   </select>
 
-                  <label style={{ fontWeight: 'bold', color: '#0066cc', textAlign: 'right', textDecoration: 'underline', cursor: 'pointer' }}>Contact:</label>
-                  <select value={editingFields.contact || ''} onChange={e => setEditingFields({ ...editingFields, contact: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
+                  <label style={{ fontWeight: 'bold', color: '#0066cc', textAlign: 'right' }}>Contact:</label>
+                  <select
+                    value={editingFields.contact || ''}
+                    disabled={!canEditRequirement}
+                    onChange={e => canEditRequirement && setEditingFields({ ...editingFields, contact: e.target.value })}
+                    style={{
+                      padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
+                      background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
+                      cursor: !canEditRequirement ? 'not-allowed' : undefined
+                    }}
+                  >
                     <option>Hustedt Lexi</option>
                     <option>Miller Sarah</option>
                   </select>
 
                   <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}>Submission Deadline:*</label>
-                  <input type="text" value={editingFields.deadline || ''} onChange={e => setEditingFields({ ...editingFields, deadline: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
+                  <input
+                    type="text"
+                    value={editingFields.deadline || ''}
+                    disabled={!canEditRequirement}
+                    readOnly={!canEditRequirement}
+                    onChange={e => canEditRequirement && setEditingFields({ ...editingFields, deadline: e.target.value })}
+                    style={{
+                      padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
+                      background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
+                      cursor: !canEditRequirement ? 'not-allowed' : undefined
+                    }}
+                  />
 
                   <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}>Req Category:*</label>
-                  <select value={editingFields.category || 'SP'} onChange={e => setEditingFields({ ...editingFields, category: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
+                  <select
+                    value={editingFields.category || 'SP'}
+                    disabled={!canEditRequirement}
+                    onChange={e => canEditRequirement && setEditingFields({ ...editingFields, category: e.target.value })}
+                    style={{
+                      padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
+                      background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
+                      cursor: !canEditRequirement ? 'not-allowed' : undefined
+                    }}
+                  >
                     <option>SP</option>
                     <option>IT</option>
                     <option>ENG</option>
@@ -2269,40 +2391,81 @@ function RecruiterDashboard() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '6px 8px', alignItems: 'center' }}>
                   <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}>Status:</label>
-                  <select value={editingFields.status || 'In-Progress'} onChange={e => setEditingFields({ ...editingFields, status: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
+                  <select
+                    value={editingFields.status || 'In-Progress'}
+                    disabled={isEmployee}
+                    onChange={e => !isEmployee && setEditingFields({ ...editingFields, status: e.target.value })}
+                    style={{
+                      padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
+                      background: isEmployee ? '#f1f5f9' : '#fffbeb',
+                      borderColor: !isEmployee ? '#f59e0b' : '#cbd5e1',
+                      fontWeight: 'bold',
+                      color: '#0f172a'
+                    }}
+                  >
                     <option>In-Progress</option>
                     <option>Ready</option>
+                    <option>Active</option>
                     <option>Closed</option>
                   </select>
 
-                  <label style={{ fontWeight: 'bold', color: '#0066cc', textAlign: 'right', textDecoration: 'underline', cursor: 'pointer' }}>End Client:</label>
-                  <select value={editingFields.endClient || ''} onChange={e => setEditingFields({ ...editingFields, endClient: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
+                  <label style={{ fontWeight: 'bold', color: '#0066cc', textAlign: 'right' }}>End Client:</label>
+                  <select
+                    value={editingFields.endClient || ''}
+                    disabled={!canEditRequirement}
+                    onChange={e => canEditRequirement && setEditingFields({ ...editingFields, endClient: e.target.value })}
+                    style={{
+                      padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
+                      background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
+                      cursor: !canEditRequirement ? 'not-allowed' : undefined
+                    }}
+                  >
                     <option>State Of SC</option>
                     <option>DFA</option>
+                    <option>Texas Health and Human Services Commission</option>
                   </select>
 
-                  <label style={{ fontWeight: 'bold', color: '#0066cc', textAlign: 'right', textDecoration: 'underline', cursor: 'pointer' }}>Contact:</label>
-                  <select value={editingFields.contact || ''} onChange={e => setEditingFields({ ...editingFields, contact: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
+                  <label style={{ fontWeight: 'bold', color: '#0066cc', textAlign: 'right' }}>Contact:</label>
+                  <select
+                    value={editingFields.contact || ''}
+                    disabled={!canEditRequirement}
+                    onChange={e => canEditRequirement && setEditingFields({ ...editingFields, contact: e.target.value })}
+                    style={{
+                      padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
+                      background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
+                      cursor: !canEditRequirement ? 'not-allowed' : undefined
+                    }}
+                  >
                     <option>Hustedt Lexi</option>
+                    <option>Miller Sarah</option>
                   </select>
 
                   <div style={{ gridColumn: 'span 2', display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '4px' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                      <input type="checkbox" checked={editingFields.keyReq || false} onChange={e => setEditingFields({ ...editingFields, keyReq: e.target.checked })} /> Key Req
+                      <input type="checkbox" disabled={!canEditRequirement} checked={editingFields.keyReq || false} onChange={e => canEditRequirement && setEditingFields({ ...editingFields, keyReq: e.target.checked })} /> Key Req
                     </label>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                      <input type="checkbox" checked={editingFields.working || true} onChange={e => setEditingFields({ ...editingFields, working: e.target.checked })} /> Working
+                      <input type="checkbox" disabled={!canEditRequirement} checked={editingFields.working || true} onChange={e => canEditRequirement && setEditingFields({ ...editingFields, working: e.target.checked })} /> Working
                     </label>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                      <input type="checkbox" checked={editingFields.hotReq || false} onChange={e => setEditingFields({ ...editingFields, hotReq: e.target.checked })} /> Hot Req
+                      <input type="checkbox" disabled={!canEditRequirement} checked={editingFields.hotReq || false} onChange={e => canEditRequirement && setEditingFields({ ...editingFields, hotReq: e.target.checked })} /> Hot Req
                     </label>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                      <input type="checkbox" checked={editingFields.incumbentVendor || false} onChange={e => setEditingFields({ ...editingFields, incumbentVendor: e.target.checked })} /> Incumbent Vendor
+                      <input type="checkbox" disabled={!canEditRequirement} checked={editingFields.incumbentVendor || false} onChange={e => canEditRequirement && setEditingFields({ ...editingFields, incumbentVendor: e.target.checked })} /> Incumbent Vendor
                     </label>
                   </div>
 
                   <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}>Req Type:*</label>
-                  <select value={editingFields.type || 'Contract'} onChange={e => setEditingFields({ ...editingFields, type: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
+                  <select
+                    value={editingFields.type || 'Contract'}
+                    disabled={!canEditRequirement}
+                    onChange={e => canEditRequirement && setEditingFields({ ...editingFields, type: e.target.value })}
+                    style={{
+                      padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
+                      background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
+                      cursor: !canEditRequirement ? 'not-allowed' : undefined
+                    }}
+                  >
                     <option>Contract</option>
                     <option>Full-Time</option>
                   </select>
@@ -2313,7 +2476,7 @@ function RecruiterDashboard() {
               <div style={{ display: 'flex', borderBottom: '1px solid #cbd5e1', background: '#e2e8f0', padding: '4px 8px 0', gap: '2px' }}>
                 {[
                   { id: 'details', label: 'Details' },
-                  { id: 'assign', label: 'Assign to Recruiters' },
+                  ...(!isEmployee ? [{ id: 'assign', label: 'Assign to Recruiters' }] : []),
                   { id: 'potential', label: `Potential Candidates (${potentialCandidates.length})` },
                   { id: 'attachments', label: `Attachments (${attachments.length})` },
                   { id: 'newCandidates', label: 'New Candidates (0)' }
@@ -2341,47 +2504,149 @@ function RecruiterDashboard() {
                   <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
                     <div style={{ flex: '1 1 420px', display: 'grid', gridTemplateColumns: '140px 1fr', gap: '8px 10px', alignContent: 'start', fontSize: '11.5px' }}>
                       <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Location Address:</label>
-                      <input type="text" value={editingFields.address || ''} onChange={e => setEditingFields({ ...editingFields, address: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
+                      <input
+                        type="text"
+                        value={editingFields.address || ''}
+                        disabled={!canEditRequirement}
+                        readOnly={!canEditRequirement}
+                        onChange={e => canEditRequirement && setEditingFields({ ...editingFields, address: e.target.value })}
+                        style={{
+                          padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
+                          background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
+                          cursor: !canEditRequirement ? 'not-allowed' : undefined
+                        }}
+                      />
 
                       <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>City*, State*, Zip*:</label>
                       <div style={{ display: 'flex', gap: '4px' }}>
-                        <input type="text" value={editingFields.city || 'Columbia'} onChange={e => setEditingFields({ ...editingFields, city: e.target.value })} style={{ flex: 2, padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
-                        <select value={editingFields.state || 'SC'} onChange={e => setEditingFields({ ...editingFields, state: e.target.value })} style={{ flex: 1, padding: '3px 4px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
+                        <input
+                          type="text"
+                          value={editingFields.city || 'Columbia'}
+                          disabled={!canEditRequirement}
+                          readOnly={!canEditRequirement}
+                          onChange={e => canEditRequirement && setEditingFields({ ...editingFields, city: e.target.value })}
+                          style={{
+                            flex: 2, padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
+                            background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
+                            cursor: !canEditRequirement ? 'not-allowed' : undefined
+                          }}
+                        />
+                        <select
+                          value={editingFields.state || 'SC'}
+                          disabled={!canEditRequirement}
+                          onChange={e => canEditRequirement && setEditingFields({ ...editingFields, state: e.target.value })}
+                          style={{
+                            flex: 1, padding: '3px 4px', fontSize: '11.5px', border: '1px solid #cbd5e1',
+                            background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
+                            cursor: !canEditRequirement ? 'not-allowed' : undefined
+                          }}
+                        >
                           <option>SC</option>
                           <option>VA</option>
                           <option>TX</option>
                         </select>
-                        <input type="text" value={editingFields.zip || '29210'} onChange={e => setEditingFields({ ...editingFields, zip: e.target.value })} style={{ width: '60px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
+                        <input
+                          type="text"
+                          value={editingFields.zip || '29210'}
+                          disabled={!canEditRequirement}
+                          readOnly={!canEditRequirement}
+                          onChange={e => canEditRequirement && setEditingFields({ ...editingFields, zip: e.target.value })}
+                          style={{
+                            width: '60px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
+                            background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
+                            cursor: !canEditRequirement ? 'not-allowed' : undefined
+                          }}
+                        />
                       </div>
 
                       <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Bill Rate:</label>
-                      <input type="text" value={editingFields.billRate || '90'} onChange={e => setEditingFields({ ...editingFields, billRate: e.target.value })} style={{ width: '60px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
+                      <input
+                        type="text"
+                        value={editingFields.billRate || '90'}
+                        disabled={!canEditRequirement}
+                        readOnly={!canEditRequirement}
+                        onChange={e => canEditRequirement && setEditingFields({ ...editingFields, billRate: e.target.value })}
+                        style={{
+                          width: '60px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
+                          background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
+                          cursor: !canEditRequirement ? 'not-allowed' : undefined
+                        }}
+                      />
 
                       <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Pay Rate:</label>
-                      <input type="text" value={editingFields.payRate || '75'} onChange={e => setEditingFields({ ...editingFields, payRate: e.target.value })} style={{ width: '60px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
+                      <input
+                        type="text"
+                        value={editingFields.payRate || '75'}
+                        disabled={!canEditRequirement}
+                        readOnly={!canEditRequirement}
+                        onChange={e => canEditRequirement && setEditingFields({ ...editingFields, payRate: e.target.value })}
+                        style={{
+                          width: '60px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
+                          background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
+                          cursor: !canEditRequirement ? 'not-allowed' : undefined
+                        }}
+                      />
 
                       <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Interview:</label>
-                      <select value={editingFields.interview || 'Select'} onChange={e => setEditingFields({ ...editingFields, interview: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
+                      <select
+                        value={editingFields.interview || 'Select'}
+                        disabled={!canEditRequirement}
+                        onChange={e => canEditRequirement && setEditingFields({ ...editingFields, interview: e.target.value })}
+                        style={{
+                          padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
+                          background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
+                          cursor: !canEditRequirement ? 'not-allowed' : undefined
+                        }}
+                      >
                         <option>Select</option>
                         <option>1 Round Virtual/Online</option>
                       </select>
 
                       <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Work Authorization:</label>
-                      <select value={editingFields.workAuth || 'Select'} onChange={e => setEditingFields({ ...editingFields, workAuth: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
+                      <select
+                        value={editingFields.workAuth || 'Select'}
+                        disabled={!canEditRequirement}
+                        onChange={e => canEditRequirement && setEditingFields({ ...editingFields, workAuth: e.target.value })}
+                        style={{
+                          padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
+                          background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
+                          cursor: !canEditRequirement ? 'not-allowed' : undefined
+                        }}
+                      >
                         <option>Select</option>
                         <option>US Citizen</option>
                         <option>Green Card</option>
                       </select>
 
                       <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Subcontractable:*</label>
-                      <select value={editingFields.subcontractable || 'No'} onChange={e => setEditingFields({ ...editingFields, subcontractable: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
+                      <select
+                        value={editingFields.subcontractable || 'No'}
+                        disabled={!canEditRequirement}
+                        onChange={e => canEditRequirement && setEditingFields({ ...editingFields, subcontractable: e.target.value })}
+                        style={{
+                          padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
+                          background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
+                          cursor: !canEditRequirement ? 'not-allowed' : undefined
+                        }}
+                      >
                         <option>No</option>
                         <option>Yes</option>
                       </select>
 
                       <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>Experience:*</label>
                       <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                        <input type="text" value={editingFields.experience || '5'} onChange={e => setEditingFields({ ...editingFields, experience: e.target.value })} style={{ width: '45px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
+                        <input
+                          type="text"
+                          value={editingFields.experience || '5'}
+                          disabled={!canEditRequirement}
+                          readOnly={!canEditRequirement}
+                          onChange={e => canEditRequirement && setEditingFields({ ...editingFields, experience: e.target.value })}
+                          style={{
+                            width: '45px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1',
+                            background: !canEditRequirement ? '#f1f5f9' : '#ffffff',
+                            cursor: !canEditRequirement ? 'not-allowed' : undefined
+                          }}
+                        />
                         <span style={{ fontWeight: 'bold', color: '#1e3a8a' }}>years</span>
                       </div>
                     </div>
@@ -2395,8 +2660,16 @@ function RecruiterDashboard() {
                         <textarea
                           rows={11}
                           value={editingFields.description || ''}
-                          onChange={e => setEditingFields({ ...editingFields, description: e.target.value })}
-                          style={{ width: '100%', padding: '8px', fontSize: '11.5px', lineHeight: '1.6', border: '1px solid #cbd5e1', fontFamily: 'monospace', background: '#fafafa' }}
+                          disabled={!canEditRequirement}
+                          readOnly={!canEditRequirement}
+                          onChange={e => canEditRequirement && setEditingFields({ ...editingFields, description: e.target.value })}
+                          style={{
+                            width: '100%', padding: '8px', fontSize: '11.5px', lineHeight: '1.6', border: '1px solid #cbd5e1',
+                            fontFamily: 'monospace',
+                            background: !canEditRequirement ? '#f8fafc' : '#fafafa',
+                            color: !canEditRequirement ? '#334155' : undefined,
+                            cursor: !canEditRequirement ? 'not-allowed' : undefined
+                          }}
                         />
                       </div>
 
@@ -2916,28 +3189,30 @@ function RecruiterDashboard() {
                   onClick={() => setViewMode('portal')}
                   style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '6px 18px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '3px' }}
                 >
-                  Cancel / Back
+                  &lt;&lt; Back To Search Results
                 </button>
-                <button
-                  type="button"
-                  onClick={() => handleSaveRequisition()}
-                  style={{
-                    background: '#ea580c',
-                    color: '#ffffff',
-                    border: 'none',
-                    padding: '6px 26px',
-                    fontSize: '12.5px',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    borderRadius: '3px',
-                    boxShadow: '0 1px 3px rgba(234, 88, 12, 0.4)',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  💾 Save Requisition
-                </button>
+                {!isEmployee && (
+                  <button
+                    type="button"
+                    onClick={() => handleSaveRequisition()}
+                    style={{
+                      background: '#ea580c',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '6px 26px',
+                      fontSize: '12.5px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      borderRadius: '3px',
+                      boxShadow: '0 1px 3px rgba(234, 88, 12, 0.4)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    {canEditRequirement ? '💾 Save Requisition' : '💾 Save Status & Assignments'}
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -2956,12 +3231,12 @@ function RecruiterDashboard() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #ea580c', paddingBottom: '8px', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
                   <div>
                     <h2 style={{ margin: 0, fontSize: '16px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                      {isAdmin ? 'SmartWorks Administration — Team & Recruiter Management' : `My Team — Employees & Sourcing Specialists under ${userName}`}
+                      {isAdmin || isManager ? 'SmartWorks Administration — Team & Recruiter Management' : `My Team — Employees & Sourcing Specialists under ${userName}`}
                     </h2>
                     <p style={{ margin: '3px 0 0', fontSize: '11.5px', color: '#64748b' }}>
-                      {isAdmin
-                        ? 'Create and manage recruiters, add employees under recruiters, set credentials, and manage requirement permissions.'
-                        : 'Add sub-users/employees under your recruiter account, assign them requirements, and manage their access.'}
+                      {isAdmin || isManager
+                        ? 'Manage full team roster, invite new recruiters or employees, assign roles, and configure system credentials.'
+                        : `Manage all employees and sub-recruiters directly reporting to ${userName}. Added team members can immediately log in with their credentials.`}
                     </p>
                   </div>
 
@@ -2973,8 +3248,8 @@ function RecruiterDashboard() {
                         name: '',
                         email: '',
                         password: 'recruiter123',
-                        role: isAdmin ? 'recruiter' : 'employee',
-                        parentRecruiterName: isAdmin ? '' : userName,
+                        role: isAdmin || isManager ? 'recruiter' : 'employee',
+                        parentRecruiterName: isAdmin || isManager ? '' : userName,
                         company: 'SmartHire LLC',
                         isActive: true
                       })
@@ -2995,7 +3270,7 @@ function RecruiterDashboard() {
                       boxShadow: '0 1px 3px rgba(234, 88, 12, 0.3)'
                     }}
                   >
-                    <span>+ {isAdmin ? 'Add New Team Member / Recruiter' : 'Add Employee Under Me'}</span>
+                    <span>+ {isAdmin || isManager ? 'Add New Team Member / Recruiter' : 'Add Employee Under Me'}</span>
                   </button>
                 </div>
 
@@ -3004,7 +3279,7 @@ function RecruiterDashboard() {
                   <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '4px', padding: '12px 14px' }}>
                     <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#1d4ed8' }}>TOTAL TEAM USERS</div>
                     <div style={{ fontSize: '22px', fontWeight: '800', color: '#1e3a8a', marginTop: '2px' }}>
-                      {isAdmin ? teamUsers.length : teamUsers.filter(u => u.name === userName || (u.parentRecruiterName && u.parentRecruiterName.toLowerCase() === userName.toLowerCase())).length}
+                      {isAdmin || isManager ? teamUsers.length : teamUsers.filter(u => u.name === userName || (u.parentRecruiterName && u.parentRecruiterName.toLowerCase() === userName.toLowerCase())).length}
                     </div>
                     <div style={{ fontSize: '10.5px', color: '#60a5fa', marginTop: '2px' }}>Registered in portal</div>
                   </div>
@@ -3224,14 +3499,16 @@ function RecruiterDashboard() {
               <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 18px', marginBottom: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <h2 style={{ margin: 0, fontSize: '15px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                    Search Requisitions
+                    {isEmployee ? 'My Assigned Requisitions' : 'Search Requisitions'}
                   </h2>
-                  <span
-                    onClick={handleAddNewRequisition}
-                    style={{ color: '#0066cc', fontWeight: 'bold', fontSize: '12px', textDecoration: 'underline', cursor: 'pointer' }}
-                  >
-                    Add new Requisition
-                  </span>
+                  {canCreateRequisition && (
+                    <span
+                      onClick={handleAddNewRequisition}
+                      style={{ color: '#0066cc', fontWeight: 'bold', fontSize: '12px', textDecoration: 'underline', cursor: 'pointer' }}
+                    >
+                      + Add new Requisition
+                    </span>
+                  )}
                 </div>
 
                 <div

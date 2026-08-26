@@ -35,13 +35,16 @@ function Navigation() {
     localStorage.getItem('verifyhire_authenticated') === 'true'
 
   const realUserRole = user?.role || 'recruiter'
-  const canSwitchRoles = realUserRole === 'superadmin' || realUserRole === 'admin'
+  const isEmployee = realUserRole === 'employee'
+  const isManager = realUserRole === 'manager'
+  const isRecruiter = realUserRole === 'recruiter'
+  const canSwitchRoles = (realUserRole === 'superadmin' || realUserRole === 'admin' || isManager) && !isEmployee
   const defaultRole = user && user.role ? user.role : 'superadmin'
   const [activeRole, setActiveRole] = useState(() => {
     return canSwitchRoles ? (localStorage.getItem('smarthire_active_role') || defaultRole) : defaultRole
   })
 
-  const isSuperAdmin = canSwitchRoles && (activeRole === 'superadmin' || activeRole === 'admin')
+  const isSuperAdmin = (activeRole === 'superadmin' || activeRole === 'admin' || (isManager && activeRole !== 'recruiter')) && !isEmployee
 
   // Live health check
   useEffect(() => {
@@ -52,7 +55,7 @@ function Navigation() {
 
   // Keyboard shortcut for Spotlight (Ctrl+K or Cmd+K)
   useEffect(() => {
-    if (!isSuperAdmin) return
+    if (!isSuperAdmin || isEmployee) return
     const handleKeyDown = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault()
@@ -61,7 +64,7 @@ function Navigation() {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isSuperAdmin])
+  }, [isSuperAdmin, isEmployee])
 
   // Click outside to close dropdowns
   useEffect(() => {
@@ -125,7 +128,7 @@ function Navigation() {
         .substring(0, 2)
         .toUpperCase()
     }
-    return isSuperAdmin ? 'SA' : 'RC'
+    return isSuperAdmin ? 'SA' : isManager ? 'MG' : isEmployee ? 'EM' : 'RC'
   }
 
   const atsSubModules = [
@@ -153,8 +156,8 @@ function Navigation() {
         <div className="nav-container-pro">
           {/* ─── LEFT: BRAND & APP LAUNCHER ─── */}
           <div className="nav-left-cluster">
-            {/* 9-Dot App Launcher (Zoho Style) */}
-            {isAuthenticated && (
+            {/* 9-Dot App Launcher (Zoho Style) - Strictly Hidden for Employee */}
+            {isAuthenticated && !isEmployee && (
               <div className="nav-dropdown-wrapper" ref={appLauncherRef}>
                 <button
                   className={`app-launcher-btn ${appLauncherOpen ? 'active' : ''}`}
@@ -183,12 +186,12 @@ function Navigation() {
                         <div className="launcher-title">SmartHire Ecosystem</div>
                         <div className="launcher-subtitle">Unified AI Talent & Automation Hub</div>
                       </div>
-                      <span className="launcher-badge">{isSuperAdmin ? 'ENTERPRISE' : 'RECRUITER'}</span>
+                      <span className="launcher-badge">{isSuperAdmin ? 'ENTERPRISE' : isManager ? 'MANAGER' : 'RECRUITER'}</span>
                     </div>
 
                     <div className="app-launcher-grid">
                       {appLauncherItems
-                        .filter((item) => !item.adminOnly || isSuperAdmin)
+                        .filter((item) => !item.adminOnly || isSuperAdmin || isManager)
                         .map((app) => (
                           <div
                             key={app.title}
@@ -214,7 +217,7 @@ function Navigation() {
             )}
 
             {/* Brand Logo & Name */}
-            <Link to="/" className="brand-logo-link" onClick={() => setMobileMenuOpen(false)}>
+            <Link to={isEmployee ? "/dashboard" : "/"} className="brand-logo-link" onClick={() => setMobileMenuOpen(false)}>
               <span className="brand-shield-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
@@ -223,7 +226,9 @@ function Navigation() {
               </span>
               <div className="brand-title-wrap">
                 <span className="brand-name">SmartHire</span>
-                <span className="brand-edition-tag">{isSuperAdmin ? 'ENTERPRISE' : 'PRO'}</span>
+                <span className="brand-edition-tag" style={{ background: isEmployee ? '#16a34a' : undefined }}>
+                  {isEmployee ? 'EMPLOYEE' : isManager ? 'MANAGER' : isSuperAdmin ? 'ENTERPRISE' : 'PRO'}
+                </span>
               </div>
             </Link>
 
@@ -239,75 +244,77 @@ function Navigation() {
                   className={`nav-tab-item ${location.pathname === '/dashboard' ? 'active' : ''}`}
                 >
                   <span className="nav-tab-icon">📊</span>
-                  <span>Dashboard</span>
+                  <span>{isEmployee ? 'My Workspace' : 'Dashboard'}</span>
                 </Link>
 
-                {/* ATS Workspace with Direct Navigation & Dropdown */}
-                <div
-                  className="nav-dropdown-wrapper"
-                  ref={atsMenuRef}
-                  onMouseEnter={() => setAtsMenuOpen(true)}
-                  onMouseLeave={() => setAtsMenuOpen(false)}
-                  style={{ display: 'inline-flex', position: 'relative' }}
-                >
-                  <Link
-                    to="/ats"
-                    className={`nav-tab-item dropdown-toggle ${
-                      location.pathname.startsWith('/ats') ? 'active' : ''
-                    } ${atsMenuOpen ? 'menu-open' : ''}`}
-                    onClick={() => setAtsMenuOpen(false)}
-                    style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                {/* ATS Workspace with Direct Navigation & Dropdown - Hidden for Employee */}
+                {!isEmployee && (
+                  <div
+                    className="nav-dropdown-wrapper"
+                    ref={atsMenuRef}
+                    onMouseEnter={() => setAtsMenuOpen(true)}
+                    onMouseLeave={() => setAtsMenuOpen(false)}
+                    style={{ display: 'inline-flex', position: 'relative' }}
                   >
-                    <span className="nav-tab-icon">💼</span>
-                    <span>ATS Workspace</span>
-                    <span
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        setAtsMenuOpen(!atsMenuOpen)
-                      }}
-                      style={{ display: 'inline-flex', alignItems: 'center', padding: '2px', cursor: 'pointer' }}
-                      title="View ATS Modules"
+                    <Link
+                      to="/ats"
+                      className={`nav-tab-item dropdown-toggle ${
+                        location.pathname.startsWith('/ats') ? 'active' : ''
+                      } ${atsMenuOpen ? 'menu-open' : ''}`}
+                      onClick={() => setAtsMenuOpen(false)}
+                      style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                     >
-                      <svg className="chevron-down-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
-                    </span>
-                  </Link>
-
-                  {atsMenuOpen && (
-                    <div className="nav-sub-dropdown shadow-enterprise" style={{ zIndex: 1000 }}>
-                      <div className="dropdown-section-title">Core ATS Modules</div>
-                      {atsSubModules.map((sub) => (
-                        <button
-                          key={sub.id}
-                          className="dropdown-item-btn"
-                          onClick={() => navigateToAtsTab(sub.id)}
-                        >
-                          <span className="dropdown-item-icon">{sub.icon}</span>
-                          <div className="dropdown-item-content">
-                            <span className="dropdown-item-label">{sub.label}</span>
-                            <span className="dropdown-item-sub">{sub.desc}</span>
-                          </div>
-                        </button>
-                      ))}
-
-                      <div className="dropdown-divider" />
-                      <button
-                        className="dropdown-item-btn open-all-btn"
-                        onClick={() => {
-                          setAtsMenuOpen(false)
-                          navigate('/ats')
+                      <span className="nav-tab-icon">💼</span>
+                      <span>ATS Workspace</span>
+                      <span
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          setAtsMenuOpen(!atsMenuOpen)
                         }}
+                        style={{ display: 'inline-flex', alignItems: 'center', padding: '2px', cursor: 'pointer' }}
+                        title="View ATS Modules"
                       >
-                        <span>Open Full ATS Console</span>
-                        <span>→</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
+                        <svg className="chevron-down-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                      </span>
+                    </Link>
 
-                {isSuperAdmin && (
+                    {atsMenuOpen && (
+                      <div className="nav-sub-dropdown shadow-enterprise" style={{ zIndex: 1000 }}>
+                        <div className="dropdown-section-title">Core ATS Modules</div>
+                        {atsSubModules.map((sub) => (
+                          <button
+                            key={sub.id}
+                            className="dropdown-item-btn"
+                            onClick={() => navigateToAtsTab(sub.id)}
+                          >
+                            <span className="dropdown-item-icon">{sub.icon}</span>
+                            <div className="dropdown-item-content">
+                              <span className="dropdown-item-label">{sub.label}</span>
+                              <span className="dropdown-item-sub">{sub.desc}</span>
+                            </div>
+                          </button>
+                        ))}
+
+                        <div className="dropdown-divider" />
+                        <button
+                          className="dropdown-item-btn open-all-btn"
+                          onClick={() => {
+                            setAtsMenuOpen(false)
+                            navigate('/ats')
+                          }}
+                        >
+                          <span>Open Full ATS Console</span>
+                          <span>→</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {(isSuperAdmin || isManager) && (
                   <Link
                     to="/reports"
                     className={`nav-tab-item ${location.pathname === '/reports' ? 'active' : ''}`}
@@ -337,13 +344,15 @@ function Navigation() {
                   </Link>
                 )}
 
-                <Link
-                  to="/jobs"
-                  className={`nav-tab-item ${location.pathname === '/jobs' ? 'active' : ''}`}
-                >
-                  <span className="nav-tab-icon">🚀</span>
-                  <span>Careers</span>
-                </Link>
+                {!isEmployee && (
+                  <Link
+                    to="/jobs"
+                    className={`nav-tab-item ${location.pathname === '/jobs' ? 'active' : ''}`}
+                  >
+                    <span className="nav-tab-icon">🚀</span>
+                    <span>Careers</span>
+                  </Link>
+                )}
 
                 {isSuperAdmin && (
                   <Link
@@ -380,8 +389,8 @@ function Navigation() {
           <div className="nav-right-cluster">
             {isAuthenticated ? (
               <>
-                {/* Global Search Trigger (Ctrl+K) */}
-                {isSuperAdmin && (
+                {/* Global Search Trigger (Ctrl+K) - Hidden for Employee */}
+                {(isSuperAdmin || isManager) && !isEmployee && (
                   <button
                     className="nav-search-trigger"
                     onClick={() => setSearchModalOpen(true)}
@@ -397,109 +406,119 @@ function Navigation() {
                   </button>
                 )}
 
-                {/* Quick Add Button (+) */}
-                <div className="nav-dropdown-wrapper" ref={quickAddRef}>
-                  <button
-                    className={`nav-quick-add-btn ${quickAddOpen ? 'active' : ''}`}
-                    onClick={() => setQuickAddOpen(!quickAddOpen)}
-                    title="Quick Action / Create New"
-                    aria-label="Quick Add"
+                {/* Quick Add Button (+) - Hidden for Employee */}
+                {!isEmployee && (
+                  <div className="nav-dropdown-wrapper" ref={quickAddRef}>
+                    <button
+                      className={`nav-quick-add-btn ${quickAddOpen ? 'active' : ''}`}
+                      onClick={() => setQuickAddOpen(!quickAddOpen)}
+                      title="Quick Action / Create New"
+                      aria-label="Quick Add"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                      </svg>
+                    </button>
+
+                    {quickAddOpen && (
+                      <div className="quick-add-popover shadow-enterprise">
+                        <div className="quick-add-header">Quick Creation Actions</div>
+                        {(isSuperAdmin || isManager) && (
+                          <button
+                            className="quick-add-item"
+                            onClick={() => {
+                              setQuickAddOpen(false)
+                              navigateToAtsTab('jobs')
+                            }}
+                          >
+                            <span className="quick-add-icon">💼</span>
+                            <div>
+                              <div className="quick-add-label">Post New Vacancy</div>
+                              <div className="quick-add-desc">Add requisition or scrape JD</div>
+                            </div>
+                          </button>
+                        )}
+
+                        <button
+                          className="quick-add-item"
+                          onClick={() => {
+                            setQuickAddOpen(false)
+                            navigateToAtsTab('candidates')
+                          }}
+                        >
+                          <span className="quick-add-icon">👤</span>
+                          <div>
+                            <div className="quick-add-label">Add / Parse Candidate</div>
+                            <div className="quick-add-desc">Upload resume docx/pdf</div>
+                          </div>
+                        </button>
+
+                        <button
+                          className="quick-add-item"
+                          onClick={() => {
+                            setQuickAddOpen(false)
+                            navigateToAtsTab('screening')
+                          }}
+                        >
+                          <span className="quick-add-icon">🔍</span>
+                          <div>
+                            <div className="quick-add-label">Launch AI Screening</div>
+                            <div className="quick-add-desc">Anti-proxy interview chat</div>
+                          </div>
+                        </button>
+
+                        {isSuperAdmin && (
+                          <button
+                            className="quick-add-item"
+                            onClick={() => {
+                              setQuickAddOpen(false)
+                              navigate('/linkedin-posts')
+                            }}
+                          >
+                            <span className="quick-add-icon">🌐</span>
+                            <div>
+                              <div className="quick-add-label">Create LinkedIn Post</div>
+                              <div className="quick-add-desc">Automated social job outreach</div>
+                            </div>
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* API Status Pill - Hidden for Employee */}
+                {!isEmployee && (
+                  <div
+                    className={`nav-status-pill ${apiOnline ? 'online' : 'offline'}`}
+                    title={apiOnline ? 'All SmartHire microservices operational' : 'Backend connection interrupted'}
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="12" y1="5" x2="12" y2="19" />
-                      <line x1="5" y1="12" x2="19" y2="12" />
+                    <span className="status-pulse-dot" />
+                    <span className="status-text">{apiOnline ? 'Live' : 'Offline'}</span>
+                  </div>
+                )}
+
+                {/* Inbox / Messages Icon - Hidden for Employee */}
+                {!isEmployee && (
+                  <Link
+                    to="/inbox"
+                    className="nav-icon-action-btn"
+                    title="Recruiter Messages & Inbox"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                     </svg>
-                  </button>
-
-                  {quickAddOpen && (
-                    <div className="quick-add-popover shadow-enterprise">
-                      <div className="quick-add-header">Quick Creation Actions</div>
-                      <button
-                        className="quick-add-item"
-                        onClick={() => {
-                          setQuickAddOpen(false)
-                          navigateToAtsTab('jobs')
-                        }}
-                      >
-                        <span className="quick-add-icon">💼</span>
-                        <div>
-                          <div className="quick-add-label">Post New Vacancy</div>
-                          <div className="quick-add-desc">Add requisition or scrape JD</div>
-                        </div>
-                      </button>
-
-                      <button
-                        className="quick-add-item"
-                        onClick={() => {
-                          setQuickAddOpen(false)
-                          navigateToAtsTab('candidates')
-                        }}
-                      >
-                        <span className="quick-add-icon">👤</span>
-                        <div>
-                          <div className="quick-add-label">Add / Parse Candidate</div>
-                          <div className="quick-add-desc">Upload resume docx/pdf</div>
-                        </div>
-                      </button>
-
-                      <button
-                        className="quick-add-item"
-                        onClick={() => {
-                          setQuickAddOpen(false)
-                          navigateToAtsTab('screening')
-                        }}
-                      >
-                        <span className="quick-add-icon">🔍</span>
-                        <div>
-                          <div className="quick-add-label">Launch AI Screening</div>
-                          <div className="quick-add-desc">Anti-proxy interview chat</div>
-                        </div>
-                      </button>
-
-                      <button
-                        className="quick-add-item"
-                        onClick={() => {
-                          setQuickAddOpen(false)
-                          navigate('/linkedin-posts')
-                        }}
-                      >
-                        <span className="quick-add-icon">🌐</span>
-                        <div>
-                          <div className="quick-add-label">Create LinkedIn Post</div>
-                          <div className="quick-add-desc">Automated social job outreach</div>
-                        </div>
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* API Status Pill */}
-                <div
-                  className={`nav-status-pill ${apiOnline ? 'online' : 'offline'}`}
-                  title={apiOnline ? 'All SmartHire microservices operational' : 'Backend connection interrupted'}
-                >
-                  <span className="status-pulse-dot" />
-                  <span className="status-text">{apiOnline ? 'Live' : 'Offline'}</span>
-                </div>
-
-                {/* Inbox / Messages Icon */}
-                <Link
-                  to="/inbox"
-                  className="nav-icon-action-btn"
-                  title="Recruiter Messages & Inbox"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                  </svg>
-                  <span className="nav-notification-badge">●</span>
-                </Link>
+                    <span className="nav-notification-badge">●</span>
+                  </Link>
+                )}
 
                 {/* Role Switcher Pill */}
-                {canSwitchRoles && (
+                {canSwitchRoles && !isEmployee && (
                   <button
                     className={`nav-role-switcher-pill ${isSuperAdmin ? 'admin-theme' : 'recruiter-theme'}`}
                     onClick={toggleRoleMode}
-                    title="Click to toggle between Super Admin and Recruiter workspace modes"
+                    title="Click to toggle workspace view mode"
                   >
                     <span className="role-icon">{isSuperAdmin ? '👑' : '💼'}</span>
                     <span className="role-label">{isSuperAdmin ? 'Admin' : 'Recruiter'}</span>
@@ -514,7 +533,7 @@ function Navigation() {
                     onClick={() => setProfileMenuOpen(!profileMenuOpen)}
                     aria-label="User profile menu"
                   >
-                    <div className="avatar-circle">{getUserInitials()}</div>
+                    <div className="avatar-circle" style={{ background: isEmployee ? '#16a34a' : undefined }}>{getUserInitials()}</div>
                     <svg className="avatar-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <polyline points="6 9 12 15 18 9" />
                     </svg>
@@ -531,8 +550,8 @@ function Navigation() {
                           <div className="profile-user-email">
                             {user?.email || 'omkesh@coolsofttech.com'}
                           </div>
-                          <div className="profile-role-tag">
-                            {isSuperAdmin ? '👑 Super Admin Console' : '💼 Recruiter Portal'}
+                          <div className="profile-role-tag" style={{ background: isEmployee ? '#dcfce7' : undefined, color: isEmployee ? '#166534' : undefined }}>
+                            {isEmployee ? `🔒 Employee (${user?.parentRecruiterName ? 'reports to ' + user.parentRecruiterName : 'Team Member'})` : isManager ? '👔 Manager Console' : isSuperAdmin ? '👑 Super Admin Console' : '💼 Lead Recruiter Portal'}
                           </div>
                         </div>
                       </div>
@@ -551,27 +570,29 @@ function Navigation() {
                           </button>
                         )}
 
-                        <button
-                          className="profile-menu-link"
-                          onClick={() => {
-                            setProfileMenuOpen(false)
-                            navigateToAtsTab('settings')
-                          }}
-                        >
-                          <span className="menu-link-icon">⚙️</span>
-                          <span>Workspace Settings</span>
-                        </button>
-
-                        {isSuperAdmin && (
+                        {!isEmployee && (
                           <button
                             className="profile-menu-link"
                             onClick={() => {
                               setProfileMenuOpen(false)
-                              navigateToAtsTab('users')
+                              navigateToAtsTab('settings')
+                            }}
+                          >
+                            <span className="menu-link-icon">⚙️</span>
+                            <span>Workspace Settings</span>
+                          </button>
+                        )}
+
+                        {(isSuperAdmin || isManager) && (
+                          <button
+                            className="profile-menu-link"
+                            onClick={() => {
+                              setProfileMenuOpen(false)
+                              navigate('/dashboard')
                             }}
                           >
                             <span className="menu-link-icon">👥</span>
-                            <span>Manage Team & Roles</span>
+                            <span>Manage Team & Employees</span>
                           </button>
                         )}
 
