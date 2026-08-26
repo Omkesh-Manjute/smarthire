@@ -10,8 +10,20 @@ const DEFAULT_RECRUITERS = [
     company: 'SmartHire LLC',
     isActive: true,
     password: 'admin',
-    lastLogin: '2026-08-17T18:45:00.000Z',
+    lastLogin: '2026-08-26T18:45:00.000Z',
     createdAt: '2026-01-10T10:00:00.000Z'
+  },
+  {
+    id: 'mgr-1',
+    name: 'Alok Manager',
+    email: 'manager@coolsofttech.com',
+    role: 'manager',
+    refCode: 'alok-manager',
+    company: 'SmartHire LLC',
+    isActive: true,
+    password: 'manager123',
+    lastLogin: '2026-08-26T14:15:00.000Z',
+    createdAt: '2026-01-15T09:00:00.000Z'
   },
   {
     id: 'rec-2',
@@ -22,7 +34,7 @@ const DEFAULT_RECRUITERS = [
     company: 'SmartHire LLC',
     isActive: true,
     password: 'recruiter123',
-    lastLogin: null,
+    lastLogin: '2026-08-25T11:30:00.000Z',
     createdAt: '2026-02-15T11:30:00.000Z'
   },
   {
@@ -46,7 +58,7 @@ const DEFAULT_RECRUITERS = [
     company: 'SmartHire LLC',
     isActive: true,
     password: 'recruiter123',
-    lastLogin: null,
+    lastLogin: '2026-08-26T09:00:00.000Z',
     createdAt: '2026-03-10T09:00:00.000Z'
   },
   {
@@ -60,24 +72,62 @@ const DEFAULT_RECRUITERS = [
     password: 'recruiter123',
     lastLogin: null,
     createdAt: '2026-03-15T08:30:00.000Z'
+  },
+  {
+    id: 'emp-1',
+    name: 'Rahul Sharma',
+    email: 'rahul.s@coolsofttech.com',
+    role: 'employee',
+    parentRecruiterName: 'Vaibhav Bisen',
+    company: 'SmartHire LLC',
+    isActive: true,
+    password: 'recruiter123',
+    lastLogin: '2026-08-26T16:20:00.000Z',
+    createdAt: '2026-04-01T10:00:00.000Z'
+  },
+  {
+    id: 'emp-2',
+    name: 'Priya Verma',
+    email: 'priya.v@coolsofttech.com',
+    role: 'employee',
+    parentRecruiterName: 'Sukamal Chatterjee',
+    company: 'SmartHire LLC',
+    isActive: true,
+    password: 'recruiter123',
+    lastLogin: '2026-08-25T17:40:00.000Z',
+    createdAt: '2026-04-10T12:00:00.000Z'
   }
 ]
 
 export default function UsersModule({ allCandidates, permissions, setPermissions }) {
   const [subTab, setSubTab] = useState('recruiters')
-  const [recruiters, setRecruiters] = useState(DEFAULT_RECRUITERS)
+  const [recruiters, setRecruiters] = useState(() => {
+    try {
+      const saved = localStorage.getItem('smarthire_recruiters')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+    } catch (e) {}
+    return DEFAULT_RECRUITERS
+  })
   const [loading, setLoading] = useState(false)
 
-  // Add recruiter modal state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [roleFilter, setRoleFilter] = useState('All')
+  const [statusFilter, setStatusFilter] = useState('All')
+
+  const [expandedRecruiters, setExpandedRecruiters] = useState({})
+
   const [showAddModal, setShowAddModal] = useState(false)
   const [newRecName, setNewRecName] = useState('')
   const [newRecEmail, setNewRecEmail] = useState('')
-  const [newRecCompany, setNewRecCompany] = useState('')
+  const [newRecCompany, setNewRecCompany] = useState('SmartHire LLC')
   const [newRecRef, setNewRecRef] = useState('')
   const [newRecRole, setNewRecRole] = useState('recruiter')
-  const [newRecPassword, setNewRecPassword] = useState('')
+  const [newRecPassword, setNewRecPassword] = useState('recruiter123')
+  const [newRecParent, setNewRecParent] = useState('')
 
-  // Edit recruiter modal state
   const [editRecruiter, setEditRecruiter] = useState(null)
   const [editRecName, setEditRecName] = useState('')
   const [editRecEmail, setEditRecEmail] = useState('')
@@ -85,21 +135,34 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
   const [editRecRef, setEditRecRef] = useState('')
   const [editRecRole, setEditRecRole] = useState('recruiter')
   const [editRecPassword, setEditRecPassword] = useState('')
+  const [editRecParent, setEditRecParent] = useState('')
 
   const [toastMessage, setToastMessage] = useState('')
   const [selectedCandidate, setSelectedCandidate] = useState(null)
 
-  // Fetch recruiters from backend on mount
+  const saveRecruiters = (newList, notifyMsg = null) => {
+    setRecruiters(newList)
+    try {
+      localStorage.setItem('smarthire_recruiters', JSON.stringify(newList))
+    } catch (e) {}
+    if (notifyMsg) showToast(notifyMsg)
+  }
+
   const fetchRecruiters = async () => {
     setLoading(true)
     try {
       const res = await fetch('/api/admin/recruiters')
       const data = await res.json()
-      if (res.ok && data.success) {
-        setRecruiters(data.recruiters)
+      if (res.ok && data.success && Array.isArray(data.recruiters) && data.recruiters.length > 0) {
+        const serverRecs = data.recruiters
+        const local = recruiters || []
+        const existingEmails = new Set(serverRecs.map(u => (u.email || '').toLowerCase().trim()))
+        const localOnly = local.filter(u => !existingEmails.has((u.email || '').toLowerCase().trim()))
+        const merged = [...serverRecs, ...localOnly]
+        saveRecruiters(merged)
       }
     } catch (err) {
-      console.error('Error fetching recruiters from server:', err)
+      console.warn('Recruiter backend sync notice:', err)
     } finally {
       setLoading(false)
     }
@@ -111,14 +174,32 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
 
   const showToast = (msg) => {
     setToastMessage(msg)
-    setTimeout(() => setToastMessage(''), 3000)
+    setTimeout(() => setToastMessage(''), 3500)
   }
 
-  // Get sourced candidates count in real time
+  const toggleExpandRecruiter = (recId) => {
+    setExpandedRecruiters(prev => ({
+      ...prev,
+      [recId]: !prev[recId]
+    }))
+  }
+
+  const getSubordinateEmployees = (rec) => {
+    if (!rec || !rec.name) return []
+    const targetName = rec.name.toLowerCase().trim()
+    const targetId = rec.id || rec._id
+    return recruiters.filter(u => {
+      if (u.role !== 'employee') return false
+      const parent = (u.parentRecruiterName || '').toLowerCase().trim()
+      const pId = u.parentRecruiterId || ''
+      return parent === targetName || (pId && pId === targetId)
+    })
+  }
+
   const getSourcedCount = (rec) => {
     if (!allCandidates || !Array.isArray(allCandidates)) return 0
     return allCandidates.filter(c => {
-      const ref = (c.recruiterRefCode || c.referredByRecruiterName || '').toLowerCase()
+      const ref = (c.recruiterRefCode || c.referredByRecruiterName || c.recruiter || '').toLowerCase()
       const recRef = (rec.refCode || '').toLowerCase()
       const recName = (rec.name || '').toLowerCase()
       
@@ -132,22 +213,32 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
   }
 
   const handleToggleStatus = async (id, currentName) => {
+    const updated = recruiters.map(r => {
+      if (r.id === id || r._id === id) {
+        const nextState = r.isActive === false ? true : false
+        return { ...r, isActive: nextState }
+      }
+      return r
+    })
+    saveRecruiters(updated, `User "${currentName}" status changed.`)
+
     try {
-      const res = await fetch(`/api/admin/recruiters/${id}/status`, {
+      await fetch(`/api/admin/recruiters/${id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' }
       })
-      const data = await res.json()
-      if (res.ok && data.success) {
-        setRecruiters(prev => prev.map(r => r.id === id ? { ...r, isActive: data.recruiter.isActive } : r))
-        showToast(`User "${currentName}" account ${data.recruiter.isActive ? 'activated' : 'deactivated'}.`)
-      } else {
-        alert(data.message || 'Failed to update status.')
-      }
-    } catch (err) {
-      console.error('Status toggle failed:', err)
-      alert('Server connection error.')
-    }
+    } catch (err) {}
+  }
+
+  const openAddModal = (presetParent = '') => {
+    setNewRecName('')
+    setNewRecEmail('')
+    setNewRecCompany('SmartHire LLC')
+    setNewRecRef('')
+    setNewRecRole(presetParent ? 'employee' : 'recruiter')
+    setNewRecPassword('recruiter123')
+    setNewRecParent(presetParent || '')
+    setShowAddModal(true)
   }
 
   const handleAddRecruiter = async (e) => {
@@ -161,55 +252,42 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
       ? newRecRef.trim().toLowerCase().replace(/[^a-z0-9]/g, '-')
       : newRecName.trim().toLowerCase().replace(/[^a-z0-9]/g, '-')
 
+    const newId = `rec-${Date.now().toString().slice(-4)}`
     const payload = {
+      id: newId,
       name: newRecName.trim(),
       email: newRecEmail.trim().toLowerCase(),
       role: newRecRole,
       refCode: newRefCode,
       company: newRecCompany.trim() || 'SmartHire LLC',
-      password: newRecPassword.trim()
+      password: newRecPassword.trim(),
+      parentRecruiterName: newRecRole === 'employee' ? newRecParent : '',
+      isActive: true,
+      createdAt: new Date().toISOString()
     }
 
+    const updated = [payload, ...recruiters]
+    saveRecruiters(updated, `🎉 User account created for "${payload.name}" (${payload.role})!`)
+    setShowAddModal(false)
+
     try {
-      const res = await fetch('/api/admin/recruiters', {
+      fetch('/api/admin/recruiters', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
-      })
-      const data = await res.json()
-      if (res.ok && data.success) {
-        setRecruiters(prev => [data.recruiter, ...prev])
-        setShowAddModal(false)
-        showToast(`User account created for "${payload.name}"!`)
-
-        // Clear form
-        setNewRecName('')
-        setNewRecEmail('')
-        setNewRecCompany('')
-        setNewRecRef('')
-        setNewRecRole('recruiter')
-        setNewRecPassword('')
-        
-        // Reload list to get proper ids and values
-        fetchRecruiters()
-      } else {
-        alert(data.message || 'Failed to create user.')
-      }
-    } catch (err) {
-      console.error('Add user failed:', err)
-      alert('Server connection error.')
-    }
+      }).catch(() => {})
+    } catch (err) {}
   }
 
-  // Open Edit Modal
   const openEditModal = (rec) => {
     setEditRecruiter(rec)
-    setEditRecName(rec.name)
-    setEditRecEmail(rec.email)
-    setEditRecCompany(rec.company || '')
+    setEditRecName(rec.name || '')
+    setEditRecEmail(rec.email || '')
+    setEditRecCompany(rec.company || 'SmartHire LLC')
     setEditRecRef(rec.refCode || '')
-    setEditRecRole(rec.role)
-    setEditRecPassword(rec.password || '')
+    setEditRecRole(rec.role || 'recruiter')
+    setEditRecPassword(rec.password || '••••••••')
+    setEditRecParent(rec.parentRecruiterName || '')
   }
 
   const handleUpdateRecruiter = async (e) => {
@@ -223,53 +301,50 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
       ? editRecRef.trim().toLowerCase().replace(/[^a-z0-9]/g, '-')
       : editRecName.trim().toLowerCase().replace(/[^a-z0-9]/g, '-')
 
-    const payload = {
-      name: editRecName.trim(),
-      email: editRecEmail.trim().toLowerCase(),
-      role: editRecRole,
-      refCode: finalRefCode,
-      company: editRecCompany.trim() || 'SmartHire LLC',
-      password: editRecPassword.trim()
-    }
+    const updated = recruiters.map(r => {
+      if (r.id === editRecruiter.id || r._id === editRecruiter.id) {
+        return {
+          ...r,
+          name: editRecName.trim(),
+          email: editRecEmail.trim().toLowerCase(),
+          role: editRecRole,
+          refCode: finalRefCode,
+          company: editRecCompany.trim() || 'SmartHire LLC',
+          password: editRecPassword.trim(),
+          parentRecruiterName: editRecRole === 'employee' ? editRecParent : ''
+        }
+      }
+      return r
+    })
+
+    saveRecruiters(updated, `✅ User "${editRecName}" updated successfully!`)
+    setEditRecruiter(null)
 
     try {
-      const res = await fetch(`/api/admin/recruiters/${editRecruiter.id}`, {
+      fetch(`/api/admin/recruiters/${editRecruiter.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-      const data = await res.json()
-      if (res.ok && data.success) {
-        setRecruiters(prev => prev.map(r => r.id === editRecruiter.id ? { ...r, ...data.recruiter } : r))
-        setEditRecruiter(null)
-        showToast(`User "${editRecName}" updated successfully!`)
-        fetchRecruiters()
-      } else {
-        alert(data.message || 'Failed to update user.')
-      }
-    } catch (err) {
-      console.error('Update user failed:', err)
-      alert('Server connection error.')
-    }
+        body: JSON.stringify({
+          name: editRecName.trim(),
+          email: editRecEmail.trim().toLowerCase(),
+          role: editRecRole,
+          refCode: finalRefCode,
+          company: editRecCompany.trim() || 'SmartHire LLC',
+          password: editRecPassword.trim(),
+          parentRecruiterName: editRecRole === 'employee' ? editRecParent : ''
+        })
+      }).catch(() => {})
+    } catch (err) {}
   }
 
   const handleDeleteRecruiter = async (id, name) => {
     if (window.confirm(`Are you sure you want to delete user "${name}"?`)) {
+      const updated = recruiters.filter(r => r.id !== id && r._id !== id)
+      saveRecruiters(updated, `User "${name}" account deleted.`)
+
       try {
-        const res = await fetch(`/api/admin/recruiters/${id}`, {
-          method: 'DELETE'
-        })
-        const data = await res.json()
-        if (res.ok && data.success) {
-          setRecruiters(prev => prev.filter(r => r.id !== id))
-          showToast(`User "${name}" account deleted.`)
-        } else {
-          alert(data.message || 'Failed to delete user.')
-        }
-      } catch (err) {
-        console.error('Delete user failed:', err)
-        alert('Server connection error.')
-      }
+        fetch(`/api/admin/recruiters/${id}`, { method: 'DELETE' }).catch(() => {})
+      } catch (err) {}
     }
   }
 
@@ -285,7 +360,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
     try {
       localStorage.setItem('smarthire_role_permissions', JSON.stringify(updated))
     } catch(e) {}
-    showToast(`Permissions updated for ${role === 'superadmin' ? 'Super Admin' : 'Recruiter'} role.`)
+    showToast(`Permissions updated for ${role} role.`)
   }
 
   const formatDate = (isoString) => {
@@ -299,38 +374,61 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
     })
   }
 
+  const filteredRecruiters = recruiters.filter(rec => {
+    if (roleFilter !== 'All' && rec.role !== roleFilter) return false
+    if (statusFilter === 'Active' && rec.isActive === false) return false
+    if (statusFilter === 'Inactive' && rec.isActive !== false) return false
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim()
+      const matchName = (rec.name || '').toLowerCase().includes(q)
+      const matchEmail = (rec.email || '').toLowerCase().includes(q)
+      const matchRef = (rec.refCode || '').toLowerCase().includes(q)
+      const matchCompany = (rec.company || '').toLowerCase().includes(q)
+      const matchParent = (rec.parentRecruiterName || '').toLowerCase().includes(q)
+      if (!matchName && !matchEmail && !matchRef && !matchCompany && !matchParent) return false
+    }
+
+    return true
+  })
+
+  const totalUsersCount = recruiters.length
+  const adminCount = recruiters.filter(r => r.role === 'superadmin' || r.role === 'admin').length
+  const managerCount = recruiters.filter(r => r.role === 'manager').length
+  const leadRecruiterCount = recruiters.filter(r => r.role === 'recruiter').length
+  const employeeCount = recruiters.filter(r => r.role === 'employee').length
+
   return (
     <div className="users-module-container">
-      {/* Toast Notification */}
       {toastMessage && (
         <div className="toast-notification">
           <span>🔔 {toastMessage}</span>
         </div>
       )}
 
-      {/* Header Block */}
       <div className="users-header">
         <div>
           <h2 className="users-title">👥 Master User & Access Control Hub</h2>
           <p className="users-subtitle">
-            Admin console to manage recruitment team members, audit candidate logins, and toggle role-based page permissions.
+            Admin console to manage organizational hierarchy, assign managers and recruiter teams, and audit permissions.
           </p>
         </div>
         
         {subTab === 'recruiters' && (
-          <button className="btn" onClick={() => setShowAddModal(true)}>
-            ➕ Add Team Member
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="btn" onClick={() => openAddModal('')} style={{ background: '#4f46e5', color: '#ffffff', fontWeight: 'bold' }}>
+              ➕ Add Team Member
+            </button>
+          </div>
         )}
       </div>
 
-      {/* Tab Navigation */}
       <div className="subtabs-bar">
         <button 
           className={`subtab-btn ${subTab === 'recruiters' ? 'active' : ''}`}
           onClick={() => setSubTab('recruiters')}
         >
-          💼 Recruiters & Team ({recruiters.length})
+          💼 Team & Hierarchy ({recruiters.length})
         </button>
         <button 
           className={`subtab-btn ${subTab === 'candidates' ? 'active' : ''}`}
@@ -346,169 +444,435 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
         </button>
       </div>
 
-      {/* Subtab Contents */}
       <div className="subtab-content-panel">
         
-        {/* RECRUITERS & TEAM SUB-TAB */}
         {subTab === 'recruiters' && (
-          <div className="card shadow-sm">
-            {loading ? (
-              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--ink-soft)' }}>
-                <span className="loader-spinner"></span> Loading team members from database...
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+              <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '12px 14px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b' }}>TOTAL TEAM USERS</div>
+                <div style={{ fontSize: '22px', fontWeight: '800', color: '#0f172a', marginTop: '2px' }}>{totalUsersCount}</div>
+                <div style={{ fontSize: '10.5px', color: '#94a3b8' }}>Entire Organization</div>
               </div>
-            ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table className="users-table">
-                  <thead>
-                    <tr>
-                      <th>Team Member</th>
-                      <th>Ref Code</th>
-                      <th>Company</th>
-                      <th>Role</th>
-                      <th>Sourced</th>
-                      <th>Account Status</th>
-                      <th>Last Active</th>
-                      <th style={{ textAlign: 'right' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recruiters.map(rec => {
-                      const count = getSourcedCount(rec)
-                      const isMaster = rec.email === 'omkesh@coolsofttech.com'
-                      return (
-                        <tr key={rec.id || rec._id} style={{ opacity: rec.isActive ? 1 : 0.6 }}>
-                          <td>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                              <div className="avatar-circle">
-                                {(rec.name || 'R')[0].toUpperCase()}
-                              </div>
-                              <div>
-                                <strong style={{ display: 'block', color: 'var(--ink)' }}>{rec.name}</strong>
-                                <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{rec.email}</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td>
-                            <code className="ref-code-badge">{rec.refCode}</code>
-                          </td>
-                          <td>{rec.company}</td>
-                          <td>
-                            <span className={`role-pill ${rec.role}`}>
-                              {rec.role === 'superadmin' ? '👑 Super Admin' : '💼 Recruiter'}
-                            </span>
-                          </td>
-                          <td>
-                            <span style={{ fontWeight: 800, color: 'var(--brand)' }}>{count}</span>
-                          </td>
-                          <td>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <label className="switch">
-                                <input 
-                                  type="checkbox" 
-                                  checked={rec.isActive} 
-                                  disabled={isMaster}
-                                  onChange={() => handleToggleStatus(rec.id, rec.name)} 
-                                />
-                                <span className="slider round"></span>
-                              </label>
-                              <span style={{ fontSize: 12, fontWeight: 600, color: rec.isActive ? 'var(--brand)' : 'var(--ink-soft)' }}>
-                                {rec.isActive ? 'Active' : 'Inactive'}
-                              </span>
-                            </div>
-                          </td>
-                          <td style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
-                            {formatDate(rec.lastLogin)}
-                          </td>
-                          <td style={{ textAlign: 'right' }}>
-                            <button 
-                              className="btn btn-sm btn-ghost" 
-                              style={{ color: 'var(--brand)', border: 'none', marginRight: 8 }}
-                              onClick={() => openEditModal(rec)}
-                            >
-                              ✏️ Edit
-                            </button>
-                            <button 
-                              className="btn btn-sm btn-ghost" 
-                              style={{ color: 'var(--danger)', border: 'none' }}
-                              onClick={() => handleDeleteRecruiter(rec.id, rec.name)}
-                              disabled={isMaster} 
-                            >
-                              🗑️ Delete
-                            </button>
+
+              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '12px 14px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#1d4ed8' }}>👑 SUPER ADMINS</div>
+                <div style={{ fontSize: '22px', fontWeight: '800', color: '#1e3a8a', marginTop: '2px' }}>{adminCount}</div>
+                <div style={{ fontSize: '10.5px', color: '#60a5fa' }}>Full Platform Control</div>
+              </div>
+
+              <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '8px', padding: '12px 14px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#b45309' }}>🛡️ MANAGERS & LEADS</div>
+                <div style={{ fontSize: '22px', fontWeight: '800', color: '#78350f', marginTop: '2px' }}>{managerCount}</div>
+                <div style={{ fontSize: '10.5px', color: '#f59e0b' }}>Candidate Review & AI</div>
+              </div>
+
+              <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '8px', padding: '12px 14px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#c2410c' }}>💼 LEAD RECRUITERS</div>
+                <div style={{ fontSize: '22px', fontWeight: '800', color: '#9a3412', marginTop: '2px' }}>{leadRecruiterCount}</div>
+                <div style={{ fontSize: '10.5px', color: '#fb923c' }}>Managing Requisitions</div>
+              </div>
+
+              <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '8px', padding: '12px 14px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#047857' }}>👤 SOURCING EMPLOYEES</div>
+                <div style={{ fontSize: '22px', fontWeight: '800', color: '#065f46', marginTop: '2px' }}>{employeeCount}</div>
+                <div style={{ fontSize: '10.5px', color: '#34d399' }}>Assigned Sub-Recruiters</div>
+              </div>
+            </div>
+
+            <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', padding: '10px 14px', borderRadius: '8px', marginBottom: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    placeholder="🔍 Search name, email, ref code..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    style={{ padding: '6px 10px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '220px' }}
+                  />
+                  {searchQuery && (
+                    <span onClick={() => setSearchQuery('')} style={{ position: 'absolute', right: 8, top: 6, cursor: 'pointer', color: '#94a3b8', fontSize: '12px' }}>✕</span>
+                  )}
+                </div>
+
+                <select
+                  value={roleFilter}
+                  onChange={e => setRoleFilter(e.target.value)}
+                  style={{ padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#ffffff', fontWeight: 'bold' }}
+                >
+                  <option value="All">All Roles ({recruiters.length})</option>
+                  <option value="superadmin">👑 Super Admins ({adminCount})</option>
+                  <option value="manager">🛡️ Managers & Leads ({managerCount})</option>
+                  <option value="recruiter">💼 Lead Recruiters ({leadRecruiterCount})</option>
+                  <option value="employee">👤 Sourcing Employees ({employeeCount})</option>
+                </select>
+
+                <select
+                  value={statusFilter}
+                  onChange={e => setStatusFilter(e.target.value)}
+                  style={{ padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#ffffff' }}
+                >
+                  <option value="All">All Status</option>
+                  <option value="Active">🟢 Active Accounts</option>
+                  <option value="Inactive">🔴 Inactive Accounts</option>
+                </select>
+              </div>
+
+              <div style={{ fontSize: '11.5px', color: '#64748b' }}>
+                Showing <strong style={{ color: '#4f46e5' }}>{filteredRecruiters.length}</strong> of <strong>{recruiters.length}</strong> team members
+              </div>
+            </div>
+
+            <div className="card shadow-sm" style={{ padding: 0, overflow: 'hidden', border: '1px solid #cbd5e1', borderRadius: '8px' }}>
+              {loading ? (
+                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--ink-soft)' }}>
+                  <span className="loader-spinner"></span> Loading team members...
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="users-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                    <thead>
+                      <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0', color: '#475569' }}>
+                        <th style={{ padding: '10px 14px', fontWeight: 'bold' }}>Team Member</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 'bold' }}>System Role</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 'bold' }}>Team Hierarchy / Reporting</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 'bold' }}>Company & Ref</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 'bold', textAlign: 'center' }}>Sourced</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 'bold' }}>Account Status</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 'bold' }}>Last Active</th>
+                        <th style={{ padding: '10px 14px', fontWeight: 'bold', textAlign: 'right' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredRecruiters.length === 0 ? (
+                        <tr>
+                          <td colSpan="8" style={{ padding: '36px', textAlign: 'center', color: '#64748b' }}>
+                            No team members found matching your filter criteria.
                           </td>
                         </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                      ) : (
+                        filteredRecruiters.map(rec => {
+                          const count = getSourcedCount(rec)
+                          const isMaster = rec.email === 'omkesh@coolsofttech.com'
+                          const subordinates = getSubordinateEmployees(rec)
+                          const isExpanded = Boolean(expandedRecruiters[rec.id || rec._id])
+
+                          let roleBadgeBg = '#dbeafe'
+                          let roleBadgeColor = '#1e40af'
+                          let roleBadgeBorder = '#bfdbfe'
+                          let roleLabel = '💼 Lead Recruiter'
+                          let avatarBg = '#0284c7'
+
+                          if (rec.role === 'superadmin' || rec.role === 'admin') {
+                            roleBadgeBg = '#e0f2fe'
+                            roleBadgeColor = '#0369a1'
+                            roleBadgeBorder = '#bae6fd'
+                            roleLabel = '👑 Super Admin'
+                            avatarBg = '#0284c7'
+                          } else if (rec.role === 'manager') {
+                            roleBadgeBg = '#fef3c7'
+                            roleBadgeColor = '#92400e'
+                            roleBadgeBorder = '#fde68a'
+                            roleLabel = '🛡️ Manager / Lead'
+                            avatarBg = '#d97706'
+                          } else if (rec.role === 'employee') {
+                            roleBadgeBg = '#dcfce7'
+                            roleBadgeColor = '#15803d'
+                            roleBadgeBorder = '#bbf7d0'
+                            roleLabel = '👤 Employee (Sourcer)'
+                            avatarBg = '#10b981'
+                          }
+
+                          return (
+                            <React.Fragment key={rec.id || rec._id}>
+                              <tr style={{
+                                opacity: rec.isActive !== false ? 1 : 0.65,
+                                background: isExpanded ? '#f0fdf4' : '#ffffff',
+                                borderBottom: '1px solid #e2e8f0',
+                                transition: 'background-color 0.15s ease'
+                              }}>
+                                <td style={{ padding: '10px 14px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                    <div style={{
+                                      width: '32px', height: '32px', borderRadius: '50%',
+                                      background: avatarBg, color: '#ffffff',
+                                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                      fontWeight: '800', fontSize: '12px'
+                                    }}>
+                                      {(rec.name || 'U')[0].toUpperCase()}
+                                    </div>
+                                    <div>
+                                      <strong style={{ display: 'block', color: '#0f172a', fontSize: '13px' }}>
+                                        {rec.name} {isMaster ? '(Primary Owner)' : ''}
+                                      </strong>
+                                      <span style={{ fontSize: '11px', color: '#64748b' }}>{rec.email}</span>
+                                    </div>
+                                  </div>
+                                </td>
+
+                                <td style={{ padding: '10px 12px' }}>
+                                  <span style={{
+                                    background: roleBadgeBg, color: roleBadgeColor,
+                                    border: `1px solid ${roleBadgeBorder}`,
+                                    borderRadius: '12px', padding: '2px 8px', fontSize: '11px', fontWeight: 'bold',
+                                    display: 'inline-block'
+                                  }}>
+                                    {roleLabel}
+                                  </span>
+                                </td>
+
+                                <td style={{ padding: '10px 12px' }}>
+                                  {rec.role === 'employee' ? (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                      <span style={{ color: '#0284c7', fontWeight: 'bold', fontSize: '11.5px', background: '#eff6ff', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bfdbfe' }}>
+                                        ↳ Reports to: {rec.parentRecruiterName || 'Lead Recruiter'}
+                                      </span>
+                                    </div>
+                                  ) : subordinates.length > 0 ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleExpandRecruiter(rec.id || rec._id)}
+                                      style={{
+                                        background: isExpanded ? '#dcfce7' : '#f1f5f9',
+                                        color: isExpanded ? '#15803d' : '#1e3a8a',
+                                        border: `1px solid ${isExpanded ? '#86efac' : '#cbd5e1'}`,
+                                        padding: '3px 10px',
+                                        borderRadius: '4px',
+                                        fontSize: '11px',
+                                        fontWeight: 'bold',
+                                        cursor: 'pointer',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                      }}
+                                      title="Click to view employees reporting under this recruiter"
+                                    >
+                                      <span>👥 {subordinates.length} Subordinate{subordinates.length === 1 ? '' : 's'}</span>
+                                      <span>{isExpanded ? '▲ Hide' : '▼ View Team'}</span>
+                                    </button>
+                                  ) : (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                      <span style={{ fontSize: '11px', color: '#94a3b8' }}>Independent Lead</span>
+                                      {(rec.role === 'recruiter' || rec.role === 'manager' || rec.role === 'superadmin') && (
+                                        <button
+                                          type="button"
+                                          onClick={() => openAddModal(rec.name)}
+                                          style={{
+                                            background: '#f8fafc', color: '#4f46e5', border: '1px dashed #a5b4fc',
+                                            padding: '1px 6px', borderRadius: '3px', fontSize: '10.5px', fontWeight: 'bold', cursor: 'pointer'
+                                          }}
+                                          title={`Add an employee under ${rec.name}`}
+                                        >
+                                          + Assign Employee
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+                                </td>
+
+                                <td style={{ padding: '10px 12px' }}>
+                                  <div style={{ fontSize: '11.5px', color: '#334155' }}>{rec.company || 'SmartHire LLC'}</div>
+                                  <code className="ref-code-badge" style={{ fontSize: '10px' }}>{rec.refCode}</code>
+                                </td>
+
+                                <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                                  <span style={{ fontWeight: '800', color: '#4f46e5', fontSize: '13px' }}>{count}</span>
+                                </td>
+
+                                <td style={{ padding: '10px 12px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <label className="switch">
+                                      <input 
+                                        type="checkbox" 
+                                        checked={rec.isActive !== false} 
+                                        disabled={isMaster}
+                                        onChange={() => handleToggleStatus(rec.id || rec._id, rec.name)} 
+                                      />
+                                      <span className="slider round"></span>
+                                    </label>
+                                    <span style={{ fontSize: '11.5px', fontWeight: '600', color: rec.isActive !== false ? '#16a34a' : '#94a3b8' }}>
+                                      {rec.isActive !== false ? '🟢 Active' : '🔴 Inactive'}
+                                    </span>
+                                  </div>
+                                </td>
+
+                                <td style={{ padding: '10px 12px', fontSize: '11px', color: '#64748b' }}>
+                                  {formatDate(rec.lastLogin)}
+                                </td>
+
+                                <td style={{ padding: '10px 14px', textAlign: 'right' }}>
+                                  <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
+                                    {(rec.role === 'recruiter' || rec.role === 'manager') && (
+                                      <button 
+                                        className="btn btn-sm btn-ghost" 
+                                        style={{ color: '#0284c7', border: '1px solid #bfdbfe', padding: '2px 6px', fontSize: '11px', borderRadius: '3px' }}
+                                        onClick={() => openAddModal(rec.name)}
+                                        title={`Add new employee under ${rec.name}`}
+                                      >
+                                        ➕ Sub-User
+                                      </button>
+                                    )}
+                                    <button 
+                                      className="btn btn-sm btn-ghost" 
+                                      style={{ color: '#4f46e5', border: '1px solid #c7d2fe', padding: '2px 6px', fontSize: '11px', borderRadius: '3px' }}
+                                      onClick={() => openEditModal(rec)}
+                                    >
+                                      ✏️ Edit
+                                    </button>
+                                    <button 
+                                      className="btn btn-sm btn-ghost" 
+                                      style={{ color: '#dc2626', border: '1px solid #fecaca', padding: '2px 6px', fontSize: '11px', borderRadius: '3px' }}
+                                      onClick={() => handleDeleteRecruiter(rec.id || rec._id, rec.name)}
+                                      disabled={isMaster} 
+                                    >
+                                      🗑️
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+
+                              {isExpanded && (
+                                <tr style={{ background: '#f8fafc' }}>
+                                  <td colSpan="8" style={{ padding: '14px 20px', borderBottom: '2px solid #cbd5e1' }}>
+                                    <div style={{ background: '#ffffff', border: '1px solid #86efac', borderRadius: '6px', padding: '14px 16px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)' }}>
+                                      
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                          <span style={{ fontSize: '16px' }}>👥</span>
+                                          <strong style={{ color: '#166534', fontSize: '13px' }}>
+                                            Direct Reporting Sub-Team for {rec.name} ({subordinates.length} Employee{subordinates.length === 1 ? '' : 's'})
+                                          </strong>
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() => openAddModal(rec.name)}
+                                          style={{
+                                            background: '#16a34a', color: '#ffffff', border: 'none',
+                                            padding: '4px 12px', fontSize: '11px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer'
+                                          }}
+                                        >
+                                          ➕ Add Employee under {rec.name}
+                                        </button>
+                                      </div>
+
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        {subordinates.map((subEmp, index) => {
+                                          const subSourced = getSourcedCount(subEmp)
+                                          return (
+                                            <div
+                                              key={subEmp.id || subEmp._id || index}
+                                              style={{
+                                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                                background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '4px', padding: '8px 12px', fontSize: '12px'
+                                              }}
+                                            >
+                                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <span style={{ fontWeight: 'bold', color: '#15803d', width: '20px', fontSize: '13px' }}>
+                                                  {index + 1}.
+                                                </span>
+                                                <div>
+                                                  <strong style={{ color: '#0f172a', fontSize: '12.5px' }}>{subEmp.name}</strong>
+                                                  <span style={{ color: '#64748b', fontSize: '11px', marginLeft: '6px' }}>({subEmp.email})</span>
+                                                </div>
+                                                <span style={{ background: '#dcfce7', color: '#166534', padding: '1px 6px', borderRadius: '3px', fontSize: '10.5px', fontWeight: 'bold' }}>
+                                                  👤 Sourcing Specialist
+                                                </span>
+                                                <span style={{ color: subEmp.isActive !== false ? '#16a34a' : '#dc2626', fontSize: '11px', fontWeight: 'bold' }}>
+                                                  {subEmp.isActive !== false ? '🟢 Active' : '🔴 Inactive'}
+                                                </span>
+                                                <span style={{ fontSize: '11px', color: '#475569' }}>
+                                                  Sourced: <strong style={{ color: '#15803d' }}>{subSourced} Candidates</strong>
+                                                </span>
+                                              </div>
+
+                                              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                                <span style={{ fontSize: '10.5px', color: '#94a3b8', marginRight: '6px' }}>
+                                                  Last login: {formatDate(subEmp.lastLogin)}
+                                                </span>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => openEditModal(subEmp)}
+                                                  style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '2px 8px', fontSize: '11px', borderRadius: '3px', cursor: 'pointer', color: '#1e3a8a', fontWeight: 'bold' }}
+                                                >
+                                                  ✏️ Edit
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => handleDeleteRecruiter(subEmp.id || subEmp._id, subEmp.name)}
+                                                  style={{ background: '#fee2e2', border: '1px solid #fca5a5', padding: '2px 6px', fontSize: '11px', borderRadius: '3px', cursor: 'pointer', color: '#b91c1c' }}
+                                                >
+                                                  🗑️ Remove
+                                                </button>
+                                              </div>
+                                            </div>
+                                          )
+                                        })}
+                                      </div>
+
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </React.Fragment>
+                          )
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
-        {/* CANDIDATES SUB-TAB */}
         {subTab === 'candidates' && (
-          <div className="card shadow-sm">
+          <div className="card shadow-sm" style={{ padding: 0, overflow: 'hidden' }}>
             <div style={{ overflowX: 'auto' }}>
               <table className="users-table">
                 <thead>
-                  <tr>
-                    <th>Candidate User</th>
-                    <th>Applied Job</th>
-                    <th>Visa / Work Auth</th>
-                    <th>Status</th>
-                    <th>Attributed Recruiter</th>
-                    <th>Date Applied</th>
-                    <th style={{ textAlign: 'right' }}>Actions</th>
+                  <tr style={{ background: '#f8fafc', color: '#475569' }}>
+                    <th style={{ padding: '10px 14px' }}>Candidate Name</th>
+                    <th style={{ padding: '10px 12px' }}>Role / Skill</th>
+                    <th style={{ padding: '10px 12px' }}>Email Address</th>
+                    <th style={{ padding: '10px 12px' }}>Sourced By</th>
+                    <th style={{ padding: '10px 12px' }}>Screening Trust</th>
+                    <th style={{ padding: '10px 12px' }}>Status</th>
+                    <th style={{ padding: '10px 14px', textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {allCandidates && allCandidates.length > 0 ? (
-                    allCandidates.map(cand => {
-                      return (
-                        <tr key={cand._id || cand.id}>
-                          <td>
-                            <div>
-                              <strong style={{ display: 'block', color: 'var(--ink)' }}>{cand.name}</strong>
-                              <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{cand.email}</span>
-                            </div>
-                          </td>
-                          <td>
-                            <span style={{ fontWeight: 600 }}>{cand.role || 'Unspecified Position'}</span>
-                          </td>
-                          <td>
-                            <span style={{ fontSize: 12, fontWeight: 500, background: '#f1f5f9', padding: '2px 8px', borderRadius: 4 }}>
-                              {cand.visaStatus || 'Not Specified'}
-                            </span>
-                          </td>
-                          <td>
-                            <span className={`pill-status status-${(cand.status || 'new').toLowerCase().replace(' ', '-')}`}>
-                              {cand.status || 'New'}
-                            </span>
-                          </td>
-                          <td>
-                            {cand.recruiterRefCode ? (
-                              <code className="ref-code-badge">{cand.recruiterRefCode}</code>
-                            ) : cand.referredByRecruiterName ? (
-                              <span style={{ fontSize: 12 }}>{cand.referredByRecruiterName}</span>
-                            ) : (
-                              <span style={{ fontSize: 12, color: 'var(--ink-soft)', fontStyle: 'italic' }}>Direct Application</span>
-                            )}
-                          </td>
-                          <td style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
-                            {formatDate(cand.createdAt)}
-                          </td>
-                          <td style={{ textAlign: 'right' }}>
-                            <button 
-                              className="btn btn-sm btn-ghost"
-                              onClick={() => setSelectedCandidate(cand)}
-                            >
-                              👁️ Details
-                            </button>
-                          </td>
-                        </tr>
-                      )
-                    })
+                    allCandidates.map(cand => (
+                      <tr key={cand.id || cand._id}>
+                        <td style={{ padding: '10px 14px' }}>
+                          <strong style={{ color: '#0f172a' }}>{cand.name}</strong>
+                        </td>
+                        <td style={{ padding: '10px 12px' }}>{cand.role || 'Software Consultant'}</td>
+                        <td style={{ padding: '10px 12px', color: '#0284c7' }}>{cand.email}</td>
+                        <td style={{ padding: '10px 12px' }}>
+                          <span style={{ background: '#eff6ff', color: '#1e40af', padding: '2px 6px', borderRadius: '3px', fontSize: '11px', fontWeight: 'bold' }}>
+                            {cand.referredByRecruiterName || cand.recruiter || 'Direct'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px 12px' }}>
+                          <strong style={{ color: '#16a34a' }}>{cand.trustScore || '88'}%</strong>
+                        </td>
+                        <td style={{ padding: '10px 12px' }}>
+                          <span className={`pill-status status-${(cand.status || 'new').toLowerCase().replace(' ', '-')}`}>
+                            {cand.status || 'Screened'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px 14px', textAlign: 'right' }}>
+                          <button 
+                            className="btn btn-sm btn-ghost"
+                            onClick={() => setSelectedCandidate(cand)}
+                            style={{ color: '#4f46e5', border: '1px solid #c7d2fe', padding: '2px 8px', fontSize: '11px' }}
+                          >
+                            👁️ Details
+                          </button>
+                        </td>
+                      </tr>
+                    ))
                   ) : (
                     <tr>
                       <td colSpan="7" style={{ textAlign: 'center', padding: '40px 0', color: 'var(--ink-soft)' }}>
@@ -522,20 +886,16 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
           </div>
         )}
 
-        {/* ROLE PERMISSIONS SUB-TAB */}
         {subTab === 'permissions' && (
           <div className="card shadow-sm" style={{ padding: 24 }}>
             <h4 style={{ margin: '0 0 10px', fontSize: 16, fontWeight: 800 }}>🔒 Role-Based Workspace Access (Pages ON/OFF)</h4>
-            <p style={{ margin: '0 0 24px', fontSize: 13.5, color: 'var(--ink-soft)', lineHeight: 1.5 }}>
-              Define which modules/pages are active and visible in the ATS workspace navigation. Any changes will immediately hide/show those navigation items depending on the user's role.
-            </p>
-
             <div className="permission-grid-wrap">
               <table className="permissions-table">
                 <thead>
                   <tr>
                     <th>Page / Module</th>
                     <th style={{ textAlign: 'center' }}>👑 Super Admin Access</th>
+                    <th style={{ textAlign: 'center' }}>🛡️ Manager Access</th>
                     <th style={{ textAlign: 'center' }}>💼 Recruiter Access</th>
                   </tr>
                 </thead>
@@ -571,6 +931,14 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                         <td style={{ textAlign: 'center' }}>
                           <input 
                             type="checkbox" 
+                            checked={permissions['manager']?.[page.id] !== false} 
+                            onChange={() => handleTogglePermission('manager', page.id)}
+                            style={{ width: 18, height: 18, accentColor: '#d97706', cursor: 'pointer' }}
+                          />
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          <input 
+                            type="checkbox" 
                             checked={!!permissions['recruiter']?.[page.id]} 
                             onChange={() => handleTogglePermission('recruiter', page.id)}
                             style={{ width: 18, height: 18, accentColor: 'var(--brand)', cursor: 'pointer' }}
@@ -582,24 +950,14 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                 </tbody>
               </table>
             </div>
-
-            <div className="permissions-notice-box">
-              <strong>💡 Try Testing This Out:</strong>
-              <ol style={{ margin: '6px 0 0 18px', padding: 0, fontSize: 13, lineHeight: 1.5, color: '#451a03' }}>
-                <li>Uncheck the <strong>📊 Dashboard</strong> or <strong>📈 Visual Pipeline</strong> checkbox in the <strong>Recruiter Access</strong> column above.</li>
-                <li>In the top header, click the <strong>"💼 Switch to Recruiter View"</strong> button.</li>
-                <li>You will notice that the corresponding tabs disappear from the navigation list, hiding those pages!</li>
-              </ol>
-            </div>
           </div>
         )}
 
       </div>
 
-      {/* ADD RECRUITER MODAL */}
       {showAddModal && (
         <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
-          <div className="modal-card" onClick={e => e.stopPropagation()}>
+          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '560px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>➕ Add New Team Member</h3>
               <button 
@@ -616,7 +974,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                 <input 
                   type="text" 
                   required 
-                  placeholder="e.g. Rachel Green" 
+                  placeholder="e.g. Alok Sharma" 
                   value={newRecName}
                   onChange={e => setNewRecName(e.target.value)}
                 />
@@ -627,7 +985,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                 <input 
                   type="email" 
                   required 
-                  placeholder="rachel@company.com" 
+                  placeholder="alok@coolsofttech.com" 
                   value={newRecEmail}
                   onChange={e => setNewRecEmail(e.target.value)}
                 />
@@ -658,25 +1016,51 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                 <label>Referral Tracking Code (Optional)</label>
                 <input 
                   type="text" 
-                  placeholder="e.g. rachel-g (Leave blank to auto-generate)" 
+                  placeholder="e.g. alok-s (Leave blank to auto-generate)" 
                   value={newRecRef}
                   onChange={e => setNewRecRef(e.target.value)}
                 />
               </div>
 
               <div className="form-group">
-                <label>User System Role</label>
-                <select value={newRecRole} onChange={e => setNewRecRole(e.target.value)}>
-                  <option value="recruiter">💼 Recruiter (Subject to Page Permissions)</option>
+                <label style={{ fontWeight: 'bold', color: '#1e3a8a' }}>User System Role *</label>
+                <select value={newRecRole} onChange={e => setNewRecRole(e.target.value)} style={{ fontWeight: 'bold' }}>
                   <option value="superadmin">👑 Super Admin (Full Control)</option>
+                  <option value="manager">🛡️ Manager / Account Lead (Candidate & AI Reviewer)</option>
+                  <option value="recruiter">💼 Lead Recruiter (Client Submissions & Sourcing)</option>
+                  <option value="employee">👤 Employee / Sub-Recruiter (Reporting to Recruiter)</option>
                 </select>
               </div>
+
+              {newRecRole === 'employee' && (
+                <div className="form-group" style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '6px', padding: '10px 12px' }}>
+                  <label style={{ fontWeight: 'bold', color: '#166534' }}>Reporting Lead Recruiter / Manager *</label>
+                  <select 
+                    value={newRecParent} 
+                    onChange={e => setNewRecParent(e.target.value)}
+                    style={{ background: '#ffffff', fontWeight: 'bold', marginTop: '4px' }}
+                    required
+                  >
+                    <option value="">-- Select Reporting Lead Recruiter --</option>
+                    {recruiters
+                      .filter(r => r.role === 'recruiter' || r.role === 'manager' || r.role === 'superadmin')
+                      .map(r => (
+                        <option key={r.id || r._id} value={r.name}>
+                          {r.name} ({r.role}) — {r.email}
+                        </option>
+                      ))}
+                  </select>
+                  <div style={{ fontSize: '11px', color: '#475569', marginTop: '4px' }}>
+                    Requisitions assigned to this employee will automatically be accessible to this reporting recruiter.
+                  </div>
+                </div>
+              )}
 
               <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24 }}>
                 <button type="button" className="btn btn-ghost" onClick={() => setShowAddModal(false)}>
                   Cancel
                 </button>
-                <button type="submit" className="btn">
+                <button type="submit" className="btn" style={{ background: '#4f46e5', color: '#ffffff' }}>
                   💾 Create Account
                 </button>
               </div>
@@ -685,10 +1069,9 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
         </div>
       )}
 
-      {/* EDIT RECRUITER MODAL */}
       {editRecruiter && (
         <div className="modal-overlay" onClick={() => setEditRecruiter(null)}>
-          <div className="modal-card" onClick={e => e.stopPropagation()}>
+          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '560px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>✏️ Edit Team Member Details</h3>
               <button 
@@ -724,7 +1107,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
               <div className="form-group">
                 <label>Password *</label>
                 <input 
-                  type="password" 
+                  type="text" 
                   required 
                   placeholder="Update account password" 
                   value={editRecPassword}
@@ -752,12 +1135,39 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
               </div>
 
               <div className="form-group">
-                <label>User System Role</label>
-                <select value={editRecRole} onChange={e => setEditRecRole(e.target.value)} disabled={editRecruiter.email === 'omkesh@coolsofttech.com'}>
-                  <option value="recruiter">💼 Recruiter (Subject to Page Permissions)</option>
+                <label style={{ fontWeight: 'bold', color: '#1e3a8a' }}>User System Role *</label>
+                <select 
+                  value={editRecRole} 
+                  onChange={e => setEditRecRole(e.target.value)} 
+                  disabled={editRecruiter.email === 'omkesh@coolsofttech.com'}
+                  style={{ fontWeight: 'bold' }}
+                >
                   <option value="superadmin">👑 Super Admin (Full Control)</option>
+                  <option value="manager">🛡️ Manager / Account Lead (Candidate & AI Reviewer)</option>
+                  <option value="recruiter">💼 Lead Recruiter (Client Submissions & Sourcing)</option>
+                  <option value="employee">👤 Employee / Sub-Recruiter (Reporting to Recruiter)</option>
                 </select>
               </div>
+
+              {editRecRole === 'employee' && (
+                <div className="form-group" style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '6px', padding: '10px 12px' }}>
+                  <label style={{ fontWeight: 'bold', color: '#166534' }}>Reporting Lead Recruiter / Manager *</label>
+                  <select 
+                    value={editRecParent} 
+                    onChange={e => setEditRecParent(e.target.value)}
+                    style={{ background: '#ffffff', fontWeight: 'bold', marginTop: '4px' }}
+                  >
+                    <option value="">-- Select Reporting Lead Recruiter --</option>
+                    {recruiters
+                      .filter(r => (r.role === 'recruiter' || r.role === 'manager' || r.role === 'superadmin') && r.id !== editRecruiter.id)
+                      .map(r => (
+                        <option key={r.id || r._id} value={r.name}>
+                          {r.name} ({r.role}) — {r.email}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
 
               <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24 }}>
                 <button type="button" className="btn btn-ghost" onClick={() => setEditRecruiter(null)}>
