@@ -205,6 +205,7 @@ function RecruiterDashboard() {
   const userRole = activeRoleOverride || currentUser?.role || (userName.toLowerCase().includes('omkesh') ? 'superadmin' : 'recruiter')
 
   const isAdmin = userRole === 'superadmin' || userRole === 'admin'
+  const isSuperAdmin = isAdmin
   const isManager = userRole === 'manager'
   const isRecruiter = userRole === 'recruiter'
   const isEmployee = userRole === 'employee'
