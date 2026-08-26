@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import SiteLayout from '../components/SiteLayout'
 import CandidatePdfReportModal from '../components/CandidatePdfReportModal'
+import { AuditActivityLogModule, logAuditEvent } from '../ats'
 
 function getFullDescriptionText(job) {
   if (!job) return ''
@@ -412,15 +413,21 @@ function RecruiterDashboard() {
     ]
   })
 
+  // Audit Log Modal state
+  const [showAuditLogModal, setShowAuditLogModal] = useState(false)
+
   // Notification toast on save
   const [saveToastMessage, setSaveToastMessage] = useState(null)
 
   // Handler to update candidate submission status and record audit log (Who changed it, role, timestamp)
   const handleUpdatePotentialCandidate = (candId, field, value) => {
-    const userRoleDisplay = currentUser?.role === 'superadmin' || currentUser?.role === 'admin' || userName.toLowerCase().includes('omkesh') ? 'Manager' : 'Recruiter'
+    const userRoleDisplay = isManager ? 'Manager' : (currentUser?.role === 'superadmin' || currentUser?.role === 'admin') ? 'Super Admin' : isEmployee ? 'Employee' : 'Recruiter'
     const timeString = new Date().toLocaleString('en-US', { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })
 
     setPotentialCandidates(prev => {
+      const targetCandidate = prev.find(c => c.id === candId)
+      const oldStatus = targetCandidate?.status || 'Pending'
+
       const updated = prev.map(c => {
         if (c.id === candId) {
           return {
@@ -444,8 +451,36 @@ function RecruiterDashboard() {
         return c
       })
       try {
+        const cleanId = String(selectedReq?.id || '158938').replace('J-', '')
+        localStorage.setItem(`smarthire_potential_candidates_${cleanId}`, JSON.stringify(updated))
         localStorage.setItem('smarthire_potential_candidates_158938', JSON.stringify(updated))
       } catch (e) {}
+
+      // Log status transitions into global audit activity log
+      if (field === 'status' && targetCandidate && oldStatus !== value) {
+        let actionType = 'STATUS_CHANGE'
+        if (value.includes('Approved')) actionType = 'MANAGER_APPROVAL'
+        else if (value.includes('Rejected')) actionType = 'MANAGER_REJECTION'
+        else if (value.includes('Interview')) actionType = 'INTERVIEW_SCHEDULED'
+
+        logAuditEvent({
+          candidateId: candId,
+          candidateName: targetCandidate.name || 'Candidate',
+          candidateRole: targetCandidate.role || selectedReq?.title || 'Consultant',
+          jobId: selectedReq?.id || '158938',
+          jobTitle: selectedReq?.title || 'Requisition Position',
+          client: selectedReq?.customer || 'Client',
+          actionType: actionType,
+          fromStatus: oldStatus,
+          toStatus: value,
+          performedBy: userName,
+          performedByEmail: currentUser?.email || '',
+          userRole: isManager ? 'manager' : isEmployee ? 'employee' : isSuperAdmin ? 'superadmin' : 'recruiter',
+          note: targetCandidate.statusComments || `Status transitioned from "${oldStatus}" to "${value}" by ${userName} (${userRoleDisplay}).`,
+          rejectedReason: targetCandidate.rejectedReason || ''
+        })
+      }
+
       return updated
     })
   }
@@ -3625,6 +3660,26 @@ Experienced technology professional with hands-on expertise in software engineer
                         >
                           🔍 Search Talent Directory
                         </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowAuditLogModal(true)}
+                          style={{
+                            background: '#f8fafc',
+                            border: '1px solid #cbd5e1',
+                            padding: '6px 12px',
+                            fontSize: '11px',
+                            fontWeight: 'bold',
+                            borderRadius: '3px',
+                            cursor: 'pointer',
+                            color: '#0f172a',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px'
+                          }}
+                        >
+                          <span>📜 Status Audit History</span>
+                        </button>
                       </div>
                     </div>
 
@@ -6000,6 +6055,84 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                 </div>
 
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* ═══════════ AUDIT & ACTIVITY LOG MODAL ═══════════ */}
+        {showAuditLogModal && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(15, 23, 42, 0.65)',
+              backdropFilter: 'blur(5px)',
+              zIndex: 3500,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '16px'
+            }}
+            onClick={() => setShowAuditLogModal(false)}
+          >
+            <div
+              style={{
+                background: '#ffffff',
+                borderRadius: '12px',
+                width: '100%',
+                maxWidth: '1000px',
+                maxHeight: '90vh',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
+                border: '1px solid #cbd5e1',
+                overflow: 'hidden'
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div style={{
+                background: '#1e3a8a',
+                color: '#ffffff',
+                padding: '14px 20px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>📜 Candidate Status Audit History & Timeline</span>
+                  </h3>
+                  <p style={{ margin: '2px 0 0', fontSize: '11.5px', color: '#bfdbfe' }}>
+                    Complete audit trail showing which recruiter/manager changed candidate status, approvals, and reasons.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAuditLogModal(false)}
+                  style={{
+                    background: 'rgba(255,255,255,0.15)',
+                    border: 'none',
+                    color: '#ffffff',
+                    fontSize: '18px',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Body */}
+              <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
+                <AuditActivityLogModule />
+              </div>
             </div>
           </div>
         )}

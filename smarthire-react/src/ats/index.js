@@ -8,4 +8,4 @@ export { default as AutomationModule } from './AutomationModule'
 export { default as SettingsModule } from './SettingsModule'
 export { default as ScreeningModule } from './ScreeningModule'
 export { default as UsersModule } from './UsersModule'
-
+export { default as AuditActivityLogModule, logAuditEvent } from './AuditActivityLogModule'

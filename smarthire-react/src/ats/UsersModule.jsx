@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import AuditActivityLogModule from './AuditActivityLogModule'
 
 const DEFAULT_RECRUITERS = [
   {
@@ -360,6 +361,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
     try {
       localStorage.setItem('smarthire_role_permissions', JSON.stringify(updated))
     } catch(e) {}
+    window.dispatchEvent(new CustomEvent('smarthire_permissions_updated', { detail: updated }))
     showToast(`Permissions updated for ${role} role.`)
   }
 
@@ -435,6 +437,12 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
           onClick={() => setSubTab('candidates')}
         >
           🎓 Candidate Users ({allCandidates?.length || 0})
+        </button>
+        <button 
+          className={`subtab-btn ${subTab === 'audit' ? 'active' : ''}`}
+          onClick={() => setSubTab('audit')}
+        >
+          📜 Audit & Activity Log
         </button>
         <button 
           className={`subtab-btn ${subTab === 'permissions' ? 'active' : ''}`}
@@ -886,14 +894,25 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
           </div>
         )}
 
+        {/* AUDIT & ACTIVITY LOG SUB-TAB */}
+        {subTab === 'audit' && (
+          <div className="card shadow-sm" style={{ padding: 20 }}>
+            <AuditActivityLogModule />
+          </div>
+        )}
+
+        {/* ROLE PERMISSIONS SUB-TAB */}
         {subTab === 'permissions' && (
           <div className="card shadow-sm" style={{ padding: 24 }}>
             <h4 style={{ margin: '0 0 10px', fontSize: 16, fontWeight: 800 }}>🔒 Role-Based Workspace Access (Pages ON/OFF)</h4>
+            <p style={{ margin: '0 0 20px', fontSize: 13, color: 'var(--ink-soft)' }}>
+              Configure which workspaces, portals, and ATS modules are accessible to Managers and Recruiters. Any change takes effect in real-time.
+            </p>
             <div className="permission-grid-wrap">
               <table className="permissions-table">
                 <thead>
                   <tr>
-                    <th>Page / Module</th>
+                    <th>Page / Module / Workspace</th>
                     <th style={{ textAlign: 'center' }}>👑 Super Admin Access</th>
                     <th style={{ textAlign: 'center' }}>🛡️ Manager Access</th>
                     <th style={{ textAlign: 'center' }}>💼 Recruiter Access</th>
@@ -901,15 +920,19 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                 </thead>
                 <tbody>
                   {[
-                    { id: 'dashboard', label: '📊 Dashboard', desc: 'Main recruitment funnel overview and quick stats.' },
-                    { id: 'jobs', label: '💼 Jobs Panel', desc: 'Post new positions, scrape job descriptions, and link to LinkedIn.' },
-                    { id: 'candidates', label: '👤 Candidate List', desc: 'Review, search, filter, and modify profiles.' },
-                    { id: 'pipeline', label: '📈 Visual Pipeline', desc: 'Kanban board of candidates across hiring stages.' },
-                    { id: 'screening', label: '🔍 AI Screening Sessions', desc: 'Manage interactive AI chats and matching assessments.' },
-                    { id: 'submissions', label: '📤 Client Submissions', desc: 'Package and submit shortlisted candidate profiles.' },
-                    { id: 'reports', label: '📑 Intelligence & Reports', desc: 'Generate PDF summaries and recruiter performance logs.' },
-                    { id: 'automation', label: '⚙️ Automation Rules', desc: 'Configure background jobs and automation triggers.' },
-                    { id: 'inbox', label: '💬 Real-time Inbox', desc: '1-on-1 candidate messaging platform.' }
+                    { id: 'ats', label: '💼 ATS Workspace Platform (/ats)', desc: 'Core ATS Talent portal with candidate database, screening, and jobs.' },
+                    { id: 'dashboard', label: '📊 Executive Dashboard (/dashboard)', desc: 'Requisition allocation, candidate submissions, and VMS metrics.' },
+                    { id: 'reports', label: '📑 Intelligence & Reports (/reports)', desc: 'Recruitment analytics, conversion charts, and export tools.' },
+                    { id: 'audit', label: '📜 Audit & Activity Log (/ats?tab=audit)', desc: 'Chronological timeline of candidate status changes & reviews.' },
+                    { id: 'linkedin', label: '🌐 LinkedIn Automation (/linkedin-posts)', desc: 'Auto-post vacancies and social outreach studio.' },
+                    { id: 'branding', label: '🎨 AI Branding Studio (/branding)', desc: 'Marketing flyers, promotional banners, and social creatives.' },
+                    { id: 'jobs', label: '💼 Jobs Hub (ATS Module)', desc: 'Post new positions, scrape JDs, and link openings.' },
+                    { id: 'candidates', label: '👤 Candidate List (ATS Module)', desc: 'Review, search, filter, and modify candidate talent profiles.' },
+                    { id: 'pipeline', label: '📈 Visual Pipeline (ATS Module)', desc: 'Kanban board of candidates across hiring stages.' },
+                    { id: 'screening', label: '🔍 AI Screening Sessions (ATS Module)', desc: 'Manage interactive AI candidate pre-screening and chat evaluations.' },
+                    { id: 'submissions', label: '📤 Client Submissions & RTR (ATS Module)', desc: 'Package and submit shortlisted candidate profiles to clients.' },
+                    { id: 'automation', label: '⚙️ Automation Rules (ATS Module)', desc: 'Configure background jobs, webhooks, and automation triggers.' },
+                    { id: 'inbox', label: '💬 Real-time Inbox (ATS Module)', desc: '1-on-1 direct candidate messaging platform.' }
                   ].map(page => {
                     return (
                       <tr key={page.id}>

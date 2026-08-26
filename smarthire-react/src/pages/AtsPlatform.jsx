@@ -13,6 +13,7 @@ import {
   SettingsModule,
   ScreeningModule,
   UsersModule,
+  AuditActivityLogModule,
 } from '../ats'
 
 const API_BASE = ''
@@ -30,6 +31,7 @@ const ALL_TABS = [
   { id: 'screening',   label: '🔍 Screening',     icon: '🔍' },
   { id: 'submissions', label: '📤 Submissions',   icon: '📤', adminOnly: true },
   { id: 'reports',     label: '📑 Reports',       icon: '📑', adminOnly: true },
+  { id: 'audit',       label: '📜 Audit Logs',    icon: '📜' },
   { id: 'automation',  label: '⚙️ Automation',    icon: '⚙️', adminOnly: true },
   { id: 'inbox',       label: '💬 Inbox',         icon: '💬', isLink: '/inbox' },
   { id: 'settings',    label: '🛠️ Settings',      icon: '🛠️', adminOnly: true },
@@ -43,23 +45,18 @@ export default function AtsPlatform() {
     if (userStr) currentUser = JSON.parse(userStr)
   } catch (e) {}
 
-  const defaultRole = (currentUser && currentUser.role) ? currentUser.role : 'superadmin'
+  const defaultRole = (currentUser && currentUser.role) ? currentUser.role : 'recruiter'
   const realUserRole = currentUser?.role || 'recruiter'
   const isEmployee = realUserRole === 'employee'
   const isManager = realUserRole === 'manager'
-  const canSwitchRoles = (realUserRole === 'superadmin' || realUserRole === 'admin' || isManager) && !isEmployee
-  const activeRole = canSwitchRoles ? (localStorage.getItem('smarthire_active_role') || defaultRole) : defaultRole
-  const isSuperAdmin = (activeRole === 'superadmin' || activeRole === 'admin' || (isManager && activeRole !== 'recruiter')) && !isEmployee
-
-  // Strict employee workspace isolation: redirect employee to dashboard
-  useEffect(() => {
-    if (isEmployee) {
-      window.location.href = '/dashboard'
-    }
-  }, [isEmployee])
+  const isSuperAdmin = (realUserRole === 'superadmin' || realUserRole === 'admin') && !isEmployee && !isManager
+  const canSwitchRoles = isSuperAdmin
+  const activeRole = canSwitchRoles ? (localStorage.getItem('smarthire_active_role') || 'superadmin') : defaultRole
+  const roleKey = isSuperAdmin ? 'superadmin' : isManager ? 'manager' : isEmployee ? 'employee' : 'recruiter'
 
   const DEFAULT_PERMISSIONS = {
     superadmin: {
+      ats: true,
       dashboard: true,
       jobs: true,
       candidates: true,
@@ -67,12 +64,29 @@ export default function AtsPlatform() {
       screening: true,
       submissions: true,
       reports: true,
+      audit: true,
       automation: true,
       inbox: true,
       settings: true,
       users: true,
     },
+    manager: {
+      ats: true,
+      dashboard: true,
+      jobs: true,
+      candidates: true,
+      pipeline: true,
+      screening: true,
+      submissions: true,
+      reports: true,
+      audit: true,
+      automation: false,
+      inbox: true,
+      settings: false,
+      users: false,
+    },
     recruiter: {
+      ats: true,
       dashboard: false,
       jobs: true,
       candidates: true,
@@ -80,6 +94,7 @@ export default function AtsPlatform() {
       screening: true,
       submissions: false,
       reports: false,
+      audit: true,
       automation: false,
       inbox: true,
       settings: false,
@@ -96,15 +111,37 @@ export default function AtsPlatform() {
     }
   })
 
-  const roleKey = isSuperAdmin ? 'superadmin' : 'recruiter'
+  // Listen for permission updates
+  useEffect(() => {
+    const handlePermUpdate = () => {
+      try {
+        const saved = localStorage.getItem('smarthire_role_permissions')
+        if (saved) setPermissions(JSON.parse(saved))
+      } catch (e) {}
+    }
+    window.addEventListener('smarthire_permissions_updated', handlePermUpdate)
+    return () => window.removeEventListener('smarthire_permissions_updated', handlePermUpdate)
+  }, [])
+
+  // Strict employee workspace isolation & ATS permission check
+  useEffect(() => {
+    if (isEmployee) {
+      window.location.href = '/dashboard'
+    } else if (!isSuperAdmin && permissions && permissions[roleKey] && permissions[roleKey].ats === false) {
+      window.location.href = '/dashboard'
+    }
+  }, [isEmployee, isSuperAdmin, roleKey, permissions])
+
   const TABS = ALL_TABS.filter(tab => {
-    if (!isSuperAdmin) {
-      return ['jobs', 'candidates', 'screening', 'inbox'].includes(tab.id)
+    if (isSuperAdmin) return true
+    if (tab.id === 'users' || tab.id === 'settings') return false
+    if (permissions && permissions[roleKey]) {
+      return permissions[roleKey][tab.id] !== false
     }
-    if (roleKey === 'superadmin' && (tab.id === 'users' || tab.id === 'settings')) {
-      return true
+    if (isManager) {
+      return ['dashboard', 'jobs', 'candidates', 'pipeline', 'screening', 'submissions', 'reports', 'audit', 'inbox'].includes(tab.id)
     }
-    return !!permissions[roleKey]?.[tab.id]
+    return ['jobs', 'candidates', 'screening', 'audit', 'inbox'].includes(tab.id)
   })
 
   const getTabFromUrl = () => {
@@ -763,6 +800,10 @@ export default function AtsPlatform() {
                 jobsList={safeJobs}
                 submissions={submissions}
               />
+            )}
+
+            {activeTab === 'audit' && (
+              <AuditActivityLogModule />
             )}
 
             {activeTab === 'automation' && (

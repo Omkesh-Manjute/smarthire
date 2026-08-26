@@ -38,13 +38,51 @@ function Navigation() {
   const isEmployee = realUserRole === 'employee'
   const isManager = realUserRole === 'manager'
   const isRecruiter = realUserRole === 'recruiter'
-  const canSwitchRoles = (realUserRole === 'superadmin' || realUserRole === 'admin' || isManager) && !isEmployee
-  const defaultRole = user && user.role ? user.role : 'superadmin'
+  const isSuperAdmin = (realUserRole === 'superadmin' || realUserRole === 'admin') && !isEmployee && !isManager
+  const canSwitchRoles = isSuperAdmin
+  const defaultRole = user && user.role ? user.role : 'recruiter'
   const [activeRole, setActiveRole] = useState(() => {
-    return canSwitchRoles ? (localStorage.getItem('smarthire_active_role') || defaultRole) : defaultRole
+    return isSuperAdmin ? (localStorage.getItem('smarthire_active_role') || 'superadmin') : defaultRole
   })
 
-  const isSuperAdmin = (activeRole === 'superadmin' || activeRole === 'admin' || (isManager && activeRole !== 'recruiter')) && !isEmployee
+  // Load permissions
+  const [permissions, setPermissions] = useState(() => {
+    try {
+      const saved = localStorage.getItem('smarthire_role_permissions')
+      return saved ? JSON.parse(saved) : null
+    } catch(e) { return null }
+  })
+
+  useEffect(() => {
+    const handlePermUpdate = () => {
+      try {
+        const saved = localStorage.getItem('smarthire_role_permissions')
+        if (saved) setPermissions(JSON.parse(saved))
+      } catch(e) {}
+    }
+    window.addEventListener('smarthire_permissions_updated', handlePermUpdate)
+    return () => window.removeEventListener('smarthire_permissions_updated', handlePermUpdate)
+  }, [])
+
+  const currentRoleKey = isSuperAdmin ? 'superadmin' : isManager ? 'manager' : isEmployee ? 'employee' : 'recruiter'
+
+  const isPageAllowed = (pageId) => {
+    if (isSuperAdmin) return true
+    if (isEmployee) {
+      return pageId === 'dashboard'
+    }
+    if (permissions && permissions[currentRoleKey]) {
+      return permissions[currentRoleKey][pageId] !== false
+    }
+    // Safe defaults
+    if (isManager) {
+      return ['dashboard', 'reports', 'ats', 'inbox'].includes(pageId)
+    }
+    if (isRecruiter) {
+      return ['dashboard', 'ats', 'inbox', 'jobs'].includes(pageId)
+    }
+    return false
+  }
 
   // Live health check
   useEffect(() => {
@@ -53,9 +91,9 @@ function Navigation() {
       .catch(() => setApiOnline(false))
   }, [])
 
-  // Keyboard shortcut for Spotlight (Ctrl+K or Cmd+K)
+  // Keyboard shortcut for Spotlight (Ctrl+K or Cmd+K) - Strictly Super Admin only
   useEffect(() => {
-    if (!isSuperAdmin || isEmployee) return
+    if (!isSuperAdmin) return
     const handleKeyDown = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault()
@@ -64,7 +102,7 @@ function Navigation() {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isSuperAdmin, isEmployee])
+  }, [isSuperAdmin])
 
   // Click outside to close dropdowns
   useEffect(() => {
@@ -191,7 +229,13 @@ function Navigation() {
 
                     <div className="app-launcher-grid">
                       {appLauncherItems
-                        .filter((item) => !item.adminOnly || isSuperAdmin || isManager)
+                        .filter((item) => {
+                          if (item.adminOnly && !isSuperAdmin) return false
+                          if (item.path === '/ats' && !isPageAllowed('ats')) return false
+                          if (item.path === '/reports' && !isPageAllowed('reports')) return false
+                          if (item.path === '/dashboard' && !isPageAllowed('dashboard')) return false
+                          return true
+                        })
                         .map((app) => (
                           <div
                             key={app.title}
@@ -239,16 +283,18 @@ function Navigation() {
           <nav className="nav-center-menu">
             {isAuthenticated ? (
               <>
-                <Link
-                  to="/dashboard"
-                  className={`nav-tab-item ${location.pathname === '/dashboard' ? 'active' : ''}`}
-                >
-                  <span className="nav-tab-icon">📊</span>
-                  <span>{isEmployee ? 'My Workspace' : 'Dashboard'}</span>
-                </Link>
+                {isPageAllowed('dashboard') && (
+                  <Link
+                    to="/dashboard"
+                    className={`nav-tab-item ${location.pathname === '/dashboard' ? 'active' : ''}`}
+                  >
+                    <span className="nav-tab-icon">📊</span>
+                    <span>{isEmployee ? 'My Workspace' : 'Dashboard'}</span>
+                  </Link>
+                )}
 
-                {/* ATS Workspace with Direct Navigation & Dropdown - Hidden for Employee */}
-                {!isEmployee && (
+                {/* ATS Workspace with Direct Navigation & Dropdown - Controlled by isPageAllowed('ats') */}
+                {!isEmployee && isPageAllowed('ats') && (
                   <div
                     className="nav-dropdown-wrapper"
                     ref={atsMenuRef}
@@ -314,7 +360,7 @@ function Navigation() {
                   </div>
                 )}
 
-                {(isSuperAdmin || isManager) && (
+                {isPageAllowed('reports') && (
                   <Link
                     to="/reports"
                     className={`nav-tab-item ${location.pathname === '/reports' ? 'active' : ''}`}
@@ -324,7 +370,7 @@ function Navigation() {
                   </Link>
                 )}
 
-                {isSuperAdmin && (
+                {isSuperAdmin && isPageAllowed('linkedin') && (
                   <Link
                     to="/linkedin-posts"
                     className={`nav-tab-item ${location.pathname === '/linkedin-posts' ? 'active' : ''}`}
@@ -334,7 +380,7 @@ function Navigation() {
                   </Link>
                 )}
 
-                {isSuperAdmin && (
+                {isSuperAdmin && isPageAllowed('branding') && (
                   <Link
                     to="/branding"
                     className={`nav-tab-item ${location.pathname === '/branding' ? 'active' : ''}`}
@@ -344,7 +390,7 @@ function Navigation() {
                   </Link>
                 )}
 
-                {!isEmployee && (
+                {!isEmployee && isPageAllowed('jobs') && (
                   <Link
                     to="/jobs"
                     className={`nav-tab-item ${location.pathname === '/jobs' ? 'active' : ''}`}
@@ -389,8 +435,8 @@ function Navigation() {
           <div className="nav-right-cluster">
             {isAuthenticated ? (
               <>
-                {/* Global Search Trigger (Ctrl+K) - Hidden for Employee */}
-                {(isSuperAdmin || isManager) && !isEmployee && (
+                {/* Global Search Trigger (Ctrl+K) - Strictly Super Admin only */}
+                {isSuperAdmin && (
                   <button
                     className="nav-search-trigger"
                     onClick={() => setSearchModalOpen(true)}
@@ -406,8 +452,8 @@ function Navigation() {
                   </button>
                 )}
 
-                {/* Quick Add Button (+) - Hidden for Employee */}
-                {!isEmployee && (
+                {/* Quick Add Button (+) - Strictly Super Admin */}
+                {isSuperAdmin && (
                   <div className="nav-dropdown-wrapper" ref={quickAddRef}>
                     <button
                       className={`nav-quick-add-btn ${quickAddOpen ? 'active' : ''}`}
@@ -654,32 +700,46 @@ function Navigation() {
                 </div>
 
                 <div className="mobile-section-label">Navigation</div>
-                <Link to="/dashboard" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
-                  <span>📊 Executive Dashboard</span>
-                </Link>
-                <Link to="/ats" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
-                  <span>💼 ATS Workspace</span>
-                </Link>
-                <Link to="/reports" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
-                  <span>📑 Intelligence & Reports</span>
-                </Link>
-                {isSuperAdmin && (
+                {isPageAllowed('dashboard') && (
+                  <Link to="/dashboard" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
+                    <span>📊 {isEmployee ? 'My Workspace' : 'Executive Dashboard'}</span>
+                  </Link>
+                )}
+                {!isEmployee && isPageAllowed('ats') && (
+                  <Link to="/ats" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
+                    <span>💼 ATS Workspace</span>
+                  </Link>
+                )}
+                {isPageAllowed('reports') && (
+                  <Link to="/reports" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
+                    <span>📑 Intelligence & Reports</span>
+                  </Link>
+                )}
+                {isSuperAdmin && isPageAllowed('linkedin') && (
                   <Link to="/linkedin-posts" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
                     <span>🌐 LinkedIn Automation</span>
                   </Link>
                 )}
-                <Link to="/branding" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
-                  <span>🎨 AI Branding Center</span>
-                </Link>
-                <Link to="/inbox" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
-                  <span>💬 Recruiter Inbox</span>
-                </Link>
-                <Link to="/jobs" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
-                  <span>🚀 Public Careers</span>
-                </Link>
-                <Link to="/pricing" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
-                  <span>💳 Pricing Plans</span>
-                </Link>
+                {isSuperAdmin && isPageAllowed('branding') && (
+                  <Link to="/branding" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
+                    <span>🎨 AI Branding Center</span>
+                  </Link>
+                )}
+                {!isEmployee && (
+                  <Link to="/inbox" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
+                    <span>💬 Recruiter Inbox</span>
+                  </Link>
+                )}
+                {!isEmployee && isPageAllowed('jobs') && (
+                  <Link to="/jobs" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
+                    <span>🚀 Public Careers</span>
+                  </Link>
+                )}
+                {isSuperAdmin && (
+                  <Link to="/pricing" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
+                    <span>💳 Pricing Plans</span>
+                  </Link>
+                )}
 
                 {canSwitchRoles && (
                   <>
