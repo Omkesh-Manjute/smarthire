@@ -251,6 +251,67 @@ function RecruiterDashboard() {
     } catch (e) {}
   }
 
+  // Delete User handler with comprehensive cleanup across assignments, local storage, and database
+  const handleDeleteTeamUser = async (userToDelete) => {
+    if (!userToDelete) return
+    const uEmail = (userToDelete.email || '').toLowerCase().trim()
+    if (uEmail === 'omkesh@coolsofttech.com') {
+      alert('⚠️ Master Superadmin cannot be deleted.')
+      return
+    }
+    const confirmDelete = window.confirm(
+      `Are you sure you want to permanently delete user "${userToDelete.name}" (${userToDelete.email || userToDelete.role || 'Team Member'})?\n\nThis will remove their login access, employee records, and requisition assignments.`
+    )
+    if (!confirmDelete) return
+
+    const targetId = String(userToDelete.id || userToDelete._id || userToDelete.email || '')
+    const targetEmail = uEmail
+    const targetName = (userToDelete.name || '').toLowerCase().trim()
+
+    // 1. Remove from teamUsers state
+    const updated = teamUsers.filter(u => {
+      const thisId = String(u.id || u._id || '')
+      const thisEmail = (u.email || '').toLowerCase().trim()
+      const thisName = (u.name || '').toLowerCase().trim()
+      if (targetId && (thisId === targetId || thisId === `rec-${targetId}` || thisId === `emp-${targetId}`)) return false
+      if (targetEmail && thisEmail === targetEmail) return false
+      if (targetName && thisName === targetName) return false
+      return true
+    })
+
+    saveTeamUsers(updated)
+
+    // 2. Also remove user from any assigned requisitions in editingFields
+    setEditingFields(prev => {
+      const currentAssigned = prev.assignedRecruiters || []
+      const filtered = currentAssigned.filter(r => {
+        const rName = String(r || '').toLowerCase().trim()
+        return rName !== targetName && rName !== targetEmail
+      })
+      return { ...prev, assignedRecruiters: filtered }
+    })
+
+    // 3. Call backend API to delete permanently from MongoDB / Server
+    try {
+      const token = localStorage.getItem('smarthire_token') || ''
+      const headers = { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
+      await fetch(`/api/admin/recruiters/${encodeURIComponent(targetId || targetEmail)}`, {
+        method: 'DELETE',
+        headers
+      })
+      await fetch('/api/admin/recruiters/sync', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ recruiters: updated })
+      })
+    } catch (err) {
+      console.warn('Backend user delete sync notice:', err)
+    }
+
+    setSaveToastMessage(`🗑️ User "${userToDelete.name}" deleted successfully!`)
+    setTimeout(() => setSaveToastMessage(null), 3500)
+  }
+
   // User auth state & RBAC detection
   const userStr = localStorage.getItem('smarthire_user') || localStorage.getItem('verifyhire_user')
   let currentUser = null
@@ -816,16 +877,27 @@ We are currently reviewing candidate profiles and scheduling immediate interview
   })
   const [newNoteText, setNewNoteText] = useState('')
 
-  // All Available Recruiters & Employees (Dynamically derived from managed team)
+  // All Available Recruiters & Employees (Dynamically derived from managed team with deduplication)
   const allRecruitersList = useMemo(() => {
-    return teamUsers.filter(u => u.isActive !== false).map(u => ({
-      id: u.id,
-      name: u.name,
-      role: u.role === 'superadmin' || u.role === 'admin' ? 'Manager / Superadmin' : u.role === 'employee' ? `Employee (${u.parentRecruiterName ? 'reports to ' + u.parentRecruiterName : 'Team Member'})` : 'Recruiter',
-      email: u.email,
-      parentRecruiterName: u.parentRecruiterName,
-      rawRole: u.role
-    }))
+    const seen = new Set()
+    const list = []
+    teamUsers.filter(u => u && u.isActive !== false).forEach(u => {
+      const emailKey = (u.email || '').toLowerCase().trim()
+      const nameKey = (u.name || '').toLowerCase().trim()
+      const dedupeKey = emailKey || nameKey
+      if (dedupeKey && !seen.has(dedupeKey)) {
+        seen.add(dedupeKey)
+        list.push({
+          id: u.id || u._id,
+          name: u.name,
+          role: u.role === 'superadmin' || u.role === 'admin' ? 'Manager / Superadmin' : u.role === 'employee' ? `Employee (${u.parentRecruiterName ? 'reports to ' + u.parentRecruiterName : 'Team Member'})` : 'Recruiter',
+          email: u.email,
+          parentRecruiterName: u.parentRecruiterName,
+          rawRole: u.role
+        })
+      }
+    })
+    return list
   }, [teamUsers])
 
   const getJobAssignedRecruiters = (jobId) => {
@@ -4020,7 +4092,10 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                             <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Recruiter Name</th>
                             <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Role</th>
                             <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Email Address</th>
-                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', fontWeight: 'bold', fontSize: '11px' }}>Assignment Status</th>
+                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', fontWeight: 'bold', fontSize: '11px', borderRight: (isAdmin || isManager) ? '1px solid rgba(255,255,255,0.25)' : 'none' }}>Assignment Status</th>
+                            {(isAdmin || isManager) && (
+                              <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', fontWeight: 'bold', fontSize: '11px', textAlign: 'center', width: '70px' }}>Action</th>
+                            )}
                           </tr>
                         </thead>
                         <tbody>
@@ -4063,6 +4138,32 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                                     <span style={{ color: '#94a3b8' }}>⚪ Not Assigned</span>
                                   )}
                                 </td>
+                                {(isAdmin || isManager) && (
+                                  <td style={{ padding: '3px 6px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                                    {rec.email !== 'omkesh@coolsofttech.com' && (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          handleDeleteTeamUser(rec)
+                                        }}
+                                        style={{
+                                          background: '#fee2e2',
+                                          border: '1px solid #fca5a5',
+                                          color: '#dc2626',
+                                          padding: '1px 6px',
+                                          fontSize: '10px',
+                                          fontWeight: 'bold',
+                                          borderRadius: '2px',
+                                          cursor: 'pointer'
+                                        }}
+                                        title="Permanently delete user"
+                                      >
+                                        🗑️ Delete
+                                      </button>
+                                    )}
+                                  </td>
+                                )}
                               </tr>
                             )
                           })}
@@ -5094,6 +5195,29 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                                   >
                                     {u.isActive !== false ? 'Deactivate' : 'Activate'}
                                   </button>
+
+                                  {u.email !== 'omkesh@coolsofttech.com' && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteTeamUser(u)}
+                                      style={{
+                                        background: '#fee2e2',
+                                        border: '1px solid #fca5a5',
+                                        color: '#dc2626',
+                                        padding: '2px 8px',
+                                        fontSize: '10.5px',
+                                        fontWeight: 'bold',
+                                        borderRadius: '2px',
+                                        cursor: 'pointer',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '3px'
+                                      }}
+                                      title="Permanently Delete User"
+                                    >
+                                      🗑️ Delete
+                                    </button>
+                                  )}
                                 </div>
                               </td>
                             </tr>
@@ -5851,20 +5975,50 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                 </div>
 
                 {/* Buttons */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', borderTop: '1px solid #e2e8f0', paddingTop: '12px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setShowUserModal(false)}
-                    style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 14px', fontSize: '12px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer' }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    style={{ background: '#ea580c', color: '#ffffff', border: 'none', padding: '6px 18px', fontSize: '12px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
-                  >
-                    {editingUser ? 'Save Changes' : 'Create User'}
-                  </button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '12px' }}>
+                  <div>
+                    {editingUser && editingUser.email !== 'omkesh@coolsofttech.com' && (isAdmin || isManager) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const uToDel = editingUser
+                          setShowUserModal(false)
+                          handleDeleteTeamUser(uToDel)
+                        }}
+                        style={{
+                          background: '#fee2e2',
+                          border: '1px solid #fca5a5',
+                          color: '#dc2626',
+                          padding: '6px 14px',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          borderRadius: '3px',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        🗑️ Delete User
+                      </button>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowUserModal(false)}
+                      style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 14px', fontSize: '12px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer' }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      style={{ background: '#ea580c', color: '#ffffff', border: 'none', padding: '6px 18px', fontSize: '12px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
+                    >
+                      {editingUser ? 'Save Changes' : 'Create User'}
+                    </button>
+                  </div>
                 </div>
 
               </form>

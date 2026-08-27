@@ -5961,27 +5961,51 @@ app.put('/api/admin/recruiters/:id', async (req, res) => {
 
 app.delete('/api/admin/recruiters/:id', async (req, res) => {
   const { id } = req.params;
+  const decodedId = decodeURIComponent(id || '').trim();
+  const lowerId = decodedId.toLowerCase();
+
   try {
+    if (lowerId === 'omkesh@coolsofttech.com') {
+      return res.status(400).json({ success: false, message: 'Cannot delete master superadmin' });
+    }
+
     if (isMongoConnected) {
-      const user = await RecruiterDoc.findById(id);
-      if (!user) {
-        return res.status(404).json({ success: false, message: 'User not found' });
+      const isObjectId = mongoose.Types.ObjectId.isValid(decodedId);
+      const query = isObjectId 
+        ? { $or: [{ _id: decodedId }, { email: lowerId }, { id: decodedId }, { userId: decodedId }, { name: new RegExp(`^${decodedId}$`, 'i') }] }
+        : { $or: [{ email: lowerId }, { id: decodedId }, { userId: decodedId }, { name: new RegExp(`^${decodedId}$`, 'i') }] };
+
+      const user = await RecruiterDoc.findOne(query);
+      if (user) {
+        if (user.email && user.email.toLowerCase() === 'omkesh@coolsofttech.com') {
+          return res.status(400).json({ success: false, message: 'Cannot delete master superadmin' });
+        }
+        await RecruiterDoc.findByIdAndDelete(user._id);
       }
-      if (user.email === 'omkesh@coolsofttech.com') {
-        return res.status(400).json({ success: false, message: 'Cannot delete master admin' });
-      }
-      await RecruiterDoc.findByIdAndDelete(id);
-      res.json({ success: true, message: 'User deleted' });
+      recruitersMock = recruitersMock.filter(r => 
+        r._id !== decodedId && 
+        r.id !== decodedId && 
+        (r.email || '').toLowerCase() !== lowerId && 
+        (r.name || '').toLowerCase() !== lowerId
+      );
+      res.json({ success: true, message: 'User deleted permanently' });
     } else {
-      const user = recruitersMock.find(r => r._id === id);
-      if (!user) {
-        return res.status(404).json({ success: false, message: 'User not found' });
+      const user = recruitersMock.find(r => 
+        r._id === decodedId || 
+        r.id === decodedId || 
+        (r.email || '').toLowerCase() === lowerId || 
+        (r.name || '').toLowerCase() === lowerId
+      );
+      if (user && user.email && user.email.toLowerCase() === 'omkesh@coolsofttech.com') {
+        return res.status(400).json({ success: false, message: 'Cannot delete master superadmin' });
       }
-      if (user.email === 'omkesh@coolsofttech.com') {
-        return res.status(400).json({ success: false, message: 'Cannot delete master admin' });
-      }
-      recruitersMock = recruitersMock.filter(r => r._id !== id);
-      res.json({ success: true, message: 'User deleted' });
+      recruitersMock = recruitersMock.filter(r => 
+        r._id !== decodedId && 
+        r.id !== decodedId && 
+        (r.email || '').toLowerCase() !== lowerId && 
+        (r.name || '').toLowerCase() !== lowerId
+      );
+      res.json({ success: true, message: 'User deleted permanently' });
     }
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
