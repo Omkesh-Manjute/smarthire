@@ -5745,7 +5745,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                   actorRole: userRole,
                   reqId: cleanId,
                   candidateName: fullName,
-                  candidateId: newId
+                  candidateId: newCandId
                 })
 
                 setShowAddCandidateModal(false)
