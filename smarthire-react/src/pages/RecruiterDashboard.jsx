@@ -870,9 +870,10 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
   // Universal Handler to save recruiter assignments, requisition details, and candidates
   const handleSaveRequisition = (customList) => {
-    const assignedList = customList !== undefined ? customList : (editingFields.assignedRecruiters || [])
+    const rawId = String(selectedReq?.id || '')
     const cleanId = String(selectedReq?.id || '158938').replace('J-', '')
     const fullId = selectedReq?.id ? (selectedReq.id.startsWith('J-') ? selectedReq.id : `J-${selectedReq.id}`) : `J-${cleanId}`
+    const assignedList = customList !== undefined ? customList : (editingFields.assignedRecruiters || [])
     const nowStr = new Date().toLocaleString('en-US', {
       month: 'numeric',
       day: 'numeric',
@@ -886,6 +887,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     const updatedReqData = {
       ...editingFields,
       assignedRecruiters: assignedList,
+      attachments: attachments,
       lastUpdatedBy: userName,
       lastUpdatedOn: nowStr
     }
@@ -901,11 +903,15 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       localStorage.setItem(`smarthire_potential_candidates_${cleanId}`, JSON.stringify(potentialCandidates))
       if (rawId) localStorage.setItem(`smarthire_potential_candidates_${rawId}`, JSON.stringify(potentialCandidates))
 
-      // 3. Save requisition fields
+      // 3. Save attachments for this requisition
+      localStorage.setItem(`smarthire_req_attachments_${cleanId}`, JSON.stringify(attachments))
+      if (rawId) localStorage.setItem(`smarthire_req_attachments_${rawId}`, JSON.stringify(attachments))
+
+      // 4. Save requisition fields
       localStorage.setItem(`smarthire_req_${cleanId}`, JSON.stringify(updatedReqData))
       if (rawId) localStorage.setItem(`smarthire_req_${rawId}`, JSON.stringify(updatedReqData))
 
-      // 4. Save to master map of all custom / edited jobs in localStorage
+      // 5. Save to master map of all custom / edited jobs in localStorage
       const savedJobsRaw = localStorage.getItem('smarthire_saved_custom_jobs')
       let savedJobsMap = {}
       if (savedJobsRaw) {
@@ -921,6 +927,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
         type: editingFields.reqType || selectedReq?.type,
         status: editingFields.status || selectedReq?.status || 'In-Progress',
         assignedRecruiters: assignedList,
+        attachments: attachments,
         creationDate: editingFields.startDate || selectedReq?.creationDate,
         deadline: editingFields.deadline || selectedReq?.deadline
       }
@@ -1124,6 +1131,21 @@ We are currently reviewing candidate profiles and scheduling immediate interview
             lastChangedRole: 'Recruiter',
             lastChangedOn: 'Aug 20, 2026 04:40 PM'
           }
+        ])
+      }
+    } catch (e) {}
+
+    // Load attachments specifically for this requisition
+    try {
+      const savedAtt = localStorage.getItem(`smarthire_req_attachments_${cleanId}`) ||
+                       localStorage.getItem(`smarthire_req_attachments_${job.id}`)
+      if (savedAtt) {
+        setAttachments(JSON.parse(savedAtt))
+      } else {
+        setAttachments([
+          { id: 1, title: `13285 - Admin - ${cleanId}`, filename: `13285 - Admin - ${cleanId}.docx` },
+          { id: 2, title: `SCMSP_Candidate_Cover_Sheet - ${cleanId}`, filename: `SCMSP_Candidate_Cover_Sheet - ${cleanId}.docx` },
+          { id: 3, title: `SSN References - ${cleanId}`, filename: `SSN References - ${cleanId}.doc` },
         ])
       }
     } catch (e) {}
