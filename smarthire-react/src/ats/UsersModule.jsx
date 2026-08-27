@@ -8,95 +8,11 @@ const DEFAULT_RECRUITERS = [
     email: 'omkesh@coolsofttech.com',
     role: 'superadmin',
     refCode: 'omkesh',
-    company: 'SmartHire',
+    company: 'SmartHire LLC',
     isActive: true,
     password: 'admin',
-    lastLogin: '2026-08-26T18:45:00.000Z',
+    lastLogin: '2026-08-27T18:45:00.000Z',
     createdAt: '2026-01-10T10:00:00.000Z'
-  },
-  {
-    id: 'mgr-1',
-    name: 'Alok Manager',
-    email: 'manager@coolsofttech.com',
-    role: 'manager',
-    refCode: 'alok-manager',
-    company: 'SmartHire',
-    isActive: true,
-    password: 'manager123',
-    lastLogin: '2026-08-26T14:15:00.000Z',
-    createdAt: '2026-01-15T09:00:00.000Z'
-  },
-  {
-    id: 'rec-2',
-    name: 'Sukamal Chatterjee',
-    email: 'kamal@coolsofttech.com',
-    role: 'recruiter',
-    refCode: 'sukamal-chatterjee',
-    company: 'SmartHire',
-    isActive: true,
-    password: 'recruiter123',
-    lastLogin: '2026-08-25T11:30:00.000Z',
-    createdAt: '2026-02-15T11:30:00.000Z'
-  },
-  {
-    id: 'rec-3',
-    name: 'Raj',
-    email: 'raj@coolsofttech.com',
-    role: 'recruiter',
-    refCode: 'raj',
-    company: 'SmartHire',
-    isActive: true,
-    password: 'recruiter123',
-    lastLogin: null,
-    createdAt: '2026-03-01T08:00:00.000Z'
-  },
-  {
-    id: 'rec-4',
-    name: 'Vaibhav Bisen',
-    email: 'vaibhav@coolsofttech.com',
-    role: 'recruiter',
-    refCode: 'vaibhav-bisen',
-    company: 'SmartHire',
-    isActive: true,
-    password: 'recruiter123',
-    lastLogin: '2026-08-26T09:00:00.000Z',
-    createdAt: '2026-03-10T09:00:00.000Z'
-  },
-  {
-    id: 'rec-5',
-    name: 'Pankaj',
-    email: 'pankajm@coolsofttech.com',
-    role: 'recruiter',
-    refCode: 'pankaj',
-    company: 'SmartHire',
-    isActive: true,
-    password: 'recruiter123',
-    lastLogin: null,
-    createdAt: '2026-03-15T08:30:00.000Z'
-  },
-  {
-    id: 'emp-1',
-    name: 'Rahul Sharma',
-    email: 'rahul.s@coolsofttech.com',
-    role: 'employee',
-    parentRecruiterName: 'Vaibhav Bisen',
-    company: 'SmartHire',
-    isActive: true,
-    password: 'recruiter123',
-    lastLogin: '2026-08-26T16:20:00.000Z',
-    createdAt: '2026-04-01T10:00:00.000Z'
-  },
-  {
-    id: 'emp-2',
-    name: 'Priya Verma',
-    email: 'priya.v@coolsofttech.com',
-    role: 'employee',
-    parentRecruiterName: 'Sukamal Chatterjee',
-    company: 'SmartHire',
-    isActive: true,
-    password: 'recruiter123',
-    lastLogin: '2026-08-25T17:40:00.000Z',
-    createdAt: '2026-04-10T12:00:00.000Z'
   }
 ]
 
@@ -123,7 +39,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
   const [showAddModal, setShowAddModal] = useState(false)
   const [newRecName, setNewRecName] = useState('')
   const [newRecEmail, setNewRecEmail] = useState('')
-  const [newRecCompany, setNewRecCompany] = useState('SmartHire')
+  const [newRecCompany, setNewRecCompany] = useState('SmartHire LLC')
   const [newRecRef, setNewRecRef] = useState('')
   const [newRecRole, setNewRecRole] = useState('recruiter')
   const [newRecPassword, setNewRecPassword] = useState('recruiter123')
@@ -154,13 +70,10 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
     try {
       const res = await fetch('/api/admin/recruiters')
       const data = await res.json()
-      if (res.ok && data.success && Array.isArray(data.recruiters) && data.recruiters.length > 0) {
-        const serverRecs = data.recruiters
-        const local = recruiters || []
-        const existingEmails = new Set(serverRecs.map(u => (u.email || '').toLowerCase().trim()))
-        const localOnly = local.filter(u => !existingEmails.has((u.email || '').toLowerCase().trim()))
-        const merged = [...serverRecs, ...localOnly]
-        saveRecruiters(merged)
+      if (res.ok && data.success && Array.isArray(data.recruiters)) {
+        if (data.recruiters.length > 0) {
+          saveRecruiters(data.recruiters)
+        }
       }
     } catch (err) {
       console.warn('Recruiter backend sync notice:', err)
@@ -340,12 +253,26 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
 
   const handleDeleteRecruiter = async (id, name) => {
     if (window.confirm(`Are you sure you want to delete user "${name}"?`)) {
-      const updated = recruiters.filter(r => r.id !== id && r._id !== id)
+      const targetName = (name || '').toLowerCase().trim()
+      const targetId = String(id || '')
+      const updated = recruiters.filter(r => {
+        const thisId = String(r.id || r._id || '')
+        const thisName = (r.name || '').toLowerCase().trim()
+        return thisId !== targetId && thisName !== targetName
+      })
       saveRecruiters(updated, `User "${name}" account deleted.`)
+      window.dispatchEvent(new CustomEvent('smarthire_recruiters_updated', { detail: updated }))
 
       try {
-        fetch(`/api/admin/recruiters/${id}`, { method: 'DELETE' }).catch(() => {})
-      } catch (err) {}
+        await fetch(`/api/admin/recruiters/${encodeURIComponent(targetId || targetName)}`, { method: 'DELETE' })
+        await fetch('/api/admin/recruiters/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recruiters: updated })
+        })
+      } catch (err) {
+        console.warn('Backend delete sync note:', err)
+      }
     }
   }
 

@@ -1,140 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 
-const DEFAULT_AUDIT_LOGS = [
-  {
-    id: 'audit-101',
-    timestamp: '2026-08-26T18:45:00.000Z',
-    dateString: 'Aug 26, 2026 06:45 PM',
-    candidateId: '87534',
-    candidateName: 'Ashok Ganta',
-    candidateRole: 'VDOT Network Administrator 4 (807536)',
-    jobId: '158938',
-    jobTitle: 'SC Admin / Network Project Manager',
-    client: 'State Of SC',
-    actionType: 'MANAGER_APPROVAL',
-    fromStatus: 'Int-SubmittedToManager',
-    toStatus: 'Int-ApprovedByManager',
-    performedBy: 'Alok Manager',
-    performedByEmail: 'manager@coolsofttech.com',
-    userRole: 'manager',
-    note: 'Candidate cleared AI Fit Analysis (Score: 94%). Rate $74/hr approved within State of SC budget. 14 years hands-on Cisco/Azure networking experience verified.',
-    rejectedReason: ''
-  },
-  {
-    id: 'audit-102',
-    timestamp: '2026-08-26T17:15:00.000Z',
-    dateString: 'Aug 26, 2026 05:15 PM',
-    candidateId: '87535',
-    candidateName: 'Kashyap K Vora',
-    candidateRole: 'Senior Business Analyst',
-    jobId: '158938',
-    jobTitle: 'SC Admin / Network Project Manager',
-    client: 'State Of SC',
-    actionType: 'INTERVIEW_SCHEDULED',
-    fromStatus: 'Int-ApprovedByManager',
-    toStatus: 'Client-InterviewScheduled',
-    performedBy: 'Omkesh',
-    performedByEmail: 'omkesh@coolsofttech.com',
-    userRole: 'superadmin',
-    note: 'Client panel interview scheduled with State Of SC delivery lead for Aug 29, 2026 10:00 AM EST.',
-    rejectedReason: ''
-  },
-  {
-    id: 'audit-103',
-    timestamp: '2026-08-26T16:30:00.000Z',
-    dateString: 'Aug 26, 2026 04:30 PM',
-    candidateId: '87536',
-    candidateName: 'Amit Saxena',
-    candidateRole: 'Cloud Solutions Architect',
-    jobId: '158766',
-    jobTitle: 'Cloud Architect / DevOps Lead',
-    client: 'State Of NC',
-    actionType: 'CANDIDATE_SOURCED',
-    fromStatus: 'Direct Sourcing',
-    toStatus: 'Int-SubmittedToManager',
-    performedBy: 'Rahul Sharma',
-    performedByEmail: 'rahul.s@coolsofttech.com',
-    userRole: 'employee',
-    note: 'Sourced candidate directly via LinkedIn outreach. AWS Certified Solution Architect Professional with 8 years experience.',
-    rejectedReason: ''
-  },
-  {
-    id: 'audit-104',
-    timestamp: '2026-08-26T14:20:00.000Z',
-    dateString: 'Aug 26, 2026 02:20 PM',
-    candidateId: '87520',
-    candidateName: 'Ashok Kumar Dodda',
-    candidateRole: 'Cloud Enterprise Solutions Architect',
-    jobId: '158420',
-    jobTitle: 'Enterprise Cloud Lead',
-    client: 'State Of TX',
-    actionType: 'MANAGER_REJECTION',
-    fromStatus: 'Int-SubmittedToManager',
-    toStatus: 'Int-RejectedByManager',
-    performedBy: 'Alok Manager',
-    performedByEmail: 'manager@coolsofttech.com',
-    userRole: 'manager',
-    note: 'Candidate does not have mandatory 5+ years GCP cloud security experience required by client.',
-    rejectedReason: 'Skill Gap - Missing Mandatory GCP Security'
-  },
-  {
-    id: 'audit-105',
-    timestamp: '2026-08-25T16:10:00.000Z',
-    dateString: 'Aug 25, 2026 04:10 PM',
-    candidateId: '87503',
-    candidateName: 'Vadivelu Ashok Kumar',
-    candidateRole: 'DCY - IT Lead Architect',
-    jobId: '158102',
-    jobTitle: 'IT Lead Enterprise Architect',
-    client: 'DOJ',
-    actionType: 'STATUS_CHANGE',
-    fromStatus: 'Int-ApprovedByManager',
-    toStatus: 'Client-Submitted',
-    performedBy: 'Vaibhav Bisen',
-    performedByEmail: 'vaibhav@coolsofttech.com',
-    userRole: 'recruiter',
-    note: 'Profile packaged with signed RTR document and submitted to prime vendor portal.',
-    rejectedReason: ''
-  },
-  {
-    id: 'audit-106',
-    timestamp: '2026-08-25T11:45:00.000Z',
-    dateString: 'Aug 25, 2026 11:45 AM',
-    candidateId: '87504',
-    candidateName: 'Ashok Rajendran',
-    candidateRole: 'Application Developer Senior',
-    jobId: '157990',
-    jobTitle: 'Senior Fullstack Java Developer',
-    client: 'State Of MI',
-    actionType: 'CANDIDATE_SOURCED',
-    fromStatus: 'Direct Sourcing',
-    toStatus: 'Int-SubmittedToManager',
-    performedBy: 'Priya Verma',
-    performedByEmail: 'priya.v@coolsofttech.com',
-    userRole: 'employee',
-    note: 'Submitted to reporting manager Sukamal Chatterjee for technical vetting.',
-    rejectedReason: ''
-  },
-  {
-    id: 'audit-107',
-    timestamp: '2026-08-24T15:30:00.000Z',
-    dateString: 'Aug 24, 2026 03:30 PM',
-    candidateId: '87501',
-    candidateName: 'Ashok Ankalla',
-    candidateRole: 'Project Manager / Delivery Lead',
-    jobId: '157800',
-    jobTitle: 'Senior Scrum Master / PM',
-    client: 'State Of SC',
-    actionType: 'MANAGER_APPROVAL',
-    fromStatus: 'Int-SubmittedToManager',
-    toStatus: 'Int-ApprovedByManager',
-    performedBy: 'Alok Manager',
-    performedByEmail: 'manager@coolsofttech.com',
-    userRole: 'manager',
-    note: 'PMP certification verified. Pay rate $60/hr fits well within client margin.',
-    rejectedReason: ''
-  }
-]
+const DEFAULT_AUDIT_LOGS = []
 
 export const logAuditEvent = (eventData) => {
   try {
@@ -368,6 +234,27 @@ export default function AuditActivityLogModule({ isCompact = false }) {
             >
               📥 Export CSV
             </button>
+
+            {logs.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm('Are you sure you want to clear all logged activity audit events?')) {
+                    setLogs([])
+                    try {
+                      localStorage.setItem('smarthire_activity_audit_logs', JSON.stringify([]))
+                    } catch (e) {}
+                  }
+                }}
+                style={{
+                  background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5',
+                  padding: '6px 12px', fontSize: '11.5px', fontWeight: 'bold',
+                  borderRadius: '4px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px'
+                }}
+              >
+                🗑️ Clear Logs
+              </button>
+            )}
           </div>
         </div>
       )}

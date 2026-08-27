@@ -206,14 +206,7 @@ function RecruiterDashboard() {
   
   // ─── DYNAMIC TEAM USERS & MULTI-LEVEL RBAC ───
   const DEFAULT_USERS_LIST = [
-    { id: 'rec-1', name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', company: 'SmartHire', isActive: true, password: 'admin' },
-    { id: 'rec-2', name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com', role: 'recruiter', refCode: 'sukamal-chatterjee', company: 'SmartHire', isActive: true, password: 'recruiter123' },
-    { id: 'rec-3', name: 'Raj', email: 'raj@coolsofttech.com', role: 'recruiter', refCode: 'raj', company: 'SmartHire', isActive: true, password: 'recruiter123' },
-    { id: 'rec-4', name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com', role: 'recruiter', refCode: 'vaibhav-bisen', company: 'SmartHire', isActive: true, password: 'recruiter123' },
-    { id: 'rec-5', name: 'Pankaj', email: 'pankajm@coolsofttech.com', role: 'recruiter', refCode: 'pankaj', company: 'SmartHire', isActive: true, password: 'recruiter123' },
-    { id: 'mgr-1', name: 'Alok Manager', email: 'manager@coolsofttech.com', role: 'manager', refCode: 'alok-manager', company: 'SmartHire', isActive: true, password: 'manager123' },
-    { id: 'emp-1', name: 'Rahul Sharma', email: 'rahul.s@coolsofttech.com', role: 'employee', parentRecruiterName: 'Vaibhav Bisen', company: 'SmartHire', isActive: true, password: 'recruiter123' },
-    { id: 'emp-2', name: 'Priya Verma', email: 'priya.v@coolsofttech.com', role: 'employee', parentRecruiterName: 'Sukamal Chatterjee', company: 'SmartHire', isActive: true, password: 'recruiter123' }
+    { id: 'rec-1', name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', company: 'SmartHire LLC', isActive: true, password: 'admin' }
   ]
 
   const [teamUsers, setTeamUsers] = useState(() => {
@@ -997,15 +990,11 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     fetch('/api/admin/recruiters', { headers })
       .then(res => res.json())
       .then(data => {
-        if (data.success && Array.isArray(data.recruiters) && data.recruiters.length > 0) {
-          const serverRecs = data.recruiters
-          setTeamUsers(prev => {
-            const existingEmails = new Set(serverRecs.map(u => (u.email || '').toLowerCase().trim()))
-            const localOnly = prev.filter(u => !existingEmails.has((u.email || '').toLowerCase().trim()))
-            const merged = [...serverRecs, ...localOnly]
-            try { localStorage.setItem('smarthire_recruiters', JSON.stringify(merged)) } catch (e) {}
-            return merged
-          })
+        if (data.success && Array.isArray(data.recruiters)) {
+          if (data.recruiters.length > 0) {
+            setTeamUsers(data.recruiters)
+            try { localStorage.setItem('smarthire_recruiters', JSON.stringify(data.recruiters)) } catch (e) {}
+          }
         }
       })
       .catch(err => console.warn('Backend team sync notice:', err))

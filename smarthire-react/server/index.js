@@ -286,15 +286,7 @@ const RecruiterDoc = mongoose.models.RecruiterStore || mongoose.model('Recruiter
 
 const recruitersDbPath = path.resolve(__dirname, 'recruiters.json');
 let recruitersMock = [
-  { _id: 'rec-1', name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', parentRecruiterName: '', company: 'SmartHire LLC', isActive: true, password: 'admin', lastLogin: '2026-08-17T18:45:00.000Z', createdAt: '2026-01-10T10:00:00.000Z' },
-  { _id: 'rec-1b', name: 'Omkesh Manjute', email: 'omkesh.manjute@smarthire.com', role: 'superadmin', refCode: 'omkesh', parentRecruiterName: '', company: 'SmartHire LLC', isActive: true, password: 'admin', lastLogin: '2026-08-17T18:45:00.000Z', createdAt: '2026-01-10T10:00:00.000Z' },
-  { _id: 'rec-2', name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com', role: 'recruiter', refCode: 'sukamal-chatterjee', parentRecruiterName: '', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-02-15T11:30:00.000Z' },
-  { _id: 'rec-3', name: 'Raj', email: 'raj@coolsofttech.com', role: 'recruiter', refCode: 'raj', parentRecruiterName: '', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' },
-  { _id: 'rec-4', name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com', role: 'recruiter', refCode: 'vaibhav-bisen', parentRecruiterName: '', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-10T09:00:00.000Z' },
-  { _id: 'rec-5', name: 'Pankaj', email: 'pankajm@coolsofttech.com', role: 'recruiter', refCode: 'pankaj', parentRecruiterName: '', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' },
-  { _id: 'mgr-1', name: 'Alok Manager', email: 'manager@coolsofttech.com', role: 'manager', refCode: 'alok-manager', parentRecruiterName: '', company: 'SmartHire LLC', isActive: true, password: 'manager123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' },
-  { _id: 'emp-1', name: 'Rahul Sharma', email: 'rahul@coolsofttech.com', role: 'employee', parentRecruiterName: 'Vaibhav Bisen', refCode: 'rahul-sharma', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' },
-  { _id: 'emp-2', name: 'Priya Verma', email: 'priya@coolsofttech.com', role: 'employee', parentRecruiterName: 'Sukamal Chatterjee', refCode: 'priya-verma', company: 'SmartHire LLC', isActive: true, password: 'recruiter123', lastLogin: null, createdAt: '2026-03-01T08:00:00.000Z' }
+  { _id: 'rec-1', name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', parentRecruiterName: '', company: 'SmartHire LLC', isActive: true, password: 'admin', lastLogin: '2026-08-27T18:45:00.000Z', createdAt: '2026-01-10T10:00:00.000Z' }
 ];
 
 function loadRecruitersFromDisk() {
@@ -303,9 +295,7 @@ function loadRecruitersFromDisk() {
       const raw = fs.readFileSync(recruitersDbPath, 'utf-8');
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        const existingEmails = new Set(parsed.map(p => (p.email || '').toLowerCase().trim()));
-        const missing = recruitersMock.filter(d => !existingEmails.has(d.email.toLowerCase().trim()));
-        recruitersMock = [...parsed, ...missing];
+        recruitersMock = parsed;
         console.log(`📂 Loaded ${recruitersMock.length} recruiter(s) from disk.`);
         return;
       }
@@ -5839,75 +5829,49 @@ app.post('/api/admin/recruiters/sync', async (req, res) => {
     return res.status(400).json({ success: false, message: 'Array of recruiters expected.' });
   }
   try {
-    loadRecruitersFromDisk();
-    for (const r of recruiters) {
-      if (!r.email || !r.name) continue;
-      const cleanEmail = String(r.email).toLowerCase().trim();
-      const cleanName = String(r.name).trim();
-      const cleanPassword = String(r.password || 'recruiter123').trim();
-      const cleanRole = r.role || 'employee';
-      const cleanRef = r.refCode || cleanName.toLowerCase().replace(/[^a-z0-9]/g, '-');
-      const cleanCompany = r.company || 'SmartHire LLC';
-      const cleanParent = r.parentRecruiterName || '';
+    const cleanList = recruiters.map(r => ({
+      _id: r.id || r._id || ('rec-' + Date.now()),
+      id: r.id || r._id || ('rec-' + Date.now()),
+      name: String(r.name || '').trim(),
+      email: String(r.email || '').toLowerCase().trim(),
+      password: String(r.password || 'recruiter123').trim(),
+      role: r.role || 'employee',
+      parentRecruiterName: r.parentRecruiterName || '',
+      refCode: r.refCode || String(r.name || '').toLowerCase().replace(/[^a-z0-9]/g, '-'),
+      company: r.company || 'SmartHire LLC',
+      isActive: r.isActive !== false,
+      lastLogin: r.lastLogin || null,
+      createdAt: r.createdAt || new Date().toISOString()
+    })).filter(r => r.name && r.email);
 
-      const idx = recruitersMock.findIndex(m => (m.email || '').toLowerCase().trim() === cleanEmail);
-      if (idx >= 0) {
-        recruitersMock[idx] = {
-          ...recruitersMock[idx],
-          name: cleanName,
-          email: cleanEmail,
-          password: cleanPassword,
-          role: cleanRole,
-          parentRecruiterName: cleanParent,
-          company: cleanCompany,
-          isActive: r.isActive !== false
-        };
-      } else {
-        recruitersMock.unshift({
-          _id: r.id || 'rec-' + Date.now(),
-          name: cleanName,
-          email: cleanEmail,
-          password: cleanPassword,
-          role: cleanRole,
-          parentRecruiterName: cleanParent,
-          refCode: cleanRef,
-          company: cleanCompany,
-          isActive: r.isActive !== false,
-          lastLogin: null,
-          createdAt: new Date().toISOString()
-        });
-      }
+    recruitersMock = cleanList;
+    saveRecruitersToDisk();
 
-      if (isMongoConnected) {
-        try {
-          const emailRegex = new RegExp('^' + cleanEmail.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&') + '$', 'i');
+    if (isMongoConnected) {
+      try {
+        const activeEmails = cleanList.map(r => r.email);
+        await RecruiterDoc.deleteMany({ email: { $nin: activeEmails, $ne: 'omkesh@coolsofttech.com' } });
+        for (const r of cleanList) {
+          const emailRegex = new RegExp('^' + r.email.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&') + '$', 'i');
           let existing = await RecruiterDoc.findOne({ email: emailRegex });
           if (existing) {
-            existing.name = cleanName;
-            existing.email = cleanEmail;
-            existing.password = cleanPassword;
-            existing.role = cleanRole;
-            existing.parentRecruiterName = cleanParent;
-            existing.company = cleanCompany;
-            if (typeof r.isActive === 'boolean') existing.isActive = r.isActive;
+            existing.name = r.name;
+            existing.password = r.password;
+            existing.role = r.role;
+            existing.parentRecruiterName = r.parentRecruiterName;
+            existing.company = r.company;
+            existing.isActive = r.isActive;
             await existing.save();
           } else {
-            await RecruiterDoc.create({
-              name: cleanName,
-              email: cleanEmail,
-              password: cleanPassword,
-              role: cleanRole,
-              parentRecruiterName: cleanParent,
-              refCode: cleanRef,
-              company: cleanCompany,
-              isActive: r.isActive !== false
-            });
+            await RecruiterDoc.create(r);
           }
-        } catch (e) {}
+        }
+      } catch (mErr) {
+        console.warn('MongoDB sync note:', mErr.message);
       }
     }
-    saveRecruitersToDisk();
-    return res.json({ success: true, count: recruitersMock.length });
+
+    return res.json({ success: true, count: recruitersMock.length, recruiters: recruitersMock });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -5929,6 +5893,7 @@ app.put('/api/admin/recruiters/:id', async (req, res) => {
       if (refCode && user.email !== 'omkesh@coolsofttech.com') user.refCode = refCode;
       if (company) user.company = company;
       await user.save();
+      saveRecruitersToDisk();
       res.json({
         success: true,
         recruiter: {
@@ -5942,7 +5907,7 @@ app.put('/api/admin/recruiters/:id', async (req, res) => {
         }
       });
     } else {
-      const user = recruitersMock.find(r => r._id === id);
+      const user = recruitersMock.find(r => r._id === id || r.id === id);
       if (!user) {
         return res.status(404).json({ success: false, message: 'User not found' });
       }
@@ -5952,6 +5917,7 @@ app.put('/api/admin/recruiters/:id', async (req, res) => {
       if (role && user.email !== 'omkesh@coolsofttech.com') user.role = role;
       if (refCode && user.email !== 'omkesh@coolsofttech.com') user.refCode = refCode;
       if (company) user.company = company;
+      saveRecruitersToDisk();
       res.json({ success: true, recruiter: { ...user, id: user._id } });
     }
   } catch (err) {
@@ -5988,6 +5954,7 @@ app.delete('/api/admin/recruiters/:id', async (req, res) => {
         (r.email || '').toLowerCase() !== lowerId && 
         (r.name || '').toLowerCase() !== lowerId
       );
+      saveRecruitersToDisk();
       res.json({ success: true, message: 'User deleted permanently' });
     } else {
       const user = recruitersMock.find(r => 
@@ -6005,6 +5972,7 @@ app.delete('/api/admin/recruiters/:id', async (req, res) => {
         (r.email || '').toLowerCase() !== lowerId && 
         (r.name || '').toLowerCase() !== lowerId
       );
+      saveRecruitersToDisk();
       res.json({ success: true, message: 'User deleted permanently' });
     }
   } catch (err) {
