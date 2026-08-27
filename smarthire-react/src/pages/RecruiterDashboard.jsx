@@ -6,6 +6,7 @@ import CandidateDetailViewModal from '../components/CandidateDetailViewModal'
 import AiMatchingCandidatesModal from '../components/AiMatchingCandidatesModal'
 import ActivityNotificationBell, { pushActivityNotification } from '../components/ActivityNotificationBell'
 import { AuditActivityLogModule, logAuditEvent } from '../ats'
+import { US_STATES } from '../data/usStates'
 
 function getFullDescriptionText(job) {
   if (!job) return ''
@@ -490,22 +491,49 @@ We are currently reviewing candidate profiles and scheduling immediate interview
   const [selectedAvailable, setSelectedAvailable] = useState([])
   const [selectedAssigned, setSelectedAssigned] = useState([])
 
-  // Attachments List
-  const [attachments, setAttachments] = useState([
-    { id: 1, title: '13285 - Admin - 158938', filename: '13285 - Admin - 158938.docx' },
-    { id: 2, title: 'SCMSP_Candidate_Cover_Sheet - 158938', filename: 'SCMSP_Candidate_Cover_Sheet - 158938.docx' },
-    { id: 3, title: 'SSN References - 158938', filename: 'SSN References - 158938.doc' },
-    { id: 4, title: 'Right_to_Represent_SOSC - 158938', filename: 'Right_to_Represent_SOSC - 158938.pdf' },
-  ])
+  // Attachments List (Dynamically initialized from active requisition storage)
+  const [attachments, setAttachments] = useState(() => {
+    try {
+      const activeReq = localStorage.getItem('smarthire_active_selected_req')
+      if (activeReq) {
+        const parsed = JSON.parse(activeReq)
+        const rawId = String(parsed.id || '')
+        const cleanId = rawId.replace('J-', '').replace('REQ-', '').trim()
+        const saved = localStorage.getItem(`smarthire_req_attachments_${cleanId}`) ||
+                      localStorage.getItem(`smarthire_req_attachments_${rawId}`) ||
+                      localStorage.getItem(`smarthire_req_attachments_J-${cleanId}`)
+        if (saved !== null && saved !== undefined) return JSON.parse(saved)
+        if (parsed.attachments && Array.isArray(parsed.attachments)) return parsed.attachments
+      }
+      const saved158 = localStorage.getItem('smarthire_req_attachments_158938')
+      if (saved158 !== null && saved158 !== undefined) return JSON.parse(saved158)
+    } catch (e) {}
+    return [
+      { id: 1, title: '13285 - Admin - 158938', filename: '13285 - Admin - 158938.docx' },
+      { id: 2, title: 'SCMSP_Candidate_Cover_Sheet - 158938', filename: 'SCMSP_Candidate_Cover_Sheet - 158938.docx' },
+      { id: 3, title: 'SSN References - 158938', filename: 'SSN References - 158938.doc' },
+      { id: 4, title: 'Right_to_Represent_SOSC - 158938', filename: 'Right_to_Represent_SOSC - 158938.pdf' },
+    ]
+  })
   const [showAddAttachment, setShowAddAttachment] = useState(false)
   const [newAttachmentTitle, setNewAttachmentTitle] = useState('')
   const [newAttachmentFile, setNewAttachmentFile] = useState(null)
 
-  // Potential Candidates Attached to Requisition
+  // Potential Candidates Attached to Requisition (Dynamically initialized)
   const [potentialCandidates, setPotentialCandidates] = useState(() => {
     try {
-      const saved = localStorage.getItem('smarthire_potential_candidates_158938')
-      if (saved) return JSON.parse(saved)
+      const activeReq = localStorage.getItem('smarthire_active_selected_req')
+      if (activeReq) {
+        const parsed = JSON.parse(activeReq)
+        const rawId = String(parsed.id || '')
+        const cleanId = rawId.replace('J-', '').replace('REQ-', '').trim()
+        const saved = localStorage.getItem(`smarthire_potential_candidates_${cleanId}`) ||
+                      localStorage.getItem(`smarthire_potential_candidates_${rawId}`) ||
+                      localStorage.getItem(`smarthire_potential_candidates_J-${cleanId}`)
+        if (saved !== null && saved !== undefined) return JSON.parse(saved)
+      }
+      const saved158 = localStorage.getItem('smarthire_potential_candidates_158938')
+      if (saved158 !== null && saved158 !== undefined) return JSON.parse(saved158)
     } catch (e) {}
     return [
       {
@@ -868,10 +896,67 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     })
   }
 
+  // Delete Requisition Attachment & Sync Storage Immediately
+  const handleDeleteAttachment = (attId) => {
+    const nextAtts = attachments.filter(a => a.id !== attId)
+    setAttachments(nextAtts)
+
+    const rawId = String(selectedReq?.id || '158938')
+    const cleanId = rawId.replace('J-', '').replace('REQ-', '').trim()
+    const fullId = `J-${cleanId}`
+
+    try {
+      localStorage.setItem(`smarthire_req_attachments_${cleanId}`, JSON.stringify(nextAtts))
+      localStorage.setItem(`smarthire_req_attachments_${fullId}`, JSON.stringify(nextAtts))
+      if (rawId) localStorage.setItem(`smarthire_req_attachments_${rawId}`, JSON.stringify(nextAtts))
+
+      // Also update master saved jobs map in localStorage
+      const savedJobsRaw = localStorage.getItem('smarthire_saved_custom_jobs')
+      if (savedJobsRaw) {
+        const savedJobsMap = JSON.parse(savedJobsRaw)
+        if (savedJobsMap[cleanId]) savedJobsMap[cleanId].attachments = nextAtts
+        if (savedJobsMap[rawId]) savedJobsMap[rawId].attachments = nextAtts
+        if (savedJobsMap[fullId]) savedJobsMap[fullId].attachments = nextAtts
+        localStorage.setItem('smarthire_saved_custom_jobs', JSON.stringify(savedJobsMap))
+      }
+
+      // Update in-memory jobs state
+      setJobs(prev => prev.map(j => {
+        const jClean = String(j.id || '').replace('J-', '').replace('REQ-', '').trim()
+        if (jClean === cleanId || String(j.id) === rawId || String(j.id) === fullId) {
+          return { ...j, attachments: nextAtts }
+        }
+        return j
+      }))
+    } catch (e) {}
+
+    setSaveToastMessage('🗑️ Attachment deleted and removed from storage!')
+    setTimeout(() => setSaveToastMessage(null), 3000)
+  }
+
+  // Remove Potential Candidate from Requisition & Sync Storage
+  const handleRemovePotentialCandidate = (candId) => {
+    const nextCands = potentialCandidates.filter(c => String(c.id) !== String(candId))
+    setPotentialCandidates(nextCands)
+
+    const rawId = String(selectedReq?.id || '158938')
+    const cleanId = rawId.replace('J-', '').replace('REQ-', '').trim()
+    const fullId = `J-${cleanId}`
+
+    try {
+      localStorage.setItem(`smarthire_potential_candidates_${cleanId}`, JSON.stringify(nextCands))
+      localStorage.setItem(`smarthire_potential_candidates_${fullId}`, JSON.stringify(nextCands))
+      if (rawId) localStorage.setItem(`smarthire_potential_candidates_${rawId}`, JSON.stringify(nextCands))
+    } catch (e) {}
+
+    setSaveToastMessage('🗑️ Candidate removed from requisition list!')
+    setTimeout(() => setSaveToastMessage(null), 3000)
+  }
+
   // Universal Handler to save recruiter assignments, requisition details, and candidates
   const handleSaveRequisition = (customList) => {
     const rawId = String(selectedReq?.id || '')
-    const cleanId = String(selectedReq?.id || '158938').replace('J-', '')
+    const cleanId = String(selectedReq?.id || '158938').replace('J-', '').replace('REQ-', '').trim()
     const fullId = selectedReq?.id ? (selectedReq.id.startsWith('J-') ? selectedReq.id : `J-${selectedReq.id}`) : `J-${cleanId}`
     const assignedList = customList !== undefined ? customList : (editingFields.assignedRecruiters || [])
     const nowStr = new Date().toLocaleString('en-US', {
@@ -901,14 +986,17 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
       // 2. Save potential candidates for this requisition
       localStorage.setItem(`smarthire_potential_candidates_${cleanId}`, JSON.stringify(potentialCandidates))
+      localStorage.setItem(`smarthire_potential_candidates_${fullId}`, JSON.stringify(potentialCandidates))
       if (rawId) localStorage.setItem(`smarthire_potential_candidates_${rawId}`, JSON.stringify(potentialCandidates))
 
       // 3. Save attachments for this requisition
       localStorage.setItem(`smarthire_req_attachments_${cleanId}`, JSON.stringify(attachments))
+      localStorage.setItem(`smarthire_req_attachments_${fullId}`, JSON.stringify(attachments))
       if (rawId) localStorage.setItem(`smarthire_req_attachments_${rawId}`, JSON.stringify(attachments))
 
       // 4. Save requisition fields
       localStorage.setItem(`smarthire_req_${cleanId}`, JSON.stringify(updatedReqData))
+      localStorage.setItem(`smarthire_req_${fullId}`, JSON.stringify(updatedReqData))
       if (rawId) localStorage.setItem(`smarthire_req_${rawId}`, JSON.stringify(updatedReqData))
 
       // 5. Save to master map of all custom / edited jobs in localStorage
@@ -1099,6 +1187,32 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     setTimeout(() => setSaveToastMessage(null), 4000)
   }
 
+  // Auto-sync requisition attachments and candidates whenever active requisition changes
+  useEffect(() => {
+    if (!selectedReq) return
+    const rawId = String(selectedReq.id || '')
+    const cleanId = rawId.replace('J-', '').replace('REQ-', '').trim()
+    const fullId = `J-${cleanId}`
+
+    try {
+      const savedAtt = localStorage.getItem(`smarthire_req_attachments_${cleanId}`) ||
+                       localStorage.getItem(`smarthire_req_attachments_${rawId}`) ||
+                       localStorage.getItem(`smarthire_req_attachments_${fullId}`)
+      if (savedAtt !== null && savedAtt !== undefined) {
+        setAttachments(JSON.parse(savedAtt))
+      }
+    } catch (e) {}
+
+    try {
+      const savedCand = localStorage.getItem(`smarthire_potential_candidates_${cleanId}`) ||
+                        localStorage.getItem(`smarthire_potential_candidates_${rawId}`) ||
+                        localStorage.getItem(`smarthire_potential_candidates_${fullId}`)
+      if (savedCand !== null && savedCand !== undefined) {
+        setPotentialCandidates(JSON.parse(savedCand))
+      }
+    } catch (e) {}
+  }, [selectedReq?.id])
+
   // Open Requisition Detail
   const handleOpenReq = (job) => {
     setSelectedReq(job)
@@ -1106,12 +1220,16 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     setActiveReqTab('details')
     const fullDesc = getFullDescriptionText(job)
     const assigned = Array.isArray(job.assignedRecruiters) ? job.assignedRecruiters : getJobAssignedRecruiters(job.id)
-    const cleanId = String(job.id || '158938').replace('J-', '')
+    const rawId = String(job.id || '')
+    const cleanId = rawId.replace('J-', '').replace('REQ-', '').trim()
+    const fullId = `J-${cleanId}`
 
     // Load candidates specifically for this requisition
     try {
-      const savedCand = localStorage.getItem(`smarthire_potential_candidates_${cleanId}`)
-      if (savedCand) {
+      const savedCand = localStorage.getItem(`smarthire_potential_candidates_${cleanId}`) ||
+                        localStorage.getItem(`smarthire_potential_candidates_${rawId}`) ||
+                        localStorage.getItem(`smarthire_potential_candidates_${fullId}`)
+      if (savedCand !== null && savedCand !== undefined) {
         setPotentialCandidates(JSON.parse(savedCand))
       } else {
         // Default candidate if not set
@@ -1138,9 +1256,12 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     // Load attachments specifically for this requisition
     try {
       const savedAtt = localStorage.getItem(`smarthire_req_attachments_${cleanId}`) ||
-                       localStorage.getItem(`smarthire_req_attachments_${job.id}`)
-      if (savedAtt) {
+                       localStorage.getItem(`smarthire_req_attachments_${rawId}`) ||
+                       localStorage.getItem(`smarthire_req_attachments_${fullId}`)
+      if (savedAtt !== null && savedAtt !== undefined) {
         setAttachments(JSON.parse(savedAtt))
+      } else if (job.attachments && Array.isArray(job.attachments)) {
+        setAttachments(job.attachments)
       } else {
         setAttachments([
           { id: 1, title: `13285 - Admin - ${cleanId}`, filename: `13285 - Admin - ${cleanId}.docx` },
@@ -1972,22 +2093,10 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
                       <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>State:</label>
                       <select value={candFilters.state} onChange={e => setCandFilters({ ...candFilters, state: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
-                        <option>Select</option>
-                        <option>NJ</option>
-                        <option>VA</option>
-                        <option>TX</option>
-                        <option>MN</option>
-                        <option>NE</option>
-                        <option>CT</option>
-                        <option>MI</option>
-                        <option>NY</option>
-                        <option>KY</option>
-                        <option>NC</option>
-                        <option>AR</option>
-                        <option>CA</option>
-                        <option>IN</option>
-                        <option>OH</option>
-                        <option>TN</option>
+                        <option value="Select">Select</option>
+                        {US_STATES.map(st => (
+                          <option key={st.code} value={st.code}>{st.code} - {st.name}</option>
+                        ))}
                       </select>
 
                       <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Job Title :</label>
@@ -2714,11 +2823,10 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
                     <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>State:</label>
                     <select value={searchCandFilter.state} onChange={e => setSearchCandFilter({ ...searchCandFilter, state: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
-                      <option>Select</option>
-                      <option>SC</option>
-                      <option>VA</option>
-                      <option>TX</option>
-                      <option>NC</option>
+                      <option value="Select">Select</option>
+                      {US_STATES.map(st => (
+                        <option key={st.code} value={st.code}>{st.code} - {st.name}</option>
+                      ))}
                     </select>
 
                     <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Zip Code:</label>
@@ -2834,11 +2942,10 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
                     <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>State*:</label>
                     <select value={newCandForm.state} onChange={e => setNewCandForm({ ...newCandForm, state: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
-                      <option>Select</option>
-                      <option>SC</option>
-                      <option>VA</option>
-                      <option>TX</option>
-                      <option>NC</option>
+                      <option value="Select">Select</option>
+                      {US_STATES.map(st => (
+                        <option key={st.code} value={st.code}>{st.code} - {st.name}</option>
+                      ))}
                     </select>
 
                     <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Resume Title*:</label>
@@ -3003,10 +3110,9 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                         <div style={{ display: 'flex', gap: '4px' }}>
                           <input type="text" value={submissionCandidate.city} onChange={e => setSubmissionCandidate({ ...submissionCandidate, city: e.target.value })} style={{ flex: 2, padding: '3px 4px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
                           <select value={submissionCandidate.state} onChange={e => setSubmissionCandidate({ ...submissionCandidate, state: e.target.value })} style={{ flex: 1, padding: '3px 4px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
-                            <option>VA</option>
-                            <option>SC</option>
-                            <option>TX</option>
-                            <option>NC</option>
+                            {US_STATES.map(st => (
+                              <option key={st.code} value={st.code}>{st.code}</option>
+                            ))}
                           </select>
                           <input type="text" value={submissionCandidate.zip} onChange={e => setSubmissionCandidate({ ...submissionCandidate, zip: e.target.value })} style={{ width: '55px', padding: '3px 4px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
                         </div>
@@ -3508,11 +3614,9 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                               background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                             }}
                           >
-                            <option>SC</option>
-                            <option>VA</option>
-                            <option>TN</option>
-                            <option>NC</option>
-                            <option>TX</option>
+                            {US_STATES.map(st => (
+                              <option key={st.code} value={st.code}>{st.code}</option>
+                            ))}
                           </select>
                           <input
                             type="text"
@@ -4412,7 +4516,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                               <td style={{ padding: '5px 8px', textAlign: 'right', width: '70px' }}>
                                 <span style={{ cursor: 'pointer', marginRight: '8px' }} title="Edit">✏️</span>
                                 <span
-                                  onClick={() => setAttachments(prev => prev.filter(a => a.id !== att.id))}
+                                  onClick={() => handleDeleteAttachment(att.id)}
                                   style={{ cursor: 'pointer', color: '#dc2626', fontWeight: 'bold' }}
                                   title="Delete"
                                 >
@@ -4949,13 +5053,10 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
                         <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>State:</label>
                         <select value={reqFilters.state} onChange={e => setReqFilters({ ...reqFilters, state: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
-                          <option>Select State</option>
-                          <option>SC</option>
-                          <option>VA</option>
-                          <option>TX</option>
-                          <option>NC</option>
-                          <option>GA</option>
-                          <option>FL</option>
+                          <option value="Select State">Select State</option>
+                          {US_STATES.map(st => (
+                            <option key={st.code} value={st.code}>{st.code} - {st.name}</option>
+                          ))}
                         </select>
 
                         <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Office:</label>

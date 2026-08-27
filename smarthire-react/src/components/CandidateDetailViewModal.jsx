@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
+import { US_STATES } from '../data/usStates'
 
 export default function CandidateDetailViewModal({
   candidate,
@@ -727,13 +728,9 @@ export default function CandidateDetailViewModal({
                             onChange={e => handleInputChange('state', e.target.value)}
                             style={{ padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9' }}
                           >
-                            <option value="TX">TX</option>
-                            <option value="VA">VA</option>
-                            <option value="NC">NC</option>
-                            <option value="SC">SC</option>
-                            <option value="CA">CA</option>
-                            <option value="NY">NY</option>
-                            <option value="FL">FL</option>
+                            {US_STATES.map(st => (
+                              <option key={st.code} value={st.code}>{st.code} - {st.name}</option>
+                            ))}
                           </select>
                           <input
                             type="text"
