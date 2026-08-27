@@ -6913,6 +6913,7 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
             }}
             allJobs={jobs.length > 0 ? jobs : filteredJobs}
             currentUser={currentUser}
+            reqContext={selectedReq || (selectedViewCandidate ? (jobs.find(j => String(j.id).replace('J-', '') === String(selectedViewCandidate.reqId || '')) || null) : null)}
             onUpdateCandidate={(updatedCand) => {
               setCandidates(prev => {
                 const merged = prev.map(c => c.id === updatedCand.id ? updatedCand : c)
