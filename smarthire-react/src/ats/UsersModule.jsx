@@ -537,24 +537,24 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                   <span className="loader-spinner"></span> Loading team members...
                 </div>
               ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table className="users-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                <div style={{ overflowX: 'auto', border: '1px solid #7f9db9', borderRadius: 0 }}>
+                  <table className="users-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', fontFamily: 'Arial, Helvetica, sans-serif', textAlign: 'left', background: '#ffffff' }}>
                     <thead>
-                      <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0', color: '#475569' }}>
-                        <th style={{ padding: '10px 14px', fontWeight: 'bold' }}>Team Member</th>
-                        <th style={{ padding: '10px 12px', fontWeight: 'bold' }}>System Role</th>
-                        <th style={{ padding: '10px 12px', fontWeight: 'bold' }}>Team Hierarchy / Reporting</th>
-                        <th style={{ padding: '10px 12px', fontWeight: 'bold' }}>Company & Ref</th>
-                        <th style={{ padding: '10px 12px', fontWeight: 'bold', textAlign: 'center' }}>Sourced</th>
-                        <th style={{ padding: '10px 12px', fontWeight: 'bold' }}>Account Status</th>
-                        <th style={{ padding: '10px 12px', fontWeight: 'bold' }}>Last Active</th>
-                        <th style={{ padding: '10px 14px', fontWeight: 'bold', textAlign: 'right' }}>Actions</th>
+                      <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
+                        <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', borderRight: '1px solid rgba(255,255,255,0.2)' }}>TEAM MEMBER</th>
+                        <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', borderRight: '1px solid rgba(255,255,255,0.2)' }}>SYSTEM ROLE</th>
+                        <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', borderRight: '1px solid rgba(255,255,255,0.2)' }}>TEAM HIERARCHY / REPORTING</th>
+                        <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', borderRight: '1px solid rgba(255,255,255,0.2)' }}>COMPANY & REF</th>
+                        <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', textAlign: 'center', borderRight: '1px solid rgba(255,255,255,0.2)' }}>SOURCED</th>
+                        <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', borderRight: '1px solid rgba(255,255,255,0.2)' }}>ACCOUNT STATUS</th>
+                        <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', borderRight: '1px solid rgba(255,255,255,0.2)' }}>LAST ACTIVE</th>
+                        <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', textAlign: 'center', width: '140px' }}>ACTIONS</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredRecruiters.length === 0 ? (
                         <tr>
-                          <td colSpan="8" style={{ padding: '36px', textAlign: 'center', color: '#64748b' }}>
+                          <td colSpan="8" style={{ padding: '24px', textAlign: 'center', color: '#64748b' }}>
                             No team members found matching your filter criteria.
                           </td>
                         </tr>
@@ -569,73 +569,62 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                           let roleBadgeColor = '#1e40af'
                           let roleBadgeBorder = '#bfdbfe'
                           let roleLabel = '💼 Lead Recruiter'
-                          let avatarBg = '#0284c7'
 
                           if (rec.role === 'superadmin' || rec.role === 'admin') {
                             roleBadgeBg = '#e0f2fe'
                             roleBadgeColor = '#0369a1'
                             roleBadgeBorder = '#bae6fd'
                             roleLabel = '👑 Super Admin'
-                            avatarBg = '#0284c7'
                           } else if (rec.role === 'manager') {
                             roleBadgeBg = '#fef3c7'
                             roleBadgeColor = '#92400e'
                             roleBadgeBorder = '#fde68a'
                             roleLabel = '🛡️ Manager / Lead'
-                            avatarBg = '#d97706'
                           } else if (rec.role === 'employee') {
                             roleBadgeBg = '#dcfce7'
                             roleBadgeColor = '#15803d'
                             roleBadgeBorder = '#bbf7d0'
                             roleLabel = '👤 Employee (Sourcer)'
-                            avatarBg = '#10b981'
                           }
 
                           return (
                             <React.Fragment key={rec.id || rec._id}>
                               <tr style={{
                                 opacity: rec.isActive !== false ? 1 : 0.65,
-                                background: isExpanded ? '#f0fdf4' : '#ffffff',
+                                background: isExpanded ? '#eff6ff' : '#ffffff',
                                 borderBottom: '1px solid #e2e8f0',
                                 transition: 'background-color 0.15s ease'
                               }}>
-                                <td style={{ padding: '10px 14px' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                    <div style={{
-                                      width: '32px', height: '32px', borderRadius: '50%',
-                                      background: avatarBg, color: '#ffffff',
-                                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                      fontWeight: '800', fontSize: '12px'
-                                    }}>
-                                      {(rec.name || 'U')[0].toUpperCase()}
-                                    </div>
-                                    <div>
-                                      <strong style={{ display: 'block', color: '#0f172a', fontSize: '13px' }}>
-                                        {rec.name} {isMaster ? '(Primary Owner)' : ''}
-                                      </strong>
-                                      <span style={{ fontSize: '11px', color: '#64748b' }}>{rec.email}</span>
-                                    </div>
+                                {/* Team Member without Circle Avatar */}
+                                <td style={{ padding: '6px 10px' }}>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                                    <span style={{ fontWeight: 'bold', color: '#0033cc', fontSize: '11.5px' }}>
+                                      {rec.name} {isMaster ? '(Primary Owner)' : ''}
+                                    </span>
+                                    <span style={{ fontSize: '10px', color: '#475569', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                                      {rec.email}
+                                    </span>
                                   </div>
                                 </td>
 
-                                <td style={{ padding: '10px 12px' }}>
+                                {/* System Role */}
+                                <td style={{ padding: '6px 10px' }}>
                                   <span style={{
                                     background: roleBadgeBg, color: roleBadgeColor,
                                     border: `1px solid ${roleBadgeBorder}`,
-                                    borderRadius: '12px', padding: '2px 8px', fontSize: '11px', fontWeight: 'bold',
+                                    borderRadius: '2px', padding: '2px 7px', fontSize: '10.5px', fontWeight: 'bold',
                                     display: 'inline-block'
                                   }}>
                                     {roleLabel}
                                   </span>
                                 </td>
 
-                                <td style={{ padding: '10px 12px' }}>
+                                {/* Team Hierarchy / Reporting */}
+                                <td style={{ padding: '6px 10px' }}>
                                   {rec.role === 'employee' ? (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                      <span style={{ color: '#0284c7', fontWeight: 'bold', fontSize: '11.5px', background: '#eff6ff', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bfdbfe' }}>
-                                        ↳ Reports to: {rec.parentRecruiterName || 'Lead Recruiter'}
-                                      </span>
-                                    </div>
+                                    <span style={{ color: '#0284c7', fontWeight: 'bold', fontSize: '10.5px', background: '#eff6ff', padding: '2px 7px', borderRadius: '2px', border: '1px solid #bfdbfe', display: 'inline-block' }}>
+                                      ↳ Reports to: {rec.parentRecruiterName || 'Lead Recruiter'}
+                                    </span>
                                   ) : subordinates.length > 0 ? (
                                     <button
                                       type="button"
@@ -644,9 +633,9 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                                         background: isExpanded ? '#dcfce7' : '#f1f5f9',
                                         color: isExpanded ? '#15803d' : '#1e3a8a',
                                         border: `1px solid ${isExpanded ? '#86efac' : '#cbd5e1'}`,
-                                        padding: '3px 10px',
-                                        borderRadius: '4px',
-                                        fontSize: '11px',
+                                        padding: '2px 8px',
+                                        borderRadius: '2px',
+                                        fontSize: '10.5px',
                                         fontWeight: 'bold',
                                         cursor: 'pointer',
                                         display: 'inline-flex',
@@ -656,18 +645,18 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                                       title="Click to view employees reporting under this recruiter"
                                     >
                                       <span>👥 {subordinates.length} Subordinate{subordinates.length === 1 ? '' : 's'}</span>
-                                      <span>{isExpanded ? '▲ Hide' : '▼ View Team'}</span>
+                                      <span>{isExpanded ? '▲ Hide' : '▼ View'}</span>
                                     </button>
                                   ) : (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                      <span style={{ fontSize: '11px', color: '#94a3b8' }}>Independent Lead</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                      <span style={{ fontSize: '10.5px', color: '#64748b' }}>Independent Lead</span>
                                       {(rec.role === 'recruiter' || rec.role === 'manager' || rec.role === 'superadmin') && (
                                         <button
                                           type="button"
                                           onClick={() => openAddModal(rec.name)}
                                           style={{
-                                            background: '#f8fafc', color: '#4f46e5', border: '1px dashed #a5b4fc',
-                                            padding: '1px 6px', borderRadius: '3px', fontSize: '10.5px', fontWeight: 'bold', cursor: 'pointer'
+                                            background: '#eff6ff', color: '#0033cc', border: '1px solid #bfdbfe',
+                                            padding: '1px 6px', borderRadius: '2px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer'
                                           }}
                                           title={`Add an employee under ${rec.name}`}
                                         >
@@ -678,76 +667,97 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                                   )}
                                 </td>
 
-                                <td style={{ padding: '10px 12px' }}>
-                                  <div style={{ fontSize: '11.5px', color: '#334155' }}>{rec.company || 'SmartHire'}</div>
-                                  <code className="ref-code-badge" style={{ fontSize: '10px' }}>{rec.refCode}</code>
+                                {/* Company & Ref */}
+                                <td style={{ padding: '6px 10px' }}>
+                                  <div style={{ fontSize: '11px', color: '#0f172a', fontWeight: 'bold' }}>{rec.company || 'SmartHire'}</div>
+                                  {rec.refCode && (
+                                    <span style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '2px', padding: '0 4px', fontSize: '9.5px', color: '#475569', fontFamily: 'monospace' }}>
+                                      {rec.refCode}
+                                    </span>
+                                  )}
                                 </td>
 
-                                <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                                  <span style={{ fontWeight: '800', color: '#4f46e5', fontSize: '13px' }}>{count}</span>
+                                {/* Sourced */}
+                                <td style={{ padding: '6px 10px', textAlign: 'center' }}>
+                                  <span style={{ fontWeight: 'bold', color: count > 0 ? '#0033cc' : '#64748b', fontSize: '11.5px' }}>{count}</span>
                                 </td>
 
-                                <td style={{ padding: '10px 12px' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <label className="switch">
+                                {/* Account Status */}
+                                <td style={{ padding: '6px 10px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <label style={{ position: 'relative', display: 'inline-block', width: '28px', height: '16px', margin: 0, cursor: isMaster ? 'not-allowed' : 'pointer' }}>
                                       <input 
                                         type="checkbox" 
                                         checked={rec.isActive !== false} 
                                         disabled={isMaster}
                                         onChange={() => handleToggleStatus(rec.id || rec._id, rec.name)} 
+                                        style={{ opacity: 0, width: 0, height: 0 }}
                                       />
-                                      <span className="slider round"></span>
+                                      <span style={{
+                                        position: 'absolute', cursor: isMaster ? 'not-allowed' : 'pointer', top: 0, left: 0, right: 0, bottom: 0,
+                                        backgroundColor: rec.isActive !== false ? '#4f46e5' : '#cbd5e1',
+                                        transition: '.2s', borderRadius: '16px'
+                                      }}>
+                                        <span style={{
+                                          position: 'absolute', content: '""', height: '12px', width: '12px', left: rec.isActive !== false ? '14px' : '2px', bottom: '2px',
+                                          backgroundColor: 'white', transition: '.2s', borderRadius: '50%'
+                                        }}></span>
+                                      </span>
                                     </label>
-                                    <span style={{ fontSize: '11.5px', fontWeight: '600', color: rec.isActive !== false ? '#16a34a' : '#94a3b8' }}>
+                                    <span style={{ fontSize: '10.5px', fontWeight: 'bold', color: rec.isActive !== false ? '#16a34a' : '#dc2626' }}>
                                       {rec.isActive !== false ? '🟢 Active' : '🔴 Inactive'}
                                     </span>
                                   </div>
                                 </td>
 
-                                <td style={{ padding: '10px 12px', fontSize: '11px', color: '#64748b' }}>
+                                {/* Last Active */}
+                                <td style={{ padding: '6px 10px', fontSize: '10.5px', color: '#475569' }}>
                                   {formatDate(rec.lastLogin)}
                                 </td>
 
-                                <td style={{ padding: '10px 14px', textAlign: 'right' }}>
-                                  <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
+                                {/* Action Buttons */}
+                                <td style={{ padding: '6px 10px', textAlign: 'center' }}>
+                                  <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center' }}>
                                     {(rec.role === 'recruiter' || rec.role === 'manager') && (
                                       <button 
-                                        className="btn btn-sm btn-ghost" 
-                                        style={{ color: '#0284c7', border: '1px solid #bfdbfe', padding: '2px 6px', fontSize: '11px', borderRadius: '3px' }}
+                                        type="button"
+                                        style={{ background: '#eff6ff', color: '#0284c7', border: '1px solid #bfdbfe', padding: '2px 6px', fontSize: '10px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer' }}
                                         onClick={() => openAddModal(rec.name)}
                                         title={`Add new employee under ${rec.name}`}
                                       >
-                                        ➕ Sub-User
+                                        + Sub-User
                                       </button>
                                     )}
                                     <button 
-                                      className="btn btn-sm btn-ghost" 
-                                      style={{ color: '#4f46e5', border: '1px solid #c7d2fe', padding: '2px 6px', fontSize: '11px', borderRadius: '3px' }}
+                                      type="button"
+                                      style={{ background: '#f1f5f9', color: '#0033cc', border: '1px solid #cbd5e1', padding: '2px 7px', fontSize: '10.5px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer' }}
                                       onClick={() => openEditModal(rec)}
                                     >
-                                      ✏️ Edit
+                                      Edit
                                     </button>
-                                    <button 
-                                      className="btn btn-sm btn-ghost" 
-                                      style={{ color: '#dc2626', border: '1px solid #fecaca', padding: '2px 6px', fontSize: '11px', borderRadius: '3px' }}
-                                      onClick={() => handleDeleteRecruiter(rec.id || rec._id, rec.name)}
-                                      disabled={isMaster} 
-                                    >
-                                      🗑️
-                                    </button>
+                                    {!isMaster && (
+                                      <button 
+                                        type="button"
+                                        style={{ background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5', padding: '2px 7px', fontSize: '10.5px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer' }}
+                                        onClick={() => handleDeleteRecruiter(rec.id || rec._id, rec.name)}
+                                        title="Permanently delete user"
+                                      >
+                                        🗑️ Delete
+                                      </button>
+                                    )}
                                   </div>
                                 </td>
                               </tr>
 
                               {isExpanded && (
                                 <tr style={{ background: '#f8fafc' }}>
-                                  <td colSpan="8" style={{ padding: '14px 20px', borderBottom: '2px solid #cbd5e1' }}>
-                                    <div style={{ background: '#ffffff', border: '1px solid #86efac', borderRadius: '6px', padding: '14px 16px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)' }}>
+                                  <td colSpan="8" style={{ padding: '10px 14px', borderBottom: '1px solid #cbd5e1' }}>
+                                    <div style={{ background: '#ffffff', border: '1px solid #86efac', borderRadius: '4px', padding: '10px 12px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
                                       
-                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                          <span style={{ fontSize: '16px' }}>👥</span>
-                                          <strong style={{ color: '#166534', fontSize: '13px' }}>
+                                          <span style={{ fontSize: '14px' }}>👥</span>
+                                          <strong style={{ color: '#166534', fontSize: '11.5px' }}>
                                             Direct Reporting Sub-Team for {rec.name} ({subordinates.length} Employee{subordinates.length === 1 ? '' : 's'})
                                           </strong>
                                         </div>
@@ -756,14 +766,14 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                                           onClick={() => openAddModal(rec.name)}
                                           style={{
                                             background: '#16a34a', color: '#ffffff', border: 'none',
-                                            padding: '4px 12px', fontSize: '11px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer'
+                                            padding: '2px 10px', fontSize: '10.5px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer'
                                           }}
                                         >
-                                          ➕ Add Employee under {rec.name}
+                                          + Add Employee under {rec.name}
                                         </button>
                                       </div>
 
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                         {subordinates.map((subEmp, index) => {
                                           const subSourced = getSourcedCount(subEmp)
                                           return (
@@ -771,45 +781,45 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                                               key={subEmp.id || subEmp._id || index}
                                               style={{
                                                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                                background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '4px', padding: '8px 12px', fontSize: '12px'
+                                                background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '2px', padding: '6px 10px', fontSize: '11px'
                                               }}
                                             >
-                                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                <span style={{ fontWeight: 'bold', color: '#15803d', width: '20px', fontSize: '13px' }}>
+                                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <span style={{ fontWeight: 'bold', color: '#15803d', width: '16px', fontSize: '11px' }}>
                                                   {index + 1}.
                                                 </span>
                                                 <div>
-                                                  <strong style={{ color: '#0f172a', fontSize: '12.5px' }}>{subEmp.name}</strong>
-                                                  <span style={{ color: '#64748b', fontSize: '11px', marginLeft: '6px' }}>({subEmp.email})</span>
+                                                  <strong style={{ color: '#0033cc', fontSize: '11.5px' }}>{subEmp.name}</strong>
+                                                  <span style={{ color: '#475569', fontSize: '10px', fontFamily: 'monospace', marginLeft: '6px' }}>({subEmp.email})</span>
                                                 </div>
-                                                <span style={{ background: '#dcfce7', color: '#166534', padding: '1px 6px', borderRadius: '3px', fontSize: '10.5px', fontWeight: 'bold' }}>
-                                                  👤 Sourcing Specialist
+                                                <span style={{ background: '#dcfce7', color: '#166534', padding: '1px 6px', borderRadius: '2px', fontSize: '10px', fontWeight: 'bold' }}>
+                                                  👤 Sourcing Employee
                                                 </span>
-                                                <span style={{ color: subEmp.isActive !== false ? '#16a34a' : '#dc2626', fontSize: '11px', fontWeight: 'bold' }}>
+                                                <span style={{ color: subEmp.isActive !== false ? '#16a34a' : '#dc2626', fontSize: '10.5px', fontWeight: 'bold' }}>
                                                   {subEmp.isActive !== false ? '🟢 Active' : '🔴 Inactive'}
                                                 </span>
-                                                <span style={{ fontSize: '11px', color: '#475569' }}>
+                                                <span style={{ fontSize: '10.5px', color: '#475569' }}>
                                                   Sourced: <strong style={{ color: '#15803d' }}>{subSourced} Candidates</strong>
                                                 </span>
                                               </div>
 
-                                              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                                                <span style={{ fontSize: '10.5px', color: '#94a3b8', marginRight: '6px' }}>
+                                              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                                                <span style={{ fontSize: '10px', color: '#64748b', marginRight: '6px' }}>
                                                   Last login: {formatDate(subEmp.lastLogin)}
                                                 </span>
                                                 <button
                                                   type="button"
                                                   onClick={() => openEditModal(subEmp)}
-                                                  style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '2px 8px', fontSize: '11px', borderRadius: '3px', cursor: 'pointer', color: '#1e3a8a', fontWeight: 'bold' }}
+                                                  style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '1px 6px', fontSize: '10.5px', borderRadius: '2px', cursor: 'pointer', color: '#0033cc', fontWeight: 'bold' }}
                                                 >
-                                                  ✏️ Edit
+                                                  Edit
                                                 </button>
                                                 <button
                                                   type="button"
                                                   onClick={() => handleDeleteRecruiter(subEmp.id || subEmp._id, subEmp.name)}
-                                                  style={{ background: '#fee2e2', border: '1px solid #fca5a5', padding: '2px 6px', fontSize: '11px', borderRadius: '3px', cursor: 'pointer', color: '#b91c1c' }}
+                                                  style={{ background: '#fee2e2', border: '1px solid #fca5a5', padding: '1px 6px', fontSize: '10.5px', borderRadius: '2px', cursor: 'pointer', color: '#dc2626', fontWeight: 'bold' }}
                                                 >
-                                                  🗑️ Remove
+                                                  🗑️
                                                 </button>
                                               </div>
                                             </div>
@@ -835,48 +845,48 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
 
         {subTab === 'candidates' && (
           <div className="card shadow-sm" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ overflowX: 'auto' }}>
-              <table className="users-table">
+            <div style={{ overflowX: 'auto', border: '1px solid #7f9db9', borderRadius: 0 }}>
+              <table className="users-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', fontFamily: 'Arial, Helvetica, sans-serif', textAlign: 'left', background: '#ffffff' }}>
                 <thead>
-                  <tr style={{ background: '#f8fafc', color: '#475569' }}>
-                    <th style={{ padding: '10px 14px' }}>Candidate Name</th>
-                    <th style={{ padding: '10px 12px' }}>Role / Skill</th>
-                    <th style={{ padding: '10px 12px' }}>Email Address</th>
-                    <th style={{ padding: '10px 12px' }}>Sourced By</th>
-                    <th style={{ padding: '10px 12px' }}>Screening Trust</th>
-                    <th style={{ padding: '10px 12px' }}>Status</th>
-                    <th style={{ padding: '10px 14px', textAlign: 'right' }}>Actions</th>
+                  <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
+                    <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', borderRight: '1px solid rgba(255,255,255,0.2)' }}>CANDIDATE NAME</th>
+                    <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', borderRight: '1px solid rgba(255,255,255,0.2)' }}>ROLE / SKILL</th>
+                    <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', borderRight: '1px solid rgba(255,255,255,0.2)' }}>EMAIL ADDRESS</th>
+                    <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', borderRight: '1px solid rgba(255,255,255,0.2)' }}>SOURCED BY</th>
+                    <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', textAlign: 'center', borderRight: '1px solid rgba(255,255,255,0.2)' }}>SCREENING TRUST</th>
+                    <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', borderRight: '1px solid rgba(255,255,255,0.2)' }}>STATUS</th>
+                    <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', textAlign: 'center', width: '100px' }}>ACTIONS</th>
                   </tr>
                 </thead>
                 <tbody>
                   {allCandidates && allCandidates.length > 0 ? (
                     allCandidates.map(cand => (
-                      <tr key={cand.id || cand._id}>
-                        <td style={{ padding: '10px 14px' }}>
-                          <strong style={{ color: '#0f172a' }}>{cand.name}</strong>
+                      <tr key={cand.id || cand._id} style={{ borderBottom: '1px solid #e2e8f0', background: '#ffffff' }}>
+                        <td style={{ padding: '6px 10px' }}>
+                          <strong style={{ color: '#0033cc', fontSize: '11.5px' }}>{cand.name}</strong>
                         </td>
-                        <td style={{ padding: '10px 12px' }}>{cand.role || 'Software Consultant'}</td>
-                        <td style={{ padding: '10px 12px', color: '#0284c7' }}>{cand.email}</td>
-                        <td style={{ padding: '10px 12px' }}>
-                          <span style={{ background: '#eff6ff', color: '#1e40af', padding: '2px 6px', borderRadius: '3px', fontSize: '11px', fontWeight: 'bold' }}>
+                        <td style={{ padding: '6px 10px', color: '#0f172a' }}>{cand.role || 'Software Consultant'}</td>
+                        <td style={{ padding: '6px 10px', color: '#475569', fontFamily: 'monospace' }}>{cand.email}</td>
+                        <td style={{ padding: '6px 10px' }}>
+                          <span style={{ background: '#eff6ff', color: '#1e40af', padding: '2px 6px', borderRadius: '2px', fontSize: '10.5px', fontWeight: 'bold', border: '1px solid #bfdbfe' }}>
                             {cand.referredByRecruiterName || cand.recruiter || 'Direct'}
                           </span>
                         </td>
-                        <td style={{ padding: '10px 12px' }}>
-                          <strong style={{ color: '#16a34a' }}>{cand.trustScore || '88'}%</strong>
+                        <td style={{ padding: '6px 10px', textAlign: 'center' }}>
+                          <strong style={{ color: '#16a34a', fontSize: '11.5px' }}>{cand.trustScore || '88'}%</strong>
                         </td>
-                        <td style={{ padding: '10px 12px' }}>
-                          <span className={`pill-status status-${(cand.status || 'new').toLowerCase().replace(' ', '-')}`}>
+                        <td style={{ padding: '6px 10px' }}>
+                          <span className={`pill-status status-${(cand.status || 'new').toLowerCase().replace(' ', '-')}`} style={{ fontSize: '10.5px', padding: '2px 6px', borderRadius: '2px' }}>
                             {cand.status || 'Screened'}
                           </span>
                         </td>
-                        <td style={{ padding: '10px 14px', textAlign: 'right' }}>
+                        <td style={{ padding: '6px 10px', textAlign: 'center' }}>
                           <button 
-                            className="btn btn-sm btn-ghost"
+                            type="button"
                             onClick={() => setSelectedCandidate(cand)}
-                            style={{ color: '#4f46e5', border: '1px solid #c7d2fe', padding: '2px 8px', fontSize: '11px' }}
+                            style={{ background: '#f1f5f9', color: '#0033cc', border: '1px solid #cbd5e1', padding: '2px 8px', fontSize: '10.5px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer' }}
                           >
-                            👁️ Details
+                            Details
                           </button>
                         </td>
                       </tr>
