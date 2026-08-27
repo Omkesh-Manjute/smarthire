@@ -7,6 +7,7 @@ import AiMatchingCandidatesModal from '../components/AiMatchingCandidatesModal'
 import ActivityNotificationBell, { pushActivityNotification } from '../components/ActivityNotificationBell'
 import { AuditActivityLogModule, logAuditEvent } from '../ats'
 import { US_STATES } from '../data/usStates'
+import { parseResume } from '../smarthire/utils/parseResume'
 
 function getFullDescriptionText(job) {
   if (!job) return ''
@@ -43,64 +44,88 @@ function parseResumeDetails(text, filename = '') {
   let lastName = ''
   let email = ''
   let phone = ''
-  let city = 'Richmond'
+  let city = ''
   let state = 'VA'
-  let zip = '23173'
-  let exp = '14'
-  let jobTitle = 'Network Administrator / Consultant'
+  let zip = ''
+  let exp = '5'
+  let jobTitle = 'Consultant'
+  let skills = []
 
   if (text) {
-    const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/)
-    if (emailMatch) email = emailMatch[0]
+    // 1. Email Extraction - match all valid email patterns
+    const emailMatches = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g)
+    if (emailMatches && emailMatches.length > 0) {
+      // Pick first non-generic email
+      email = emailMatches.find(em => !em.includes('example.com') && !em.includes('dummy')) || emailMatches[0]
+      email = email.trim()
+    }
 
-    const phoneMatch = text.match(/(?:\+?\d{1,3}[\s-]?)?\(?\d{3}\)?[\s-]?\d{3}[\s-]?\d{4}/)
-    if (phoneMatch) phone = phoneMatch[0]
+    // 2. Phone Extraction - match US and international phone formats
+    const phonePatterns = [
+      /(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/,
+      /\b\d{3}[-.\s]\d{3}[-.\s]\d{4}\b/,
+      /\b\d{10}\b/,
+      /\+?\d{1,3}[-.\s]?\d{3,5}[-.\s]?\d{3,5}/
+    ]
+    for (const pattern of phonePatterns) {
+      const m = text.match(pattern)
+      if (m) {
+        phone = m[0].trim()
+        break
+      }
+    }
 
-    const locMatch = text.match(/([A-Z][a-zA-Z\s]{2,15}),\s*([A-Z]{2})(?:\s*(\d{5}))?/)
+    // 3. Location Extraction
+    const locMatch = text.match(/([A-Z][a-zA-Z\s]{2,18}),\s*([A-Z]{2})(?:\s*(\d{5}))?/)
     if (locMatch) {
       city = locMatch[1].trim()
-      state = locMatch[2].trim()
+      state = locMatch[2].trim().toUpperCase()
       if (locMatch[3]) zip = locMatch[3].trim()
     }
 
-    const expMatch = text.match(/(\d{1,2})\+?\s*(?:years|yrs)/i)
+    // 4. Experience Extraction
+    const expMatch = text.match(/(\d{1,2})\+?\s*(?:years|yrs|year)\s*(?:of)?\s*(?:experience|exp)?/i)
     if (expMatch) exp = expMatch[1]
 
-    const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
-    if (lines.length > 0) {
-      const nameParts = lines[0].replace(/[^a-zA-Z\s]/g, '').split(' ').filter(Boolean)
-      if (nameParts.length >= 2) {
-        firstName = nameParts[0]
-        lastName = nameParts.slice(1).join(' ')
-      } else if (nameParts.length === 1) {
-        firstName = nameParts[0]
-        lastName = 'Candidate'
+    // 5. Name Extraction from top lines
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
+    for (let i = 0; i < Math.min(6, lines.length); i++) {
+      const line = lines[i]
+      if (line.includes('@') || /http|www|linkedin|github|phone|tel|curriculum|vitae|resume/i.test(line)) continue
+      if (/\d{4,}/.test(line)) continue
+      const cleanWords = line.replace(/[^a-zA-Z\s.'-]/g, '').trim().split(/\s+/).filter(Boolean)
+      if (cleanWords.length >= 2 && cleanWords.length <= 4) {
+        firstName = cleanWords[0]
+        lastName = cleanWords.slice(1).join(' ')
+        break
       }
     }
   }
 
+  // 6. Filename fallback for Name
   if (!firstName && filename) {
     const cleanName = filename.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z\s_-]/g, ' ')
-    const parts = cleanName.split(/[\s_-]+/).filter(Boolean)
+    const parts = cleanName.split(/[\s_-]+/).filter(w => !['resume', 'cv', 'profile', 'latest', 'updated', 'pdf', 'doc', 'docx'].includes(w.toLowerCase()))
     if (parts.length >= 2) {
       firstName = parts[0]
-      lastName = parts[1]
+      lastName = parts.slice(1).join(' ')
     } else if (parts.length === 1) {
       firstName = parts[0]
-      lastName = 'Candidate'
+      lastName = ''
     }
   }
 
   return {
-    firstName: firstName || 'Ashok',
-    lastName: lastName || 'Ganta',
-    email: email || 'ashok57800@gmail.com',
-    phone: phone || '571-660-5778',
+    firstName: firstName || 'Candidate',
+    lastName: lastName || '',
+    name: `${firstName || 'Candidate'} ${lastName || ''}`.trim(),
+    email: email || '',
+    phone: phone || '',
     city: city || 'Richmond',
     state: state || 'VA',
-    zip: zip || '23173',
-    exp: exp || '14',
-    jobTitle: jobTitle || 'VDOT Network Administrator 4',
+    zip: zip || '',
+    exp: exp || '5',
+    jobTitle: jobTitle || 'Consultant',
     resumeTitle: filename ? filename.replace(/\.[^/.]+$/, '') : `${firstName || 'Candidate'}_Resume`,
   }
 }
@@ -6428,7 +6453,7 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
               </div>
 
               {/* Body Form */}
-              <form onSubmit={e => {
+              <form onSubmit={async e => {
                 e.preventDefault()
                 const fullName = `${candidateIntakeData.firstName.trim()} ${candidateIntakeData.lastName.trim()}`.trim() || candidateIntakeData.name.trim()
                 if (!fullName) {
@@ -6441,7 +6466,10 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
 
                 const updatedCandObj = {
                   id: candId,
+                  canId: candId,
                   name: fullName,
+                  firstName: candidateIntakeData.firstName,
+                  lastName: candidateIntakeData.lastName,
                   fullRole: candidateIntakeData.fullRole || candidateIntakeData.role || 'Software Consultant',
                   role: candidateIntakeData.role || candidateIntakeData.fullRole || 'Consultant',
                   exp: candidateIntakeData.exp || '5',
@@ -6451,7 +6479,7 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                   payRate: `$${String(candidateIntakeData.payRate).replace(/[^0-9]/g, '') || '75'} /hr`,
                   rateType: candidateIntakeData.rateType || 'C2C',
                   rating: 5,
-                  subVendor: 'Direct Sourcing',
+                  subVendor: candidateIntakeData.subVendor || 'Direct Sourcing',
                   recruiter: userName,
                   addedByName: userName,
                   submittedBy: userName,
@@ -6460,16 +6488,18 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                   parentRecruiterName: currentUser?.parentRecruiterName || '',
                   agrExists: false,
                   avblDate: 'Immediate',
-                  email: candidateIntakeData.email || `${candidateIntakeData.firstName.toLowerCase() || 'cand'}@example.com`,
-                  phone: candidateIntakeData.phone || '571-555-0199',
+                  email: candidateIntakeData.email || '',
+                  phone: candidateIntakeData.phone || '',
                   workAuth: candidateIntakeData.workAuth || 'US Citizen',
-                  skills: candidateIntakeData.skills ? candidateIntakeData.skills.split(',').map(s => s.trim()).filter(Boolean) : ['Java', 'Cloud', 'SQL'],
+                  skills: candidateIntakeData.skills ? (typeof candidateIntakeData.skills === 'string' ? candidateIntakeData.skills.split(',').map(s => s.trim()).filter(Boolean) : candidateIntakeData.skills) : ['Technical Consultant'],
                   resumeName: candidateIntakeData.resumeName || `${fullName.replace(/\s+/g, '_')}_Resume.pdf`,
+                  resumeData: candidateIntakeData.resumeData || null,
+                  resumeText: candidateIntakeData.resumeText || '',
                   screened: 'Yes',
                   dateAdded: dateStr
                 }
 
-                // Update or Add to Candidates State
+                // 1. Update or Add to Candidates State & LocalStorage
                 setCandidates(prev => {
                   const filtered = prev.filter(c => c.id !== candId && c.name.toLowerCase() !== fullName.toLowerCase())
                   const merged = [updatedCandObj, ...filtered]
@@ -6479,7 +6509,51 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                   return merged
                 })
 
-                // Optional: Submit directly to selected requisition
+                // 2. Persist candidate details override
+                try {
+                  localStorage.setItem(`smarthire_candidate_details_${candId}`, JSON.stringify({
+                    firstName: candidateIntakeData.firstName,
+                    lastName: candidateIntakeData.lastName,
+                    email: candidateIntakeData.email,
+                    phoneCell: candidateIntakeData.phone,
+                    jobTitle: candidateIntakeData.fullRole || candidateIntakeData.role,
+                    city: candidateIntakeData.city,
+                    state: candidateIntakeData.state,
+                    payRate: candidateIntakeData.payRate,
+                    rateType: candidateIntakeData.rateType,
+                    workAuth: candidateIntakeData.workAuth,
+                    experience: candidateIntakeData.exp,
+                    comments: candidateIntakeData.comments
+                  }))
+                } catch (e) {}
+
+                // 3. Persist documents mapping with real uploaded resume
+                if (candidateIntakeData.resumeData || candidateIntakeData.resumeName) {
+                  try {
+                    const currentDocs = JSON.parse(localStorage.getItem(`smarthire_candidate_docs_${candId}`) || '{}')
+                    currentDocs.resume = {
+                      title: candidateIntakeData.resumeName || `${fullName}_Resume.pdf`,
+                      fileName: candidateIntakeData.resumeName || `${fullName}_Resume.pdf`,
+                      uploadedOn: dateStr,
+                      status: 'Uploaded',
+                      size: '210 KB',
+                      fileData: candidateIntakeData.resumeData || null,
+                      resumeText: candidateIntakeData.resumeText || ''
+                    }
+                    localStorage.setItem(`smarthire_candidate_docs_${candId}`, JSON.stringify(currentDocs))
+                  } catch (e) {}
+                }
+
+                // 4. Save to Backend Database API
+                try {
+                  fetch('/api/candidates', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedCandObj)
+                  })
+                } catch (e) {}
+
+                // 5. Optional: Submit directly to selected requisition
                 if (candidateIntakeData.targetJobId) {
                   const cleanReqId = String(candidateIntakeData.targetJobId).replace('J-', '')
                   let existingSubmissions = []
@@ -6489,7 +6563,7 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                   } catch (err) {}
 
                   const subObj = {
-                    id: `CAND-${Date.now().toString().slice(-5)}`,
+                    id: candId,
                     name: fullName,
                     payRate: `$${String(candidateIntakeData.payRate).replace(/[^0-9]/g, '') || '75'}/hr`,
                     payRateType: candidateIntakeData.rateType || 'C2C',
@@ -6504,9 +6578,10 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                     lastChangedOn: new Date().toLocaleDateString()
                   }
 
-                  const updatedSubmissions = [subObj, ...existingSubmissions]
+                  const updatedSubmissions = [subObj, ...existingSubmissions.filter(s => s.id !== candId)]
                   try {
                     localStorage.setItem(`smarthire_potential_candidates_${cleanReqId}`, JSON.stringify(updatedSubmissions))
+                    localStorage.setItem(`smarthire_potential_candidates_J-${cleanReqId}`, JSON.stringify(updatedSubmissions))
                   } catch (err) {}
 
                   if (String(selectedReq?.id || '').replace('J-', '') === cleanReqId) {
@@ -6525,28 +6600,98 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                     <span>📄 Smart Resume Upload (*.pdf, *.docx, *.doc)</span>
                   </div>
                   <div style={{ fontSize: '11px', color: '#475569', marginBottom: '8px' }}>
-                    Upload or replace candidate resume to auto-fill candidate name, skills, and contact details:
+                    Upload or replace candidate resume to auto-fill candidate name, skills, email, and contact number:
                   </div>
                   <input
                     type="file"
                     accept=".pdf,.doc,.docx"
-                    onChange={e => {
+                    onChange={async e => {
                       const file = e.target.files[0]
                       if (!file) return
-                      const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ')
-                      const words = cleanName.split(' ').filter(w => !['resume', 'cv', 'profile', 'latest', 'updated'].includes(w.toLowerCase()))
-                      const fName = words[0] || 'Candidate'
-                      const lName = words.slice(1).join(' ') || 'Profile'
 
-                      setCandidateIntakeData(prev => ({
-                        ...prev,
-                        resumeName: file.name,
-                        resumeFile: file,
-                        firstName: prev.firstName || fName,
-                        lastName: prev.lastName || lName,
-                        name: `${prev.firstName || fName} ${prev.lastName || lName}`,
-                        email: prev.email || `${fName.toLowerCase()}.${lName.toLowerCase()}@gmail.com`
-                      }))
+                      // Read DataURL for Live Viewer & preview
+                      const reader = new FileReader()
+                      reader.onload = async (uploadEvt) => {
+                        const dataUrl = uploadEvt.target.result
+
+                        let parsedText = ''
+                        let parsedEmail = ''
+                        let parsedPhone = ''
+                        let parsedLocation = ''
+                        let parsedSkills = []
+                        let parsedTitle = ''
+                        let parsedExp = ''
+                        let parsedName = ''
+
+                        // Try server parser
+                        try {
+                          const fd = new FormData()
+                          fd.append('resume', file)
+                          const res = await fetch('/api/parse-resume', { method: 'POST', body: fd })
+                          if (res.ok) {
+                            const json = await res.json()
+                            parsedText = json.text || ''
+                            parsedEmail = json.email || ''
+                            parsedPhone = json.phone || ''
+                            parsedLocation = json.location || ''
+                          }
+                        } catch (err) {}
+
+                        // Client-side extraction fallback
+                        if (parsedText) {
+                          const clientExtracted = parseResume(parsedText)
+                          if (!parsedEmail && clientExtracted.email) parsedEmail = clientExtracted.email
+                          if (!parsedPhone && clientExtracted.phone) parsedPhone = clientExtracted.phone
+                          if (clientExtracted.name && clientExtracted.name !== 'Unknown') parsedName = clientExtracted.name
+                          if (clientExtracted.title && clientExtracted.title !== 'Software Engineer') parsedTitle = clientExtracted.title
+                          if (clientExtracted.skills) parsedSkills = clientExtracted.skills
+                          if (clientExtracted.experience) parsedExp = clientExtracted.experience.replace(/[^0-9]/g, '')
+                          if (!parsedLocation && clientExtracted.location) parsedLocation = clientExtracted.location
+                        }
+
+                        // Filename fallback for Name
+                        let fName = ''
+                        let lName = ''
+                        if (parsedName) {
+                          const parts = parsedName.trim().split(/\s+/)
+                          fName = parts[0]
+                          lName = parts.slice(1).join(' ')
+                        } else {
+                          const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ')
+                          const words = cleanName.split(' ').filter(w => !['resume', 'cv', 'profile', 'latest', 'updated', 'pdf', 'doc', 'docx'].includes(w.toLowerCase()))
+                          fName = words[0] || 'Candidate'
+                          lName = words.slice(1).join(' ') || ''
+                        }
+
+                        let city = ''
+                        let state = 'VA'
+                        if (parsedLocation) {
+                          const locParts = parsedLocation.split(',').map(s => s.trim())
+                          if (locParts[0]) city = locParts[0]
+                          if (locParts[1]) state = locParts[1].slice(0, 2).toUpperCase()
+                        }
+
+                        setCandidateIntakeData(prev => ({
+                          ...prev,
+                          resumeName: file.name,
+                          resumeFile: file,
+                          resumeData: dataUrl,
+                          resumeText: parsedText,
+                          firstName: fName || prev.firstName,
+                          lastName: lName || prev.lastName,
+                          name: `${fName || prev.firstName} ${lName || prev.lastName}`.trim(),
+                          email: parsedEmail || prev.email || '',
+                          phone: parsedPhone || prev.phone || '',
+                          skills: parsedSkills.length > 0 ? (Array.isArray(parsedSkills) ? parsedSkills.join(', ') : parsedSkills) : prev.skills,
+                          fullRole: parsedTitle || prev.fullRole || prev.role || 'Consultant',
+                          role: parsedTitle || prev.role || 'Consultant',
+                          exp: parsedExp || prev.exp || '5',
+                          city: city || prev.city || 'Richmond',
+                          state: state || prev.state || 'VA',
+                          location: city ? `${city}, ${state}` : prev.location
+                        }))
+                      }
+                      reader.readAsDataURL(file)
                     }}
                     style={{ fontSize: '11.5px' }}
                   />

@@ -1219,6 +1219,53 @@ app.get('/api/candidates', authenticateToken, async (req, res) => {
   });
 });
 
+// ─── POST /api/candidates — Create or update candidate ──────────────────────
+app.post('/api/candidates', authenticateToken, (req, res) => {
+  const candidateData = req.body
+  if (!candidateData || !candidateData.name) {
+    return res.status(400).json({ success: false, message: 'Candidate name is required.' })
+  }
+  const candId = String(candidateData.id || candidateData.candidate_id || `875${Date.now().toString().slice(-4)}`)
+  const newCandidate = {
+    ...candidateData,
+    id: candId,
+    candidate_id: candId,
+    name: candidateData.name,
+    email: candidateData.email || '',
+    phone: candidateData.phone || '',
+    role: candidateData.role || candidateData.fullRole || 'Consultant',
+    location: candidateData.location || `${candidateData.city || ''}, ${candidateData.state || ''}`,
+    status: candidateData.status || 'Int-SubmittedToManager',
+    updatedAt: new Date().toISOString()
+  }
+
+  const existingIdx = candidatesStore.findIndex(c => String(c.id) === candId || String(c.candidate_id) === candId)
+  if (existingIdx >= 0) {
+    candidatesStore[existingIdx] = { ...candidatesStore[existingIdx], ...newCandidate }
+  } else {
+    candidatesStore.unshift(newCandidate)
+  }
+  saveCandidatesToDisk()
+  res.json({ success: true, candidate: newCandidate })
+})
+
+// ─── PUT /api/candidates/:id — Update candidate ─────────────────────────────
+app.put('/api/candidates/:id', authenticateToken, (req, res) => {
+  const candId = String(req.params.id)
+  const updateData = req.body
+  const existingIdx = candidatesStore.findIndex(c => String(c.id) === candId || String(c.candidate_id) === candId)
+  if (existingIdx >= 0) {
+    candidatesStore[existingIdx] = { ...candidatesStore[existingIdx], ...updateData, updatedAt: new Date().toISOString() }
+    saveCandidatesToDisk()
+    return res.json({ success: true, candidate: candidatesStore[existingIdx] })
+  } else {
+    const newCandidate = { ...updateData, id: candId, candidate_id: candId, updatedAt: new Date().toISOString() }
+    candidatesStore.unshift(newCandidate)
+    saveCandidatesToDisk()
+    return res.json({ success: true, candidate: newCandidate })
+  }
+})
+
 // ─── GET /api/candidates/:id — Returns a single candidate ────────────────────
 app.get('/api/candidates/:id', authenticateToken, (req, res) => {
   const candidate = candidatesStore.find(c => c.candidate_id === req.params.id)
