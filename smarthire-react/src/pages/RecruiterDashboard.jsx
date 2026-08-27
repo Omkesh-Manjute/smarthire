@@ -14,29 +14,61 @@ function getFullDescriptionText(job) {
   const raw = job.rawDescription || job.fullDescription || job.rawText || job.details || job.rawJd
   if (raw && raw.length > 50) return raw
 
-  if (job.description && job.description.length > 50 && !job.description.startsWith('Looking for a')) {
+  if (job.description && job.description.length > 50 && !job.description.startsWith('Looking for a') && !job.description.startsWith('Start date :')) {
     return job.description
   }
 
+  const jobTitle = job.title || 'Lead Business Analyst'
+  const clientName = job.client || job.customer || 'State Of SC'
   const reqSkills = Array.isArray(job.skills) && job.skills.length > 0
     ? job.skills.join(', ')
-    : 'Technical leadership, architectural design, cloud deployments'
+    : 'Business Analysis, Requirements Gathering (BRD/FRD), Agile / Scrum ceremonies, JIRA, SQL Data Validation, Stakeholder Coordination'
 
   const prefSkills = Array.isArray(job.preferredSkills) && job.preferredSkills.length > 0
     ? job.preferredSkills.join(', ')
-    : Array.isArray(job.preferred_skills) && job.preferred_skills.length > 0
-    ? job.preferred_skills.join(', ')
-    : 'PMP Certification, Bachelors Degree in IT Related Field, Agile / Scrum Delivery'
+    : 'PMP / PMI-PBA Certification, Bachelors Degree in IT Related Field, Public Sector / State Government Transformation Experience'
 
   const expText = job.experience && job.experience !== 'TBD' && job.experience !== 'Any'
-    ? job.experience
-    : '5+ years'
+    ? (String(job.experience).includes('year') ? job.experience : `${job.experience}+ years`)
+    : '6+ years'
 
-  const locText = job.location || 'Columbia, SC'
-  const modeText = job.work_mode || job.workMode || 'Hybrid'
-  const deadlineText = job.deadline || '08/28 at 5:00 PM EST'
+  const locText = job.location || 'Columbia, SC 29210'
+  const modeText = job.work_mode || job.workMode || 'Hybrid (2 days onsite / 3 days remote)'
+  const deadlineText = job.deadline || '09/01/2026 at 5:00 PM EST'
+  const startDateText = job.creationDate || job.startDate || '10/23/2026'
+  const durationText = job.duration ? `${job.duration} Months` : '12 Months (with option to extend)'
 
-  return `Start date :${job.creationDate || '10/23/2026'}\nEnd Date   :${job.duration || '12 Months from projected start date'}\n\nSubmission deadline :${deadlineText}\n\nClient Info : ${job.client || 'ADMIN'}\n\nNote:\n* Interview Process: 1 round, Virtual/Online\n* Work Location: ${modeText} - schedule will be determined by the hiring manager after the start date.\n* Candidate Location: ${locText}\n\nRequired Skills & Experience:\n* Experience: ${expText}\n* Core Skills: ${reqSkills}\n* Certifications & Preferred: ${prefSkills}`
+  return `POSITION: ${jobTitle}
+CLIENT: ${clientName}
+START DATE: ${startDateText}
+DURATION: ${durationText}
+SUBMISSION DEADLINE: ${deadlineText}
+WORK LOCATION: ${locText} (${modeText})
+
+SCOPE OF WORK & POSITION SUMMARY:
+The ${clientName} is seeking a senior, highly accomplished ${jobTitle} to join the enterprise transformation delivery team. The consultant will be responsible for leading business requirements elicitation, authoring formal Business Requirements Documents (BRD) and Functional Requirements Specifications (FRD), defining sprint backlogs and user stories in JIRA, and facilitating cross-functional alignment between technical architecture leads, development teams, and executive stakeholders.
+
+KEY RESPONSIBILITIES:
+• Lead stakeholder interview sessions, requirements discovery workshops, and business process modeling sessions.
+• Create high-quality, comprehensive documentation including BRDs, FRDs, Process Flow Diagrams (UML), and Traceability Matrices.
+• Collaborate closely with Solution Architects and Database Engineers to validate technical feasibility and data mapping models.
+• Drive Agile/Scrum ceremonies, sprint backlog grooming, sprint planning, and user story refinement with clear Acceptance Criteria.
+• Coordinate User Acceptance Testing (UAT), authoring test scenarios and managing defect triage through resolution.
+• Provide executive project status reporting, risk mitigation plans, and delivery milestones to state leadership.
+
+REQUIRED QUALIFICATIONS & SKILLS:
+• Experience: ${expText} of progressive experience as a Business Analyst / Systems Analyst in enterprise environments.
+• Core Technical Skills: ${reqSkills}
+• Strong proficiency in requirements lifecycle management, JIRA, Confluence, Visio/Lucidchart, and SQL queries.
+• Exceptional written and verbal communication skills with proven ability to present to senior leadership.
+
+PREFERRED QUALIFICATIONS:
+• Certifications: ${prefSkills}
+• Prior experience working within public sector, state agency, or municipal digital transformation programs.
+
+INTERVIEW & SELECTION PROCESS:
+• Round 1: Virtual Technical Screening & Behavioral Assessment (Microsoft Teams / WebEx)
+• Round 2: Final Stakeholder Video Interview`
 }
 
 function parseResumeDetails(text, filename = '') {
@@ -1240,14 +1272,27 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
   // Open Requisition Detail
   const handleOpenReq = (job) => {
+    if (!job) return
     setSelectedReq(job)
     setViewMode('requisition')
     setActiveReqTab('details')
-    const fullDesc = getFullDescriptionText(job)
-    const assigned = Array.isArray(job.assignedRecruiters) ? job.assignedRecruiters : getJobAssignedRecruiters(job.id)
+    
     const rawId = String(job.id || '')
     const cleanId = rawId.replace('J-', '').replace('REQ-', '').trim()
     const fullId = `J-${cleanId}`
+
+    let savedReq = {}
+    try {
+      const raw = localStorage.getItem(`smarthire_req_${cleanId}`) ||
+                  localStorage.getItem(`smarthire_req_${rawId}`) ||
+                  localStorage.getItem(`smarthire_req_${fullId}`)
+      if (raw) savedReq = JSON.parse(raw)
+    } catch(e) {}
+
+    const fullDesc = savedReq.description || job.description || getFullDescriptionText(job)
+    const assigned = (savedReq.assignedRecruiters && savedReq.assignedRecruiters.length > 0)
+      ? savedReq.assignedRecruiters
+      : (Array.isArray(job.assignedRecruiters) ? job.assignedRecruiters : getJobAssignedRecruiters(job.id))
 
     // Load candidates specifically for this requisition
     try {
@@ -1297,45 +1342,103 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     } catch (e) {}
 
     setEditingFields({
-      title: job.title || '',
-      startDate: job.creationDate || '10/23/2026',
-      duration: job.duration || '12',
+      id: rawId || fullId,
+      title: savedReq.title || job.title || 'Lead Business Analyst',
+      startDate: savedReq.startDate || job.creationDate || job.startDate || '10/23/2026',
+      duration: savedReq.duration || job.duration || '12',
       durationUnit: 'months',
-      customer: job.client || 'State Of SC',
-      endClient: job.client || 'State Of SC',
-      contact: job.contact || 'Hustedt Lexi',
-      numPositions: job.numPositions || '1',
-      deadline: job.deadline || '8/28/2026',
-      maxSubmissions: job.maxSubmissions || '2',
-      category: job.category || 'SP',
-      type: job.type || 'Contract',
-      address: job.address || '4430 Broad Rd.',
-      city: job.city || 'Columbia',
-      state: job.state || 'SC',
-      zip: job.zip || '29210',
-      location: job.location || 'Columbia, SC 29210',
-      billRate: job.billRate || '90',
-      payRate: job.budget ? job.budget.replace(/[^0-9]/g, '').slice(0, 3) || '75' : '75',
-      interview: 'Select',
-      workAuth: 'Select',
-      subcontractable: 'No',
-      employmentType: 'Contract',
-      experience: job.experience ? (job.experience.replace(/[^0-9]/g, '') || '5') : '5',
+      customer: savedReq.customer || job.client || job.customer || 'State Of SC',
+      endClient: savedReq.endClient || job.client || job.customer || 'State Of SC',
+      contact: savedReq.contact || job.contact || 'Hustedt Lexi',
+      numPositions: savedReq.numPositions || job.numPositions || '1',
+      deadline: savedReq.deadline || job.deadline || '2026-09-01',
+      maxSubmissions: savedReq.maxSubmissions || job.maxSubmissions || '2',
+      category: savedReq.category || job.category || 'SP',
+      type: savedReq.type || job.type || 'Contract',
+      address: savedReq.address || job.address || '4430 Broad Rd.',
+      city: savedReq.city || job.city || 'Columbia',
+      state: savedReq.state || job.state || 'SC',
+      zip: savedReq.zip || job.zip || '29210',
+      location: savedReq.location || job.location || 'Columbia, SC 29210',
+      billRate: savedReq.billRate || job.billRate || '90',
+      payRate: savedReq.payRate || (job.budget ? String(job.budget).replace(/[^0-9]/g, '').slice(0, 3) : '75') || '75',
+      interview: savedReq.interview || 'Select',
+      workAuth: savedReq.workAuth || 'Select',
+      subcontractable: savedReq.subcontractable || 'No',
+      employmentType: savedReq.employmentType || 'Contract',
+      experience: savedReq.experience || (job.experience ? (String(job.experience).replace(/[^0-9]/g, '') || '6') : '6'),
       description: fullDesc,
-      skills: Array.isArray(job.skills) ? job.skills : ['PMP Certification', 'Bachelors Degree In An IT Related Field', 'Project Management'],
-      desiredSkills: Array.isArray(job.preferredSkills) ? job.preferredSkills : ['Cloud Security', 'Public Sector Experience'],
-      status: job.status === 'Active' ? 'In-Progress' : (job.status || 'In-Progress'),
+      skills: Array.isArray(savedReq.skills) ? savedReq.skills : (Array.isArray(job.skills) ? job.skills : ['Business Analysis', 'Requirements Gathering', 'Agile / Scrum', 'SQL']),
+      desiredSkills: Array.isArray(savedReq.desiredSkills) ? savedReq.desiredSkills : (Array.isArray(job.preferredSkills) ? job.preferredSkills : ['Public Sector Experience', 'Cloud Security']),
+      status: savedReq.status || (job.status === 'Active' ? 'In-Progress' : (job.status || 'In-Progress')),
       assignedRecruiters: assigned,
-      keyReq: false,
-      working: true,
-      hotReq: false,
-      incumbentVendor: false,
-      createdBy: job.createdBy || 'admin',
-      createdOn: job.createdOn || (job.creationDate ? `${job.creationDate} 11:40:14 AM` : '2026-08-26 11:40:14 AM'),
-      lastUpdatedBy: job.lastUpdatedBy || 'kautilya',
-      lastUpdatedOn: job.lastUpdatedOn || '8/26/2026 11:43:52 AM'
+      keyReq: savedReq.keyReq || false,
+      working: savedReq.working !== undefined ? savedReq.working : true,
+      hotReq: savedReq.hotReq || false,
+      incumbentVendor: savedReq.incumbentVendor || false,
+      createdBy: savedReq.createdBy || job.createdBy || 'admin',
+      createdOn: savedReq.createdOn || job.createdOn || (job.creationDate ? `${job.creationDate} 11:40:14 AM` : '2026-08-26 11:40:14 AM'),
+      lastUpdatedBy: savedReq.lastUpdatedBy || job.lastUpdatedBy || userName,
+      lastUpdatedOn: savedReq.lastUpdatedOn || job.lastUpdatedOn || '8/26/2026 11:43:52 AM'
     })
   }
+
+  // Open Full Candidate Detail View with unified master candidate data
+  const handleOpenCandidateView = (candObj) => {
+    if (!candObj) return
+    const candId = String(candObj.id || candObj.canId || '')
+    const cleanId = candId.replace('CAND-', '').replace('cand-', '').trim()
+    const candName = (candObj.name || '').trim().toLowerCase()
+
+    // Find master candidate in candidates array
+    const matchedMaster = candidates.find(c => 
+      String(c.id) === candId || 
+      String(c.id) === cleanId || 
+      String(c.canId) === candId ||
+      String(c.canId) === cleanId ||
+      (c.name && c.name.toLowerCase() === candName)
+    )
+
+    let detailsOverride = {}
+    try {
+      const saved = localStorage.getItem(`smarthire_candidate_details_${cleanId}`) ||
+                    localStorage.getItem(`smarthire_candidate_details_${candId}`)
+      if (saved) detailsOverride = JSON.parse(saved)
+    } catch (e) {}
+
+    let docsOverride = {}
+    try {
+      const saved = localStorage.getItem(`smarthire_candidate_docs_${cleanId}`) ||
+                    localStorage.getItem(`smarthire_candidate_docs_${candId}`)
+      if (saved) docsOverride = JSON.parse(saved)
+    } catch (e) {}
+
+    const mergedCand = {
+      ...candObj,
+      ...(matchedMaster || {}),
+      ...detailsOverride,
+      jobId: selectedReq?.id || candObj.jobId || matchedMaster?.jobId,
+      reqId: selectedReq?.id || candObj.reqId || matchedMaster?.reqId,
+      jobTitle: detailsOverride.jobTitle || matchedMaster?.jobTitle || candObj.jobTitle || matchedMaster?.fullRole || candObj.fullRole || selectedReq?.title || 'Lead Business Analyst',
+      email: detailsOverride.email || matchedMaster?.email || candObj.email || candObj.candidateEmail || '',
+      phone: detailsOverride.phoneCell || matchedMaster?.phone || candObj.phone || '',
+      phoneCell: detailsOverride.phoneCell || matchedMaster?.phoneCell || candObj.phoneCell || candObj.phone || '',
+      skills: matchedMaster?.skills || candObj.skills || detailsOverride.skills || [],
+      resumeName: docsOverride.resume?.fileName || matchedMaster?.resumeName || candObj.resumeName || `${candObj.name || 'Candidate'}_Resume.pdf`,
+      resumeData: docsOverride.resume?.fileData || matchedMaster?.resumeData || candObj.resumeData || null,
+      resumeText: docsOverride.resume?.resumeText || matchedMaster?.resumeText || candObj.resumeText || ''
+    }
+
+    setSelectedViewCandidate(mergedCand)
+    setShowDetailViewModal(true)
+  }
+
+  // Auto-sync editingFields when requisition view is active
+  useEffect(() => {
+    if (selectedReq && (!editingFields.title || editingFields.title === '' || (editingFields.id && !String(editingFields.id).includes(String(selectedReq.id).replace('J-', ''))))) {
+      handleOpenReq(selectedReq)
+    }
+  }, [selectedReq?.id, viewMode])
 
   // ─── AI PROACTIVE CANDIDATE MATCHMAKER & RECRUITER ALERT ENGINE ───
   const runAiMatchForJob = (jobObj, options = { notifyRecruiter: true }) => {
@@ -2371,10 +2474,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
                             {/* Name Link */}
                             <td style={{ padding: '4px 8px' }}>
-                              <span onClick={() => {
-                                setSelectedViewCandidate(c)
-                                setShowDetailViewModal(true)
-                              }} style={{ color: '#0033cc', cursor: 'pointer', textDecoration: 'none' }}
+                              <span onClick={() => handleOpenCandidateView(c)} style={{ color: '#0033cc', cursor: 'pointer', textDecoration: 'none' }}
                               onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
                               onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}>
                                 {c.name}
@@ -2418,10 +2518,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
                             {/* Resume Icon */}
                             <td style={{ padding: '4px 6px', textAlign: 'center' }}>
-                              <span onClick={() => {
-                                setSelectedViewCandidate(c)
-                                setShowDetailViewModal(true)
-                              }} style={{ cursor: 'pointer', fontSize: '13px' }} title="View Details, Submission & Resume History">
+                              <span onClick={() => handleOpenCandidateView(c)} style={{ cursor: 'pointer', fontSize: '13px' }} title="View Details, Submission & Resume History">
                                 📄
                               </span>
                             </td>
@@ -2431,10 +2528,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                               <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', alignItems: 'center' }}>
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    setSelectedViewCandidate(c)
-                                    setShowDetailViewModal(true)
-                                  }}
+                                  onClick={() => handleOpenCandidateView(c)}
                                   style={{
                                     background: '#f1f5f9',
                                     color: '#0033cc',
@@ -4220,19 +4314,13 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                               <tr key={pc.id} style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
                                 <td style={{ padding: '4px 6px' }}>
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                                    <span onClick={() => {
-                                      setSelectedViewCandidate(pc)
-                                      setShowDetailViewModal(true)
-                                    }} style={{ color: '#0033cc', cursor: 'pointer', textDecoration: 'none', fontWeight: 'normal' }}
+                                    <span onClick={() => handleOpenCandidateView(pc)} style={{ color: '#0033cc', cursor: 'pointer', textDecoration: 'none', fontWeight: 'normal' }}
                                     onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
                                     onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}>
                                       {pc.name}
                                     </span>
                                     <span
-                                      onClick={() => {
-                                        setSelectedViewCandidate(pc)
-                                        setShowDetailViewModal(true)
-                                      }}
+                                      onClick={() => handleOpenCandidateView(pc)}
                                       style={{ fontSize: '9.5px', color: '#0033cc', cursor: 'pointer' }}
                                     >
                                       📄 View Details & History
@@ -4414,10 +4502,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                           >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontWeight: 'bold', fontSize: '12px', color: '#000080', cursor: 'pointer' }} onClick={() => {
-                                  setSelectedViewCandidate(pc)
-                                  setShowDetailViewModal(true)
-                                }}>
+                                <span style={{ fontWeight: 'bold', fontSize: '12px', color: '#000080', cursor: 'pointer' }} onClick={() => handleOpenCandidateView(pc)}>
                                   {pc.name}
                                 </span>
                                 <span style={{ background: '#dcfce7', color: '#166534', padding: '2px 6px', fontSize: '10px', fontWeight: 'bold', borderRadius: 0, border: '1px solid #bbf7d0' }}>
@@ -7185,8 +7270,7 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
               setAiMatchTargetJob(null)
             }}
             onOpenCandidateDetails={(cand) => {
-              setSelectedViewCandidate(cand)
-              setShowDetailViewModal(true)
+              handleOpenCandidateView(cand)
             }}
             onAssignCandidate={(cand, targetJob) => {
               const cleanReqId = String(targetJob?.id || '158938').replace('J-', '')

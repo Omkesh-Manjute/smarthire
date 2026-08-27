@@ -2907,6 +2907,9 @@ async function scrapeAndImportLatestJobs() {
         source: 'Jobsinhand',
         sourceId: job.sourceId,
         sourceUrl: detailUrl,
+        description: rawDescText,
+        rawDescription: rawDescText,
+        fullDescription: rawDescText,
         scrapedAt: new Date().toISOString(),
         creationDate: parsedJob.creationDate || new Date().toISOString().split('T')[0],
         deadline: parsedJob.deadline || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -2980,7 +2983,7 @@ app.get('/api/jobs', (_req, res) => {
 
 // POST new job
 app.post('/api/jobs', (req, res) => {
-  const { title, client, skills, budget, experience, location, type, status, creationDate, deadline, billRate } = req.body;
+  const { title, client, skills, budget, experience, location, type, status, creationDate, deadline, billRate, description, rawDescription, fullDescription } = req.body;
   if (!title) {
     return res.status(400).json({ success: false, message: 'Job title is required.' });
   }
@@ -2995,6 +2998,9 @@ app.post('/api/jobs', (req, res) => {
     location: location || 'Any',
     type: type || 'Full-time',
     status: status || 'Active',
+    description: description || rawDescription || fullDescription || '',
+    rawDescription: rawDescription || description || '',
+    fullDescription: fullDescription || description || '',
     creationDate: creationDate || new Date().toISOString().split('T')[0],
     deadline: deadline || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     billRate: billRate || budget || 'TBD'
