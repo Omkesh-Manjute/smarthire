@@ -31,7 +31,13 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
-### 2026-09-01 — Universal Candidate Deduplication & Reporting Lead Resolution (Gourav -> Omkesh)
+### 2026-09-01 — Requisition Search & Position Number Match Fix Across Admin & Employee
+- **Universal Requisition Search Matching**:
+  - `filteredJobs` and `handleQuickSearch` in `RecruiterDashboard.jsx` enhanced to search by position numbers `(807791)`, `(808800)`, `(805119)`, etc., JobsInHand 6-digit Req IDs (`158999`, `158885`, `158894`), client names, skills, and titles.
+  - Resolved `Status: In-Progress` filter mismatch so all active, open, and posted requisitions match properly.
+- **Dataset Consistency Across Admin & Employee Views**:
+  - `server/index.js` prioritizes authentic JobsInHand listings and filters out legacy mock placeholders (`SAP HR Consultant`, `Acme Corp`, `Nexa Digital`).
+  - Added Firebase Firestore fallback to `RecruiterDashboard.jsx` ensuring that all views load the authentic synchronized dataset even if backend server is starting up.
 - **Reporting Hierarchy Dynamic Resolution**:
   - `Navigation.jsx` and `RecruiterInbox.jsx` dynamically resolve the logged-in user's assigned Lead Recruiter from the `teamUsers` roster and user object.
   - When **Gourav** logs in, he is correctly mapped to his supervisor **`Omkesh`** (`💬 Message Lead Recruiter (Omkesh)` / `omkesh@coolsofttech.com`).
