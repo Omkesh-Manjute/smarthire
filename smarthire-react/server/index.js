@@ -7104,8 +7104,8 @@ if (fs.existsSync(distPath)) {
 }
 
 // For React Router support - fallback all non-API GET requests to index.html
-app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+app.use((req, res, next) => {
+  if (req.method !== 'GET' || req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
     return next()
   }
   const indexPath = path.join(distPath, 'index.html')
