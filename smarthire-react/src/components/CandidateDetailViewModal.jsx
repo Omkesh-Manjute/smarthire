@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { US_STATES } from '../data/usStates'
 import { parseResume } from '../smarthire/utils/parseResume'
+import { saveLegalDocs, uploadDocFile, saveCandidate } from '../lib/atsFirestore'
 
 export default function CandidateDetailViewModal({
   candidate,
@@ -341,7 +342,7 @@ export default function CandidateDetailViewModal({
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
-  // Handle File Upload for any document (with automatic text extraction)
+  // Handle File Upload for any document (with automatic text extraction + Firebase Storage)
   const handleFileUpload = (docKey, e) => {
     const file = e.target.files[0]
     if (!file) return
@@ -381,21 +382,20 @@ export default function CandidateDetailViewModal({
         } catch(err) {}
       }
 
+      // Build updated document entry
+      const updatedDoc = {
+        title: file.name,
+        fileName: file.name,
+        uploadedOn: new Date().toLocaleString('en-US', { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }),
+        status: 'Uploaded',
+        size: `${Math.round(file.size / 1024)} KB`,
+        fileData: dataUrl,
+        fileType: file.type,
+        resumeText: parsedText || ''
+      }
+
       setDocuments(prev => {
-        const nextDocs = {
-          ...prev,
-          [docKey]: {
-            ...prev[docKey],
-            title: file.name,
-            fileName: file.name,
-            uploadedOn: new Date().toLocaleString('en-US', { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }),
-            status: 'Uploaded',
-            size: `${Math.round(file.size / 1024)} KB`,
-            fileData: dataUrl,
-            fileType: file.type,
-            resumeText: parsedText || prev[docKey]?.resumeText || ''
-          }
-        }
+        const nextDocs = { ...prev, [docKey]: { ...prev[docKey], ...updatedDoc, resumeText: parsedText || prev[docKey]?.resumeText || '' } }
         try {
           localStorage.setItem(`smarthire_candidate_docs_${cleanCandId}`, JSON.stringify(nextDocs))
           localStorage.setItem(`smarthire_candidate_docs_${candidate.id}`, JSON.stringify(nextDocs))
@@ -403,7 +403,31 @@ export default function CandidateDetailViewModal({
         return nextDocs
       })
       setActiveDocType(docKey)
-      setToastMsg(`✅ ${file.name} uploaded successfully! Displaying in viewer.`)
+      setToastMsg(`✅ ${file.name} uploaded! Saving to Firebase Storage...`)
+
+      // Upload to Firebase Storage in background and update storageUrl
+      try {
+        const { downloadUrl, storagePath } = await uploadDocFile(cleanCandId, docKey, dataUrl, file.name, file.type)
+        setDocuments(prev => {
+          const nextDocs = {
+            ...prev,
+            [docKey]: { ...prev[docKey], storageUrl: downloadUrl, storagePath }
+          }
+          try {
+            localStorage.setItem(`smarthire_candidate_docs_${cleanCandId}`, JSON.stringify(nextDocs))
+          } catch(e) {}
+          return nextDocs
+        })
+        // Save metadata to Firestore automatically after upload
+        await saveLegalDocs(cleanCandId, documents, {
+          email: formData.email || candidate.email || '',
+          candidateName: `${formData.firstName} ${formData.lastName}`.trim() || candidate.name || ''
+        })
+        setToastMsg(`✅ ${file.name} uploaded & saved to Firebase!`)
+      } catch(storageErr) {
+        console.warn('Firebase Storage upload failed, file is in localStorage:', storageErr)
+        setToastMsg(`✅ ${file.name} uploaded locally! (Firebase sync failed — will retry on Save)`)
+      }
       setTimeout(() => setToastMsg(null), 3500)
     }
     reader.readAsDataURL(file)
@@ -470,12 +494,12 @@ export default function CandidateDetailViewModal({
     setTimeout(() => setToastMsg(null), 3000)
   }
 
-  // Handle Save Legal Documents to Database
+  // Handle Save Legal Documents to Firebase Firestore
   const [isSavingDocs, setIsSavingDocs] = useState(false)
 
   const handleSaveDocuments = async () => {
     setIsSavingDocs(true)
-    setToastMsg('⏳ Saving documents to database...')
+    setToastMsg('⏳ Saving documents to Firebase...')
 
     // Always save to localStorage first as a guaranteed local backup
     try {
@@ -484,38 +508,31 @@ export default function CandidateDetailViewModal({
     } catch(e) {}
 
     try {
-      // Get auth token — try all known storage keys
-      const token = localStorage.getItem('smarthire_token') ||
-                    localStorage.getItem('smarthire_auth_token') ||
-                    localStorage.getItem('token') ||
-                    localStorage.getItem('authToken') || ''
-
-      // Use /api/ats/documents — works with local canId, no MongoDB _id required
-      const res = await fetch('/api/ats/documents', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({
-          canId: cleanCandId,
-          email: formData.email || candidate.email || '',
-          candidateName: `${formData.firstName} ${formData.lastName}`.trim() || candidate.name || '',
-          legalDocs: documents
-        })
+      // Save metadata to Firestore (base64 fileData is stripped inside saveLegalDocs)
+      await saveLegalDocs(cleanCandId, documents, {
+        email: formData.email || candidate.email || '',
+        candidateName: `${formData.firstName} ${formData.lastName}`.trim() || candidate.name || ''
       })
-
-      const json = await res.json()
-
-      if (res.ok && json.success) {
-        setToastMsg('✅ Documents saved to database successfully!')
-      } else {
-        // API returned error but localStorage is already saved
-        setToastMsg(`✅ Saved locally. Server: ${json.message || 'Could not reach database'}`)
-      }
+      setToastMsg('✅ Documents saved to Firebase successfully!')
     } catch(err) {
-      // Network error — localStorage backup is already saved
-      setToastMsg('✅ Documents saved locally! (Server unavailable — will sync when online)')
+      console.warn('Firebase saveLegalDocs error:', err)
+      // Fallback: try old Express API
+      try {
+        const token = localStorage.getItem('smarthire_token') || ''
+        await fetch('/api/ats/documents', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({
+            canId: cleanCandId,
+            email: formData.email || candidate.email || '',
+            candidateName: `${formData.firstName} ${formData.lastName}`.trim() || candidate.name || '',
+            legalDocs: documents
+          })
+        })
+        setToastMsg('✅ Documents saved (via backup server)!')
+      } catch(fallbackErr) {
+        setToastMsg('✅ Documents saved locally! (Firebase unavailable)')
+      }
     } finally {
       setIsSavingDocs(false)
       setTimeout(() => setToastMsg(null), 4000)

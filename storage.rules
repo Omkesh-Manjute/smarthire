@@ -1,0 +1,15 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ATS document files — allow read/write for ats-documents path
+    match /ats-documents/{canId}/{docKey}/{fileName} {
+      allow read, write: if true;
+    }
+
+    // Deny everything else
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
