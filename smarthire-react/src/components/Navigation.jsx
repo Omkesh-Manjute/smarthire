@@ -30,6 +30,7 @@ function Navigation() {
   try {
     if (userStr) user = JSON.parse(userStr)
   } catch (e) {}
+  const currentUser = user
 
   const isAuthenticated =
     localStorage.getItem('smarthire_authenticated') === 'true' ||
