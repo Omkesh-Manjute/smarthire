@@ -32,6 +32,11 @@ function Navigation() {
   } catch (e) {}
   const currentUser = user
 
+  const isAuthenticated =
+    localStorage.getItem('smarthire_authenticated') === 'true' ||
+    localStorage.getItem('verifyhire_authenticated') === 'true' ||
+    Boolean(user && (user.email || user.name))
+
   // Dynamic team users roster lookup for accurate hierarchy
   const teamUsersList = (() => {
     try {
