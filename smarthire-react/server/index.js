@@ -571,6 +571,15 @@ function resolveReqId(rawId = '', job = {}) {
   return strId || '158999';
 }
 
+function extractPositionNumber(title = '', text = '') {
+  const titleMatch = String(title).match(/\((\d{5,8})\)/) || String(title).match(/-\s*(\d{5,8})\b/);
+  if (titleMatch) return titleMatch[1];
+  const posRegex = /(?:Position|Requisition|Req|Pos|Job|RFP)\s*(?:Number|No\.?|#|ID)?\s*[:\-]?\s*(\d{5,8})\b/i;
+  const match = String(text).match(posRegex);
+  if (match) return match[1];
+  return '';
+}
+
 function cleanJobTitleWithPositionNumber(title = '', job = {}) {
   if (!title && !job?.title) return '';
   let str = String(title || job?.title || '').trim();
