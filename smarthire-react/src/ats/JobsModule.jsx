@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { saveAtsJob } from '../lib/atsFirestore'
-import { formatJobDescription } from '../utils/formatJobDescription'
+import { formatJobDescription, resolveJobLocation } from '../utils/formatJobDescription'
 
 function JobsModule({
   jobsList = [], allCandidates = [], submissions = [],
@@ -600,7 +600,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
                 }
                 const workMode = job.work_mode || job.workMode || job.type || 'Onsite'
                 const candidateCount = getJobCandidateCount(job.id)
-                const locationText = job.location || 'Remote, US'
+                const locationText = resolveJobLocation(job)
                 const skillsList = Array.isArray(job.skills) ? job.skills : []
 
                 return (
@@ -833,7 +833,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
               <div>
                 <h2 style={{ margin: 0, color: '#0f172a', fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 20, fontWeight: 800 }}>{jdModalJob.title}</h2>
-                <div style={{ color: '#2563eb', fontSize: 13, marginTop: 4, fontWeight: 700 }}>📍 {jdModalJob.location || 'Remote, US'} · {jdModalJob.client || 'Direct Client'}</div>
+                <div style={{ color: '#2563eb', fontSize: 13, marginTop: 4, fontWeight: 700 }}>📍 {resolveJobLocation(jdModalJob)} · {jdModalJob.client || 'Direct Client'}</div>
               </div>
               <button onClick={() => setJdModalJob(null)}
                 style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
@@ -844,7 +844,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
             {/* Job Meta Info */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
               {[
-                { icon: '📍', label: 'Location', val: jdModalJob.location || 'Remote, US' },
+                { icon: '📍', label: 'Location', val: resolveJobLocation(jdModalJob) },
                 { icon: '💼', label: 'Exp', val: jdModalJob.experience || 'Relevant Experience' },
                 { icon: '🏢', label: 'Mode', val: jdModalJob.work_mode || 'Onsite' },
                 { icon: '📋', label: 'Type', val: jdModalJob.employment_type || 'Contract' },

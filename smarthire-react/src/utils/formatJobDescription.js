@@ -58,6 +58,40 @@ export function extractPositionNumber(title = '', text = '') {
   return '';
 }
 
+export function resolveJobLocation(job = {}) {
+  if (job?.location && typeof job.location === 'string') {
+    const loc = job.location.trim();
+    if (loc && !['tbd', 'any', 'unknown', 'n/a', 'na', 'remote', 'hybrid', 'onsite'].includes(loc.toLowerCase())) {
+      return loc;
+    }
+  }
+
+  // Look in city / state fields
+  if (job?.city && job?.state) {
+    return `${job.city}, ${job.state}`;
+  }
+
+  // Look in rawDescription / description / title / details
+  const fullText = `${job?.title || ''} ${job?.rawDescription || ''} ${job?.description || ''} ${job?.details || ''}`;
+  
+  if (/nc\s*fast|dhhs|state of nc|raleigh|north carolina/i.test(fullText)) return 'Raleigh, NC';
+  if (/vrs|richmond|virginia/i.test(fullText)) return 'Richmond, VA';
+  if (/tn\s*doe|tennessee|nashville/i.test(fullText)) return 'Nashville, TN';
+  if (/austin|texas/i.test(fullText)) return 'Austin, TX';
+  if (/dallas/i.test(fullText)) return 'Dallas, TX';
+  if (/atlanta|georgia/i.test(fullText)) return 'Atlanta, GA';
+  if (/tallahassee|florida/i.test(fullText)) return 'Tallahassee, FL';
+
+  // City, ST regex match
+  const cityStateRegex = /\b([A-Z][a-zA-Z\s]{2,18}),\s*([A-Z]{2})\b/;
+  const match = fullText.match(cityStateRegex);
+  if (match) {
+    return `${match[1].trim()}, ${match[2].trim()}`;
+  }
+
+  return (job?.work_mode === 'Remote' || job?.type === 'Remote') ? 'Remote, US' : 'Raleigh, NC';
+}
+
 export function cleanJobTitleWithPositionNumber(title = '', job = {}) {
   if (!title && !job?.title) return '';
   let str = String(title || job?.title || '').trim();

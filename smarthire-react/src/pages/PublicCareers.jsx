@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import CandidateMessengerWidget from '../components/CandidateMessengerWidget'
 import SmartHireBotWidget from '../components/SmartHireBotWidget'
-import { loginWithGoogle } from '../lib/firebase'
 import { saveCareerApplication, getAtsJobs } from '../lib/atsFirestore'
-import { formatJobDescription } from '../utils/formatJobDescription'
+import { formatJobDescription, resolveJobLocation } from '../utils/formatJobDescription'
 
 export default function PublicCareers() {
   const navigate = useNavigate()
@@ -1172,19 +1171,15 @@ export default function PublicCareers() {
                       <span className="sh-metadata-item">
                         🏢 {workModeText === 'Remote' ? 'Remote' : workModeText === 'Hybrid' ? 'Hybrid' : 'Onsite'}
                       </span>
-                      {job.location && !['onsite', 'on site', 'on-site', 'hybrid', 'remote', 'tbd', 'any'].includes(job.location.toLowerCase().trim()) && (
-                        <>
-                          <span className="sh-metadata-divider" />
-                          <span className="sh-metadata-item">
-                            📍 {job.location}
-                          </span>
-                        </>
-                      )}
+                      <span className="sh-metadata-divider" />
+                      <span className="sh-metadata-item">
+                        📍 {resolveJobLocation(job)}
+                      </span>
                       {job.experience && job.experience !== 'TBD' && job.experience !== 'Any' && (
                         <>
                           <span className="sh-metadata-divider" />
                           <span className="sh-metadata-item">
-                            ⏳ {job.experience}
+                            ⏳ {formatExperience(job.experience)}
                           </span>
                         </>
                       )}
@@ -1312,14 +1307,14 @@ export default function PublicCareers() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: theme.textPrimary }}>{fullJdModalJob.title}</h3>
-                <p style={{ margin: '4px 0 0', fontSize: 13, color: '#2563EB', fontWeight: 700 }}>📍 {fullJdModalJob.location || 'Remote, US'} · {fullJdModalJob.work_mode || 'Onsite'}</p>
+                <p style={{ margin: '4px 0 0', fontSize: 13, color: '#2563EB', fontWeight: 700 }}>📍 {resolveJobLocation(fullJdModalJob)} · {fullJdModalJob.work_mode || 'Onsite'}</p>
               </div>
               <button onClick={() => setFullJdModalJob(null)}
                 style={{ backgroundColor: 'transparent', border: 'none', color: theme.textSecondary, fontSize: 22, cursor: 'pointer' }}>✕</button>
             </div>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 18 }}>
-              <span style={{ fontSize: 12, backgroundColor: theme.inputBg, color: theme.textSecondary, padding: '5px 12px', borderRadius: 6 }}>📍 Location: <strong>{fullJdModalJob.location || 'Remote, US'}</strong></span>
+              <span style={{ fontSize: 12, backgroundColor: theme.inputBg, color: theme.textSecondary, padding: '5px 12px', borderRadius: 6 }}>📍 Location: <strong>{resolveJobLocation(fullJdModalJob)}</strong></span>
               <span style={{ fontSize: 12, backgroundColor: theme.inputBg, color: theme.textSecondary, padding: '5px 12px', borderRadius: 6 }}>⏳ Experience: <strong>{formatExperience(fullJdModalJob.experience)}</strong></span>
               <span style={{ fontSize: 12, backgroundColor: theme.inputBg, color: theme.textSecondary, padding: '5px 12px', borderRadius: 6 }}>🏢 Mode: <strong>{fullJdModalJob.work_mode || 'Onsite'}</strong></span>
               <span style={{ fontSize: 12, backgroundColor: theme.inputBg, color: theme.textSecondary, padding: '5px 12px', borderRadius: 6 }}>📋 Type: <strong>{fullJdModalJob.employment_type || fullJdModalJob.type || 'Contract'}</strong></span>
