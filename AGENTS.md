@@ -31,7 +31,11 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
-### 2026-09-01 — Requisition Search & Position Number Match Fix Across Admin & Employee
+### 2026-09-01 — Requisition Candidate Sync & Cross-Lookup Fix (Requisition 158490)
+- **Requisition Candidate Cross-Lookup**:
+  - `handleOpenReq` and `useEffect` in `RecruiterDashboard.jsx` enhanced to automatically merge and resolve potential candidates across all ID formats (`158490`, `J-158490`, and Firestore `atsRequisitions` / `atsCandidates`).
+  - Added multi-ID Firestore lookup (`cleanId`, `resolvedId`, `rawId`) and global talent pool cross-matching so whenever any candidate is added/assigned, Admin instantly sees the candidate in the Requisition Potential Candidates tab.
+  - Candidate Intake Modal directly binds `reqId`, `targetJobId`, and `job_id` and saves to both `cleanReqId` and `resolvedCleanId` in Firestore.
 - **Universal Requisition Search Matching**:
   - `filteredJobs` and `handleQuickSearch` in `RecruiterDashboard.jsx` enhanced to search by position numbers `(807791)`, `(808800)`, `(805119)`, etc., JobsInHand 6-digit Req IDs (`158999`, `158885`, `158894`), client names, skills, and titles.
   - Resolved `Status: In-Progress` filter mismatch so all active, open, and posted requisitions match properly.
