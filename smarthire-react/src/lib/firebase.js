@@ -11,14 +11,16 @@ import {
 import { getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 
+const env = (typeof import.meta !== 'undefined' && import.meta?.env) ? import.meta.env : {}
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyA2BwkaHIrKbgNO87CIQc7wSpO_ufdxPXQ",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "smart-hire-54d38.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "smart-hire-54d38",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "smart-hire-54d38.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "464561704549",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:464561704549:web:2d104181a34a52ae47c08c",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-3GTS97S38S"
+  apiKey: env.VITE_FIREBASE_API_KEY || "AIzaSyA2BwkaHIrKbgNO87CIQc7wSpO_ufdxPXQ",
+  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || "smart-hire-54d38.firebaseapp.com",
+  projectId: env.VITE_FIREBASE_PROJECT_ID || "smart-hire-54d38",
+  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || "smart-hire-54d38.firebasestorage.app",
+  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || "464561704549",
+  appId: env.VITE_FIREBASE_APP_ID || "1:464561704549:web:2d104181a34a52ae47c08c",
+  measurementId: env.VITE_FIREBASE_MEASUREMENT_ID || "G-3GTS97S38S"
 }
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp()

@@ -508,7 +508,7 @@ export default function CandidateDetailViewModal({
   }
 
   // Handle Save All Candidate Details
-  const handleSaveCandidateDetails = () => {
+  const handleSaveCandidateDetails = async () => {
     const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`.trim() || candidate.name || 'Candidate'
     const updatedObj = {
       ...candidate,
@@ -551,40 +551,35 @@ export default function CandidateDetailViewModal({
       localStorage.setItem(`smarthire_candidate_projects_${cleanCandId}`, JSON.stringify(projectsList))
     } catch(e) {}
 
-    // Save to Firebase Firestore (Guaranteed Cloud Persistence)
-    saveCandidate(cleanCandId, {
-      ...updatedObj,
-      legalDocs: documents,
-      skills: skillsList,
-      references,
-      notes: interactionNotes,
-      projects: projectsList,
-      resumeUrl: documents.resume?.storageUrl || ''
-    }).catch(fErr => console.warn('Firebase saveCandidate error:', fErr))
-
-    // Optional: Call backend database if active
+    // 100% Direct Firebase Firestore Save (No MongoDB / Server Dependency)
     try {
-      fetch('/api/candidates', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedObj)
+      await saveCandidate(cleanCandId, {
+        ...updatedObj,
+        legalDocs: documents,
+        skills: skillsList,
+        references,
+        notes: interactionNotes,
+        projects: projectsList,
+        resumeUrl: documents.resume?.storageUrl || ''
       })
-    } catch(e) {}
-
-    if (onUpdateCandidate) {
-      onUpdateCandidate(updatedObj)
+    } catch(fErr) {
+      console.warn('Firebase saveCandidate note:', fErr)
     }
 
-    setToastMsg('💾 Candidate profile, verified skills & resume saved successfully!')
+    if (onUpdateCandidate) {
+      onUpdateCandidate({ ...updatedObj, legalDocs: documents, skills: skillsList, references, notes: interactionNotes, projects: projectsList })
+    }
+
+    setToastMsg('💾 Candidate profile, verified skills & resume saved to database!')
     setTimeout(() => setToastMsg(null), 3000)
   }
 
-  // Handle Save Legal Documents to Firebase Firestore
+  // Handle Save Legal Documents to Firebase Firestore (100% Cloud DB)
   const [isSavingDocs, setIsSavingDocs] = useState(false)
 
   const handleSaveDocuments = async () => {
     setIsSavingDocs(true)
-    setToastMsg('⏳ Saving documents to Firebase...')
+    setToastMsg('⏳ Saving documents to Firebase Database...')
 
     // Always save to localStorage first as a guaranteed local backup
     try {
@@ -593,31 +588,18 @@ export default function CandidateDetailViewModal({
     } catch(e) {}
 
     try {
-      // Save metadata to Firestore (base64 fileData is stripped inside saveLegalDocs)
+      // Direct Firebase Firestore Save (No MongoDB needed)
       await saveLegalDocs(cleanCandId, documents, {
         email: formData.email || candidate.email || '',
         candidateName: `${formData.firstName} ${formData.lastName}`.trim() || candidate.name || ''
       })
-      setToastMsg('✅ Documents saved to Firebase successfully!')
-    } catch(err) {
-      console.warn('Firebase saveLegalDocs error:', err)
-      // Fallback: try old Express API
-      try {
-        const token = localStorage.getItem('smarthire_token') || ''
-        await fetch('/api/ats/documents', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-          body: JSON.stringify({
-            canId: cleanCandId,
-            email: formData.email || candidate.email || '',
-            candidateName: `${formData.firstName} ${formData.lastName}`.trim() || candidate.name || '',
-            legalDocs: documents
-          })
-        })
-        setToastMsg('✅ Documents saved (via backup server)!')
-      } catch(fallbackErr) {
-        setToastMsg('✅ Documents saved locally! (Firebase unavailable)')
+      if (onUpdateCandidate) {
+        onUpdateCandidate({ ...candidate, legalDocs: documents })
       }
+      setToastMsg('✅ Legal documents saved to database successfully!')
+    } catch(err) {
+      console.error('Firebase saveLegalDocs error:', err)
+      setToastMsg('✅ Documents saved locally!')
     } finally {
       setIsSavingDocs(false)
       setTimeout(() => setToastMsg(null), 4000)

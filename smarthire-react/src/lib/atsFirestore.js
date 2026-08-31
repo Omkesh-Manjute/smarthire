@@ -129,17 +129,19 @@ export async function saveLegalDocs(canId, legalDocs, opts = {}) {
 
 /**
  * Upload a document file (Visa, DL, RTR, SSN, Resume) to Firebase Storage.
+ * Clean, deterministic storage path overwrites previous file on re-upload.
  */
 export async function uploadDocFile(canId, docKey, dataUrl, fileName, mimeType) {
   if (!canId || !docKey || !dataUrl) throw new Error('canId, docKey, dataUrl are required')
 
-  const ext = fileName?.split('.').pop() || 'bin'
-  const storagePath = `ats-documents/${canId}/${docKey}/${docKey}_${Date.now()}.${ext}`
+  const ext = fileName?.split('.').pop()?.toLowerCase() || 'jpg'
+  // Clean deterministic path: ats-documents/8756383/visa/visa.jpg (avoids duplicates)
+  const storagePath = `ats-documents/${String(canId)}/${docKey}/${docKey}.${ext}`
   const storageRef = ref(storage, storagePath)
 
   const format = dataUrl.startsWith('data:') ? 'data_url' : 'base64'
   await uploadString(storageRef, dataUrl, format, {
-    contentType: mimeType || 'application/octet-stream'
+    contentType: mimeType || (ext === 'pdf' ? 'application/pdf' : 'image/jpeg')
   })
 
   const downloadUrl = await getDownloadURL(storageRef)
