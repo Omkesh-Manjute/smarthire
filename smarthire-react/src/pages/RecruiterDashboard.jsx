@@ -982,6 +982,15 @@ We are currently reviewing candidate profiles and scheduling immediate interview
         assignedRecruiters: assigned
       }
     }).filter(Boolean)
+
+    const uniqueMap = new Map()
+    processed.forEach(j => {
+      const posKey = j.positionNumber ? `pos_${j.positionNumber}` : `req_${j.reqId || j.id}`
+      if (!uniqueMap.has(posKey)) {
+        uniqueMap.set(posKey, j)
+      }
+    })
+    return Array.from(uniqueMap.values())
   }, [])
 
   // Fetch jobs & merge persistent local custom assignments, and sync team roster

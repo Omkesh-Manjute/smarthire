@@ -608,7 +608,11 @@ async function loadJobsFromDisk() {
           if (j && (j.id || j.title)) {
             const cleanT = cleanJobTitleWithPositionNumber(j.title, j);
             const cleanI = resolveReqId(j.id, j);
-            map.set(cleanI, { ...j, id: cleanI, reqId: cleanI, title: cleanT });
+            const pNum = j.positionNumber || extractPositionNumber(cleanT, j.description);
+            const dedupeKey = pNum ? `pos_${pNum}` : `req_${cleanI}`;
+            if (!map.has(dedupeKey)) {
+              map.set(dedupeKey, { ...j, id: cleanI, reqId: cleanI, title: cleanT, positionNumber: pNum || '' });
+            }
           }
         });
         // Merge dynamically added jobs from MongoDB Atlas (discard legacy mock placeholders)
@@ -619,8 +623,10 @@ async function loadJobsFromDisk() {
             if (titleLower.includes('sap hr') || clientLower.includes('acme') || titleLower.includes('nexa digital')) return;
             const cleanT = cleanJobTitleWithPositionNumber(j.title, j);
             const cleanI = resolveReqId(j.id, j);
-            if (!map.has(cleanI)) {
-              map.set(cleanI, { ...j, id: cleanI, reqId: cleanI, title: cleanT });
+            const pNum = j.positionNumber || extractPositionNumber(cleanT, j.description);
+            const dedupeKey = pNum ? `pos_${pNum}` : `req_${cleanI}`;
+            if (!map.has(dedupeKey)) {
+              map.set(dedupeKey, { ...j, id: cleanI, reqId: cleanI, title: cleanT, positionNumber: pNum || '' });
             }
           }
         });
@@ -631,11 +637,19 @@ async function loadJobsFromDisk() {
       }
     }
     if (diskJobs.length > 0) {
-      jobsStore = diskJobs.map(j => {
-        const cleanT = cleanJobTitleWithPositionNumber(j.title, j);
-        const cleanI = resolveReqId(j.id, j);
-        return { ...j, id: cleanI, reqId: cleanI, title: cleanT };
+      const map = new Map();
+      diskJobs.forEach(j => {
+        if (j && (j.id || j.title)) {
+          const cleanT = cleanJobTitleWithPositionNumber(j.title, j);
+          const cleanI = resolveReqId(j.id, j);
+          const pNum = j.positionNumber || extractPositionNumber(cleanT, j.description);
+          const dedupeKey = pNum ? `pos_${pNum}` : `req_${cleanI}`;
+          if (!map.has(dedupeKey)) {
+            map.set(dedupeKey, { ...j, id: cleanI, reqId: cleanI, title: cleanT, positionNumber: pNum || '' });
+          }
+        }
       });
+      jobsStore = Array.from(map.values());
       console.log(`📂 Loaded ${jobsStore.length} job(s) from disk.`);
       if (isMongoConnected) saveJobsToDisk();
     } else {
@@ -3109,16 +3123,25 @@ app.get('/api/jobs', (_req, res) => {
     saveJobsToDisk();
   }
 
-  const sanitized = jobsStore.map(job => {
+  const uniqueMap = new Map();
+  jobsStore.forEach(job => {
+    if (!job) return;
     const cleanT = cleanJobTitleWithPositionNumber(job.title, job);
     const cleanI = resolveReqId(job.id, job);
-    return {
-      ...job,
-      id: cleanI,
-      reqId: cleanI,
-      title: cleanT
-    };
+    const pNum = job.positionNumber || extractPositionNumber(cleanT, job.description);
+    const dedupeKey = pNum ? `pos_${pNum}` : `req_${cleanI}`;
+    if (!uniqueMap.has(dedupeKey)) {
+      uniqueMap.set(dedupeKey, {
+        ...job,
+        id: cleanI,
+        reqId: cleanI,
+        title: cleanT,
+        positionNumber: pNum || ''
+      });
+    }
   });
+
+  const sanitized = Array.from(uniqueMap.values());
 
   const sorted = [...sanitized].sort((a, b) => {
     const aMatch = String(a.id).match(/\d+/);

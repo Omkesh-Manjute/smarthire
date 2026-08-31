@@ -216,7 +216,10 @@ export default function RecruiterInbox() {
   const defaultRole = (currentUser && currentUser.role) ? currentUser.role : 'superadmin'
   const activeRole = localStorage.getItem('smarthire_active_role') || defaultRole
   const isSuperAdmin = activeRole === 'superadmin' || activeRole === 'admin'
+  const isAdmin = isSuperAdmin
+  const isManager = activeRole === 'manager' || defaultRole === 'manager'
   const isEmployee = activeRole === 'employee' || defaultRole === 'employee'
+  const isRecruiter = activeRole === 'recruiter' || defaultRole === 'recruiter'
   
   const resolvedParentName = currentUser?.parentRecruiterName || matchedUserInTeam?.parentRecruiterName || 
     (currentUser?.name?.toLowerCase().includes('gourav') || currentUser?.email?.toLowerCase().includes('gourav') ? 'Omkesh' : (isEmployee ? 'Sukamal Chatterjee' : ''))
