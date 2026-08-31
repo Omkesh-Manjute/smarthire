@@ -262,11 +262,11 @@ export async function scrapeViaPlaywright(logger = console.log) {
     const noRebid = rawJobs.filter(j => !/rebid/i.test(j.title));
     logger(`[playwright] After Rebid filter: ${noRebid.length}`);
 
-    // Filter today's jobs
+    // Filter today's jobs (fallback to all latest non-rebid jobs if today is 0)
     const todayJobs = noRebid.filter(j => isToday(j.createDateStr));
-    logger(`[playwright] Today's jobs: ${todayJobs.length}`);
+    logger(`[playwright] Today's jobs: ${todayJobs.length} (out of ${noRebid.length} active listings)`);
 
-    const eligibleJobs = todayJobs;
+    const eligibleJobs = todayJobs.length > 0 ? todayJobs : noRebid;
     const jobsToProcess = eligibleJobs.slice(0, MAX_JOBS);
 
     const results = [];

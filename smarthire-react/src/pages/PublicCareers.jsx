@@ -296,6 +296,7 @@ export default function PublicCareers() {
           )
           if (match) openApplicationModal(match)
         }
+        setLoading(false)
         return
       }
     } catch (e) {

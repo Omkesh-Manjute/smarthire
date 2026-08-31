@@ -439,15 +439,15 @@ export async function scrapeViaHttp(logger = console.log) {
   const rebidCount = beforeRebid - rawJobs.length;
   logger(`[scraper] Filtered ${rebidCount} Rebid listings. Remaining: ${rawJobs.length}`);
 
-  // Filter 2: Only today's jobs
+  // Filter 2: Only today's jobs (fallback to all latest jobs if today count is 0)
   const beforeDate = rawJobs.length;
   const todayJobs = rawJobs.filter(j => isToday(j.createDateStr));
   const notTodayCount = beforeDate - todayJobs.length;
-  logger(`[scraper] Filtered ${notTodayCount} jobs not created today. Today's jobs: ${todayJobs.length}`);
+  logger(`[scraper] Filtered ${notTodayCount} jobs not created today. Today's jobs: ${todayJobs.length} (out of ${rawJobs.length} active)`);
 
-  const eligibleJobs = todayJobs;
+  const eligibleJobs = todayJobs.length > 0 ? todayJobs : rawJobs;
   if (todayJobs.length === 0) {
-    logger(`[scraper] ℹ️  No new jobs matched today's creation date.`);
+    logger(`[scraper] ℹ️  Using latest ${rawJobs.length} active jobs from JobsInHand.`);
   }
 
   // Limit to MAX_JOBS

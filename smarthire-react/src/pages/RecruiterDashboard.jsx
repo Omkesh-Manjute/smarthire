@@ -8,7 +8,7 @@ import ActivityNotificationBell, { pushActivityNotification } from '../component
 import { AuditActivityLogModule, logAuditEvent } from '../ats'
 import { US_STATES } from '../data/usStates'
 import { parseResume } from '../smarthire/utils/parseResume'
-import { formatJobDescription, cleanJobTitleWithPositionNumber } from '../utils/formatJobDescription'
+import { formatJobDescription, cleanJobTitleWithPositionNumber, resolveReqId } from '../utils/formatJobDescription'
 import {
   saveCandidate,
   getAllCandidates,

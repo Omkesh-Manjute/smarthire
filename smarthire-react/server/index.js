@@ -536,23 +536,101 @@ async function saveSocialPostsToDisk() {
 // ─── Jobs DB File ────────────────────────────────────────────────────────────
 const jobsDbPath = path.resolve(__dirname, 'jobs.json');
 
+const KNOWN_TITLE_MAP = [
+  { match: /junior java|java.*developer.*test/i, positionNumber: '807791', reqId: '158999', title: 'NC FAST Junior Java Developer/Test Engineer (807791)' },
+  { match: /system(?:s)? administrator ii/i, positionNumber: '808800', reqId: '158885', title: 'NC DHHS System Administrator II (808800)' },
+  { match: /power platform/i, positionNumber: '805119', reqId: '158894', title: 'DHHS MS Power Platform Developer Architect (805119)' },
+  { match: /senior aws developer|aws senior/i, positionNumber: '808496', reqId: '158950', title: 'NC DHHS AWS Senior Developer (808496)' },
+  { match: /aws\s*\/?\s*java developer/i, positionNumber: '809716', reqId: '158776', title: 'NC DHHS AWS/Java Developer (809716)' },
+  { match: /system analyst 4/i, positionNumber: '806546', reqId: '158611', title: 'VRS - System Analyst 4 (806546)' },
+  { match: /world language/i, positionNumber: '809432', reqId: '158699', title: 'World Language Project Manager (809432)' },
+  { match: /salesforce solution engineer/i, positionNumber: '809821', reqId: '158673', title: 'Salesforce Solution Engineer (809821)' },
+  { match: /senior business analyst/i, positionNumber: '810558', reqId: '158674', title: 'Senior Business Analyst (810558)' },
+  { match: /data analyst\s*\/\s*business system/i, positionNumber: '809112', reqId: '158655', title: 'Data Analyst / Business System Analyst (809112)' },
+];
+
+function resolveReqId(rawId = '', job = {}) {
+  const strId = String(rawId || job.reqId || job.id || '').replace('J-', '').trim();
+  const idMap = {
+    '84387': '158999',
+    '84386': '158885',
+    '84385': '158894',
+    '84384': '158950',
+    '84383': '158776',
+    '84379': '158699',
+    '84380': '158673',
+    '84381': '158674',
+    '84382': '158655',
+    '84378': '158611',
+  };
+  if (idMap[strId]) return idMap[strId];
+  const title = String(job.title || '');
+  for (const item of KNOWN_TITLE_MAP) {
+    if (item.match.test(title)) return item.reqId;
+  }
+  return strId || '158999';
+}
+
+function cleanJobTitleWithPositionNumber(title = '', job = {}) {
+  if (!title && !job?.title) return '';
+  let str = String(title || job?.title || '').trim();
+  for (const item of KNOWN_TITLE_MAP) {
+    if (item.match.test(str)) return item.title;
+  }
+  const posMatch = str.match(/\((\d{5,8})\)/);
+  if (posMatch) return str;
+  const pNum = job.positionNumber || job.posNumber;
+  if (pNum && !str.includes(`(${pNum})`)) {
+    return `${str} (${pNum})`;
+  }
+  return str;
+}
+
 // ─── Jobs Store (persisted to disk) ──────────────────────────────────────────
 let jobsStore = [];
 
 async function loadJobsFromDisk() {
   try {
+    let diskJobs = [];
+    if (fs.existsSync(jobsDbPath)) {
+      try {
+        const raw = fs.readFileSync(jobsDbPath, 'utf-8');
+        diskJobs = JSON.parse(raw);
+      } catch (e) {}
+    }
+
     if (isMongoConnected) {
       const doc = await JobsDoc.findOne();
-      if (doc) {
-        jobsStore = doc.list || [];
-        console.log(`📂 Loaded ${jobsStore.length} job(s) from MongoDB Atlas.`);
+      if (doc && Array.isArray(doc.list) && doc.list.length > 0) {
+        const map = new Map();
+        doc.list.forEach(j => {
+          if (j && (j.id || j.title)) {
+            const cleanT = cleanJobTitleWithPositionNumber(j.title, j);
+            const cleanI = resolveReqId(j.id, j);
+            map.set(cleanT || cleanI, { ...j, id: cleanI, reqId: cleanI, title: cleanT });
+          }
+        });
+        diskJobs.forEach(j => {
+          if (j && (j.id || j.title)) {
+            const cleanT = cleanJobTitleWithPositionNumber(j.title, j);
+            const cleanI = resolveReqId(j.id, j);
+            map.set(cleanT || cleanI, { ...j, id: cleanI, reqId: cleanI, title: cleanT });
+          }
+        });
+        jobsStore = Array.from(map.values());
+        console.log(`📂 Loaded ${jobsStore.length} job(s) from MongoDB Atlas with seed jobs.json.`);
+        saveJobsToDisk();
         return;
       }
     }
-    if (fs.existsSync(jobsDbPath)) {
-      const raw = fs.readFileSync(jobsDbPath, 'utf-8');
-      jobsStore = JSON.parse(raw);
+    if (diskJobs.length > 0) {
+      jobsStore = diskJobs.map(j => {
+        const cleanT = cleanJobTitleWithPositionNumber(j.title, j);
+        const cleanI = resolveReqId(j.id, j);
+        return { ...j, id: cleanI, reqId: cleanI, title: cleanT };
+      });
       console.log(`📂 Loaded ${jobsStore.length} job(s) from disk.`);
+      if (isMongoConnected) saveJobsToDisk();
     } else {
       jobsStore = [
         {
@@ -3024,9 +3102,20 @@ app.get('/api/jobs', (_req, res) => {
     saveJobsToDisk();
   }
 
-  const sorted = [...jobsStore].sort((a, b) => {
-    const aMatch = a.id.match(/\d+/);
-    const bMatch = b.id.match(/\d+/);
+  const sanitized = jobsStore.map(job => {
+    const cleanT = cleanJobTitleWithPositionNumber(job.title, job);
+    const cleanI = resolveReqId(job.id, job);
+    return {
+      ...job,
+      id: cleanI,
+      reqId: cleanI,
+      title: cleanT
+    };
+  });
+
+  const sorted = [...sanitized].sort((a, b) => {
+    const aMatch = String(a.id).match(/\d+/);
+    const bMatch = String(b.id).match(/\d+/);
     const timeA = aMatch ? parseInt(aMatch[0], 10) : 0;
     const timeB = bMatch ? parseInt(bMatch[0], 10) : 0;
     return timeB - timeA;
