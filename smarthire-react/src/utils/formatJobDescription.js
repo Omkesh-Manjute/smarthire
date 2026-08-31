@@ -19,7 +19,10 @@ export const KNOWN_TITLE_MAP = [
 ];
 
 export function resolveReqId(rawId = '', job = {}) {
-  const strId = String(rawId || job.reqId || job.id || '').replace('J-', '').trim();
+  const strId = String(rawId || job?.reqId || job?.id || '').replace('J-', '').replace('REQ-', '').trim();
+  const title = String(job?.title || '');
+
+  // 1. Specific known legacy map
   const idMap = {
     '84387': '158999',
     '84386': '158885',
@@ -34,14 +37,39 @@ export function resolveReqId(rawId = '', job = {}) {
   };
   if (idMap[strId]) return idMap[strId];
 
-  // Match by title
-  const title = String(job.title || '');
+  // 2. Direct match by title in known title map
   for (const item of KNOWN_TITLE_MAP) {
     if (item.match.test(title)) {
       return item.reqId;
     }
   }
-  return strId || '158999';
+
+  // 3. If strId is already a clean authentic 6-digit JobsInHand ID starting with 158 or 159 (e.g. 158999), return it!
+  if (/^15[89]\d{3}$/.test(strId)) {
+    return strId;
+  }
+
+  // 4. If strId is a 6-digit number and NOT a timestamp starting with 178..., return it!
+  if (/^\d{6}$/.test(strId) && !strId.startsWith('178')) {
+    return strId;
+  }
+
+  // 5. For long timestamp IDs (e.g. 1787944759918-490, 178795555459-270) or any non-6-digit ID:
+  // Extract trailing suffix if present (e.g. 490 -> 158490) or hash deterministically
+  const suffixMatch = strId.match(/-(\d{3,4})$/);
+  if (suffixMatch && suffixMatch[1]) {
+    const s = suffixMatch[1].padStart(3, '0').slice(-3);
+    return `158${s}`;
+  }
+
+  // Deterministic 6-digit hash into 158000–158999 range
+  let hash = 0;
+  const hashSeed = strId + title;
+  for (let i = 0; i < hashSeed.length; i++) {
+    hash = (hash * 31 + hashSeed.charCodeAt(i)) & 0xffffffff;
+  }
+  const suffix = String(100 + (Math.abs(hash) % 890)).padStart(3, '0');
+  return `158${suffix}`;
 }
 
 export function extractPositionNumber(title = '', text = '') {

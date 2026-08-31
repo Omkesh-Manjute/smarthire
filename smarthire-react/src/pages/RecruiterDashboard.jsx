@@ -3184,8 +3184,8 @@ We are currently reviewing candidate profiles and scheduling immediate interview
           {viewMode === 'resumeSearch' && (
             <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
               <div style={{ background: '#e2e8f0', border: '1px solid #cbd5e1', padding: '8px 14px', borderRadius: '4px', marginBottom: '12px', fontSize: '11.5px', color: '#1e3a8a', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 20px' }}>
-                <div><strong>Requisition #:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>{selectedReq?.id?.replace('J-', '') || '158938'}</span></div>
-                <div><strong>Position Title:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>{editingFields.title || 'Project Manager - Consultant - 13285'}</span></div>
+                <div><strong>Requisition #:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>{resolveReqId(selectedReq?.id, selectedReq)}</span></div>
+                <div><strong>Position Title:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>{cleanJobTitleWithPositionNumber(editingFields.title || selectedReq?.title, selectedReq)}</span></div>
                 <div><strong>Status:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>In-Progress</span></div>
                 <div><strong>Agency:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>{editingFields.customer || 'State Of SC'}</span></div>
                 <div><strong>Start Date:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>{editingFields.startDate || '10/23/2026'}</span></div>
@@ -3413,8 +3413,8 @@ We are currently reviewing candidate profiles and scheduling immediate interview
           {viewMode === 'resumeSubmission' && (
             <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
               <div style={{ background: '#e2e8f0', border: '1px solid #cbd5e1', padding: '8px 14px', borderRadius: '4px', marginBottom: '8px', fontSize: '11.5px', color: '#1e3a8a', display: 'grid', gridTemplateColumns: '1.2fr 1.5fr', gap: '4px 20px' }}>
-                <div><strong>Requisition #:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>{selectedReq?.id?.replace('J-', '') || '158938'}</span></div>
-                <div><strong>Position Title:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>{editingFields.title || 'Project Manager - Consultant - 13285'}</span></div>
+                <div><strong>Requisition #:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>{resolveReqId(selectedReq?.id, selectedReq)}</span></div>
+                <div><strong>Position Title:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>{cleanJobTitleWithPositionNumber(editingFields.title || selectedReq?.title, selectedReq)}</span></div>
                 <div><strong>Status:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>In-Progress</span></div>
                 <div><strong>Customer:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>{editingFields.customer || 'State Of SC'}</span></div>
                 <div><strong>Start Date:</strong> <span style={{ color: '#0f172a', marginLeft: '6px' }}>{editingFields.startDate || '10/23/2026'}</span></div>
@@ -3667,7 +3667,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #ea580c', paddingBottom: '5px', marginBottom: '10px', flexWrap: 'wrap', gap: 10 }}>
                 <h2 style={{ margin: 0, fontSize: '15px', color: '#000080', fontWeight: 'bold' }}>
-                  Requisition #:{selectedReq.id.replace('J-', '')} - {cleanJobTitleWithPositionNumber(editingFields.title || selectedReq.title)} <span style={{ color: '#dc2626', fontSize: '12px', marginLeft: '8px' }}>Status: {editingFields.status || 'Ready'}</span>
+                  Requisition #:{resolveReqId(selectedReq.id, selectedReq)} - {cleanJobTitleWithPositionNumber(editingFields.title || selectedReq.title, selectedReq)} <span style={{ color: '#dc2626', fontSize: '12px', marginLeft: '8px' }}>Status: {editingFields.status || 'Ready'}</span>
                 </h2>
                 <div style={{ display: 'flex', gap: '14px', alignItems: 'center', fontSize: '11.5px', fontWeight: 'bold' }}>
                   {(isSuperAdmin || isAdmin) && (
@@ -4298,7 +4298,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                   <div style={{ fontSize: '11px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
                       <div style={{ fontWeight: 'bold', color: '#000080', fontSize: '11.5px' }}>
-                        Assign Recruiters to Requisition #{selectedReq?.id?.replace('J-', '') || '158938'} ({editingFields.assignedRecruiters?.length || 0} Assigned)
+                        Assign Recruiters to Requisition #{resolveReqId(selectedReq?.id, selectedReq)} ({editingFields.assignedRecruiters?.length || 0} Assigned)
                       </div>
                       <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                         <button
@@ -4848,7 +4848,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                       <div>
                         <div style={{ fontWeight: 'bold', color: '#000080', fontSize: '12px' }}>
-                          🧠 AI Candidate Match & Fit Review for Requisition #{selectedReq?.id?.replace('J-', '') || '158938'}
+                          🧠 AI Candidate Match & Fit Review for Requisition #{resolveReqId(selectedReq?.id, selectedReq)}
                         </div>
                         <div style={{ color: '#64748b', fontSize: '10.5px', marginTop: '2px' }}>
                           Instant match evaluation against <strong>{editingFields.title || selectedReq?.title}</strong> ({editingFields.customer || 'State Client'}).
@@ -6315,7 +6315,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
               <div style={{ background: '#ea580c', color: '#ffffff', padding: '12px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold' }}>
-                    ➕ Add Candidate to Requisition #{selectedReq?.id?.replace('J-', '') || '158938'}
+                    ➕ Add Candidate to Requisition #{resolveReqId(selectedReq?.id, selectedReq)}
                   </h3>
                   <div style={{ fontSize: '11px', color: '#ffedd5', marginTop: '2px' }}>
                     {selectedReq?.title || 'Senior Software Engineer'}
@@ -6659,7 +6659,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                     </span>
                   </div>
                   <div style={{ fontSize: '11px', color: '#e0f2fe', marginTop: '3px' }}>
-                    Evaluating candidate against Requisition #{selectedReq?.id?.replace('J-', '') || '158938'} — <strong>{editingFields.title || selectedReq?.title || 'Senior Consultant'}</strong>
+                    Evaluating candidate against Requisition #{resolveReqId(selectedReq?.id, selectedReq)} — <strong>{editingFields.title || selectedReq?.title || 'Senior Consultant'}</strong>
                   </div>
                 </div>
                 <span
