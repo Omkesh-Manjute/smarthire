@@ -31,6 +31,12 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-01 — Strict Descending Serial Number (Req #) Sorting & Array Processing Fix
+- **Fixed `processJobsList` Immediate Return Bug**:
+  - In `RecruiterDashboard.jsx`, corrected `processJobsList` which was previously returning the raw array before deduplication and descending serial number sorting could run.
+  - All requisitions across the ATS portal are now strictly sorted by descending numeric Requirement ID (`159005` -> `159004` -> `159003` -> `159002` -> `159000` -> `158999` -> `158998` -> `158997` -> `158996` -> `158995` -> ...).
+  - The latest authentic requisitions are guaranteed to appear sequentially at the top of the table.
+
 ### 2026-09-01 — Authentic JobsInHand Requirement ID Alignment (159005, 159000, etc.) & Newest-First Top Order
 - **Authentic Requirement ID Extraction**:
   - Extracted exact authentic `Requirement id` (`ctl00_Contentpage1_lbl_reqid`) directly from JobsInHand detail pages instead of hash-based IDs.
