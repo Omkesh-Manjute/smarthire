@@ -31,6 +31,14 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-01 — Universal Requisition Deduplication & Recruiter Inbox Scope Fix
+- **Universal Requisition Deduplication**:
+  - Deduplicated `jobs.json` seed database and runtime stores across `server/index.js`, `jobsStore`, and `RecruiterDashboard.jsx` (`processJobsList`).
+  - Merged identical requisitions by Position Number `(810453)`, Requirement ID, and normalized title, eliminating repeated rows in the Requisition Portal.
+- **Fixed `isManager` Scope in `RecruiterInbox.jsx`**:
+  - Declared `isManager`, `isAdmin`, and `isRecruiter` in `RecruiterInbox.jsx`, preventing "Temporary View Rendering Notice: isManager is not defined" when employees click "Message Lead Recruiter".
+  - Maintained dynamic Lead Recruiter supervisor mapping for employees and recruiters.
+
 ### 2026-09-01 — Scraper 10-Minute Cron, 30-Job Capacity & Newest-First Top Order
 - **10-Minute Automatic Background Ingestion**:
   - Decreased the automatic job scraping scheduler interval from 15 minutes to **10 minutes** (`INGESTION_INTERVAL_MS = 10 * 60 * 1000`).
