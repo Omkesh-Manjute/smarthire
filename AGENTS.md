@@ -31,6 +31,19 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-01 — Scraper 10-Minute Cron, 30-Job Capacity & Newest-First Top Order
+- **10-Minute Automatic Background Ingestion**:
+  - Decreased the automatic job scraping scheduler interval from 15 minutes to **10 minutes** (`INGESTION_INTERVAL_MS = 10 * 60 * 1000`).
+- **30 Jobs Parsing Capacity**:
+  - Increased `MAX_JOBS` limit from 10 to **30** across `playwright-scraper.js` and `jobsinhand-scraper.js` so all active/pending listings on JobsInHand are processed.
+  - Added table row cell deduplication to prevent duplicate extraction on nested rows.
+  - Excluded all Rebid listings automatically.
+- **New Jobs Strictly at the TOP**:
+  - `run-ingestion.js` updated to prepend newly ingested jobs at the **TOP** (`[...newJobs, ...existingJobs]`) of the database and ATS stores.
+  - Auto-formatted JD structure and 6-digit JobsInHand Requirement IDs attached immediately upon ingestion.
+- **Scraper Execution Verified**:
+  - Ran full scraper pipeline: fetched 15 live active jobs from JobsInHand, filtered 3 rebids, deduplicated, and updated database with 0 errors.
+
 ### 2026-09-01 — Requisition Candidate Sync & Cross-Lookup Fix (Requisition 158490)
 - **Requisition Candidate Cross-Lookup**:
   - `handleOpenReq` and `useEffect` in `RecruiterDashboard.jsx` enhanced to automatically merge and resolve potential candidates across all ID formats (`158490`, `J-158490`, and Firestore `atsRequisitions` / `atsCandidates`).
