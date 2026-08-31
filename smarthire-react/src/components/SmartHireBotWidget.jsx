@@ -75,7 +75,7 @@ export default function SmartHireBotWidget({ jobs = [], onClose }) {
 
     // STRICT RULE: Pay rates / salary secrecy
     if (q.includes('rate') || q.includes('pay') || q.includes('salary') || q.includes('money') || q.includes('dollar') || q.includes('bill rate') || q.includes('compensation') || q.includes('hourly') || q.includes('$')) {
-      return `🔒 **Pay Rate Policy:** Compensation and hourly pay rates are evaluated individually based on your experience and discussed directly with our staffing recruiters during the initial screening call.\n\nTo get evaluated for a role, click **"Apply Direct"** on any job opening on this page!`
+      return `🔒 **Pay Rate Policy:** Compensation and hourly pay rates are evaluated individually based on your experience and discussed directly with our staffing recruiters during the initial screening call.\n\nTo get evaluated for a role, click **"Apply"** on any job opening on this page!`
     }
 
     // Remote / Hybrid / Onsite query
@@ -94,7 +94,7 @@ export default function SmartHireBotWidget({ jobs = [], onClose }) {
           const exp = j.experience || '3+ yrs'
           text += `• **${j.title}** (${mode} · ${exp})\n  Skills: ${(j.skills || []).slice(0, 3).join(', ')}\n\n`
         })
-        text += `Click **"Apply Direct"** on any card to submit your resume!`
+        text += `Click **"Apply"** on any card to submit your resume!`
         return text
       }
       return `We have several Onsite, Hybrid, and Remote vacancies open across US locations. You can filter them using the top dropdown on the portal!`
@@ -116,18 +116,18 @@ export default function SmartHireBotWidget({ jobs = [], onClose }) {
         const exp = j.experience && j.experience !== 'TBD' ? j.experience : 'Relevant Experience'
         text += `🔹 **${j.title}**\n  • Work Mode: ${mode}\n  • Experience: ${exp}\n  • Required Skills: ${(j.skills || []).slice(0, 4).join(', ')}\n\n`
       })
-      text += `Submit your application by clicking **"Apply Direct"** on the job card!`
+      text += `Submit your application by clicking **"Apply"** on the job card!`
       return text
     }
 
     // How to apply / application query
     if (q.includes('apply') || q.includes('submit') || q.includes('resume') || q.includes('how')) {
-      return `📝 **How to Apply:**\n1. Find your target job card on the portal\n2. Click the blue **"Apply Direct"** button\n3. Attach your resume (PDF/Docx) — your info will auto-populate!\n4. Click Submit — our recruiting team receives it immediately and you'll get a direct **"Message Recruiter"** button!`
+      return `📝 **How to Apply:**\n1. Find your target job card on the portal\n2. Click the blue **"Apply"** button\n3. Attach your resume (PDF/Docx) — your info will auto-populate!\n4. Click Submit — our recruiting team receives it immediately and you'll get a direct **"Message Recruiter"** button!`
     }
 
     // General fallback overview
     const sampleTitles = activeJobs.slice(0, 4).map(j => `"${j.title}"`).join(', ')
-    return `🤖 We have ${activeJobs.length || 77} active vacancies including ${sampleTitles || 'Engineering, Consulting, and Tech roles'}.\n\nYou can search by job title or skill at the top, or click **"Apply Direct"** on any job card to submit your resume. Is there a specific role or technology stack you are looking for?`
+    return `🤖 We have ${activeJobs.length || 77} active vacancies including ${sampleTitles || 'Engineering, Consulting, and Tech roles'}.\n\nYou can search by job title or skill at the top, or click **"Apply"** on any job card to submit your resume. Is there a specific role or technology stack you are looking for?`
   }
 
   return (

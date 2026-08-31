@@ -996,10 +996,10 @@ export default function PublicCareers() {
           ✨ Direct Candidate Applications
         </span>
         <h2 style={{ fontSize: 32, fontWeight: 800, margin: '16px 0 10px', color: theme.textPrimary, lineHeight: 1.25 }}>
-          Explore Vacancies & Apply Direct
+          Explore Vacancies & Apply
         </h2>
         <p style={{ fontSize: 15, color: theme.textSecondary, maxWidth: 660, margin: '0 auto 24px', lineHeight: 1.6 }}>
-          Submit your resume for C2C, W2, or 1099 contracts. Direct candidate submissions are immediately delivered to our recruiting team.
+          Submit your resume for C2C, W2, or 1099 contracts. Candidate submissions are immediately delivered to our recruiting team.
         </p>
 
         {/* Search & Filter Bar */}
@@ -1162,23 +1162,6 @@ export default function PublicCareers() {
                       )}
                     </div>
 
-                    {/* Job Timezone Dates */}
-                    {(() => {
-                      const tzTimes = getJobPostTimezones(job)
-                      return (
-                        <div style={{ marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 4, background: isLight ? '#f8fafc' : '#1e293b', border: `1px solid ${isLight ? '#e2e8f0' : '#334155'}`, borderRadius: 8, padding: '8px 10px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: isLight ? '#475569' : '#cbd5e1' }}>
-                            <span>📅 <strong>EST:</strong> {tzTimes.EST}</span>
-                          </div>
-                          <div style={{ display: 'flex', gap: 6, justifyContent: 'space-between', fontSize: 10, color: isLight ? '#64748b' : '#94a3b8', borderTop: `1px solid ${isLight ? '#e2e8f0' : '#334155'}`, paddingTop: 4, marginTop: 2 }}>
-                            <span title="Central Time">CST: {tzTimes.CST.split(' at ')[1]}</span>
-                            <span title="Mountain Time">MST: {tzTimes.MST.split(' at ')[1]}</span>
-                            <span title="Pacific Time">PST: {tzTimes.PST.split(' at ')[1]}</span>
-                          </div>
-                        </div>
-                      )
-                    })()}
-
                     {/* Job Title */}
                     <h4 className="sh-job-title">
                       {job.title}
@@ -1248,10 +1231,17 @@ export default function PublicCareers() {
                           </button>
                         </div>
                       </div>
-                      <div style={{ whiteSpace: isBriefExpanded ? 'pre-wrap' : 'normal' }}>
+                      <div style={{ whiteSpace: isBriefExpanded ? 'pre-wrap' : 'normal', fontSize: 12.5, lineHeight: 1.6, color: theme.textSecondary }}>
                         {isBriefExpanded 
                           ? fullDesc
-                          : (fullDesc.substring(0, 120) + '...')}
+                          : (() => {
+                              const summaryMatch = fullDesc.match(/🎯 PROJECT SUMMARY & OBJECTIVE\s*=+\s*([\s\S]*?)(?:=|$)/i)
+                              if (summaryMatch && summaryMatch[1].trim().length > 20) {
+                                return summaryMatch[1].trim()
+                              }
+                              const clean = fullDesc.replace(/=+/g, '').replace(/📌.*?\n/g, '').replace(/•.*?\n/g, '').trim()
+                              return clean.length > 140 ? clean.substring(0, 140) + '...' : clean
+                            })()}
                       </div>
                     </div>
                   </div>
@@ -1302,7 +1292,7 @@ export default function PublicCareers() {
                         onClick={() => handleApplyClick(job)}
                         className="sh-apply-btn"
                       >
-                        ⚡ Apply Direct
+                        ⚡ Apply
                       </button>
                     )}
                   </div>
@@ -1358,7 +1348,7 @@ export default function PublicCareers() {
               <button onClick={() => setFullJdModalJob(null)} style={{ backgroundColor: 'transparent', border: `1px solid ${theme.border}`, color: theme.textSecondary, borderRadius: 8, padding: '10px 18px', fontSize: 13, cursor: 'pointer' }}>Close</button>
               <button onClick={() => { const jobToApply = fullJdModalJob; setFullJdModalJob(null); openApplicationModal(jobToApply); }}
                 style={{ backgroundColor: '#2563EB', color: '#FFF', border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                ⚡ Apply Direct Now
+                ⚡ Apply Now
               </button>
             </div>
           </div>

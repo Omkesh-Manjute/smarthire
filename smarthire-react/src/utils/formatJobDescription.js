@@ -107,15 +107,14 @@ export function cleanJobTitleWithPositionNumber(title = '', job = {}) {
  * Parses raw text and splits it into structured sections.
  */
 export function formatJobDescription(rawText = '', jobMeta = {}) {
-  if (!rawText || typeof rawText !== 'string') return '';
-  
-  const text = rawText.trim();
-  if (text.length === 0) return '';
+  const text = typeof rawText === 'string' ? rawText.trim() : '';
 
   // If already cleanly formatted with our section dividers, return as-is
   if (text.includes('📌 POSITION & CLIENT OVERVIEW') && text.includes('📋 KEY ROLES & RESPONSIBILITIES')) {
     return text;
   }
+
+  if (!text && !jobMeta?.title) return '';
 
   // ─── Metadata Extraction ───
   let client = jobMeta.client || jobMeta.customer || '';
