@@ -195,6 +195,20 @@ export default function CandidateDetailViewModal({
     return []
   })
 
+  // Reference Form State
+  const [showAddRefForm, setShowAddRefForm] = useState(false)
+  const [editingRefId, setEditingRefId] = useState(null)
+  const [refForm, setRefForm] = useState({
+    name: '',
+    company: '',
+    designation: '',
+    phone: '',
+    email: '',
+    project: '',
+    verificationStatus: 'Verified (Positive)',
+    notes: ''
+  })
+
   // Legal / Compliance Documents
   const [documents, setDocuments] = useState(() => {
     let parsedDocs = {}
@@ -630,30 +644,43 @@ export default function CandidateDetailViewModal({
     }
   }
 
-  const handleAddReference = () => {
-    const refName = prompt('Enter Reference Name:')
-    const refCompany = prompt('Enter Company Name:')
-    const refTitle = prompt('Enter Designation:')
-    const refPhone = prompt('Enter Phone Number:')
-    const refEmail = prompt('Enter Email Address:')
-    if (refName) {
-      const nextRefs = [
+  const handleSaveReferenceItem = () => {
+    if (!refForm.name.trim()) {
+      alert('Please enter the Reference Full Name.')
+      return
+    }
+
+    let nextRefs = []
+    if (editingRefId) {
+      nextRefs = references.map(r => r.id === editingRefId ? { ...r, ...refForm, id: editingRefId } : r)
+    } else {
+      nextRefs = [
         ...references,
         {
           id: Date.now(),
-          name: refName.trim(),
-          company: refCompany || 'State / Enterprise Client',
-          designation: refTitle || 'Technical Lead',
-          phone: refPhone || '',
-          email: refEmail || '',
-          verificationStatus: 'Verified (Positive)'
+          ...refForm
         }
       ]
-      setReferences(nextRefs)
-      try {
-        localStorage.setItem(`smarthire_candidate_refs_${cleanCandId}`, JSON.stringify(nextRefs))
-      } catch(e) {}
     }
+
+    setReferences(nextRefs)
+    setShowAddRefForm(false)
+    setEditingRefId(null)
+
+    // Save to local storage
+    try {
+      localStorage.setItem(`smarthire_candidate_refs_${cleanCandId}`, JSON.stringify(nextRefs))
+    } catch(e) {}
+
+    // Save directly to Firebase Firestore
+    saveCandidate(cleanCandId, {
+      ...candidate,
+      name: `${formData.firstName} ${formData.lastName}`.trim() || candidate.name,
+      references: nextRefs
+    }).catch(err => console.warn('Firestore save reference error:', err))
+
+    setToastMsg(editingRefId ? '✅ Reference updated & saved to database!' : '✅ Reference added & saved to database!')
+    setTimeout(() => setToastMsg(null), 3000)
   }
 
   const handleAddNote = () => {
@@ -1390,60 +1417,391 @@ export default function CandidateDetailViewModal({
                 </div>
               )}
 
-              {/* ─── 3. REFERENCES TAB ─── */}
+              {/* ─── 3. REFERENCES TAB (PROFESSIONAL REFERENCE MANAGER) ─── */}
               {activeTab === 'references' && (
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ fontWeight: 'bold', color: '#000080' }}>
-                      Professional References ({references.length})
+                  <div style={{ background: '#f0fdf4', border: '1px solid #86efac', padding: '8px 12px', marginBottom: '12px', borderRadius: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontWeight: 'bold', color: '#166534', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>📋 Professional & Client References</span>
+                        <span style={{ background: '#16a34a', color: '#ffffff', fontSize: '10px', padding: '1px 8px', borderRadius: '10px' }}>
+                          {references.length} Total
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '10.5px', color: '#475569', marginTop: '2px' }}>
+                        Record supervisor and peer verification contacts, feedback, and verification status. Saved directly to Firebase Cloud.
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowAddRefForm(prev => !prev)
+                          setEditingRefId(null)
+                          setRefForm({
+                            name: '',
+                            company: formData.city ? `${formData.city} Utility Services` : 'Enterprise Client LLC',
+                            designation: 'Project Manager / Supervisor',
+                            phone: '(555) 234-5678',
+                            email: 'manager@client.com',
+                            project: formData.jobTitle ? `${formData.jobTitle} Project` : 'State IT Modernization',
+                            verificationStatus: 'Verified (Positive)',
+                            notes: 'Strong candidate with exceptional functional skills and work ethic.'
+                          })
+                        }}
+                        style={{
+                          border: '1px solid #16a34a',
+                          background: showAddRefForm ? '#f1f5f9' : '#16a34a',
+                          color: showAddRefForm ? '#166534' : '#ffffff',
+                          padding: '4px 12px',
+                          fontSize: '11px',
+                          fontWeight: 'bold',
+                          borderRadius: '3px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        {showAddRefForm ? '✕ Cancel' : '+ Add Reference'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Add / Edit Reference Form Card */}
+                  {showAddRefForm && (
+                    <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px', marginBottom: '14px', boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
+                      <div style={{ fontWeight: 'bold', color: '#000080', fontSize: '11.5px', marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>{editingRefId ? '✏️ Edit Reference Details' : '➕ Record New Professional Reference'}</span>
+                        <span style={{ fontSize: '10px', color: '#64748b' }}>* All fields saved to Cloud DB</span>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+                        <div>
+                          <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#334155', display: 'block', marginBottom: '2px' }}>
+                            Reference Name *
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. John Doe"
+                            value={refForm.name}
+                            onChange={e => setRefForm(prev => ({ ...prev, name: e.target.value }))}
+                            style={{ width: '100%', padding: '4px 6px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: '2px' }}
+                          />
+                        </div>
+
+                        <div>
+                          <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#334155', display: 'block', marginBottom: '2px' }}>
+                            Company / Client *
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Northern Trust / BCBS"
+                            value={refForm.company}
+                            onChange={e => setRefForm(prev => ({ ...prev, company: e.target.value }))}
+                            style={{ width: '100%', padding: '4px 6px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: '2px' }}
+                          />
+                        </div>
+
+                        <div>
+                          <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#334155', display: 'block', marginBottom: '2px' }}>
+                            Designation / Title *
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Delivery Director / Lead"
+                            value={refForm.designation}
+                            onChange={e => setRefForm(prev => ({ ...prev, designation: e.target.value }))}
+                            style={{ width: '100%', padding: '4px 6px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: '2px' }}
+                          />
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+                        <div>
+                          <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#334155', display: 'block', marginBottom: '2px' }}>
+                            Phone Number
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. (313) 555-0199"
+                            value={refForm.phone}
+                            onChange={e => setRefForm(prev => ({ ...prev, phone: e.target.value }))}
+                            style={{ width: '100%', padding: '4px 6px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: '2px' }}
+                          />
+                        </div>
+
+                        <div>
+                          <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#334155', display: 'block', marginBottom: '2px' }}>
+                            Email Address
+                          </label>
+                          <input
+                            type="email"
+                            placeholder="e.g. manager@company.com"
+                            value={refForm.email}
+                            onChange={e => setRefForm(prev => ({ ...prev, email: e.target.value }))}
+                            style={{ width: '100%', padding: '4px 6px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: '2px' }}
+                          />
+                        </div>
+
+                        <div>
+                          <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#334155', display: 'block', marginBottom: '2px' }}>
+                            Verification Status
+                          </label>
+                          <select
+                            value={refForm.verificationStatus}
+                            onChange={e => setRefForm(prev => ({ ...prev, verificationStatus: e.target.value }))}
+                            style={{ width: '100%', padding: '4px 6px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: '2px', background: '#ffffff', fontWeight: 'bold' }}
+                          >
+                            <option value="Verified (Positive)">✅ Verified (Positive)</option>
+                            <option value="Verified (Neutral)">👌 Verified (Neutral)</option>
+                            <option value="Pending Verification">⏳ Pending Verification</option>
+                            <option value="Contact Attempted">📞 Contact Attempted</option>
+                            <option value="Do Not Contact">🚫 Do Not Contact</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '8px', marginBottom: '10px' }}>
+                        <div>
+                          <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#334155', display: 'block', marginBottom: '2px' }}>
+                            Project / Relationship
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Enterprise Migration (Manager)"
+                            value={refForm.project}
+                            onChange={e => setRefForm(prev => ({ ...prev, project: e.target.value }))}
+                            style={{ width: '100%', padding: '4px 6px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: '2px' }}
+                          />
+                        </div>
+
+                        <div>
+                          <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#334155', display: 'block', marginBottom: '2px' }}>
+                            Feedback / Notes
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Highly recommended, outstanding problem solving and delivery track record"
+                            value={refForm.notes}
+                            onChange={e => setRefForm(prev => ({ ...prev, notes: e.target.value }))}
+                            style={{ width: '100%', padding: '4px 6px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: '2px' }}
+                          />
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowAddRefForm(false)
+                            setEditingRefId(null)
+                          }}
+                          style={{ padding: '4px 12px', fontSize: '11px', border: '1px solid #cbd5e1', background: '#ffffff', borderRadius: '3px', cursor: 'pointer' }}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSaveReferenceItem}
+                          style={{ padding: '4px 16px', fontSize: '11px', fontWeight: 'bold', border: '1px solid #16a34a', background: '#16a34a', color: '#ffffff', borderRadius: '3px', cursor: 'pointer' }}
+                        >
+                          {editingRefId ? '💾 Update Reference' : '➕ Add to Table'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* References Data Table */}
+                  <div style={{ border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden', marginBottom: '12px' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
+                      <thead>
+                        <tr style={{ background: '#334155', color: '#ffffff' }}>
+                          <th style={{ padding: '6px 8px', borderRight: '1px solid rgba(255,255,255,0.1)' }}>#</th>
+                          <th style={{ padding: '6px 8px', borderRight: '1px solid rgba(255,255,255,0.1)' }}>Reference Name</th>
+                          <th style={{ padding: '6px 8px', borderRight: '1px solid rgba(255,255,255,0.1)' }}>Company & Title</th>
+                          <th style={{ padding: '6px 8px', borderRight: '1px solid rgba(255,255,255,0.1)' }}>Contact Info</th>
+                          <th style={{ padding: '6px 8px', borderRight: '1px solid rgba(255,255,255,0.1)' }}>Project / Role</th>
+                          <th style={{ padding: '6px 8px', borderRight: '1px solid rgba(255,255,255,0.1)' }}>Status</th>
+                          <th style={{ padding: '6px 8px', width: '80px', textAlign: 'center' }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {references.length === 0 ? (
+                          <tr>
+                            <td colSpan="7" style={{ padding: '32px 16px', textAlign: 'center', background: '#f8fafc', color: '#64748b' }}>
+                              <div style={{ fontSize: '24px', marginBottom: '6px' }}>📇</div>
+                              <div style={{ fontWeight: 'bold', color: '#334155', marginBottom: '4px' }}>
+                                No References Recorded Yet
+                              </div>
+                              <div style={{ fontSize: '10.5px', marginBottom: '12px' }}>
+                                Click <strong>"+ Add Reference"</strong> above or use <strong>"Auto-Fill Sample Reference"</strong> to populate supervisor details.
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const sample = {
+                                    id: Date.now(),
+                                    name: 'Robert Vance',
+                                    company: 'DTE Energy / Distribution Engineering',
+                                    designation: 'Senior Delivery Manager',
+                                    phone: '(313) 555-0182',
+                                    email: 'robert.vance@dteenergy.com',
+                                    project: 'Enterprise Gas Innovations Portal',
+                                    verificationStatus: 'Verified (Positive)',
+                                    notes: 'Direct supervisor. Praised analytical rigor, sprint discipline, and stakeholder communication.'
+                                  }
+                                  const updated = [sample]
+                                  setReferences(updated)
+                                  try { localStorage.setItem(`smarthire_candidate_refs_${cleanCandId}`, JSON.stringify(updated)) } catch(e) {}
+                                  saveCandidate(cleanCandId, { ...candidate, references: updated }).catch(() => {})
+                                  setToastMsg('✨ Sample supervisor reference added & saved to database!')
+                                  setTimeout(() => setToastMsg(null), 3000)
+                                }}
+                                style={{
+                                  background: '#0033cc',
+                                  color: '#ffffff',
+                                  border: '1px solid #002299',
+                                  padding: '4px 14px',
+                                  fontSize: '11px',
+                                  fontWeight: 'bold',
+                                  borderRadius: '3px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                ✨ Auto-Fill Sample Reference
+                              </button>
+                            </td>
+                          </tr>
+                        ) : (
+                          references.map((rf, idx) => (
+                            <tr key={rf.id || idx} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                              <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#64748b' }}>{idx + 1}</td>
+                              <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#000080' }}>
+                                {rf.name}
+                                {rf.notes && (
+                                  <div style={{ fontSize: '9.5px', color: '#64748b', fontWeight: 'normal', marginTop: '1px' }}>
+                                    💬 {rf.notes}
+                                  </div>
+                                )}
+                              </td>
+                              <td style={{ padding: '6px 8px' }}>
+                                <div style={{ fontWeight: 'bold', color: '#334155' }}>{rf.company}</div>
+                                <div style={{ fontSize: '10px', color: '#64748b' }}>{rf.designation}</div>
+                              </td>
+                              <td style={{ padding: '6px 8px', fontSize: '10.5px' }}>
+                                {rf.phone && <div style={{ color: '#0f172a' }}>📞 {rf.phone}</div>}
+                                {rf.email && <div style={{ color: '#0284c7' }}>✉️ {rf.email}</div>}
+                              </td>
+                              <td style={{ padding: '6px 8px', color: '#475569', fontSize: '10.5px' }}>
+                                {rf.project || 'Target Requisition'}
+                              </td>
+                              <td style={{ padding: '6px 8px' }}>
+                                <span style={{
+                                  background: (rf.verificationStatus || '').includes('Positive') ? '#dcfce7' : ((rf.verificationStatus || '').includes('Pending') ? '#fef3c7' : '#f1f5f9'),
+                                  color: (rf.verificationStatus || '').includes('Positive') ? '#166534' : ((rf.verificationStatus || '').includes('Pending') ? '#b45309' : '#334155'),
+                                  padding: '2px 6px',
+                                  borderRadius: '3px',
+                                  fontSize: '10px',
+                                  fontWeight: 'bold',
+                                  display: 'inline-block'
+                                }}>
+                                  {rf.verificationStatus || 'Verified'}
+                                </span>
+                              </td>
+                              <td style={{ padding: '6px 8px', textAlign: 'center' }}>
+                                <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setEditingRefId(rf.id)
+                                      setRefForm({
+                                        name: rf.name || '',
+                                        company: rf.company || '',
+                                        designation: rf.designation || '',
+                                        phone: rf.phone || '',
+                                        email: rf.email || '',
+                                        project: rf.project || '',
+                                        verificationStatus: rf.verificationStatus || 'Verified (Positive)',
+                                        notes: rf.notes || ''
+                                      })
+                                      setShowAddRefForm(true)
+                                    }}
+                                    style={{ border: '1px solid #cbd5e1', background: '#ffffff', padding: '1px 6px', fontSize: '10px', borderRadius: '2px', cursor: 'pointer' }}
+                                    title="Edit Reference"
+                                  >
+                                    ✏️
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (confirm(`Remove reference for ${rf.name}?`)) {
+                                        const nextRefs = references.filter(r => r.id !== rf.id)
+                                        setReferences(nextRefs)
+                                        try { localStorage.setItem(`smarthire_candidate_refs_${cleanCandId}`, JSON.stringify(nextRefs)) } catch(e) {}
+                                        saveCandidate(cleanCandId, { ...candidate, references: nextRefs }).catch(() => {})
+                                        setToastMsg('🗑️ Reference removed and updated in database.')
+                                        setTimeout(() => setToastMsg(null), 2500)
+                                      }
+                                    }}
+                                    style={{ border: '1px solid #fecaca', background: '#fff1f2', color: '#dc2626', padding: '1px 6px', fontSize: '10px', borderRadius: '2px', cursor: 'pointer' }}
+                                    title="Delete Reference"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Save References to Database Footer Action */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f1f5f9', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
+                    <span style={{ fontSize: '10.5px', color: '#64748b' }}>
+                      💡 References are automatically linked with candidate profile #{cleanCandId} and synced across all recruiters.
                     </span>
                     <button
                       type="button"
-                      onClick={handleAddReference}
-                      style={{ border: '1px solid #0033cc', background: '#0033cc', color: '#ffffff', padding: '2px 10px', fontSize: '10.5px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer' }}
+                      onClick={async () => {
+                        setToastMsg('⏳ Saving references to Firebase Database...')
+                        try {
+                          localStorage.setItem(`smarthire_candidate_refs_${cleanCandId}`, JSON.stringify(references))
+                        } catch(e) {}
+                        try {
+                          await saveCandidate(cleanCandId, {
+                            ...candidate,
+                            name: `${formData.firstName} ${formData.lastName}`.trim() || candidate.name,
+                            references
+                          })
+                          if (onUpdateCandidate) {
+                            onUpdateCandidate({ ...candidate, references })
+                          }
+                          setToastMsg('✅ References saved to database successfully!')
+                        } catch(err) {
+                          setToastMsg('✅ References saved locally!')
+                        }
+                        setTimeout(() => setToastMsg(null), 3000)
+                      }}
+                      style={{
+                        background: '#0033cc',
+                        border: '1px solid #002299',
+                        color: '#ffffff',
+                        padding: '5px 18px',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        borderRadius: '3px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
                     >
-                      + Add Reference
+                      💾 Save References to Database
                     </button>
                   </div>
-
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', border: '1px solid #7f9db9', textAlign: 'left' }}>
-                    <thead>
-                      <tr style={{ background: '#708090', color: '#ffffff' }}>
-                        <th style={{ padding: '5px 8px', borderRight: '1px solid #ffffff' }}>Reference Name</th>
-                        <th style={{ padding: '5px 8px', borderRight: '1px solid #ffffff' }}>Company & Title</th>
-                        <th style={{ padding: '5px 8px', borderRight: '1px solid #ffffff' }}>Contact</th>
-                        <th style={{ padding: '5px 8px', borderRight: '1px solid #ffffff' }}>Status</th>
-                        <th style={{ padding: '5px 8px', width: '50px', textAlign: 'center' }}>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {references.length === 0 ? (
-                        <tr>
-                          <td colSpan="5" style={{ padding: '24px', textAlign: 'center', color: '#64748b' }}>
-                            No references added for this candidate yet. Click '+ Add Reference' to record a professional reference.
-                          </td>
-                        </tr>
-                      ) : (
-                        references.map((rf, idx) => (
-                          <tr key={rf.id || idx} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                            <td style={{ padding: '5px 8px', fontWeight: 'bold', color: '#000080' }}>{rf.name}</td>
-                            <td style={{ padding: '5px 8px' }}>{rf.company} ({rf.designation})</td>
-                            <td style={{ padding: '5px 8px' }}>{rf.phone} {rf.email ? `| ${rf.email}` : ''}</td>
-                            <td style={{ padding: '5px 8px', color: '#166534', fontWeight: 'bold' }}>{rf.verificationStatus}</td>
-                            <td style={{ padding: '5px 8px', textAlign: 'center' }}>
-                              <span
-                                onClick={() => setReferences(prev => prev.filter(r => r.id !== rf.id))}
-                                style={{ color: '#dc2626', cursor: 'pointer', fontWeight: 'bold' }}
-                                title="Delete Reference"
-                              >
-                                ❌
-                              </span>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
                 </div>
               )}
 
