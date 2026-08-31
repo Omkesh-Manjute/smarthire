@@ -53,30 +53,34 @@ function SuperAdminRoute({ children }) {
   return children
 }
 
+import ErrorBoundary from './components/ErrorBoundary'
+
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Homepage />} />
-      <Route path="/jobs" element={<PublicCareers />} />
-      <Route path="/careers" element={<PublicCareers />} />
-      <Route path="/dashboard" element={<ProtectedRoute><RecruiterDashboard /></ProtectedRoute>} />
-      <Route path="/verify" element={<Navigate to="/ats" replace />} />
-      <Route path="/ats" element={<ProtectedRoute><AtsPlatform /></ProtectedRoute>} />
-      <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-      <Route path="/pricing" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
-      <Route path="/branding" element={<ProtectedRoute><BrandingCenter /></ProtectedRoute>} />
-      <Route path="/inbox" element={<ProtectedRoute><RecruiterInbox /></ProtectedRoute>} />
-      <Route path="/linkedin-posts" element={<SuperAdminRoute><LinkedInPosts /></SuperAdminRoute>} />
-      <Route path="/candidate-chat/:sessionId" element={<CandidateChat />} />
-      <Route path="/candidate-chat/job/:jobId" element={<CandidateChat />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/about" element={<About />} />
-      <Route path="/contact" element={<Contact />} />
-      <Route path="/support" element={<Support />} />
-      <Route path="/privacy" element={<PrivacyPolicy />} />
-      <Route path="/terms" element={<Terms />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <ErrorBoundary>
+      <Routes>
+        <Route path="/" element={<Homepage />} />
+        <Route path="/jobs" element={<PublicCareers />} />
+        <Route path="/careers" element={<PublicCareers />} />
+        <Route path="/dashboard" element={<ProtectedRoute><RecruiterDashboard /></ProtectedRoute>} />
+        <Route path="/verify" element={<Navigate to="/ats" replace />} />
+        <Route path="/ats" element={<ProtectedRoute><AtsPlatform /></ProtectedRoute>} />
+        <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+        <Route path="/pricing" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
+        <Route path="/branding" element={<ProtectedRoute><BrandingCenter /></ProtectedRoute>} />
+        <Route path="/inbox" element={<ProtectedRoute><RecruiterInbox /></ProtectedRoute>} />
+        <Route path="/linkedin-posts" element={<SuperAdminRoute><LinkedInPosts /></SuperAdminRoute>} />
+        <Route path="/candidate-chat/:sessionId" element={<CandidateChat />} />
+        <Route path="/candidate-chat/job/:jobId" element={<CandidateChat />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/support" element={<Support />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </ErrorBoundary>
   )
 }
 

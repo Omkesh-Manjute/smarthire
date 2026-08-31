@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import SiteLayout from '../components/SiteLayout'
 import CandidatePdfReportModal from '../components/CandidatePdfReportModal'
