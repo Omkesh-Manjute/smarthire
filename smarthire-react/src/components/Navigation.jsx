@@ -32,9 +32,24 @@ function Navigation() {
   } catch (e) {}
   const currentUser = user
 
-  const isAuthenticated =
-    localStorage.getItem('smarthire_authenticated') === 'true' ||
-    localStorage.getItem('verifyhire_authenticated') === 'true'
+  // Dynamic team users roster lookup for accurate hierarchy
+  const teamUsersList = (() => {
+    try {
+      const raw = localStorage.getItem('smarthire_recruiters')
+      if (raw) return JSON.parse(raw) || []
+    } catch(e) {}
+    return []
+  })()
+
+  const matchedUserInTeam = teamUsersList.find(u =>
+    (u.email && user?.email && u.email.toLowerCase() === user.email.toLowerCase()) ||
+    (u.name && user?.name && u.name.toLowerCase() === user.name.toLowerCase())
+  )
+
+  const effectiveParentRecruiterName = 
+    user?.parentRecruiterName || 
+    matchedUserInTeam?.parentRecruiterName || 
+    (user?.name?.toLowerCase().includes('gourav') || user?.email?.toLowerCase().includes('gourav') ? 'Omkesh' : (user?.role === 'employee' ? 'Sukamal Chatterjee' : ''))
 
   const realUserRole = user?.role || 'recruiter'
   const isEmployee = realUserRole === 'employee'
@@ -46,6 +61,8 @@ function Navigation() {
   const [activeRole, setActiveRole] = useState(() => {
     return isSuperAdmin ? (localStorage.getItem('smarthire_active_role') || 'superadmin') : defaultRole
   })
+
+  const isReportee = Boolean(effectiveParentRecruiterName && !isSuperAdmin && !isManager && effectiveParentRecruiterName.toLowerCase() !== (user?.name || '').toLowerCase())
 
   // Load permissions
   const [permissions, setPermissions] = useState(() => {
@@ -651,7 +668,7 @@ function Navigation() {
                           </button>
                         )}
 
-                        {isEmployee ? (
+                        {isReportee ? (
                           <button
                             className="profile-menu-link"
                             onClick={() => {
@@ -660,7 +677,7 @@ function Navigation() {
                             }}
                           >
                             <span className="menu-link-icon">💬</span>
-                            <span>Message Lead Recruiter ({currentUser?.parentRecruiterName || 'Sukamal Chatterjee'})</span>
+                            <span>Message Lead Recruiter ({effectiveParentRecruiterName})</span>
                           </button>
                         ) : (
                           <button

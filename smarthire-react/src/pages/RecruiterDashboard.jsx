@@ -118,7 +118,40 @@ function parseResumeDetails(text, filename = '') {
   }
 }
 
-// ─── CANDIDATES STORE (Directly populated from Firestore and real additions) ───
+// ─── CANDIDATES STORE & DEDUPLICATION ───
+export const deduplicateCandidates = (list) => {
+  if (!Array.isArray(list)) return []
+  const seen = new Set()
+  const result = []
+
+  for (const c of list) {
+    if (!c) continue
+    const email = (c.email || c.extracted_profile?.email || '').toLowerCase().trim()
+    const name = (c.name || c.extracted_profile?.name || '').toLowerCase().trim().replace(/\s+/g, ' ')
+    const phone = String(c.phone || c.phoneCell || c.extracted_profile?.phone || '').replace(/\D/g, '')
+    const id = String(c.id || c.canId || c._id || '').trim()
+
+    const emailKey = email ? `email:${email}` : null
+    const namePhoneKey = (name && phone.length >= 7) ? `np:${name}_${phone}` : null
+    const nameKey = name ? `name:${name}` : null
+    const idKey = id ? `id:${id}` : null
+
+    if (emailKey && seen.has(emailKey)) continue
+    if (namePhoneKey && seen.has(namePhoneKey)) continue
+    if (!emailKey && !namePhoneKey && nameKey && seen.has(nameKey)) continue
+    if (!emailKey && !nameKey && idKey && seen.has(idKey)) continue
+
+    if (emailKey) seen.add(emailKey)
+    if (namePhoneKey) seen.add(namePhoneKey)
+    if (nameKey) seen.add(nameKey)
+    if (idKey) seen.add(idKey)
+
+    result.push(c)
+  }
+
+  return result
+}
+
 const legacyCandidateData = []
 
 function RecruiterDashboard() {
@@ -128,7 +161,7 @@ function RecruiterDashboard() {
       const saved = localStorage.getItem('smarthire_all_candidates')
       if (saved) {
         const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed)) return parsed
+        if (Array.isArray(parsed)) return deduplicateCandidates(parsed)
       }
     } catch (e) {}
     return legacyCandidateData
@@ -617,7 +650,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       const subRefs = mySubordinates.map(u => (u.refCode || '').toLowerCase().trim()).filter(Boolean)
       const subIds = mySubordinates.map(u => String(u.id || u._id || '').toLowerCase().trim()).filter(Boolean)
 
-      return candList.filter(c => {
+      const filtered = candList.filter(c => {
         if (!c) return false
         const candAssigned = (c.assignedBy || c.recruiter || c.addedByName || c.submittedBy || c.lastChangedBy || '').toLowerCase().trim()
         const candEmail = (c.recruiterEmail || c.addedByEmail || '').toLowerCase().trim()
@@ -645,11 +678,12 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
         return isMine || isMyParentChild || isSubordinateCand
       })
+      return deduplicateCandidates(filtered)
     }
 
     if (isEmployee) {
       // Employee: strictly sees own candidates
-      return candList.filter(c => {
+      const filtered = candList.filter(c => {
         if (!c) return false
         const candAssigned = (c.assignedBy || c.recruiter || c.addedByName || c.submittedBy || '').toLowerCase().trim()
         const candEmail = (c.recruiterEmail || c.addedByEmail || '').toLowerCase().trim()
@@ -657,9 +691,10 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                (userIdent.length >= 3 && (candAssigned.includes(userIdent) || userIdent.includes(candAssigned))) ||
                (userEmail && (candAssigned.includes(userEmail) || candEmail.includes(userEmail)))
       })
+      return deduplicateCandidates(filtered)
     }
 
-    return candList
+    return deduplicateCandidates(candList)
   }, [isAdmin, isManager, isRecruiter, isEmployee, userName, currentUser, teamUsers])
 
   // Audit Log Modal state
@@ -2083,7 +2118,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
   // ─── FILTER CANDIDATES LIST (ROLE-BASED & SEARCH FILTERS) ───
   const filteredCandidates = useMemo(() => {
-    return candidates.filter(c => {
+    const list = candidates.filter(c => {
       if (!c) return false
 
       // ─── STRICT RBAC FOR CANDIDATES ───
@@ -2223,6 +2258,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
       return true
     })
+    return deduplicateCandidates(list)
   }, [candidates, candFilters, isEmployee, isRecruiter, isAdmin, isManager, userName, currentUser, teamUsers])
 
   const paginatedCandidates = useMemo(() => {

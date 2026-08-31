@@ -15,7 +15,7 @@ import {
   AuditActivityLogModule,
 } from '../ats'
 import { formatJobDescription, cleanJobTitleWithPositionNumber } from '../utils/formatJobDescription'
-import { getAllCandidates } from '../lib/atsFirestore'
+import { getAllCandidates, deduplicateCandidates } from '../lib/atsFirestore'
 
 const API_BASE = ''
 
@@ -359,7 +359,7 @@ export default function AtsPlatform() {
     return []
   })()
 
-  const safeCandidates = (isSuperAdmin || realUserRole === 'admin' || isManager)
+  const safeCandidates = deduplicateCandidates((isSuperAdmin || realUserRole === 'admin' || isManager)
     ? rawCandidates
     : rawCandidates.filter(c => {
         if (!c) return false
@@ -413,10 +413,10 @@ export default function AtsPlatform() {
                                subIds.some(sid => sid && cOwner === sid)
 
         return isMine || isMyParentChild || isSubCandidate
-      })
+      }))
 
   // Filtered candidates safely
-  const filteredCandidates = safeCandidates.filter(c => {
+  const filteredCandidates = deduplicateCandidates(safeCandidates.filter(c => {
     if (!c) return false
     const matchJob = selectedJob === 'All' || c.job_id === selectedJob
     const matchStatus = statusFilter === 'All' || c.status === statusFilter
@@ -433,7 +433,7 @@ export default function AtsPlatform() {
       skillStr.toLowerCase().includes(query.toLowerCase())
 
     return matchJob && matchStatus && matchQuery
-  })
+  }))
 
   const liveCandidates = safeCandidates.filter(c => c && c.status !== 'Rejected')
 

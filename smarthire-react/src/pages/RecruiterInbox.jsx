@@ -200,12 +200,33 @@ export default function RecruiterInbox() {
     if (userStr) currentUser = JSON.parse(userStr)
   } catch (e) {}
 
+  const teamUsersList = (() => {
+    try {
+      const raw = localStorage.getItem('smarthire_recruiters')
+      if (raw) return JSON.parse(raw) || []
+    } catch(e) {}
+    return []
+  })()
+
+  const matchedUserInTeam = teamUsersList.find(u =>
+    (u.email && currentUser?.email && u.email.toLowerCase() === currentUser.email.toLowerCase()) ||
+    (u.name && currentUser?.name && u.name.toLowerCase() === currentUser.name.toLowerCase())
+  )
+
   const defaultRole = (currentUser && currentUser.role) ? currentUser.role : 'superadmin'
   const activeRole = localStorage.getItem('smarthire_active_role') || defaultRole
   const isSuperAdmin = activeRole === 'superadmin' || activeRole === 'admin'
   const isEmployee = activeRole === 'employee' || defaultRole === 'employee'
-  const parentRecruiterName = currentUser?.parentRecruiterName || 'Sukamal Chatterjee'
-  const parentRecruiterEmail = currentUser?.parentRecruiterEmail || 'sukamal.c@smarthire.com'
+  
+  const resolvedParentName = currentUser?.parentRecruiterName || matchedUserInTeam?.parentRecruiterName || 
+    (currentUser?.name?.toLowerCase().includes('gourav') || currentUser?.email?.toLowerCase().includes('gourav') ? 'Omkesh' : (isEmployee ? 'Sukamal Chatterjee' : ''))
+
+  const isReportee = Boolean(resolvedParentName && !isSuperAdmin && !isManager && resolvedParentName.toLowerCase() !== (currentUser?.name || '').toLowerCase())
+
+  const parentRecruiterName = resolvedParentName || 'Sukamal Chatterjee'
+  const parentRecruiterEmail = currentUser?.parentRecruiterEmail || 
+    (parentRecruiterName.toLowerCase().includes('omkesh') ? 'omkesh@coolsofttech.com' : 
+     parentRecruiterName.toLowerCase().includes('vaibhav') ? 'vaibhav@coolsofttech.com' : 'sukamal.c@smarthire.com')
 
   const [recruiterFilter, setRecruiterFilter] = useState(() => {
     try {
@@ -219,12 +240,12 @@ export default function RecruiterInbox() {
     return 'all'
   })
 
-  const quickTemplates = isEmployee ? [
-    "Hi Sukamal, could you please review this candidate profile for Requisition #158999?",
-    "Could you confirm if the bill rate of $90/hr and pay rate of $74/hr is approved for this candidate?",
-    "Candidate's Right to Represent (RTR) form and work authorization docs have been verified.",
-    "Candidate is immediately available for client interview rounds this week.",
-    "Please let me know if any additional screening notes are required before submission."
+  const quickTemplates = isReportee ? [
+    `Hi ${parentRecruiterName}, could you please review this candidate profile for Requisition #158999?`,
+    `Could you confirm if the bill rate of $90/hr and pay rate of $74/hr is approved for this candidate?`,
+    `Candidate's Right to Represent (RTR) form and work authorization docs have been verified.`,
+    `Candidate is immediately available for client interview rounds this week.`,
+    `Please let me know if any additional screening notes are required before submission.`
   ] : [
     "Hi! I reviewed your resume and would love to connect. Are you available for a quick call this week?",
     "Thank you for your application! Could you confirm your work authorization status and notice period?",
@@ -234,7 +255,7 @@ export default function RecruiterInbox() {
   ]
 
   const fetchThreads = useCallback(async () => {
-    if (isEmployee) {
+    if (isReportee) {
       const localKey = `smarthire_lead_messages_${currentUser?.email || 'emp'}`
       let savedMsgs = []
       try {
@@ -244,7 +265,7 @@ export default function RecruiterInbox() {
       const lastMsgText = savedMsgs.length > 0 ? savedMsgs[savedMsgs.length - 1].text : 'Direct reporting & candidate approval channel'
       const leadThread = {
         candidateId: 'lead-recruiter-' + (currentUser?.email || 'emp'),
-        candidateName: `${parentRecruiterName} (Lead Recruiter)`,
+        candidateName: `${parentRecruiterName} (Reporting Supervisor / Lead)`,
         jobTitle: 'Reporting Supervisor & Sourcing Approvals',
         lastMessage: lastMsgText,
         lastMessageTime: new Date().toISOString(),
@@ -270,18 +291,18 @@ export default function RecruiterInbox() {
       if (data.success && Array.isArray(data.threads)) setThreads(data.threads)
     } catch (e) { console.warn('Thread fetch error:', e) }
     finally { setLoadingThreads(false) }
-  }, [recruiterFilter, isEmployee, parentRecruiterName, parentRecruiterEmail, currentUser?.email])
+  }, [recruiterFilter, isReportee, parentRecruiterName, parentRecruiterEmail, currentUser?.email])
 
   const fetchCandidateDetails = useCallback(async (candidateId) => {
-    if (isEmployee) {
+    if (isReportee) {
       setCandidateDetails({
         name: parentRecruiterName,
         email: parentRecruiterEmail,
-        role: 'Senior / Lead Recruiter',
+        role: parentRecruiterName.toLowerCase().includes('omkesh') ? 'Super Admin / Lead Recruiter' : 'Senior / Lead Recruiter',
         phone: '571-660-5778',
         location: 'Richmond, VA',
         skills: ['Team Supervision', 'Requisition Approvals', 'Client Delivery', 'Rate Clearances'],
-        summary: `Lead Recruiter supervisor for ${currentUser?.name || 'Employee'}. Review candidates, requisition queries, and approve submissions.`
+        summary: `Lead Recruiter supervisor for ${currentUser?.name || 'Recruiter'}. Review candidates, requisition queries, and approve submissions.`
       })
       return
     }
@@ -309,11 +330,11 @@ export default function RecruiterInbox() {
         setCandidateDetails(null)
       }
     } catch (e) { setCandidateDetails(null) }
-  }, [isEmployee, parentRecruiterName, parentRecruiterEmail, currentUser?.name])
+  }, [isReportee, parentRecruiterName, parentRecruiterEmail, currentUser?.name])
 
   const fetchMessages = useCallback(async (candidateId, silent = false) => {
     if (!candidateId) return
-    if (isEmployee) {
+    if (isReportee) {
       const localKey = `smarthire_lead_messages_${currentUser?.email || 'emp'}`
       try {
         const raw = localStorage.getItem(localKey)
@@ -351,7 +372,7 @@ export default function RecruiterInbox() {
       if (data.success && Array.isArray(data.messages)) setMessages(data.messages)
     } catch (e) { console.warn('Message fetch error:', e) }
     finally { setLoadingMessages(false) }
-  }, [isEmployee, currentUser?.email, currentUser?.name, parentRecruiterName])
+  }, [isReportee, currentUser?.email, currentUser?.name, parentRecruiterName])
 
   const selectThread = useCallback(async (thread) => {
     setActiveThread(thread)
@@ -359,7 +380,7 @@ export default function RecruiterInbox() {
     setShowTemplates(false)
     await fetchMessages(thread.candidateId)
     fetchCandidateDetails(thread.candidateId)
-    if (!isEmployee) {
+    if (!isReportee) {
       try {
         await fetch('/api/messages/' + thread.candidateId + '/read', { 
           method: 'PATCH',
@@ -370,7 +391,7 @@ export default function RecruiterInbox() {
         setThreads(prev => prev.map(t => t.candidateId === thread.candidateId ? { ...t, unreadCount: 0 } : t))
       } catch (e) {}
     }
-  }, [fetchMessages, fetchCandidateDetails, isEmployee])
+  }, [fetchMessages, fetchCandidateDetails, isReportee])
 
   const handleSend = async (textOverride) => {
     const text = (textOverride || inputText).trim()
@@ -380,7 +401,7 @@ export default function RecruiterInbox() {
     setShowTemplates(false)
     const optimistic = {
       id: 'opt-' + Date.now(),
-      sender: isEmployee ? 'employee' : 'recruiter',
+      sender: isReportee ? 'employee' : 'recruiter',
       senderName: currentUser?.name || 'Recruiter',
       text,
       timestamp: new Date().toISOString(),
@@ -388,14 +409,14 @@ export default function RecruiterInbox() {
     }
     setMessages(prev => {
       const updated = [...prev, optimistic]
-      if (isEmployee) {
+      if (isReportee) {
         localStorage.setItem(`smarthire_lead_messages_${currentUser?.email || 'emp'}`, JSON.stringify(updated))
       }
       return updated
     })
     setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
     
-    if (isEmployee) {
+    if (isReportee) {
       setSending(false)
       return
     }
@@ -432,14 +453,14 @@ export default function RecruiterInbox() {
 
   useEffect(() => {
     if (pollingRef.current) clearInterval(pollingRef.current)
-    if (activeThread && !isEmployee) {
+    if (activeThread && !isReportee) {
       pollingRef.current = setInterval(() => {
         fetchMessages(activeThread.candidateId, true)
         fetchThreads()
       }, POLL_INTERVAL)
     }
     return () => clearInterval(pollingRef.current)
-  }, [activeThread, fetchMessages, fetchThreads, isEmployee])
+  }, [activeThread, fetchMessages, fetchThreads, isReportee])
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
@@ -479,17 +500,17 @@ export default function RecruiterInbox() {
           </div>
           <div>
             <div style={{ fontWeight:800, fontSize:16, color:C.textPrimary, lineHeight:1.2 }}>
-              {isEmployee ? 'Lead Recruiter Messaging' : 'Recruiter Inbox'}
+              {isReportee ? 'Lead Recruiter Messaging' : 'Recruiter Inbox'}
             </div>
             <div style={{ fontSize:11, color:C.textSecondary }}>
-              {isEmployee ? `Reporting Channel with ${parentRecruiterName} (Lead Recruiter)` : 'Live Candidate Conversations'}
+              {isReportee ? `Reporting Channel with ${parentRecruiterName} (Lead Recruiter)` : 'Live Candidate Conversations'}
             </div>
           </div>
           {totalUnread > 0 && <span style={{ background:'#EF4444', color:'#FFF', fontSize:11, fontWeight:800, borderRadius:12, padding:'2px 8px', marginLeft:4 }}>{totalUnread} unread</span>}
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
           <span style={{ fontSize:12, color:C.textSecondary, background:C.inputBg, border:`1px solid ${C.border}`, padding:'5px 14px', borderRadius:20, fontWeight:600, display:'inline-flex', alignItems:'center', gap:6 }}>
-            <span style={{ width:7, height:7, borderRadius:'50%', background:'#22C55E', display:'inline-block' }} /> {isEmployee ? '1 Supervisor Channel' : `${visibleThreads.length} Conversations`}
+            <span style={{ width:7, height:7, borderRadius:'50%', background:'#22C55E', display:'inline-block' }} /> {isReportee ? '1 Supervisor Channel' : `${visibleThreads.length} Conversations`}
           </span>
           <button onClick={() => { const m = themeMode==='light'?'dark':'light'; setThemeMode(m); localStorage.setItem('smarthire_theme',m) }} style={{ background:C.inputBg, border:`1px solid ${C.border}`, borderRadius:20, padding:'6px 14px', fontSize:12, fontWeight:700, cursor:'pointer', color:C.textPrimary, display:'inline-flex', alignItems:'center', gap:6 }}>
             {isLight ? <><IconMoon /> Dark</> : <><IconSun /> Light</>}
@@ -502,8 +523,8 @@ export default function RecruiterInbox() {
         {/* LEFT SIDEBAR */}
         <div style={{ width:330, flexShrink:0, backgroundColor:C.sidebar, borderRight:`1px solid ${C.border}`, display:'flex', flexDirection:'column', overflow:'hidden' }}>
           <div style={{ padding:'14px 14px 10px', borderBottom:`1px solid ${C.border}`, flexShrink:0 }}>
-            {/* Recruiter Filter Dropdown - Only for Admins / Recruiters */}
-            {!isEmployee && (
+            {/* Recruiter Filter Dropdown - Only for Admins / Recruiters without reporting lead */}
+            {!isReportee && (
               <div style={{ marginBottom: 10 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                   <label style={{ fontSize: 11, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase', letterSpacing: '0.5px' }}>

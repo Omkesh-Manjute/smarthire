@@ -435,3 +435,40 @@ export async function getTeamUsersFirestore() {
   }
 }
 
+/**
+ * Universal Candidate Deduplication Utility
+ * Deduplicates by Email, Name + Phone, Name, or ID.
+ */
+export function deduplicateCandidates(list) {
+  if (!Array.isArray(list)) return []
+  const seen = new Set()
+  const result = []
+
+  for (const c of list) {
+    if (!c) continue
+    const email = (c.email || c.extracted_profile?.email || '').toLowerCase().trim()
+    const name = (c.name || c.extracted_profile?.name || '').toLowerCase().trim().replace(/\s+/g, ' ')
+    const phone = String(c.phone || c.phoneCell || c.extracted_profile?.phone || '').replace(/\D/g, '')
+    const id = String(c.id || c.canId || c._id || '').trim()
+
+    const emailKey = email ? `email:${email}` : null
+    const namePhoneKey = (name && phone.length >= 7) ? `np:${name}_${phone}` : null
+    const nameKey = name ? `name:${name}` : null
+    const idKey = id ? `id:${id}` : null
+
+    if (emailKey && seen.has(emailKey)) continue
+    if (namePhoneKey && seen.has(namePhoneKey)) continue
+    if (!emailKey && !namePhoneKey && nameKey && seen.has(nameKey)) continue
+    if (!emailKey && !nameKey && idKey && seen.has(idKey)) continue
+
+    if (emailKey) seen.add(emailKey)
+    if (namePhoneKey) seen.add(namePhoneKey)
+    if (nameKey) seen.add(nameKey)
+    if (idKey) seen.add(idKey)
+
+    result.push(c)
+  }
+
+  return result
+}
+
