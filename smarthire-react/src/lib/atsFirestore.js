@@ -36,6 +36,7 @@ export const JOBS_COLLECTION = 'atsJobs'
 export const APPLICATIONS_COLLECTION = 'atsApplications'
 export const REQUISITIONS_COLLECTION = 'atsRequisitions'
 export const USERS_COLLECTION = 'atsUsers'
+export const MESSAGES_COLLECTION = 'atsMessages'
 
 // ─────────────────────────────────────────
 // 1. CANDIDATE & LEGAL DOCS (A to Z Structured)
@@ -471,4 +472,93 @@ export function deduplicateCandidates(list) {
 
   return result
 }
+
+/**
+ * ─────────────────────────────────────────
+ * 6. REAL-TIME TEAM & CANDIDATE MESSAGING
+ * ─────────────────────────────────────────
+ */
+
+/**
+ * Save / sync message to Firestore
+ */
+export async function saveMessageFirestore(threadId, msgObj) {
+  try {
+    if (!threadId || !msgObj) return
+    const cleanThreadId = String(threadId).replace(/[^a-zA-Z0-9_-]/g, '_')
+    const threadDocRef = doc(db, MESSAGES_COLLECTION, cleanThreadId)
+    
+    // Get existing thread doc to append message
+    const snap = await getDoc(threadDocRef)
+    let existingMsgs = []
+    if (snap.exists()) {
+      const data = snap.data()
+      existingMsgs = Array.isArray(data.messages) ? data.messages : []
+    }
+
+    const newMsg = {
+      id: msgObj.id || `msg-${Date.now()}`,
+      sender: msgObj.sender || 'recruiter',
+      senderName: msgObj.senderName || 'Team Member',
+      senderEmail: msgObj.senderEmail || '',
+      text: msgObj.text || '',
+      timestamp: msgObj.timestamp || new Date().toISOString(),
+      candidateId: threadId
+    }
+
+    const updatedMsgs = [...existingMsgs.filter(m => m.id !== newMsg.id), newMsg]
+
+    await setDoc(threadDocRef, {
+      threadId: cleanThreadId,
+      rawThreadId: threadId,
+      lastMessage: newMsg.text,
+      lastMessageTime: newMsg.timestamp,
+      lastSenderName: newMsg.senderName,
+      messages: updatedMsgs,
+      updatedAt: serverTimestamp()
+    }, { merge: true })
+
+    return updatedMsgs
+  } catch (err) {
+    console.warn('saveMessageFirestore warning:', err)
+    return null
+  }
+}
+
+/**
+ * Fetch messages for a thread from Firestore
+ */
+export async function getMessagesFirestore(threadId) {
+  try {
+    if (!threadId) return []
+    const cleanThreadId = String(threadId).replace(/[^a-zA-Z0-9_-]/g, '_')
+    const snap = await getDoc(doc(db, MESSAGES_COLLECTION, cleanThreadId))
+    if (snap.exists()) {
+      const data = snap.data()
+      return Array.isArray(data.messages) ? data.messages : []
+    }
+    return []
+  } catch (err) {
+    console.warn('getMessagesFirestore warning:', err)
+    return []
+  }
+}
+
+/**
+ * Fetch all threads from Firestore
+ */
+export async function getAllThreadsFirestore() {
+  try {
+    const snap = await getDocs(collection(db, MESSAGES_COLLECTION))
+    const threads = []
+    snap.forEach(d => {
+      threads.push({ id: d.id, ...d.data() })
+    })
+    return threads
+  } catch (err) {
+    console.warn('getAllThreadsFirestore warning:', err)
+    return []
+  }
+}
+
 

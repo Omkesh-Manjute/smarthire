@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { saveMessageFirestore, getMessagesFirestore } from '../lib/atsFirestore'
 
 const POLL_INTERVAL = 3000
 
@@ -258,30 +259,7 @@ export default function RecruiterInbox() {
   ]
 
   const fetchThreads = useCallback(async () => {
-    if (isReportee) {
-      const localKey = `smarthire_lead_messages_${currentUser?.email || 'emp'}`
-      let savedMsgs = []
-      try {
-        const raw = localStorage.getItem(localKey)
-        if (raw) savedMsgs = JSON.parse(raw)
-      } catch(e) {}
-      const lastMsgText = savedMsgs.length > 0 ? savedMsgs[savedMsgs.length - 1].text : 'Direct reporting & candidate approval channel'
-      const leadThread = {
-        candidateId: 'lead-recruiter-' + (currentUser?.email || 'emp'),
-        candidateName: `${parentRecruiterName} (Reporting Supervisor / Lead)`,
-        jobTitle: 'Reporting Supervisor & Sourcing Approvals',
-        lastMessage: lastMsgText,
-        lastMessageTime: new Date().toISOString(),
-        unreadCount: 0,
-        isLeadChannel: true,
-        email: parentRecruiterEmail
-      }
-      setThreads([leadThread])
-      setActiveThread(leadThread)
-      setLoadingThreads(false)
-      return
-    }
-
+    let candidateThreads = []
     try {
       const queryParam = recruiterFilter !== 'all' ? `?recruiter=${encodeURIComponent(recruiterFilter)}` : ''
       const res = await fetch(`/api/messages${queryParam}`, {
@@ -291,21 +269,101 @@ export default function RecruiterInbox() {
         }
       })
       const data = await res.json()
-      if (data.success && Array.isArray(data.threads)) setThreads(data.threads)
-    } catch (e) { console.warn('Thread fetch error:', e) }
-    finally { setLoadingThreads(false) }
-  }, [recruiterFilter, isReportee, parentRecruiterName, parentRecruiterEmail, currentUser?.email])
+      if (data.success && Array.isArray(data.threads)) {
+        candidateThreads = data.threads
+      }
+    } catch (e) { console.warn('Candidate thread fetch error:', e) }
 
-  const fetchCandidateDetails = useCallback(async (candidateId) => {
+    // ─── DYNAMIC TEAM REPORTING CHANNELS ───
+    const teamChannels = []
+
     if (isReportee) {
-      setCandidateDetails({
-        name: parentRecruiterName,
+      // Employee / Sourcing Specialist channel with their direct supervisor (e.g. Naveen -> Sukamal)
+      const threadId = `team-reportee-${(currentUser?.email || 'emp').toLowerCase().trim()}`
+      let fsMsgs = []
+      try { fsMsgs = await getMessagesFirestore(threadId) } catch(e) {}
+      const lastMsgText = (fsMsgs && fsMsgs.length > 0) ? fsMsgs[fsMsgs.length - 1].text : 'Direct reporting & candidate approval channel'
+      const lastMsgTime = (fsMsgs && fsMsgs.length > 0) ? fsMsgs[fsMsgs.length - 1].timestamp : new Date().toISOString()
+
+      const supervisorThread = {
+        candidateId: threadId,
+        candidateName: `${parentRecruiterName} (Reporting Supervisor / Lead)`,
+        jobTitle: 'Reporting Supervisor & Sourcing Approvals',
+        lastMessage: lastMsgText,
+        lastMessageTime: lastMsgTime,
+        unreadCount: 0,
+        isLeadChannel: true,
+        isTeamMember: true,
         email: parentRecruiterEmail,
-        role: parentRecruiterName.toLowerCase().includes('omkesh') ? 'Super Admin / Lead Recruiter' : 'Senior / Lead Recruiter',
-        phone: '571-660-5778',
-        location: 'Richmond, VA',
-        skills: ['Team Supervision', 'Requisition Approvals', 'Client Delivery', 'Rate Clearances'],
-        summary: `Lead Recruiter supervisor for ${currentUser?.name || 'Recruiter'}. Review candidates, requisition queries, and approve submissions.`
+        role: 'Lead Recruiter'
+      }
+      teamChannels.push(supervisorThread)
+    } else {
+      // Supervisor / Lead Recruiter / Admin (e.g. Sukamal Chatterjee, Omkesh, Vaibhav)
+      // Find all reportees assigned to this supervisor
+      const myName = (currentUser?.name || '').toLowerCase().trim()
+      const myEmail = (currentUser?.email || '').toLowerCase().trim()
+
+      const myReportees = teamUsersList.filter(u => {
+        if (!u || !u.name) return false
+        const pName = (u.parentRecruiterName || '').toLowerCase().trim()
+        const pEmail = (u.parentRecruiterEmail || '').toLowerCase().trim()
+        const uEmail = (u.email || '').toLowerCase().trim()
+        if (uEmail === myEmail) return false
+        if (isAdmin || isSuperAdmin) {
+          return u.role === 'employee' || u.role === 'recruiter'
+        }
+        return pName === myName || (myEmail && pEmail === myEmail) || (myName && pName.includes(myName))
+      })
+
+      for (const rep of myReportees) {
+        const threadId = `team-reportee-${(rep.email || '').toLowerCase().trim()}`
+        let fsMsgs = []
+        try { fsMsgs = await getMessagesFirestore(threadId) } catch(e) {}
+        const lastMsgText = (fsMsgs && fsMsgs.length > 0) ? fsMsgs[fsMsgs.length - 1].text : 'Team reporting & candidate review channel'
+        const lastMsgTime = (fsMsgs && fsMsgs.length > 0) ? fsMsgs[fsMsgs.length - 1].timestamp : new Date().toISOString()
+
+        teamChannels.push({
+          candidateId: threadId,
+          candidateName: `${rep.name} (Sourcing Specialist)`,
+          jobTitle: `Direct Reportee • ${rep.company || 'SmartHire Team'}`,
+          lastMessage: lastMsgText,
+          lastMessageTime: lastMsgTime,
+          unreadCount: 0,
+          isLeadChannel: false,
+          isTeamMember: true,
+          email: rep.email,
+          phone: rep.phone || '571-660-5778',
+          role: rep.role || 'Employee / Sourcing Specialist'
+        })
+      }
+    }
+
+    const combined = isReportee ? teamChannels : [...teamChannels, ...candidateThreads]
+    setThreads(combined)
+
+    if (!activeThread && combined.length > 0) {
+      setActiveThread(combined[0])
+    }
+    setLoadingThreads(false)
+  }, [recruiterFilter, isReportee, parentRecruiterName, parentRecruiterEmail, currentUser?.email, currentUser?.name, isAdmin, isSuperAdmin, teamUsersList, activeThread])
+
+  const fetchCandidateDetails = useCallback(async (candidateId, threadObj = null) => {
+    const thread = threadObj || threads.find(t => t.candidateId === candidateId)
+    if (thread?.isTeamMember || thread?.isLeadChannel || candidateId.startsWith('team-') || candidateId.startsWith('lead-')) {
+      const isLead = thread?.isLeadChannel || isReportee
+      setCandidateDetails({
+        name: thread?.candidateName || (isLead ? parentRecruiterName : 'Team Member'),
+        email: thread?.email || (isLead ? parentRecruiterEmail : 'team@coolsofttech.com'),
+        role: thread?.role || (isLead ? 'Lead Recruiter & Reporting Supervisor' : 'Sourcing Specialist / Team Member'),
+        phone: thread?.phone || '571-660-5778',
+        location: 'Richmond, VA / Remote',
+        skills: isLead 
+          ? ['Team Supervision', 'Requisition Approvals', 'Client Delivery', 'Rate Clearances', 'Candidate Intake']
+          : ['Active Sourcing', 'Resume Verification', 'RTR Screening', 'Boolean Search', 'Candidate Engagement'],
+        summary: isLead
+          ? `Lead Recruiter supervisor for ${currentUser?.name || 'Recruiter'}. Reviews candidates, requisition queries, and approves client submissions.`
+          : `Team member reporting to ${currentUser?.name || 'Lead Recruiter'}. Sources candidates, collects RTR documents, and submits profiles for requisition matching.`
       })
       return
     }
@@ -333,57 +391,72 @@ export default function RecruiterInbox() {
         setCandidateDetails(null)
       }
     } catch (e) { setCandidateDetails(null) }
-  }, [isReportee, parentRecruiterName, parentRecruiterEmail, currentUser?.name])
+  }, [isReportee, parentRecruiterName, parentRecruiterEmail, currentUser?.name, threads])
 
   const fetchMessages = useCallback(async (candidateId, silent = false) => {
     if (!candidateId) return
-    if (isReportee) {
-      const localKey = `smarthire_lead_messages_${currentUser?.email || 'emp'}`
-      try {
-        const raw = localStorage.getItem(localKey)
-        if (raw) {
-          const msgs = JSON.parse(raw)
-          if (Array.isArray(msgs) && msgs.length > 0) {
-            setMessages(msgs)
-            return
-          }
-        }
-      } catch(e) {}
-      const initial = [
-        {
-          id: 'lead-init-1',
-          sender: 'lead',
-          senderName: parentRecruiterName,
-          text: `Hi ${currentUser?.name || 'there'}, welcome to your sourcing reporting channel. Feel free to send candidate profiles for review, ask requisition questions, or request rate clearances here.`,
-          timestamp: new Date(Date.now() - 3600000).toISOString(),
-          candidateId: candidateId
-        }
-      ]
-      setMessages(initial)
-      localStorage.setItem(localKey, JSON.stringify(initial))
-      return
-    }
-
     if (!silent) setLoadingMessages(true)
     try {
-      const res = await fetch('/api/messages/' + candidateId, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+      // 1. Fetch from Firestore
+      let fsMsgs = []
+      try {
+        fsMsgs = await getMessagesFirestore(candidateId)
+      } catch(e) {}
+
+      // 2. Fetch from backend /api/messages/:candidateId
+      let backendMsgs = []
+      try {
+        const res = await fetch('/api/messages/' + candidateId, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+          }
+        })
+        const data = await res.json()
+        if (data.success && Array.isArray(data.messages)) {
+          backendMsgs = data.messages
         }
+      } catch (e) {}
+
+      // Merge and deduplicate
+      const msgMap = new Map()
+      ;[...(fsMsgs || []), ...(backendMsgs || [])].forEach(m => {
+        if (!m) return
+        const key = m.id || `${m.timestamp}_${m.text}`
+        if (!msgMap.has(key)) msgMap.set(key, m)
       })
-      const data = await res.json()
-      if (data.success && Array.isArray(data.messages)) setMessages(data.messages)
-    } catch (e) { console.warn('Message fetch error:', e) }
-    finally { setLoadingMessages(false) }
-  }, [isReportee, currentUser?.email, currentUser?.name, parentRecruiterName])
+
+      let merged = Array.from(msgMap.values()).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+
+      if (merged.length === 0 && candidateId.startsWith('team-reportee-')) {
+        const initial = [
+          {
+            id: 'lead-init-1',
+            sender: 'lead',
+            senderName: parentRecruiterName,
+            senderEmail: parentRecruiterEmail,
+            text: `Hi! Welcome to your direct reporting channel. Feel free to send candidate profiles for review, ask requisition questions, or request rate clearances here.`,
+            timestamp: new Date(Date.now() - 3600000).toISOString(),
+            candidateId: candidateId
+          }
+        ]
+        merged = initial
+      }
+
+      setMessages(merged)
+    } catch (e) {
+      console.warn('Message fetch error:', e)
+    } finally {
+      if (!silent) setLoadingMessages(false)
+    }
+  }, [parentRecruiterName, parentRecruiterEmail])
 
   const selectThread = useCallback(async (thread) => {
     setActiveThread(thread)
     setInputText('')
     setShowTemplates(false)
     await fetchMessages(thread.candidateId)
-    fetchCandidateDetails(thread.candidateId)
-    if (!isReportee) {
+    fetchCandidateDetails(thread.candidateId, thread)
+    if (!thread.isLeadChannel && !thread.isTeamMember) {
       try {
         await fetch('/api/messages/' + thread.candidateId + '/read', { 
           method: 'PATCH',
@@ -394,7 +467,7 @@ export default function RecruiterInbox() {
         setThreads(prev => prev.map(t => t.candidateId === thread.candidateId ? { ...t, unreadCount: 0 } : t))
       } catch (e) {}
     }
-  }, [fetchMessages, fetchCandidateDetails, isReportee])
+  }, [fetchMessages, fetchCandidateDetails])
 
   const handleSend = async (textOverride) => {
     const text = (textOverride || inputText).trim()
@@ -402,31 +475,31 @@ export default function RecruiterInbox() {
     setSending(true)
     setInputText('')
     setShowTemplates(false)
-    const optimistic = {
-      id: 'opt-' + Date.now(),
-      sender: isReportee ? 'employee' : 'recruiter',
-      senderName: currentUser?.name || 'Recruiter',
-      text,
+
+    const isMeEmployee = (currentUser?.role === 'employee' || isReportee)
+    const senderType = isMeEmployee ? 'employee' : 'recruiter'
+
+    const newMsg = {
+      id: 'msg-' + Date.now(),
+      sender: senderType,
+      senderName: currentUser?.name || (isMeEmployee ? 'Employee' : 'Recruiter'),
+      senderEmail: (currentUser?.email || '').toLowerCase().trim(),
+      text: text,
+      candidateName: activeThread.candidateName,
+      jobTitle: activeThread.jobTitle,
       timestamp: new Date().toISOString(),
-      candidateId: activeThread.candidateId
+      candidateId: activeThread.candidateId,
+      read: false
     }
-    setMessages(prev => {
-      const updated = [...prev, optimistic]
-      if (isReportee) {
-        localStorage.setItem(`smarthire_lead_messages_${currentUser?.email || 'emp'}`, JSON.stringify(updated))
-      }
-      return updated
-    })
+
+    // Optimistic local state update
+    setMessages(prev => [...prev.filter(m => m.id !== newMsg.id), newMsg])
     setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
-    
-    if (isReportee) {
-      setSending(false)
-      return
-    }
 
-    const recruiterInfo = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
-    const recruiterName = recruiterInfo.name || 'Recruiter'
+    // 1. Save to Cloud Firestore in real-time
+    saveMessageFirestore(activeThread.candidateId, newMsg).catch(err => console.warn('Firestore msg error:', err))
 
+    // 2. Save to backend API
     try {
       await fetch('/api/messages/' + activeThread.candidateId, {
         method: 'POST',
@@ -434,17 +507,22 @@ export default function RecruiterInbox() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
         },
-        body: JSON.stringify({
-          sender: 'recruiter',
-          text,
-          candidateName: activeThread.candidateName,
-          jobTitle: activeThread.jobTitle,
-          senderName: recruiterName
-        })
+        body: JSON.stringify(newMsg)
       })
-      fetchMessages(activeThread.candidateId, true)
-      fetchThreads()
     } catch (e) {}
+
+    // 3. Update thread preview
+    setThreads(prev => prev.map(t => {
+      if (t.candidateId === activeThread.candidateId) {
+        return {
+          ...t,
+          lastMessage: text,
+          lastMessageTime: newMsg.timestamp
+        }
+      }
+      return t
+    }))
+
     setSending(false)
   }
 
@@ -456,14 +534,14 @@ export default function RecruiterInbox() {
 
   useEffect(() => {
     if (pollingRef.current) clearInterval(pollingRef.current)
-    if (activeThread && !isReportee) {
+    if (activeThread) {
       pollingRef.current = setInterval(() => {
         fetchMessages(activeThread.candidateId, true)
         fetchThreads()
       }, POLL_INTERVAL)
     }
     return () => clearInterval(pollingRef.current)
-  }, [activeThread, fetchMessages, fetchThreads, isReportee])
+  }, [activeThread, fetchMessages, fetchThreads])
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
@@ -642,7 +720,12 @@ export default function RecruiterInbox() {
                   <p style={{ fontSize:12.5 }}>Send your message to {candidateName}.</p>
                 </div>
               ) : messages.map((msg, idx) => {
-                const isRec = msg.sender==='recruiter'
+                const myEmail = (currentUser?.email || '').toLowerCase().trim()
+                const myName = (currentUser?.name || '').toLowerCase().trim()
+                const isMe = (msg.senderEmail && myEmail && msg.senderEmail.toLowerCase() === myEmail) ||
+                             (msg.senderName && myName && msg.senderName.toLowerCase() === myName) ||
+                             (isReportee && msg.sender === 'employee') ||
+                             (!isReportee && msg.sender === 'recruiter')
                 const showDate = idx===0 || new Date(msg.timestamp).toDateString()!==new Date(messages[idx-1]?.timestamp).toDateString()
                 return (
                   <div key={msg.id||idx}>
@@ -653,22 +736,33 @@ export default function RecruiterInbox() {
                         </span>
                       </div>
                     )}
-                    <div style={{ display:'flex', flexDirection:isRec?'row-reverse':'row', alignItems:'flex-end', gap:8 }}>
-                      {!isRec && <Avatar name={candidateName} size={32} />}
+                    <div style={{ display:'flex', flexDirection:isMe?'row-reverse':'row', alignItems:'flex-end', gap:8 }}>
+                      {!isMe && <Avatar name={msg.senderName || candidateName} size={32} />}
                       <div style={{ maxWidth:'64%' }}>
                         <div style={{
-                          backgroundColor: isRec ? '#2563EB' : C.msgOther,
-                          color: isRec ? '#FFF' : C.msgOtherText,
-                          borderRadius: isRec ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                          backgroundColor: isMe ? '#2563EB' : C.msgOther,
+                          color: isMe ? '#FFF' : C.msgOtherText,
+                          borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
                           padding:'12px 16px', fontSize:13.5, lineHeight:1.56,
-                          boxShadow: isRec ? '0 4px 14px rgba(37,99,235,0.22)' : '0 2px 6px rgba(0,0,0,0.06)',
+                          boxShadow: isMe ? '0 4px 14px rgba(37,99,235,0.22)' : '0 2px 6px rgba(0,0,0,0.06)',
                           wordBreak:'break-word'
-                        }}>{msg.text}</div>
-                        <div style={{ fontSize:11, color:C.textSecondary, marginTop:4, textAlign:isRec?'right':'left', paddingLeft:isRec?0:4, paddingRight:isRec?4:0 }}>
-                          {formatTime(msg.timestamp)}{isRec && ' • Delivered'}
+                        }}>
+                          {!isMe && msg.senderName && (
+                            <div style={{ fontSize: 11, fontWeight: 800, color: '#2563EB', marginBottom: 4 }}>
+                              {msg.senderName}
+                            </div>
+                          )}
+                          {msg.text}
+                        </div>
+                        <div style={{ fontSize:11, color:C.textSecondary, marginTop:4, textAlign:isMe?'right':'left', paddingLeft:isMe?0:4, paddingRight:isMe?4:0 }}>
+                          {formatTime(msg.timestamp)}{isMe && ' • Delivered'}
                         </div>
                       </div>
-                      {isRec && <div style={{ width:32, height:32, borderRadius:'50%', background:'linear-gradient(135deg,#2563EB,#7C3AED)', display:'flex', alignItems:'center', justifyContent:'center', color:'#FFF', fontSize:13, fontWeight:800, flexShrink:0 }}>R</div>}
+                      {isMe && (
+                        <div style={{ width:32, height:32, borderRadius:'50%', background:'linear-gradient(135deg,#2563EB,#7C3AED)', display:'flex', alignItems:'center', justifyContent:'center', color:'#FFF', fontSize:12, fontWeight:800, flexShrink:0 }}>
+                          {getInitials(currentUser?.name || 'Me')}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )

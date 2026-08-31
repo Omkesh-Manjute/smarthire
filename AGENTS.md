@@ -31,6 +31,19 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-01 — Two-Way Real-Time Team & Candidate Messaging Sync (Sukamal-Naveen & Hierarchy)
+- **Two-Way Supervisor & Employee Messaging**:
+  - Connected `RecruiterInbox.jsx` with Cloud Firestore (`atsMessages`) and backend `/api/messages`.
+  - When **Sukamal Chatterjee** (Lead Recruiter) opens the inbox, he automatically sees all reporting employees (**Naveen Bhardwaj**, **Priya Verma**) at the top of his conversations list with live badge indicators.
+  - When **Naveen Bhardwaj** (or any employee) opens the inbox, he sees his assigned Supervisor (**Sukamal Chatterjee**) as the direct reporting & approvals channel.
+  - When either party sends a message, it is instantly written to Cloud Firestore `atsMessages` and `/api/messages/team-reportee-{email}` with 3-second auto-polling and optimistic UI updates.
+- **Enabled Top Header Messages Icon for All Roles**:
+  - Removed employee restriction on the top orange bar message icon in `Navigation.jsx` so employees can instantly launch their direct supervisor channel.
+- **Backend Bypass for Team Channels**:
+  - Updated `server/index.js` `/api/messages/:candidateId` GET & POST endpoints to bypass candidate ownership 403 blocks for `team-` and `lead-` communication threads.
+- **Firestore Security Rules Released**:
+  - Deployed rules for `atsMessages/{threadId}` allowing unrestricted team messaging across all recruiter and employee accounts.
+
 ### 2026-09-01 — Strict Descending Serial Number (Req #) Sorting & Array Processing Fix
 - **Fixed `processJobsList` Immediate Return Bug**:
   - In `RecruiterDashboard.jsx`, corrected `processJobsList` which was previously returning the raw array before deduplication and descending serial number sorting could run.

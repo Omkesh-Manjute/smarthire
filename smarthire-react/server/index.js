@@ -6390,8 +6390,11 @@ app.get('/api/messages/:candidateId', authenticateToken, (req, res) => {
   const userRole = req.user?.role || 'superadmin';
   const userEmail = (req.user?.email || '').toLowerCase().trim();
 
-  // If recruiter, check ownership
-  if (userRole === 'recruiter') {
+  // If team channel, allow immediately
+  const isTeamChannel = candidateId.startsWith('team-') || candidateId.startsWith('lead-');
+
+  // If recruiter and not team channel, check candidate ownership
+  if (userRole === 'recruiter' && !isTeamChannel) {
     const candidate = candidatesStore.find(c => c && (c.id === candidateId || c.candidate_id === candidateId));
     const session = screeningStore.find(s => s && s.sessionId === candidateId);
     
@@ -6563,8 +6566,11 @@ app.post('/api/messages/:candidateId', authenticateToken, (req, res) => {
   const userRole = req.user?.role || 'superadmin';
   const userEmail = (req.user?.email || '').toLowerCase().trim();
 
-  // If recruiter, check ownership
-  if (userRole === 'recruiter') {
+  // If team channel, allow immediately
+  const isTeamChannel = candidateId.startsWith('team-') || candidateId.startsWith('lead-');
+
+  // If recruiter and not team channel, check ownership
+  if (userRole === 'recruiter' && !isTeamChannel) {
     const candidate = candidatesStore.find(c => c && (c.id === candidateId || c.candidate_id === candidateId));
     const session = screeningStore.find(s => s && s.sessionId === candidateId);
     
