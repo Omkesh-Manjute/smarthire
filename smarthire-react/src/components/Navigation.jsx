@@ -650,16 +650,29 @@ function Navigation() {
                           </button>
                         )}
 
-                        <button
-                          className="profile-menu-link"
-                          onClick={() => {
-                            setProfileMenuOpen(false)
-                            navigate('/inbox')
-                          }}
-                        >
-                          <span className="menu-link-icon">💬</span>
-                          <span>Candidate Inbox</span>
-                        </button>
+                        {isEmployee ? (
+                          <button
+                            className="profile-menu-link"
+                            onClick={() => {
+                              setProfileMenuOpen(false)
+                              navigate('/inbox')
+                            }}
+                          >
+                            <span className="menu-link-icon">💬</span>
+                            <span>Message Lead Recruiter ({currentUser?.parentRecruiterName || 'Sukamal Chatterjee'})</span>
+                          </button>
+                        ) : (
+                          <button
+                            className="profile-menu-link"
+                            onClick={() => {
+                              setProfileMenuOpen(false)
+                              navigate('/inbox')
+                            }}
+                          >
+                            <span className="menu-link-icon">💬</span>
+                            <span>Candidate Inbox</span>
+                          </button>
+                        )}
                       </div>
 
                       <div className="profile-dropdown-footer">
