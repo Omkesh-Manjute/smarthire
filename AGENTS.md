@@ -31,6 +31,13 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-01 — Backend /api/jobs Scope Fix & Cloud Firestore Jobs Sync
+- **Fixed `extractPositionNumber` Backend Crash**:
+  - Declared `extractPositionNumber` in `server/index.js`, fixing the 500 error that occurred during `loadJobsFromDisk()` and `/api/jobs`.
+  - Requisition portal and Public Careers `/jobs` now return all 15 authentic deduplicated jobs immediately without empty tables.
+- **Direct Cloud Firestore Sync (`atsJobs`)**:
+  - Synchronized all 15 authentic jobs directly to Firebase Firestore `atsJobs` collection, providing instant client fallback even if backend is asleep.
+
 ### 2026-09-01 — Universal Requisition Deduplication & Recruiter Inbox Scope Fix
 - **Universal Requisition Deduplication**:
   - Deduplicated `jobs.json` seed database and runtime stores across `server/index.js`, `jobsStore`, and `RecruiterDashboard.jsx` (`processJobsList`).
