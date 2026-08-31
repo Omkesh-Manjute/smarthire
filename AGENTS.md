@@ -31,6 +31,21 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-01 — Authentic JobsInHand Requirement ID Alignment (159005, 159000, etc.) & Newest-First Top Order
+- **Authentic Requirement ID Extraction**:
+  - Extracted exact authentic `Requirement id` (`ctl00_Contentpage1_lbl_reqid`) directly from JobsInHand detail pages instead of hash-based IDs.
+  - Aligned all live requisitions with their real JobsInHand requirement numbers:
+    - **`159005`**: `NCDIT - ITSM Change Process Manager - Junior (810453)` (Top #1)
+    - **`159000`**: `Enterprise Content Management (ECM) Business Analyst (66279)`
+    - **`159004`**: `Business Analyst - Advanced (13414)`
+    - **`159003`**: `Enterprise Project Manager - Advanced (13421)`
+    - **`159002`**: `VRS - System Analyst 4 (806546)`
+    - **`158999`**: `NC FAST Junior Java Developer/Test Engineer (807791)`
+- **Newest-First Sort Guarantee**:
+  - `filteredJobs` in `RecruiterDashboard.jsx` and `/api/jobs` strictly sort newest/highest requirement numbers at the top of the table.
+- **Synced to Cloud Firestore**:
+  - All 15 authentic jobs with real Req IDs written directly to Firestore `atsJobs`.
+
 ### 2026-09-01 — Backend /api/jobs Scope Fix & Cloud Firestore Jobs Sync
 - **Fixed `extractPositionNumber` Backend Crash**:
   - Declared `extractPositionNumber` in `server/index.js`, fixing the 500 error that occurred during `loadJobsFromDisk()` and `/api/jobs`.
