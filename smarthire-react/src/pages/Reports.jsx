@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import SiteLayout from '../components/SiteLayout'
+import { getCareerApplications } from '../lib/atsFirestore'
 
 // ─── MOCK DATA STORES FOR THE REPORTS ───
 
@@ -321,6 +322,31 @@ function Reports() {
 
   // Modal State for Candidate Details Breakdown
   const [detailsModalData, setDetailsModalData] = useState(null)
+  const [cloudApplications, setCloudApplications] = useState([])
+
+  useEffect(() => {
+    // Fetch live Firestore applications
+    getCareerApplications().then(apps => {
+      if (Array.isArray(apps) && apps.length > 0) {
+        setCloudApplications(apps.map(a => ({
+          fName: a.name ? a.name.split(' ')[0] : (a.fName || 'Candidate'),
+          lName: a.name ? a.name.split(' ').slice(1).join(' ') : (a.lName || ''),
+          name: a.name || `${a.fName || ''} ${a.lName || ''}`.trim(),
+          email: a.email,
+          phone: a.phone,
+          canId: a.canId,
+          reqId: (a.jobId || '').replace('J-', ''),
+          jobId: a.jobId,
+          jobTitle: a.jobTitle,
+          appliedDate: a.appliedDate ? (typeof a.appliedDate === 'string' ? a.appliedDate : new Date(a.appliedDate).toLocaleString()) : new Date().toLocaleString(),
+          status: a.status || 'Int-SubmittedToManager',
+          comments: a.comments || 'Submitted from SmartHire Careers (Firebase)',
+          recruiter: a.recruiter || 'Recruiter',
+          resumeUrl: a.resumeUrl
+        })))
+      }
+    }).catch(() => {})
+  }, [])
 
   // Switch Sub-report
   const handleSelectReport = (catId, subId) => {
@@ -338,7 +364,15 @@ function Reports() {
       if (saved) localApps = JSON.parse(saved)
     } catch(e) {}
 
-    const allApps = [...localApps, ...mockSmartHireCareersCandidates]
+    // Deduplicate by email + jobId / canId
+    const seen = new Set()
+    const allApps = [...cloudApplications, ...localApps, ...mockSmartHireCareersCandidates].filter(item => {
+      const key = `${item.email}_${item.jobId || item.reqId || item.canId}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+
     return allApps.filter(c => {
       if (searchTerm.trim()) {
         const q = searchTerm.toLowerCase()
@@ -347,7 +381,7 @@ function Reports() {
       }
       return true
     })
-  }, [searchTerm])
+  }, [searchTerm, cloudApplications])
 
   // Filter Resumes Added Rows
   const filteredResumesAdded = useMemo(() => {

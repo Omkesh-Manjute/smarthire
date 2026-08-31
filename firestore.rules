@@ -2,9 +2,18 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ATS Candidates collection — allow read/write (no Firebase Auth required for ATS)
-    // This is internal recruiter data, not public-facing
+    // ATS Candidates collection — allow read/write (Recruiter ATS)
     match /atsCandidates/{canId} {
+      allow read, write: if true;
+    }
+
+    // ATS Jobs & Job Descriptions (JDs)
+    match /atsJobs/{jobId} {
+      allow read, write: if true;
+    }
+
+    // ATS Career Portal Applications
+    match /atsApplications/{appId} {
       allow read, write: if true;
     }
 

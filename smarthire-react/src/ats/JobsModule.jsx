@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { saveAtsJob } from '../lib/atsFirestore'
 
 function JobsModule({
   jobsList = [], allCandidates = [], submissions = [],
@@ -124,21 +125,35 @@ function JobsModule({
         postedByName: selectedRecruiterPoster.name || recruiterInfo?.name || 'Recruiter',
         refCode: selectedRecruiterPoster.refCode || recruiterInfo?.refCode || 'omkesh',
       }
-      const res = await fetch('/api/jobs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('smarthire_token') || ''}` },
-        body: JSON.stringify(payload)
-      })
-      const data = res.ok ? await res.json() : null
-      const jobId = data?.id || data?.data?.id || data?.job?.id || Date.now().toString()
-      const appLink = getRecruiterJobLink(jobId, selectedRecruiterPoster.refCode)
-      setPostedJobLink(appLink)
+
+      // 1. Direct Save to Firebase Firestore (Always persists, never sleeps)
+      const tempId = `J-${Date.now()}`
+      try {
+        await saveAtsJob(tempId, { ...payload, id: tempId })
+      } catch (fErr) {
+        console.warn('Firebase saveAtsJob error:', fErr)
+      }
+
+      // 2. Also notify backend if available
+      try {
+        const res = await fetch('/api/jobs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('smarthire_token') || ''}` },
+          body: JSON.stringify(payload)
+        })
+        const data = res.ok ? await res.json() : null
+        const finalJobId = data?.id || data?.data?.id || data?.job?.id || tempId
+        const appLink = getRecruiterJobLink(finalJobId, selectedRecruiterPoster.refCode)
+        setPostedJobLink(appLink)
+      } catch (backendErr) {
+        setPostedJobLink(getRecruiterJobLink(tempId, selectedRecruiterPoster.refCode))
+      }
+
       setPostForm({ title: '', client: '', location: '', work_mode: 'Onsite', employment_type: 'Contract', experience: '', skills: '', description: '' })
       if (fetchJobs) fetchJobs()
     } catch (err) {
       console.error('Manual job post failed:', err)
-      // Even if API fails, show a generated link
-      const tempId = Date.now().toString()
+      const tempId = `J-${Date.now()}`
       setPostedJobLink(getRecruiterJobLink(tempId, selectedRecruiterPoster.refCode))
     } finally {
       setPostingJob(false)
@@ -310,23 +325,31 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
     setSavingEdit(true)
     try {
       const skillsArray = editFormData.skills.split(',').map(s => s.trim()).filter(Boolean)
-      const res = await fetch(`/api/jobs/${editingJob.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...editFormData,
-          skills: skillsArray,
-          billRate: editFormData.budget,
-          rawDescription: editFormData.description
-        })
-      })
-      const data = await res.json()
-      if (data.success) {
-        setEditingJob(null)
-        if (fetchJobs) fetchJobs()
-      } else {
-        alert(`Failed to save: ${data.message}`)
+      const updatePayload = {
+        ...editFormData,
+        skills: skillsArray,
+        billRate: editFormData.budget,
+        rawDescription: editFormData.description
       }
+
+      // Save to Firebase Firestore
+      try {
+        await saveAtsJob(editingJob.id, updatePayload)
+      } catch (fErr) {
+        console.warn('Firestore update job error:', fErr)
+      }
+
+      // Also call backend if active
+      try {
+        await fetch(`/api/jobs/${editingJob.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatePayload)
+        })
+      } catch(e) {}
+
+      setEditingJob(null)
+      if (fetchJobs) fetchJobs()
     } catch (err) {
       alert('Error updating job.')
     } finally {

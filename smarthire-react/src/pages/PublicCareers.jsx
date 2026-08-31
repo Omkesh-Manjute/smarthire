@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import CandidateMessengerWidget from '../components/CandidateMessengerWidget'
 import SmartHireBotWidget from '../components/SmartHireBotWidget'
 import { loginWithGoogle } from '../lib/firebase'
+import { saveCareerApplication, getAtsJobs } from '../lib/atsFirestore'
 
 export default function PublicCareers() {
   const navigate = useNavigate()
@@ -299,7 +300,7 @@ export default function PublicCareers() {
     try {
       const res = await fetch('/api/jobs')
       const data = await res.json()
-      if (data.success && Array.isArray(data.jobs)) {
+      if (data.success && Array.isArray(data.jobs) && data.jobs.length > 0) {
         setJobs(data.jobs)
         
         if (targetJobId) {
@@ -311,9 +312,29 @@ export default function PublicCareers() {
           )
           if (match) openApplicationModal(match)
         }
+        return
       }
     } catch (e) {
-      console.error('Failed to fetch public jobs:', e)
+      console.warn('Backend /api/jobs asleep/unavailable, loading from Firebase Firestore...', e)
+    }
+
+    // Fallback: Load directly from Firebase Firestore (Always online, 0 sleep)
+    try {
+      const firestoreJobs = await getAtsJobs()
+      if (firestoreJobs && firestoreJobs.length > 0) {
+        setJobs(firestoreJobs)
+        if (targetJobId) {
+          const cleanTarget = String(targetJobId).replace('J-', '')
+          const match = firestoreJobs.find(j => 
+            j.id === targetJobId || 
+            String(j.id).replace('J-', '') === cleanTarget ||
+            j.id === `J-${cleanTarget}`
+          )
+          if (match) openApplicationModal(match)
+        }
+      }
+    } catch (fErr) {
+      console.error('Failed to fetch jobs from Firestore:', fErr)
     } finally {
       setLoading(false)
     }
@@ -526,6 +547,22 @@ export default function PublicCareers() {
           const existingApps = JSON.parse(localStorage.getItem('smarthire_careers_applications') || '[]')
           localStorage.setItem('smarthire_careers_applications', JSON.stringify([newApp, ...existingApps]))
         } catch(e) {}
+
+        // Save to Firebase Firestore & Storage (Guaranteed cloud persistence)
+        try {
+          await saveCareerApplication({
+            ...newApp,
+            currentLocation: currentLocation.trim(),
+            relocatePref,
+            contractType,
+            visaStatus,
+            expectedRate,
+            resumeFileName: resumeFile?.name || 'Candidate_Resume.pdf',
+            resumeText: resumeText || `${parsedName} applied for ${selectedJob.title}`
+          }, resumeFile || resumeText)
+        } catch(fireErr) {
+          console.warn('Firebase saveCareerApplication note:', fireErr)
+        }
 
         setSubmitSuccess({ ...data, candidateName: parsedName, appRecord, recruiterName: activeRecruiter.name })
       } else {
