@@ -943,7 +943,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       if (savedJobsRaw) savedJobsMap = JSON.parse(savedJobsRaw)
     } catch (e) {}
 
-    return list.map(j => {
+    const processed = list.map(j => {
       if (!j) return null
       const rawId = String(j.id || '')
       const cleanId = rawId.replace('J-', '')
@@ -990,7 +990,13 @@ We are currently reviewing candidate profiles and scheduling immediate interview
         uniqueMap.set(posKey, j)
       }
     })
-    return Array.from(uniqueMap.values())
+
+    // Sort strictly newest/highest serial number at the TOP (159005, 159004, 159003, ...)
+    return Array.from(uniqueMap.values()).sort((a, b) => {
+      const aNum = parseInt(String(a.reqId || a.id).replace(/\D/g, ''), 10) || 0
+      const bNum = parseInt(String(b.reqId || b.id).replace(/\D/g, ''), 10) || 0
+      return bNum - aNum
+    })
   }, [])
 
   // Fetch jobs & merge persistent local custom assignments, and sync team roster
