@@ -118,34 +118,8 @@ function parseResumeDetails(text, filename = '') {
   }
 }
 
-// ─── RICH MOCK CANDIDATES (EXACT MATCH TO MEDIA_1787312540212.PNG) ───
-const legacyCandidateData = [
-  { id: '87501', name: 'Ashok Ankalla', role: 'Project ..', fullRole: 'Project Manager / Delivery Lead', exp: '18', location: 'Plainsboro,NJ', city: 'Plainsboro', state: 'NJ', locPref: '', payRate: '60 /hr', rateType: 'C2C', rating: 5, subVendor: '??????????????.', recruiter: 'Vaibhav Bisen', agrExists: false, avblDate: 'Aug 13, 2026', email: 'a.ankalla@gmail.com', phone: '609-555-1201', workAuth: 'GC', screened: 'Yes' },
-  { id: '87534', name: 'Ashok Ganta', role: 'VDOT Net..', fullRole: 'VDOT Network Administrator 4 (807536)', exp: '14', location: 'Richmond,VA', city: 'Richmond', state: 'VA', locPref: '', payRate: '74 /hr', rateType: 'C2C', rating: 1, subVendor: 'Talent9 Inc', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Aug 31, 2026', email: 'ashok57800@gmail.com', phone: '571-660-5778', workAuth: 'GC', screened: 'Yes' },
-  { id: '87503', name: 'Vadivelu Ashok Kumar', role: 'DCY - IT..', fullRole: 'DCY - IT Lead Architect', exp: '12', location: 'Minneapolis,MN', city: 'Minneapolis', state: 'MN', locPref: '', payRate: '75 /hr', rateType: 'C2C', rating: 1, subVendor: 'Paramount Software Solutions', recruiter: 'Prudhvi', agrExists: false, avblDate: 'Apr 30, 2026', email: 'vadivelu.kumar@paramount.com', phone: '612-555-8821', workAuth: 'H1B', screened: 'Yes' },
-  { id: '87504', name: 'Ashok Rajendran', role: 'Applicat..', fullRole: 'Application Developer Senior', exp: '13', location: 'Omaha,NE', city: 'Omaha', state: 'NE', locPref: '', payRate: '74 /hr', rateType: 'C2C', rating: 1, subVendor: 'Ardor IT Systems INC', recruiter: 'Sukamal Chatterjee', agrExists: false, avblDate: 'Mar 31, 2026', email: 'ashok.raj@ardorit.com', phone: '402-555-0912', workAuth: 'GC', screened: 'Yes' },
-  { id: '87505', name: 'Upendra Ganta', role: 'Data Eng..', fullRole: 'Data Engineer / Snowflake Lead', exp: '11', location: 'Hartford,CT', city: 'Hartford', state: 'CT', locPref: '', payRate: '60 /hr', rateType: 'C2C', rating: 1, subVendor: '??????????????.', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Feb 10, 2026', email: 'upendra.ganta@cloudtek.io', phone: '860-555-4421', workAuth: 'US Citizen', screened: 'Yes' },
-  { id: '87506', name: 'Ashok Kumar Rayapudi', role: 'Project ..', fullRole: 'Project Manager - Infrastructure', exp: '17', location: 'Novi,MI', city: 'Novi', state: 'MI', locPref: '', payRate: '85 /hr', rateType: 'C2C', rating: 5, subVendor: 'IConnect', recruiter: 'Vaibhav Bisen', agrExists: false, avblDate: 'Jan 19, 2026', email: 'ashok.rayapudi@iconnect.com', phone: '248-555-3312', workAuth: 'US Citizen', screened: 'Yes' },
-  { id: '87507', name: 'Goutham Gantala', role: 'Cloud En..', fullRole: 'Cloud Engineer / AWS Solutions', exp: '11', location: 'Bayonne,NY', city: 'Bayonne', state: 'NY', locPref: '', payRate: '78 /hr', rateType: 'C2C', rating: 1, subVendor: 'Cloud TechnoSoft LLC', recruiter: 'Nitin Bhosale', agrExists: false, avblDate: 'Dec 31, 2025', email: 'goutham.g@technosoft.com', phone: '201-555-9081', workAuth: 'H1B', screened: 'Yes' },
-  { id: '87508', name: 'Vamshi Krishna Ganta', role: 'TAX - Sr..', fullRole: 'TAX - Senior Systems Analyst', exp: '8', location: 'Woodbridge,NJ', city: 'Woodbridge', state: 'NJ', locPref: '', payRate: '60 /hr', rateType: 'C2C', rating: 1, subVendor: 'Client Server Technologies', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Dec 31, 2025', email: 'vamshi.ganta@clientserver.com', phone: '732-555-6671', workAuth: 'GC', screened: 'Yes' },
-  { id: '87509', name: 'Nagababu Ganta', role: 'Oracle D..', fullRole: 'Oracle DBA / PL-SQL Specialist', exp: '13', location: 'Katy,TX', city: 'Katy', state: 'TX', locPref: '', payRate: '63 /hr', rateType: 'C2C', rating: 5, subVendor: '??????????????.', recruiter: 'Vaibhav Bisen', agrExists: false, avblDate: 'Oct 9, 2025', email: 'nagababu.g@oracletech.net', phone: '281-555-1190', workAuth: 'GC', screened: 'Yes' },
-  { id: '87510', name: 'Ashok Juttu Kannan', role: 'QA', fullRole: 'QA Automation Lead (Selenium/Cypress)', exp: '19', location: 'Louisville,KY', city: 'Louisville', state: 'KY', locPref: '', payRate: '40 /hr', rateType: 'C2C', rating: 1, subVendor: 'SmartHire', recruiter: 'Sukamal Chatterjee', agrExists: false, avblDate: 'Oct 1, 2024', email: 'ashok.jk@smarthire.com', phone: '502-555-8721', workAuth: 'US Citizen', screened: 'Yes' },
-  { id: '87511', name: 'Naga Babu Ganta', role: 'Database..', fullRole: 'Database Engineer - PostgreSQL / AWS', exp: '13', location: 'Katy,TX', city: 'Katy', state: 'TX', locPref: '', payRate: '70 /hr', rateType: 'C2C', rating: 5, subVendor: '??????????????.', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Oct 3, 2025', email: 'naga.ganta@katytech.io', phone: '281-555-7612', workAuth: 'US Citizen', screened: 'Yes' },
-  { id: '87512', name: 'Cx Avinash Ashokrao Mahajan', role: 'Senior B..', fullRole: 'Senior Business Systems Analyst', exp: '16', location: 'Raleigh,NC', city: 'Raleigh', state: 'NC', locPref: '', payRate: '55 /hr', rateType: 'W2', rating: 1, subVendor: 'SmartHire', recruiter: 'Vaibhav Bisen', agrExists: true, avblDate: 'May 14, 2025', email: 'avinash.mahajan@smarthire.com', phone: '919-555-0918', workAuth: 'US Citizen', screened: 'Yes' },
-  { id: '87513', name: 'Naga Babu Ganta', role: 'Database..', fullRole: 'Database Administrator Senior', exp: '13', location: 'Houston,TX', city: 'Houston', state: 'TX', locPref: '', payRate: '65 /hr', rateType: 'C2C', rating: 1, subVendor: '??????????????.', recruiter: 'Prudhvi', agrExists: false, avblDate: 'Sep 3, 2025', email: 'naga.houston@databasedev.com', phone: '713-555-9921', workAuth: 'GC', screened: 'Yes' },
-  { id: '87514', name: 'Ashok Ankalla', role: 'Project ..', fullRole: 'Project Coordinator / Scrum Master', exp: '18', location: 'Bentonville,AR', city: 'Bentonville', state: 'AR', locPref: '', payRate: '60 /hr', rateType: 'C2C', rating: 1, subVendor: '??????????????.', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Aug 29, 2025', email: 'ashok.a.benton@retailtech.com', phone: '479-555-1120', workAuth: 'US Citizen', screened: 'Yes' },
-  { id: '87515', name: 'Tirumala Ashok Varmadantuluri', role: 'SCC - Sr..', fullRole: 'SCC - Senior Network Architect', exp: '16', location: 'Ashburn,VA', city: 'Ashburn', state: 'VA', locPref: '', payRate: '71 /hr', rateType: 'C2C', rating: 1, subVendor: 'Ameritech Global INC', recruiter: 'Nitin Bhosale', agrExists: false, avblDate: 'Jun 17, 2025', email: 'tirumala.v@ameritech.com', phone: '571-555-3341', workAuth: 'GC', screened: 'Yes' },
-  { id: '87516', name: 'Priyanka Gantareddy', role: 'Senior Q..', fullRole: 'Senior Quality Assurance Lead', exp: '16', location: 'Austin,TX', city: 'Austin', state: 'TX', locPref: '', payRate: '60 /hr', rateType: 'C2C', rating: 5, subVendor: '??????????????.', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Feb 26, 2025', email: 'priyanka.ganta@austintech.com', phone: '512-555-7721', workAuth: 'US Citizen', screened: 'Yes' },
-  { id: '87517', name: 'Nagajyothsna Ch Ganta', role: 'ERFO-ISD..', fullRole: 'ERFO-ISD Developer / Analyst', exp: '10', location: 'Ceref,CA', city: 'Ceref', state: 'CA', locPref: '', payRate: '65 /hr', rateType: 'C2C', rating: 1, subVendor: 'SmartHire', recruiter: 'Vaibhav Bisen', agrExists: false, avblDate: 'Feb 13, 2025', email: 'nagajyothsna@smarthire.com', phone: '408-555-6671', workAuth: 'H1B', screened: 'Yes' },
-  { id: '87518', name: 'Triveni Ganta', role: '.Net Dev..', fullRole: '.Net Core / Angular Full Stack Developer', exp: '8', location: 'Minneapolis,MN', city: 'Minneapolis', state: 'MN', locPref: '', payRate: '55 /hr', rateType: 'C2C', rating: 1, subVendor: 'Origin Tek Solutions', recruiter: 'Sukamal Chatterjee', agrExists: false, avblDate: 'Jan 22, 2025', email: 'triveni.ganta@origintek.com', phone: '612-555-1234', workAuth: 'H1B', screened: 'Yes' },
-  { id: '87519', name: 'Ashok Anakalla', role: 'Technica..', fullRole: 'Technical Lead / Solution Architect', exp: '18', location: 'Herndon,VA', city: 'Herndon', state: 'VA', locPref: '', payRate: '68 /hr', rateType: 'C2C', rating: 1, subVendor: '??????????????.', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Jan 13, 2025', email: 'ashok.anakalla@herndontech.com', phone: '703-555-9012', workAuth: 'US Citizen', screened: 'Yes' },
-  { id: '87520', name: 'Ashok Kumar Dodda', role: 'Cloud En..', fullRole: 'Cloud Enterprise Solutions Architect', exp: '13', location: 'Dallas,TX', city: 'Dallas', state: 'TX', locPref: '', payRate: '75 /hr', rateType: 'C2C', rating: 1, subVendor: 'E-Solutions Inc', recruiter: 'Vaibhav Bisen', agrExists: false, avblDate: 'Dec 12, 2024', email: 'ashok.dodda@esolutions.com', phone: '214-555-4431', workAuth: 'GC', screened: 'Yes' },
-  { id: '87521', name: 'Ashok Reddy', role: 'Software..', fullRole: 'Software Engineer Lead (Java/Cloud)', exp: '14', location: 'Fishers,IN', city: 'Fishers', state: 'IN', locPref: '', payRate: '65 /hr', rateType: 'C2C', rating: 1, subVendor: '??????????????.', recruiter: 'Prudhvi', agrExists: false, avblDate: 'Dec 23, 2024', email: 'ashok.reddy@indydigital.com', phone: '317-555-8812', workAuth: 'US Citizen', screened: 'Yes' },
-  { id: '87522', name: 'Ashok Bellala', role: 'Java Dev..', fullRole: 'Java Developer / Microservices', exp: '13', location: 'Columbus,OH', city: 'Columbus', state: 'OH', locPref: '', payRate: '60 /hr', rateType: '1099', rating: 1, subVendor: '48170', recruiter: 'Omkesh Manjute', agrExists: false, avblDate: 'Aug 25, 2020', email: 'ashok.bellala@ohiodata.org', phone: '614-555-0912', workAuth: 'GC', screened: 'Yes' },
-  { id: '87523', name: 'Ashok Mundlamuri', role: 'NCDIT - ..', fullRole: 'NCDIT - Systems Security Specialist', exp: '12', location: 'North Brunswick,NJ', city: 'North Brunswick', state: 'NJ', locPref: '', payRate: '65 /hr', rateType: 'C2C', rating: 1, subVendor: '??????????????.', recruiter: 'Vaibhav Bisen', agrExists: false, avblDate: 'Sep 25, 2024', email: 'ashok.mundlamuri@njtech.io', phone: '732-555-1823', workAuth: 'US Citizen', screened: 'Yes' },
-  { id: '87524', name: 'Ashok Natarajan', role: 'Project ..', fullRole: 'Project Manager - Enterprise ERP', exp: '17', location: 'Irving,TX', city: 'Irving', state: 'TX', locPref: '', payRate: '80 /hr', rateType: 'C2C', rating: 1, subVendor: 'Paramount Software Solutions', recruiter: 'Nitin Bhosale', agrExists: false, avblDate: 'Aug 28, 2024', email: 'ashok.natarajan@paramount.com', phone: '972-555-6671', workAuth: 'US Citizen', screened: 'Yes' },
-  { id: '87525', name: 'Sri Sai Tejasvi Gantakolla', role: 'Power Pl..', fullRole: 'Power Platform / Dynamics 365 Architect', exp: '10', location: 'Memphis,TN', city: 'Memphis', state: 'TN', locPref: '', payRate: '65 /hr', rateType: 'C2C', rating: 1, subVendor: 'SmartHire', recruiter: 'Sukamal Chatterjee', agrExists: false, avblDate: 'Aug 22, 2024', email: 'tejasvi.ganta@smarthire.com', phone: '901-555-7781', workAuth: 'GC', screened: 'Yes' }
-]
+// ─── CANDIDATES STORE (Directly populated from Firestore and real additions) ───
+const legacyCandidateData = []
 
 function RecruiterDashboard() {
   const [jobs, setJobs] = useState([])
@@ -154,7 +128,7 @@ function RecruiterDashboard() {
       const saved = localStorage.getItem('smarthire_all_candidates')
       if (saved) {
         const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+        if (Array.isArray(parsed)) return parsed
       }
     } catch (e) {}
     return legacyCandidateData
@@ -162,7 +136,14 @@ function RecruiterDashboard() {
   
   // ─── DYNAMIC TEAM USERS & MULTI-LEVEL RBAC ───
   const DEFAULT_USERS_LIST = [
-    { id: 'rec-1', name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', company: 'SmartHire LLC', isActive: true, password: 'admin' }
+    { id: 'rec-1', name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', parentRecruiterName: '', company: 'SmartHire LLC', isActive: true, password: 'admin' },
+    { id: 'rec-2', name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com', role: 'recruiter', refCode: 'sukamal-chatterjee', parentRecruiterName: '', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
+    { id: 'rec-3', name: 'Gourav', email: 'gourav@coolsofttech.com', role: 'recruiter', refCode: 'gourav', parentRecruiterName: 'Omkesh', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
+    { id: 'rec-4', name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com', role: 'recruiter', refCode: 'vaibhav-bisen', parentRecruiterName: '', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
+    { id: 'mgr-1', name: 'Alok Manager', email: 'manager@coolsofttech.com', role: 'manager', refCode: 'alok-manager', parentRecruiterName: '', company: 'SmartHire LLC', isActive: true, password: 'manager123' },
+    { id: 'emp-1', name: 'Naveen Bhardwaj', email: 'naveen@coolsofttech.com', role: 'employee', refCode: 'naveen-bhardwaj', parentRecruiterName: 'Sukamal Chatterjee', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
+    { id: 'emp-2', name: 'Rahul Sharma', email: 'rahul@coolsofttech.com', role: 'employee', refCode: 'rahul-sharma', parentRecruiterName: 'Vaibhav Bisen', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' },
+    { id: 'emp-3', name: 'Priya Verma', email: 'priya@coolsofttech.com', role: 'employee', refCode: 'priya-verma', parentRecruiterName: 'Sukamal Chatterjee', company: 'SmartHire LLC', isActive: true, password: 'recruiter123' }
   ]
 
   const [teamUsers, setTeamUsers] = useState(() => {
@@ -589,7 +570,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
   const [newAttachmentTitle, setNewAttachmentTitle] = useState('')
   const [newAttachmentFile, setNewAttachmentFile] = useState(null)
 
-  // Potential Candidates Attached to Requisition (Dynamically initialized)
+  // Potential Candidates Attached to Requisition (Dynamically initialized from Firestore & real data)
   const [potentialCandidates, setPotentialCandidates] = useState(() => {
     try {
       const activeReq = localStorage.getItem('smarthire_active_selected_req')
@@ -605,39 +586,81 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       const saved158 = localStorage.getItem('smarthire_potential_candidates_158938')
       if (saved158 !== null && saved158 !== undefined) return JSON.parse(saved158)
     } catch (e) {}
-    return [
-      {
-        id: '87534',
-        name: 'Ashok Ganta',
-        payRate: '74/hr',
-        payRateType: 'C2C',
-        assignedBy: 'Prudhvi',
-        assignedOn: 'Aug 20, 2026 04:40 PM',
-        status: 'Int-SubmittedToManager',
-        statusComments: 'Submitted',
-        interview: 'Select',
-        rejectedReason: 'Select',
-        lastChangedBy: 'Prudhvi',
-        lastChangedRole: 'Recruiter',
-        lastChangedOn: 'Aug 20, 2026 04:40 PM'
-      },
-      {
-        id: '87535',
-        name: 'Kashyap K Vora',
-        payRate: '55/hr',
-        payRateType: 'W2',
-        assignedBy: 'Vaibhav',
-        assignedOn: 'Aug 20, 2026 06:41 PM',
-        status: 'Int-SubmittedToManager',
-        statusComments: 'Submitted',
-        interview: 'Select',
-        rejectedReason: 'Select',
-        lastChangedBy: 'Vaibhav',
-        lastChangedRole: 'Recruiter',
-        lastChangedOn: 'Aug 20, 2026 06:41 PM'
-      }
-    ]
+    return []
   })
+
+  // Role & Reporting Hierarchy Scoping for Requisition Candidates
+  const getScopedPotentialCandidates = useCallback((candList) => {
+    if (!Array.isArray(candList)) return []
+    if (isAdmin || isManager) return candList
+
+    const userIdent = (userName || '').toLowerCase().trim()
+    const userEmail = (currentUser?.email || '').toLowerCase().trim()
+    const userRef = (currentUser?.refCode || '').toLowerCase().trim()
+    const userId = String(currentUser?.id || currentUser?._id || '').toLowerCase().trim()
+    const firstName = (userName.split(' ')[0] || '').toLowerCase().trim()
+
+    if (isRecruiter) {
+      // Lead Recruiter: sees own candidates + all candidates submitted by reporting subordinate employees
+      const mySubordinates = teamUsers.filter(u => {
+        if (!u) return false
+        const pName = (u.parentRecruiterName || '').toLowerCase().trim()
+        const pId = String(u.parentRecruiterId || '').toLowerCase().trim()
+        const pEmail = (u.parentRecruiterEmail || '').toLowerCase().trim()
+        return (pName && (pName === userIdent || pName.includes(userIdent) || userIdent.includes(pName) || (firstName.length >= 3 && pName.includes(firstName)))) ||
+               (pId && (pId === userId || userId.includes(pId))) ||
+               (pEmail && pEmail === userEmail)
+      })
+
+      const subNames = mySubordinates.map(u => (u.name || '').toLowerCase().trim()).filter(Boolean)
+      const subEmails = mySubordinates.map(u => (u.email || '').toLowerCase().trim()).filter(Boolean)
+      const subRefs = mySubordinates.map(u => (u.refCode || '').toLowerCase().trim()).filter(Boolean)
+      const subIds = mySubordinates.map(u => String(u.id || u._id || '').toLowerCase().trim()).filter(Boolean)
+
+      return candList.filter(c => {
+        if (!c) return false
+        const candAssigned = (c.assignedBy || c.recruiter || c.addedByName || c.submittedBy || c.lastChangedBy || '').toLowerCase().trim()
+        const candEmail = (c.recruiterEmail || c.addedByEmail || '').toLowerCase().trim()
+        const candRef = (c.recruiterRefCode || c.recruiterRef || '').toLowerCase().trim()
+        const candParent = (c.parentRecruiterName || '').toLowerCase().trim()
+        const candParentEmail = (c.parentRecruiterEmail || '').toLowerCase().trim()
+        const candParentId = String(c.parentRecruiterId || '').toLowerCase().trim()
+        const candCreator = String(c.createdBy || '').toLowerCase().trim()
+
+        const isMine = candAssigned === userIdent ||
+                       (userIdent.length >= 3 && (candAssigned.includes(userIdent) || userIdent.includes(candAssigned))) ||
+                       (userEmail && (candAssigned.includes(userEmail) || candEmail.includes(userEmail))) ||
+                       (userRef && candRef.includes(userRef)) ||
+                       (userId && candCreator === userId) ||
+                       (firstName.length >= 3 && candAssigned.includes(firstName))
+
+        const isMyParentChild = (candParent && (candParent === userIdent || candParent.includes(userIdent) || userIdent.includes(candParent) || (firstName.length >= 3 && candParent.includes(firstName)))) ||
+                               (candParentEmail && candParentEmail === userEmail) ||
+                               (candParentId && candParentId === userId)
+
+        const isSubordinateCand = subNames.some(sn => sn && (candAssigned === sn || candAssigned.includes(sn) || sn.includes(candAssigned))) ||
+                                  subEmails.some(se => se && (candEmail.includes(se) || candAssigned.includes(se))) ||
+                                  subRefs.some(sr => sr && candRef.includes(sr)) ||
+                                  subIds.some(sid => sid && candCreator === sid)
+
+        return isMine || isMyParentChild || isSubordinateCand
+      })
+    }
+
+    if (isEmployee) {
+      // Employee: strictly sees own candidates
+      return candList.filter(c => {
+        if (!c) return false
+        const candAssigned = (c.assignedBy || c.recruiter || c.addedByName || c.submittedBy || '').toLowerCase().trim()
+        const candEmail = (c.recruiterEmail || c.addedByEmail || '').toLowerCase().trim()
+        return candAssigned === userIdent ||
+               (userIdent.length >= 3 && (candAssigned.includes(userIdent) || userIdent.includes(candAssigned))) ||
+               (userEmail && (candAssigned.includes(userEmail) || candEmail.includes(userEmail)))
+      })
+    }
+
+    return candList
+  }, [isAdmin, isManager, isRecruiter, isEmployee, userName, currentUser, teamUsers])
 
   // Audit Log Modal state
   const [showAuditLogModal, setShowAuditLogModal] = useState(false)
@@ -1420,24 +1443,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
         if (matchingGlobal.length > 0) {
           setPotentialCandidates(matchingGlobal)
         } else {
-          // Default candidate if not set
-          setPotentialCandidates([
-            {
-              id: '87534',
-              name: 'Ashok Ganta',
-              payRate: '74/hr',
-              payRateType: 'C2C',
-              assignedBy: assigned[0] || userName,
-              assignedOn: 'Aug 20, 2026 04:40 PM',
-              status: 'Int-SubmittedToManager',
-              statusComments: 'Submitted',
-              interview: 'Select',
-              rejectedReason: 'Select',
-              lastChangedBy: assigned[0] || userName,
-              lastChangedRole: 'Recruiter',
-              lastChangedOn: 'Aug 20, 2026 04:40 PM'
-            }
-          ])
+          setPotentialCandidates([])
         }
       }
     } catch (e) {}
@@ -1855,6 +1861,13 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     const candId = String(submissionCandidate.id || `875${Date.now().toString().slice(-4)}`)
     const dateStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
+    const effectiveParentRecruiterName = currentUser?.parentRecruiterName || 
+      teamUsers.find(u => (u.email && u.email.toLowerCase() === (currentUser?.email || '').toLowerCase()) || (u.name && u.name.toLowerCase() === (userName || '').toLowerCase()))?.parentRecruiterName || ''
+    const effectiveParentRecruiterEmail = currentUser?.parentRecruiterEmail || 
+      teamUsers.find(u => (u.email && u.email.toLowerCase() === (currentUser?.email || '').toLowerCase()) || (u.name && u.name.toLowerCase() === (userName || '').toLowerCase()))?.parentRecruiterEmail || ''
+    const effectiveParentRecruiterId = currentUser?.parentRecruiterId || 
+      teamUsers.find(u => (u.email && u.email.toLowerCase() === (currentUser?.email || '').toLowerCase()) || (u.name && u.name.toLowerCase() === (userName || '').toLowerCase()))?.parentRecruiterId || ''
+
     const newSubObj = {
       id: candId,
       name: fullName,
@@ -1866,6 +1879,15 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       statusComments: 'Submitted',
       interview: 'Select',
       rejectedReason: '',
+      recruiter: userName,
+      recruiterEmail: currentUser?.email || '',
+      recruiterRefCode: currentUser?.refCode || '',
+      parentRecruiterName: effectiveParentRecruiterName,
+      parentRecruiterEmail: effectiveParentRecruiterEmail,
+      parentRecruiterId: effectiveParentRecruiterId,
+      addedByName: userName,
+      addedByEmail: currentUser?.email || '',
+      addedByRole: isEmployee ? 'employee' : isRecruiter ? 'recruiter' : 'admin',
       lastChangedBy: userName || currentUser?.name || 'Recruiter',
       lastChangedRole: isAdmin ? 'superadmin' : (isRecruiter ? 'Recruiter' : 'Employee'),
       lastChangedOn: dateStr
@@ -1899,8 +1921,12 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       assignedBy: userName,
       recruiterEmail: currentUser?.email || '',
       recruiterRefCode: currentUser?.refCode || '',
-      parentRecruiterName: currentUser?.parentRecruiterName || '',
-      parentRecruiterId: currentUser?.parentRecruiterId || '',
+      parentRecruiterName: effectiveParentRecruiterName,
+      parentRecruiterEmail: effectiveParentRecruiterEmail,
+      parentRecruiterId: effectiveParentRecruiterId,
+      addedByName: userName,
+      addedByEmail: currentUser?.email || '',
+      addedByRole: isEmployee ? 'employee' : isRecruiter ? 'recruiter' : 'admin',
       email: submissionCandidate.email || `${submissionCandidate.firstName.toLowerCase()}@example.com`,
       phone: submissionCandidate.phoneCell || '571-660-5778',
       workAuth: 'US Citizen',
@@ -2052,8 +2078,8 @@ We are currently reviewing candidate profiles and scheduling immediate interview
           const pName = (u.parentRecruiterName || '').toLowerCase().trim()
           const pId = String(u.parentRecruiterId || '').toLowerCase().trim()
           const pEmail = (u.parentRecruiterEmail || '').toLowerCase().trim()
-          return (pName && (pName === userIdent || pName.includes(userIdent) || userIdent.includes(pName))) ||
-                 (pId && pId === userId) ||
+          return (pName && (pName === userIdent || pName.includes(userIdent) || userIdent.includes(pName) || (firstName.length >= 3 && pName.includes(firstName)))) ||
+                 (pId && (pId === userId || userId.includes(pId))) ||
                  (pEmail && pEmail === userEmail)
         })
 
@@ -2063,25 +2089,30 @@ We are currently reviewing candidate profiles and scheduling immediate interview
         const subIds = mySubordinates.map(u => String(u.id || u._id || '').toLowerCase().trim()).filter(Boolean)
 
         const candRecruiter = (c.recruiter || c.assignedTo || c.assignedBy || c.addedByName || c.submittedBy || c.referredByRecruiterName || '').toLowerCase().trim()
-        const candEmail = (c.recruiterEmail || '').toLowerCase().trim()
+        const candEmail = (c.recruiterEmail || c.addedByEmail || '').toLowerCase().trim()
         const candRef = (c.recruiterRefCode || c.recruiterRef || '').toLowerCase().trim()
         const candParent = (c.parentRecruiterName || '').toLowerCase().trim()
+        const candParentEmail = (c.parentRecruiterEmail || '').toLowerCase().trim()
+        const candParentId = String(c.parentRecruiterId || '').toLowerCase().trim()
         const candCreator = String(c.createdBy || '').toLowerCase().trim()
 
         const isMine = candRecruiter === userIdent ||
-                       (userIdent.length >= 3 && candRecruiter.includes(userIdent)) ||
+                       (userIdent.length >= 3 && (candRecruiter.includes(userIdent) || userIdent.includes(candRecruiter))) ||
                        (userEmail && (candRecruiter.includes(userEmail) || candEmail.includes(userEmail))) ||
                        (userRef && candRef.includes(userRef)) ||
-                       (candParent && (candParent === userIdent || candParent.includes(userIdent))) ||
                        (userId && candCreator === userId) ||
                        (firstName.length >= 3 && candRecruiter.includes(firstName))
+
+        const isMyParentChild = (candParent && (candParent === userIdent || candParent.includes(userIdent) || userIdent.includes(candParent) || (firstName.length >= 3 && candParent.includes(firstName)))) ||
+                                (candParentEmail && candParentEmail === userEmail) ||
+                                (candParentId && candParentId === userId)
 
         const isSubordinateCand = subNames.some(sn => sn && (candRecruiter === sn || candRecruiter.includes(sn) || sn.includes(candRecruiter))) ||
                                   subEmails.some(se => se && (candEmail.includes(se) || candRecruiter.includes(se))) ||
                                   subRefs.some(sr => sr && candRef.includes(sr)) ||
                                   subIds.some(sid => sid && candCreator === sid)
 
-        if (!isMine && !isSubordinateCand) return false
+        if (!isMine && !isMyParentChild && !isSubordinateCand) return false
       }
 
       // Recruiter Name Filter (Assigned To)
@@ -3911,7 +3942,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                   {[
                     { id: 'details', label: 'Details' },
                     ...(!isEmployee ? [{ id: 'assign', label: 'Assign to Recruiters' }] : []),
-                    { id: 'potential', label: `Potential Candidates (${potentialCandidates.length})` },
+                    { id: 'potential', label: `Potential Candidates (${getScopedPotentialCandidates(potentialCandidates).length})` },
                     ...(canReviewAndUseAI ? [{ id: 'aiFit', label: 'AI Fit Review' }] : []),
                     { id: 'attachments', label: `Attachments (${attachments.length})` },
                     { id: 'newCandidates', label: 'New Candidates (0)' }
@@ -4581,7 +4612,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                           </tr>
                         </thead>
                         <tbody>
-                          {potentialCandidates.length === 0 ? (
+                          {getScopedPotentialCandidates(potentialCandidates).length === 0 ? (
                             <tr>
                               <td colSpan="9" style={{ padding: '24px', textAlign: 'center', color: '#000080', background: '#ffffff', fontSize: '11.5px' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#0f172a', fontSize: '12px' }}>
@@ -4650,7 +4681,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                               </td>
                             </tr>
                           ) : (
-                            potentialCandidates.map((pc, idx) => (
+                            getScopedPotentialCandidates(potentialCandidates).map((pc, idx) => (
                               <tr key={pc.id} style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
                                 <td style={{ padding: '4px 6px' }}>
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
@@ -4821,12 +4852,12 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {potentialCandidates.length === 0 ? (
+                      {getScopedPotentialCandidates(potentialCandidates).length === 0 ? (
                         <div style={{ padding: '24px', textAlign: 'center', color: '#64748b', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 0 }}>
                           No candidates submitted to evaluate AI fit for this position yet.
                         </div>
                       ) : (
-                        potentialCandidates.map((pc, idx) => (
+                        getScopedPotentialCandidates(potentialCandidates).map((pc, idx) => (
                           <div
                             key={pc.id || idx}
                             style={{
@@ -6306,6 +6337,13 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                 const newCandId = `CAND-${Date.now().toString().slice(-5)}`
                 const dateStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
+                const effectiveParentRecruiterName = currentUser?.parentRecruiterName || 
+                  teamUsers.find(u => (u.email && u.email.toLowerCase() === (currentUser?.email || '').toLowerCase()) || (u.name && u.name.toLowerCase() === (userName || '').toLowerCase()))?.parentRecruiterName || ''
+                const effectiveParentRecruiterEmail = currentUser?.parentRecruiterEmail || 
+                  teamUsers.find(u => (u.email && u.email.toLowerCase() === (currentUser?.email || '').toLowerCase()) || (u.name && u.name.toLowerCase() === (userName || '').toLowerCase()))?.parentRecruiterEmail || ''
+                const effectiveParentRecruiterId = currentUser?.parentRecruiterId || 
+                  teamUsers.find(u => (u.email && u.email.toLowerCase() === (currentUser?.email || '').toLowerCase()) || (u.name && u.name.toLowerCase() === (userName || '').toLowerCase()))?.parentRecruiterId || ''
+
                 const newCandObj = {
                   id: newCandId,
                   name: fullName,
@@ -6317,6 +6355,15 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                   statusComments: newCandReqForm.comments || 'Direct submission',
                   interview: 'Select',
                   rejectedReason: '',
+                  recruiter: userName,
+                  recruiterEmail: currentUser?.email || '',
+                  recruiterRefCode: currentUser?.refCode || '',
+                  parentRecruiterName: effectiveParentRecruiterName,
+                  parentRecruiterEmail: effectiveParentRecruiterEmail,
+                  parentRecruiterId: effectiveParentRecruiterId,
+                  addedByName: userName,
+                  addedByEmail: currentUser?.email || '',
+                  addedByRole: isEmployee ? 'employee' : isRecruiter ? 'recruiter' : 'admin',
                   lastChangedBy: userName,
                   lastChangedRole: isAdmin ? 'superadmin' : (isRecruiter ? 'Recruiter' : 'Employee'),
                   lastChangedOn: dateStr
@@ -6340,6 +6387,15 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                   subVendor: 'Direct Submission',
                   recruiter: userName,
                   assignedTo: userName,
+                  assignedBy: userName,
+                  recruiterEmail: currentUser?.email || '',
+                  recruiterRefCode: currentUser?.refCode || '',
+                  parentRecruiterName: effectiveParentRecruiterName,
+                  parentRecruiterEmail: effectiveParentRecruiterEmail,
+                  parentRecruiterId: effectiveParentRecruiterId,
+                  addedByName: userName,
+                  addedByEmail: currentUser?.email || '',
+                  addedByRole: isEmployee ? 'employee' : isRecruiter ? 'recruiter' : 'admin',
                   agrExists: false,
                   avblDate: 'Immediate',
                   email: newCandReqForm.email || `${newCandReqForm.firstName.toLowerCase()}@example.com`,
@@ -6375,8 +6431,9 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                   recruiter: userName,
                   recruiterEmail: currentUser?.email || '',
                   recruiterRefCode: currentUser?.refCode || '',
-                  parentRecruiterName: currentUser?.parentRecruiterName || '',
-                  parentRecruiterId: currentUser?.parentRecruiterId || '',
+                  parentRecruiterName: effectiveParentRecruiterName,
+                  parentRecruiterEmail: effectiveParentRecruiterEmail,
+                  parentRecruiterId: effectiveParentRecruiterId,
                   addedByName: userName,
                   submittedBy: userName
                 }).catch(err => console.warn('Firestore candidate save notice:', err))
@@ -6396,7 +6453,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                     reqId: cleanId,
                     recruiter: userName,
                     recruiterEmail: currentUser?.email || '',
-                    parentRecruiterName: currentUser?.parentRecruiterName || ''
+                    parentRecruiterName: effectiveParentRecruiterName
                   })
                 }).catch(() => {})
 
@@ -6980,6 +7037,13 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                 const candId = candidateIntakeData.id || `875${Date.now().toString().slice(-4)}`
                 const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
 
+                const effectiveParentRecruiterName = currentUser?.parentRecruiterName || 
+                  teamUsers.find(u => (u.email && u.email.toLowerCase() === (currentUser?.email || '').toLowerCase()) || (u.name && u.name.toLowerCase() === (userName || '').toLowerCase()))?.parentRecruiterName || ''
+                const effectiveParentRecruiterEmail = currentUser?.parentRecruiterEmail || 
+                  teamUsers.find(u => (u.email && u.email.toLowerCase() === (currentUser?.email || '').toLowerCase()) || (u.name && u.name.toLowerCase() === (userName || '').toLowerCase()))?.parentRecruiterEmail || ''
+                const effectiveParentRecruiterId = currentUser?.parentRecruiterId || 
+                  teamUsers.find(u => (u.email && u.email.toLowerCase() === (currentUser?.email || '').toLowerCase()) || (u.name && u.name.toLowerCase() === (userName || '').toLowerCase()))?.parentRecruiterId || ''
+
                 const updatedCandObj = {
                   id: candId,
                   canId: candId,
@@ -7000,8 +7064,13 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                   addedByName: userName,
                   submittedBy: userName,
                   assignedTo: userName,
+                  assignedBy: userName,
                   recruiterEmail: currentUser?.email || '',
-                  parentRecruiterName: currentUser?.parentRecruiterName || '',
+                  recruiterRefCode: currentUser?.refCode || '',
+                  parentRecruiterName: effectiveParentRecruiterName,
+                  parentRecruiterEmail: effectiveParentRecruiterEmail,
+                  parentRecruiterId: effectiveParentRecruiterId,
+                  addedByRole: isEmployee ? 'employee' : isRecruiter ? 'recruiter' : 'admin',
                   agrExists: false,
                   avblDate: 'Immediate',
                   email: candidateIntakeData.email || '',
@@ -7093,6 +7162,15 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                     statusComments: candidateIntakeData.comments || 'Direct candidate sourcing',
                     interview: 'Select',
                     rejectedReason: '',
+                    recruiter: userName,
+                    recruiterEmail: currentUser?.email || '',
+                    recruiterRefCode: currentUser?.refCode || '',
+                    parentRecruiterName: effectiveParentRecruiterName,
+                    parentRecruiterEmail: effectiveParentRecruiterEmail,
+                    parentRecruiterId: effectiveParentRecruiterId,
+                    addedByName: userName,
+                    addedByEmail: currentUser?.email || '',
+                    addedByRole: isEmployee ? 'employee' : isRecruiter ? 'recruiter' : 'admin',
                     lastChangedBy: userName,
                     lastChangedRole: isEmployee ? 'Employee' : 'Recruiter',
                     lastChangedOn: new Date().toLocaleDateString()

@@ -367,14 +367,17 @@ export default function AtsPlatform() {
         const cRecruiter = (c.recruiter || c.assignedBy || c.addedByName || c.referredByRecruiterName || '').toLowerCase().trim()
         const cRef = (c.recruiterRefCode || c.recruiterRef || '').toLowerCase().trim()
         const cParent = (c.parentRecruiterName || '').toLowerCase().trim()
+        const cParentEmail = (c.parentRecruiterEmail || '').toLowerCase().trim()
+        const cParentId = String(c.parentRecruiterId || '').toLowerCase().trim()
+        const firstName = (recruiterUserName.split(' ')[0] || '').toLowerCase().trim()
 
         if (isEmployee) {
           return cOwner === recruiterUserEmail ||
                  cOwner === recruiterUserId ||
                  cRecruiter === recruiterUserName ||
-                 cRecruiter.includes(recruiterUserName) ||
+                 (recruiterUserName.length >= 3 && (cRecruiter.includes(recruiterUserName) || recruiterUserName.includes(cRecruiter))) ||
                  (recruiterRef && cRef.includes(recruiterRef)) ||
-                 c.isSample || c.job_id === 'J-102'
+                 (recruiterUserEmail && cOwner.includes(recruiterUserEmail))
         }
 
         // For Lead Recruiter: include own candidates + all candidates from subordinate employees!
@@ -383,28 +386,33 @@ export default function AtsPlatform() {
           const pName = (u.parentRecruiterName || '').toLowerCase().trim()
           const pId = String(u.parentRecruiterId || '').toLowerCase().trim()
           const pEmail = (u.parentRecruiterEmail || '').toLowerCase().trim()
-          return (pName && (pName === recruiterUserName || pName.includes(recruiterUserName) || recruiterUserName.includes(pName))) ||
-                 (pId && pId === recruiterUserId) ||
+          return (pName && (pName === recruiterUserName || pName.includes(recruiterUserName) || recruiterUserName.includes(pName) || (firstName.length >= 3 && pName.includes(firstName)))) ||
+                 (pId && (pId === recruiterUserId || recruiterUserId.includes(pId))) ||
                  (pEmail && pEmail === recruiterUserEmail)
         })
 
         const subNames = mySubordinates.map(u => (u.name || '').toLowerCase().trim()).filter(Boolean)
         const subEmails = mySubordinates.map(u => (u.email || '').toLowerCase().trim()).filter(Boolean)
         const subRefs = mySubordinates.map(u => (u.refCode || '').toLowerCase().trim()).filter(Boolean)
+        const subIds = mySubordinates.map(u => String(u.id || u._id || '').toLowerCase().trim()).filter(Boolean)
 
         const isMine = cOwner === recruiterUserEmail ||
                        cOwner === recruiterUserId ||
                        cRecruiter === recruiterUserName ||
-                       cRecruiter.includes(recruiterUserName) ||
+                       (recruiterUserName.length >= 3 && (cRecruiter.includes(recruiterUserName) || recruiterUserName.includes(cRecruiter))) ||
                        (recruiterRef && cRef.includes(recruiterRef)) ||
-                       (cParent && (cParent === recruiterUserName || cParent.includes(recruiterUserName))) ||
-                       c.isSample || c.job_id === 'J-102'
+                       (firstName.length >= 3 && cRecruiter.includes(firstName))
+
+        const isMyParentChild = (cParent && (cParent === recruiterUserName || cParent.includes(recruiterUserName) || recruiterUserName.includes(cParent) || (firstName.length >= 3 && cParent.includes(firstName)))) ||
+                                (cParentEmail && cParentEmail === recruiterUserEmail) ||
+                                (cParentId && cParentId === recruiterUserId)
 
         const isSubCandidate = subNames.some(sn => sn && (cRecruiter === sn || cRecruiter.includes(sn) || sn.includes(cRecruiter))) ||
                                subEmails.some(se => se && (cOwner.includes(se) || cRecruiter.includes(se))) ||
-                               subRefs.some(sr => sr && cRef.includes(sr))
+                               subRefs.some(sr => sr && cRef.includes(sr)) ||
+                               subIds.some(sid => sid && cOwner === sid)
 
-        return isMine || isSubCandidate
+        return isMine || isMyParentChild || isSubCandidate
       })
 
   // Filtered candidates safely

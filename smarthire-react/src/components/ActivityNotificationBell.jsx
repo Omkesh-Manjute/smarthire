@@ -33,84 +33,8 @@ export const pushActivityNotification = (notif) => {
   window.dispatchEvent(new CustomEvent('smarthire_new_activity_notification', { detail: newEntry }))
 }
 
-// Initial realistic default notifications for immediate rich experience
-const DEFAULT_NOTIFICATIONS = [
-  {
-    id: 'notif-1',
-    title: 'Manager Candidate Approval',
-    message: 'Manager Alok approved Candidate Rahul Sharma for Requisition #158938',
-    type: 'approval',
-    category: 'status',
-    timestamp: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
-    timeAgo: '2m ago',
-    isRead: false,
-    actor: 'Alok Manager',
-    actorRole: 'Manager',
-    reqId: '158938',
-    candidateName: 'Rahul Sharma',
-    candidateId: 'emp-1',
-    statusText: 'Int-ApprovedByManager'
-  },
-  {
-    id: 'notif-2',
-    title: 'New Candidate Assigned to Requisition',
-    message: 'New candidate Ashok Juttu Kannan assigned to Requisition #158938 by Sukamal Chatterjee',
-    type: 'assignment',
-    category: 'team',
-    timestamp: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
-    timeAgo: '12m ago',
-    isRead: false,
-    actor: 'Sukamal Chatterjee',
-    actorRole: 'Recruiter',
-    reqId: '158938',
-    candidateName: 'Ashok Juttu Kannan',
-    candidateId: '87510'
-  },
-  {
-    id: 'notif-3',
-    title: 'Client Interview Scheduled',
-    message: 'Cx Avinash Ashokrao Mahajan status updated to "Client-InterviewScheduled" for State Of SC',
-    type: 'interview',
-    category: 'status',
-    timestamp: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
-    timeAgo: '45m ago',
-    isRead: false,
-    actor: 'Vaibhav Bisen',
-    actorRole: 'Recruiter',
-    reqId: '158938',
-    candidateName: 'Cx Avinash Ashokrao Mahajan',
-    candidateId: '87512',
-    statusText: 'Client-InterviewScheduled'
-  },
-  {
-    id: 'notif-4',
-    title: 'AI Fit Match Evaluation',
-    message: 'AI Fit Engine evaluated Candidate Ashok Juttu Kannan with 94% Strong Match for Req #158938',
-    type: 'ai',
-    category: 'ai',
-    timestamp: new Date(Date.now() - 110 * 60 * 1000).toISOString(),
-    timeAgo: '1h ago',
-    isRead: true,
-    actor: 'SmartHire AI Intelligence',
-    actorRole: 'AI Agent',
-    reqId: '158938',
-    candidateName: 'Ashok Juttu Kannan',
-    candidateId: '87510'
-  },
-  {
-    id: 'notif-5',
-    title: 'New Requisition Created',
-    message: 'Admin Omkesh created new Requisition #158942 "Senior Cloud DevOps Engineer" for DFA',
-    type: 'requisition',
-    category: 'team',
-    timestamp: new Date(Date.now() - 240 * 60 * 1000).toISOString(),
-    timeAgo: '4h ago',
-    isRead: true,
-    actor: 'Omkesh',
-    actorRole: 'SuperAdmin',
-    reqId: '158942'
-  }
-]
+// Initial real-time activity notifications list
+const DEFAULT_NOTIFICATIONS = []
 
 export default function ActivityNotificationBell({ theme = 'default', onSelectNotification }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -119,7 +43,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
       const raw = localStorage.getItem('smarthire_activity_notifications')
       if (raw) {
         const parsed = JSON.parse(raw)
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+        if (Array.isArray(parsed)) return parsed
       }
     } catch (e) {}
     return DEFAULT_NOTIFICATIONS
