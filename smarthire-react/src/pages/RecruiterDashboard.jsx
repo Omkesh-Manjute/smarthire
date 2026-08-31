@@ -878,9 +878,11 @@ We are currently reviewing candidate profiles and scheduling immediate interview
   const getJobAssignedRecruiters = (jobId) => {
     try {
       const rawId = String(jobId || '')
-      const cleanId = rawId.replace('J-', '')
+      const cleanId = rawId.replace('J-', '').replace('REQ-', '').trim()
+      const resolvedReq = resolveReqId(rawId)
       const saved = localStorage.getItem(`smarthire_req_assigned_${cleanId}`) ||
                     localStorage.getItem(`smarthire_req_assigned_${rawId}`) ||
+                    localStorage.getItem(`smarthire_req_assigned_${resolvedReq}`) ||
                     localStorage.getItem(`smarthire_req_assigned_J-${cleanId}`)
       if (saved !== null && saved !== undefined) {
         const parsed = JSON.parse(saved)
@@ -1209,8 +1211,9 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
     // Update jobs list in state
     setJobs(prev => prev.map(j => {
-      const jClean = String(j.id || '').replace('J-', '')
-      if (jClean === cleanId || j.id === fullId || j.id === rawId || j.id === `J-${cleanId}` || (rawId && String(j.id) === rawId)) {
+      const jClean = String(j.id || '').replace('J-', '').replace('REQ-', '').trim()
+      const reqMatch = (resolveReqId(j.id, j) === resolveReqId(rawId, selectedReq)) || (jClean === cleanId) || (j.id === fullId) || (j.id === rawId)
+      if (reqMatch) {
         return {
           ...j,
           title: editingFields.title || j.title,
@@ -1965,8 +1968,8 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     return jobs.filter(j => {
       if (!j) return false
 
-      // ─── STRICT ROLE-BASED ACCESS CONTROL (RBAC) ───
-      // If user is an Employee (Sub-recruiter): show requisitions assigned to them, or assigned to their lead recruiter, or open to team
+      // ─── STRICT ROLE-BASED ACCESS CONTROL (RBAC) FOR EMPLOYEE ───
+      // If user is an Employee (Sub-recruiter): strictly show ONLY requisitions explicitly assigned to this employee!
       if (isEmployee) {
         const assignedList = Array.isArray(j.assignedRecruiters)
           ? j.assignedRecruiters.map(r => String(r || '').toLowerCase().trim())
@@ -1976,21 +1979,22 @@ We are currently reviewing candidate profiles and scheduling immediate interview
         const firstNameIdent = (userName.split(' ')[0] || '').toLowerCase().trim()
         const uidIdent = (currentUser?.uid || '').toLowerCase().trim()
 
-        const effectiveParentRecruiterName = (currentUser?.parentRecruiterName || 
-          teamUsers.find(u => (u.email && u.email.toLowerCase() === (currentUser?.email || '').toLowerCase()) || (u.name && u.name.toLowerCase() === (userName || '').toLowerCase()))?.parentRecruiterName || '').toLowerCase().trim()
-
         const isDirectlyAssigned = assignedList.some(r =>
           r === userIdent ||
-          r.includes(userIdent) || userIdent.includes(r) ||
+          (userIdent.length >= 3 && (r.includes(userIdent) || userIdent.includes(r))) ||
           (userEmailIdent && (r === userEmailIdent || r.includes(userEmailIdent) || userEmailIdent.includes(r))) ||
-          (firstNameIdent && firstNameIdent.length >= 2 && (r === firstNameIdent || r.includes(firstNameIdent) || firstNameIdent.includes(r))) ||
-          (uidIdent && r.includes(uidIdent)) ||
-          (effectiveParentRecruiterName && (r === effectiveParentRecruiterName || r.includes(effectiveParentRecruiterName) || effectiveParentRecruiterName.includes(r)))
+          (firstNameIdent && firstNameIdent.length >= 3 && (r === firstNameIdent || r.includes(firstNameIdent))) ||
+          (uidIdent && r.includes(uidIdent))
         )
 
-        const isUnassignedOrOpen = assignedList.length === 0 || assignedList.includes('all') || assignedList.includes('any') || assignedList.includes('smarthire')
+        const isAssignedField = [j.assignedTo, j.recruiter, j.recruiterEmail, j.postedByName]
+          .some(prop => {
+            if (!prop) return false
+            const p = String(prop).toLowerCase().trim()
+            return p === userIdent || (userIdent.length >= 3 && p.includes(userIdent)) || (userEmailIdent && p.includes(userEmailIdent))
+          })
 
-        if (!isDirectlyAssigned && !isUnassignedOrOpen) {
+        if (!isDirectlyAssigned && !isAssignedField) {
           return false
         }
       }
