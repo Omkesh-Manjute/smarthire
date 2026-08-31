@@ -1378,10 +1378,12 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     if (!selectedReq) return
     const rawId = String(selectedReq.id || '')
     const cleanId = rawId.replace('J-', '').replace('REQ-', '').trim()
+    const resolvedId = resolveReqId(cleanId, selectedReq)
     const fullId = `J-${cleanId}`
 
     try {
       const savedAtt = localStorage.getItem(`smarthire_req_attachments_${cleanId}`) ||
+                       localStorage.getItem(`smarthire_req_attachments_${resolvedId}`) ||
                        localStorage.getItem(`smarthire_req_attachments_${rawId}`) ||
                        localStorage.getItem(`smarthire_req_attachments_${fullId}`)
       if (savedAtt !== null && savedAtt !== undefined) {
@@ -1389,37 +1391,70 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       }
     } catch (e) {}
 
+    // Find any candidates in memory or localStorage matching this req
+    const matchingGlobal = (candidates || []).filter(c => {
+      if (!c) return false
+      const cReq = String(c.reqId || c.job_id || c.jobId || c.targetJobId || '').replace('J-', '').trim()
+      const resolvedCReq = resolveReqId(cReq)
+      return cReq === cleanId || cReq === resolvedId || resolvedCReq === resolvedId || cReq === rawId || resolvedCReq === cleanId
+    }).map(c => ({
+      id: c.id || c.canId,
+      name: c.name,
+      payRate: c.payRate || '74/hr',
+      payRateType: c.rateType || c.payRateType || 'C2C',
+      assignedBy: c.assignedBy || c.recruiter || userName,
+      assignedOn: c.dateAdded || 'Aug 20, 2026 04:40 PM',
+      status: c.status || 'Int-SubmittedToManager',
+      statusComments: c.statusComments || 'Submitted',
+      interview: 'Select',
+      rejectedReason: 'Select',
+      lastChangedBy: c.lastChangedBy || c.recruiter || userName,
+      lastChangedRole: c.lastChangedRole || 'Recruiter',
+      lastChangedOn: c.lastChangedOn || 'Aug 20, 2026 04:40 PM'
+    }))
+
     try {
       const savedCand = localStorage.getItem(`smarthire_potential_candidates_${cleanId}`) ||
+                        localStorage.getItem(`smarthire_potential_candidates_${resolvedId}`) ||
                         localStorage.getItem(`smarthire_potential_candidates_${rawId}`) ||
                         localStorage.getItem(`smarthire_potential_candidates_${fullId}`)
       if (savedCand !== null && savedCand !== undefined) {
-        setPotentialCandidates(JSON.parse(savedCand))
+        const parsed = JSON.parse(savedCand)
+        const combined = [...(Array.isArray(parsed) ? parsed : []), ...matchingGlobal]
+        setPotentialCandidates(deduplicateCandidates(combined))
+      } else {
+        setPotentialCandidates(deduplicateCandidates(matchingGlobal))
       }
-    } catch (e) {}
+    } catch (e) {
+      setPotentialCandidates(deduplicateCandidates(matchingGlobal))
+    }
 
     // Fetch real-time requisition candidates from Firestore
-    getRequisitionCandidates(cleanId).then(cloudCands => {
-      if (Array.isArray(cloudCands) && cloudCands.length > 0) {
-        setPotentialCandidates(prev => {
-          const map = new Map()
-          prev.forEach(c => { if (c && (c.id || c.name)) map.set(String(c.id || c.name), c) })
-          cloudCands.forEach(c => {
-            if (c && (c.id || c.name)) {
-              const existing = map.get(String(c.id || c.name)) || {}
-              map.set(String(c.id || c.name), { ...existing, ...c })
-            }
+    const fetchCloudCandidates = async () => {
+      try {
+        const [c1, c2, c3] = await Promise.all([
+          getRequisitionCandidates(cleanId),
+          resolvedId !== cleanId ? getRequisitionCandidates(resolvedId) : Promise.resolve([]),
+          rawId !== cleanId && rawId !== resolvedId ? getRequisitionCandidates(rawId) : Promise.resolve([])
+        ])
+        const cloudCands = [...(c1 || []), ...(c2 || []), ...(c3 || [])]
+        if (cloudCands.length > 0) {
+          setPotentialCandidates(prev => {
+            const merged = deduplicateCandidates([...cloudCands, ...prev])
+            try {
+              localStorage.setItem(`smarthire_potential_candidates_${cleanId}`, JSON.stringify(merged))
+              localStorage.setItem(`smarthire_potential_candidates_${resolvedId}`, JSON.stringify(merged))
+              localStorage.setItem(`smarthire_potential_candidates_J-${cleanId}`, JSON.stringify(merged))
+            } catch (e) {}
+            return merged
           })
-          const merged = Array.from(map.values())
-          try {
-            localStorage.setItem(`smarthire_potential_candidates_${cleanId}`, JSON.stringify(merged))
-            localStorage.setItem(`smarthire_potential_candidates_J-${cleanId}`, JSON.stringify(merged))
-          } catch (e) {}
-          return merged
-        })
+        }
+      } catch(err) {
+        console.warn('Firestore requisition candidates fetch notice:', err)
       }
-    }).catch(() => {})
-  }, [selectedReq?.id])
+    }
+    fetchCloudCandidates()
+  }, [selectedReq?.id, candidates])
 
   // Open Requisition Detail
   const handleOpenReq = (job) => {
@@ -1430,11 +1465,13 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     
     const rawId = String(job.id || '')
     const cleanId = rawId.replace('J-', '').replace('REQ-', '').trim()
+    const resolvedId = resolveReqId(cleanId, job)
     const fullId = `J-${cleanId}`
 
     let savedReq = {}
     try {
       const raw = localStorage.getItem(`smarthire_req_${cleanId}`) ||
+                  localStorage.getItem(`smarthire_req_${resolvedId}`) ||
                   localStorage.getItem(`smarthire_req_${rawId}`) ||
                   localStorage.getItem(`smarthire_req_${fullId}`)
       if (raw) savedReq = JSON.parse(raw)
@@ -1445,64 +1482,68 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       ? savedReq.assignedRecruiters
       : (Array.isArray(job.assignedRecruiters) ? job.assignedRecruiters : getJobAssignedRecruiters(job.id))
 
+    // Find matching candidates from global candidates list
+    const matchingGlobal = (candidates || []).filter(c => {
+      if (!c) return false
+      const cReq = String(c.reqId || c.job_id || c.jobId || c.targetJobId || '').replace('J-', '').trim()
+      const resolvedCReq = resolveReqId(cReq)
+      return cReq === cleanId || cReq === resolvedId || resolvedCReq === resolvedId || cReq === rawId || resolvedCReq === cleanId
+    }).map(c => ({
+      id: c.id || c.canId,
+      name: c.name,
+      payRate: c.payRate || '74/hr',
+      payRateType: c.rateType || c.payRateType || 'C2C',
+      assignedBy: c.assignedBy || c.recruiter || userName,
+      assignedOn: c.dateAdded || 'Aug 20, 2026 04:40 PM',
+      status: c.status || 'Int-SubmittedToManager',
+      statusComments: c.statusComments || 'Submitted',
+      interview: 'Select',
+      rejectedReason: 'Select',
+      lastChangedBy: c.lastChangedBy || c.recruiter || userName,
+      lastChangedRole: c.lastChangedRole || 'Recruiter',
+      lastChangedOn: c.lastChangedOn || 'Aug 20, 2026 04:40 PM'
+    }))
+
     // Load candidates specifically for this requisition
     try {
       const savedCand = localStorage.getItem(`smarthire_potential_candidates_${cleanId}`) ||
+                        localStorage.getItem(`smarthire_potential_candidates_${resolvedId}`) ||
                         localStorage.getItem(`smarthire_potential_candidates_${rawId}`) ||
                         localStorage.getItem(`smarthire_potential_candidates_${fullId}`)
       if (savedCand !== null && savedCand !== undefined) {
-        setPotentialCandidates(JSON.parse(savedCand))
+        const parsed = JSON.parse(savedCand)
+        const combined = [...(Array.isArray(parsed) ? parsed : []), ...matchingGlobal]
+        setPotentialCandidates(deduplicateCandidates(combined))
       } else {
-        // Find matching candidates from global candidates list
-        const matchingGlobal = (candidates || []).filter(c => {
-          if (!c) return false
-          const cReq = String(c.reqId || c.job_id || c.jobId || '').replace('J-', '').trim()
-          return cReq === cleanId
-        }).map(c => ({
-          id: c.id,
-          name: c.name,
-          payRate: c.payRate || '74/hr',
-          payRateType: c.rateType || c.payRateType || 'C2C',
-          assignedBy: c.assignedBy || c.recruiter || userName,
-          assignedOn: c.dateAdded || 'Aug 20, 2026 04:40 PM',
-          status: c.status || 'Int-SubmittedToManager',
-          statusComments: c.statusComments || 'Submitted',
-          interview: 'Select',
-          rejectedReason: 'Select',
-          lastChangedBy: c.lastChangedBy || c.recruiter || userName,
-          lastChangedRole: c.lastChangedRole || 'Recruiter',
-          lastChangedOn: c.lastChangedOn || 'Aug 20, 2026 04:40 PM'
-        }))
-
-        if (matchingGlobal.length > 0) {
-          setPotentialCandidates(matchingGlobal)
-        } else {
-          setPotentialCandidates([])
-        }
+        setPotentialCandidates(deduplicateCandidates(matchingGlobal))
       }
-    } catch (e) {}
+    } catch (e) {
+      setPotentialCandidates(deduplicateCandidates(matchingGlobal))
+    }
 
     // Fetch from Firestore for freshest real-time updates
-    getRequisitionCandidates(cleanId).then(cloudCands => {
-      if (Array.isArray(cloudCands) && cloudCands.length > 0) {
-        setPotentialCandidates(prev => {
-          const map = new Map()
-          prev.forEach(c => { if (c && (c.id || c.name)) map.set(String(c.id || c.name), c) })
-          cloudCands.forEach(c => {
-            if (c && (c.id || c.name)) {
-              const existing = map.get(String(c.id || c.name)) || {}
-              map.set(String(c.id || c.name), { ...existing, ...c })
-            }
+    const fetchCloud = async () => {
+      try {
+        const [c1, c2, c3] = await Promise.all([
+          getRequisitionCandidates(cleanId),
+          resolvedId !== cleanId ? getRequisitionCandidates(resolvedId) : Promise.resolve([]),
+          rawId !== cleanId && rawId !== resolvedId ? getRequisitionCandidates(rawId) : Promise.resolve([])
+        ])
+        const cloudCands = [...(c1 || []), ...(c2 || []), ...(c3 || [])]
+        if (cloudCands.length > 0) {
+          setPotentialCandidates(prev => {
+            const merged = deduplicateCandidates([...cloudCands, ...prev])
+            try {
+              localStorage.setItem(`smarthire_potential_candidates_${cleanId}`, JSON.stringify(merged))
+              localStorage.setItem(`smarthire_potential_candidates_${resolvedId}`, JSON.stringify(merged))
+              localStorage.setItem(`smarthire_potential_candidates_J-${cleanId}`, JSON.stringify(merged))
+            } catch (e) {}
+            return merged
           })
-          const merged = Array.from(map.values())
-          try {
-            localStorage.setItem(`smarthire_potential_candidates_${cleanId}`, JSON.stringify(merged))
-            localStorage.setItem(`smarthire_potential_candidates_J-${cleanId}`, JSON.stringify(merged))
-          } catch (e) {}
-          return merged
-        })
-      }
-    }).catch(() => {})
+        }
+      } catch (err) {}
+    }
+    fetchCloud()
 
     // Load attachments specifically for this requisition
     try {
@@ -7749,7 +7790,10 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                   resumeData: candidateIntakeData.resumeData || null,
                   resumeText: candidateIntakeData.resumeText || '',
                   screened: 'Yes',
-                  dateAdded: dateStr
+                  dateAdded: dateStr,
+                  reqId: candidateIntakeData.targetJobId ? resolveReqId(String(candidateIntakeData.targetJobId).replace('J-', '')) : '',
+                  targetJobId: candidateIntakeData.targetJobId ? resolveReqId(String(candidateIntakeData.targetJobId).replace('J-', '')) : '',
+                  job_id: candidateIntakeData.targetJobId ? resolveReqId(String(candidateIntakeData.targetJobId).replace('J-', '')) : ''
                 }
 
                 // 1. Update or Add to Candidates State & LocalStorage
@@ -7812,10 +7856,12 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
 
                 // 5. Optional: Submit directly to selected requisition
                 if (candidateIntakeData.targetJobId) {
-                  const cleanReqId = String(candidateIntakeData.targetJobId).replace('J-', '')
+                  const cleanReqId = String(candidateIntakeData.targetJobId).replace('J-', '').trim()
+                  const resolvedCleanId = resolveReqId(cleanReqId)
                   let existingSubmissions = []
                   try {
-                    const raw = localStorage.getItem(`smarthire_potential_candidates_${cleanReqId}`)
+                    const raw = localStorage.getItem(`smarthire_potential_candidates_${cleanReqId}`) ||
+                                localStorage.getItem(`smarthire_potential_candidates_${resolvedCleanId}`)
                     if (raw) existingSubmissions = JSON.parse(raw)
                   } catch (err) {}
 
@@ -7847,13 +7893,19 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                   const updatedSubmissions = [subObj, ...existingSubmissions.filter(s => s.id !== candId)]
                   try {
                     localStorage.setItem(`smarthire_potential_candidates_${cleanReqId}`, JSON.stringify(updatedSubmissions))
+                    localStorage.setItem(`smarthire_potential_candidates_${resolvedCleanId}`, JSON.stringify(updatedSubmissions))
                     localStorage.setItem(`smarthire_potential_candidates_J-${cleanReqId}`, JSON.stringify(updatedSubmissions))
+                    localStorage.setItem(`smarthire_potential_candidates_J-${resolvedCleanId}`, JSON.stringify(updatedSubmissions))
                   } catch (err) {}
 
-                  // Save to Firestore
+                  // Save to Firestore for both IDs
                   saveRequisitionCandidates(cleanReqId, updatedSubmissions).catch(() => {})
+                  if (resolvedCleanId !== cleanReqId) {
+                    saveRequisitionCandidates(resolvedCleanId, updatedSubmissions).catch(() => {})
+                  }
 
-                  if (String(selectedReq?.id || '').replace('J-', '') === cleanReqId) {
+                  const currentSelectedId = String(selectedReq?.id || '').replace('J-', '').trim()
+                  if (currentSelectedId === cleanReqId || currentSelectedId === resolvedCleanId) {
                     setPotentialCandidates(updatedSubmissions)
                   }
                 }
