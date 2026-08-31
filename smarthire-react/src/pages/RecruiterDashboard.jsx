@@ -2322,30 +2322,41 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     <SiteLayout>
       <div style={{ background: '#f1f5f9', minHeight: '92vh', paddingBottom: '30px', fontFamily: 'Arial, sans-serif' }}>
         
-        {/* ═══════════ TOP HEADER USER INFO STRIP ═══════════ */}
-        <div style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', padding: '4px 16px', fontSize: '11px', color: '#475569' }}>
-          <div className="container-wide" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', gap: '14px' }}>
-              <span onClick={() => { setActiveMainTab('requisitions'); setViewMode('portal'); }} style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>Home</span>
-              <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>About Us</span>
-              <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>My Account</span>
-              <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>Logout</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <span>Theme: <select style={{ fontSize: '11px', padding: '1px 3px' }}><option>Default</option></select></span>
-              <span style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Welcome: {userName}</span>
-            </div>
-          </div>
-        </div>
-
         {/* ═══════════ SMARTWORKS ORANGE HEADER NAVIGATION BAR ═══════════ */}
         <header style={{ background: '#ea580c', borderBottom: '2px solid #c2410c', color: '#ffffff' }}>
           <div className="container-wide" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '42px', padding: '0 16px' }}>
             
             <div style={{ display: 'flex', gap: '2px', height: '100%', alignItems: 'stretch' }}>
-              <div style={{ display: 'flex', alignItems: 'center', padding: '0 12px', fontWeight: 'bold', fontSize: '15px', letterSpacing: '0.02em', background: '#c2410c' }}>
-                SmartWorks
+              {/* SmartWorks Logo / Home Button */}
+              <div
+                onClick={() => {
+                  setActiveMainTab('requisitions')
+                  setViewMode('portal')
+                  setCurrentPage(1)
+                  setReqFilters({ reqId: '', title: '', skills: '', city: '', state: 'Select State', status: 'In-Progress', assignedTo: 'Any', reqType: 'Select Req Type' })
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '0 16px',
+                  fontWeight: '900',
+                  fontSize: '15px',
+                  letterSpacing: '0.03em',
+                  background: '#9a3412',
+                  cursor: 'pointer',
+                  color: '#ffffff',
+                  userSelect: 'none',
+                  gap: '6px',
+                  borderRight: '1px solid rgba(255,255,255,0.25)',
+                  transition: 'background-color 0.15s ease'
+                }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#7c2d12'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = '#9a3412'}
+                title="SmartWorks Home — Click to return to Requisitions Home"
+              >
+                <span style={{ fontSize: '16px' }}>🏢</span> SmartWorks
               </div>
+
               {navTabs.map(t => (
                 <div
                   key={t.id}
@@ -2359,10 +2370,25 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                     }
                   }}
                   style={{
-                    display: 'flex', alignItems: 'center', padding: '0 16px', fontSize: '12.5px', fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '0 16px',
+                    fontSize: '12.5px',
+                    fontWeight: 'bold',
                     background: activeMainTab === t.id && viewMode === 'portal' ? '#d97706' : 'transparent',
                     borderRight: '1px solid rgba(255,255,255,0.2)',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    transition: 'background-color 0.15s ease'
+                  }}
+                  onMouseEnter={e => {
+                    if (!(activeMainTab === t.id && viewMode === 'portal')) {
+                      e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.1)'
+                    }
+                  }}
+                  onMouseLeave={e => {
+                    if (!(activeMainTab === t.id && viewMode === 'portal')) {
+                      e.currentTarget.style.backgroundColor = 'transparent'
+                    }
                   }}
                 >
                   {t.name}
@@ -2370,23 +2396,31 @@ We are currently reviewing candidate profiles and scheduling immediate interview
               ))}
             </div>
 
-            {/* Quick Search Input */}
-            <form onSubmit={handleQuickSearch} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 'bold' }}>Requisition #</span>
-              <input
-                type="text"
-                value={quickSearchId}
-                onChange={e => setQuickSearchId(e.target.value)}
-                placeholder="Req ID / Title"
-                style={{ padding: '2px 6px', fontSize: '11px', width: '130px', border: '1px solid #ffffff', borderRadius: '2px' }}
-              />
-              <button
-                type="submit"
-                style={{ background: '#f8fafc', color: '#0f172a', border: 'none', padding: '3px 10px', fontSize: '11px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer' }}
-              >
-                Quick Search
-              </button>
-            </form>
+            {/* Right Side: Welcome User & Quick Search */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <span style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#ffedd5' }}>
+                Welcome: <span style={{ color: '#ffffff', textDecoration: 'underline' }}>{userName}</span>
+              </span>
+
+              {/* Quick Search Input */}
+              <form onSubmit={handleQuickSearch} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 'bold' }}>Requisition #</span>
+                <input
+                  type="text"
+                  value={quickSearchId}
+                  onChange={e => setQuickSearchId(e.target.value)}
+                  placeholder="Req ID / Title"
+                  style={{ padding: '3px 8px', fontSize: '11px', width: '130px', border: '1px solid #ffffff', borderRadius: '3px', outline: 'none' }}
+                />
+                <button
+                  type="submit"
+                  style={{ background: '#f8fafc', color: '#0f172a', border: 'none', padding: '3px 10px', fontSize: '11px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer' }}
+                >
+                  Quick Search
+                </button>
+              </form>
+            </div>
+
           </div>
         </header>
 
