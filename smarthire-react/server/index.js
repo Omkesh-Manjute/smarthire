@@ -254,7 +254,7 @@ async function publishPostToLinkedIn(post) {
 }
 
 const app = express()
-const PORT = process.env.API_PORT || 8787
+const PORT = process.env.PORT || process.env.API_PORT || 8787
 
 const uploadDir = path.resolve(__dirname, 'uploads')
 if (!fs.existsSync(uploadDir)) {
@@ -7104,7 +7104,7 @@ if (fs.existsSync(distPath)) {
 }
 
 // For React Router support - fallback all non-API GET requests to index.html
-app.get('/{*path}', (req, res, next) => {
+app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
     return next()
   }
