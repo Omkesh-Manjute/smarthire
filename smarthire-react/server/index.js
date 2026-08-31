@@ -4027,23 +4027,23 @@ app.get('/api/jobs/ingestion/run-now', async (_req, res) => {
   }
 });
 
-// ─── 15-Minute Automatic Background Ingestion Scheduler ──────────────────────
-const INGESTION_INTERVAL_MS = 15 * 60 * 1000; // 15 Minutes
+// ─── 10-Minute Automatic Background Ingestion Scheduler ──────────────────────
+const INGESTION_INTERVAL_MS = 10 * 60 * 1000; // 10 Minutes
 setInterval(async () => {
   if (ingestionRunning) {
-    console.log('⏰ [15-Min Cron] Skipping: Ingestion is currently running.');
+    console.log('⏰ [10-Min Cron] Skipping: Ingestion is currently running.');
     return;
   }
-  console.log('⏰ [15-Min Cron] Triggering automatic 15-minute job scraper ingestion...');
+  console.log('⏰ [10-Min Cron] Triggering automatic 10-minute job scraper ingestion...');
   ingestionRunning = true;
   try {
     const { runIngestion } = await import('./jobs-ingestion/run-ingestion.js');
     const result = await runIngestion();
     await loadJobsFromDisk();
     await loadReportsFromDisk();
-    console.log(`✅ [15-Min Cron] Scraper run complete. Status: ${result.status}, Added: ${result.jobs_added}`);
+    console.log(`✅ [10-Min Cron] Scraper run complete. Status: ${result.status}, Added: ${result.jobs_added}`);
   } catch (err) {
-    console.error('❌ [15-Min Cron] Scraper run error:', err.message);
+    console.error('❌ [10-Min Cron] Scraper run error:', err.message);
   } finally {
     ingestionRunning = false;
   }

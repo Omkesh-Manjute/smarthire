@@ -17,7 +17,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const BASE_URL = 'https://www.jobsinhand.com';
 const SEARCH_URL = `${BASE_URL}/search_jobs.aspx`;
-const MAX_JOBS = 10;
+const MAX_JOBS = 30;
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
@@ -258,8 +258,17 @@ export async function scrapeViaPlaywright(logger = console.log) {
 
     logger(`[playwright] Found ${rawJobs.length} raw job entries.`);
 
+    // Deduplicate identical rows from nested table cells
+    const uniqueMap = new Map();
+    rawJobs.forEach(j => {
+      const key = (j.href || j.title).trim();
+      if (!uniqueMap.has(key)) uniqueMap.set(key, j);
+    });
+    const uniqueRawJobs = Array.from(uniqueMap.values());
+    logger(`[playwright] Unique raw job entries after cell deduplication: ${uniqueRawJobs.length}`);
+
     // Filter Rebid
-    const noRebid = rawJobs.filter(j => !/rebid/i.test(j.title));
+    const noRebid = uniqueRawJobs.filter(j => !/rebid/i.test(j.title));
     logger(`[playwright] After Rebid filter: ${noRebid.length}`);
 
     // Filter today's jobs (fallback to all latest non-rebid jobs if today is 0)

@@ -23,7 +23,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const BASE_URL = 'https://www.jobsinhand.com';
 const SEARCH_URL = `${BASE_URL}/search_jobs.aspx`;
-const MAX_JOBS = 10;
+const MAX_JOBS = 30;
 const REQUEST_DELAY_MS = 800; // Be polite between requests
 
 // ─── Utilities ───────────────────────────────────────────────────────────────

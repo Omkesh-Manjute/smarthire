@@ -21,6 +21,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { scrapeJobsInHand } from './jobsinhand-scraper.js';
+import { resolveReqId, extractPositionNumber, cleanJobTitleWithPositionNumber, formatJobDescription } from '../../src/utils/formatJobDescription.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -201,18 +202,26 @@ function isDuplicate(newJob, existingJobs) {
   const normalise = s => (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
   const newTitle  = normalise(newJob.title);
   const newClient = normalise(newJob.client);
-  const newDate   = (newJob.post_date || '').slice(0, 10);
+  const newPos    = extractPositionNumber(newJob.title, newJob.description || newJob.rawDescription);
+  const newResolvedId = resolveReqId(newJob.id || newJob.reqId || newJob.title, newJob);
 
   return existingJobs.some(existing => {
     const eTitle  = normalise(existing.title);
     const eClient = normalise(existing.client);
-    const eDate   = (existing.post_date || existing.postDate || '').slice(0, 10);
+    const ePos    = existing.positionNumber || extractPositionNumber(existing.title, existing.description);
+    const eResolvedId = resolveReqId(existing.id || existing.reqId || existing.title, existing);
 
-    // Strong match: title + date
-    if (eTitle === newTitle && eDate === newDate) return true;
+    // If both have valid position numbers and they match
+    if (newPos && ePos && newPos === ePos) return true;
 
-    // Moderate match: title + client
-    if (eTitle === newTitle && eClient === newClient && eClient !== '') return true;
+    // If both have resolved authentic req IDs and they match
+    if (newResolvedId && eResolvedId && newResolvedId === eResolvedId && /^15[89]\d{3}$/.test(newResolvedId)) return true;
+
+    // Strong match: exact title
+    if (eTitle === newTitle) return true;
+
+    // Match if client and partial title match
+    if (eClient && newClient && eClient === newClient && (eTitle.includes(newTitle) || newTitle.includes(eTitle))) return true;
 
     return false;
   });
@@ -230,12 +239,12 @@ function buildReportContent(summary, addedJobs) {
 
   let jobListSection = '';
   if (addedJobs.length > 0) {
-    jobListSection = '\n\n### New Jobs Added Today\n';
+    jobListSection = '\n\n### New Jobs Added Today (Newest at Top)\n';
     addedJobs.forEach((j, i) => {
       const skills = Array.isArray(j.skills) && j.skills.length > 0
         ? j.skills.slice(0, 3).join(', ')
         : 'Various';
-      jobListSection += `- **${j.title}** — ${j.location || 'Location TBD'} · ${j.type || 'Contract'} · Skills: ${skills}\n`;
+      jobListSection += `- **${j.title}** (Req #${j.reqId || j.id}) — ${j.location || 'Location TBD'} · ${j.workMode || j.type || 'Hybrid'} · Skills: ${skills}\n`;
     });
   }
 
@@ -245,14 +254,14 @@ Automated job ingestion completed at **${timeStr}** on ${dateStr}.
 Scraping mode: ${modeLabel}
 
 ### Sync Summary
-- **${summary.jobs_found} Jobs** found on JobsInHand today.
+- **${summary.jobs_found} Jobs** found on JobsInHand.
 - **${summary.rebid_filtered} Rebid listings** automatically excluded.
-- **${summary.jobs_added} New Jobs** successfully added to the ATS database.
+- **${summary.jobs_added} New Jobs** successfully added to the top of the ATS database.
 - **${summary.duplicates_skipped} Duplicates** detected and skipped.
 - **${summary.failed_jobs} Jobs** failed to parse or fetch.${jobListSection}
 
 ### Next Actions
-New job postings are now visible in the ATS Jobs tab. Recruiters can search candidates against these new requirements and share them on LinkedIn.`;
+New job postings are now visible at the top of the ATS Jobs tab. Recruiters can search candidates against these new requirements and share them on LinkedIn.`;
 }
 
 // ─── Main Ingestion Pipeline ──────────────────────────────────────────────────
@@ -306,32 +315,41 @@ export async function runIngestion() {
       let dupCount = 0;
 
       for (const job of scrapeResult.jobs) {
-        if (isDuplicate(job, existingJobs)) {
+        if (isDuplicate(job, existingJobs) || isDuplicate(job, newJobs)) {
           logger(`  [DUP] Skipping duplicate: "${job.title}" (${job.post_date})`);
           dupCount++;
         } else {
-          // Assign a unique ID
-          const jobId = `J-JIH-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+          const rawTitle = job.title;
+          const posNumber = extractPositionNumber(rawTitle, job.rawDescription || job.description);
+          const cleanTitle = cleanJobTitleWithPositionNumber(rawTitle, { ...job, positionNumber: posNumber });
+          const resolvedReqId = resolveReqId(job.id || job.reqId || rawTitle, { ...job, positionNumber: posNumber, title: cleanTitle });
+          const formattedDesc = formatJobDescription(job.rawDescription || job.description, { ...job, positionNumber: posNumber, title: cleanTitle, id: resolvedReqId });
+
           newJobs.push({
-            id: jobId,
-            title: job.title,
+            id: resolvedReqId,
+            reqId: resolvedReqId,
+            positionNumber: posNumber || '',
+            title: cleanTitle,
             client: job.client || 'General Client',
             company: job.company || '',
             skills: job.skills || [],
             preferredSkills: job.preferredSkills || [],
-            budget: job.budget || 'TBD',
-            experience: job.experience || 'TBD',
+            budget: job.budget || '$75/hr',
+            payRate: job.budget ? String(job.budget).replace(/[^0-9]/g, '') || '75' : '75',
+            billRate: 'TBD',
+            experience: job.experience || '5+ years',
             location: job.location || 'Unknown',
             type: job.type || 'Contract',
+            workMode: job.work_mode || job.workMode || job.type || 'Hybrid',
             employment_type: job.employment_type || job.type || 'Contract',
-            description: job.description || '',
+            description: formattedDesc || job.description || job.rawDescription || '',
             rawDescription: job.rawDescription || '',
             applyUrl: job.applyUrl || '',
             postDate: job.postDate || '',
             post_date: job.post_date || new Date().toISOString().slice(0, 10),
             source: 'jobsinhand',
             source_url: 'https://www.jobsinhand.com/search_jobs.aspx',
-            status: 'Active',
+            status: 'Open',
             ingested_at: new Date().toISOString(),
           });
         }
@@ -344,10 +362,10 @@ export async function runIngestion() {
       logger(`  New jobs to add: ${newJobs.length}`);
       logger(`  Duplicates skipped: ${dupCount}`);
 
-      // Step 3: Save to jobs.json
+      // Step 3: Save to jobs.json (New jobs placed at the TOP)
       if (newJobs.length > 0) {
-        logger(`\n[Step 3] Saving ${newJobs.length} new jobs to database...`);
-        const updatedJobs = [...existingJobs, ...newJobs];
+        logger(`\n[Step 3] Saving ${newJobs.length} new jobs to top of database...`);
+        const updatedJobs = [...newJobs, ...existingJobs];
         await saveJobsDb(updatedJobs);
         logger(`  ✅ Database saved. Total jobs: ${updatedJobs.length}`);
       } else {

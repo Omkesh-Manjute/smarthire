@@ -1,5 +1,27 @@
 [
   {
+    "id": "R-JIH-1788213726040",
+    "type": "jobs",
+    "report_date": "2026-08-31",
+    "title": "JobsInHand Daily Active Requirements Sync",
+    "content": "### JobsInHand Daily Sync — ✅ SUCCESS\n\nAutomated job ingestion completed at **03:32 AM** on September 1, 2026.\nScraping mode: 🤖 Playwright Browser Automation\n\n### Sync Summary\n- **15 Jobs** found on JobsInHand.\n- **3 Rebid listings** automatically excluded.\n- **1 New Jobs** successfully added to the top of the ATS database.\n- **14 Duplicates** detected and skipped.\n- **0 Jobs** failed to parse or fetch.\n\n### New Jobs Added Today (Newest at Top)\n- **Enterprise Content Management (ECM) Business Analyst (66278)** (Req #158978) — Remote · Remote · Skills: Various\n\n\n### Next Actions\nNew job postings are now visible at the top of the ATS Jobs tab. Recruiters can search candidates against these new requirements and share them on LinkedIn.",
+    "raw": {
+      "jobs_found": 15,
+      "jobs_added": 1,
+      "duplicates_skipped": 14,
+      "rebid_filtered": 3,
+      "failed_jobs": 0,
+      "scrape_mode": "playwright",
+      "run_start": "2026-08-31T22:01:16.968Z",
+      "run_end": "2026-08-31T22:02:06.040Z",
+      "new_job_ids": [
+        "158978"
+      ]
+    },
+    "status": "success",
+    "created_at": "2026-08-31T22:02:06.040Z"
+  },
+  {
     "id": "R-1780948082652",
     "type": "ai-brief",
     "report_date": "2026-06-08",
