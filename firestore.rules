@@ -17,6 +17,16 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // ATS Requisitions (Potential Candidates & Requisition Data)
+    match /atsRequisitions/{reqId} {
+      allow read, write: if true;
+    }
+
+    // ATS Team Users & Hierarchy
+    match /atsUsers/{userId} {
+      allow read, write: if true;
+    }
+
     // Deny everything else by default
     match /{document=**} {
       allow read, write: if false;

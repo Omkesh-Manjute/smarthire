@@ -34,6 +34,8 @@ import { db, storage } from './firebase'
 export const CANDIDATES_COLLECTION = 'atsCandidates'
 export const JOBS_COLLECTION = 'atsJobs'
 export const APPLICATIONS_COLLECTION = 'atsApplications'
+export const REQUISITIONS_COLLECTION = 'atsRequisitions'
+export const USERS_COLLECTION = 'atsUsers'
 
 // ─────────────────────────────────────────
 // 1. CANDIDATE & LEGAL DOCS (A to Z Structured)
@@ -60,40 +62,63 @@ export async function saveCandidate(canId, data) {
     }
   }
 
+  const cleanReqId = data.reqId || (data.job_id ? String(data.job_id).replace('J-', '') : '') || (data.jobId ? String(data.jobId).replace('J-', '') : '')
+
   const payload = {
     canId: String(canId),
-    ...(data.name       && { name:       data.name }),
-    ...(data.firstName  && { firstName:  data.firstName }),
-    ...(data.lastName   && { lastName:   data.lastName }),
-    ...(data.email      && { email:      data.email.toLowerCase().trim() }),
-    ...(data.phone      && { phone:      data.phone }),
-    ...(data.jobTitle   && { jobTitle:   data.jobTitle }),
-    ...(data.workAuth   && { workAuth:   data.workAuth }),
-    ...(data.payRate    && { payRate:    data.payRate }),
-    ...(data.payRateTo  && { payRateTo:  data.payRateTo }),
-    ...(data.rateType   && { rateType:   data.rateType }),
-    ...(data.location   && { location:   data.location }),
-    ...(data.skills     && { skills:     data.skills }),
-    ...(data.notes      && { notes:      data.notes }),
-    ...(data.projects   && { projects:   data.projects }),
-    ...(data.status     && { status:     data.status }),
-    ...(data.exp        && { exp:        data.exp }),
-    ...(data.experience && { experience: data.experience }),
-    ...(data.city       && { city:       data.city }),
-    ...(data.state      && { state:      data.state }),
-    ...(data.zip        && { zip:        data.zip }),
-    ...(data.subVendor  && { subVendor:  data.subVendor }),
-    ...(data.source     && { source:     data.source }),
-    ...(data.rating     && { rating:     data.rating }),
-    ...(data.comments   && { comments:   data.comments }),
-    ...(data.resumeName && { resumeName: data.resumeName }),
-    ...(data.resumeText && { resumeText: data.resumeText }),
-    ...(data.resumeUrl  && { resumeUrl:  data.resumeUrl }),
+    id: String(canId),
+    ...(data.name                && { name:                data.name }),
+    ...(data.firstName           && { firstName:           data.firstName }),
+    ...(data.lastName            && { lastName:            data.lastName }),
+    ...(data.email               && { email:               data.email.toLowerCase().trim() }),
+    ...(data.phone               && { phone:               data.phone }),
+    ...(data.jobTitle            && { jobTitle:            data.jobTitle }),
+    ...(data.role                && { role:                data.role }),
+    ...(data.fullRole            && { fullRole:            data.fullRole }),
+    ...(data.workAuth            && { workAuth:            data.workAuth }),
+    ...(data.payRate             && { payRate:             data.payRate }),
+    ...(data.payRateTo           && { payRateTo:           data.payRateTo }),
+    ...(data.payRateType         && { payRateType:         data.payRateType }),
+    ...(data.rateType            && { rateType:            data.rateType }),
+    ...(data.location            && { location:            data.location }),
+    ...(data.skills              && { skills:              data.skills }),
+    ...(data.notes               && { notes:               data.notes }),
+    ...(data.projects            && { projects:            data.projects }),
+    ...(data.status              && { status:              data.status }),
+    ...(data.statusComments      && { statusComments:      data.statusComments }),
+    ...(data.interview           && { interview:           data.interview }),
+    ...(data.rejectedReason      && { rejectedReason:      data.rejectedReason }),
+    ...(data.exp                 && { exp:                 data.exp }),
+    ...(data.experience          && { experience:          data.experience }),
+    ...(data.city                && { city:                data.city }),
+    ...(data.state               && { state:               data.state }),
+    ...(data.zip                 && { zip:                 data.zip }),
+    ...(data.subVendor           && { subVendor:           data.subVendor }),
+    ...(data.source              && { source:              data.source }),
+    ...(data.rating              && { rating:              data.rating }),
+    ...(data.comments            && { comments:            data.comments }),
+    ...(data.assignedBy          && { assignedBy:          data.assignedBy }),
+    ...(data.assignedOn          && { assignedOn:          data.assignedOn }),
+    ...(data.recruiter           && { recruiter:           data.recruiter }),
+    ...(data.recruiterEmail      && { recruiterEmail:      data.recruiterEmail.toLowerCase().trim() }),
+    ...(data.recruiterRefCode    && { recruiterRefCode:    data.recruiterRefCode }),
+    ...(data.parentRecruiterName && { parentRecruiterName: data.parentRecruiterName }),
+    ...(data.parentRecruiterId   && { parentRecruiterId:   data.parentRecruiterId }),
+    ...(data.addedByName         && { addedByName:         data.addedByName }),
+    ...(data.submittedBy         && { submittedBy:         data.submittedBy }),
+    ...(data.createdBy           && { createdBy:           data.createdBy }),
+    ...(data.lastChangedBy       && { lastChangedBy:       data.lastChangedBy }),
+    ...(data.lastChangedRole     && { lastChangedRole:     data.lastChangedRole }),
+    ...(cleanReqId               && { reqId:               cleanReqId, job_id: `J-${cleanReqId}`, jobId: cleanReqId }),
+    ...(data.resumeName          && { resumeName:          data.resumeName }),
+    ...(data.resumeText          && { resumeText:          data.resumeText }),
+    ...(data.resumeUrl           && { resumeUrl:           data.resumeUrl }),
     legalDocs: cleanedLegalDocs,
     updatedAt: serverTimestamp()
   }
 
   await setDoc(doc(db, CANDIDATES_COLLECTION, String(canId)), payload, { merge: true })
+  return payload
 }
 
 /**
@@ -309,3 +334,102 @@ export async function getCareerApplications() {
     return []
   }
 }
+
+// ─────────────────────────────────────────
+// 4. CANDIDATE DIRECTORY & REQUISITION SYNC
+// ─────────────────────────────────────────
+
+/**
+ * Fetch all Candidates from Firestore atsCandidates collection
+ */
+export async function getAllCandidates() {
+  try {
+    const snap = await getDocs(collection(db, CANDIDATES_COLLECTION))
+    const candidates = []
+    snap.forEach(docSnap => {
+      candidates.push({ id: docSnap.id, canId: docSnap.id, ...docSnap.data() })
+    })
+    return candidates
+  } catch (err) {
+    console.warn('Failed to fetch all candidates from Firestore:', err)
+    return []
+  }
+}
+
+/**
+ * Save candidate list specifically for a Requisition
+ */
+export async function saveRequisitionCandidates(reqId, candidatesList) {
+  if (!reqId) return
+  const cleanId = String(reqId).replace('J-', '').replace('REQ-', '').trim()
+  try {
+    const payload = {
+      reqId: cleanId,
+      candidates: Array.isArray(candidatesList) ? candidatesList : [],
+      updatedAt: serverTimestamp()
+    }
+    await setDoc(doc(db, REQUISITIONS_COLLECTION, cleanId), payload, { merge: true })
+    return payload
+  } catch (err) {
+    console.warn('Failed to save requisition candidates to Firestore:', err)
+  }
+}
+
+/**
+ * Get candidate list attached to a Requisition from Firestore
+ */
+export async function getRequisitionCandidates(reqId) {
+  if (!reqId) return []
+  const cleanId = String(reqId).replace('J-', '').replace('REQ-', '').trim()
+  try {
+    const snap = await getDoc(doc(db, REQUISITIONS_COLLECTION, cleanId))
+    if (snap.exists()) {
+      const data = snap.data()
+      if (Array.isArray(data.candidates)) {
+        return data.candidates
+      }
+    }
+    return []
+  } catch (err) {
+    console.warn('Failed to fetch requisition candidates from Firestore:', err)
+    return []
+  }
+}
+
+/**
+ * Sync team users to Firestore
+ */
+export async function saveTeamUsersFirestore(usersList) {
+  try {
+    if (!Array.isArray(usersList)) return
+    for (const u of usersList) {
+      const uid = String(u.id || u._id || u.email || '').replace(/[^a-zA-Z0-9]/g, '_')
+      if (uid) {
+        await setDoc(doc(db, USERS_COLLECTION, uid), {
+          ...u,
+          updatedAt: serverTimestamp()
+        }, { merge: true })
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to save team users to Firestore:', err)
+  }
+}
+
+/**
+ * Fetch team users from Firestore
+ */
+export async function getTeamUsersFirestore() {
+  try {
+    const snap = await getDocs(collection(db, USERS_COLLECTION))
+    const users = []
+    snap.forEach(docSnap => {
+      users.push({ id: docSnap.id, ...docSnap.data() })
+    })
+    return users
+  } catch (err) {
+    console.warn('Failed to fetch team users from Firestore:', err)
+    return []
+  }
+}
+

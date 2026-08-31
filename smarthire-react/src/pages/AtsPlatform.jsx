@@ -14,6 +14,8 @@ import {
   UsersModule,
   AuditActivityLogModule,
 } from '../ats'
+import { formatJobDescription, cleanJobTitleWithPositionNumber } from '../utils/formatJobDescription'
+import { getAllCandidates } from '../lib/atsFirestore'
 
 const API_BASE = ''
 
@@ -230,7 +232,17 @@ export default function AtsPlatform() {
       const res = await fetch(`${API_BASE}/api/jobs`)
       if (res.ok) {
         const data = await res.json()
-        const list = Array.isArray(data) ? data : Array.isArray(data.jobs) ? data.jobs : []
+        const rawList = Array.isArray(data) ? data : Array.isArray(data.jobs) ? data.jobs : []
+        const list = rawList.map(j => {
+          const finalTitle = cleanJobTitleWithPositionNumber(j.title)
+          return {
+            ...j,
+            title: finalTitle,
+            description: (j.description && typeof j.description === 'string' && j.description.length > 20)
+              ? formatJobDescription(j.description, { ...j, title: finalTitle })
+              : j.description
+          }
+        })
         setJobsList(list)
       } else {
         setJobsList([])
@@ -241,21 +253,64 @@ export default function AtsPlatform() {
     }
   }, [])
 
-  // Fetch candidates safely
+  // Fetch candidates safely with Firestore direct link + API + local cache
   const fetchCandidates = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/candidates`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+      let combined = []
+
+      // 1. Fetch from Firestore (Direct client, 0 server sleep issues)
+      try {
+        const firestoreList = await getAllCandidates()
+        if (Array.isArray(firestoreList) && firestoreList.length > 0) {
+          combined = firestoreList
         }
-      })
-      if (res.ok) {
-        const data = await res.json()
-        const list = Array.isArray(data) ? data : Array.isArray(data.candidates) ? data.candidates : []
-        setAllCandidates(list)
-      } else {
-        setAllCandidates([])
+      } catch (fErr) {
+        console.warn('Firestore getAllCandidates note:', fErr)
       }
+
+      // 2. Fetch from Backend
+      try {
+        const res = await fetch(`${API_BASE}/api/candidates`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+          }
+        })
+        if (res.ok) {
+          const data = await res.json()
+          const apiList = Array.isArray(data) ? data : Array.isArray(data.candidates) ? data.candidates : Array.isArray(data.data?.candidates) ? data.data.candidates : []
+          
+          const map = new Map()
+          combined.forEach(c => { if (c && (c.id || c.name)) map.set(String(c.id || c.name), c) })
+          apiList.forEach(c => {
+            if (c && (c.id || c.name)) {
+              const existing = map.get(String(c.id || c.name)) || {}
+              map.set(String(c.id || c.name), { ...existing, ...c })
+            }
+          })
+          combined = Array.from(map.values())
+        }
+      } catch (bErr) {}
+
+      // 3. Merge with localStorage cache
+      try {
+        const localRaw = localStorage.getItem('smarthire_all_candidates')
+        if (localRaw) {
+          const localList = JSON.parse(localRaw)
+          if (Array.isArray(localList)) {
+            const map = new Map()
+            combined.forEach(c => { if (c && (c.id || c.name)) map.set(String(c.id || c.name), c) })
+            localList.forEach(c => {
+              if (c && (c.id || c.name)) {
+                const existing = map.get(String(c.id || c.name)) || {}
+                map.set(String(c.id || c.name), { ...existing, ...c })
+              }
+            })
+            combined = Array.from(map.values())
+          }
+        }
+      } catch (lErr) {}
+
+      setAllCandidates(combined)
     } catch (err) {
       console.error('Failed to fetch candidates:', err)
       setAllCandidates([])
@@ -290,15 +345,66 @@ export default function AtsPlatform() {
   const rawCandidates = Array.isArray(allCandidates) ? allCandidates : []
   const safeJobs = Array.isArray(jobsList) ? jobsList : []
 
-  const recruiterUserEmail = (currentUser?.email || '').toLowerCase()
-  const recruiterUserId = currentUser?.id || currentUser?._id || ''
+  const recruiterUserEmail = (currentUser?.email || '').toLowerCase().trim()
+  const recruiterUserName = (currentUser?.name || '').toLowerCase().trim()
+  const recruiterUserId = String(currentUser?.id || currentUser?._id || '').toLowerCase().trim()
+  const recruiterRef = (currentUser?.refCode || '').toLowerCase().trim()
 
-  const safeCandidates = isSuperAdmin
+  // Load team users to find subordinates
+  const teamUsersList = (() => {
+    try {
+      const raw = localStorage.getItem('smarthire_recruiters')
+      if (raw) return JSON.parse(raw) || []
+    } catch(e) {}
+    return []
+  })()
+
+  const safeCandidates = (isSuperAdmin || realUserRole === 'admin' || isManager)
     ? rawCandidates
     : rawCandidates.filter(c => {
         if (!c) return false
-        const cOwner = (c.createdBy || c.recruiterEmail || c.submittedBy || c.recruiterId || '').toLowerCase()
-        return cOwner === recruiterUserEmail || cOwner === recruiterUserId || c.isSample || c.job_id === 'J-102'
+        const cOwner = (c.createdBy || c.recruiterEmail || c.submittedBy || c.recruiterId || '').toLowerCase().trim()
+        const cRecruiter = (c.recruiter || c.assignedBy || c.addedByName || c.referredByRecruiterName || '').toLowerCase().trim()
+        const cRef = (c.recruiterRefCode || c.recruiterRef || '').toLowerCase().trim()
+        const cParent = (c.parentRecruiterName || '').toLowerCase().trim()
+
+        if (isEmployee) {
+          return cOwner === recruiterUserEmail ||
+                 cOwner === recruiterUserId ||
+                 cRecruiter === recruiterUserName ||
+                 cRecruiter.includes(recruiterUserName) ||
+                 (recruiterRef && cRef.includes(recruiterRef)) ||
+                 c.isSample || c.job_id === 'J-102'
+        }
+
+        // For Lead Recruiter: include own candidates + all candidates from subordinate employees!
+        const mySubordinates = teamUsersList.filter(u => {
+          if (!u) return false
+          const pName = (u.parentRecruiterName || '').toLowerCase().trim()
+          const pId = String(u.parentRecruiterId || '').toLowerCase().trim()
+          const pEmail = (u.parentRecruiterEmail || '').toLowerCase().trim()
+          return (pName && (pName === recruiterUserName || pName.includes(recruiterUserName) || recruiterUserName.includes(pName))) ||
+                 (pId && pId === recruiterUserId) ||
+                 (pEmail && pEmail === recruiterUserEmail)
+        })
+
+        const subNames = mySubordinates.map(u => (u.name || '').toLowerCase().trim()).filter(Boolean)
+        const subEmails = mySubordinates.map(u => (u.email || '').toLowerCase().trim()).filter(Boolean)
+        const subRefs = mySubordinates.map(u => (u.refCode || '').toLowerCase().trim()).filter(Boolean)
+
+        const isMine = cOwner === recruiterUserEmail ||
+                       cOwner === recruiterUserId ||
+                       cRecruiter === recruiterUserName ||
+                       cRecruiter.includes(recruiterUserName) ||
+                       (recruiterRef && cRef.includes(recruiterRef)) ||
+                       (cParent && (cParent === recruiterUserName || cParent.includes(recruiterUserName))) ||
+                       c.isSample || c.job_id === 'J-102'
+
+        const isSubCandidate = subNames.some(sn => sn && (cRecruiter === sn || cRecruiter.includes(sn) || sn.includes(cRecruiter))) ||
+                               subEmails.some(se => se && (cOwner.includes(se) || cRecruiter.includes(se))) ||
+                               subRefs.some(sr => sr && cRef.includes(sr))
+
+        return isMine || isSubCandidate
       })
 
   // Filtered candidates safely
@@ -767,7 +873,7 @@ export default function AtsPlatform() {
 
             {activeTab === 'users' && (
               <UsersModule
-                allCandidates={safeCandidates}
+                allCandidates={rawCandidates}
                 permissions={permissions}
                 setPermissions={setPermissions}
               />

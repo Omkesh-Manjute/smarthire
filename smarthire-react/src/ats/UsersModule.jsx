@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import AuditActivityLogModule from './AuditActivityLogModule'
+import { saveTeamUsersFirestore, getTeamUsersFirestore } from '../lib/atsFirestore'
 
 const DEFAULT_RECRUITERS = [
   {
@@ -62,12 +63,33 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
     try {
       localStorage.setItem('smarthire_recruiters', JSON.stringify(newList))
     } catch (e) {}
+    // Sync to Firestore
+    saveTeamUsersFirestore(newList).catch(() => {})
     if (notifyMsg) showToast(notifyMsg)
   }
 
   const fetchRecruiters = async () => {
     setLoading(true)
     try {
+      // 1. Fetch from Firestore
+      const firestoreUsers = await getTeamUsersFirestore()
+      if (Array.isArray(firestoreUsers) && firestoreUsers.length > 0) {
+        setRecruiters(prev => {
+          const map = new Map()
+          prev.forEach(u => { if (u && (u.email || u.id)) map.set((u.email || u.id).toLowerCase(), u) })
+          firestoreUsers.forEach(u => {
+            if (u && (u.email || u.id)) {
+              const existing = map.get((u.email || u.id).toLowerCase()) || {}
+              map.set((u.email || u.id).toLowerCase(), { ...existing, ...u })
+            }
+          })
+          const merged = Array.from(map.values())
+          try { localStorage.setItem('smarthire_recruiters', JSON.stringify(merged)) } catch (e) {}
+          return merged
+        })
+      }
+
+      // 2. Fetch from Backend Server
       const res = await fetch('/api/admin/recruiters')
       const data = await res.json()
       if (res.ok && data.success && Array.isArray(data.recruiters)) {
@@ -76,7 +98,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
         }
       }
     } catch (err) {
-      console.warn('Recruiter backend sync notice:', err)
+      console.warn('Recruiter sync notice:', err)
     } finally {
       setLoading(false)
     }
@@ -100,29 +122,59 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
 
   const getSubordinateEmployees = (rec) => {
     if (!rec || !rec.name) return []
-    const targetName = rec.name.toLowerCase().trim()
-    const targetId = rec.id || rec._id
+    const targetName = (rec.name || '').toLowerCase().trim()
+    const targetEmail = (rec.email || '').toLowerCase().trim()
+    const targetId = String(rec.id || rec._id || '').toLowerCase().trim()
     return recruiters.filter(u => {
       if (u.role !== 'employee') return false
       const parent = (u.parentRecruiterName || '').toLowerCase().trim()
-      const pId = u.parentRecruiterId || ''
-      return parent === targetName || (pId && pId === targetId)
+      const pId = String(u.parentRecruiterId || '').toLowerCase().trim()
+      const pEmail = (u.parentRecruiterEmail || '').toLowerCase().trim()
+      return (parent && (parent === targetName || parent.includes(targetName) || targetName.includes(parent))) ||
+             (pId && pId === targetId) ||
+             (pEmail && pEmail === targetEmail)
     })
   }
 
   const getSourcedCount = (rec) => {
-    if (!allCandidates || !Array.isArray(allCandidates)) return 0
+    if (!rec || !allCandidates || !Array.isArray(allCandidates)) return 0
+    const recRef = (rec.refCode || '').toLowerCase().trim()
+    const recName = (rec.name || '').toLowerCase().trim()
+    const recEmail = (rec.email || '').toLowerCase().trim()
+    const recId = String(rec.id || rec._id || '').toLowerCase().trim()
+
+    // If rec is a Lead Recruiter, get their subordinates to calculate total team count
+    const subordinates = rec.role === 'recruiter' ? getSubordinateEmployees(rec) : []
+    const subNames = subordinates.map(s => (s.name || '').toLowerCase().trim()).filter(Boolean)
+    const subEmails = subordinates.map(s => (s.email || '').toLowerCase().trim()).filter(Boolean)
+    const subRefs = subordinates.map(s => (s.refCode || '').toLowerCase().trim()).filter(Boolean)
+
     return allCandidates.filter(c => {
-      const ref = (c.recruiterRefCode || c.referredByRecruiterName || c.recruiter || '').toLowerCase()
-      const recRef = (rec.refCode || '').toLowerCase()
-      const recName = (rec.name || '').toLowerCase()
-      
-      return (
-        ref === recRef || 
-        ref.includes(recRef) ||
-        ref.includes(recName) ||
-        (c.referredByRecruiter && c.referredByRecruiter === rec.id)
-      )
+      if (!c) return false
+      const candRecruiter = (c.recruiter || c.assignedTo || c.assignedBy || c.addedByName || c.submittedBy || c.referredByRecruiterName || '').toLowerCase().trim()
+      const candEmail = (c.recruiterEmail || '').toLowerCase().trim()
+      const candRef = (c.recruiterRefCode || c.recruiterRef || '').toLowerCase().trim()
+      const candCreator = String(c.createdBy || '').toLowerCase().trim()
+      const candParent = (c.parentRecruiterName || '').toLowerCase().trim()
+
+      const isDirectMatch = (recRef && (candRef === recRef || candRef.includes(recRef))) ||
+                            (recName && (candRecruiter === recName || candRecruiter.includes(recName) || recName.includes(candRecruiter))) ||
+                            (recEmail && (candEmail === recEmail || candRecruiter.includes(recEmail))) ||
+                            (recId && candCreator === recId) ||
+                            (rec.id && c.referredByRecruiter === rec.id)
+
+      if (isDirectMatch) return true
+
+      // If lead recruiter, also include candidates sourced by their subordinate employees
+      if (rec.role === 'recruiter') {
+        if (candParent && (candParent === recName || candParent.includes(recName))) return true
+        const isSubSourced = subNames.some(sn => sn && (candRecruiter === sn || candRecruiter.includes(sn) || sn.includes(candRecruiter))) ||
+                             subEmails.some(se => se && (candEmail === se || candRecruiter.includes(se))) ||
+                             subRefs.some(sr => sr && (candRef === sr || candRef.includes(sr)))
+        if (isSubSourced) return true
+      }
+
+      return false
     }).length
   }
 

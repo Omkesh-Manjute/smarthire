@@ -1,437 +1,374 @@
 [
   {
-    "id": "J-1783375025983",
-    "title": "Primavera Unifier Developer",
-    "client": "DFA",
-    "skills": [
-      "Oracle Primavera Unifier",
-      ".NET Framework 4.0.0",
-      "ASP.NET (VB.NET)"
-    ],
-    "budget": "TBD",
-    "experience": "7+ years",
-    "location": "100% Remote",
-    "type": "Contract",
-    "status": "Posted"
-  },
-  {
-    "id": "J-1783347101114",
-    "title": "Sr. Project Manager",
-    "client": "DBHDS",
-    "skills": [
-      "Project Management",
-      "Vendor Management",
-      "Budgeting"
-    ],
-    "budget": "TBD",
-    "experience": "7+ years",
-    "location": "Hybrid (Richmond, VA)",
-    "type": "Contract",
-    "status": "Posted"
-  },
-  {
-    "id": "J-1782916154641",
-    "title": "Senior Angular Developer",
-    "client": "Central Procurement",
-    "skills": [
-      "Angular",
-      ".NET technologies",
-      "Azure DevOps"
-    ],
-    "budget": "TBD",
-    "experience": "6+ years",
-    "location": "Lansing, MI 48933 (Hybrid work schedule)",
-    "type": "Contract",
-    "status": "Posted"
-  },
-  {
-    "id": "J-1782916078692",
-    "title": "Enterprise Application Integration Engineer",
-    "client": "Florida Agency",
-    "skills": [
-      "MuleSoft Anypoint Platform",
-      "DataWeave",
-      "API Design",
-      "Cloud Infrastructure (AWS/Azure)"
-    ],
-    "budget": "TBD",
-    "experience": "4+ years",
-    "location": "Tallahassee, FL 32399",
-    "type": "Contract",
-    "status": "Posted"
-  },
-  {
-    "id": "J-1782915965714",
-    "title": "Microsoft Dynamics 365 Developer",
-    "client": "MDA",
-    "skills": [
-      "Microsoft Dynamics 365",
-      "Power Platform",
-      "C#",
-      ".NET"
-    ],
-    "budget": "TBD",
-    "experience": "5+ years of professional experience developing Microsoft Dynamics 365 solutions",
-    "location": "100% Remote",
-    "type": "Contract",
-    "status": "Posted"
-  },
-  {
-    "id": "J-1782846660291",
-    "title": "Agile Project Coordinator",
-    "client": "VDOT",
-    "skills": [
-      "Agile",
-      "Project Management",
-      "Scrum"
-    ],
-    "budget": "TBD",
-    "experience": "2-5 years",
-    "location": "Remote",
-    "type": "Contract",
-    "status": "Posted"
-  },
-  {
-    "id": "J-1782827947762",
-    "title": "Project Manager",
-    "client": "VDOT",
-    "skills": [
-      "Agile methodologies",
-      "Scrum",
-      "Azure DevOps",
-      "Microsoft Office",
-      "SharePoint",
-      "Teams"
-    ],
-    "budget": "TBD",
-    "experience": "2-5 years",
-    "location": "Mechanicsville, VA",
-    "type": "Full-time",
-    "status": "Posted"
-  },
-  {
-    "id": "J-1782827885310",
-    "title": "Security Analyst II",
-    "client": "DOC",
-    "skills": [
-      "Identity and Access Management (IAM)",
-      "Microsoft 365",
-      "Exchange"
-    ],
-    "budget": "TBD",
-    "experience": "7+ years",
-    "location": "Madison, WI 53704",
-    "type": "Contract",
-    "status": "Posted"
-  },
-  {
-    "id": "J-1782827786009",
-    "title": "Business Subject-Matter Expert (SME)",
-    "client": "Florida Department of Transportation",
-    "skills": [
-      "Financial Management",
-      "Federal Aid Program Administration",
-      "Transportation Work Program Management"
-    ],
-    "budget": "TBD",
-    "experience": "15+ years",
-    "location": "Tallahassee, FL 32399",
-    "type": "Contract",
-    "status": "Posted"
-  },
-  {
-    "id": "J-1782743247472",
-    "title": "Senior Cloud and AI Architect",
-    "client": "GTA",
-    "skills": [
-      "Machine Learning",
-      "Deep Learning",
-      "Natural Language Processing"
-    ],
-    "budget": "TBD",
-    "experience": "10+ years",
-    "location": "Atlanta, Metro Area",
-    "type": "Full-time",
-    "status": "Posted"
-  },
-  {
-    "id": "J-1782743015315",
-    "title": "AI Engineer",
-    "client": "General Client",
-    "skills": [
-      "Agile (Scrum)",
-      "Restful API Design",
-      "Python"
-    ],
-    "budget": "TBD",
-    "experience": "Any",
-    "location": "Louisville, KY",
-    "type": "Full-time",
-    "status": "Posted"
-  },
-  {
-    "id": "J-1782741497274",
-    "title": "Full Stack Developer",
-    "client": "DCF",
-    "skills": [
-      ".NET MVC",
-      "JavaScript",
-      "C#"
-    ],
-    "budget": "TBD",
-    "experience": "8+ years",
-    "location": "Madison, WI",
-    "type": "Full-time",
-    "status": "Posted"
-  },
-  {
-    "id": "J-1782485558421",
-    "title": "IT Project Manager",
-    "client": "NCDHHS-PMO",
-    "skills": [
-      "Leadership",
-      "Negotiation",
-      "Time Management",
-      "Facilitation",
-      "Organizational Skills"
-    ],
-    "budget": "TBD",
-    "experience": "7+ years",
-    "location": "Raleigh, NC",
-    "type": "Contract",
-    "status": "Posted"
-  },
-  {
-    "id": "J-1781645166510",
-    "title": "Java Developer",
-    "client": "CO Judicial",
+    "id": "158999",
+    "reqId": "158999",
+    "positionNumber": "807791",
+    "title": "NC FAST Junior Java Developer/Test Engineer (807791)",
+    "client": "NCDHHS-NCFAST",
+    "customer": "NCDHHS-NCFAST",
     "skills": [
       "Java",
-      "Spring",
-      "AWS"
-    ],
-    "budget": "TBD",
-    "experience": "Strong professional experience developing applications with Java. 5+ years",
-    "location": "Hybrid (Denver, CO), with in-person presence on Tuesdays",
-    "type": "Contract",
-    "status": "Active"
-  },
-  {
-    "id": "J-1781646225217",
-    "title": "SQL Developer",
-    "client": "MDE",
-    "skills": [
-      "Microsoft SQL Server",
-      ".NET (C# and/or VB)",
+      "TOSCA",
+      "QTP",
+      "JUnit",
+      "JMockit",
       "SQL"
     ],
-    "budget": "TBD",
-    "experience": "3+ years",
-    "location": "Hybrid",
-    "type": "Contract",
-    "status": "Active"
+    "preferredSkills": [
+      "Public Sector Experience",
+      "Curam",
+      "Cloud Security"
+    ],
+    "budget": "$75/hr",
+    "payRate": "75",
+    "billRate": "TBD",
+    "experience": "5+ years",
+    "location": "Raleigh, NC",
+    "city": "Raleigh",
+    "state": "NC",
+    "zip": "27601",
+    "address": "4430 Broad Rd.",
+    "type": "Hybrid",
+    "workMode": "Hybrid",
+    "status": "Open",
+    "reqType": "Contract",
+    "duration": "12",
+    "creationDate": "2026-08-28",
+    "deadline": "2026-09-04",
+    "description": "===============================================================\n📌 POSITION & CLIENT OVERVIEW\n===============================================================\n• Position Title: NC FAST Junior Java Developer/Test Engineer (807791)\n• Client / Agency: NCDHHS-NCFAST (NC Department of Health and Human Services)\n• Work Arrangement: Hybrid (Raleigh, NC)\n• Interview Type: In Person Only / Webcam\n• Target Start Date: 09/01/2026\n• Target End Date: 08/31/2027 (12 Months Contract)\n• Submission Deadline: 09/04/2026\n\n===============================================================\n🎯 PROJECT SUMMARY & OBJECTIVE\n===============================================================\nNC Families Accessing Services through Technology (NC FAST) requires the services of a Junior Java Developer/Test Engineer to support development and implementation of NC FAST Operations and Maintenance related to the FNS Program.\n\n===============================================================\n📋 KEY ROLES & RESPONSIBILITIES\n===============================================================\n• Assist with the development and implementation of NC FAST as a Junior Java Developer.\n• Contribute to the full lifecycle of Java-based enterprise applications in an agile, collaborative environment.\n• Responsible for writing automated test scripts, performing manual and functional testing.\n• Create, maintain, and execute TOSCA test automation suites and QTP regression tests.\n• Develop and execute JUnit and JMockit test scripts for developer unit testing.\n• Collaborate with business analysts, database administrators, and project managers across sprint cycles.\n\n===============================================================\n🛠️ REQUIRED TECHNICAL PROFICIENCIES\n===============================================================\n• Java / J2EE Development & Object-Oriented Programming\n• TOSCA Test Automation & Certification\n• QTP / UFT Scripting\n• JUnit / JMockit Unit Testing Frameworks\n• Database Applications & SQL Data Modeling\n• Software Development Lifecycle (SDLC) & Agile Delivery\n\n===============================================================\n🌟 PREFERRED QUALIFICATIONS & DOMAIN SKILLS\n===============================================================\n• Public Sector / State Government Project Experience\n• Knowledge of Curam Application Suite\n• Familiarity with Spring Framework & Hibernate\n• Cloud Security & AWS Integration"
   },
   {
-    "id": "J-1781646914703",
-    "title": "Software Test Analyst 5",
-    "client": "DHHS",
+    "id": "158885",
+    "reqId": "158885",
+    "positionNumber": "808800",
+    "title": "NC DHHS System Administrator II (808800)",
+    "client": "NCDHHS-PMO",
+    "customer": "NCDHHS-PMO",
+    "skills": [
+      "PowerShell",
+      "Active Directory",
+      "VMware",
+      "Windows Server",
+      "Linux"
+    ],
+    "preferredSkills": [
+      "Disaster Recovery",
+      "Hyper-V",
+      "Cloud Infrastructure"
+    ],
+    "budget": "$80/hr",
+    "payRate": "80",
+    "billRate": "TBD",
+    "experience": "7+ years",
+    "location": "Raleigh, NC",
+    "city": "Raleigh",
+    "state": "NC",
+    "zip": "27603",
+    "address": "2001 Mail Service Center",
+    "type": "Hybrid",
+    "workMode": "Hybrid",
+    "status": "Open",
+    "reqType": "Contract",
+    "duration": "12",
+    "creationDate": "2026-08-28",
+    "deadline": "2026-09-09",
+    "description": "===============================================================\n📌 POSITION & CLIENT OVERVIEW\n===============================================================\n• Position Title: NC DHHS System Administrator II (808800)\n• Client / Agency: NCDHHS-PMO\n• Work Arrangement: Hybrid (Raleigh, NC)\n• Interview Type: Webcam or In Person\n• Target Start Date: 09/08/2026\n• Target End Date: 09/07/2027\n• Submission Deadline: 09/09/2026\n\n===============================================================\n🎯 PROJECT SUMMARY & OBJECTIVE\n===============================================================\nDHHS-ITD is looking to hire a systems administrator II who will be responsible for supporting a highly available enterprise server and virtualization infrastructure across state departments.\n\n===============================================================\n📋 KEY ROLES & RESPONSIBILITIES\n===============================================================\n• Manage and maintain high-availability Windows Server and Linux enterprise environments.\n• Design, automate, and schedule PowerShell scripts for system monitoring, backup, and patch management.\n• Administer VMware ESXi clusters, virtual machines, storage allocation, and network interfaces.\n• Configure and manage Active Directory, Group Policies (GPO), DNS, DHCP, and enterprise user access.\n• Perform proactive system diagnostics, capacity planning, security hardening, and disaster recovery testing.\n\n===============================================================\n🛠️ REQUIRED TECHNICAL PROFICIENCIES\n===============================================================\n• Advanced PowerShell Scripting & Automation\n• Active Directory & Group Policy Management\n• VMware vSphere / ESXi Virtualization\n• Windows Server 2019/2022 & RHEL Linux Administration\n• Enterprise Storage, Backup, and Recovery Solutions\n\n===============================================================\n🌟 PREFERRED QUALIFICATIONS & DOMAIN SKILLS\n===============================================================\n• Microsoft / VMware Professional Certification\n• Experience with Public Health or State IT Environments\n• Hybrid Cloud Infrastructure (Azure / AWS)"
+  },
+  {
+    "id": "158894",
+    "reqId": "158894",
+    "positionNumber": "805119",
+    "title": "DHHS MS Power Platform Developer Architect (805119)",
+    "client": "NCDHHS-PH",
+    "customer": "NCDHHS-PH",
+    "skills": [
+      "Power Apps",
+      "Power Automate",
+      "Power BI",
+      "Dataverse",
+      "Dynamics 365"
+    ],
+    "preferredSkills": [
+      "C# .NET",
+      "Azure Logic Apps",
+      "SQL Server"
+    ],
+    "budget": "$95/hr",
+    "payRate": "95",
+    "billRate": "TBD",
+    "experience": "8+ years",
+    "location": "Raleigh, NC",
+    "city": "Raleigh",
+    "state": "NC",
+    "zip": "27601",
+    "address": "101 Blair Dr.",
+    "type": "Hybrid",
+    "workMode": "Hybrid",
+    "status": "Open",
+    "reqType": "Contract",
+    "duration": "12",
+    "creationDate": "2026-08-28",
+    "deadline": "2026-09-03",
+    "description": "===============================================================\n📌 POSITION & CLIENT OVERVIEW\n===============================================================\n• Position Title: DHHS MS Power Platform Developer Architect (805119)\n• Client / Agency: NCDHHS-PH (Public Health)\n• Work Arrangement: Hybrid (Raleigh, NC)\n• Interview Type: Either Webcam or In Person\n• Target Start Date: 09/15/2026\n• Target End Date: 09/14/2027\n• Submission Deadline: 09/03/2026\n\n===============================================================\n🎯 PROJECT SUMMARY & OBJECTIVE\n===============================================================\nSeeking a highly skilled and motivated MS Power Platform Developer/Architect to lead the modernization of internal public health workflows and citizen-facing application portals.\n\n===============================================================\n📋 KEY ROLES & RESPONSIBILITIES\n===============================================================\n• Architect, develop, and deploy complex Canvas and Model-driven Power Apps.\n• Design end-to-end automated workflows using Power Automate and Azure Logic Apps.\n• Build rich interactive dashboards and KPI reporting using Power BI and Microsoft Dataverse.\n• Integrate Power Platform solutions with enterprise APIs, SQL Server databases, and third-party systems.\n• Establish ALM best practices, solution packaging, environment management, and governance.\n\n===============================================================\n🛠️ REQUIRED TECHNICAL PROFICIENCIES\n===============================================================\n• Microsoft Power Apps (Canvas & Model-Driven Apps)\n• Power Automate (Cloud & Desktop Flows)\n• Microsoft Dataverse Architecture & Security Modeling\n• Power BI Dashboard Development & DAX\n• RESTful API Integration & Custom Connectors\n\n===============================================================\n🌟 PREFERRED QUALIFICATIONS & DOMAIN SKILLS\n===============================================================\n• PL-400 or PL-600 Power Platform Solution Architect Certification\n• Experience with C# .NET Plugins and PCF Controls\n• State Agency Compliance & Accessibility (WCAG 2.1)"
+  },
+  {
+    "id": "158950",
+    "reqId": "158950",
+    "positionNumber": "808496",
+    "title": "NC DHHS AWS Senior Developer (808496)",
+    "client": "NCDHHS-PMO",
+    "customer": "NCDHHS-PMO",
+    "skills": [
+      "AWS",
+      "Python",
+      "Node.js",
+      "Serverless",
+      "Lambda",
+      "DynamoDB"
+    ],
+    "preferredSkills": [
+      "Terraform",
+      "Docker",
+      "DevOps CI/CD"
+    ],
+    "budget": "$90/hr",
+    "payRate": "90",
+    "billRate": "TBD",
+    "experience": "8+ years",
+    "location": "Raleigh, NC",
+    "city": "Raleigh",
+    "state": "NC",
+    "zip": "27603",
+    "address": "2001 Mail Service Center",
+    "type": "Hybrid",
+    "workMode": "Hybrid",
+    "status": "Open",
+    "reqType": "Contract",
+    "duration": "12",
+    "creationDate": "2026-08-28",
+    "deadline": "2026-09-09",
+    "description": "===============================================================\n📌 POSITION & CLIENT OVERVIEW\n===============================================================\n• Position Title: NC DHHS AWS Senior Developer (808496)\n• Client / Agency: NCDHHS-PMO\n• Work Arrangement: Hybrid (Raleigh, NC)\n• Interview Type: Either Webcam or In Person\n• Target Start Date: 09/08/2026\n• Target End Date: 09/07/2027\n• Submission Deadline: 09/09/2026\n\n===============================================================\n🎯 PROJECT SUMMARY & OBJECTIVE\n===============================================================\nDHHS-ITD is looking to hire a senior AWS developer with 8+ years of software development experience to design, construct, and optimize cloud microservices.\n\n===============================================================\n📋 KEY ROLES & RESPONSIBILITIES\n===============================================================\n• Design, develop, and deploy serverless architectures using AWS Lambda, API Gateway, and DynamoDB.\n• Implement scalable backend services in Python and Node.js.\n• Manage infrastructure as code (IaC) using Terraform and AWS CloudFormation.\n• Ensure high security, encryption in transit/at rest (KMS), IAM least-privilege policies, and CloudWatch logging.\n• Collaborate with cross-functional teams on agile sprint releases, code reviews, and automated CI/CD pipelines.\n\n===============================================================\n🛠️ REQUIRED TECHNICAL PROFICIENCIES\n===============================================================\n• AWS Core Services (Lambda, API Gateway, S3, DynamoDB, SQS, SNS)\n• Python & Node.js Backend Development\n• Infrastructure as Code (Terraform / CloudFormation)\n• CloudWatch, CloudTrail, and Observability Tools\n• Agile / Scrum Methodology & Git Version Control\n\n===============================================================\n🌟 PREFERRED QUALIFICATIONS & DOMAIN SKILLS\n===============================================================\n• AWS Certified Solutions Architect or Developer Associate\n• Docker Containerization & ECS/EKS\n• State Health & Human Services Domain Experience"
+  },
+  {
+    "id": "158776",
+    "reqId": "158776",
+    "positionNumber": "809716",
+    "title": "NC DHHS AWS/Java Developer (809716)",
+    "client": "NCDHHS-PMO",
+    "customer": "NCDHHS-PMO",
     "skills": [
       "Java",
-      "Selenium",
-      "Cypress"
+      "Spring Boot",
+      "AWS",
+      "Microservices",
+      "REST APIs",
+      "PostgreSQL"
     ],
-    "budget": "TBD",
-    "experience": "5+ years",
-    "location": "Downtown Lansing 2 days a week, remote",
-    "type": "Contract",
-    "status": "Active"
-  },
-  {
-    "id": "J-1781792442890",
-    "title": "Microsoft Power Platform Developer",
-    "client": "NCDHHS-PH",
-    "skills": [
-      "Power Apps",
-      "Power Automate",
-      "SQL Server"
+    "preferredSkills": [
+      "Kafka",
+      "Kubernetes",
+      "CI/CD"
     ],
-    "budget": "TBD",
-    "experience": "7+ years",
-    "location": "Hybrid",
+    "budget": "$85/hr",
+    "payRate": "85",
+    "billRate": "TBD",
+    "experience": "6+ years",
+    "location": "Raleigh, NC",
+    "city": "Raleigh",
+    "state": "NC",
+    "zip": "27601",
+    "address": "4430 Broad Rd.",
     "type": "Hybrid",
-    "status": "Active"
+    "workMode": "Hybrid",
+    "status": "Open",
+    "reqType": "Contract",
+    "duration": "12",
+    "creationDate": "2026-08-28",
+    "deadline": "2026-09-09",
+    "description": "===============================================================\n📌 POSITION & CLIENT OVERVIEW\n===============================================================\n• Position Title: NC DHHS AWS/Java Developer (809716)\n• Client / Agency: NCDHHS-PMO\n• Work Arrangement: Hybrid (Raleigh, NC)\n• Interview Type: Webcam Interview Only\n• Target Start Date: 09/15/2026\n• Target End Date: 09/14/2027\n• Submission Deadline: 09/09/2026\n\n===============================================================\n🎯 PROJECT SUMMARY & OBJECTIVE\n===============================================================\nDHHS-ITD is looking to hire an AWS/Java developer with 6-10 years of software development experience. This role involves close collaboration with architecture and engineering leads on enterprise modernization.\n\n===============================================================\n📋 KEY ROLES & RESPONSIBILITIES\n===============================================================\n• Develop scalable microservices using Java 17+, Spring Boot, and Spring Cloud.\n• Deploy and maintain cloud workloads on AWS (EC2, ECS, S3, RDS PostgreSQL).\n• Build secure REST APIs following OpenAPI/Swagger specifications.\n• Optimize SQL queries, database indexing, and caching mechanisms.\n• Write automated JUnit integration tests and participate in peer code reviews.\n\n===============================================================\n🛠️ REQUIRED TECHNICAL PROFICIENCIES\n===============================================================\n• Core Java & Spring Boot Microservices\n• AWS Services (ECS, RDS, S3, CloudWatch)\n• Relational Databases (PostgreSQL / Oracle SQL)\n• RESTful Web Services & JSON Processing\n• Maven, Git, and Jenkins CI/CD Pipelines\n\n===============================================================\n🌟 PREFERRED QUALIFICATIONS & DOMAIN SKILLS\n===============================================================\n• Apache Kafka Event Streaming\n• Docker & Kubernetes Orchestration\n• Public Sector Experience"
   },
   {
-    "id": "J-1782137454703",
-    "title": "Network Administrator",
-    "client": "State of South Carolina Department of Public Health",
+    "id": "158611",
+    "reqId": "158611",
+    "positionNumber": "806546",
+    "title": "VRS - System Analyst 4 (806546)",
+    "client": "VRS (Virginia Retirement System)",
+    "customer": "VRS",
     "skills": [
-      "Network Administration",
-      "Identity Services",
-      "SD-WAN",
-      "PKI"
-    ],
-    "budget": "$80-$95/hr",
-    "experience": "7+ years",
-    "location": "Fully Onsite in SC, with potential for travel within the state. Candidate must be a resident within the Eastern Time Zone and relocate to SC prior to their start.",
-    "type": "Contract, 12 months with possibility for extension, hybrid onsite and remote",
-    "status": "Active"
-  },
-  {
-    "id": "J-1782137703379",
-    "title": "IT Security Analyst",
-    "client": "VDOT",
-    "skills": [
-      "IT Security",
-      "Cybersecurity",
-      "Information Security"
-    ],
-    "budget": "TBD",
-    "experience": "Any",
-    "location": "Richmond, VA",
-    "type": "Contract",
-    "status": "Active"
-  },
-  {
-    "id": "J-1782137853962",
-    "title": "Salesforce Programmer Analyst",
-    "client": "DSS",
-    "skills": [
-      "Apex",
-      "Lightning Components(LWC)",
-      "Copado CI/CD"
-    ],
-    "budget": "TBD",
-    "experience": "Any",
-    "location": "Glen Allen, VA 23060 (Hybrid)",
-    "type": "Contract",
-    "status": "Active"
-  },
-  {
-    "id": "J-1782138902844",
-    "title": "Microsoft Power Platform Developer",
-    "client": "NCDHHS-PH",
-    "skills": [
-      "Power Apps",
-      "Power Automate",
-      "SQL Server"
-    ],
-    "budget": "TBD",
-    "experience": "7+ years",
-    "location": "Raleigh, NC 27601",
-    "type": "Hybrid",
-    "status": "Active"
-  },
-  {
-    "id": "J-1782138974272",
-    "title": "Senior Project Manager",
-    "client": "VDOT",
-    "skills": [
-      "Project Management",
-      "Technical Leadership",
-      "Vendor Management",
-      "Communication"
-    ],
-    "budget": "TBD",
-    "experience": "7+ years",
-    "location": "Mechanicsville, VA",
-    "type": "Hybrid",
-    "status": "Active"
-  },
-  {
-    "id": "J-1782224551104",
-    "title": "System Software Programmer - Intermediate",
-    "client": "DSS",
-    "skills": [
-      "Visual Studio 2022/2019",
-      ".NET",
-      "MS SQL Server 2016 enterprise server"
-    ],
-    "budget": "TBD",
-    "experience": "7+ years",
-    "location": "Hybrid (3 days onsite per week, SC or willing to relocate)",
-    "type": "Contract",
-    "status": "Active"
-  },
-  {
-    "id": "J-1782224987107",
-    "title": "Project Manager",
-    "client": "FCDC",
-    "skills": [
-      "Project Management",
-      "Leadership",
-      "Communication"
-    ],
-    "budget": "TBD",
-    "experience": "7+ years",
-    "location": "Columbus, OH 43215",
-    "type": "Onsite",
-    "status": "Active"
-  },
-  {
-    "id": "J-1782311099444",
-    "title": "Applications Development Analyst",
-    "client": "Florida Department of Transportation",
-    "skills": [
-      "Classic ASP",
-      "ASP.NET",
-      "Angular",
-      "React",
-      "SQL Server",
-      "Oracle",
-      "Azure"
-    ],
-    "budget": "TBD",
-    "experience": "5+ years",
-    "location": "Tallahassee, FL",
-    "type": "Full-time",
-    "status": "Active"
-  },
-  {
-    "id": "J-1782312115927",
-    "title": "Senior Data Developer (SQL)",
-    "client": "DPH",
-    "skills": [
+      "Systems Analysis",
       "SQL",
-      "ETL",
-      "SSIS",
-      "Power BI"
+      "Requirements Gathering",
+      "UAT Testing",
+      "Data Modeling"
     ],
-    "budget": "TBD",
+    "preferredSkills": [
+      "Retirement Systems",
+      "Oracle DB",
+      "Agile PM"
+    ],
+    "budget": "$82/hr",
+    "payRate": "82",
+    "billRate": "TBD",
     "experience": "7+ years",
-    "location": "Remote (Nationwide)",
-    "type": "Contract",
-    "status": "Active"
+    "location": "Richmond, VA",
+    "city": "Richmond",
+    "state": "VA",
+    "zip": "23219",
+    "address": "1200 E Main St.",
+    "type": "Hybrid",
+    "workMode": "Hybrid",
+    "status": "Open",
+    "reqType": "Contract",
+    "duration": "12",
+    "creationDate": "2026-08-31",
+    "deadline": "2026-09-04",
+    "description": "===============================================================\n📌 POSITION & CLIENT OVERVIEW\n===============================================================\n• Position Title: VRS - System Analyst 4 (806546)\n• Client / Agency: VRS (Virginia Retirement System)\n• Work Arrangement: Hybrid (Richmond, VA)\n• Interview Type: Webcam or In Person\n• Target Start Date: 09/08/2026\n• Target End Date: 09/07/2027\n• Submission Deadline: 09/04/2026\n\n===============================================================\n🎯 PROJECT SUMMARY & OBJECTIVE\n===============================================================\nVRS requires an experienced System Analyst 4 to facilitate business systems analysis, functional specifications, and UAT verification for state pension and retirement benefit platforms.\n\n===============================================================\n📋 KEY ROLES & RESPONSIBILITIES\n===============================================================\n• Liaise with business stakeholders, pension administrators, and development teams to elicit detailed functional requirements.\n• Author comprehensive Business Requirements Documents (BRD), System Architecture Specs, and Process Flow Diagrams.\n• Write complex SQL queries against Oracle databases for data validation and discrepancy auditing.\n• Lead User Acceptance Testing (UAT), defect triage, and sprint test validation.\n• Ensure regulatory compliance with state retirement statutes and data security policies.\n\n===============================================================\n🛠️ REQUIRED TECHNICAL PROFICIENCIES\n===============================================================\n• Business & Systems Analysis Methodologies\n• Advanced SQL Data Querying & Oracle DB Validation\n• BRD / FRD Documentation & Use Case Modeling\n• UAT Test Planning, Execution, and Defect Management\n• Agile Scrum Delivery & JIRA / Confluence\n\n===============================================================\n🌟 PREFERRED QUALIFICATIONS & DOMAIN SKILLS\n===============================================================\n• State Government or Retirement System Experience\n• CBAP or PMI-PBA Professional Certification\n• Knowledge of Financial & Pension Accounting"
   },
   {
-    "id": "J-1782398802976",
-    "title": "Quality Assurance Engineer",
-    "client": "CO Judicial",
+    "id": "158699",
+    "reqId": "158699",
+    "positionNumber": "809432",
+    "title": "World Language Project Manager (809432)",
+    "client": "TN DOE (Tennessee Department of Education)",
+    "customer": "TN DOE",
     "skills": [
-      "Automated Testing",
-      "Test Cases",
-      "Quality Assurance Standards"
+      "Project Management",
+      "Curriculum Development",
+      "Stakeholder Engagement",
+      "PMP"
     ],
-    "budget": "TBD",
-    "experience": "3+ years",
-    "location": "Denver, CO",
-    "type": "Full-time",
-    "status": "Active"
+    "preferredSkills": [
+      "State Government",
+      "Education Tech",
+      "Vendor Management"
+    ],
+    "budget": "$70/hr",
+    "payRate": "70",
+    "billRate": "TBD",
+    "experience": "5+ years",
+    "location": "Nashville, TN",
+    "city": "Nashville",
+    "state": "TN",
+    "zip": "37243",
+    "address": "710 James Robertson Pkwy",
+    "type": "Remote",
+    "workMode": "Remote",
+    "status": "Open",
+    "reqType": "Contract",
+    "duration": "12",
+    "creationDate": "2026-08-28",
+    "deadline": "2026-09-11",
+    "description": "===============================================================\n📌 POSITION & CLIENT OVERVIEW\n===============================================================\n• Position Title: World Language Project Manager (809432)\n• Client / Agency: TN DOE (Tennessee Department of Education)\n• Work Arrangement: 100% Remote\n• Interview Type: Webcam Interview Only\n• Target Start Date: 09/21/2026\n• Target End Date: 09/20/2027\n• Submission Deadline: 09/11/2026\n\n===============================================================\n🎯 PROJECT SUMMARY & OBJECTIVE\n===============================================================\nManage statewide educational initiatives, digital curriculum rollouts, and district stakeholder alignment for the Tennessee Department of Education World Language programs.\n\n===============================================================\n📋 KEY ROLES & RESPONSIBILITIES\n===============================================================\n• Coordinate statewide project plans, timelines, resource allocation, and milestone tracking.\n• Manage communication across school districts, educational leaders, and state committees.\n• Monitor vendor contracts, deliverables, budgets, and compliance standards.\n• Produce executive dashboard reports, risk assessments, and executive presentations.\n\n===============================================================\n🛠️ REQUIRED TECHNICAL PROFICIENCIES\n===============================================================\n• Enterprise Project Management & Governance\n• MS Project, SmartSheet, and Jira Coordination\n• Budget & Schedule Tracking\n• Stakeholder Facilitation & Conflict Resolution\n\n===============================================================\n🌟 PREFERRED QUALIFICATIONS & DOMAIN SKILLS\n===============================================================\n• PMP / CAPM Certification\n• Public Education or State Department Experience\n• Bilingual Education Background"
   },
   {
-    "id": "J-1782399160067",
-    "title": "Senior Business Analyst",
-    "client": "NCDHHS-AM",
+    "id": "158961",
+    "reqId": "158961",
+    "positionNumber": "809821",
+    "title": "Senior Salesforce Engineer (809821)",
+    "client": "NCDHHS-NCFAST",
+    "customer": "NCDHHS-NCFAST",
+    "skills": [
+      "Salesforce",
+      "Apex",
+      "Lightning Web Components (LWC)",
+      "Visualforce",
+      "SOQL"
+    ],
+    "preferredSkills": [
+      "Salesforce Admin Certification",
+      "Health Cloud",
+      "REST Integrations"
+    ],
+    "budget": "$92/hr",
+    "payRate": "92",
+    "billRate": "TBD",
+    "experience": "7+ years",
+    "location": "Raleigh, NC",
+    "city": "Raleigh",
+    "state": "NC",
+    "zip": "27601",
+    "address": "4430 Broad Rd.",
+    "type": "Hybrid",
+    "workMode": "Hybrid",
+    "status": "Open",
+    "reqType": "Contract",
+    "duration": "12",
+    "creationDate": "2026-08-28",
+    "deadline": "2026-09-08",
+    "description": "===============================================================\n📌 POSITION & CLIENT OVERVIEW\n===============================================================\n• Position Title: Senior Salesforce Engineer (809821)\n• Client / Agency: NCDHHS-NCFAST\n• Work Arrangement: Hybrid (Raleigh, NC)\n• Interview Type: Webcam or In Person\n• Target Start Date: 09/14/2026\n• Target End Date: 09/13/2027\n• Submission Deadline: 09/08/2026\n\n===============================================================\n🎯 PROJECT SUMMARY & OBJECTIVE\n===============================================================\nLead custom Salesforce enterprise architecture, Apex triggers, Lightning Web Components (LWC), and integrations for state health services delivery.\n\n===============================================================\n📋 KEY ROLES & RESPONSIBILITIES\n===============================================================\n• Develop custom Apex classes, controllers, batch processes, and complex SOQL queries.\n• Build modern responsive UI components using Lightning Web Components (LWC).\n• Architect REST integrations connecting Salesforce with external state databases.\n• Optimize governor limits, test coverage (90%+), and continuous deployment (Copado/Flosum/Git).\n\n===============================================================\n🛠️ REQUIRED TECHNICAL PROFICIENCIES\n===============================================================\n• Advanced Salesforce Development (Apex, LWC, Aura, Visualforce)\n• SOQL / SOSL Query Optimization\n• REST / SOAP API Web Services\n• Salesforce DX & Version Control\n\n===============================================================\n🌟 PREFERRED QUALIFICATIONS & DOMAIN SKILLS\n===============================================================\n• Salesforce Platform Developer II Certification\n• Experience with Public Sector or Health Cloud Solutions\n• Experience with MuleSoft Integration"
+  },
+  {
+    "id": "158768",
+    "reqId": "158768",
+    "positionNumber": "810558",
+    "title": "NCDOT - Business Analyst- Expert (810558)",
+    "client": "State Of NC",
+    "customer": "State Of NC",
     "skills": [
       "Business Analysis",
-      "Jira",
-      "Confluence",
-      "Project Management"
+      "BRD / FRD Documentation",
+      "Agile User Stories",
+      "JIRA",
+      "SQL"
     ],
-    "budget": "TBD",
-    "experience": "TBD",
-    "location": "Raleigh, NC 27607",
-    "type": "Contract",
-    "status": "Posted"
+    "preferredSkills": [
+      "Transportation / DOT",
+      "Data Flow Diagramming",
+      "BPMN"
+    ],
+    "budget": "$78/hr",
+    "payRate": "78",
+    "billRate": "TBD",
+    "experience": "8+ years",
+    "location": "Raleigh, NC",
+    "city": "Raleigh",
+    "state": "NC",
+    "zip": "27601",
+    "address": "1 S Wilmington St.",
+    "type": "Remote",
+    "workMode": "Remote",
+    "status": "Open",
+    "reqType": "Contract",
+    "duration": "12",
+    "creationDate": "2026-08-28",
+    "deadline": "2026-09-03",
+    "description": "===============================================================\n📌 POSITION & CLIENT OVERVIEW\n===============================================================\n• Position Title: NCDOT - Business Analyst- Expert (810558)\n• Client / Agency: State Of NC (Department of Transportation)\n• Work Arrangement: Remote\n• Interview Type: Webcam Interview Only\n• Target Start Date: 09/07/2026\n• Target End Date: 09/06/2027\n• Submission Deadline: 09/03/2026\n\n===============================================================\n🎯 PROJECT SUMMARY & OBJECTIVE\n===============================================================\nLead business analysis, enterprise workflow re-engineering, and technical requirements mapping for NCDOT transit and infrastructure modernization.\n\n===============================================================\n📋 KEY ROLES & RESPONSIBILITIES\n===============================================================\n• Elicit and document high-level business goals and granular technical user stories.\n• Create process maps, swimlane diagrams, and BPMN 2.0 workflow models.\n• Facilitate backlog grooming, sprint planning, and acceptance criteria signoffs.\n• Conduct stakeholder interviews, gap analyses, and cost-benefit evaluations.\n\n===============================================================\n🛠️ REQUIRED TECHNICAL PROFICIENCIES\n===============================================================\n• Business Analysis & Agile Scrum\n• JIRA, Confluence, and MS Visio Modeling\n• SQL Querying & Data Flow Validation\n• Technical Writing & Executive Presentations\n\n===============================================================\n🌟 PREFERRED QUALIFICATIONS & DOMAIN SKILLS\n===============================================================\n• NCDOT or State Government IT Experience\n• CBAP Certification\n• Transportation Management Systems Knowledge"
+  },
+  {
+    "id": "158886",
+    "reqId": "158886",
+    "positionNumber": "809112",
+    "title": "IT Data Analyst (809112)",
+    "client": "General Client",
+    "customer": "General Client",
+    "skills": [
+      "Data Analysis",
+      "SQL",
+      "Tableau",
+      "Python",
+      "Excel PowerQuery"
+    ],
+    "preferredSkills": [
+      "ETL Pipelines",
+      "Snowflake",
+      "Statistical Modeling"
+    ],
+    "budget": "$65/hr",
+    "payRate": "65",
+    "billRate": "TBD",
+    "experience": "5+ years",
+    "location": "Stamford, CT",
+    "city": "Stamford",
+    "state": "CT",
+    "zip": "06901",
+    "address": "100 Washington Blvd",
+    "type": "Remote",
+    "workMode": "Remote",
+    "status": "Open",
+    "reqType": "Contract",
+    "duration": "12",
+    "creationDate": "2026-08-28",
+    "deadline": "2026-09-04",
+    "description": "===============================================================\n📌 POSITION & CLIENT OVERVIEW\n===============================================================\n• Position Title: IT Data Analyst (809112)\n• Client / Agency: General Client\n• Work Arrangement: 100% Remote\n• Interview Type: Webcam Interview\n• Target Start Date: 09/01/2026\n• Target End Date: 08/31/2027\n• Submission Deadline: 09/04/2026\n\n===============================================================\n🎯 PROJECT SUMMARY & OBJECTIVE\n===============================================================\nPerform complex data transformation, trend analysis, and KPI dashboard reporting to support executive decision-making and operational optimization.\n\n===============================================================\n📋 KEY ROLES & RESPONSIBILITIES\n===============================================================\n• Extract, clean, and analyze enterprise datasets from disparate SQL databases.\n• Build and maintain automated Tableau and Power BI executive dashboards.\n• Write Python automation scripts for data cleansing, aggregation, and validation.\n• Partner with product managers and engineers to define core data metrics.\n\n===============================================================\n🛠️ REQUIRED TECHNICAL PROFICIENCIES\n===============================================================\n• Advanced SQL (Window Functions, CTEs, Aggregations)\n• Tableau & Power BI Dashboard Development\n• Python (Pandas, NumPy, Data Cleansing)\n• Advanced Excel (PowerQuery, VLOOKUP, Pivots)\n\n===============================================================\n🌟 PREFERRED QUALIFICATIONS & DOMAIN SKILLS\n===============================================================\n• Snowflake Data Warehouse Knowledge\n• AWS S3 / Athena Data Querying\n• Financial & Healthcare Analytics Experience"
   }
 ]

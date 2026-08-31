@@ -1175,7 +1175,7 @@ app.get('/api/health', (_req, res) => {
   })
 })
 
-// ─── GET /api/candidates — Returns all stored candidates ─────────────────────
+// ─── GET /api/candidates — Returns all stored candidates with Hierarchy RBAC ──
 app.get('/api/candidates', authenticateToken, async (req, res) => {
   if (!candidatesStore || candidatesStore.length === 0) {
     await loadCandidatesFromDisk();
@@ -1192,13 +1192,51 @@ app.get('/api/candidates', authenticateToken, async (req, res) => {
 
   const userRole = req.user?.role || 'superadmin';
   const userEmail = (req.user?.email || '').toLowerCase().trim();
+  const userName = (req.user?.name || '').toLowerCase().trim();
+  const userId = String(req.user?.id || req.user?._id || '').toLowerCase().trim();
+  const userRef = (req.user?.refCode || '').toLowerCase().trim();
 
   let filtered = normalized;
-  if (userRole === 'recruiter') {
+  if (userRole === 'superadmin' || userRole === 'admin' || userRole === 'manager') {
+    filtered = normalized;
+  } else if (userRole === 'employee') {
     filtered = normalized.filter(c => {
       if (!c) return false;
       const cOwner = (c.createdBy || c.recruiterEmail || c.submittedBy || c.recruiterId || '').toLowerCase().trim();
-      return cOwner === userEmail || c.isSample || c.job_id === 'J-102';
+      const cRecruiter = (c.recruiter || c.assignedBy || c.addedByName || c.referredByRecruiterName || '').toLowerCase().trim();
+      const cRef = (c.recruiterRefCode || c.recruiterRef || '').toLowerCase().trim();
+      return cOwner === userEmail || cOwner === userId || cRecruiter === userName || (userRef && cRef.includes(userRef)) || c.isSample || c.job_id === 'J-102';
+    });
+  } else if (userRole === 'recruiter') {
+    // Lead recruiter sees own candidates + all candidates from reporting subordinate employees
+    let subordinateRecruiters = [];
+    if (Array.isArray(recruitersStore)) {
+      subordinateRecruiters = recruitersStore.filter(u => {
+        if (!u) return false;
+        const pName = (u.parentRecruiterName || '').toLowerCase().trim();
+        const pId = String(u.parentRecruiterId || '').toLowerCase().trim();
+        const pEmail = (u.parentRecruiterEmail || '').toLowerCase().trim();
+        return (pName && (pName === userName || pName.includes(userName))) ||
+               (pId && pId === userId) ||
+               (pEmail && pEmail === userEmail);
+      });
+    }
+    const subNames = subordinateRecruiters.map(u => (u.name || '').toLowerCase().trim()).filter(Boolean);
+    const subEmails = subordinateRecruiters.map(u => (u.email || '').toLowerCase().trim()).filter(Boolean);
+    const subRefs = subordinateRecruiters.map(u => (u.refCode || '').toLowerCase().trim()).filter(Boolean);
+
+    filtered = normalized.filter(c => {
+      if (!c) return false;
+      const cOwner = (c.createdBy || c.recruiterEmail || c.submittedBy || c.recruiterId || '').toLowerCase().trim();
+      const cRecruiter = (c.recruiter || c.assignedBy || c.addedByName || c.referredByRecruiterName || '').toLowerCase().trim();
+      const cRef = (c.recruiterRefCode || c.recruiterRef || '').toLowerCase().trim();
+      const cParent = (c.parentRecruiterName || '').toLowerCase().trim();
+
+      const isMine = cOwner === userEmail || cOwner === userId || cRecruiter === userName || (userRef && cRef.includes(userRef)) || (cParent && (cParent === userName || cParent.includes(userName))) || c.isSample || c.job_id === 'J-102';
+      const isSub = subNames.some(sn => sn && (cRecruiter === sn || cRecruiter.includes(sn) || sn.includes(cRecruiter))) ||
+                    subEmails.some(se => se && (cOwner.includes(se) || cRecruiter.includes(se))) ||
+                    subRefs.some(sr => sr && (cRef === sr || cRef.includes(sr)));
+      return isMine || isSub;
     });
   }
 
@@ -2150,23 +2188,35 @@ function cleanJsonResponseText(text) {
 
 function cleanJobTitle(title) {
   if (!title) return '';
-  let cleaned = title
+  let str = String(title).trim();
+
+  // Extract position number if present (e.g. "(807791)" or "- 808800")
+  const numMatch = str.match(/\((\d{5,8})\)/) || str.match(/-\s*(\d{5,8})\b/);
+  const posNum = numMatch ? numMatch[1] : '';
+
+  let cleaned = str
     .replace(/\bcontractor\b/gi, '')
     .replace(/\bc2c\b/gi, '')
     .replace(/\bw2\b/gi, '')
     .replace(/\bcorp-to-corp\b/gi, '')
+    .replace(/\bneed resume\b/gi, '')
+    .replace(/\burgent hiring\b/gi, '')
+    .replace(/\blocal candidates only\b/gi, '')
     .trim();
 
-  // Remove empty or symbol-only parentheses like (), ( ), (/), (-), ( / )
-  cleaned = cleaned.replace(/\([\s\-\|\/]*\)/g, '');
-  
-  // Remove trailing/leading hyphens, vertical bars, or slashes, and spaces
-  cleaned = cleaned.replace(/^[\s\-\|\/]+|[\s\-\|\/]+$/g, '');
-  
-  // Clean up any double spaces
-  cleaned = cleaned.replace(/\s+/g, ' ');
+  // Remove empty parentheses like (), ( ), (/), (-)
+  cleaned = cleaned.replace(/\([\s\-\|\/]*\)/g, '').trim();
 
-  return cleaned.trim();
+  // If position number was found, ensure it is formatted cleanly: "Title (807791)"
+  if (posNum && !cleaned.includes(`(${posNum})`)) {
+    cleaned = cleaned.replace(new RegExp(`\\b${posNum}\\b`, 'g'), '').trim();
+    cleaned = cleaned.replace(/^[\s\-\|\/]+|[\s\-\|\/]+$/g, '').trim();
+    cleaned = `${cleaned} (${posNum})`;
+  }
+
+  // Remove trailing/leading hyphens or slashes
+  cleaned = cleaned.replace(/^[\s\-\|\/]+|[\s\-\|\/]+$/g, '').replace(/\s+/g, ' ').trim();
+  return cleaned;
 }
 
 // Call remote LLM APIs for LinkedIn post generation
@@ -2878,22 +2928,38 @@ async function scrapeAndImportLatestJobs() {
         continue;
       }
 
+      // Extract real Requirement ID from detail page (e.g. 158999)
+      const reqIdMatch = detailHtml.match(/id=["']ctl00_Contentpage1_lbl_reqid["'][^>]*>([\s\S]*?)<\/span>/i);
+      const reqId = reqIdMatch ? reqIdMatch[1].trim() : (job.sourceId || `158${Math.floor(100 + Math.random() * 900)}`);
+
+      // Extract skills & location from detail page if available
+      const skillsMatch = detailHtml.match(/id=["']ctl00_Contentpage1_lbl_skills["'][^>]*>([\s\S]*?)<\/span>/i);
+      const locMatch = detailHtml.match(/id=["']ctl00_Contentpage1_lbl_location["'][^>]*>([\s\S]*?)<\/span>/i);
+
       const rawDescText = cleanHtmlText(descMatch[1]);
       
       console.log(`[Scraper] Parsing description for "${job.title}" using Groq...`);
       const parsedJob = await parseJobDescriptionWithLLM(rawDescText);
 
-      // Save to jobsStore
+      const finalTitle = cleanJobTitle(job.title);
+      const finalClient = parsedJob.client || 'General Client';
+      const finalLocation = locMatch ? cleanHtmlText(locMatch[1]).replace(/^in\s+/i, '') : (parsedJob.location || 'Raleigh, NC');
+
+      // Save to jobsStore with real Requirement ID
       const newJob = {
-        id: `J-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        title: parsedJob.title || job.title,
-        client: parsedJob.client || 'General Client',
-        skills: parsedJob.skills || [],
+        id: reqId,
+        reqId: reqId,
+        title: finalTitle,
+        client: finalClient,
+        customer: finalClient,
+        skills: parsedJob.skills && parsedJob.skills.length > 0 ? parsedJob.skills : (skillsMatch ? cleanHtmlText(skillsMatch[1]).split(',').map(s => s.trim()).filter(Boolean) : ['Technical Skills']),
+        preferredSkills: parsedJob.preferredSkills || [],
         budget: parsedJob.budget || 'TBD',
-        experience: parsedJob.experience || 'Any',
-        location: parsedJob.location || 'Any',
-        type: parsedJob.type || 'Full-time',
-        status: 'Active',
+        experience: parsedJob.experience || '5+ years',
+        location: finalLocation,
+        type: parsedJob.type || 'Hybrid',
+        workMode: parsedJob.type || 'Hybrid',
+        status: 'Open',
         source: 'Jobsinhand',
         sourceId: job.sourceId,
         sourceUrl: detailUrl,
@@ -6005,20 +6071,40 @@ app.patch('/api/admin/recruiters/:id/status', async (req, res) => {
   }
 });
 
-app.get('/api/candidates', authenticateToken, async (req, res) => {
+// ─── GET /api/requisitions/:id/candidates ─────────────────────────────────────
+app.get('/api/requisitions/:id/candidates', async (req, res) => {
+  const { id } = req.params;
+  const cleanId = String(id).replace('J-', '').replace('REQ-', '').trim();
   await loadCandidatesFromDisk();
-  const userRole = req.user?.role || 'superadmin';
-  const userEmail = (req.user?.email || '').toLowerCase().trim();
+  const matched = (candidatesStore || []).filter(c => {
+    if (!c) return false;
+    const cReq = String(c.reqId || c.job_id || c.jobId || '').replace('J-', '').replace('REQ-', '').trim();
+    return cReq === cleanId;
+  });
+  res.json({ success: true, count: matched.length, candidates: matched });
+});
 
-  let filtered = candidatesStore;
-  if (userRole === 'recruiter') {
-    filtered = candidatesStore.filter(c => {
-      if (!c) return false;
-      const cOwner = (c.createdBy || c.recruiterEmail || c.submittedBy || c.recruiterId || '').toLowerCase().trim();
-      return cOwner === userEmail || c.isSample || c.job_id === 'J-102';
-    });
+// ─── POST /api/requisitions/:id/candidates ────────────────────────────────────
+app.post('/api/requisitions/:id/candidates', async (req, res) => {
+  const { id } = req.params;
+  const cleanId = String(id).replace('J-', '').replace('REQ-', '').trim();
+  const { candidates } = req.body;
+  if (!Array.isArray(candidates)) {
+    return res.status(400).json({ success: false, message: 'Array of candidates required' });
   }
-  res.json({ success: true, candidates: filtered });
+  await loadCandidatesFromDisk();
+  candidates.forEach(cand => {
+    const candId = String(cand.id || cand.candidate_id || `875${Date.now().toString().slice(-4)}`);
+    const existingIdx = candidatesStore.findIndex(c => String(c.id) === candId || String(c.candidate_id) === candId);
+    const enriched = { ...cand, id: candId, reqId: cleanId, job_id: `J-${cleanId}`, updatedAt: new Date().toISOString() };
+    if (existingIdx >= 0) {
+      candidatesStore[existingIdx] = { ...candidatesStore[existingIdx], ...enriched };
+    } else {
+      candidatesStore.unshift(enriched);
+    }
+  });
+  await saveCandidatesToDisk();
+  res.json({ success: true, message: `Updated candidates for Requisition #${cleanId}` });
 });
 
 app.put('/api/candidates/:id/status', async (req, res) => {

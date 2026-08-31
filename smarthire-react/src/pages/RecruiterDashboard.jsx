@@ -8,67 +8,23 @@ import ActivityNotificationBell, { pushActivityNotification } from '../component
 import { AuditActivityLogModule, logAuditEvent } from '../ats'
 import { US_STATES } from '../data/usStates'
 import { parseResume } from '../smarthire/utils/parseResume'
+import { formatJobDescription, cleanJobTitleWithPositionNumber } from '../utils/formatJobDescription'
+import {
+  saveCandidate,
+  getAllCandidates,
+  saveRequisitionCandidates,
+  getRequisitionCandidates,
+  saveTeamUsersFirestore,
+  getTeamUsersFirestore
+} from '../lib/atsFirestore'
 
 function getFullDescriptionText(job) {
   if (!job) return ''
-  const raw = job.rawDescription || job.fullDescription || job.rawText || job.details || job.rawJd
-  if (raw && raw.length > 50) return raw
-
-  if (job.description && job.description.length > 50 && !job.description.startsWith('Looking for a') && !job.description.startsWith('Start date :')) {
-    return job.description
+  const raw = job.rawDescription || job.fullDescription || job.rawText || job.details || job.rawJd || job.description
+  if (raw && typeof raw === 'string' && raw.length > 30) {
+    return formatJobDescription(raw, job)
   }
-
-  const jobTitle = job.title || 'Lead Business Analyst'
-  const clientName = job.client || job.customer || 'State Of SC'
-  const reqSkills = Array.isArray(job.skills) && job.skills.length > 0
-    ? job.skills.join(', ')
-    : 'Business Analysis, Requirements Gathering (BRD/FRD), Agile / Scrum ceremonies, JIRA, SQL Data Validation, Stakeholder Coordination'
-
-  const prefSkills = Array.isArray(job.preferredSkills) && job.preferredSkills.length > 0
-    ? job.preferredSkills.join(', ')
-    : 'PMP / PMI-PBA Certification, Bachelors Degree in IT Related Field, Public Sector / State Government Transformation Experience'
-
-  const expText = job.experience && job.experience !== 'TBD' && job.experience !== 'Any'
-    ? (String(job.experience).includes('year') ? job.experience : `${job.experience}+ years`)
-    : '6+ years'
-
-  const locText = job.location || 'Columbia, SC 29210'
-  const modeText = job.work_mode || job.workMode || 'Hybrid (2 days onsite / 3 days remote)'
-  const deadlineText = job.deadline || '09/01/2026 at 5:00 PM EST'
-  const startDateText = job.creationDate || job.startDate || '10/23/2026'
-  const durationText = job.duration ? `${job.duration} Months` : '12 Months (with option to extend)'
-
-  return `POSITION: ${jobTitle}
-CLIENT: ${clientName}
-START DATE: ${startDateText}
-DURATION: ${durationText}
-SUBMISSION DEADLINE: ${deadlineText}
-WORK LOCATION: ${locText} (${modeText})
-
-SCOPE OF WORK & POSITION SUMMARY:
-The ${clientName} is seeking a senior, highly accomplished ${jobTitle} to join the enterprise transformation delivery team. The consultant will be responsible for leading business requirements elicitation, authoring formal Business Requirements Documents (BRD) and Functional Requirements Specifications (FRD), defining sprint backlogs and user stories in JIRA, and facilitating cross-functional alignment between technical architecture leads, development teams, and executive stakeholders.
-
-KEY RESPONSIBILITIES:
-• Lead stakeholder interview sessions, requirements discovery workshops, and business process modeling sessions.
-• Create high-quality, comprehensive documentation including BRDs, FRDs, Process Flow Diagrams (UML), and Traceability Matrices.
-• Collaborate closely with Solution Architects and Database Engineers to validate technical feasibility and data mapping models.
-• Drive Agile/Scrum ceremonies, sprint backlog grooming, sprint planning, and user story refinement with clear Acceptance Criteria.
-• Coordinate User Acceptance Testing (UAT), authoring test scenarios and managing defect triage through resolution.
-• Provide executive project status reporting, risk mitigation plans, and delivery milestones to state leadership.
-
-REQUIRED QUALIFICATIONS & SKILLS:
-• Experience: ${expText} of progressive experience as a Business Analyst / Systems Analyst in enterprise environments.
-• Core Technical Skills: ${reqSkills}
-• Strong proficiency in requirements lifecycle management, JIRA, Confluence, Visio/Lucidchart, and SQL queries.
-• Exceptional written and verbal communication skills with proven ability to present to senior leadership.
-
-PREFERRED QUALIFICATIONS:
-• Certifications: ${prefSkills}
-• Prior experience working within public sector, state agency, or municipal digital transformation programs.
-
-INTERVIEW & SELECTION PROCESS:
-• Round 1: Virtual Technical Screening & Behavioral Assessment (Microsoft Teams / WebEx)
-• Round 2: Final Stakeholder Video Interview`
+  return formatJobDescription('', job)
 }
 
 function parseResumeDetails(text, filename = '') {
@@ -225,6 +181,9 @@ function RecruiterDashboard() {
     try {
       localStorage.setItem('smarthire_recruiters', JSON.stringify(updatedList))
     } catch (e) {}
+
+    // Sync to Firestore immediately
+    saveTeamUsersFirestore(updatedList).catch(() => {})
 
     // Sync to backend database immediately
     try {
@@ -976,9 +935,16 @@ We are currently reviewing candidate profiles and scheduling immediate interview
             }
           }
 
+          const finalTitle = cleanJobTitleWithPositionNumber(customOverride?.title || j.title)
+          const finalDesc = (customOverride?.description || j.description)
+            ? formatJobDescription(customOverride?.description || j.description, { ...j, title: finalTitle })
+            : getFullDescriptionText({ ...j, title: finalTitle })
+
           return {
             ...j,
             ...(customOverride || {}),
+            title: finalTitle,
+            description: finalDesc,
             assignedRecruiters: assigned
           }
         })
@@ -998,6 +964,51 @@ We are currently reviewing candidate profiles and scheduling immediate interview
         }
       })
       .catch(err => console.warn('Backend team sync notice:', err))
+
+    // Real-time synchronization of candidates & team users from Firestore
+    const syncCandidatesAndRoster = async () => {
+      try {
+        const firestoreCands = await getAllCandidates()
+        if (Array.isArray(firestoreCands) && firestoreCands.length > 0) {
+          setCandidates(prev => {
+            const map = new Map()
+            prev.forEach(c => { if (c && (c.id || c.name)) map.set(String(c.id || c.name), c) })
+            firestoreCands.forEach(c => {
+              if (c && (c.id || c.name)) {
+                const existing = map.get(String(c.id || c.name)) || {}
+                map.set(String(c.id || c.name), { ...existing, ...c })
+              }
+            })
+            const merged = Array.from(map.values())
+            try { localStorage.setItem('smarthire_all_candidates', JSON.stringify(merged)) } catch (e) {}
+            return merged
+          })
+        }
+      } catch (err) {
+        console.warn('Firestore candidates sync notice:', err)
+      }
+
+      try {
+        const firestoreUsers = await getTeamUsersFirestore()
+        if (Array.isArray(firestoreUsers) && firestoreUsers.length > 0) {
+          setTeamUsers(prev => {
+            const map = new Map()
+            prev.forEach(u => { if (u && (u.email || u.id)) map.set((u.email || u.id).toLowerCase(), u) })
+            firestoreUsers.forEach(u => {
+              if (u && (u.email || u.id)) {
+                const existing = map.get((u.email || u.id).toLowerCase()) || {}
+                map.set((u.email || u.id).toLowerCase(), { ...existing, ...u })
+              }
+            })
+            const merged = Array.from(map.values())
+            try { localStorage.setItem('smarthire_recruiters', JSON.stringify(merged)) } catch (e) {}
+            return merged
+          })
+        }
+      } catch (err) {}
+    }
+
+    syncCandidatesAndRoster()
   }, [])
 
   // Toggle recruiter selection for current requisition (case-insensitive and trimmed)
@@ -1329,6 +1340,28 @@ We are currently reviewing candidate profiles and scheduling immediate interview
         setPotentialCandidates(JSON.parse(savedCand))
       }
     } catch (e) {}
+
+    // Fetch real-time requisition candidates from Firestore
+    getRequisitionCandidates(cleanId).then(cloudCands => {
+      if (Array.isArray(cloudCands) && cloudCands.length > 0) {
+        setPotentialCandidates(prev => {
+          const map = new Map()
+          prev.forEach(c => { if (c && (c.id || c.name)) map.set(String(c.id || c.name), c) })
+          cloudCands.forEach(c => {
+            if (c && (c.id || c.name)) {
+              const existing = map.get(String(c.id || c.name)) || {}
+              map.set(String(c.id || c.name), { ...existing, ...c })
+            }
+          })
+          const merged = Array.from(map.values())
+          try {
+            localStorage.setItem(`smarthire_potential_candidates_${cleanId}`, JSON.stringify(merged))
+            localStorage.setItem(`smarthire_potential_candidates_J-${cleanId}`, JSON.stringify(merged))
+          } catch (e) {}
+          return merged
+        })
+      }
+    }).catch(() => {})
   }, [selectedReq?.id])
 
   // Open Requisition Detail
@@ -1363,26 +1396,73 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       if (savedCand !== null && savedCand !== undefined) {
         setPotentialCandidates(JSON.parse(savedCand))
       } else {
-        // Default candidate if not set
-        setPotentialCandidates([
-          {
-            id: '87534',
-            name: 'Ashok Ganta',
-            payRate: '74/hr',
-            payRateType: 'C2C',
-            assignedBy: assigned[0] || userName,
-            assignedOn: 'Aug 20, 2026 04:40 PM',
-            status: 'Int-SubmittedToManager',
-            statusComments: 'Submitted',
-            interview: 'Select',
-            rejectedReason: 'Select',
-            lastChangedBy: assigned[0] || userName,
-            lastChangedRole: 'Recruiter',
-            lastChangedOn: 'Aug 20, 2026 04:40 PM'
-          }
-        ])
+        // Find matching candidates from global candidates list
+        const matchingGlobal = (candidates || []).filter(c => {
+          if (!c) return false
+          const cReq = String(c.reqId || c.job_id || c.jobId || '').replace('J-', '').trim()
+          return cReq === cleanId
+        }).map(c => ({
+          id: c.id,
+          name: c.name,
+          payRate: c.payRate || '74/hr',
+          payRateType: c.rateType || c.payRateType || 'C2C',
+          assignedBy: c.assignedBy || c.recruiter || userName,
+          assignedOn: c.dateAdded || 'Aug 20, 2026 04:40 PM',
+          status: c.status || 'Int-SubmittedToManager',
+          statusComments: c.statusComments || 'Submitted',
+          interview: 'Select',
+          rejectedReason: 'Select',
+          lastChangedBy: c.lastChangedBy || c.recruiter || userName,
+          lastChangedRole: c.lastChangedRole || 'Recruiter',
+          lastChangedOn: c.lastChangedOn || 'Aug 20, 2026 04:40 PM'
+        }))
+
+        if (matchingGlobal.length > 0) {
+          setPotentialCandidates(matchingGlobal)
+        } else {
+          // Default candidate if not set
+          setPotentialCandidates([
+            {
+              id: '87534',
+              name: 'Ashok Ganta',
+              payRate: '74/hr',
+              payRateType: 'C2C',
+              assignedBy: assigned[0] || userName,
+              assignedOn: 'Aug 20, 2026 04:40 PM',
+              status: 'Int-SubmittedToManager',
+              statusComments: 'Submitted',
+              interview: 'Select',
+              rejectedReason: 'Select',
+              lastChangedBy: assigned[0] || userName,
+              lastChangedRole: 'Recruiter',
+              lastChangedOn: 'Aug 20, 2026 04:40 PM'
+            }
+          ])
+        }
       }
     } catch (e) {}
+
+    // Fetch from Firestore for freshest real-time updates
+    getRequisitionCandidates(cleanId).then(cloudCands => {
+      if (Array.isArray(cloudCands) && cloudCands.length > 0) {
+        setPotentialCandidates(prev => {
+          const map = new Map()
+          prev.forEach(c => { if (c && (c.id || c.name)) map.set(String(c.id || c.name), c) })
+          cloudCands.forEach(c => {
+            if (c && (c.id || c.name)) {
+              const existing = map.get(String(c.id || c.name)) || {}
+              map.set(String(c.id || c.name), { ...existing, ...c })
+            }
+          })
+          const merged = Array.from(map.values())
+          try {
+            localStorage.setItem(`smarthire_potential_candidates_${cleanId}`, JSON.stringify(merged))
+            localStorage.setItem(`smarthire_potential_candidates_J-${cleanId}`, JSON.stringify(merged))
+          } catch (e) {}
+          return merged
+        })
+      }
+    }).catch(() => {})
 
     // Load attachments specifically for this requisition
     try {
@@ -1402,34 +1482,37 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       }
     } catch (e) {}
 
+    const formattedTitle = cleanJobTitleWithPositionNumber(savedReq.title || job.title || 'Lead Business Analyst')
+    const formattedDesc = formatJobDescription(fullDesc, { ...job, ...savedReq, title: formattedTitle })
+
     setEditingFields({
       id: rawId || fullId,
-      title: savedReq.title || job.title || 'Lead Business Analyst',
+      title: formattedTitle,
       startDate: savedReq.startDate || job.creationDate || job.startDate || '10/23/2026',
       duration: savedReq.duration || job.duration || '12',
       durationUnit: 'months',
-      customer: savedReq.customer || job.client || job.customer || 'State Of SC',
-      endClient: savedReq.endClient || job.client || job.customer || 'State Of SC',
+      customer: savedReq.customer || job.client || job.customer || 'NCDHHS-NCFAST',
+      endClient: savedReq.endClient || job.client || job.customer || 'NCDHHS-NCFAST',
       contact: savedReq.contact || job.contact || 'Hustedt Lexi',
       numPositions: savedReq.numPositions || job.numPositions || '1',
-      deadline: savedReq.deadline || job.deadline || '2026-09-01',
+      deadline: savedReq.deadline || job.deadline || '2026-09-04',
       maxSubmissions: savedReq.maxSubmissions || job.maxSubmissions || '2',
       category: savedReq.category || job.category || 'SP',
       type: savedReq.type || job.type || 'Contract',
       address: savedReq.address || job.address || '4430 Broad Rd.',
-      city: savedReq.city || job.city || 'Columbia',
-      state: savedReq.state || job.state || 'SC',
-      zip: savedReq.zip || job.zip || '29210',
-      location: savedReq.location || job.location || 'Columbia, SC 29210',
+      city: savedReq.city || job.city || (job.location ? job.location.split(',')[0].trim() : 'Raleigh'),
+      state: savedReq.state || job.state || (job.location && job.location.includes(',') ? job.location.split(',')[1].trim().slice(0, 2) : 'NC'),
+      zip: savedReq.zip || job.zip || '27601',
+      location: savedReq.location || job.location || 'Raleigh, NC',
       billRate: savedReq.billRate || job.billRate || '90',
       payRate: savedReq.payRate || (job.budget ? String(job.budget).replace(/[^0-9]/g, '').slice(0, 3) : '75') || '75',
-      interview: savedReq.interview || 'Select',
+      interview: savedReq.interview || 'Webcam Interview Only',
       workAuth: savedReq.workAuth || 'Select',
-      subcontractable: savedReq.subcontractable || 'No',
-      employmentType: savedReq.employmentType || 'Contract',
+      subcontractable: savedReq.subcontractable || 'Yes',
+      employmentType: savedReq.employmentType || job.type || 'Contract',
       experience: savedReq.experience || (job.experience ? (String(job.experience).replace(/[^0-9]/g, '') || '6') : '6'),
-      description: fullDesc,
-      skills: Array.isArray(savedReq.skills) ? savedReq.skills : (Array.isArray(job.skills) ? job.skills : ['Business Analysis', 'Requirements Gathering', 'Agile / Scrum', 'SQL']),
+      description: formattedDesc,
+      skills: Array.isArray(savedReq.skills) ? savedReq.skills : (Array.isArray(job.skills) ? job.skills : ['Java', 'SQL', 'Agile']),
       desiredSkills: Array.isArray(savedReq.desiredSkills) ? savedReq.desiredSkills : (Array.isArray(job.preferredSkills) ? job.preferredSkills : ['Public Sector Experience', 'Cloud Security']),
       status: savedReq.status || (job.status === 'Active' ? 'In-Progress' : (job.status || 'In-Progress')),
       assignedRecruiters: assigned,
@@ -1768,24 +1851,85 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
   const handleAssignCandidateToReq = () => {
     const fullName = `${submissionCandidate.firstName} ${submissionCandidate.lastName}`.trim()
-    
-    setPotentialCandidates(prev => [
-      {
-        id: submissionCandidate.id,
-        name: fullName,
-        payRate: `${submissionCandidate.proposedPayRate}/hr`,
-        payRateType: submissionCandidate.proposedRateType || 'C2C',
-        assignedBy: currentUser?.name || 'Recruiter',
-        assignedOn: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        status: 'Int-SubmittedToManager',
-        statusComments: 'Submitted',
-        interview: 'Select',
-        rejectedReason: ''
-      },
-      ...prev.filter(p => p.id !== submissionCandidate.id)
-    ])
+    const cleanId = String(selectedReq?.id || '158938').replace('J-', '').replace('REQ-', '').trim()
+    const candId = String(submissionCandidate.id || `875${Date.now().toString().slice(-4)}`)
+    const dateStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
-    alert(`✅ Candidate ${fullName} (ID: ${submissionCandidate.id}) has been successfully assigned to Requisition #${selectedReq?.id?.replace('J-', '') || '158938'}!`)
+    const newSubObj = {
+      id: candId,
+      name: fullName,
+      payRate: `${submissionCandidate.proposedPayRate || submissionCandidate.payRateMin || '74'}/hr`,
+      payRateType: submissionCandidate.proposedRateType || submissionCandidate.rateType || 'C2C',
+      assignedBy: userName || currentUser?.name || 'Recruiter',
+      assignedOn: dateStr,
+      status: 'Int-SubmittedToManager',
+      statusComments: 'Submitted',
+      interview: 'Select',
+      rejectedReason: '',
+      lastChangedBy: userName || currentUser?.name || 'Recruiter',
+      lastChangedRole: isAdmin ? 'superadmin' : (isRecruiter ? 'Recruiter' : 'Employee'),
+      lastChangedOn: dateStr
+    }
+
+    const updated = [newSubObj, ...potentialCandidates.filter(p => p.id !== candId && p.name !== fullName)]
+    setPotentialCandidates(updated)
+
+    // Save to localStorage
+    try {
+      localStorage.setItem(`smarthire_potential_candidates_${cleanId}`, JSON.stringify(updated))
+      localStorage.setItem(`smarthire_potential_candidates_J-${cleanId}`, JSON.stringify(updated))
+    } catch (e) {}
+
+    const masterCandObj = {
+      id: candId,
+      canId: candId,
+      name: fullName,
+      fullRole: submissionCandidate.jobTitle || editingFields.title || 'Consultant',
+      role: submissionCandidate.jobTitle || editingFields.title || 'Consultant',
+      exp: submissionCandidate.experienceYears || '5',
+      location: `${submissionCandidate.city || 'Richmond'}, ${submissionCandidate.state || 'VA'}`,
+      city: submissionCandidate.city || 'Richmond',
+      state: submissionCandidate.state || 'VA',
+      payRate: `$${submissionCandidate.proposedPayRate || '74'} /hr`,
+      rateType: submissionCandidate.proposedRateType || 'C2C',
+      rating: 5,
+      subVendor: 'Direct Submission',
+      recruiter: userName,
+      assignedTo: userName,
+      assignedBy: userName,
+      recruiterEmail: currentUser?.email || '',
+      recruiterRefCode: currentUser?.refCode || '',
+      parentRecruiterName: currentUser?.parentRecruiterName || '',
+      parentRecruiterId: currentUser?.parentRecruiterId || '',
+      email: submissionCandidate.email || `${submissionCandidate.firstName.toLowerCase()}@example.com`,
+      phone: submissionCandidate.phoneCell || '571-660-5778',
+      workAuth: 'US Citizen',
+      screened: 'Yes',
+      reqId: cleanId,
+      status: 'Int-SubmittedToManager'
+    }
+
+    setCandidates(prev => {
+      const merged = [masterCandObj, ...prev.filter(c => c.id !== candId && c.name !== fullName)]
+      try { localStorage.setItem('smarthire_all_candidates', JSON.stringify(merged)) } catch (e) {}
+      return merged
+    })
+
+    // Save to Firestore
+    saveRequisitionCandidates(cleanId, updated).catch(() => {})
+    saveCandidate(candId, masterCandObj).catch(err => console.warn('Firestore candidate save notice:', err))
+
+    // Backend sync
+    fetch('/api/candidates', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+      },
+      body: JSON.stringify(masterCandObj)
+    }).catch(() => {})
+
+    alert(`✅ Candidate ${fullName} (ID: ${candId}) has been successfully assigned to Requisition #${cleanId}!`)
     setViewMode('requisition')
     setActiveReqTab('potential')
   }
@@ -1876,14 +2020,21 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       if (isEmployee) {
         const userIdent = userName.toLowerCase().trim()
         const userEmail = (currentUser?.email || '').toLowerCase().trim()
+        const userRef = (currentUser?.refCode || '').toLowerCase().trim()
+        const userId = String(currentUser?.id || currentUser?._id || '').toLowerCase().trim()
         const firstName = (userName.split(' ')[0] || '').toLowerCase().trim()
-        const candRecruiter = (c.recruiter || c.assignedTo || c.assignedBy || c.addedByName || c.submittedBy || '').toLowerCase().trim()
+
+        const candRecruiter = (c.recruiter || c.assignedTo || c.assignedBy || c.addedByName || c.submittedBy || c.referredByRecruiterName || '').toLowerCase().trim()
         const candEmail = (c.recruiterEmail || '').toLowerCase().trim()
+        const candRef = (c.recruiterRefCode || c.recruiterRef || '').toLowerCase().trim()
+        const candCreator = String(c.createdBy || '').toLowerCase().trim()
 
         const isMyCandidate = candRecruiter === userIdent ||
                               (userIdent.length >= 3 && candRecruiter.includes(userIdent)) ||
                               (candRecruiter.length >= 3 && userIdent.includes(candRecruiter)) ||
                               (userEmail && (candRecruiter.includes(userEmail) || candEmail.includes(userEmail))) ||
+                              (userRef && candRef.includes(userRef)) ||
+                              (userId && candCreator === userId) ||
                               (firstName.length >= 3 && candRecruiter.includes(firstName))
         if (!isMyCandidate) return false
       }
@@ -1891,15 +2042,46 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       // If user is Recruiter (Lead): show candidates submitted by this recruiter OR any employee reporting to this recruiter
       if (isRecruiter && (!candFilters.assignedTo || candFilters.assignedTo === 'Any' || candFilters.assignedTo === 'All')) {
         const userIdent = userName.toLowerCase().trim()
-        const mySubordinates = teamUsers
-          .filter(u => u.parentRecruiterName && u.parentRecruiterName.toLowerCase().trim() === userIdent)
-          .map(u => u.name.toLowerCase().trim())
-        
-        const candRecruiter = (c.recruiter || c.assignedTo || c.assignedBy || c.addedByName || c.submittedBy || '').toLowerCase().trim()
-        const isMineOrSub = candRecruiter === userIdent || candRecruiter.includes(userIdent) || userIdent.includes(candRecruiter) ||
-                            mySubordinates.some(sub => candRecruiter === sub || candRecruiter.includes(sub) || sub.includes(candRecruiter))
+        const userEmail = (currentUser?.email || '').toLowerCase().trim()
+        const userRef = (currentUser?.refCode || '').toLowerCase().trim()
+        const userId = String(currentUser?.id || currentUser?._id || '').toLowerCase().trim()
+        const firstName = (userName.split(' ')[0] || '').toLowerCase().trim()
 
-        if (!isMineOrSub) return false
+        const mySubordinates = teamUsers.filter(u => {
+          if (!u) return false
+          const pName = (u.parentRecruiterName || '').toLowerCase().trim()
+          const pId = String(u.parentRecruiterId || '').toLowerCase().trim()
+          const pEmail = (u.parentRecruiterEmail || '').toLowerCase().trim()
+          return (pName && (pName === userIdent || pName.includes(userIdent) || userIdent.includes(pName))) ||
+                 (pId && pId === userId) ||
+                 (pEmail && pEmail === userEmail)
+        })
+
+        const subNames = mySubordinates.map(u => (u.name || '').toLowerCase().trim()).filter(Boolean)
+        const subEmails = mySubordinates.map(u => (u.email || '').toLowerCase().trim()).filter(Boolean)
+        const subRefs = mySubordinates.map(u => (u.refCode || '').toLowerCase().trim()).filter(Boolean)
+        const subIds = mySubordinates.map(u => String(u.id || u._id || '').toLowerCase().trim()).filter(Boolean)
+
+        const candRecruiter = (c.recruiter || c.assignedTo || c.assignedBy || c.addedByName || c.submittedBy || c.referredByRecruiterName || '').toLowerCase().trim()
+        const candEmail = (c.recruiterEmail || '').toLowerCase().trim()
+        const candRef = (c.recruiterRefCode || c.recruiterRef || '').toLowerCase().trim()
+        const candParent = (c.parentRecruiterName || '').toLowerCase().trim()
+        const candCreator = String(c.createdBy || '').toLowerCase().trim()
+
+        const isMine = candRecruiter === userIdent ||
+                       (userIdent.length >= 3 && candRecruiter.includes(userIdent)) ||
+                       (userEmail && (candRecruiter.includes(userEmail) || candEmail.includes(userEmail))) ||
+                       (userRef && candRef.includes(userRef)) ||
+                       (candParent && (candParent === userIdent || candParent.includes(userIdent))) ||
+                       (userId && candCreator === userId) ||
+                       (firstName.length >= 3 && candRecruiter.includes(firstName))
+
+        const isSubordinateCand = subNames.some(sn => sn && (candRecruiter === sn || candRecruiter.includes(sn) || sn.includes(candRecruiter))) ||
+                                  subEmails.some(se => se && (candEmail.includes(se) || candRecruiter.includes(se))) ||
+                                  subRefs.some(sr => sr && candRef.includes(sr)) ||
+                                  subIds.some(sid => sid && candCreator === sid)
+
+        if (!isMine && !isSubordinateCand) return false
       }
 
       // Recruiter Name Filter (Assigned To)
@@ -3958,9 +4140,44 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
                       <div style={{ flex: '1 1 480px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
-                            <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#000080' }}>Description:*</label>
-                            <span style={{ fontSize: '12px', cursor: 'pointer' }} title="Print / Format JD">🖨️</span>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#000080' }}>Description:*</label>
+                              <span style={{ fontSize: '12px', cursor: 'pointer' }} title="Print / Format JD">🖨️</span>
+                            </div>
+                            {!isEmployee && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const formatted = formatJobDescription(editingFields.description || '', {
+                                    ...selectedReq,
+                                    ...editingFields,
+                                    title: editingFields.title || selectedReq?.title,
+                                    client: editingFields.customer || selectedReq?.client
+                                  })
+                                  setEditingFields(prev => ({ ...prev, description: formatted }))
+                                  setSaveToastMessage('✨ JD automatically reformatted and structured!')
+                                  setTimeout(() => setSaveToastMessage(null), 3000)
+                                }}
+                                style={{
+                                  background: '#2563eb',
+                                  color: '#ffffff',
+                                  border: 'none',
+                                  padding: '2px 8px',
+                                  fontSize: '10.5px',
+                                  fontWeight: 'bold',
+                                  borderRadius: '2px',
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  boxShadow: '0 1px 2px rgba(37,99,235,0.2)'
+                                }}
+                                title="Clean and structure raw JD into professional sections with bullet points"
+                              >
+                                <span>✨ Auto-Format Structure</span>
+                              </button>
+                            )}
                           </div>
                           <textarea
                             rows={10}
@@ -5581,20 +5798,18 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                         </tr>
                       ) : (
                         paginatedJobs.map((job, idx) => {
-                          const rawId = String(job.id || '').replace('J-', '').trim()
-                          // Format clean 6-digit Requisition ID (e.g. 158968, 158967)
+                          const rawId = String(job.reqId || job.id || '').replace('J-', '').trim()
                           let displayReqId = rawId
                           if (!/^\d{5,6}$/.test(rawId)) {
-                            let hash = 0
-                            for (let i = 0; i < rawId.length; i++) {
-                              hash = (hash * 31 + rawId.charCodeAt(i)) % 900
+                            if (job.reqId && /^\d{5,6}$/.test(String(job.reqId))) {
+                              displayReqId = String(job.reqId)
+                            } else if (job.sourceId && /^\d{5,6}$/.test(String(job.sourceId))) {
+                              displayReqId = String(job.sourceId)
                             }
-                            const offset = (Math.abs(hash) + idx * 3) % 400
-                            displayReqId = String(158968 - offset)
                           }
 
-                          const rawTitle = job.title || 'Consultant'
-                          const truncatedTitle = rawTitle.length > 14 ? rawTitle.slice(0, 12) + '..' : rawTitle
+                          const rawTitle = cleanJobTitleWithPositionNumber(job.title) || job.title || 'Consultant'
+                          const truncatedTitle = rawTitle.length > 34 ? rawTitle.slice(0, 32) + '..' : rawTitle
                           
                           const allSkills = Array.isArray(job.skills) ? job.skills.join(', ') : (job.skills || 'Troubleshooting, Project Management')
                           const truncatedSkills = allSkills.length > 12 ? allSkills.slice(0, 10) + '..' : allSkills
@@ -6134,7 +6349,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                 }
 
                 setCandidates(prev => {
-                  const merged = [masterCandObj, ...prev]
+                  const merged = [masterCandObj, ...prev.filter(c => c.id !== newCandId && c.name !== fullName)]
                   try {
                     localStorage.setItem('smarthire_all_candidates', JSON.stringify(merged))
                   } catch (e) {}
@@ -6143,7 +6358,47 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
                 try {
                   localStorage.setItem(`smarthire_potential_candidates_${cleanId}`, JSON.stringify(updatedCandidates))
+                  localStorage.setItem(`smarthire_potential_candidates_J-${cleanId}`, JSON.stringify(updatedCandidates))
                 } catch (err) {}
+
+                // Save to Firestore
+                saveRequisitionCandidates(cleanId, updatedCandidates).catch(() => {})
+                saveCandidate(newCandId, {
+                  ...masterCandObj,
+                  ...newCandObj,
+                  canId: newCandId,
+                  id: newCandId,
+                  name: fullName,
+                  reqId: cleanId,
+                  job_id: `J-${cleanId}`,
+                  assignedBy: userName,
+                  recruiter: userName,
+                  recruiterEmail: currentUser?.email || '',
+                  recruiterRefCode: currentUser?.refCode || '',
+                  parentRecruiterName: currentUser?.parentRecruiterName || '',
+                  parentRecruiterId: currentUser?.parentRecruiterId || '',
+                  addedByName: userName,
+                  submittedBy: userName
+                }).catch(err => console.warn('Firestore candidate save notice:', err))
+
+                // Backend sync
+                fetch('/api/candidates', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+                  },
+                  body: JSON.stringify({
+                    ...masterCandObj,
+                    ...newCandObj,
+                    canId: newCandId,
+                    id: newCandId,
+                    reqId: cleanId,
+                    recruiter: userName,
+                    recruiterEmail: currentUser?.email || '',
+                    parentRecruiterName: currentUser?.parentRecruiterName || ''
+                  })
+                }).catch(() => {})
 
                 pushActivityNotification({
                   title: 'New Candidate Assigned to Requisition',
@@ -6805,11 +7060,15 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                   } catch (e) {}
                 }
 
-                // 4. Save to Backend Database API
+                // 4. Save to Firestore & Backend Database API
+                saveCandidate(candId, updatedCandObj).catch(err => console.warn('Firestore candidate save notice:', err))
                 try {
                   fetch('/api/candidates', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+                    },
                     body: JSON.stringify(updatedCandObj)
                   })
                 } catch (e) {}
@@ -6844,6 +7103,9 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                     localStorage.setItem(`smarthire_potential_candidates_${cleanReqId}`, JSON.stringify(updatedSubmissions))
                     localStorage.setItem(`smarthire_potential_candidates_J-${cleanReqId}`, JSON.stringify(updatedSubmissions))
                   } catch (err) {}
+
+                  // Save to Firestore
+                  saveRequisitionCandidates(cleanReqId, updatedSubmissions).catch(() => {})
 
                   if (String(selectedReq?.id || '').replace('J-', '') === cleanReqId) {
                     setPotentialCandidates(updatedSubmissions)
@@ -7476,7 +7738,22 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
               const merged = [newSubObj, ...existingList.filter(c => c.name !== cand.name)]
               try {
                 localStorage.setItem(`smarthire_potential_candidates_${cleanReqId}`, JSON.stringify(merged))
+                localStorage.setItem(`smarthire_potential_candidates_J-${cleanReqId}`, JSON.stringify(merged))
               } catch (e) {}
+
+              // Save to Firestore
+              saveRequisitionCandidates(cleanReqId, merged).catch(() => {})
+              saveCandidate(newSubObj.id, {
+                ...cand,
+                ...newSubObj,
+                canId: newSubObj.id,
+                id: newSubObj.id,
+                reqId: cleanReqId,
+                job_id: `J-${cleanReqId}`,
+                recruiter: userName,
+                recruiterEmail: currentUser?.email || '',
+                parentRecruiterName: currentUser?.parentRecruiterName || ''
+              }).catch(() => {})
 
               if (String(selectedReq?.id || '').replace('J-', '') === cleanReqId) {
                 setPotentialCandidates(merged)

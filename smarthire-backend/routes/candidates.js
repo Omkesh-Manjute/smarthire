@@ -1,6 +1,7 @@
 import express from 'express';
 import { body, validationResult, query } from 'express-validator';
 import Candidate from '../models/Candidate.js';
+import User from '../models/User.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -36,17 +37,44 @@ router.get(
       const { status, search, page = 1, limit = 10 } = req.query;
       
       // Build query based on role
-      const isSuperAdmin = req.user.role === 'superadmin' || req.user.role === 'admin';
-      const queryObj = isSuperAdmin
-        ? { isActive: true }
-        : {
-            $or: [
-              { referredByRecruiter: req.user._id },
-              { createdBy: req.user._id },
-              { recruiterRefCode: req.user.refCode }
-            ],
-            isActive: true
-          };
+      const isSuperAdmin = req.user.role === 'superadmin' || req.user.role === 'admin' || req.user.role === 'manager';
+      let queryObj = { isActive: true };
+
+      if (!isSuperAdmin) {
+        let allowedRecruiterIds = [req.user._id];
+        let allowedRefCodes = [req.user.refCode].filter(Boolean);
+        let allowedNames = [req.user.name].filter(Boolean);
+
+        if (req.user.role === 'recruiter') {
+          // Find all subordinate employees
+          try {
+            const subordinates = await User.find({
+              $or: [
+                { parentRecruiterId: req.user._id },
+                { parentRecruiterName: req.user.name },
+                { parentRecruiterEmail: req.user.email }
+              ]
+            }).select('_id refCode name email');
+
+            subordinates.forEach(s => {
+              if (s._id) allowedRecruiterIds.push(s._id);
+              if (s.refCode) allowedRefCodes.push(s.refCode);
+              if (s.name) allowedNames.push(s.name);
+            });
+          } catch (uErr) {}
+        }
+
+        queryObj = {
+          $or: [
+            { referredByRecruiter: { $in: allowedRecruiterIds } },
+            { createdBy: { $in: allowedRecruiterIds } },
+            { recruiterRefCode: { $in: allowedRefCodes } },
+            { referredByRecruiterName: { $in: allowedNames } },
+            { parentRecruiterName: req.user.name }
+          ],
+          isActive: true
+        };
+      }
       
       if (status) {
         queryObj.status = status;
