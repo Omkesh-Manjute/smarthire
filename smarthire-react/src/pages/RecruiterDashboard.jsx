@@ -2166,6 +2166,13 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       }
       return true
     })
+
+    // Sort newest/highest authentic Req ID at the TOP
+    return [...list].sort((a, b) => {
+      const aNum = parseInt(String(resolveReqId(a.id, a)).replace(/\D/g, ''), 10) || 0
+      const bNum = parseInt(String(resolveReqId(b.id, b)).replace(/\D/g, ''), 10) || 0
+      return bNum - aNum
+    })
   }, [jobs, reqFilters, isAdmin, isRecruiter, isEmployee, userName, currentUser, teamUsers])
 
   const paginatedJobs = useMemo(() => {

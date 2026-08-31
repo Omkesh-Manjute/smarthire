@@ -295,8 +295,20 @@ export async function scrapeViaPlaywright(logger = console.log) {
         await detailPage.goto(fullLink, { waitUntil: 'domcontentloaded', timeout: 30000 });
         await sleep(1000);
 
-        // Extract description
-        const description = await detailPage.evaluate(() => {
+        // Extract authentic Requirement ID & description & metadata
+        const detailData = await detailPage.evaluate(() => {
+          const reqEl = document.querySelector('#ctl00_Contentpage1_lbl_reqid');
+          const authenticReqId = reqEl ? reqEl.innerText.trim() : '';
+
+          const skillsEl = document.querySelector('#ctl00_Contentpage1_lbl_skills');
+          const skillsText = skillsEl ? skillsEl.innerText.trim() : '';
+
+          const locEl = document.querySelector('#ctl00_Contentpage1_lbl_location');
+          const locText = locEl ? locEl.innerText.trim() : '';
+
+          const dateEl = document.querySelector('#ctl00_Contentpage1_lbl_date_open');
+          const dateText = dateEl ? dateEl.innerText.trim() : '';
+
           const selectors = [
             '#ctl00_Contentpage1_lbl_descr',
             '#ctl00_Contentpage1_lbl_description',
@@ -304,28 +316,45 @@ export async function scrapeViaPlaywright(logger = console.log) {
             '[id*="descr"]',
             '[class*="description"]',
           ];
+          let description = '';
           for (const sel of selectors) {
             const el = document.querySelector(sel);
-            if (el && el.innerText.length > 50) return el.innerText.trim();
+            if (el && el.innerText.length > 50) {
+              description = el.innerText.trim();
+              break;
+            }
           }
-          return document.body.innerText.substring(0, 3000);
+          if (!description) description = document.body.innerText.substring(0, 3000);
+
+          return {
+            authenticReqId,
+            skillsText,
+            locText,
+            dateText,
+            description
+          };
         });
 
         await detailPage.close();
 
+        const description = detailData.description;
         logger(`[playwright] Parsing "${job.title}" with Groq LLM...`);
         const parsed = await parseJobWithGroq(description, job.title);
 
         const fallback = fallbackExtractLocationAndWorkMode(description, job.title);
-        const finalLocation = (parsed.location && parsed.location !== 'Unknown') ? parsed.location : fallback.location;
+        const finalLocation = (detailData.locText && detailData.locText !== 'Unknown') ? detailData.locText.replace(/^in\s+/i, '') : ((parsed.location && parsed.location !== 'Unknown') ? parsed.location : fallback.location);
         const finalWorkMode = parsed.work_mode || parsed.workMode || (['Remote','Hybrid','Onsite'].includes(parsed.type) ? parsed.type : fallback.workMode);
         const finalEmpType = parsed.employment_type || (['Contract','Full-time','C2H','C2C','W2'].includes(parsed.type) ? parsed.type : 'Contract');
 
+        const parsedSkills = detailData.skillsText ? detailData.skillsText.split(',').map(s => s.trim()).filter(Boolean) : (Array.isArray(parsed.skills) ? parsed.skills : []);
+
         results.push({
+          id: detailData.authenticReqId || undefined,
+          reqId: detailData.authenticReqId || undefined,
           title: parsed.title || cleanText(job.title),
           client: parsed.client || 'General Client',
           company: parsed.company || '',
-          skills: Array.isArray(parsed.skills) ? parsed.skills : [],
+          skills: parsedSkills,
           preferredSkills: Array.isArray(parsed.preferredSkills) ? parsed.preferredSkills : [],
           budget: parsed.budget || 'TBD',
           experience: parsed.experience || 'TBD',
@@ -337,7 +366,7 @@ export async function scrapeViaPlaywright(logger = console.log) {
           description: parsed.description || description.substring(0, 500),
           rawDescription: description,
           applyUrl: fullLink,
-          postDate: job.createDateStr,
+          postDate: detailData.dateText || job.createDateStr,
           post_date: getTodayISODate(),
           source: 'jobsinhand',
           status: 'Active',

@@ -6,16 +6,21 @@
  */
 
 export const KNOWN_TITLE_MAP = [
-  { match: /junior java|java.*developer.*test/i, positionNumber: '807791', reqId: '158999', title: 'NC FAST Junior Java Developer/Test Engineer (807791)' },
-  { match: /system(?:s)? administrator ii/i, positionNumber: '808800', reqId: '158885', title: 'NC DHHS System Administrator II (808800)' },
-  { match: /power platform/i, positionNumber: '805119', reqId: '158894', title: 'DHHS MS Power Platform Developer Architect (805119)' },
-  { match: /senior aws developer|aws senior/i, positionNumber: '808496', reqId: '158950', title: 'NC DHHS AWS Senior Developer (808496)' },
-  { match: /aws\s*\/?\s*java developer/i, positionNumber: '809716', reqId: '158776', title: 'NC DHHS AWS/Java Developer (809716)' },
-  { match: /system analyst 4/i, positionNumber: '806546', reqId: '158611', title: 'VRS - System Analyst 4 (806546)' },
-  { match: /world language/i, positionNumber: '809432', reqId: '158699', title: 'World Language Project Manager (809432)' },
-  { match: /salesforce solution engineer/i, positionNumber: '809821', reqId: '158673', title: 'Salesforce Solution Engineer (809821)' },
-  { match: /senior business analyst/i, positionNumber: '810558', reqId: '158674', title: 'Senior Business Analyst (810558)' },
-  { match: /data analyst\s*\/\s*business system/i, positionNumber: '809112', reqId: '158655', title: 'Data Analyst / Business System Analyst (809112)' },
+  { match: /itsm.*change.*process|change.*process.*manager/i, positionNumber: '810453', reqId: '159005', title: 'NCDIT - ITSM Change Process Manager - Junior (810453)' },
+  { match: /ecm.*business.*analyst.*66279|digital content manager.*tn doe/i, positionNumber: '66279', reqId: '159000', title: 'Enterprise Content Management (ECM) Business Analyst (66279)' },
+  { match: /business analyst.*advanced.*13414|visio smes/i, positionNumber: '13414', reqId: '159004', title: 'Business Analyst - Advanced (13414)' },
+  { match: /enterprise project manager.*advanced.*13421/i, positionNumber: '13421', reqId: '159003', title: 'Enterprise Project Manager - Advanced (13421)' },
+  { match: /system analyst 4.*806546|vrs.*system analyst/i, positionNumber: '806546', reqId: '159002', title: 'VRS - System Analyst 4 (806546)' },
+  { match: /junior java|java.*developer.*test|807791/i, positionNumber: '807791', reqId: '158999', title: 'NC FAST Junior Java Developer/Test Engineer (807791)' },
+  { match: /system(?:s)? administrator ii|808800/i, positionNumber: '808800', reqId: '158998', title: 'NC DHHS System Administrator II (808800)' },
+  { match: /power platform|805119/i, positionNumber: '805119', reqId: '158996', title: 'DHHS MS Power Platform Developer Architect (805119)' },
+  { match: /senior aws developer|aws senior|808496/i, positionNumber: '808496', reqId: '158997', title: 'NC DHHS AWS Senior Developer (808496)' },
+  { match: /aws\s*\/?\s*java developer|809716/i, positionNumber: '809716', reqId: '158995', title: 'NC DHHS AWS/Java Developer (809716)' },
+  { match: /data analyst\s*\/\s*business system|it data analyst/i, positionNumber: '809112', reqId: '158988', title: 'IT Data Analyst (809112)' },
+  { match: /ncdot.*business analyst.*expert|810558/i, positionNumber: '810558', reqId: '158994', title: 'NCDOT - Business Analyst- Expert (810558)' },
+  { match: /senior salesforce engineer|salesforce solution engineer|809821/i, positionNumber: '809821', reqId: '158993', title: 'Senior Salesforce Engineer (809821)' },
+  { match: /ecm.*business.*analyst.*66278/i, positionNumber: '66278', reqId: '158992', title: 'Enterprise Content Management (ECM) Business Analyst (66278)' },
+  { match: /ncdot.*specialist.*expert|809207/i, positionNumber: '809207', reqId: '158990', title: 'NCDOT- Specialist- Expert (809207)' },
 ];
 
 export function resolveReqId(rawId = '', job = {}) {
@@ -24,16 +29,21 @@ export function resolveReqId(rawId = '', job = {}) {
 
   // 1. Specific known legacy map
   const idMap = {
+    '84392': '159005',
+    '84391': '159000',
+    '84390': '159004',
+    '84389': '159003',
+    '84388': '159002',
     '84387': '158999',
-    '84386': '158885',
-    '84385': '158894',
-    '84384': '158950',
-    '84383': '158776',
-    '84379': '158699',
-    '84380': '158673',
-    '84381': '158674',
-    '84382': '158655',
-    '84378': '158611',
+    '84386': '158998',
+    '84385': '158996',
+    '84384': '158997',
+    '84383': '158995',
+    '84382': '158988',
+    '84381': '158994',
+    '84380': '158993',
+    '84379': '158992',
+    '84378': '158990',
   };
   if (idMap[strId]) return idMap[strId];
 
