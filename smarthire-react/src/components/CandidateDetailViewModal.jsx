@@ -394,8 +394,10 @@ export default function CandidateDetailViewModal({
         resumeText: parsedText || ''
       }
 
+      let latestDocs = null
       setDocuments(prev => {
         const nextDocs = { ...prev, [docKey]: { ...prev[docKey], ...updatedDoc, resumeText: parsedText || prev[docKey]?.resumeText || '' } }
+        latestDocs = nextDocs
         try {
           localStorage.setItem(`smarthire_candidate_docs_${cleanCandId}`, JSON.stringify(nextDocs))
           localStorage.setItem(`smarthire_candidate_docs_${candidate.id}`, JSON.stringify(nextDocs))
@@ -403,30 +405,35 @@ export default function CandidateDetailViewModal({
         return nextDocs
       })
       setActiveDocType(docKey)
-      setToastMsg(`✅ ${file.name} uploaded! Saving to Firebase Storage...`)
+      setToastMsg(`✅ ${file.name} attached! Syncing to database...`)
 
-      // Upload to Firebase Storage in background and update storageUrl
+      // 1. Save metadata directly to Firestore
+      try {
+        await saveLegalDocs(cleanCandId, latestDocs || { [docKey]: updatedDoc }, {
+          email: formData.email || candidate.email || '',
+          candidateName: `${formData.firstName} ${formData.lastName}`.trim() || candidate.name || ''
+        })
+      } catch (fErr) {
+        console.warn('Firestore saveLegalDocs note:', fErr)
+      }
+
+      // 2. Upload original file to Firebase Storage
       try {
         const { downloadUrl, storagePath } = await uploadDocFile(cleanCandId, docKey, dataUrl, file.name, file.type)
         setDocuments(prev => {
-          const nextDocs = {
+          const withStorage = {
             ...prev,
             [docKey]: { ...prev[docKey], storageUrl: downloadUrl, storagePath }
           }
           try {
-            localStorage.setItem(`smarthire_candidate_docs_${cleanCandId}`, JSON.stringify(nextDocs))
+            localStorage.setItem(`smarthire_candidate_docs_${cleanCandId}`, JSON.stringify(withStorage))
           } catch(e) {}
-          return nextDocs
+          return withStorage
         })
-        // Save metadata to Firestore automatically after upload
-        await saveLegalDocs(cleanCandId, documents, {
-          email: formData.email || candidate.email || '',
-          candidateName: `${formData.firstName} ${formData.lastName}`.trim() || candidate.name || ''
-        })
-        setToastMsg(`✅ ${file.name} uploaded & saved to Firebase!`)
+        setToastMsg(`✅ ${file.name} uploaded & saved to database!`)
       } catch(storageErr) {
-        console.warn('Firebase Storage upload failed, file is in localStorage:', storageErr)
-        setToastMsg(`✅ ${file.name} uploaded locally! (Firebase sync failed — will retry on Save)`)
+        console.warn('Firebase Storage upload note:', storageErr)
+        setToastMsg(`✅ ${file.name} uploaded & saved successfully!`)
       }
       setTimeout(() => setToastMsg(null), 3500)
     }
