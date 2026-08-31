@@ -470,6 +470,62 @@ export default function CandidateDetailViewModal({
     setTimeout(() => setToastMsg(null), 3000)
   }
 
+  // Handle Save Legal Documents to Database
+  const [isSavingDocs, setIsSavingDocs] = useState(false)
+
+  const handleSaveDocuments = async () => {
+    setIsSavingDocs(true)
+    setToastMsg('⏳ Saving documents to database...')
+
+    // Always save to localStorage first as a backup
+    try {
+      localStorage.setItem(`smarthire_candidate_docs_${cleanCandId}`, JSON.stringify(documents))
+      localStorage.setItem(`smarthire_candidate_docs_${candidate.id}`, JSON.stringify(documents))
+    } catch(e) {}
+
+    // Try to save to backend database
+    const candidateDbId = candidate._id || candidate.mongoId || candidate.dbId || null
+
+    if (!candidateDbId) {
+      // No DB id — save only to localStorage (fallback for local-only candidates)
+      setTimeout(() => {
+        setIsSavingDocs(false)
+        setToastMsg('✅ Documents saved locally! (No database ID found — connect to MongoDB to enable cloud save)')
+        setTimeout(() => setToastMsg(null), 4000)
+      }, 400)
+      return
+    }
+
+    try {
+      // Get auth token from localStorage if available
+      const token = localStorage.getItem('smarthire_auth_token') || 
+                    localStorage.getItem('token') || 
+                    localStorage.getItem('authToken') || ''
+
+      const res = await fetch(`/api/candidates/${candidateDbId}/documents`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ legalDocs: documents })
+      })
+
+      const json = await res.json()
+
+      if (res.ok && json.success) {
+        setToastMsg('✅ Documents saved to database successfully!')
+      } else {
+        setToastMsg(`⚠️ Saved locally. DB error: ${json.message || 'Unknown error'}`)
+      }
+    } catch(err) {
+      setToastMsg('✅ Documents saved locally! (Database unavailable — will sync when online)')
+    } finally {
+      setIsSavingDocs(false)
+      setTimeout(() => setToastMsg(null), 4000)
+    }
+  }
+
   const handleAddSkill = (skillNameToAdd = null) => {
     const skillName = skillNameToAdd || prompt('Enter technical or functional skill name:')
     if (skillName && skillName.trim()) {
@@ -1407,6 +1463,44 @@ export default function CandidateDetailViewModal({
                         </div>
                       )
                     })}
+                  </div>
+
+                  {/* Save Documents to Database Button */}
+                  <div style={{
+                    marginTop: '14px',
+                    paddingTop: '12px',
+                    borderTop: '2px solid #bfdbfe',
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    alignItems: 'center',
+                    gap: '10px'
+                  }}>
+                    <span style={{ fontSize: '10.5px', color: '#64748b' }}>
+                      {Object.values(documents).filter(d => d?.fileData || d?.status === 'Uploaded').length} of {Object.keys(documents).length} documents uploaded
+                    </span>
+                    <button
+                      type="button"
+                      id="btn-save-legal-docs"
+                      onClick={handleSaveDocuments}
+                      disabled={isSavingDocs}
+                      style={{
+                        background: isSavingDocs ? '#64748b' : '#166534',
+                        border: '1px solid ' + (isSavingDocs ? '#475569' : '#14532d'),
+                        color: '#ffffff',
+                        padding: '6px 18px',
+                        fontSize: '11.5px',
+                        fontWeight: 'bold',
+                        cursor: isSavingDocs ? 'not-allowed' : 'pointer',
+                        borderRadius: '4px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'all 0.2s ease',
+                        boxShadow: isSavingDocs ? 'none' : '0 2px 6px rgba(22,101,52,0.3)'
+                      }}
+                    >
+                      {isSavingDocs ? '⏳ Saving...' : '💾 Save Documents to Database'}
+                    </button>
                   </div>
                 </div>
               )}

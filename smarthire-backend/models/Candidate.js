@@ -97,7 +97,7 @@ const candidateSchema = new mongoose.Schema({
     token: String
   },
   
-  // Documents
+  // Documents (verification pipeline docs)
   documents: [{
     type: {
       type: String,
@@ -113,6 +113,18 @@ const candidateSchema = new mongoose.Schema({
       default: Date.now
     }
   }],
+
+  // Legal & Compliance Documents (ATS — visa, DL, RTR, SSN, coversheet, resume)
+  legalDocs: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
+
+  // ATS Extra Fields
+  atsData: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
   
   // Media
   selfieUrl: String,

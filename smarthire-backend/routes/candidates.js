@@ -295,6 +295,75 @@ router.put(
   }
 );
 
+// @route   PATCH /api/candidates/:id/documents
+// @desc    Save legal & compliance document metadata for a candidate
+// @access  Private
+router.patch('/:id/documents', authenticate, async (req, res) => {
+  try {
+    const { legalDocs } = req.body;
+
+    if (!legalDocs || typeof legalDocs !== 'object') {
+      return res.status(400).json({
+        success: false,
+        message: 'legalDocs object is required'
+      });
+    }
+
+    // Strip large base64 fileData from each doc before saving to DB
+    // (base64 stays in localStorage on the client)
+    const cleanedDocs = {};
+    for (const [key, doc] of Object.entries(legalDocs)) {
+      if (doc && typeof doc === 'object') {
+        const { fileData, ...rest } = doc; // eslint-disable-line no-unused-vars
+        cleanedDocs[key] = {
+          ...rest,
+          hasFile: !!fileData || !!doc.fileData,
+          savedAt: new Date().toISOString()
+        };
+      }
+    }
+
+    const isSuperAdmin = req.user.role === 'superadmin' || req.user.role === 'admin';
+    const queryObj = isSuperAdmin
+      ? { _id: req.params.id, isActive: true }
+      : {
+          _id: req.params.id,
+          $or: [
+            { referredByRecruiter: req.user._id },
+            { createdBy: req.user._id },
+            { recruiterRefCode: req.user.refCode }
+          ],
+          isActive: true
+        };
+
+    const candidate = await Candidate.findOneAndUpdate(
+      queryObj,
+      { $set: { legalDocs: cleanedDocs } },
+      { new: true, runValidators: false }
+    );
+
+    if (!candidate) {
+      return res.status(404).json({
+        success: false,
+        message: 'Candidate not found or access denied'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Legal documents saved to database successfully',
+      data: { legalDocs: candidate.legalDocs }
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to save legal documents',
+      error: error.message
+    });
+  }
+});
+
 // @route   DELETE /api/candidates/:id
 // @desc    Soft delete candidate
 // @access  Private
