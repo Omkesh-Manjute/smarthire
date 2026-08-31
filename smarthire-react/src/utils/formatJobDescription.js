@@ -152,9 +152,12 @@ export function formatJobDescription(rawText = '', jobMeta = {}) {
 
   // ─── Metadata Extraction ───
   let client = jobMeta.client || jobMeta.customer || '';
-  let title = jobMeta.title || '';
-  let location = jobMeta.location || '';
-  let workMode = jobMeta.workMode || jobMeta.work_mode || jobMeta.type || 'Hybrid';
+  let title = cleanJobTitleWithPositionNumber(jobMeta.title || '', jobMeta);
+  let location = resolveJobLocation(jobMeta);
+  let workMode = jobMeta.workMode || jobMeta.work_mode;
+  if (!workMode || ['contract', 'full-time', 'c2c', 'w2', 'any'].includes(String(workMode).toLowerCase())) {
+    workMode = (jobMeta.type && !['contract', 'full-time', 'c2c', 'w2'].includes(String(jobMeta.type).toLowerCase())) ? jobMeta.type : 'Onsite';
+  }
   let startDate = '';
   let endDate = '';
   let deadline = jobMeta.deadline || '';
@@ -166,49 +169,62 @@ export function formatJobDescription(rawText = '', jobMeta = {}) {
   const clientMatch = text.match(/Client\s*Info\s*:?\s*([^\n\r<]+)/i) ||
                       text.match(/Client\s*:?\s*([^\n\r<]+)/i) ||
                       text.match(/Agency\s*:?\s*([^\n\r<]+)/i);
-  if (clientMatch && !client) client = clientMatch[1].trim();
+  if (clientMatch && !client) client = clientMatch[1].split(/Work\s*Arrangement|Interview|Description/i)[0].trim();
 
   const startMatch = text.match(/Start\s*date\s*:?\s*([^\n\r<]+)/i);
-  if (startMatch) startDate = startMatch[1].trim();
+  if (startMatch) startDate = startMatch[1].split(/End|Submission|Client|Interview/i)[0].trim();
 
   const endMatch = text.match(/End\s*Date\s*:?\s*([^\n\r<]+)/i);
-  if (endMatch) endDate = endMatch[1].trim();
+  if (endMatch) endDate = endMatch[1].split(/Submission|Client|Interview|Description/i)[0].trim();
 
   const deadlineMatch = text.match(/Submission\s*deadline\s*:?\s*([^\n\r<]+)/i) ||
                            text.match(/Deadline\s*:?\s*([^\n\r<]+)/i);
-  if (deadlineMatch) deadline = deadlineMatch[1].trim();
+  if (deadlineMatch) deadline = deadlineMatch[1].split(/Client|Interview|Description|Work/i)[0].trim();
 
   const workMatch = text.match(/Work\s*Arrangement\s*:?\s*([^\n\r<]+)/i);
-  if (workMatch) workMode = workMatch[1].trim();
+  if (workMatch) {
+    const rawW = workMatch[1].split(/Interview|Description|Client/i)[0].trim();
+    if (rawW && !['contract', 'full-time', 'c2c', 'w2'].includes(rawW.toLowerCase())) {
+      workMode = rawW;
+    }
+  }
 
   const interviewMatch = text.match(/Interview\s*Type\s*:?\s*([^\n\r<]+)/i) ||
-                             text.match(/Interview\s*:?\s*([^\n\r<]+)/i);
-  if (interviewMatch) interviewType = interviewMatch[1].trim();
+                         text.match(/Interview\s*:?\s*([^\n\r<]+)/i);
+  if (interviewMatch) {
+    let rawInt = interviewMatch[1].split(/Description\s*:/i)[0].trim();
+    rawInt = rawInt.replace(/^[sS]\s*:\s*/, '').trim();
+    if (rawInt.length > 70) rawInt = rawInt.substring(0, 70).replace(/[,\.\s]+$/, '');
+    if (rawInt && rawInt.length > 2) interviewType = rawInt;
+  }
 
   // Extract Description body
   let mainBody = text;
-
-  // Strip header metadata lines from body
-  mainBody = mainBody
-    .replace(/^.*?Engineer:\s*[^\n]+/i, '')
-    .replace(/Start\s*date\s*:[^\n]+/gi, '')
-    .replace(/End\s*Date\s*:[^\n]+/gi, '')
-    .replace(/Submission\s*deadline\s*:[^\n]+/gi, '')
-    .replace(/Client\s*Info\s*:[^\n]+/gi, '')
-    .replace(/Client\s*:[^\n]+/gi, '')
-    .replace(/Work\s*Arrangement\s*:[^\n]+/gi, '')
-    .replace(/Agency\s*Interview\s*Type\s*:[^\n]+/gi, '')
-    .replace(/Interview\s*Type\s*:[^\n]+/gi, '')
-    .replace(/Note:\s*/gi, '')
-    .replace(/Description:\s*/gi, '')
-    .replace(/\(This job is for -.*?\)/gi, '')
-    .replace(/Call\s*502-379-4456.*$/gi, '')
-    .replace(/Please provide Requirement id.*$/gi, '')
-    .trim();
+  const descMatch = text.match(/Description\s*:\s*([\s\S]+)/i);
+  if (descMatch && descMatch[1].trim().length > 30) {
+    mainBody = descMatch[1].trim();
+  } else {
+    // Strip header metadata lines from body
+    mainBody = mainBody
+      .replace(/^.*?Engineer:\s*[^\n]+/i, '')
+      .replace(/Start\s*date\s*:[^\n]+/gi, '')
+      .replace(/End\s*Date\s*:[^\n]+/gi, '')
+      .replace(/Submission\s*deadline\s*:[^\n]+/gi, '')
+      .replace(/Client\s*Info\s*:[^\n]+/gi, '')
+      .replace(/Client\s*:[^\n]+/gi, '')
+      .replace(/Work\s*Arrangement\s*:[^\n]+/gi, '')
+      .replace(/Agency\s*Interview\s*Type\s*:[^\n]+/gi, '')
+      .replace(/Interview\s*Type\s*:[^\n]+/gi, '')
+      .replace(/Note:\s*/gi, '')
+      .replace(/\(This job is for -.*?\)/gi, '')
+      .replace(/Call\s*502-379-4456.*$/gi, '')
+      .replace(/Please provide Requirement id.*$/gi, '')
+      .trim();
+  }
 
   // Separate summary paragraph vs responsibilities vs skills
-  const sentences = mainBody
-    .split(/(?<=[.?!])\s+(?=[A-Z])/)
+  const rawSentences = mainBody
+    .split(/(?<=[.?!])\s+(?=[A-Z])|\n\s*•|\n\s*-|\n\s*\*/)
     .map(s => s.trim())
     .filter(s => s.length > 10);
 
@@ -217,16 +233,16 @@ export function formatJobDescription(rawText = '', jobMeta = {}) {
   let reqSkillLines = [];
   let prefSkillLines = [];
 
-  sentences.forEach(sentence => {
+  rawSentences.forEach(sentence => {
     const sLower = sentence.toLowerCase();
     if (sLower.includes('primary skills necessary') || sLower.includes('must have') || sLower.includes('required skills') || sLower.includes('proficient in') || sLower.includes('solid understanding of')) {
       reqSkillLines.push(sentence);
     } else if (sLower.includes('additional skills beyond') || sLower.includes('nice to have') || sLower.includes('preferred') || sLower.includes('familiarity with')) {
       prefSkillLines.push(sentence);
-    } else if (sLower.includes('responsible for') || sLower.includes('responsibilities of') || sLower.includes('role involves') || sLower.includes('assist with') || sLower.includes('contributes to') || sLower.includes('collaborate with') || sLower.includes('architected') || sLower.includes('develop') || sLower.includes('testing')) {
+    } else if (sLower.includes('responsible for') || sLower.includes('responsibilities of') || sLower.includes('responsibility includes') || sLower.includes('role involves') || sLower.includes('assist with') || sLower.includes('contributes to') || sLower.includes('collaborate with') || sLower.includes('architected') || sLower.includes('develop') || sLower.includes('oversee') || sLower.includes('ensuring') || sLower.includes('guiding') || sLower.includes('testing')) {
       respLines.push(sentence);
     } else {
-      if (summaryLines.length < 3) {
+      if (summaryLines.length < 2) {
         summaryLines.push(sentence);
       } else {
         respLines.push(sentence);
@@ -239,7 +255,7 @@ export function formatJobDescription(rawText = '', jobMeta = {}) {
   if (respLines.length > 0) {
     bulletedResp = respLines.map(r => `• ${r.replace(/^[•\-\*\s]+/, '').trim()}`).join('\n');
   } else {
-    bulletedResp = `• Assist with the end-to-end development, testing, and implementation lifecycle in an agile environment.\n• Responsible for writing test scripts, manual/automated testing, and debugging software solutions.\n• Collaborate with cross-functional technical teams, business analysts, and project managers across sprint cycles.\n• Ensure high code quality, system performance, adherence to SDLC standards, and comprehensive documentation.`;
+    bulletedResp = `• Oversee end-to-end implementation and support lifecycle in a collaborative environment.\n• Collaborate with cross-functional technical teams, business stakeholders, and project managers.\n• Ensure high standards of system integration, compliance controls, and comprehensive documentation.\n• Support ongoing maintenance, testing, and continuous improvement initiatives.`;
   }
 
   // Build clean bullet points for required skills
@@ -249,12 +265,12 @@ export function formatJobDescription(rawText = '', jobMeta = {}) {
   } else if (reqSkillLines.length > 0) {
     bulletedSkills = reqSkillLines.map(sk => `• ${sk.replace(/^[•\-\*\s]+/, '').trim()}`).join('\n');
   } else {
-    bulletedSkills = `• Core Technical Proficiency in required development & testing tools\n• Solid understanding of Object-Oriented Design & Data Structures\n• Experience with Software Development Lifecycle (SDLC) & Version Control (Git)\n• Strong problem-solving and analytical capabilities`;
+    bulletedSkills = `• Core Technical Proficiency in required functional & technical domain\n• Experience with system architecture, workflow design, and access controls\n• Strong problem-solving, documentation, and stakeholder collaboration capabilities`;
   }
 
   // Summary Text
   const summaryText = summaryLines.join(' ').trim() ||
-    `The client is seeking a qualified, results-driven professional to support enterprise application development and operations. This resource contributes to the full project lifecycle within a collaborative agile environment.`;
+    `The client is seeking a qualified, results-driven professional to support enterprise operations and solution delivery. This role contributes to project milestones within an agile, collaborative environment.`;
 
   // Construct Final Beautiful Formatted JD
   const formattedJD = `===============================================================
@@ -262,8 +278,8 @@ export function formatJobDescription(rawText = '', jobMeta = {}) {
 ===============================================================
 • Position Title: ${title || jobMeta.title || 'Technical Specialist'}
 • Client / Agency: ${client || 'State Agency / Enterprise Client'}
-• Work Arrangement: ${workMode || 'Hybrid'}
-• Interview Type: ${interviewType || 'Webcam / In-Person Only'}
+• Work Arrangement: ${workMode || 'Onsite'}
+• Interview Type: ${interviewType || 'Webcam / In-Person'}
 ${startDate ? `• Target Start Date: ${startDate}\n` : ''}${endDate ? `• Target End Date: ${endDate}\n` : ''}${deadline ? `• Submission Deadline: ${deadline}\n` : ''}
 ===============================================================
 🎯 PROJECT SUMMARY & OBJECTIVE

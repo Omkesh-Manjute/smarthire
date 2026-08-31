@@ -115,6 +115,7 @@ export default function PublicCareers() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedLocation, setSelectedLocation] = useState('All')
+  const [deadlineFilter, setDeadlineFilter] = useState('All')
   const [chatEnabled, setChatEnabled] = useState(true)
   const [botWidgetOpen, setBotWidgetOpen] = useState(false)
   
@@ -415,12 +416,39 @@ export default function PublicCareers() {
     }
   }
 
+  const isDeadlineToday = (deadlineStr) => {
+    if (!deadlineStr) return false
+    const now = new Date()
+    const yyyy = now.getFullYear()
+    const mm = String(now.getMonth() + 1).padStart(2, '0')
+    const dd = String(now.getDate()).padStart(2, '0')
+    const todayISO = `${yyyy}-${mm}-${dd}`
+    const clean = String(deadlineStr).trim()
+    if (clean.includes(todayISO)) return true
+
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+    const mStr = months[now.getMonth()]
+    if (clean.toLowerCase().includes(`${now.getDate()}-${mStr.toLowerCase()}`) || clean.toLowerCase().includes(`${mStr.toLowerCase()} ${now.getDate()}`)) return true
+
+    const dl = new Date(deadlineStr)
+    if (!isNaN(dl.getTime())) {
+      return (
+        dl.getFullYear() === now.getFullYear() &&
+        dl.getMonth() === now.getMonth() &&
+        dl.getDate() === now.getDate()
+      )
+    }
+    return false
+  }
+
   const filteredJobs = jobs.filter((j) => {
     if (isJobExpired(j)) return false
     const titleMatch = j.title?.toLowerCase().includes(searchQuery.toLowerCase())
     const skillMatch = Array.isArray(j.skills) && j.skills.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()))
-    const locMatch = (j.location || 'Remote, US').toLowerCase().includes(searchQuery.toLowerCase())
+    const locMatch = (resolveJobLocation(j) || 'Remote, US').toLowerCase().includes(searchQuery.toLowerCase())
     const qMatch = titleMatch || skillMatch || locMatch
+
+    if ((deadlineFilter === 'Today' || selectedLocation === 'Today') && !isDeadlineToday(j.deadline)) return false
 
     if (selectedLocation === 'Remote') return qMatch && (j.location || 'Remote').toLowerCase().includes('remote')
     if (selectedLocation === 'Hybrid') return qMatch && (j.location || '').toLowerCase().includes('hybrid')
@@ -574,7 +602,7 @@ export default function PublicCareers() {
           background-color: ${theme.cardBg};
           border: 1px solid ${theme.border};
           border-radius: 16px;
-          padding: 24px;
+          padding: 20px 20px 16px;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
@@ -582,6 +610,11 @@ export default function PublicCareers() {
           box-shadow: ${theme.shadow};
           position: relative;
           overflow: hidden;
+        }
+        .sh-card-body {
+          display: flex;
+          flex-direction: column;
+          flex: 1 1 auto;
         }
         .sh-job-card:hover {
           transform: translateY(-6px);
@@ -599,11 +632,11 @@ export default function PublicCareers() {
           border-color: ${isLight ? '#E2E8F0' : 'rgba(239, 68, 68, 0.25)'};
         }
         .sh-job-title {
-          font-size: 19px;
+          font-size: 18px;
           font-weight: 800;
           color: ${theme.textPrimary};
-          margin: 0 0 12px;
-          line-height: 1.4;
+          margin: 0 0 10px;
+          line-height: 1.35;
           transition: color 0.2s ease;
         }
         .sh-job-card:not(.expired):hover .sh-job-title {
@@ -612,15 +645,15 @@ export default function PublicCareers() {
         .sh-metadata-container {
           display: flex;
           flex-wrap: wrap;
-          gap: 12px;
-          margin-bottom: 16px;
+          gap: 10px;
+          margin-bottom: 12px;
           align-items: center;
         }
         .sh-metadata-item {
           display: inline-flex;
           align-items: center;
-          gap: 6px;
-          font-size: 12.5px;
+          gap: 5px;
+          font-size: 12px;
           color: ${theme.textSecondary};
           font-weight: 500;
         }
@@ -634,14 +667,14 @@ export default function PublicCareers() {
           display: flex;
           flex-wrap: wrap;
           gap: 6px;
-          margin-bottom: 18px;
+          margin-bottom: 14px;
         }
         .sh-skill-pill {
           font-size: 11px;
           font-weight: 600;
           background-color: ${theme.tagBg};
           color: ${theme.tagText};
-          padding: 4px 10px;
+          padding: 3px 9px;
           border-radius: 6px;
           transition: all 0.2s ease;
           border: 1px solid ${isLight ? 'rgba(37, 99, 235, 0.15)' : 'rgba(147, 197, 253, 0.15)'};
@@ -653,11 +686,12 @@ export default function PublicCareers() {
           background-color: ${isLight ? '#F8FAFC' : '#0F172A'};
           border-left: 3.5px solid #3B82F6;
           border-radius: 4px 12px 12px 4px;
-          padding: 14px 16px;
-          font-size: 13px;
+          padding: 12px 14px;
+          font-size: 12.5px;
           color: ${theme.textSecondary};
-          margin-bottom: 20px;
-          line-height: 1.6;
+          margin-top: auto;
+          margin-bottom: 14px;
+          line-height: 1.55;
           transition: all 0.2s ease;
           border-top: 1px solid ${theme.border};
           border-right: 1px solid ${theme.border};
@@ -673,7 +707,7 @@ export default function PublicCareers() {
         }
         .sh-card-footer {
           border-top: 1px solid ${theme.border};
-          padding-top: 16px;
+          padding-top: 14px;
           display: flex;
           justify-content: space-between;
           align-items: center;
@@ -1009,7 +1043,7 @@ export default function PublicCareers() {
           padding: 8,
           display: 'flex',
           gap: 10,
-          maxWidth: 780,
+          maxWidth: 820,
           margin: '0 auto',
           boxShadow: theme.shadow,
           flexWrap: 'wrap'
@@ -1020,7 +1054,7 @@ export default function PublicCareers() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by job title, skill, location (e.g. DevOps, Texas)..."
+              placeholder="Search by job title, skill, location (e.g. Java, Raleigh, NC)..."
               style={{
                 width: '100%',
                 backgroundColor: 'transparent',
@@ -1035,9 +1069,13 @@ export default function PublicCareers() {
 
           <select
             value={selectedLocation}
-            onChange={(e) => setSelectedLocation(e.target.value)}
+            onChange={(e) => {
+              setSelectedLocation(e.target.value)
+              if (e.target.value === 'Today') setDeadlineFilter('Today')
+              else if (deadlineFilter === 'Today') setDeadlineFilter('All')
+            }}
             style={{
-              flex: '1 1 140px',
+              flex: '1 1 160px',
               backgroundColor: theme.inputBg,
               border: `1px solid ${theme.inputBorder}`,
               color: theme.textPrimary,
@@ -1049,10 +1087,117 @@ export default function PublicCareers() {
             }}
           >
             <option value="All">🌐 All Work Modes</option>
-            <option value="Remote">🏠 Remote Only</option>
-            <option value="Hybrid">🏢 Hybrid</option>
-            <option value="Onsite">📍 Onsite</option>
+            <option value="Today">⏰ Today's Deadline {todayDeadlineCount > 0 ? `(${todayDeadlineCount})` : ''}</option>
+            <option value="Remote">🏠 Remote Only ({remoteCount})</option>
+            <option value="Hybrid">🏢 Hybrid ({hybridCount})</option>
+            <option value="Onsite">📍 Onsite ({onsiteCount})</option>
           </select>
+        </div>
+
+        {/* Quick Filter Badges */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14, justifyContent: 'center', alignItems: 'center' }}>
+          <button
+            type="button"
+            onClick={() => { setDeadlineFilter('All'); setSelectedLocation('All') }}
+            style={{
+              backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'All') ? '#2563EB' : theme.cardBg,
+              color: (deadlineFilter === 'All' && selectedLocation === 'All') ? '#FFF' : theme.textSecondary,
+              border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'All') ? '#2563EB' : theme.border}`,
+              borderRadius: 20,
+              padding: '6px 14px',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              boxShadow: (deadlineFilter === 'All' && selectedLocation === 'All') ? '0 4px 10px rgba(37,99,235,0.25)' : 'none'
+            }}
+          >
+            🌐 All ({activeOpenJobs.length})
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (deadlineFilter === 'Today' || selectedLocation === 'Today') {
+                setDeadlineFilter('All')
+                setSelectedLocation('All')
+              } else {
+                setDeadlineFilter('Today')
+                setSelectedLocation('Today')
+              }
+            }}
+            style={{
+              backgroundColor: (deadlineFilter === 'Today' || selectedLocation === 'Today') ? '#DC2626' : (isLight ? '#FEE2E2' : 'rgba(239, 68, 68, 0.15)'),
+              color: (deadlineFilter === 'Today' || selectedLocation === 'Today') ? '#FFF' : '#DC2626',
+              border: `1px solid ${(deadlineFilter === 'Today' || selectedLocation === 'Today') ? '#DC2626' : 'rgba(239, 68, 68, 0.35)'}`,
+              borderRadius: 20,
+              padding: '6px 14px',
+              fontSize: 12,
+              fontWeight: 800,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              boxShadow: (deadlineFilter === 'Today' || selectedLocation === 'Today') ? '0 4px 10px rgba(220,38,38,0.25)' : 'none'
+            }}
+          >
+            ⏰ Today's Deadline {todayDeadlineCount > 0 ? `(${todayDeadlineCount})` : '(0)'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setDeadlineFilter('All'); setSelectedLocation('Remote') }}
+            style={{
+              backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#2563EB' : theme.cardBg,
+              color: (deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#FFF' : theme.textSecondary,
+              border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#2563EB' : theme.border}`,
+              borderRadius: 20,
+              padding: '6px 14px',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            🏠 Remote ({remoteCount})
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setDeadlineFilter('All'); setSelectedLocation('Hybrid') }}
+            style={{
+              backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#2563EB' : theme.cardBg,
+              color: (deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#FFF' : theme.textSecondary,
+              border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#2563EB' : theme.border}`,
+              borderRadius: 20,
+              padding: '6px 14px',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            🏢 Hybrid ({hybridCount})
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setDeadlineFilter('All'); setSelectedLocation('Onsite') }}
+            style={{
+              backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#2563EB' : theme.cardBg,
+              color: (deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#FFF' : theme.textSecondary,
+              border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#2563EB' : theme.border}`,
+              borderRadius: 20,
+              padding: '6px 14px',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            📍 Onsite ({onsiteCount})
+          </button>
         </div>
       </section>
 
@@ -1078,9 +1223,9 @@ export default function PublicCareers() {
             textAlign: 'center',
             color: theme.textSecondary
           }}>
-            <p style={{ fontSize: 15, margin: '0 0 10px' }}>No active vacancies match "{searchQuery}".</p>
+            <p style={{ fontSize: 15, margin: '0 0 10px' }}>No active vacancies match "{searchQuery || selectedLocation}".</p>
             <button
-              onClick={() => { setSearchQuery(''); setSelectedLocation('All') }}
+              onClick={() => { setSearchQuery(''); setSelectedLocation('All'); setDeadlineFilter('All') }}
               style={{
                 backgroundColor: 'transparent',
                 border: '1px solid #2563EB',
@@ -1104,7 +1249,7 @@ export default function PublicCareers() {
               const expired = isJobExpired(job)
               const isBriefExpanded = expandedBriefJobId === job.id
               const workModeText = job.work_mode || job.workMode || job.type || 'Onsite'
-              const locationText = job.location || 'Remote, US'
+              const locationText = resolveJobLocation(job)
               const fullDesc = getFullDescriptionText(job)
 
               return (
@@ -1112,7 +1257,7 @@ export default function PublicCareers() {
                   key={job.id}
                   className={`sh-job-card ${expired ? 'expired' : ''}`}
                 >
-                  <div>
+                  <div className="sh-card-body">
                     {/* Header: Status and Deadline */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
                       {expired ? (
