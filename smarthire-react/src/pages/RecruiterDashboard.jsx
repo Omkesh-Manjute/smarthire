@@ -1966,7 +1966,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       if (!j) return false
 
       // ─── STRICT ROLE-BASED ACCESS CONTROL (RBAC) ───
-      // If user is an Employee (Sub-recruiter), show ONLY requirements assigned directly to them!
+      // If user is an Employee (Sub-recruiter): show requisitions assigned to them, or assigned to their lead recruiter, or open to team
       if (isEmployee) {
         const assignedList = Array.isArray(j.assignedRecruiters)
           ? j.assignedRecruiters.map(r => String(r || '').toLowerCase().trim())
@@ -1976,14 +1976,21 @@ We are currently reviewing candidate profiles and scheduling immediate interview
         const firstNameIdent = (userName.split(' ')[0] || '').toLowerCase().trim()
         const uidIdent = (currentUser?.uid || '').toLowerCase().trim()
 
+        const effectiveParentRecruiterName = (currentUser?.parentRecruiterName || 
+          teamUsers.find(u => (u.email && u.email.toLowerCase() === (currentUser?.email || '').toLowerCase()) || (u.name && u.name.toLowerCase() === (userName || '').toLowerCase()))?.parentRecruiterName || '').toLowerCase().trim()
+
         const isDirectlyAssigned = assignedList.some(r =>
           r === userIdent ||
           r.includes(userIdent) || userIdent.includes(r) ||
           (userEmailIdent && (r === userEmailIdent || r.includes(userEmailIdent) || userEmailIdent.includes(r))) ||
           (firstNameIdent && firstNameIdent.length >= 2 && (r === firstNameIdent || r.includes(firstNameIdent) || firstNameIdent.includes(r))) ||
-          (uidIdent && r.includes(uidIdent))
+          (uidIdent && r.includes(uidIdent)) ||
+          (effectiveParentRecruiterName && (r === effectiveParentRecruiterName || r.includes(effectiveParentRecruiterName) || effectiveParentRecruiterName.includes(r)))
         )
-        if (!isDirectlyAssigned) {
+
+        const isUnassignedOrOpen = assignedList.length === 0 || assignedList.includes('all') || assignedList.includes('any') || assignedList.includes('smarthire')
+
+        if (!isDirectlyAssigned && !isUnassignedOrOpen) {
           return false
         }
       }
@@ -3660,7 +3667,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #ea580c', paddingBottom: '5px', marginBottom: '10px', flexWrap: 'wrap', gap: 10 }}>
                 <h2 style={{ margin: 0, fontSize: '15px', color: '#000080', fontWeight: 'bold' }}>
-                  Requisition #:{selectedReq.id.replace('J-', '')} <span style={{ color: '#dc2626', fontSize: '12px', marginLeft: '8px' }}>Status: Ready</span>
+                  Requisition #:{selectedReq.id.replace('J-', '')} - {cleanJobTitleWithPositionNumber(editingFields.title || selectedReq.title)} <span style={{ color: '#dc2626', fontSize: '12px', marginLeft: '8px' }}>Status: {editingFields.status || 'Ready'}</span>
                 </h2>
                 <div style={{ display: 'flex', gap: '14px', alignItems: 'center', fontSize: '11.5px', fontWeight: 'bold' }}>
                   {(isSuperAdmin || isAdmin) && (
@@ -4176,39 +4183,37 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                               <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#000080' }}>Description:*</label>
                               <span style={{ fontSize: '12px', cursor: 'pointer' }} title="Print / Format JD">🖨️</span>
                             </div>
-                            {!isEmployee && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const formatted = formatJobDescription(editingFields.description || '', {
-                                    ...selectedReq,
-                                    ...editingFields,
-                                    title: editingFields.title || selectedReq?.title,
-                                    client: editingFields.customer || selectedReq?.client
-                                  })
-                                  setEditingFields(prev => ({ ...prev, description: formatted }))
-                                  setSaveToastMessage('✨ JD automatically reformatted and structured!')
-                                  setTimeout(() => setSaveToastMessage(null), 3000)
-                                }}
-                                style={{
-                                  background: '#2563eb',
-                                  color: '#ffffff',
-                                  border: 'none',
-                                  padding: '2px 8px',
-                                  fontSize: '10.5px',
-                                  fontWeight: 'bold',
-                                  borderRadius: '2px',
-                                  cursor: 'pointer',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                  boxShadow: '0 1px 2px rgba(37,99,235,0.2)'
-                                }}
-                                title="Clean and structure raw JD into professional sections with bullet points"
-                              >
-                                <span>✨ Auto-Format Structure</span>
-                              </button>
-                            )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const formatted = formatJobDescription(editingFields.description || '', {
+                                  ...selectedReq,
+                                  ...editingFields,
+                                  title: editingFields.title || selectedReq?.title,
+                                  client: editingFields.customer || selectedReq?.client
+                                })
+                                setEditingFields(prev => ({ ...prev, description: formatted }))
+                                setSaveToastMessage('✨ JD automatically reformatted and structured!')
+                                setTimeout(() => setSaveToastMessage(null), 3000)
+                              }}
+                              style={{
+                                background: '#2563eb',
+                                color: '#ffffff',
+                                border: 'none',
+                                padding: '2px 8px',
+                                fontSize: '10.5px',
+                                fontWeight: 'bold',
+                                borderRadius: '2px',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                boxShadow: '0 1px 2px rgba(37,99,235,0.2)'
+                              }}
+                              title="Clean and structure raw JD into professional sections with bullet points"
+                            >
+                              <span>✨ Auto-Format Structure</span>
+                            </button>
                           </div>
                           <textarea
                             rows={10}
@@ -5840,7 +5845,16 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                           }
 
                           const rawTitle = cleanJobTitleWithPositionNumber(job.title) || job.title || 'Consultant'
-                          const truncatedTitle = rawTitle.length > 34 ? rawTitle.slice(0, 32) + '..' : rawTitle
+                          let truncatedTitle = rawTitle
+                          if (rawTitle.length > 55) {
+                            const posMatch = rawTitle.match(/\(\d{5,8}\)/)
+                            if (posMatch) {
+                              const baseTitle = rawTitle.replace(/\s*\(\d{5,8}\)/, '')
+                              truncatedTitle = `${baseTitle.slice(0, 42)}.. ${posMatch[0]}`
+                            } else {
+                              truncatedTitle = rawTitle.slice(0, 52) + '..'
+                            }
+                          }
                           
                           const allSkills = Array.isArray(job.skills) ? job.skills.join(', ') : (job.skills || 'Troubleshooting, Project Management')
                           const truncatedSkills = allSkills.length > 12 ? allSkills.slice(0, 10) + '..' : allSkills

@@ -4,6 +4,7 @@ import CandidateMessengerWidget from '../components/CandidateMessengerWidget'
 import SmartHireBotWidget from '../components/SmartHireBotWidget'
 import { loginWithGoogle } from '../lib/firebase'
 import { saveCareerApplication, getAtsJobs } from '../lib/atsFirestore'
+import { formatJobDescription } from '../utils/formatJobDescription'
 
 export default function PublicCareers() {
   const navigate = useNavigate()
@@ -233,28 +234,11 @@ export default function PublicCareers() {
 
   const getFullDescriptionText = (job) => {
     if (!job) return ''
-    const raw = job.rawDescription || job.fullDescription || job.rawText || job.details || job.rawJd
-    if (raw && raw.length > 80) return raw
-
-    const reqSkills = Array.isArray(job.skills) && job.skills.length > 0
-      ? job.skills.join(', ')
-      : 'Technical expertise relevant to role'
-
-    const prefSkills = Array.isArray(job.preferredSkills) && job.preferredSkills.length > 0
-      ? job.preferredSkills.join(', ')
-      : Array.isArray(job.preferred_skills) && job.preferred_skills.length > 0
-      ? job.preferred_skills.join(', ')
-      : 'Cloud architecture (AWS/Azure), Agile delivery, CI/CD pipeline automation'
-
-    const expText = job.experience && job.experience !== 'TBD' && job.experience !== 'Any'
-      ? job.experience
-      : '3+ years of professional experience'
-
-    const locText = job.location || 'Remote, US'
-    const modeText = job.work_mode || job.workMode || job.type || 'Onsite'
-    const typeText = job.employment_type || job.employmentType || job.type || 'Contract'
-
-    return `📌 Position Overview:\nWe are seeking a qualified ${job.title} to join our engineering queue. This is a ${typeText} role operating in a ${modeText} environment.\n\n📍 Work Location: ${locText}\n⏳ Required Experience: ${expText}\n\n🛠️ Required Technical Skills:\n• ${reqSkills.split(', ').join('\n• ')}\n\n⭐ Preferred Skills & Qualifications:\n• ${prefSkills.split(', ').join('\n• ')}\n\n📋 Key Responsibilities & Deliverables:\n• Design, develop, and deliver technical solutions according to project specifications.\n• Collaborate with cross-functional technical leads, architects, and project stakeholders.\n• Perform code reviews, system troubleshooting, and performance optimization.`
+    const raw = job.rawDescription || job.fullDescription || job.rawText || job.details || job.rawJd || job.description
+    if (raw && typeof raw === 'string' && raw.length > 30) {
+      return formatJobDescription(raw, job)
+    }
+    return formatJobDescription('', job)
   }
 
   const formatExperience = (val) => {

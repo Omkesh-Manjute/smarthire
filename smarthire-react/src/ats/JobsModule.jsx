@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { saveAtsJob } from '../lib/atsFirestore'
+import { formatJobDescription } from '../utils/formatJobDescription'
 
 function JobsModule({
   jobsList = [], allCandidates = [], submissions = [],
@@ -169,32 +170,11 @@ function JobsModule({
 
   const getFullDescriptionText = (job) => {
     if (!job) return ''
-    const raw = job.rawDescription || job.fullDescription || job.rawText || job.details || job.rawJd
-    if (raw && raw.length > 80) return raw
-
-    if (job.description && job.description.length > 80 && !job.description.startsWith('Looking for a')) {
-      return job.description
+    const raw = job.rawDescription || job.fullDescription || job.rawText || job.details || job.rawJd || job.description
+    if (raw && typeof raw === 'string' && raw.length > 30) {
+      return formatJobDescription(raw, job)
     }
-
-    const reqSkills = Array.isArray(job.skills) && job.skills.length > 0
-      ? job.skills.join(', ')
-      : 'Technical expertise relevant to role'
-
-    const prefSkills = Array.isArray(job.preferredSkills) && job.preferredSkills.length > 0
-      ? job.preferredSkills.join(', ')
-      : Array.isArray(job.preferred_skills) && job.preferred_skills.length > 0
-      ? job.preferred_skills.join(', ')
-      : 'Cloud architecture (AWS/Azure), Agile delivery, CI/CD pipeline integration'
-
-    const expText = job.experience && job.experience !== 'TBD' && job.experience !== 'Any'
-      ? job.experience
-      : '3+ years of professional experience'
-
-    const locText = job.location || 'Remote, US'
-    const modeText = job.work_mode || job.workMode || job.type || 'Onsite'
-    const typeText = job.employment_type || job.employmentType || job.type || 'Contract'
-
-    return `📌 Position Overview:\nWe are recruiting for a ${job.title}. This is a ${typeText} position operating in a ${modeText} work model.\n\n📍 Location: ${locText}\n⏳ Required Experience: ${expText}\n\n🛠️ Required Technical Skills:\n• ${reqSkills.split(', ').join('\n• ')}\n\n⭐ Preferred Skills & Qualifications:\n• ${prefSkills.split(', ').join('\n• ')}\n\n📋 Key Responsibilities & Deliverables:\n• Perform end-to-end technical implementation, system analysis, and software development.\n• Collaborate closely with cross-functional technical teams, architects, and product leads.\n• Debug, troubleshoot, and optimize technical workflows and codebases.`
+    return formatJobDescription('', job)
   }
 
   // LinkedIn Post Text Generator (Matching exact recruiter template format)

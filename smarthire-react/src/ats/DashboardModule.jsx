@@ -1,33 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react'
+import { formatJobDescription } from '../utils/formatJobDescription'
 
 function getFullDescriptionText(job) {
   if (!job) return ''
-  const raw = job.rawDescription || job.fullDescription || job.rawText || job.details || job.rawJd
-  if (raw && raw.length > 50) return raw
-
-  if (job.description && job.description.length > 50 && !job.description.startsWith('Looking for a')) {
-    return job.description
+  const raw = job.rawDescription || job.fullDescription || job.rawText || job.details || job.rawJd || job.description
+  if (raw && typeof raw === 'string' && raw.length > 30) {
+    return formatJobDescription(raw, job)
   }
-
-  const reqSkills = Array.isArray(job.skills) && job.skills.length > 0
-    ? job.skills.join(', ')
-    : 'Technical leadership, architectural design, cloud deployments'
-
-  const prefSkills = Array.isArray(job.preferredSkills) && job.preferredSkills.length > 0
-    ? job.preferredSkills.join(', ')
-    : Array.isArray(job.preferred_skills) && job.preferred_skills.length > 0
-    ? job.preferred_skills.join(', ')
-    : 'PMP Certification, Bachelors Degree in IT Related Field, Agile / Scrum Delivery'
-
-  const expText = job.experience && job.experience !== 'TBD' && job.experience !== 'Any'
-    ? job.experience
-    : '5+ years'
-
-  const locText = job.location || 'Columbia, SC'
-  const modeText = job.work_mode || job.workMode || 'Hybrid'
-  const deadlineText = job.deadline || '08/28 at 5:00 PM EST'
-
-  return `Start date :${job.creationDate || '10/23/2026'}\nEnd Date   :${job.duration || '12 Months from projected start date'}\n\nSubmission deadline :${deadlineText}\n\nClient Info : ${job.client || 'ADMIN'}\n\nNote:\n* Interview Process: 1 round, Virtual/Online\n* Work Location: ${modeText} - schedule will be determined by the hiring manager after the start date.\n* Candidate Location: ${locText}\n\nRequired Skills & Experience:\n* Experience: ${expText}\n* Core Skills: ${reqSkills}\n* Certifications & Preferred: ${prefSkills}`
+  return formatJobDescription('', job)
 }
 
 function DashboardModule({
