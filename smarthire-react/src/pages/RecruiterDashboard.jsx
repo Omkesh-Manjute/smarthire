@@ -15,7 +15,9 @@ import {
   saveRequisitionCandidates,
   getRequisitionCandidates,
   saveTeamUsersFirestore,
-  getTeamUsersFirestore
+  getTeamUsersFirestore,
+  getAtsJobs,
+  deduplicateCandidates
 } from '../lib/atsFirestore'
 
 function getFullDescriptionText(job) {
@@ -116,40 +118,6 @@ function parseResumeDetails(text, filename = '') {
     jobTitle: jobTitle || 'Consultant',
     resumeTitle: filename ? filename.replace(/\.[^/.]+$/, '') : `${firstName || 'Candidate'}_Resume`,
   }
-}
-
-// ─── CANDIDATES STORE & DEDUPLICATION ───
-export const deduplicateCandidates = (list) => {
-  if (!Array.isArray(list)) return []
-  const seen = new Set()
-  const result = []
-
-  for (const c of list) {
-    if (!c) continue
-    const email = (c.email || c.extracted_profile?.email || '').toLowerCase().trim()
-    const name = (c.name || c.extracted_profile?.name || '').toLowerCase().trim().replace(/\s+/g, ' ')
-    const phone = String(c.phone || c.phoneCell || c.extracted_profile?.phone || '').replace(/\D/g, '')
-    const id = String(c.id || c.canId || c._id || '').trim()
-
-    const emailKey = email ? `email:${email}` : null
-    const namePhoneKey = (name && phone.length >= 7) ? `np:${name}_${phone}` : null
-    const nameKey = name ? `name:${name}` : null
-    const idKey = id ? `id:${id}` : null
-
-    if (emailKey && seen.has(emailKey)) continue
-    if (namePhoneKey && seen.has(namePhoneKey)) continue
-    if (!emailKey && !namePhoneKey && nameKey && seen.has(nameKey)) continue
-    if (!emailKey && !nameKey && idKey && seen.has(idKey)) continue
-
-    if (emailKey) seen.add(emailKey)
-    if (namePhoneKey) seen.add(namePhoneKey)
-    if (nameKey) seen.add(nameKey)
-    if (idKey) seen.add(idKey)
-
-    result.push(c)
-  }
-
-  return result
 }
 
 const legacyCandidateData = []
@@ -966,6 +934,56 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     } catch (e) {}
   }, [activeReqTab])
 
+  const processJobsList = useCallback((list) => {
+    if (!Array.isArray(list) || list.length === 0) return []
+
+    let savedJobsMap = {}
+    try {
+      const savedJobsRaw = localStorage.getItem('smarthire_saved_custom_jobs')
+      if (savedJobsRaw) savedJobsMap = JSON.parse(savedJobsRaw)
+    } catch (e) {}
+
+    return list.map(j => {
+      if (!j) return null
+      const rawId = String(j.id || '')
+      const cleanId = rawId.replace('J-', '')
+      const resolvedI = resolveReqId(j.id, j)
+      const customOverride = savedJobsMap[rawId] || savedJobsMap[`J-${cleanId}`] || savedJobsMap[cleanId] || savedJobsMap[resolvedI]
+      
+      let assigned = []
+      if (customOverride && Array.isArray(customOverride.assignedRecruiters) && customOverride.assignedRecruiters.length > 0) {
+        assigned = customOverride.assignedRecruiters
+      } else {
+        const localAssigned = getJobAssignedRecruiters(j.id) || getJobAssignedRecruiters(resolvedI)
+        if (localAssigned && localAssigned.length > 0) {
+          assigned = localAssigned
+        } else if (Array.isArray(j.assignedRecruiters) && j.assignedRecruiters.length > 0) {
+          assigned = j.assignedRecruiters
+        }
+      }
+
+      const finalTitle = cleanJobTitleWithPositionNumber(customOverride?.title || j.title, j)
+      const finalDesc = (customOverride?.description || j.description)
+        ? formatJobDescription(customOverride?.description || j.description, { ...j, title: finalTitle })
+        : getFullDescriptionText({ ...j, title: finalTitle })
+
+      const posNumMatch = finalTitle.match(/\((\d{5,7})\)/)
+      const posNum = j.positionNumber || (posNumMatch ? posNumMatch[1] : '')
+
+      return {
+        ...j,
+        ...(customOverride || {}),
+        id: resolvedI,
+        reqId: resolvedI,
+        title: finalTitle,
+        positionNumber: posNum,
+        description: finalDesc,
+        status: j.status || 'Open',
+        assignedRecruiters: assigned
+      }
+    }).filter(Boolean)
+  }, [])
+
   // Fetch jobs & merge persistent local custom assignments, and sync team roster
   useEffect(() => {
     const token = localStorage.getItem('smarthire_token') || ''
@@ -975,46 +993,20 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       .then(res => res.json())
       .then(data => {
         const list = Array.isArray(data) ? data : data.jobs || data.data || []
-        
-        let savedJobsMap = {}
-        try {
-          const savedJobsRaw = localStorage.getItem('smarthire_saved_custom_jobs')
-          if (savedJobsRaw) savedJobsMap = JSON.parse(savedJobsRaw)
-        } catch (e) {}
-
-        const mapped = list.map(j => {
-          const rawId = String(j.id || '')
-          const cleanId = rawId.replace('J-', '')
-          const customOverride = savedJobsMap[rawId] || savedJobsMap[`J-${cleanId}`] || savedJobsMap[cleanId]
-          
-          let assigned = []
-          if (customOverride && Array.isArray(customOverride.assignedRecruiters) && customOverride.assignedRecruiters.length > 0) {
-            assigned = customOverride.assignedRecruiters
-          } else {
-            const localAssigned = getJobAssignedRecruiters(j.id)
-            if (localAssigned && localAssigned.length > 0) {
-              assigned = localAssigned
-            } else if (Array.isArray(j.assignedRecruiters) && j.assignedRecruiters.length > 0) {
-              assigned = j.assignedRecruiters
-            }
-          }
-
-          const finalTitle = cleanJobTitleWithPositionNumber(customOverride?.title || j.title)
-          const finalDesc = (customOverride?.description || j.description)
-            ? formatJobDescription(customOverride?.description || j.description, { ...j, title: finalTitle })
-            : getFullDescriptionText({ ...j, title: finalTitle })
-
-          return {
-            ...j,
-            ...(customOverride || {}),
-            title: finalTitle,
-            description: finalDesc,
-            assignedRecruiters: assigned
-          }
-        })
-        setJobs(mapped)
+        if (list.length > 0) {
+          setJobs(processJobsList(list))
+        } else {
+          getAtsJobs().then(fsJobs => {
+            if (fsJobs && fsJobs.length > 0) setJobs(processJobsList(fsJobs))
+          }).catch(() => {})
+        }
       })
-      .catch(err => console.error('Failed to load jobs:', err))
+      .catch(err => {
+        console.warn('Backend /api/jobs notice, loading from Firestore...', err)
+        getAtsJobs().then(fsJobs => {
+          if (fsJobs && fsJobs.length > 0) setJobs(processJobsList(fsJobs))
+        }).catch(() => {})
+      })
 
     // Sync team members from backend server
     fetch('/api/admin/recruiters', { headers })
@@ -1748,12 +1740,13 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       const rawId = String(j.id || '').replace('J-', '').toLowerCase()
       const title = String(j.title || '').toLowerCase()
       const cleanTitle = cleanJobTitleWithPositionNumber(j.title, j).toLowerCase()
-      return resolved.includes(q) || rawId.includes(q) || title.includes(q) || cleanTitle.includes(q)
+      const posNum = String(j.positionNumber || '').toLowerCase()
+      return resolved.includes(q) || rawId.includes(q) || title.includes(q) || cleanTitle.includes(q) || posNum.includes(q)
     })
     if (match) {
       handleOpenReq(match)
     } else {
-      setReqFilters(prev => ({ ...prev, reqId: quickSearchId }))
+      setReqFilters(prev => ({ ...prev, reqId: quickSearchId, status: 'Select Status' }))
       setActiveMainTab('requisitions')
       setViewMode('portal')
       setCurrentPage(1)
@@ -2067,31 +2060,47 @@ We are currently reviewing candidate profiles and scheduling immediate interview
         const resolvedId = resolveReqId(j.id, j).toLowerCase()
         const rawId = String(j.id || '').replace('J-', '').toLowerCase()
         const titleStr = String(j.title || '').toLowerCase()
-        if (!resolvedId.includes(query) && !rawId.includes(query) && !titleStr.includes(query)) return false
+        const cleanTitle = cleanJobTitleWithPositionNumber(j.title, j).toLowerCase()
+        const posNum = String(j.positionNumber || '').toLowerCase()
+        if (!resolvedId.includes(query) && !rawId.includes(query) && !titleStr.includes(query) && !cleanTitle.includes(query) && !posNum.includes(query)) return false
       }
       if (reqFilters.title.trim()) {
         const titleQ = reqFilters.title.toLowerCase().trim()
         const cleanTitle = cleanJobTitleWithPositionNumber(j.title, j).toLowerCase()
         const rawTitle = (j.title || '').toLowerCase()
-        if (!cleanTitle.includes(titleQ) && !rawTitle.includes(titleQ)) return false
+        const posNum = String(j.positionNumber || '').toLowerCase()
+        const resolvedId = resolveReqId(j.id, j).toLowerCase()
+        const rawId = String(j.id || '').replace('J-', '').toLowerCase()
+        const client = String(j.client || j.customer || j.agency || '').toLowerCase()
+        if (!cleanTitle.includes(titleQ) && !rawTitle.includes(titleQ) && !posNum.includes(titleQ) && !resolvedId.includes(titleQ) && !rawId.includes(titleQ) && !client.includes(titleQ)) return false
       }
       if (reqFilters.skills.trim()) {
         const skillsStr = Array.isArray(j.skills) ? j.skills.join(' ').toLowerCase() : ''
-        if (!skillsStr.includes(reqFilters.skills.toLowerCase())) return false
+        const descStr = String(j.description || '').toLowerCase()
+        if (!skillsStr.includes(reqFilters.skills.toLowerCase()) && !descStr.includes(reqFilters.skills.toLowerCase())) return false
       }
       if (reqFilters.city.trim()) {
         const loc = (j.location || '').toLowerCase()
         if (!loc.includes(reqFilters.city.toLowerCase())) return false
       }
-      if (reqFilters.state !== 'Select State') {
+      if (reqFilters.state !== 'Select State' && reqFilters.state !== 'Select') {
         const loc = (j.location || '').toLowerCase()
         if (!loc.includes(reqFilters.state.toLowerCase())) return false
       }
-      if (reqFilters.status !== 'Select Status' && reqFilters.status !== 'All') {
-        const stat = (j.status || '').toLowerCase()
-        if (reqFilters.status === 'In-Progress' && stat !== 'active' && stat !== 'in-progress' && stat !== 'posted') return false
-        if (reqFilters.status === 'Ready' && stat !== 'ready') return false
-        if (reqFilters.status === 'Closed' && stat !== 'closed') return false
+      if (reqFilters.status !== 'Select Status' && reqFilters.status !== 'All' && reqFilters.status !== 'Any') {
+        const stat = (j.status || 'open').toLowerCase()
+        if (reqFilters.status === 'In-Progress') {
+          if (stat !== 'active' && stat !== 'in-progress' && stat !== 'posted' && stat !== 'open' && stat !== 'ready') return false
+        } else if (reqFilters.status === 'Ready') {
+          if (stat !== 'ready' && stat !== 'open' && stat !== 'active') return false
+        } else if (reqFilters.status === 'Closed') {
+          if (stat !== 'closed' && stat !== 'expired' && stat !== 'filled' && stat !== 'inactive') return false
+        }
+      }
+      if (reqFilters.endClient && reqFilters.endClient !== 'Any' && reqFilters.endClient !== 'All') {
+        const targetClient = reqFilters.endClient.toLowerCase().trim()
+        const client = String(j.client || j.customer || j.agency || '').toLowerCase()
+        if (!client.includes(targetClient)) return false
       }
       if (reqFilters.assignedTo && reqFilters.assignedTo !== 'Any' && reqFilters.assignedTo !== 'All') {
         const targetRec = reqFilters.assignedTo.toLowerCase().trim()
@@ -2101,7 +2110,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
           return false
         }
       }
-      if (reqFilters.reqType !== 'Select Req Type') {
+      if (reqFilters.reqType !== 'Select Req Type' && reqFilters.reqType !== 'Select') {
         const type = (j.type || '').toLowerCase()
         if (!type.includes(reqFilters.reqType.toLowerCase())) return false
       }

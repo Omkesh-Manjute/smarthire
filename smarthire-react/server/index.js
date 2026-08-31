@@ -603,22 +603,29 @@ async function loadJobsFromDisk() {
       const doc = await JobsDoc.findOne();
       if (doc && Array.isArray(doc.list) && doc.list.length > 0) {
         const map = new Map();
-        doc.list.forEach(j => {
-          if (j && (j.id || j.title)) {
-            const cleanT = cleanJobTitleWithPositionNumber(j.title, j);
-            const cleanI = resolveReqId(j.id, j);
-            map.set(cleanT || cleanI, { ...j, id: cleanI, reqId: cleanI, title: cleanT });
-          }
-        });
+        // Authentic JobsInHand disk jobs take precedence
         diskJobs.forEach(j => {
           if (j && (j.id || j.title)) {
             const cleanT = cleanJobTitleWithPositionNumber(j.title, j);
             const cleanI = resolveReqId(j.id, j);
-            map.set(cleanT || cleanI, { ...j, id: cleanI, reqId: cleanI, title: cleanT });
+            map.set(cleanI, { ...j, id: cleanI, reqId: cleanI, title: cleanT });
+          }
+        });
+        // Merge dynamically added jobs from MongoDB Atlas (discard legacy mock placeholders)
+        doc.list.forEach(j => {
+          if (j && (j.id || j.title)) {
+            const titleLower = String(j.title || '').toLowerCase();
+            const clientLower = String(j.client || '').toLowerCase();
+            if (titleLower.includes('sap hr') || clientLower.includes('acme') || titleLower.includes('nexa digital')) return;
+            const cleanT = cleanJobTitleWithPositionNumber(j.title, j);
+            const cleanI = resolveReqId(j.id, j);
+            if (!map.has(cleanI)) {
+              map.set(cleanI, { ...j, id: cleanI, reqId: cleanI, title: cleanT });
+            }
           }
         });
         jobsStore = Array.from(map.values());
-        console.log(`📂 Loaded ${jobsStore.length} job(s) from MongoDB Atlas with seed jobs.json.`);
+        console.log(`📂 Loaded ${jobsStore.length} job(s) from seed jobs.json & MongoDB Atlas.`);
         saveJobsToDisk();
         return;
       }
