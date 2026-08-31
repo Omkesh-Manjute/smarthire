@@ -5834,17 +5834,8 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                         </tr>
                       ) : (
                         paginatedJobs.map((job, idx) => {
-                          const rawId = String(job.reqId || job.id || '').replace('J-', '').trim()
-                          let displayReqId = rawId
-                          if (!/^\d{5,6}$/.test(rawId)) {
-                            if (job.reqId && /^\d{5,6}$/.test(String(job.reqId))) {
-                              displayReqId = String(job.reqId)
-                            } else if (job.sourceId && /^\d{5,6}$/.test(String(job.sourceId))) {
-                              displayReqId = String(job.sourceId)
-                            }
-                          }
-
-                          const rawTitle = cleanJobTitleWithPositionNumber(job.title) || job.title || 'Consultant'
+                          const displayReqId = resolveReqId(job.reqId || job.id, job)
+                          const rawTitle = cleanJobTitleWithPositionNumber(job.title, job) || job.title || 'Consultant'
                           let truncatedTitle = rawTitle
                           if (rawTitle.length > 55) {
                             const posMatch = rawTitle.match(/\(\d{5,8}\)/)

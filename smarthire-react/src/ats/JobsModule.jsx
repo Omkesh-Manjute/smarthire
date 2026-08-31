@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { saveAtsJob } from '../lib/atsFirestore'
-import { formatJobDescription, resolveJobLocation } from '../utils/formatJobDescription'
+import { formatJobDescription, resolveJobLocation, cleanJobTitleWithPositionNumber, resolveReqId } from '../utils/formatJobDescription'
 
 function JobsModule({
   jobsList = [], allCandidates = [], submissions = [],
@@ -591,13 +591,8 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
               </tr>
             ) : (
               filteredJobs.map((job) => {
-                const rawId = String(job.id || '').replace('J-', '').trim()
-                let displayReqId = rawId
-                if (!/^\d{5,6}$/.test(rawId)) {
-                  let hash = 0
-                  for (let i = 0; i < rawId.length; i++) hash = (hash * 31 + rawId.charCodeAt(i)) % 900
-                  displayReqId = `158${100 + hash}`
-                }
+                const displayReqId = resolveReqId(job.reqId || job.id, job)
+                const cleanTitle = cleanJobTitleWithPositionNumber(job.title, job) || job.title
                 const workMode = job.work_mode || job.workMode || job.type || 'Onsite'
                 const candidateCount = getJobCandidateCount(job.id)
                 const locationText = resolveJobLocation(job)
@@ -612,7 +607,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
                     </td>
                     <td style={{ padding: '5px 6px', color: '#0033cc', fontWeight: 'bold', maxWidth: '200px' }}>
                       <span onClick={() => setJdModalJob(job)} style={{ cursor: 'pointer', textDecoration: 'underline' }}>
-                        {job.title}
+                        {cleanTitle}
                       </span>
                     </td>
                     <td style={{ padding: '5px 6px', color: '#000000', whiteSpace: 'nowrap' }}>

@@ -456,6 +456,12 @@ export default function PublicCareers() {
     return qMatch
   })
 
+  const activeOpenJobs = jobs.filter(j => !isJobExpired(j))
+  const todayDeadlineCount = activeOpenJobs.filter(j => isDeadlineToday(j.deadline)).length
+  const remoteCount = activeOpenJobs.filter(j => (j.location || j.work_mode || '').toLowerCase().includes('remote')).length
+  const hybridCount = activeOpenJobs.filter(j => (j.location || j.work_mode || '').toLowerCase().includes('hybrid')).length
+  const onsiteCount = activeOpenJobs.filter(j => (j.location || j.work_mode || '').toLowerCase().includes('onsite') || (j.location || j.work_mode || '').toLowerCase().includes('on site')).length
+
   const handleApplySubmit = async (e) => {
     e.preventDefault()
     let validName = candidateName.trim()
