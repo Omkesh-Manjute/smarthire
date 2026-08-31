@@ -477,7 +477,18 @@ export default function CandidateDetailViewModal({
       localStorage.setItem(`smarthire_candidate_projects_${cleanCandId}`, JSON.stringify(projectsList))
     } catch(e) {}
 
-    // Save to backend database
+    // Save to Firebase Firestore (Guaranteed Cloud Persistence)
+    saveCandidate(cleanCandId, {
+      ...updatedObj,
+      legalDocs: documents,
+      skills: skillsList,
+      references,
+      notes: interactionNotes,
+      projects: projectsList,
+      resumeUrl: documents.resume?.storageUrl || ''
+    }).catch(fErr => console.warn('Firebase saveCandidate error:', fErr))
+
+    // Optional: Call backend database if active
     try {
       fetch('/api/candidates', {
         method: 'POST',
