@@ -1511,8 +1511,9 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     const jLocation = (jobObj.location || '').toLowerCase()
     const jCleanId = String(jobObj.id || '158938').replace('J-', '')
 
-    // Score candidates from the master candidate pool
-    const scored = candidates.map(cand => {
+    // Score candidates from the candidate pool (scoped to current user if employee)
+    const poolToScore = isEmployee ? filteredCandidates : candidates
+    const scored = poolToScore.map(cand => {
       const cSkills = Array.isArray(cand.skills)
         ? cand.skills.map(s => String(s).toLowerCase().trim())
         : String(cand.skills || '').toLowerCase().split(',').map(s => s.trim())
@@ -3035,17 +3036,38 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                     </select>
 
                     <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Assigned To:</label>
-                    <select value={searchCandFilter.assignedTo} onChange={e => setSearchCandFilter({ ...searchCandFilter, assignedTo: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
-                      <option>Any</option>
-                      <option>{userName}</option>
-                      <option>Vaibhav Bisen</option>
+                    <select
+                      value={isEmployee ? userName : searchCandFilter.assignedTo}
+                      disabled={isEmployee}
+                      onChange={e => setSearchCandFilter({ ...searchCandFilter, assignedTo: e.target.value })}
+                      style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1', background: isEmployee ? '#f1f5f9' : '#ffffff' }}
+                    >
+                      {isEmployee ? (
+                        <option value={userName}>{userName} (Me)</option>
+                      ) : (
+                        <>
+                          <option value="Any">Any</option>
+                          <option>{userName}</option>
+                          <option>Vaibhav Bisen</option>
+                        </>
+                      )}
                     </select>
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
                     <button
                       type="button"
-                      onClick={() => alert(`Found ${candidates.length} candidate(s) in system.`)}
+                      onClick={() => {
+                        const targetList = isEmployee ? filteredCandidates : candidates
+                        const count = targetList.filter(c => {
+                          if (searchCandFilter.name && !c.name?.toLowerCase().includes(searchCandFilter.name.toLowerCase())) return false
+                          if (searchCandFilter.email && !c.email?.toLowerCase().includes(searchCandFilter.email.toLowerCase())) return false
+                          if (searchCandFilter.skills && !c.skills?.some?.(s => s.toLowerCase().includes(searchCandFilter.skills.toLowerCase()))) return false
+                          if (searchCandFilter.city && !c.city?.toLowerCase().includes(searchCandFilter.city.toLowerCase())) return false
+                          return true
+                        }).length
+                        alert(`Found ${count} matching candidate(s) in ${isEmployee ? 'your directory' : 'the system'}.`)
+                      }}
                       style={{ background: '#f1f5f9', border: '1px solid #94a3b8', padding: '3px 14px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer' }}
                     >
                       Search
@@ -3053,16 +3075,27 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                   </div>
 
                   <div style={{ marginTop: '14px', borderTop: '1px solid #e2e8f0', paddingTop: '10px' }}>
-                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569', marginBottom: '6px' }}>Existing Candidates in Pool:</div>
+                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569', marginBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>{isEmployee ? `📁 My Candidates in Directory (${filteredCandidates.length}):` : 'Existing Candidates in Pool:'}</span>
+                      {isEmployee && <span style={{ fontSize: '9.5px', color: '#16a34a', fontWeight: 'bold' }}>🔒 Private to you</span>}
+                    </div>
                     <div style={{ maxHeight: '110px', overflowY: 'auto', fontSize: '11px' }}>
-                      {candidates.slice(0, 4).map(c => (
-                        <div key={c.id || c.name} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 6px', borderBottom: '1px solid #f1f5f9' }}>
-                          <span><strong>{c.name}</strong> ({c.role || 'Consultant'})</span>
-                          <span onClick={() => handleSelectExistingCandidate(c)} style={{ color: '#0066cc', textDecoration: 'underline', cursor: 'pointer', fontWeight: 'bold' }}>
-                            Select &gt;&gt;
-                          </span>
+                      {filteredCandidates.length === 0 ? (
+                        <div style={{ color: '#64748b', fontStyle: 'italic', padding: '8px 0', fontSize: '10.5px' }}>
+                          {isEmployee
+                            ? 'No candidates in your directory yet. Use the form on the right to add and parse your candidate.'
+                            : 'No candidates available in pool.'}
                         </div>
-                      ))}
+                      ) : (
+                        filteredCandidates.slice(0, 6).map(c => (
+                          <div key={c.id || c.name} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 6px', borderBottom: '1px solid #f1f5f9', alignItems: 'center' }}>
+                            <span><strong>{c.name}</strong> <span style={{ color: '#64748b', fontSize: '10.5px' }}>({c.role || 'Consultant'})</span></span>
+                            <span onClick={() => handleSelectExistingCandidate(c)} style={{ color: '#0066cc', textDecoration: 'underline', cursor: 'pointer', fontWeight: 'bold' }}>
+                              Select &gt;&gt;
+                            </span>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 </div>
