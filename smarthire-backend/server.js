@@ -13,6 +13,7 @@ import verificationRoutes from './routes/verification.js';
 import userRoutes from './routes/users.js';
 import linkedinPostsRoutes from './routes/linkedin_posts.js';
 import messageRoutes from './routes/messages.js';
+import atsDocsRoutes from './routes/ats_docs.js';
 
 // Load environment variables
 dotenv.config();
@@ -83,6 +84,7 @@ app.use('/api/verification', verificationRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/linkedin-posts', linkedinPostsRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/ats', atsDocsRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

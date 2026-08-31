@@ -477,38 +477,32 @@ export default function CandidateDetailViewModal({
     setIsSavingDocs(true)
     setToastMsg('⏳ Saving documents to database...')
 
-    // Always save to localStorage first as a backup
+    // Always save to localStorage first as a guaranteed local backup
     try {
       localStorage.setItem(`smarthire_candidate_docs_${cleanCandId}`, JSON.stringify(documents))
       localStorage.setItem(`smarthire_candidate_docs_${candidate.id}`, JSON.stringify(documents))
     } catch(e) {}
 
-    // Try to save to backend database
-    const candidateDbId = candidate._id || candidate.mongoId || candidate.dbId || null
-
-    if (!candidateDbId) {
-      // No DB id — save only to localStorage (fallback for local-only candidates)
-      setTimeout(() => {
-        setIsSavingDocs(false)
-        setToastMsg('✅ Documents saved locally! (No database ID found — connect to MongoDB to enable cloud save)')
-        setTimeout(() => setToastMsg(null), 4000)
-      }, 400)
-      return
-    }
-
     try {
-      // Get auth token from localStorage if available
-      const token = localStorage.getItem('smarthire_auth_token') || 
-                    localStorage.getItem('token') || 
+      // Get auth token — try all known storage keys
+      const token = localStorage.getItem('smarthire_token') ||
+                    localStorage.getItem('smarthire_auth_token') ||
+                    localStorage.getItem('token') ||
                     localStorage.getItem('authToken') || ''
 
-      const res = await fetch(`/api/candidates/${candidateDbId}/documents`, {
+      // Use /api/ats/documents — works with local canId, no MongoDB _id required
+      const res = await fetch('/api/ats/documents', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
-        body: JSON.stringify({ legalDocs: documents })
+        body: JSON.stringify({
+          canId: cleanCandId,
+          email: formData.email || candidate.email || '',
+          candidateName: `${formData.firstName} ${formData.lastName}`.trim() || candidate.name || '',
+          legalDocs: documents
+        })
       })
 
       const json = await res.json()
@@ -516,10 +510,12 @@ export default function CandidateDetailViewModal({
       if (res.ok && json.success) {
         setToastMsg('✅ Documents saved to database successfully!')
       } else {
-        setToastMsg(`⚠️ Saved locally. DB error: ${json.message || 'Unknown error'}`)
+        // API returned error but localStorage is already saved
+        setToastMsg(`✅ Saved locally. Server: ${json.message || 'Could not reach database'}`)
       }
     } catch(err) {
-      setToastMsg('✅ Documents saved locally! (Database unavailable — will sync when online)')
+      // Network error — localStorage backup is already saved
+      setToastMsg('✅ Documents saved locally! (Server unavailable — will sync when online)')
     } finally {
       setIsSavingDocs(false)
       setTimeout(() => setToastMsg(null), 4000)
