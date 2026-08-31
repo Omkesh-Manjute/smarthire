@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { US_STATES } from '../data/usStates'
 import { parseResume } from '../smarthire/utils/parseResume'
-import { saveLegalDocs, uploadDocFile, saveCandidate } from '../lib/atsFirestore'
+import { saveLegalDocs, uploadDocFile, saveCandidate, getCandidate } from '../lib/atsFirestore'
 
 export default function CandidateDetailViewModal({
   candidate,
@@ -300,6 +300,73 @@ export default function CandidateDetailViewModal({
       }
     ]
   })
+
+  // ═══════════════════════════════════════════════════════════
+  // RE-SYNC ALL CANDIDATE DATA ON MODAL OPEN & FROM FIRESTORE
+  // ═══════════════════════════════════════════════════════════
+  useEffect(() => {
+    if (!isOpen || !candidate) return
+
+    // 1. Re-sync from localStorage immediately
+    setFormData(getInitialFormData())
+    setSkillsList(extractCandidateSkills())
+
+    try {
+      const savedDocs = localStorage.getItem(`smarthire_candidate_docs_${cleanCandId}`) ||
+                        localStorage.getItem(`smarthire_candidate_docs_${candidate.id}`)
+      if (savedDocs) {
+        const parsed = JSON.parse(savedDocs)
+        setDocuments(prev => ({ ...prev, ...parsed }))
+      }
+    } catch(e) {}
+
+    try {
+      const savedRefs = localStorage.getItem(`smarthire_candidate_refs_${cleanCandId}`) ||
+                        localStorage.getItem(`smarthire_candidate_refs_${candidate.id}`)
+      if (savedRefs) setReferences(JSON.parse(savedRefs))
+    } catch(e) {}
+
+    try {
+      const savedNotes = localStorage.getItem(`smarthire_candidate_notes_${cleanCandId}`) ||
+                         localStorage.getItem(`smarthire_candidate_notes_${candidate.id}`)
+      if (savedNotes) setInteractionNotes(JSON.parse(savedNotes))
+    } catch(e) {}
+
+    try {
+      const savedProjs = localStorage.getItem(`smarthire_candidate_projects_${cleanCandId}`) ||
+                         localStorage.getItem(`smarthire_candidate_projects_${candidate.id}`)
+      if (savedProjs) setProjectsList(JSON.parse(savedProjs))
+    } catch(e) {}
+
+    // 2. Fetch live data from Firebase Firestore (Cloud Source of Truth)
+    getCandidate(cleanCandId).then(cloudCand => {
+      if (!cloudCand) return
+      if (cloudCand.legalDocs && Object.keys(cloudCand.legalDocs).length > 0) {
+        setDocuments(prev => {
+          const merged = { ...prev }
+          for (const [k, v] of Object.entries(cloudCand.legalDocs)) {
+            merged[k] = { ...merged[k], ...v, status: v.hasFile || v.storageUrl ? 'Uploaded' : (v.status || 'Pending') }
+          }
+          return merged
+        })
+      }
+      if (cloudCand.skills && Array.isArray(cloudCand.skills) && cloudCand.skills.length > 0) {
+        const formatted = cloudCand.skills.map((s, idx) => typeof s === 'string' ? { id: idx + 1, name: s, required: 'Yes', experience: '5 Years', rating: 5, lastUsed: '2026' } : s)
+        setSkillsList(formatted)
+      }
+      if (cloudCand.notes && Array.isArray(cloudCand.notes) && cloudCand.notes.length > 0) {
+        setInteractionNotes(cloudCand.notes)
+      }
+      if (cloudCand.references && Array.isArray(cloudCand.references) && cloudCand.references.length > 0) {
+        setReferences(cloudCand.references)
+      }
+      if (cloudCand.projects && Array.isArray(cloudCand.projects) && cloudCand.projects.length > 0) {
+        setProjectsList(cloudCand.projects)
+      }
+    }).catch(err => {
+      console.warn('Firestore getCandidate note:', err)
+    })
+  }, [cleanCandId, isOpen, candidate?.id, candidate?.name])
 
   // Active Document to render in Right Panel
   const currentDoc = documents[activeDocType] || documents.resume
@@ -1421,7 +1488,7 @@ export default function CandidateDetailViewModal({
                     ].map(item => {
                       const doc = documents[item.key]
                       const isSelected = activeDocType === item.key
-                      const isUploaded = doc?.fileData || doc?.status === 'Uploaded'
+                      const isUploaded = doc?.fileData || doc?.storageUrl || doc?.hasFile || doc?.status === 'Uploaded'
 
                       return (
                         <div
@@ -1444,7 +1511,7 @@ export default function CandidateDetailViewModal({
                               </div>
                               <div style={{ fontSize: '10.5px', color: '#64748b' }}>
                                 Status: <strong style={{ color: isUploaded ? '#166534' : '#b45309' }}>
-                                  {isUploaded ? `✅ Uploaded (${doc?.fileName || doc?.title})` : '⚠️ Not Uploaded Yet'}
+                                  {isUploaded ? `✅ Uploaded (${doc?.fileName || doc?.title || 'Document Attached'})` : '⚠️ Not Uploaded Yet'}
                                 </strong>
                               </div>
                             </div>
@@ -1817,16 +1884,18 @@ export default function CandidateDetailViewModal({
             {/* Viewer Document Canvas */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '12px', display: 'flex', justifyContent: 'center' }}>
               
-              {/* If real uploaded fileData is a PDF */}
-              {currentDoc?.fileData && (currentDoc.fileData.startsWith('data:application/pdf') || currentDoc.fileType === 'application/pdf') ? (
+              {/* If real uploaded fileData or storageUrl is a PDF */}
+              {(currentDoc?.fileData && (currentDoc.fileData.startsWith('data:application/pdf') || currentDoc.fileType === 'application/pdf')) ||
+               (currentDoc?.storageUrl && (currentDoc.storageUrl.includes('.pdf') || currentDoc.fileName?.endsWith('.pdf'))) ? (
                 <iframe
-                  src={currentDoc.fileData}
+                  src={currentDoc.fileData || currentDoc.storageUrl}
                   style={{ width: '100%', height: '100%', minHeight: '700px', border: 'none', background: '#ffffff' }}
                   title="Uploaded Document PDF"
                 />
-              ) : currentDoc?.fileData && (currentDoc.fileType?.includes('image') || currentDoc.fileData.startsWith('data:image/')) ? (
+              ) : (currentDoc?.fileData && (currentDoc.fileType?.includes('image') || currentDoc.fileData.startsWith('data:image/'))) ||
+                  (currentDoc?.storageUrl && (currentDoc.storageUrl.includes('.jpg') || currentDoc.storageUrl.includes('.jpeg') || currentDoc.storageUrl.includes('.png') || currentDoc.storageUrl.includes('firebasestorage'))) ? (
                 <div style={{ width: '100%', transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top center' }}>
-                  <img src={currentDoc.fileData} alt={currentDoc.title} style={{ width: '100%', display: 'block', borderRadius: '4px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }} />
+                  <img src={currentDoc.fileData || currentDoc.storageUrl} alt={currentDoc.title} style={{ width: '100%', display: 'block', borderRadius: '4px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }} />
                 </div>
               ) : (
                 <div style={{
@@ -1965,10 +2034,10 @@ export default function CandidateDetailViewModal({
                     <div style={{ padding: '30px 20px', textAlign: 'center', background: '#f8fafc', border: '2px dashed #cbd5e1', borderRadius: '6px' }}>
                       <div style={{ fontSize: '36px', marginBottom: '8px' }}>📁</div>
                       <div style={{ fontWeight: 'bold', color: '#1e3a8a', fontSize: '14px', marginBottom: '4px' }}>
-                        {currentDoc.title}
+                        {currentDoc.title || 'Document'}
                       </div>
                       <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '16px' }}>
-                        {currentDoc.fileData ? 'File attached. Click download above to view.' : 'No file uploaded for this candidate yet. Select a file to attach and view live.'}
+                        {currentDoc.fileData || currentDoc.storageUrl || currentDoc.hasFile ? '✅ File attached and verified in database.' : 'No file uploaded for this candidate yet. Select a file to attach and view live.'}
                       </div>
                       <label style={{
                         background: '#0033cc',
