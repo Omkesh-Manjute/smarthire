@@ -3146,9 +3146,9 @@ app.get('/api/jobs', (_req, res) => {
   jobsStore.forEach(job => {
     if (!job) return;
     const cleanT = cleanJobTitleWithPositionNumber(job.title, job);
-    const cleanI = resolveReqId(job.id, job);
+    const cleanI = resolveReqId(job.id || job.reqId || job.title, job);
     const pNum = job.positionNumber || extractPositionNumber(cleanT, job.description);
-    const dedupeKey = pNum ? `pos_${pNum}` : `req_${cleanI}`;
+    const dedupeKey = `req_${cleanI}`;
     if (!uniqueMap.has(dedupeKey)) {
       uniqueMap.set(dedupeKey, {
         ...job,
@@ -3163,11 +3163,9 @@ app.get('/api/jobs', (_req, res) => {
   const sanitized = Array.from(uniqueMap.values());
 
   const sorted = [...sanitized].sort((a, b) => {
-    const aMatch = String(a.id).match(/\d+/);
-    const bMatch = String(b.id).match(/\d+/);
-    const timeA = aMatch ? parseInt(aMatch[0], 10) : 0;
-    const timeB = bMatch ? parseInt(bMatch[0], 10) : 0;
-    return timeB - timeA;
+    const aNum = parseInt(String(a.reqId || a.id).replace(/\D/g, ''), 10) || 0;
+    const bNum = parseInt(String(b.reqId || b.id).replace(/\D/g, ''), 10) || 0;
+    return bNum - aNum;
   });
   res.json({
     success: true,

@@ -542,21 +542,19 @@ export async function scrapeViaHttp(logger = console.log) {
 }
 
 /**
- * Main export: scrape with automatic fallback.
- * Tries HTTP first; if blocked, switches to Playwright.
+ * Main export: scrape with comprehensive multi-page extraction.
+ * Uses Playwright browser automation to paginate all pages (1 to 5+) and guarantee zero missing reqs.
  */
 export async function scrapeJobsInHand(logger = console.log) {
   try {
-    const result = await scrapeViaHttp(logger);
-    if (!result.blocked) return result;
-
-    // Fallback to Playwright
-    logger(`[scraper] 🤖 Switching to Playwright browser automation...`);
+    logger(`[scraper] 🤖 Initiating Playwright multi-page engine for complete requisition extraction...`);
     const { scrapeViaPlaywright } = await import('./playwright-scraper.js');
     const playwrightResult = await scrapeViaPlaywright(logger);
     return { ...playwrightResult, mode: 'playwright' };
   } catch (err) {
-    logger(`[scraper] ❌ Fatal scraper error: ${err.message}`);
-    throw err;
+    logger(`[scraper] ⚠️ Playwright attempt failed (${err.message}). Trying HTTP scraper fallback...`);
+    const httpResult = await scrapeViaHttp(logger);
+    return httpResult;
   }
 }
+

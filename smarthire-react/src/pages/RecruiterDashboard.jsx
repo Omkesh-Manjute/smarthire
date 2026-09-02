@@ -985,13 +985,13 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
     const uniqueMap = new Map()
     processed.forEach(j => {
-      const posKey = j.positionNumber ? `pos_${j.positionNumber}` : `req_${j.reqId || j.id}`
-      if (!uniqueMap.has(posKey)) {
-        uniqueMap.set(posKey, j)
+      const key = `req_${j.reqId || j.id}`
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, j)
       }
     })
 
-    // Sort strictly newest/highest serial number at the TOP (159005, 159004, 159003, ...)
+    // Sort strictly newest/highest serial number at the TOP (159021, 159020, 159019, 159016, 159015, ...)
     return Array.from(uniqueMap.values()).sort((a, b) => {
       const aNum = parseInt(String(a.reqId || a.id).replace(/\D/g, ''), 10) || 0
       const bNum = parseInt(String(b.reqId || b.id).replace(/\D/g, ''), 10) || 0

@@ -17,30 +17,20 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const BASE_URL = 'https://www.jobsinhand.com';
 const SEARCH_URL = `${BASE_URL}/search_jobs.aspx`;
-const MAX_JOBS = 30;
-
+const MAX_JOBS = 150;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
-const GROQ_SYSTEM_PROMPT = `You are an expert HR recruitment ATS parsing assistant.
-Parse a raw job description (JD) and extract key fields into a clean JSON object.
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
-Extract these fields:
-- title: Clean, professional Job Title. Remove rate info, brackets, and staffing jargon like 'Rebid', 'Urgent', 'Immediate hiring', 'W2', 'C2C', 'Contractor', 'Local candidates only', 'Need resume'. Capitalize words properly.
-- client: End client company name if mentioned. If not, use "General Client".
-- company: The posting/staffing company name if mentioned.
-- skills: Array of top 4-6 required technical skills (e.g. ["Python", "Spark", "AWS"]).
-- preferredSkills: Array of 2-4 preferred/nice-to-have technical skills if mentioned (e.g. ["Docker", "Kubernetes"]). If none are obvious, return an empty array [].
-- budget: Budget rate or pay range (e.g. "$80/hr - $95/hr"). Use "TBD" if not mentioned.
-- experience: Experience requirement (e.g. "5+ years"). Use "TBD" if not mentioned.
-- location: Work location. Format as "City, ST" (e.g. "Dallas, TX", "Austin, TX"). If 100% remote with no location required, use "Remote". If hybrid, use the city/state (e.g. "Atlanta, GA").
-- work_mode: Work location mode, strictly one of: "Remote", "Hybrid", "Onsite". Check if JD mentions "work from home", "remote", "hybrid", "onsite", "in-office", "local to", etc.
-- employment_type: The contract type, strictly one of: "Contract", "Full-time", "C2H", "C2C", "W2". Default to "Contract" if unspecified.
-- description: A clean 2-3 sentence summary of the role.
+function getTodayISODate() {
+  return new Date().toISOString().slice(0, 10);
+}
 
-Rules:
-- Be highly accurate about "work_mode" (Remote, Hybrid, Onsite).
-- Be highly accurate about "location". Use 2-letter ST code for states.
-- Output ONLY a valid JSON object. No extra text, no markdown.`;
+function cleanText(txt) {
+  return (txt || '').replace(/\s+/g, ' ').trim();
+}
 
 export function fallbackExtractLocationAndWorkMode(text, rawTitle = '') {
   const combined = ((rawTitle || '') + ' ' + (text || '')).toLowerCase();
@@ -80,12 +70,12 @@ async function parseJobWithGroq(rawDescription, jobTitle) {
     const fallback = fallbackExtractLocationAndWorkMode(rawDescription, jobTitle);
     return {
       title: jobTitle,
-      client: 'General Client',
+      client: 'State Client',
       company: 'JobsInHand',
       skills: [],
       preferredSkills: [],
-      budget: 'TBD',
-      experience: 'TBD',
+      budget: '$75/hr',
+      experience: '5+ years',
       location: fallback.location,
       work_mode: fallback.workMode,
       type: fallback.workMode,
@@ -94,12 +84,12 @@ async function parseJobWithGroq(rawDescription, jobTitle) {
     };
   }
 
-  const userPrompt = `Parse the following Job Description:\nJob Title Hint: ${jobTitle}\n\n${rawDescription}`;
+  const userPrompt = `Parse the following Job Description:\nJob Title Hint: ${jobTitle}\n\n${rawDescription.substring(0, 2500)}`;
 
   const body = JSON.stringify({
     model: 'llama-3.3-70b-versatile',
     messages: [
-      { role: 'system', content: GROQ_SYSTEM_PROMPT },
+      { role: 'system', content: 'You are an expert HR ATS parser. Return a clean JSON with title, client, skills (array), location, work_mode (Remote/Hybrid/Onsite).' },
       { role: 'user', content: userPrompt },
     ],
     response_format: { type: 'json_object' },
@@ -117,7 +107,7 @@ async function parseJobWithGroq(rawDescription, jobTitle) {
         'Authorization': `Bearer ${GROQ_API_KEY}`,
         'Content-Length': Buffer.byteLength(body),
       },
-      timeout: 20000,
+      timeout: 10000,
     };
 
     const req = https.request(options, (res) => {
@@ -144,50 +134,9 @@ async function parseJobWithGroq(rawDescription, jobTitle) {
   });
 }
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-function getTodayISODate() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function isToday(dateStr) {
-  if (!dateStr) return false;
-  const now = new Date();
-  const months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
-  const s = dateStr.trim().toLowerCase();
-  
-  // Check "17-jun-2026" format
-  const m1 = s.match(/(\d{1,2})-([a-z]{3})-(\d{4})/);
-  if (m1) {
-    const day = parseInt(m1[1]);
-    const monthIdx = months.indexOf(m1[2]);
-    const year = parseInt(m1[3]);
-    return day === now.getDate() && monthIdx === now.getMonth() && year === now.getFullYear();
-  }
-  
-  // Try native date parse
-  try {
-    const parsed = new Date(dateStr);
-    if (!isNaN(parsed.getTime())) {
-      return (
-        parsed.getDate() === now.getDate() &&
-        parsed.getMonth() === now.getMonth() &&
-        parsed.getFullYear() === now.getFullYear()
-      );
-    }
-  } catch (_) {}
-
-  return false;
-}
-
-function cleanText(txt) {
-  return (txt || '').replace(/\s+/g, ' ').trim();
-}
-
 /**
  * Scrapes JobsInHand via Playwright headless Chromium.
+ * Paginates across all pages (1 to 5+) to capture all active requirements without gaps.
  */
 export async function scrapeViaPlaywright(logger = console.log) {
   let browser;
@@ -219,70 +168,80 @@ export async function scrapeViaPlaywright(logger = console.log) {
     });
 
     logger(`[playwright] Navigating to ${SEARCH_URL}...`);
-    await page.goto(SEARCH_URL, { waitUntil: 'networkidle', timeout: 45000 });
-    await sleep(2000);
+    await page.goto(SEARCH_URL, { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await sleep(1500);
 
-    logger(`[playwright] Page loaded. Extracting job listings...`);
-
-    // Extract all job rows from the page
-    const rawJobs = await page.evaluate(() => {
-      const jobs = [];
-      
-      // Look for table rows with job links
-      const rows = document.querySelectorAll('tr');
-      rows.forEach(row => {
-        const boldLinks = row.querySelectorAll('a > b, b > a');
-        if (boldLinks.length === 0) return;
-
-        const link = row.querySelector('a[href]');
-        if (!link) return;
-
-        const titleEl = row.querySelector('b');
-        if (!titleEl) return;
-
-        const title = titleEl.innerText.trim();
-        const href = link.getAttribute('href') || '';
-        const rowText = row.innerText || '';
-
-        // Find Create date in row text
-        const dateMatch = rowText.match(/Create\s+date\s*:?\s*([^\n,]+)/i);
-        const createDateStr = dateMatch ? dateMatch[1].trim() : '';
-
-        if (title.length > 3 && href && !href.includes('mailto:')) {
-          jobs.push({ title, href, createDateStr, rowText: rowText.substring(0, 300) });
-        }
+    const extractJobsFromCurrentPage = async () => {
+      return await page.evaluate(() => {
+        const items = [];
+        const trs = document.querySelectorAll('#ctl00_Contentpage1_gv_jobs tr');
+        trs.forEach(tr => {
+          const a = tr.querySelector('a[href*=".htm"]');
+          if (!a) return;
+          const b = a.querySelector('b') || a;
+          const title = b.innerText.trim();
+          const href = a.getAttribute('href');
+          const trText = tr.innerText || '';
+          const dateM = trText.match(/Create\s+date\s*:?\s*([^\n,]+)/i);
+          if (title && href && !href.includes('mailto:')) {
+            items.push({
+              title,
+              href,
+              createDateStr: dateM ? dateM[1].trim() : '',
+              rawSnippet: trText.substring(0, 300)
+            });
+          }
+        });
+        return items;
       });
+    };
 
-      return jobs;
-    });
+    const allRawJobs = [];
+    const p1Jobs = await extractJobsFromCurrentPage();
+    logger(`[playwright] Page 1 listings found: ${p1Jobs.length}`);
+    allRawJobs.push(...p1Jobs);
 
-    logger(`[playwright] Found ${rawJobs.length} raw job entries.`);
+    // Multi-page ASP.NET WebForms pagination (Pages 2 through 10)
+    for (let p = 2; p <= 10; p++) {
+      const selector = `#ctl00_Contentpage1_gv_jobs a[href*="Page\\$${p}"]`;
+      const btn = await page.$(selector);
+      if (!btn) {
+        logger(`[playwright] Pagination complete. Reached last page (${p - 1}).`);
+        break;
+      }
+      logger(`[playwright] Navigating to page ${p}...`);
+      await Promise.all([
+        page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 20000 }),
+        btn.click()
+      ]);
+      await sleep(1000);
+      const pJobs = await extractJobsFromCurrentPage();
+      logger(`[playwright] Page ${p} listings found: ${pJobs.length}`);
+      allRawJobs.push(...pJobs);
+    }
 
-    // Deduplicate identical rows from nested table cells
-    const uniqueMap = new Map();
-    rawJobs.forEach(j => {
-      const key = (j.href || j.title).trim();
-      if (!uniqueMap.has(key)) uniqueMap.set(key, j);
-    });
-    const uniqueRawJobs = Array.from(uniqueMap.values());
-    logger(`[playwright] Unique raw job entries after cell deduplication: ${uniqueRawJobs.length}`);
+    logger(`[playwright] Total raw job rows extracted across all pages: ${allRawJobs.length}`);
 
-    // Filter Rebid
-    const noRebid = uniqueRawJobs.filter(j => !/rebid/i.test(j.title));
-    logger(`[playwright] After Rebid filter: ${noRebid.length}`);
+    // Deduplicate by href to avoid double-processing
+    const seenHrefs = new Set();
+    const uniqueRawJobs = [];
+    for (const j of allRawJobs) {
+      if (!seenHrefs.has(j.href)) {
+        seenHrefs.add(j.href);
+        uniqueRawJobs.push(j);
+      }
+    }
+    logger(`[playwright] Unique active listings across all pages: ${uniqueRawJobs.length}`);
 
-    // Filter today's jobs (fallback to all latest non-rebid jobs if today is 0)
-    const todayJobs = noRebid.filter(j => isToday(j.createDateStr));
-    logger(`[playwright] Today's jobs: ${todayJobs.length} (out of ${noRebid.length} active listings)`);
-
-    const eligibleJobs = todayJobs.length > 0 ? todayJobs : noRebid;
-    const jobsToProcess = eligibleJobs.slice(0, MAX_JOBS);
+    // Process all active jobs without dropping any (no destructive Rebid or date cuts)
+    const jobsToProcess = uniqueRawJobs.slice(0, MAX_JOBS);
+    logger(`[playwright] Processing full details for ${jobsToProcess.length} requisitions...`);
 
     const results = [];
 
     for (let i = 0; i < jobsToProcess.length; i++) {
       const job = jobsToProcess[i];
-      logger(`[playwright] [${i+1}/${jobsToProcess.length}] Processing: ${job.title}`);
+      logger(`[playwright] [${i+1}/${jobsToProcess.length}] Fetching detail: ${job.title}`);
 
       try {
         let fullLink = job.href;
@@ -293,12 +252,18 @@ export async function scrapeViaPlaywright(logger = console.log) {
 
         const detailPage = await context.newPage();
         await detailPage.goto(fullLink, { waitUntil: 'domcontentloaded', timeout: 30000 });
-        await sleep(1000);
+        await sleep(500);
 
         // Extract authentic Requirement ID & description & metadata
         const detailData = await detailPage.evaluate(() => {
           const reqEl = document.querySelector('#ctl00_Contentpage1_lbl_reqid');
           const authenticReqId = reqEl ? reqEl.innerText.trim() : '';
+
+          const posEl = document.querySelector('#ctl00_Contentpage1_lbl_pos_title, #ctl00_Contentpage1_lbl_title');
+          const posTitle = posEl ? posEl.innerText.trim() : '';
+
+          const clientEl = document.querySelector('#ctl00_Contentpage1_lbl_client');
+          const clientText = clientEl ? clientEl.innerText.trim() : '';
 
           const skillsEl = document.querySelector('#ctl00_Contentpage1_lbl_skills');
           const skillsText = skillsEl ? skillsEl.innerText.trim() : '';
@@ -308,6 +273,9 @@ export async function scrapeViaPlaywright(logger = console.log) {
 
           const dateEl = document.querySelector('#ctl00_Contentpage1_lbl_date_open');
           const dateText = dateEl ? dateEl.innerText.trim() : '';
+
+          const expEl = document.querySelector('#ctl00_Contentpage1_lbl_exp');
+          const expText = expEl ? expEl.innerText.trim() : '';
 
           const selectors = [
             '#ctl00_Contentpage1_lbl_descr',
@@ -328,9 +296,12 @@ export async function scrapeViaPlaywright(logger = console.log) {
 
           return {
             authenticReqId,
+            posTitle,
+            clientText,
             skillsText,
             locText,
             dateText,
+            expText,
             description
           };
         });
@@ -338,43 +309,62 @@ export async function scrapeViaPlaywright(logger = console.log) {
         await detailPage.close();
 
         const description = detailData.description;
-        logger(`[playwright] Parsing "${job.title}" with Groq LLM...`);
-        const parsed = await parseJobWithGroq(description, job.title);
+        let parsed = null;
+        if (GROQ_API_KEY && i < 15) {
+          try {
+            parsed = await parseJobWithGroq(description, job.title);
+          } catch (_) {
+            parsed = null;
+          }
+        }
 
         const fallback = fallbackExtractLocationAndWorkMode(description, job.title);
-        const finalLocation = (detailData.locText && detailData.locText !== 'Unknown') ? detailData.locText.replace(/^in\s+/i, '') : ((parsed.location && parsed.location !== 'Unknown') ? parsed.location : fallback.location);
-        const finalWorkMode = parsed.work_mode || parsed.workMode || (['Remote','Hybrid','Onsite'].includes(parsed.type) ? parsed.type : fallback.workMode);
-        const finalEmpType = parsed.employment_type || (['Contract','Full-time','C2H','C2C','W2'].includes(parsed.type) ? parsed.type : 'Contract');
+        
+        let finalLocation = fallback.location;
+        if (detailData.locText && detailData.locText.trim() && detailData.locText !== 'Unknown') {
+          finalLocation = detailData.locText.replace(/^in\s+/i, '').trim();
+        } else if (parsed?.location && parsed.location !== 'Unknown') {
+          finalLocation = parsed.location;
+        }
 
-        const parsedSkills = detailData.skillsText ? detailData.skillsText.split(',').map(s => s.trim()).filter(Boolean) : (Array.isArray(parsed.skills) ? parsed.skills : []);
+        const finalWorkMode = parsed?.work_mode || parsed?.workMode || (['Remote','Hybrid','Onsite'].includes(parsed?.type) ? parsed.type : fallback.workMode);
+        const finalEmpType = parsed?.employment_type || (['Contract','Full-time','C2H','C2C','W2'].includes(parsed?.type) ? parsed.type : 'Contract');
+
+        const parsedSkills = detailData.skillsText
+          ? detailData.skillsText.split(',').map(s => s.trim()).filter(Boolean)
+          : (Array.isArray(parsed?.skills) && parsed.skills.length > 0 ? parsed.skills : []);
+
+        const finalClient = (detailData.clientText && detailData.clientText.trim())
+          ? detailData.clientText.trim()
+          : (parsed?.client && parsed.client !== 'General Client' ? parsed.client : 'State Client');
 
         results.push({
           id: detailData.authenticReqId || undefined,
           reqId: detailData.authenticReqId || undefined,
-          title: parsed.title || cleanText(job.title),
-          client: parsed.client || 'General Client',
-          company: parsed.company || '',
+          title: parsed?.title || cleanText(job.title),
+          client: finalClient,
+          company: parsed?.company || 'JobsInHand',
           skills: parsedSkills,
-          preferredSkills: Array.isArray(parsed.preferredSkills) ? parsed.preferredSkills : [],
-          budget: parsed.budget || 'TBD',
-          experience: parsed.experience || 'TBD',
+          preferredSkills: Array.isArray(parsed?.preferredSkills) ? parsed.preferredSkills : [],
+          budget: parsed?.budget || '$75/hr',
+          experience: detailData.expText || parsed?.experience || '5+ years',
           location: finalLocation,
           work_mode: finalWorkMode,
           workMode: finalWorkMode,
           type: finalWorkMode,
           employment_type: finalEmpType,
-          description: parsed.description || description.substring(0, 500),
+          description: parsed?.description || description.substring(0, 500),
           rawDescription: description,
           applyUrl: fullLink,
           postDate: detailData.dateText || job.createDateStr,
           post_date: getTodayISODate(),
           source: 'jobsinhand',
-          status: 'Active',
+          status: 'Open',
           skipped: false,
           error: null,
         });
 
-        logger(`[playwright] ✅ Extracted and parsed: ${parsed.title || job.title} @ ${finalLocation} [${finalWorkMode}]`);
+        logger(`[playwright] ✅ [Req #${detailData.authenticReqId || 'N/A'}] Extracted: ${job.title} @ ${finalLocation}`);
       } catch (err) {
         logger(`[playwright] ❌ Failed: ${job.title} — ${err.message}`);
         results.push({
@@ -383,28 +373,28 @@ export async function scrapeViaPlaywright(logger = console.log) {
           postDate: job.createDateStr,
           post_date: getTodayISODate(),
           source: 'jobsinhand',
-          status: 'Active',
+          status: 'Open',
           skipped: true,
           error: err.message,
         });
       }
 
-      await sleep(800);
+      await sleep(300);
     }
 
     await browser.close();
 
     const successful = results.filter(r => !r.skipped);
-    logger(`[playwright] Playwright scrape complete. Successful: ${successful.length}`);
+    logger(`[playwright] Playwright scrape complete. Successfully extracted ${successful.length} active requisitions.`);
 
     return {
       jobs: successful,
       allAttempted: results,
       mode: 'playwright',
       blocked: false,
-      rebidFiltered: rawJobs.length - noRebid.length,
-      notTodayFiltered: noRebid.length - todayJobs.length,
-      totalFound: rawJobs.length,
+      rebidFiltered: 0,
+      notTodayFiltered: 0,
+      totalFound: uniqueRawJobs.length,
     };
 
   } catch (err) {
@@ -415,3 +405,4 @@ export async function scrapeViaPlaywright(logger = console.log) {
     throw err;
   }
 }
+

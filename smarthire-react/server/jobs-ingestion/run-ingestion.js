@@ -199,29 +199,18 @@ async function saveReportsDb(reports) {
  * Match key: title (normalised) + client + post_date
  */
 function isDuplicate(newJob, existingJobs) {
-  const normalise = s => (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
-  const newTitle  = normalise(newJob.title);
-  const newClient = normalise(newJob.client);
-  const newPos    = extractPositionNumber(newJob.title, newJob.description || newJob.rawDescription);
+  const newPos = extractPositionNumber(newJob.title, newJob.description || newJob.rawDescription);
   const newResolvedId = resolveReqId(newJob.id || newJob.reqId || newJob.title, newJob);
 
   return existingJobs.some(existing => {
-    const eTitle  = normalise(existing.title);
-    const eClient = normalise(existing.client);
-    const ePos    = existing.positionNumber || extractPositionNumber(existing.title, existing.description);
+    const ePos = existing.positionNumber || extractPositionNumber(existing.title, existing.description);
     const eResolvedId = resolveReqId(existing.id || existing.reqId || existing.title, existing);
-
-    // If both have valid position numbers and they match
-    if (newPos && ePos && newPos === ePos) return true;
 
     // If both have resolved authentic req IDs and they match
     if (newResolvedId && eResolvedId && newResolvedId === eResolvedId && /^15[89]\d{3}$/.test(newResolvedId)) return true;
 
-    // Strong match: exact title
-    if (eTitle === newTitle) return true;
-
-    // Match if client and partial title match
-    if (eClient && newClient && eClient === newClient && (eTitle.includes(newTitle) || newTitle.includes(eTitle))) return true;
+    // If both have valid non-empty position numbers and they match
+    if (newPos && ePos && newPos === ePos) return true;
 
     return false;
   });
@@ -235,7 +224,7 @@ function buildReportContent(summary, addedJobs) {
   const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
   const statusIcon = summary.status === 'success' ? '✅' : summary.status === 'partial' ? '⚠️' : '❌';
-  const modeLabel = summary.mode === 'playwright' ? '🤖 Playwright Browser Automation' : '🌐 HTTP Scraper';
+  const modeLabel = summary.mode === 'playwright' ? '🤖 Playwright Multi-Page Automation' : '🌐 HTTP Scraper';
 
   let jobListSection = '';
   if (addedJobs.length > 0) {
@@ -248,20 +237,19 @@ function buildReportContent(summary, addedJobs) {
     });
   }
 
-  return `### JobsInHand Daily Sync — ${statusIcon} ${summary.status.toUpperCase()}
+  return `### JobsInHand Complete Catalogue Sync — ${statusIcon} ${summary.status.toUpperCase()}
 
 Automated job ingestion completed at **${timeStr}** on ${dateStr}.
 Scraping mode: ${modeLabel}
 
 ### Sync Summary
-- **${summary.jobs_found} Jobs** found on JobsInHand.
-- **${summary.rebid_filtered} Rebid listings** automatically excluded.
-- **${summary.jobs_added} New Jobs** successfully added to the top of the ATS database.
-- **${summary.duplicates_skipped} Duplicates** detected and skipped.
-- **${summary.failed_jobs} Jobs** failed to parse or fetch.${jobListSection}
+- **${summary.jobs_found} Active Requisitions** scanned on JobsInHand.
+- **${summary.jobs_added} New Requisitions** successfully synced to ATS.
+- **${summary.duplicates_skipped} Existing Requisitions** preserved.
+- **${summary.failed_jobs} Skipped Requisitions**.${jobListSection}
 
 ### Next Actions
-New job postings are now visible at the top of the ATS Jobs tab. Recruiters can search candidates against these new requirements and share them on LinkedIn.`;
+All active requisitions are visible in descending sequential Req# order at the top of the ATS portal.`;
 }
 
 // ─── Main Ingestion Pipeline ──────────────────────────────────────────────────
@@ -271,7 +259,7 @@ export async function runIngestion() {
   const runSummary = {
     run_start: runStart,
     status: 'success',
-    mode: 'http',
+    mode: 'playwright',
     jobs_found: 0,
     jobs_added: 0,
     duplicates_skipped: 0,
@@ -288,7 +276,7 @@ export async function runIngestion() {
     await connectMongo();
 
     // Step 1: Scrape
-    logger(`\n[Step 1] Scraping JobsInHand...`);
+    logger(`\n[Step 1] Scraping JobsInHand across all pages...`);
     const scrapeResult = await scrapeJobsInHand(logger);
 
     runSummary.mode = scrapeResult.mode;
@@ -299,7 +287,6 @@ export async function runIngestion() {
     logger(`\n[Step 1] ✅ Scrape complete.`);
     logger(`  Mode: ${scrapeResult.mode}`);
     logger(`  Jobs fetched: ${scrapeResult.jobs.length}`);
-    logger(`  Rebid filtered: ${runSummary.rebid_filtered}`);
     logger(`  Failed fetches: ${runSummary.failed_jobs}`);
 
     if (scrapeResult.jobs.length === 0) {
@@ -316,7 +303,7 @@ export async function runIngestion() {
 
       for (const job of scrapeResult.jobs) {
         if (isDuplicate(job, existingJobs) || isDuplicate(job, newJobs)) {
-          logger(`  [DUP] Skipping duplicate: "${job.title}" (${job.post_date})`);
+          logger(`  [DUP] Skipping duplicate: "${job.title}" (${job.reqId || job.id})`);
           dupCount++;
         } else {
           const rawTitle = job.title;
@@ -330,7 +317,7 @@ export async function runIngestion() {
             reqId: resolvedReqId,
             positionNumber: posNumber || '',
             title: cleanTitle,
-            client: job.client || 'General Client',
+            client: job.client || 'State Client',
             company: job.company || '',
             skills: job.skills || [],
             preferredSkills: job.preferredSkills || [],
@@ -362,15 +349,24 @@ export async function runIngestion() {
       logger(`  New jobs to add: ${newJobs.length}`);
       logger(`  Duplicates skipped: ${dupCount}`);
 
-      // Step 3: Save to jobs.json (New jobs placed at the TOP)
-      if (newJobs.length > 0) {
-        logger(`\n[Step 3] Saving ${newJobs.length} new jobs to top of database...`);
-        const updatedJobs = [...newJobs, ...existingJobs];
-        await saveJobsDb(updatedJobs);
-        logger(`  ✅ Database saved. Total jobs: ${updatedJobs.length}`);
-      } else {
-        logger(`\n[Step 3] No new jobs to save (all duplicates).`);
-      }
+      // Step 3: Save to jobs.json (Sorted strictly descending by Req ID)
+      logger(`\n[Step 3] Sorting and saving ${newJobs.length} new jobs to database...`);
+      const mergedJobs = [...newJobs, ...existingJobs];
+      const uniqueMap = new Map();
+      mergedJobs.forEach(j => {
+        const key = j.reqId || j.id;
+        if (key && !uniqueMap.has(key)) {
+          uniqueMap.set(key, j);
+        }
+      });
+      const updatedJobs = Array.from(uniqueMap.values()).sort((a, b) => {
+        const aNum = parseInt(String(a.reqId || a.id).replace(/\D/g, ''), 10) || 0;
+        const bNum = parseInt(String(b.reqId || b.id).replace(/\D/g, ''), 10) || 0;
+        return bNum - aNum;
+      });
+
+      await saveJobsDb(updatedJobs);
+      logger(`  ✅ Database saved with ${updatedJobs.length} total requisitions in descending Req# order.`);
 
       // Step 4: Write automation report to reports.json
       logger(`\n[Step 4] Writing automation report...`);
