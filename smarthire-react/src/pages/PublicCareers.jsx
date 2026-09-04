@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import CandidateMessengerWidget from '../components/CandidateMessengerWidget'
 import SmartHireBotWidget from '../components/SmartHireBotWidget'
 import { saveCareerApplication, getAtsJobs } from '../lib/atsFirestore'
-import { formatJobDescription, resolveJobLocation } from '../utils/formatJobDescription'
+import { formatJobDescription, resolveJobLocation, resolveReqId, cleanJobTitleWithPositionNumber } from '../utils/formatJobDescription'
 
 export default function PublicCareers() {
   const navigate = useNavigate()
@@ -184,6 +184,7 @@ export default function PublicCareers() {
   const [isParsingResume, setIsParsingResume] = useState(false)
   const [autoFillSuccess, setAutoFillSuccess] = useState(false)
   const [detailsVerified, setDetailsVerified] = useState(false)
+  const [parsedSkills, setParsedSkills] = useState([])
 
   // Full JD Reader Modal State
   const [fullJdModalJob, setFullJdModalJob] = useState(null)
@@ -193,22 +194,22 @@ export default function PublicCareers() {
   const [submitError, setSubmitError] = useState('')
   const [submitSuccess, setSubmitSuccess] = useState(null)
 
-  // Theme Palette
+  // Theme Palette (Zoho CRM Minimalist)
   const isLight = themeMode === 'light'
   const theme = {
     bg: isLight ? '#F8FAFC' : '#0B0F17',
     cardBg: isLight ? '#FFFFFF' : '#1E293B',
-    headerBg: isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(15, 23, 42, 0.95)',
+    headerBg: isLight ? '#FFFFFF' : '#0F172A',
     textPrimary: isLight ? '#0F172A' : '#F1F5F9',
-    textSecondary: isLight ? '#475569' : '#94A3B8',
+    textSecondary: isLight ? '#64748B' : '#94A3B8',
     border: isLight ? '#E2E8F0' : 'rgba(255, 255, 255, 0.08)',
-    inputBg: isLight ? '#F1F5F9' : '#0F172A',
+    inputBg: isLight ? '#FFFFFF' : '#0F172A',
     inputBorder: isLight ? '#CBD5E1' : 'rgba(255, 255, 255, 0.12)',
     accent: '#2563EB',
     purple: '#7C3AED',
-    tagBg: isLight ? '#EFF6FF' : 'rgba(37, 99, 235, 0.12)',
-    tagText: isLight ? '#1D4ED8' : '#93C5FD',
-    shadow: isLight ? '0 4px 20px rgba(15, 23, 42, 0.06)' : '0 10px 30px rgba(0, 0, 0, 0.4)'
+    tagBg: isLight ? '#F8FAFC' : 'rgba(37, 99, 235, 0.12)',
+    tagText: isLight ? '#334155' : '#93C5FD',
+    shadow: isLight ? '0 1px 3px rgba(15, 23, 42, 0.05)' : '0 10px 30px rgba(0, 0, 0, 0.4)'
   }
 
   const [expandedBriefJobId, setExpandedBriefJobId] = useState(null)
@@ -595,27 +596,22 @@ export default function PublicCareers() {
   }
 
   return (
-    <div style={{ backgroundColor: theme.bg, color: theme.textPrimary, minHeight: '100vh', fontFamily: "'Plus Jakarta Sans', sans-serif", transition: 'background-color 0.3s, color 0.3s' }}>
+    <div style={{ backgroundColor: theme.bg, color: theme.textPrimary, minHeight: '100vh', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", transition: 'background-color 0.2s, color 0.2s' }}>
       <style>{`
         .sh-search-container {
           transition: all 0.2s ease-in-out;
         }
-        .sh-search-container:focus-within {
-          border-color: #3B82F6 !important;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
-        }
         .sh-job-card {
           background-color: ${theme.cardBg};
           border: 1px solid ${theme.border};
-          border-radius: 16px;
-          padding: 20px 20px 16px;
+          border-radius: 10px;
+          padding: 18px 20px 16px;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          box-shadow: ${theme.shadow};
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
           position: relative;
-          overflow: hidden;
         }
         .sh-card-body {
           display: flex;
@@ -623,27 +619,27 @@ export default function PublicCareers() {
           flex: 1 1 auto;
         }
         .sh-job-card:hover {
-          transform: translateY(-6px);
-          box-shadow: ${isLight ? '0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' : '0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2)'};
-          border-color: #3B82F6;
+          transform: translateY(-2px);
+          box-shadow: ${isLight ? '0 8px 20px rgba(0, 0, 0, 0.06)' : '0 12px 28px rgba(0, 0, 0, 0.35)'};
+          border-color: #93C5FD;
         }
         .sh-job-card.expired {
           background-color: ${isLight ? '#F8FAFC' : '#0F172A'};
-          border-color: ${isLight ? '#E2E8F0' : 'rgba(239, 68, 68, 0.25)'};
-          opacity: 0.85;
+          border-color: ${isLight ? '#E2E8F0' : 'rgba(239, 68, 68, 0.2)'};
+          opacity: 0.8;
         }
         .sh-job-card.expired:hover {
           transform: none;
-          box-shadow: ${theme.shadow};
-          border-color: ${isLight ? '#E2E8F0' : 'rgba(239, 68, 68, 0.25)'};
+          box-shadow: none;
+          border-color: ${isLight ? '#E2E8F0' : 'rgba(239, 68, 68, 0.2)'};
         }
         .sh-job-title {
-          font-size: 18px;
-          font-weight: 800;
+          font-size: 16px;
+          font-weight: 700;
           color: ${theme.textPrimary};
-          margin: 0 0 10px;
+          margin: 0 0 8px;
           line-height: 1.35;
-          transition: color 0.2s ease;
+          transition: color 0.15s ease;
         }
         .sh-job-card:not(.expired):hover .sh-job-title {
           color: #2563EB;
@@ -651,285 +647,254 @@ export default function PublicCareers() {
         .sh-metadata-container {
           display: flex;
           flex-wrap: wrap;
-          gap: 10px;
+          gap: 8px;
           margin-bottom: 12px;
           align-items: center;
         }
         .sh-metadata-item {
           display: inline-flex;
           align-items: center;
-          gap: 5px;
+          gap: 4px;
           font-size: 12px;
           color: ${theme.textSecondary};
           font-weight: 500;
         }
         .sh-metadata-divider {
-          width: 4px;
-          height: 4px;
+          width: 3px;
+          height: 3px;
           background-color: ${theme.border};
           border-radius: 50%;
         }
         .sh-skills-container {
           display: flex;
           flex-wrap: wrap;
-          gap: 6px;
-          margin-bottom: 14px;
+          gap: 5px;
+          margin: 10px 0 14px;
         }
         .sh-skill-pill {
           font-size: 11px;
-          font-weight: 600;
-          background-color: ${theme.tagBg};
-          color: ${theme.tagText};
-          padding: 3px 9px;
-          border-radius: 6px;
-          transition: all 0.2s ease;
-          border: 1px solid ${isLight ? 'rgba(37, 99, 235, 0.15)' : 'rgba(147, 197, 253, 0.15)'};
+          font-weight: 500;
+          background-color: ${isLight ? '#F8FAFC' : '#1E293B'};
+          color: ${isLight ? '#334155' : '#CBD5E1'};
+          padding: 3px 8px;
+          border-radius: 4px;
+          transition: all 0.15s ease;
+          border: 1px solid ${theme.border};
         }
         .sh-job-card:not(.expired):hover .sh-skill-pill {
           border-color: rgba(37, 99, 235, 0.3);
         }
-        .sh-jd-box {
-          background-color: ${isLight ? '#F8FAFC' : '#0F172A'};
-          border-left: 3.5px solid #3B82F6;
-          border-radius: 4px 12px 12px 4px;
-          padding: 12px 14px;
-          font-size: 12.5px;
-          color: ${theme.textSecondary};
-          margin-top: auto;
-          margin-bottom: 14px;
-          line-height: 1.55;
-          transition: all 0.2s ease;
-          border-top: 1px solid ${theme.border};
-          border-right: 1px solid ${theme.border};
-          border-bottom: 1px solid ${theme.border};
-        }
-        .sh-jd-header {
-          font-weight: 700;
-          color: ${theme.textPrimary};
-          margin-bottom: 8px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
         .sh-card-footer {
           border-top: 1px solid ${theme.border};
-          padding-top: 14px;
+          padding-top: 12px;
           display: flex;
           justify-content: space-between;
           align-items: center;
         }
         .sh-apply-btn {
           background-color: #2563EB;
-          background-image: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%);
           color: #FFF;
           border: none;
-          border-radius: 8px;
-          padding: 10px 20px;
-          font-size: 13.5px;
-          font-weight: 700;
+          border-radius: 6px;
+          padding: 7px 16px;
+          font-size: 12.5px;
+          font-weight: 600;
           cursor: pointer;
-          box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
-          transition: all 0.2s ease;
-          display: flex;
+          transition: all 0.15s ease;
+          display: inline-flex;
           align-items: center;
-          gap: 6px;
+          gap: 5px;
         }
         .sh-apply-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+          background-color: #1D4ED8;
         }
-        .sh-apply-btn:active {
-          transform: translateY(0);
+        .sh-view-btn {
+          background-color: ${isLight ? '#FFFFFF' : '#1E293B'};
+          color: ${theme.textSecondary};
+          border: 1px solid ${isLight ? '#CBD5E1' : 'rgba(255,255,255,0.15)'};
+          border-radius: 6px;
+          padding: 6px 12px;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+        }
+        .sh-view-btn:hover {
+          background-color: ${isLight ? '#F1F5F9' : '#334155'};
+          color: ${theme.textPrimary};
+          border-color: ${isLight ? '#94A3B8' : 'rgba(255,255,255,0.25)'};
         }
         .sh-expired-btn {
-          background-color: ${isLight ? '#E2E8F0' : '#334155'};
-          color: ${isLight ? '#64748B' : '#94A3B8'};
+          background-color: ${isLight ? '#F1F5F9' : '#334155'};
+          color: ${isLight ? '#94A3B8' : '#64748B'};
           border: none;
-          border-radius: 8px;
-          padding: 10px 20px;
-          font-size: 13.5px;
-          font-weight: 700;
+          border-radius: 6px;
+          padding: 7px 14px;
+          font-size: 12.5px;
+          font-weight: 600;
           cursor: not-allowed;
         }
         .pulse-dot {
-          width: 8px;
-          height: 8px;
+          width: 7px;
+          height: 7px;
           background-color: #22C55E;
           border-radius: 50%;
           display: inline-block;
-          box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
-          animation: pulse 1.6s infinite;
-        }
-        @keyframes pulse {
-          0% {
-            transform: scale(0.95);
-            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
-          }
-          70% {
-            transform: scale(1);
-            box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
-          }
-          100% {
-            transform: scale(0.95);
-            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
-          }
         }
       `}</style>
 
-      {/* FLOATING COLLAPSIBLE US LIVE CLOCKS (Hangs on Left Side of Page, Below Header) */}
-      <div style={{
-        position: 'fixed',
-        left: 0,
-        top: '110px',
-        zIndex: 2000,
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-start'
-      }}>
-        {!clocksExpanded ? (
-          <button
-            onClick={() => setClocksExpanded(true)}
-            style={{
-              backgroundColor: '#2563EB',
-              color: '#FFF',
-              border: 'none',
-              borderRadius: '0 8px 8px 0',
-              padding: '10px 12px',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: 800,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              boxShadow: '0 4px 15px rgba(37, 99, 235, 0.35)',
-              fontFamily: "'Plus Jakarta Sans', sans-serif"
-            }}
-          >
-            🇺🇸 US Clocks 🕒 ▶
-          </button>
-        ) : (
-          <div style={{
-            backgroundColor: theme.cardBg,
-            border: `1px solid ${theme.border}`,
-            borderLeft: 'none',
-            borderRadius: '0 12px 12px 0',
-            padding: '12px 14px',
-            width: '180px',
-            boxShadow: theme.shadow,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 10,
-            animation: 'slideIn 0.2s ease-out'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.border}`, paddingBottom: 6 }}>
-              <span style={{ fontSize: '11px', fontWeight: 800, color: theme.textPrimary, display: 'flex', alignItems: 'center', gap: 4 }}>
-                🇺🇸 US Clocks
-              </span>
-              <button
-                onClick={() => setClocksExpanded(false)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: theme.textSecondary,
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  padding: '2px 6px',
-                  borderRadius: 4,
-                  backgroundColor: isLight ? '#F1F5F9' : '#0F172A'
-                }}
-              >
-                ◀ Hide
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {[
-                { label: 'EDT/EST', name: 'Eastern', tz: 'America/New_York', color: '#eff6ff', textColor: '#1d4ed8', border: '#bfdbfe' },
-                { label: 'CDT/CST', name: 'Central', tz: 'America/Chicago', color: '#f5f3ff', textColor: '#6d28d9', border: '#ddd6fe' },
-                { label: 'MDT/MST', name: 'Mountain', tz: 'America/Denver', color: '#fffbeb', textColor: '#b45309', border: '#fde68a' },
-                { label: 'PDT/PST', name: 'Pacific', tz: 'America/Los_Angeles', color: '#f0fdf4', textColor: '#16a34a', border: '#bbf7d0' }
-              ].map((zone) => {
-                const live = formatLiveTime(zone.tz)
-                return (
-                  <div key={zone.label} style={{
-                    backgroundColor: isLight ? zone.color : 'rgba(255,255,255,0.03)',
-                    border: `1px solid ${isLight ? zone.border : theme.border}`,
-                    borderRadius: 6,
-                    padding: '6px 8px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 2
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '10px', fontWeight: 800, color: isLight ? zone.textColor : theme.textPrimary }}>{zone.label}</span>
-                      <span style={{ fontSize: '9px', color: theme.textSecondary }}>{zone.name}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 1 }}>
-                      <span style={{ fontSize: '12.5px', fontWeight: 900, color: theme.textPrimary, fontFamily: 'monospace' }}>{live.time}</span>
-                      <span style={{ fontSize: '9px', color: theme.textSecondary }}>{live.date.split(', ')[1]}</span>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Navbar with SmartHire Brand */}
+      {/* Enterprise Header with SmartHire Brand & Integrated Tools */}
       <header style={{
         backgroundColor: theme.headerBg,
-        backdropFilter: 'blur(12px)',
         borderBottom: `1px solid ${theme.border}`,
         position: 'sticky',
         top: 0,
         zIndex: 50,
-        padding: '14px 28px',
+        padding: '12px 28px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        boxShadow: isLight ? '0 2px 10px rgba(0,0,0,0.03)' : '0 2px 10px rgba(0,0,0,0.2)'
+        boxShadow: isLight ? '0 1px 3px rgba(0,0,0,0.03)' : '0 1px 3px rgba(0,0,0,0.2)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{
-            width: 38,
-            height: 38,
-            borderRadius: 10,
-            background: 'linear-gradient(135deg, #2563EB 0%, #3B82F6 100%)',
+            width: 36,
+            height: 36,
+            borderRadius: 8,
+            backgroundColor: '#2563EB',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: 20,
-            fontWeight: 800,
-            color: '#FFF',
-            boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)'
+            fontSize: 18,
+            color: '#FFF'
           }}>
-            ⚡
+            💼
           </div>
           <div>
-            <h1 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: theme.textPrimary }}>
-              SmartHire <span style={{ color: '#2563EB', fontSize: 13, fontWeight: 700 }}>CAREERS</span>
-            </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <h1 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: theme.textPrimary, letterSpacing: '-0.02em' }}>
+                SmartHire
+              </h1>
+              <span style={{
+                color: '#2563EB',
+                fontSize: 11,
+                fontWeight: 700,
+                backgroundColor: isLight ? '#EFF6FF' : 'rgba(37, 99, 235, 0.15)',
+                border: '1px solid rgba(37, 99, 235, 0.25)',
+                borderRadius: 4,
+                padding: '1px 6px',
+                letterSpacing: '0.04em'
+              }}>
+                CAREERS
+              </span>
+            </div>
             <p style={{ margin: 0, fontSize: 11, color: theme.textSecondary }}>Direct Candidate Job Portal</p>
           </div>
         </div>
 
-        {/* Header Navigation & Light/Dark Theme Switch */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 13, fontWeight: 600 }}>
+        {/* Header Right Tools: Integrated US Live Clocks, Candidate Auth & Theme */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}>
+          
+          {/* Integrated US Clocks Dropdown */}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setClocksExpanded(!clocksExpanded)}
+              style={{
+                backgroundColor: clocksExpanded ? (isLight ? '#EFF6FF' : 'rgba(37,99,235,0.2)') : (isLight ? '#F8FAFC' : '#1E293B'),
+                color: clocksExpanded ? '#2563EB' : theme.textSecondary,
+                border: `1px solid ${clocksExpanded ? '#93C5FD' : theme.border}`,
+                borderRadius: 6,
+                padding: '6px 12px',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <span>🕒</span>
+              <span>US Clocks</span>
+              <span style={{ fontSize: 9, opacity: 0.7 }}>{clocksExpanded ? '▲' : '▼'}</span>
+            </button>
+
+            {clocksExpanded && (
+              <div style={{
+                position: 'absolute',
+                top: 'calc(100% + 8px)',
+                right: 0,
+                backgroundColor: theme.cardBg,
+                border: `1px solid ${theme.border}`,
+                borderRadius: 8,
+                padding: 12,
+                width: 270,
+                boxShadow: '0 10px 25px rgba(0,0,0,0.12)',
+                zIndex: 2100,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.border}`, paddingBottom: 6 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: theme.textPrimary, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                    🇺🇸 US Live Timezones
+                  </span>
+                  <button
+                    onClick={() => setClocksExpanded(false)}
+                    style={{ background: 'none', border: 'none', color: theme.textSecondary, fontSize: 12, cursor: 'pointer', padding: 2 }}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                  {[
+                    { label: 'EDT / EST', name: 'Eastern', tz: 'America/New_York', color: '#eff6ff', textColor: '#1d4ed8', border: '#bfdbfe' },
+                    { label: 'CDT / CST', name: 'Central', tz: 'America/Chicago', color: '#f5f3ff', textColor: '#6d28d9', border: '#ddd6fe' },
+                    { label: 'MDT / MST', name: 'Mountain', tz: 'America/Denver', color: '#fffbeb', textColor: '#b45309', border: '#fde68a' },
+                    { label: 'PDT / PST', name: 'Pacific', tz: 'America/Los_Angeles', color: '#f0fdf4', textColor: '#16a34a', border: '#bbf7d0' }
+                  ].map((zone) => {
+                    const live = formatLiveTime(zone.tz)
+                    return (
+                      <div key={zone.label} style={{
+                        backgroundColor: isLight ? zone.color : 'rgba(255,255,255,0.03)',
+                        border: `1px solid ${isLight ? zone.border : theme.border}`,
+                        borderRadius: 6,
+                        padding: '6px 8px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 2
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: 10, fontWeight: 800, color: isLight ? zone.textColor : theme.textPrimary }}>{zone.label}</span>
+                          <span style={{ fontSize: 9, color: theme.textSecondary }}>{zone.name}</span>
+                        </div>
+                        <span style={{ fontSize: 12, fontWeight: 800, color: theme.textPrimary, fontFamily: 'monospace', marginTop: 2 }}>{live.time}</span>
+                        <span style={{ fontSize: 9, color: theme.textSecondary }}>{live.date.split(', ')[1]}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Candidate Auth */}
           {candidateUser ? (
             <div style={{
               display: 'flex', alignItems: 'center', gap: 8,
               backgroundColor: isLight ? '#EFF6FF' : 'rgba(37,99,235,0.15)',
-              border: `1px solid ${isLight ? 'rgba(37,99,235,0.2)' : 'rgba(147,197,253,0.2)'}`,
-              borderRadius: 20, padding: '4px 12px 4px 6px'
+              border: `1px solid ${isLight ? '#BFDBFE' : 'rgba(147,197,253,0.2)'}`,
+              borderRadius: 20, padding: '4px 10px 4px 6px'
             }}>
               <div style={{
-                width: 26, height: 26, borderRadius: '50%',
+                width: 24, height: 24, borderRadius: '50%',
                 backgroundColor: '#2563EB', color: '#FFF',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 12, fontWeight: 800
+                fontSize: 11, fontWeight: 800
               }}>
                 {(candidateUser.name || 'C')[0].toUpperCase()}
               </div>
@@ -953,41 +918,44 @@ export default function PublicCareers() {
               style={{
                 backgroundColor: isLight ? '#EFF6FF' : 'rgba(37,99,235,0.15)',
                 color: '#2563EB',
-                border: '1px solid rgba(37,99,235,0.3)',
-                borderRadius: 20,
-                padding: '6px 14px',
+                border: `1px solid ${isLight ? '#BFDBFE' : 'rgba(37,99,235,0.3)'}`,
+                borderRadius: 6,
+                padding: '6px 12px',
                 fontSize: 12,
-                fontWeight: 800,
+                fontWeight: 600,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 6
+                gap: 5
               }}
             >
-              🔑 Candidate Sign In
+              <span>🔑</span>
+              <span>Candidate Sign In</span>
             </button>
           )}
 
+          {/* Theme Toggle */}
           <button
             onClick={() => setThemeMode(isLight ? 'dark' : 'light')}
             style={{
-              backgroundColor: isLight ? '#E2E8F0' : '#1E293B',
-              color: isLight ? '#0F172A' : '#F1F5F9',
+              backgroundColor: isLight ? '#F1F5F9' : '#1E293B',
+              color: theme.textSecondary,
               border: `1px solid ${theme.border}`,
-              borderRadius: 20,
-              padding: '6px 14px',
+              borderRadius: 6,
+              padding: '6px 10px',
               fontSize: 12,
-              fontWeight: 700,
+              fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
-              transition: 'all 0.2s ease'
+              gap: 4,
+              transition: 'all 0.15s ease'
             }}
           >
-            {isLight ? '🌙 Dark Mode' : '☀️ Light Mode'}
+            {isLight ? '🌙' : '☀️'}
           </button>
 
+          {/* Quick Scroll Action */}
           <button
             onClick={() => {
               const el = document.getElementById('jobs-list')
@@ -995,222 +963,294 @@ export default function PublicCareers() {
             }}
             style={{
               backgroundColor: '#2563EB',
-              backgroundImage: 'linear-gradient(135deg, #2563EB 0%, #3B82F6 100%)',
               color: '#FFF',
               border: 'none',
-              borderRadius: 8,
-              padding: '8px 18px',
-              fontSize: 13,
-              fontWeight: 700,
+              borderRadius: 6,
+              padding: '7px 14px',
+              fontSize: 12.5,
+              fontWeight: 600,
               cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.3)'
+              transition: 'background-color 0.15s ease'
             }}
           >
-            ⚡ View {jobs.length} Vacancies
+            ⚡ {jobs.length} Positions
           </button>
         </div>
       </header>
 
-      {/* Hero Banner Section */}
+      {/* Zoho CRM Minimalist Search & Filter Banner */}
       <section style={{
-        padding: '44px 24px 26px',
-        textAlign: 'center',
-        background: isLight 
-          ? 'radial-gradient(ellipse at top, rgba(37, 99, 235, 0.06) 0%, rgba(248, 250, 252, 0) 70%)'
-          : 'radial-gradient(ellipse at top, rgba(37, 99, 235, 0.16) 0%, rgba(11, 15, 23, 0) 70%)',
-        maxWidth: 1000,
-        margin: '0 auto'
+        backgroundColor: isLight ? '#FFFFFF' : '#111827',
+        borderBottom: `1px solid ${theme.border}`,
+        padding: '36px 24px 30px',
+        textAlign: 'center'
       }}>
-        <span style={{
-          fontSize: 12,
-          fontWeight: 700,
-          color: '#2563EB',
-          backgroundColor: isLight ? '#EFF6FF' : 'rgba(37, 99, 235, 0.15)',
-          border: '1px solid #BFDBFE',
-          padding: '4px 14px',
-          borderRadius: 20,
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em'
-        }}>
-          ✨ Direct Candidate Applications
-        </span>
-        <h2 style={{ fontSize: 32, fontWeight: 800, margin: '16px 0 10px', color: theme.textPrimary, lineHeight: 1.25 }}>
-          Explore Vacancies & Apply
-        </h2>
-        <p style={{ fontSize: 15, color: theme.textSecondary, maxWidth: 660, margin: '0 auto 24px', lineHeight: 1.6 }}>
-          Submit your resume for C2C, W2, or 1099 contracts. Candidate submissions are immediately delivered to our recruiting team.
-        </p>
-
-        {/* Search & Filter Bar */}
-        <div className="sh-search-container" style={{
-          backgroundColor: theme.cardBg,
-          border: `1px solid ${theme.border}`,
-          borderRadius: 14,
-          padding: 8,
-          display: 'flex',
-          gap: 10,
-          maxWidth: 820,
-          margin: '0 auto',
-          boxShadow: theme.shadow,
-          flexWrap: 'wrap'
-        }}>
-          <div style={{ flex: '2 1 240px', display: 'flex', alignItems: 'center', backgroundColor: theme.inputBg, borderRadius: 8, padding: '0 14px' }}>
-            <span style={{ fontSize: 16, marginRight: 8 }}>🔍</span>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by job title, skill, location (e.g. Java, Raleigh, NC)..."
-              style={{
-                width: '100%',
-                backgroundColor: 'transparent',
-                border: 'none',
-                color: theme.textPrimary,
-                padding: '12px 0',
-                fontSize: 14,
-                outline: 'none'
-              }}
-            />
+        <div style={{ maxWidth: 940, margin: '0 auto' }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 11,
+            fontWeight: 700,
+            color: '#2563EB',
+            backgroundColor: isLight ? '#EFF6FF' : 'rgba(37, 99, 235, 0.12)',
+            border: `1px solid ${isLight ? '#DBEAFE' : 'rgba(37, 99, 235, 0.25)'}`,
+            padding: '3px 12px',
+            borderRadius: 16,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            marginBottom: 12
+          }}>
+            <span>🏢</span>
+            <span>Direct Candidate Openings</span>
           </div>
 
-          <select
-            value={selectedLocation}
-            onChange={(e) => {
-              setSelectedLocation(e.target.value)
-              if (e.target.value === 'Today') setDeadlineFilter('Today')
-              else if (deadlineFilter === 'Today') setDeadlineFilter('All')
-            }}
-            style={{
-              flex: '1 1 160px',
-              backgroundColor: theme.inputBg,
-              border: `1px solid ${theme.inputBorder}`,
-              color: theme.textPrimary,
-              borderRadius: 8,
-              padding: '0 14px',
-              fontSize: 13,
-              fontWeight: 600,
-              outline: 'none'
-            }}
-          >
-            <option value="All">🌐 All Work Modes</option>
-            <option value="Today">⏰ Today's Deadline {todayDeadlineCount > 0 ? `(${todayDeadlineCount})` : ''}</option>
-            <option value="Remote">🏠 Remote Only ({remoteCount})</option>
-            <option value="Hybrid">🏢 Hybrid ({hybridCount})</option>
-            <option value="Onsite">📍 Onsite ({onsiteCount})</option>
-          </select>
-        </div>
+          <h2 style={{
+            fontSize: 28,
+            fontWeight: 800,
+            margin: '0 0 8px',
+            color: theme.textPrimary,
+            letterSpacing: '-0.02em',
+            lineHeight: 1.25
+          }}>
+            Explore Active Requisitions & Careers
+          </h2>
 
-        {/* Quick Filter Badges */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14, justifyContent: 'center', alignItems: 'center' }}>
-          <button
-            type="button"
-            onClick={() => { setDeadlineFilter('All'); setSelectedLocation('All') }}
-            style={{
-              backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'All') ? '#2563EB' : theme.cardBg,
-              color: (deadlineFilter === 'All' && selectedLocation === 'All') ? '#FFF' : theme.textSecondary,
-              border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'All') ? '#2563EB' : theme.border}`,
-              borderRadius: 20,
-              padding: '6px 14px',
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              boxShadow: (deadlineFilter === 'All' && selectedLocation === 'All') ? '0 4px 10px rgba(37,99,235,0.25)' : 'none'
-            }}
-          >
-            🌐 All ({activeOpenJobs.length})
-          </button>
+          <p style={{
+            fontSize: 14,
+            color: theme.textSecondary,
+            maxWidth: 620,
+            margin: '0 auto 24px',
+            lineHeight: 1.55
+          }}>
+            Direct application portal for C2C, W2, and 1099 opportunities with State and Enterprise clients.
+          </p>
 
-          <button
-            type="button"
-            onClick={() => {
-              if (deadlineFilter === 'Today' || selectedLocation === 'Today') {
-                setDeadlineFilter('All')
-                setSelectedLocation('All')
-              } else {
-                setDeadlineFilter('Today')
-                setSelectedLocation('Today')
-              }
-            }}
-            style={{
-              backgroundColor: (deadlineFilter === 'Today' || selectedLocation === 'Today') ? '#DC2626' : (isLight ? '#FEE2E2' : 'rgba(239, 68, 68, 0.15)'),
-              color: (deadlineFilter === 'Today' || selectedLocation === 'Today') ? '#FFF' : '#DC2626',
-              border: `1px solid ${(deadlineFilter === 'Today' || selectedLocation === 'Today') ? '#DC2626' : 'rgba(239, 68, 68, 0.35)'}`,
-              borderRadius: 20,
-              padding: '6px 14px',
-              fontSize: 12,
-              fontWeight: 800,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              display: 'inline-flex',
+          {/* Unified Zoho Enterprise Search Box */}
+          <div style={{
+            backgroundColor: isLight ? '#FFFFFF' : '#1F2937',
+            border: `1px solid ${isLight ? '#CBD5E1' : '#374151'}`,
+            borderRadius: 8,
+            padding: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0,
+            maxWidth: 820,
+            margin: '0 auto',
+            boxShadow: isLight ? '0 1px 4px rgba(0,0,0,0.05)' : '0 4px 16px rgba(0,0,0,0.3)',
+            flexWrap: 'wrap'
+          }}>
+            {/* Search Input */}
+            <div style={{
+              flex: '2 1 260px',
+              display: 'flex',
               alignItems: 'center',
-              gap: 6,
-              boxShadow: (deadlineFilter === 'Today' || selectedLocation === 'Today') ? '0 4px 10px rgba(220,38,38,0.25)' : 'none'
-            }}
-          >
-            ⏰ Today's Deadline {todayDeadlineCount > 0 ? `(${todayDeadlineCount})` : '(0)'}
-          </button>
+              padding: '0 12px',
+              gap: 8
+            }}>
+              <span style={{ fontSize: 14, color: '#94A3B8' }}>🔍</span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search job title, skill, or location (e.g. Java, Raleigh, NC)..."
+                style={{
+                  width: '100%',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  color: theme.textPrimary,
+                  padding: '9px 0',
+                  fontSize: 13.5,
+                  outline: 'none',
+                  fontFamily: 'inherit'
+                }}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', fontSize: 13, padding: 2 }}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
 
-          <button
-            type="button"
-            onClick={() => { setDeadlineFilter('All'); setSelectedLocation('Remote') }}
-            style={{
-              backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#2563EB' : theme.cardBg,
-              color: (deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#FFF' : theme.textSecondary,
-              border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#2563EB' : theme.border}`,
-              borderRadius: 20,
-              padding: '6px 14px',
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            🏠 Remote ({remoteCount})
-          </button>
+            {/* Divider */}
+            <div style={{ width: 1, height: 24, backgroundColor: isLight ? '#E2E8F0' : '#374151', margin: '0 4px' }} />
 
-          <button
-            type="button"
-            onClick={() => { setDeadlineFilter('All'); setSelectedLocation('Hybrid') }}
-            style={{
-              backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#2563EB' : theme.cardBg,
-              color: (deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#FFF' : theme.textSecondary,
-              border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#2563EB' : theme.border}`,
-              borderRadius: 20,
-              padding: '6px 14px',
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            🏢 Hybrid ({hybridCount})
-          </button>
+            {/* Work Mode Select */}
+            <div style={{ flex: '1 1 170px', display: 'flex', alignItems: 'center', padding: '0 8px' }}>
+              <span style={{ fontSize: 13, color: '#94A3B8', marginRight: 6 }}>🌐</span>
+              <select
+                value={selectedLocation}
+                onChange={(e) => {
+                  setSelectedLocation(e.target.value)
+                  if (e.target.value === 'Today') setDeadlineFilter('Today')
+                  else if (deadlineFilter === 'Today') setDeadlineFilter('All')
+                }}
+                style={{
+                  width: '100%',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  color: theme.textPrimary,
+                  padding: '9px 4px',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  outline: 'none',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit'
+                }}
+              >
+                <option value="All">All Work Modes</option>
+                <option value="Today">⏰ Closing Today {todayDeadlineCount > 0 ? `(${todayDeadlineCount})` : ''}</option>
+                <option value="Remote">🏠 Remote ({remoteCount})</option>
+                <option value="Hybrid">🏢 Hybrid ({hybridCount})</option>
+                <option value="Onsite">📍 Onsite ({onsiteCount})</option>
+              </select>
+            </div>
 
-          <button
-            type="button"
-            onClick={() => { setDeadlineFilter('All'); setSelectedLocation('Onsite') }}
-            style={{
-              backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#2563EB' : theme.cardBg,
-              color: (deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#FFF' : theme.textSecondary,
-              border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#2563EB' : theme.border}`,
-              borderRadius: 20,
-              padding: '6px 14px',
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            📍 Onsite ({onsiteCount})
-          </button>
+            {/* Clear Filter Button */}
+            {(searchQuery || selectedLocation !== 'All' || deadlineFilter !== 'All') && (
+              <button
+                type="button"
+                onClick={() => { setSearchQuery(''); setSelectedLocation('All'); setDeadlineFilter('All') }}
+                style={{
+                  backgroundColor: isLight ? '#F1F5F9' : '#374151',
+                  color: theme.textSecondary,
+                  border: 'none',
+                  borderRadius: 6,
+                  padding: '7px 12px',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  marginRight: 4
+                }}
+              >
+                Reset
+              </button>
+            )}
+          </div>
+
+          {/* Zoho Style Segmented Quick Chips */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 16, justifyContent: 'center', alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={() => { setDeadlineFilter('All'); setSelectedLocation('All') }}
+              style={{
+                backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'All') ? '#2563EB' : (isLight ? '#FFFFFF' : '#1F2937'),
+                color: (deadlineFilter === 'All' && selectedLocation === 'All') ? '#FFFFFF' : theme.textSecondary,
+                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'All') ? '#2563EB' : theme.border}`,
+                borderRadius: 20,
+                padding: '5px 12px',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              All Roles ({activeOpenJobs.length})
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (deadlineFilter === 'Today' || selectedLocation === 'Today') {
+                  setDeadlineFilter('All')
+                  setSelectedLocation('All')
+                } else {
+                  setDeadlineFilter('Today')
+                  setSelectedLocation('Today')
+                }
+              }}
+              style={{
+                backgroundColor: (deadlineFilter === 'Today' || selectedLocation === 'Today') ? '#DC2626' : (isLight ? '#FEF2F2' : 'rgba(239, 68, 68, 0.15)'),
+                color: (deadlineFilter === 'Today' || selectedLocation === 'Today') ? '#FFFFFF' : '#DC2626',
+                border: `1px solid ${(deadlineFilter === 'Today' || selectedLocation === 'Today') ? '#DC2626' : (isLight ? '#FECACA' : 'rgba(239, 68, 68, 0.3)')}`,
+                borderRadius: 20,
+                padding: '5px 12px',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5
+              }}
+            >
+              <span>⏰ Closing Today</span>
+              <span style={{
+                backgroundColor: (deadlineFilter === 'Today' || selectedLocation === 'Today') ? 'rgba(255,255,255,0.25)' : '#DC2626',
+                color: '#FFF',
+                borderRadius: 10,
+                padding: '0 6px',
+                fontSize: 11,
+                fontWeight: 800
+              }}>
+                {todayDeadlineCount}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setDeadlineFilter('All'); setSelectedLocation('Remote') }}
+              style={{
+                backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#2563EB' : (isLight ? '#FFFFFF' : '#1F2937'),
+                color: (deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#FFFFFF' : theme.textSecondary,
+                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#2563EB' : theme.border}`,
+                borderRadius: 20,
+                padding: '5px 12px',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              Remote ({remoteCount})
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setDeadlineFilter('All'); setSelectedLocation('Hybrid') }}
+              style={{
+                backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#2563EB' : (isLight ? '#FFFFFF' : '#1F2937'),
+                color: (deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#FFFFFF' : theme.textSecondary,
+                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#2563EB' : theme.border}`,
+                borderRadius: 20,
+                padding: '5px 12px',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              Hybrid ({hybridCount})
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setDeadlineFilter('All'); setSelectedLocation('Onsite') }}
+              style={{
+                backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#2563EB' : (isLight ? '#FFFFFF' : '#1F2937'),
+                color: (deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#FFFFFF' : theme.textSecondary,
+                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#2563EB' : theme.border}`,
+                borderRadius: 20,
+                padding: '5px 12px',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              Onsite ({onsiteCount})
+            </button>
+          </div>
         </div>
       </section>
 
       {/* Main Content: Jobs Grid */}
-      <section id="jobs-list" style={{ maxWidth: 1200, margin: '0 auto', padding: '10px 24px 80px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h3 style={{ fontSize: 19, fontWeight: 700, margin: 0, color: theme.textPrimary }}>
+      <section id="jobs-list" style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 24px 80px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+          <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: theme.textPrimary }}>
             Active Vacancies <span style={{ fontSize: 13, color: theme.textSecondary, fontWeight: 500 }}>({filteredJobs.length} open)</span>
           </h3>
         </div>
@@ -1224,21 +1264,22 @@ export default function PublicCareers() {
           <div style={{
             backgroundColor: theme.cardBg,
             border: `1px dashed ${theme.border}`,
-            borderRadius: 16,
+            borderRadius: 10,
             padding: '50px 20px',
             textAlign: 'center',
             color: theme.textSecondary
           }}>
-            <p style={{ fontSize: 15, margin: '0 0 10px' }}>No active vacancies match "{searchQuery || selectedLocation}".</p>
+            <p style={{ fontSize: 15, margin: '0 0 12px' }}>No active vacancies match "{searchQuery || selectedLocation}".</p>
             <button
               onClick={() => { setSearchQuery(''); setSelectedLocation('All'); setDeadlineFilter('All') }}
               style={{
-                backgroundColor: 'transparent',
-                border: '1px solid #2563EB',
-                color: '#2563EB',
-                borderRadius: 8,
-                padding: '6px 16px',
+                backgroundColor: '#2563EB',
+                border: 'none',
+                color: '#FFFFFF',
+                borderRadius: 6,
+                padding: '7px 16px',
                 fontSize: 13,
+                fontWeight: 600,
                 cursor: 'pointer'
               }}
             >
@@ -1248,8 +1289,8 @@ export default function PublicCareers() {
         ) : (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
-            gap: 20
+            gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
+            gap: 18
           }}>
             {filteredJobs.map((job) => {
               const expired = isJobExpired(job)
@@ -1257,6 +1298,18 @@ export default function PublicCareers() {
               const workModeText = job.work_mode || job.workMode || job.type || 'Onsite'
               const locationText = resolveJobLocation(job)
               const fullDesc = getFullDescriptionText(job)
+              const authenticReqId = resolveReqId(job.reqId || job.id, job)
+              const displayTitle = cleanJobTitleWithPositionNumber(job.title, job)
+
+              // Extract clean narrative preview summary (NO [object Object], NO raw separators)
+              const summaryText = (() => {
+                const summaryMatch = fullDesc.match(/🎯 PROJECT SUMMARY & OBJECTIVE\s*=+\s*([\s\S]*?)(?:=|$)/i)
+                if (summaryMatch && summaryMatch[1].trim().length > 20) {
+                  return summaryMatch[1].trim()
+                }
+                const clean = fullDesc.replace(/=+/g, '').replace(/📌.*?\n/g, '').replace(/•.*?\n/g, '').trim()
+                return clean.length > 130 ? clean.substring(0, 130) + '...' : clean
+              })()
 
               return (
                 <div
@@ -1264,67 +1317,84 @@ export default function PublicCareers() {
                   className={`sh-job-card ${expired ? 'expired' : ''}`}
                 >
                   <div className="sh-card-body">
-                    {/* Header: Status and Deadline */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                      {expired ? (
-                        <span style={{
-                          fontSize: 11,
-                          fontWeight: 700,
-                          color: '#DC2626',
-                          backgroundColor: isLight ? '#FEE2E2' : 'rgba(239, 68, 68, 0.15)',
-                          border: '1px solid rgba(239, 68, 68, 0.3)',
-                          padding: '3px 10px',
-                          borderRadius: 12,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 4
-                        }}>
-                          🔒 Closed
-                        </span>
-                      ) : (
-                        <span style={{
-                          fontSize: 11,
-                          fontWeight: 700,
-                          color: '#16A34A',
-                          backgroundColor: isLight ? '#DCFCE7' : 'rgba(22, 163, 74, 0.12)',
-                          border: '1px solid rgba(22, 163, 74, 0.2)',
-                          padding: '3px 10px',
-                          borderRadius: 12,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 5
-                        }}>
-                          <span className="pulse-dot" /> Active Opening
-                        </span>
-                      )}
-                      
-                      {job.deadline && (
-                        <span style={{
-                          fontSize: 11,
-                          fontWeight: 600,
-                          color: expired ? '#94A3B8' : '#D97706',
-                          backgroundColor: expired ? (isLight ? '#F1F5F9' : '#1E293B') : (isLight ? '#FEF3C7' : 'rgba(217, 119, 6, 0.12)'),
-                          padding: '3px 9px',
-                          borderRadius: 6
-                        }}>
-                          ⏰ Deadline: {job.deadline}
-                        </span>
-                      )}
+                    {/* Header: Req ID & Status/Deadline */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                      <span style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: isLight ? '#475569' : '#94A3B8',
+                        backgroundColor: isLight ? '#F1F5F9' : '#1E293B',
+                        border: `1px solid ${isLight ? '#E2E8F0' : 'rgba(255,255,255,0.08)'}`,
+                        padding: '2px 8px',
+                        borderRadius: 4,
+                        letterSpacing: '0.02em'
+                      }}>
+                        Req #{authenticReqId}
+                      </span>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {expired ? (
+                          <span style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: '#DC2626',
+                            backgroundColor: isLight ? '#FEE2E2' : 'rgba(239, 68, 68, 0.15)',
+                            padding: '2px 8px',
+                            borderRadius: 12
+                          }}>
+                            Closed
+                          </span>
+                        ) : (
+                          <span style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: '#15803D',
+                            backgroundColor: isLight ? '#DCFCE7' : 'rgba(22, 163, 74, 0.12)',
+                            padding: '2px 8px',
+                            borderRadius: 12,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4
+                          }}>
+                            <span className="pulse-dot" /> Open
+                          </span>
+                        )}
+                        
+                        {job.deadline && (
+                          <span style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: expired ? '#94A3B8' : isDeadlineToday(job.deadline) ? '#DC2626' : '#B45309',
+                            backgroundColor: expired ? (isLight ? '#F1F5F9' : '#1E293B') : isDeadlineToday(job.deadline) ? (isLight ? '#FEF2F2' : 'rgba(239, 68, 68, 0.15)') : (isLight ? '#FEF3C7' : 'rgba(217, 119, 6, 0.12)'),
+                            padding: '2px 7px',
+                            borderRadius: 4
+                          }}>
+                            {job.deadline}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Job Title */}
-                    <h4 className="sh-job-title">
-                      {job.title}
+                    <h4 className="sh-job-title" title={displayTitle}>
+                      {displayTitle}
                     </h4>
 
-                    {/* Metadata Items */}
+                    {/* Metadata Items: Work Mode, Location & Experience */}
                     <div className="sh-metadata-container">
-                      <span className="sh-metadata-item">
-                        🏢 {workModeText === 'Remote' ? 'Remote' : workModeText === 'Hybrid' ? 'Hybrid' : 'Onsite'}
+                      <span style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        padding: '2px 7px',
+                        borderRadius: 4,
+                        backgroundColor: workModeText === 'Remote' ? (isLight ? '#ECFDF5' : 'rgba(16, 185, 129, 0.12)') : workModeText === 'Hybrid' ? (isLight ? '#FFFBEB' : 'rgba(245, 158, 11, 0.12)') : (isLight ? '#F1F5F9' : '#1E293B'),
+                        color: workModeText === 'Remote' ? '#065F46' : workModeText === 'Hybrid' ? '#92400E' : (isLight ? '#475569' : '#94A3B8'),
+                        border: `1px solid ${workModeText === 'Remote' ? (isLight ? '#A7F3D0' : 'rgba(16, 185, 129, 0.25)') : workModeText === 'Hybrid' ? (isLight ? '#FDE68A' : 'rgba(245, 158, 11, 0.25)') : theme.border}`
+                      }}>
+                        {workModeText}
                       </span>
-                      <span className="sh-metadata-divider" />
                       <span className="sh-metadata-item">
-                        📍 {resolveJobLocation(job)}
+                        📍 {locationText}
                       </span>
                       {job.experience && job.experience !== 'TBD' && job.experience !== 'Any' && (
                         <>
@@ -1334,6 +1404,63 @@ export default function PublicCareers() {
                           </span>
                         </>
                       )}
+                    </div>
+
+                    {/* Clean Narrative Description (NO Box-Inside-Box) */}
+                    <div style={{ marginTop: 'auto', marginBottom: 12 }}>
+                      <p style={{
+                        margin: '0 0 6px',
+                        fontSize: 12.5,
+                        color: theme.textSecondary,
+                        lineHeight: 1.5,
+                        display: '-webkit-box',
+                        WebkitLineClamp: isBriefExpanded ? 'unset' : 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: isBriefExpanded ? 'visible' : 'hidden',
+                        whiteSpace: isBriefExpanded ? 'pre-wrap' : 'normal'
+                      }}>
+                        {isBriefExpanded ? fullDesc : summaryText}
+                      </p>
+                      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setExpandedBriefJobId(isBriefExpanded ? null : job.id)
+                          }}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#2563EB',
+                            fontSize: 11.5,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            padding: 0
+                          }}
+                        >
+                          {isBriefExpanded ? '▲ Collapse Summary' : '▼ Read Summary'}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setFullJdModalJob(job)
+                          }}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#64748B',
+                            fontSize: 11.5,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            padding: 0,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 3
+                          }}
+                        >
+                          <span>Full JD</span>
+                          <span>↗</span>
+                        </button>
+                      </div>
                     </div>
 
                     {/* Skills pills */}
@@ -1351,96 +1478,64 @@ export default function PublicCareers() {
                         )}
                       </div>
                     )}
-
-                    {/* Minimal Job Description Snippet */}
-                    <div className="sh-jd-box">
-                      <div className="sh-jd-header">
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>📝 Job Description</span>
-                        <div style={{ display: 'flex', gap: 10 }}>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setExpandedBriefJobId(isBriefExpanded ? null : job.id)
-                            }}
-                            style={{ background: 'none', border: 'none', color: '#2563EB', fontSize: 11, fontWeight: 700, cursor: 'pointer', padding: 0 }}
-                          >
-                            {isBriefExpanded ? '▲ Collapse' : '▼ Read Inline'}
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setFullJdModalJob(job)
-                            }}
-                            style={{ background: 'none', border: 'none', color: '#7C3AED', fontSize: 11, fontWeight: 700, cursor: 'pointer', padding: 0 }}
-                          >
-                            📖 Full JD ↗
-                          </button>
-                        </div>
-                      </div>
-                      <div style={{ whiteSpace: isBriefExpanded ? 'pre-wrap' : 'normal', fontSize: 12.5, lineHeight: 1.6, color: theme.textSecondary }}>
-                        {isBriefExpanded 
-                          ? fullDesc
-                          : (() => {
-                              const summaryMatch = fullDesc.match(/🎯 PROJECT SUMMARY & OBJECTIVE\s*=+\s*([\s\S]*?)(?:=|$)/i)
-                              if (summaryMatch && summaryMatch[1].trim().length > 20) {
-                                return summaryMatch[1].trim()
-                              }
-                              const clean = fullDesc.replace(/=+/g, '').replace(/📌.*?\n/g, '').replace(/•.*?\n/g, '').trim()
-                              return clean.length > 140 ? clean.substring(0, 140) + '...' : clean
-                            })()}
-                      </div>
-                    </div>
                   </div>
 
                   {/* Card Footer Actions */}
                   <div className="sh-card-footer">
-                    <span style={{ fontSize: 12.5, color: theme.textSecondary, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                    <span style={{ fontSize: 12, color: theme.textSecondary, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                       💼 <strong style={{ color: theme.textPrimary, fontWeight: 600 }}>{job.employment_type || job.type || 'Contract'}</strong>
                     </span>
 
-                    {appliedJobs[job.id] ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <button
-                        onClick={() => {
-                          const app = appliedJobs[job.id]
-                          setActiveChatCandidate({
-                            id: app.candidateId || app.sessionId,
-                            sessionId: app.sessionId,
-                            name: app.candidateName,
-                            candidateName: app.candidateName,
-                            email: app.candidateEmail,
-                            jobTitle: job.title
-                          })
-                        }}
-                        style={{
-                          background: 'linear-gradient(135deg, #059669, #10B981)',
-                          color: '#FFF',
-                          border: 'none',
-                          borderRadius: 8,
-                          padding: '8px 16px',
-                          fontSize: 13,
-                          fontWeight: 800,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
-                          fontFamily: 'inherit'
-                        }}
+                        onClick={() => setFullJdModalJob(job)}
+                        className="sh-view-btn"
                       >
-                        💬 Message Recruiter
+                        Full JD
                       </button>
-                    ) : expired ? (
-                      <button disabled className="sh-expired-btn">
-                        🔒 Closed
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleApplyClick(job)}
-                        className="sh-apply-btn"
-                      >
-                        ⚡ Apply
-                      </button>
-                    )}
+
+                      {appliedJobs[job.id] ? (
+                        <button
+                          onClick={() => {
+                            const app = appliedJobs[job.id]
+                            setActiveChatCandidate({
+                              id: app.candidateId || app.sessionId,
+                              sessionId: app.sessionId,
+                              name: app.candidateName,
+                              candidateName: app.candidateName,
+                              email: app.candidateEmail,
+                              jobTitle: job.title
+                            })
+                          }}
+                          style={{
+                            backgroundColor: '#059669',
+                            color: '#FFF',
+                            border: 'none',
+                            borderRadius: 6,
+                            padding: '7px 14px',
+                            fontSize: 12.5,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 5
+                          }}
+                        >
+                          💬 Chat
+                        </button>
+                      ) : expired ? (
+                        <button disabled className="sh-expired-btn">
+                          Closed
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleApplyClick(job)}
+                          className="sh-apply-btn"
+                        >
+                          ⚡ Apply
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               )
@@ -2135,31 +2230,32 @@ export default function PublicCareers() {
           ) : (
             <button
               onClick={() => setBotWidgetOpen(true)}
+              title="Open SmartHire Career Assistant"
               style={{
                 position: 'fixed',
                 bottom: 24,
-                right: 28,
-                backgroundColor: '#0F172A',
+                right: 24,
+                backgroundColor: '#2563EB',
                 color: '#FFFFFF',
-                border: '1px solid #334155',
-                borderRadius: 30,
-                padding: '12px 20px',
-                fontSize: 13.5,
-                fontWeight: 800,
+                border: 'none',
+                borderRadius: 24,
+                padding: '10px 18px',
+                fontSize: 13,
+                fontWeight: 600,
                 cursor: 'pointer',
-                boxShadow: '0 8px 24px rgba(15, 23, 42, 0.4)',
+                boxShadow: '0 4px 16px rgba(37, 99, 235, 0.35)',
                 zIndex: 2000,
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
-                transition: 'transform 0.2s, boxShadow 0.2s',
+                transition: 'all 0.2s ease',
                 fontFamily: 'inherit'
               }}
               onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
               onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
-              <span style={{ fontSize: 16 }}>🤖</span>
-              AI Career Assistant
+              <span style={{ fontSize: 15 }}>💬</span>
+              <span>Career Assistant</span>
             </button>
           )}
         </>

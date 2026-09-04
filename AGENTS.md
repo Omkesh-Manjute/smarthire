@@ -31,6 +31,42 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-04 — Public Careers (/jobs) Redesigned with Zoho CRM Minimalist Styling
+- **Eliminated AI-Template Artifacts & Floating Pinned Elements**:
+  - Removed awkward floating left "US Clocks ▶" pill button hanging on the viewport edge; cleanly integrated US Live Clocks directly into the enterprise top navigation header with a sleek popover dropdown for EDT/EST, CDT/CST, MDT/MST, and PDT/PST.
+  - Replaced oversized black "🤖 AI Career Assistant" bar with a clean Zoho SalesIQ floating launcher button (`#2563eb`, `💬 Career Assistant`).
+- **Clean Enterprise Hero Search Banner**:
+  - Replaced generic AI "✨ Direct Candidate Applications" badge and bulky search bar with a crisp Zoho enterprise banner.
+  - Built unified search bar: Job search input + subtle divider + Work Mode dropdown (`All Work Modes`, `⏰ Closing Today`, `Remote`, `Hybrid`, `Onsite`) + reset button.
+  - Added Zoho segmented quick filter chips with live counts (`All Roles`, `⏰ Closing Today`, `Remote`, `Hybrid`, `Onsite`).
+- **Zoho CRM Job Vacancy Cards**:
+  - Eliminated "box-in-a-box" nested description container with heavy blue border (`.sh-jd-box`).
+  - Implemented clean `#ffffff` card layout with 1px `#e2e8f0` border, 10px radius, and subtle hover elevation.
+  - Displayed authentic 6-digit Req IDs (`Req #{authenticReqId}`) in soft slate badges and clean position titles with position numbers.
+  - Structured clean 2-line narrative summary with inline `▼ Read Summary` toggle and `↗ Full JD` trigger.
+  - Standardized card footer with secondary `Full JD` outline button and primary `⚡ Apply` royal blue button (`#2563eb`).
+- **Production Build Verified**:
+  - 0 errors or warnings on `npm run build`.
+
+### 2026-09-04 — Complete Zoho CRM Minimalist Styling Across All Inner ATS Section Pages
+- **Manage Users Module (`UsersModule.jsx`)**:
+  - Replaced retro `#708090` header, `#7f9db9` border, and Arial font with Zoho CRM clean white card layout, `-apple-system/Inter` font, subtle `#e2e8f0` borders, `#f8fafc` uppercase 11px table header, and `#f1f5f9` subtle row separators.
+  - Replaced heavy multi-color KPI cards with clean white cards (`#ffffff`, 1px `#e2e8f0` border, muted uppercase labels, 22px bold metrics).
+  - Modernized both Team Recruiters and Candidates subtab tables with pastel pill badges and refined button controls.
+- **Reports & Analytics Module (`ReportsModule.jsx`)**:
+  - Fixed `undefined` bar chart bug by normalizing candidate statuses (`normalizeStatus`) and cleaning compound stage names.
+  - Upgraded KPI StatCards and Bar Charts with sleek Zoho CRM cards, rounded top bars (`#2563eb`), and clean funnel/donut indicators.
+- **Candidates Module (`CandidatesModule.jsx`)**:
+  - Added `formatTitleCase` helper transforming loud uppercase candidate names (`SWATHI BA` -> `Swathi Ba`) into clean, professional title case.
+  - Replaced default raw browser `<select>` boxes with sleek Zoho CRM status pill dropdowns with custom chevron arrows.
+  - Unified table headers with uppercase 11px letter-spaced `#475569` labels.
+- **Active Jobs Module (`JobsModule.jsx`)**:
+  - Removed retro CoolWorks `#708090` / `#7f9db9` / Arial table and replaced with Zoho CRM minimal table layout (`#f8fafc` header, pastel work mode pills, clean action buttons).
+- **Global Typography Upgrade (`index.css`)**:
+  - Updated base font family from Arial to `'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`.
+- **Production Build Verified**:
+  - 0 errors or warnings on `npm run build`.
+
 ### 2026-09-04 — Zoho CRM Ultra-Modern ATS Redesign (/ats)
 - **Zoho CRM Deep-Slate Navy Sidebar (`#161e31`)**:
   - Full-height dark navy sidebar with `SmartHire ATS` brand, collapse button, upper items (Home, Workqueue, Reports, AI Agents), collapsible `ATS Teamspace` with inline search, categorized navigation (Talent Acquisition, Operations & Admin, Quick Portals), and bottom pinned tools.
