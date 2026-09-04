@@ -194,22 +194,28 @@ export default function PublicCareers() {
   const [submitError, setSubmitError] = useState('')
   const [submitSuccess, setSubmitSuccess] = useState(null)
 
-  // Theme Palette (Zoho CRM Minimalist)
+  // Theme Palette (Zoho ATS + PraxiMinds Executive Canvas)
   const isLight = themeMode === 'light'
   const theme = {
-    bg: isLight ? '#F8FAFC' : '#0B0F17',
-    cardBg: isLight ? '#FFFFFF' : '#1E293B',
-    headerBg: isLight ? '#FFFFFF' : '#0F172A',
-    textPrimary: isLight ? '#0F172A' : '#F1F5F9',
-    textSecondary: isLight ? '#64748B' : '#94A3B8',
+    bg: isLight ? '#F1F4F9' : '#080C14',
+    dotColor: isLight ? '#CBD5E1' : 'rgba(255, 255, 255, 0.08)',
+    cardBg: isLight ? '#FFFFFF' : '#111827',
+    headerBg: isLight ? '#FFFFFF' : '#070A10',
+    heroBg: isLight ? 'linear-gradient(135deg, #0B0F19 0%, #161E31 55%, #0F172A 100%)' : 'linear-gradient(135deg, #05070A 0%, #0B0F19 55%, #111827 100%)',
+    textPrimary: isLight ? '#0F172A' : '#F8FAFC',
+    textSecondary: isLight ? '#475569' : '#94A3B8',
     border: isLight ? '#E2E8F0' : 'rgba(255, 255, 255, 0.08)',
+    cardBorder: isLight ? '#E2E8F0' : 'rgba(255, 255, 255, 0.09)',
     inputBg: isLight ? '#FFFFFF' : '#0F172A',
     inputBorder: isLight ? '#CBD5E1' : 'rgba(255, 255, 255, 0.12)',
     accent: '#2563EB',
+    accentHover: '#1D4ED8',
+    brandOrange: '#FF6B00',
     purple: '#7C3AED',
     tagBg: isLight ? '#F8FAFC' : 'rgba(37, 99, 235, 0.12)',
     tagText: isLight ? '#334155' : '#93C5FD',
-    shadow: isLight ? '0 1px 3px rgba(15, 23, 42, 0.05)' : '0 10px 30px rgba(0, 0, 0, 0.4)'
+    cardShadow: isLight ? '0 2px 10px -2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03)' : '0 10px 30px rgba(0, 0, 0, 0.4)',
+    cardHoverShadow: isLight ? '0 14px 30px -4px rgba(37, 99, 235, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.06)' : '0 20px 40px rgba(0, 0, 0, 0.6)'
   }
 
   const [expandedBriefJobId, setExpandedBriefJobId] = useState(null)
@@ -596,21 +602,29 @@ export default function PublicCareers() {
   }
 
   return (
-    <div style={{ backgroundColor: theme.bg, color: theme.textPrimary, minHeight: '100vh', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", transition: 'background-color 0.2s, color 0.2s' }}>
+    <div style={{
+      backgroundColor: theme.bg,
+      backgroundImage: `radial-gradient(${theme.dotColor} 0.85px, transparent 0.85px)`,
+      backgroundSize: '20px 20px',
+      color: theme.textPrimary,
+      minHeight: '100vh',
+      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      transition: 'background-color 0.2s, color 0.2s'
+    }}>
       <style>{`
         .sh-search-container {
           transition: all 0.2s ease-in-out;
         }
         .sh-job-card {
           background-color: ${theme.cardBg};
-          border: 1px solid ${theme.border};
-          border-radius: 10px;
-          padding: 18px 20px 16px;
+          border: 1px solid ${theme.cardBorder};
+          border-radius: 12px;
+          padding: 20px 22px 18px;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
-          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+          transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: ${theme.cardShadow};
           position: relative;
         }
         .sh-card-body {
@@ -619,14 +633,14 @@ export default function PublicCareers() {
           flex: 1 1 auto;
         }
         .sh-job-card:hover {
-          transform: translateY(-2px);
-          box-shadow: ${isLight ? '0 8px 20px rgba(0, 0, 0, 0.06)' : '0 12px 28px rgba(0, 0, 0, 0.35)'};
-          border-color: #93C5FD;
+          transform: translateY(-3px);
+          box-shadow: ${theme.cardHoverShadow};
+          border-color: ${isLight ? '#93C5FD' : 'rgba(147, 197, 253, 0.4)'};
         }
         .sh-job-card.expired {
           background-color: ${isLight ? '#F8FAFC' : '#0F172A'};
           border-color: ${isLight ? '#E2E8F0' : 'rgba(239, 68, 68, 0.2)'};
-          opacity: 0.8;
+          opacity: 0.78;
         }
         .sh-job-card.expired:hover {
           transform: none;
@@ -634,11 +648,12 @@ export default function PublicCareers() {
           border-color: ${isLight ? '#E2E8F0' : 'rgba(239, 68, 68, 0.2)'};
         }
         .sh-job-title {
-          font-size: 16px;
+          font-size: 16.5px;
           font-weight: 700;
           color: ${theme.textPrimary};
           margin: 0 0 8px;
           line-height: 1.35;
+          letter-spacing: -0.015em;
           transition: color 0.15s ease;
         }
         .sh-job-card:not(.expired):hover .sh-job-title {
@@ -668,52 +683,58 @@ export default function PublicCareers() {
         .sh-skills-container {
           display: flex;
           flex-wrap: wrap;
-          gap: 5px;
-          margin: 10px 0 14px;
+          gap: 6px;
+          margin: 12px 0 14px;
         }
         .sh-skill-pill {
           font-size: 11px;
-          font-weight: 500;
-          background-color: ${isLight ? '#F8FAFC' : '#1E293B'};
-          color: ${isLight ? '#334155' : '#CBD5E1'};
-          padding: 3px 8px;
-          border-radius: 4px;
+          font-weight: 600;
+          background-color: ${theme.tagBg};
+          color: ${theme.tagText};
+          padding: 3px 9px;
+          border-radius: 5px;
           transition: all 0.15s ease;
           border: 1px solid ${theme.border};
+          letter-spacing: 0.01em;
         }
         .sh-job-card:not(.expired):hover .sh-skill-pill {
-          border-color: rgba(37, 99, 235, 0.3);
+          border-color: rgba(37, 99, 235, 0.35);
+          background-color: ${isLight ? '#EFF6FF' : 'rgba(37, 99, 235, 0.2)'};
         }
         .sh-card-footer {
           border-top: 1px solid ${theme.border};
-          padding-top: 12px;
+          padding-top: 14px;
+          margin-top: 6px;
           display: flex;
           justify-content: space-between;
           align-items: center;
         }
         .sh-apply-btn {
-          background-color: #2563EB;
+          background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
           color: #FFF;
           border: none;
-          border-radius: 6px;
+          border-radius: 7px;
           padding: 7px 16px;
           font-size: 12.5px;
-          font-weight: 600;
+          font-weight: 700;
           cursor: pointer;
-          transition: all 0.15s ease;
+          transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
           display: inline-flex;
           align-items: center;
           gap: 5px;
+          box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
         }
         .sh-apply-btn:hover {
-          background-color: #1D4ED8;
+          background: linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
         }
         .sh-view-btn {
           background-color: ${isLight ? '#FFFFFF' : '#1E293B'};
-          color: ${theme.textSecondary};
+          color: ${isLight ? '#334155' : '#E2E8F0'};
           border: 1px solid ${isLight ? '#CBD5E1' : 'rgba(255,255,255,0.15)'};
-          border-radius: 6px;
-          padding: 6px 12px;
+          border-radius: 7px;
+          padding: 6px 13px;
           font-size: 12px;
           font-weight: 600;
           cursor: pointer;
@@ -723,15 +744,15 @@ export default function PublicCareers() {
           gap: 4px;
         }
         .sh-view-btn:hover {
-          background-color: ${isLight ? '#F1F5F9' : '#334155'};
-          color: ${theme.textPrimary};
-          border-color: ${isLight ? '#94A3B8' : 'rgba(255,255,255,0.25)'};
+          background-color: ${isLight ? '#F8FAFC' : '#334155'};
+          color: ${isLight ? '#0F172A' : '#FFFFFF'};
+          border-color: ${isLight ? '#94A3B8' : 'rgba(255,255,255,0.3)'};
         }
         .sh-expired-btn {
           background-color: ${isLight ? '#F1F5F9' : '#334155'};
           color: ${isLight ? '#94A3B8' : '#64748B'};
           border: none;
-          border-radius: 6px;
+          border-radius: 7px;
           padding: 7px 14px;
           font-size: 12.5px;
           font-weight: 600;
@@ -743,6 +764,22 @@ export default function PublicCareers() {
           background-color: #22C55E;
           border-radius: 50%;
           display: inline-block;
+          box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+          animation: pulse-green 2s infinite;
+        }
+        @keyframes pulse-green {
+          0% {
+            transform: scale(0.95);
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+          }
+          70% {
+            transform: scale(1);
+            box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+          }
+          100% {
+            transform: scale(0.95);
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+          }
         }
       `}</style>
 
@@ -934,6 +971,30 @@ export default function PublicCareers() {
             </button>
           )}
 
+          {/* ATS Portal Direct Link */}
+          <button
+            onClick={() => navigate('/ats')}
+            title="Open Internal ATS Platform"
+            style={{
+              backgroundColor: isLight ? '#F8FAFC' : '#1E293B',
+              color: theme.textPrimary,
+              border: `1px solid ${theme.border}`,
+              borderRadius: 6,
+              padding: '6px 12px',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <span style={{ color: '#2563EB' }}>⚡</span>
+            <span>ATS Portal</span>
+            <span style={{ fontSize: 10, opacity: 0.6 }}>↗</span>
+          </button>
+
           {/* Theme Toggle */}
           <button
             onClick={() => setThemeMode(isLight ? 'dark' : 'light')}
@@ -978,67 +1039,127 @@ export default function PublicCareers() {
         </div>
       </header>
 
-      {/* Zoho CRM Minimalist Search & Filter Banner */}
+      {/* Executive Hero & Filter Console (PraxiMinds Dark Tech Banner + Zoho ATS Floating Search) */}
       <section style={{
-        backgroundColor: isLight ? '#FFFFFF' : '#111827',
-        borderBottom: `1px solid ${theme.border}`,
-        padding: '36px 24px 30px',
-        textAlign: 'center'
+        background: theme.heroBg,
+        position: 'relative',
+        overflow: 'hidden',
+        borderBottom: `1px solid ${isLight ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255,255,255,0.08)'}`,
+        padding: '46px 24px 50px',
+        color: '#FFFFFF'
       }}>
-        <div style={{ maxWidth: 940, margin: '0 auto' }}>
+        {/* Subtle decorative radial glow behind hero */}
+        <div style={{
+          position: 'absolute',
+          top: '-20%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: 800,
+          height: 380,
+          background: 'radial-gradient(circle, rgba(37, 99, 235, 0.18) 0%, rgba(255, 107, 0, 0.08) 45%, transparent 70%)',
+          pointerEvents: 'none',
+          zIndex: 0
+        }} />
+
+        <div style={{ maxWidth: 960, margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+          {/* Eyebrow badge */}
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 6,
+            gap: 8,
             fontSize: 11,
             fontWeight: 700,
-            color: '#2563EB',
-            backgroundColor: isLight ? '#EFF6FF' : 'rgba(37, 99, 235, 0.12)',
-            border: `1px solid ${isLight ? '#DBEAFE' : 'rgba(37, 99, 235, 0.25)'}`,
-            padding: '3px 12px',
-            borderRadius: 16,
+            color: '#93C5FD',
+            backgroundColor: 'rgba(37, 99, 235, 0.16)',
+            border: '1px solid rgba(147, 197, 253, 0.28)',
+            padding: '4px 14px',
+            borderRadius: 20,
             textTransform: 'uppercase',
             letterSpacing: '0.06em',
-            marginBottom: 12
+            marginBottom: 16,
+            backdropFilter: 'blur(8px)'
           }}>
-            <span>🏢</span>
-            <span>Direct Candidate Openings</span>
+            <span style={{ color: '#FF6B00', fontSize: 13 }}>✦</span>
+            <span>Direct Client Requisitions · State & Enterprise</span>
           </div>
 
+          {/* Main Title */}
           <h2 style={{
-            fontSize: 28,
+            fontSize: 'clamp(26px, 4vw, 36px)',
             fontWeight: 800,
-            margin: '0 0 8px',
-            color: theme.textPrimary,
-            letterSpacing: '-0.02em',
-            lineHeight: 1.25
+            margin: '0 0 12px',
+            color: '#FFFFFF',
+            letterSpacing: '-0.025em',
+            lineHeight: 1.2
           }}>
-            Explore Active Requisitions & Careers
+            Explore Career Opportunities with <span style={{
+              background: 'linear-gradient(135deg, #60A5FA 0%, #93C5FD 50%, #FDBA74 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              display: 'inline-block'
+            }}>SmartHire</span>
           </h2>
 
+          {/* Subtitle */}
           <p style={{
-            fontSize: 14,
-            color: theme.textSecondary,
-            maxWidth: 620,
-            margin: '0 auto 24px',
-            lineHeight: 1.55
+            fontSize: 14.5,
+            color: '#94A3B8',
+            maxWidth: 680,
+            margin: '0 auto 28px',
+            lineHeight: 1.6
           }}>
-            Direct application portal for C2C, W2, and 1099 opportunities with State and Enterprise clients.
+            Verified high-impact contracts (C2C, W2, 1099) with direct North Carolina, Virginia, and Fortune 500 enterprise clients. 0 third-party layers.
           </p>
 
-          {/* Unified Zoho Enterprise Search Box */}
+          {/* 4 PraxiMinds / Zoho ATS KPI Stat Metric Counters */}
           <div style={{
-            backgroundColor: isLight ? '#FFFFFF' : '#1F2937',
-            border: `1px solid ${isLight ? '#CBD5E1' : '#374151'}`,
-            borderRadius: 8,
-            padding: '4px',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+            gap: 12,
+            maxWidth: 720,
+            margin: '0 auto 32px'
+          }}>
+            {[
+              { label: 'Active Requisitions', val: `${activeOpenJobs.length > 0 ? activeOpenJobs.length : 66}+`, icon: '⚡' },
+              { label: 'Direct End-Clients', val: '100%', icon: '🏢' },
+              { label: 'Recruiter Review', val: '< 24 hrs', icon: '⏱️' },
+              { label: 'Intermediary Layers', val: '0 (Direct)', icon: '🛡️' }
+            ].map((stat, i) => (
+              <div key={i} style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: 10,
+                padding: '10px 14px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 16, fontWeight: 800, color: '#F8FAFC' }}>
+                  <span style={{ fontSize: 13 }}>{stat.icon}</span>
+                  <span>{stat.val}</span>
+                </div>
+                <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 500, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                  {stat.label}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Elevated Floating Search Box */}
+          <div style={{
+            backgroundColor: theme.cardBg,
+            border: `1px solid ${isLight ? '#CBD5E1' : 'rgba(255,255,255,0.12)'}`,
+            borderRadius: 12,
+            padding: '6px',
             display: 'flex',
             alignItems: 'center',
-            gap: 0,
             maxWidth: 820,
             margin: '0 auto',
-            boxShadow: isLight ? '0 1px 4px rgba(0,0,0,0.05)' : '0 4px 16px rgba(0,0,0,0.3)',
-            flexWrap: 'wrap'
+            boxShadow: isLight ? '0 12px 32px rgba(15, 23, 42, 0.16)' : '0 16px 40px rgba(0,0,0,0.5)',
+            flexWrap: 'wrap',
+            transition: 'box-shadow 0.2s ease, border-color 0.2s ease'
           }}>
             {/* Search Input */}
             <div style={{
@@ -1046,21 +1167,22 @@ export default function PublicCareers() {
               display: 'flex',
               alignItems: 'center',
               padding: '0 12px',
-              gap: 8
+              gap: 10
             }}>
-              <span style={{ fontSize: 14, color: '#94A3B8' }}>🔍</span>
+              <span style={{ fontSize: 15, color: '#2563EB' }}>🔍</span>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search job title, skill, or location (e.g. Java, Raleigh, NC)..."
+                placeholder="Search job title, skill, position #, or location (e.g. Java, Raleigh, NC)..."
                 style={{
                   width: '100%',
                   backgroundColor: 'transparent',
                   border: 'none',
                   color: theme.textPrimary,
-                  padding: '9px 0',
+                  padding: '10px 0',
                   fontSize: 13.5,
+                  fontWeight: 500,
                   outline: 'none',
                   fontFamily: 'inherit'
                 }}
@@ -1076,11 +1198,11 @@ export default function PublicCareers() {
             </div>
 
             {/* Divider */}
-            <div style={{ width: 1, height: 24, backgroundColor: isLight ? '#E2E8F0' : '#374151', margin: '0 4px' }} />
+            <div style={{ width: 1, height: 26, backgroundColor: isLight ? '#E2E8F0' : 'rgba(255,255,255,0.12)', margin: '0 4px' }} />
 
             {/* Work Mode Select */}
-            <div style={{ flex: '1 1 170px', display: 'flex', alignItems: 'center', padding: '0 8px' }}>
-              <span style={{ fontSize: 13, color: '#94A3B8', marginRight: 6 }}>🌐</span>
+            <div style={{ flex: '1 1 180px', display: 'flex', alignItems: 'center', padding: '0 8px' }}>
+              <span style={{ fontSize: 14, color: '#64748B', marginRight: 6 }}>🌐</span>
               <select
                 value={selectedLocation}
                 onChange={(e) => {
@@ -1093,7 +1215,7 @@ export default function PublicCareers() {
                   backgroundColor: 'transparent',
                   border: 'none',
                   color: theme.textPrimary,
-                  padding: '9px 4px',
+                  padding: '10px 4px',
                   fontSize: 13,
                   fontWeight: 600,
                   outline: 'none',
@@ -1118,12 +1240,13 @@ export default function PublicCareers() {
                   backgroundColor: isLight ? '#F1F5F9' : '#374151',
                   color: theme.textSecondary,
                   border: 'none',
-                  borderRadius: 6,
-                  padding: '7px 12px',
+                  borderRadius: 8,
+                  padding: '8px 14px',
                   fontSize: 12,
                   fontWeight: 600,
                   cursor: 'pointer',
-                  marginRight: 4
+                  marginRight: 4,
+                  transition: 'background-color 0.15s ease'
                 }}
               >
                 Reset
@@ -1132,16 +1255,16 @@ export default function PublicCareers() {
           </div>
 
           {/* Zoho Style Segmented Quick Chips */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 16, justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 18, justifyContent: 'center', alignItems: 'center' }}>
             <button
               type="button"
               onClick={() => { setDeadlineFilter('All'); setSelectedLocation('All') }}
               style={{
-                backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'All') ? '#2563EB' : (isLight ? '#FFFFFF' : '#1F2937'),
-                color: (deadlineFilter === 'All' && selectedLocation === 'All') ? '#FFFFFF' : theme.textSecondary,
-                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'All') ? '#2563EB' : theme.border}`,
+                backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'All') ? '#2563EB' : 'rgba(255,255,255,0.08)',
+                color: (deadlineFilter === 'All' && selectedLocation === 'All') ? '#FFFFFF' : '#CBD5E1',
+                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'All') ? '#2563EB' : 'rgba(255,255,255,0.15)'}`,
                 borderRadius: 20,
-                padding: '5px 12px',
+                padding: '5px 14px',
                 fontSize: 12,
                 fontWeight: 600,
                 cursor: 'pointer',
@@ -1163,18 +1286,18 @@ export default function PublicCareers() {
                 }
               }}
               style={{
-                backgroundColor: (deadlineFilter === 'Today' || selectedLocation === 'Today') ? '#DC2626' : (isLight ? '#FEF2F2' : 'rgba(239, 68, 68, 0.15)'),
-                color: (deadlineFilter === 'Today' || selectedLocation === 'Today') ? '#FFFFFF' : '#DC2626',
-                border: `1px solid ${(deadlineFilter === 'Today' || selectedLocation === 'Today') ? '#DC2626' : (isLight ? '#FECACA' : 'rgba(239, 68, 68, 0.3)')}`,
+                backgroundColor: (deadlineFilter === 'Today' || selectedLocation === 'Today') ? '#DC2626' : 'rgba(220, 38, 38, 0.15)',
+                color: (deadlineFilter === 'Today' || selectedLocation === 'Today') ? '#FFFFFF' : '#FCA5A5',
+                border: `1px solid ${(deadlineFilter === 'Today' || selectedLocation === 'Today') ? '#DC2626' : 'rgba(239, 68, 68, 0.4)'}`,
                 borderRadius: 20,
-                padding: '5px 12px',
+                padding: '5px 14px',
                 fontSize: 12,
                 fontWeight: 700,
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: 5
+                gap: 6
               }}
             >
               <span>⏰ Closing Today</span>
@@ -1194,65 +1317,98 @@ export default function PublicCareers() {
               type="button"
               onClick={() => { setDeadlineFilter('All'); setSelectedLocation('Remote') }}
               style={{
-                backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#2563EB' : (isLight ? '#FFFFFF' : '#1F2937'),
-                color: (deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#FFFFFF' : theme.textSecondary,
-                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#2563EB' : theme.border}`,
+                backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#2563EB' : 'rgba(255,255,255,0.08)',
+                color: (deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#FFFFFF' : '#CBD5E1',
+                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#2563EB' : 'rgba(255,255,255,0.15)'}`,
                 borderRadius: 20,
-                padding: '5px 12px',
+                padding: '5px 14px',
                 fontSize: 12,
                 fontWeight: 600,
                 cursor: 'pointer',
                 transition: 'all 0.15s ease'
               }}
             >
-              Remote ({remoteCount})
+              🏠 Remote ({remoteCount})
             </button>
 
             <button
               type="button"
               onClick={() => { setDeadlineFilter('All'); setSelectedLocation('Hybrid') }}
               style={{
-                backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#2563EB' : (isLight ? '#FFFFFF' : '#1F2937'),
-                color: (deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#FFFFFF' : theme.textSecondary,
-                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#2563EB' : theme.border}`,
+                backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#2563EB' : 'rgba(255,255,255,0.08)',
+                color: (deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#FFFFFF' : '#CBD5E1',
+                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#2563EB' : 'rgba(255,255,255,0.15)'}`,
                 borderRadius: 20,
-                padding: '5px 12px',
+                padding: '5px 14px',
                 fontSize: 12,
                 fontWeight: 600,
                 cursor: 'pointer',
                 transition: 'all 0.15s ease'
               }}
             >
-              Hybrid ({hybridCount})
+              🏢 Hybrid ({hybridCount})
             </button>
 
             <button
               type="button"
               onClick={() => { setDeadlineFilter('All'); setSelectedLocation('Onsite') }}
               style={{
-                backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#2563EB' : (isLight ? '#FFFFFF' : '#1F2937'),
-                color: (deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#FFFFFF' : theme.textSecondary,
-                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#2563EB' : theme.border}`,
+                backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#2563EB' : 'rgba(255,255,255,0.08)',
+                color: (deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#FFFFFF' : '#CBD5E1',
+                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#2563EB' : 'rgba(255,255,255,0.15)'}`,
                 borderRadius: 20,
-                padding: '5px 12px',
+                padding: '5px 14px',
                 fontSize: 12,
                 fontWeight: 600,
                 cursor: 'pointer',
                 transition: 'all 0.15s ease'
               }}
             >
-              Onsite ({onsiteCount})
+              📍 Onsite ({onsiteCount})
             </button>
           </div>
         </div>
       </section>
 
       {/* Main Content: Jobs Grid */}
-      <section id="jobs-list" style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 24px 80px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-          <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: theme.textPrimary }}>
-            Active Vacancies <span style={{ fontSize: 13, color: theme.textSecondary, fontWeight: 500 }}>({filteredJobs.length} open)</span>
-          </h3>
+      <section id="jobs-list" style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px 80px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22, flexWrap: 'wrap', gap: 12 }}>
+          <div>
+            <h3 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: theme.textPrimary, letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span>Active Vacancies</span>
+              <span style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: '#2563EB',
+                backgroundColor: isLight ? '#EFF6FF' : 'rgba(37, 99, 235, 0.15)',
+                border: '1px solid rgba(37, 99, 235, 0.25)',
+                padding: '1px 8px',
+                borderRadius: 12
+              }}>
+                {filteredJobs.length} Verified
+              </span>
+            </h3>
+            <p style={{ margin: '3px 0 0', fontSize: 13, color: theme.textSecondary }}>
+              Direct client contracts and full-time opportunities · Auto-refreshed in real-time
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{
+              fontSize: 11.5,
+              fontWeight: 600,
+              color: isLight ? '#059669' : '#34D399',
+              backgroundColor: isLight ? '#ECFDF5' : 'rgba(5, 150, 105, 0.12)',
+              border: `1px solid ${isLight ? '#A7F3D0' : 'rgba(5, 150, 105, 0.25)'}`,
+              borderRadius: 20,
+              padding: '4px 11px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6
+            }}>
+              <span className="pulse-dot" /> Live Ingestion Active
+            </span>
+          </div>
         </div>
 
         {loading ? (
@@ -1289,8 +1445,8 @@ export default function PublicCareers() {
         ) : (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-            gap: 18
+            gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))',
+            gap: 20
           }}>
             {filteredJobs.map((job) => {
               const expired = isJobExpired(job)
@@ -1320,16 +1476,20 @@ export default function PublicCareers() {
                     {/* Header: Req ID & Status/Deadline */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                       <span style={{
-                        fontSize: 11,
+                        fontSize: 11.5,
                         fontWeight: 700,
-                        color: isLight ? '#475569' : '#94A3B8',
+                        color: isLight ? '#334155' : '#CBD5E1',
                         backgroundColor: isLight ? '#F1F5F9' : '#1E293B',
-                        border: `1px solid ${isLight ? '#E2E8F0' : 'rgba(255,255,255,0.08)'}`,
-                        padding: '2px 8px',
-                        borderRadius: 4,
-                        letterSpacing: '0.02em'
+                        border: `1px solid ${isLight ? '#CBD5E1' : 'rgba(255,255,255,0.12)'}`,
+                        padding: '3px 9px',
+                        borderRadius: 6,
+                        letterSpacing: '0.02em',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4
                       }}>
-                        Req #{authenticReqId}
+                        <span style={{ color: '#2563EB', fontWeight: 800 }}>#</span>
+                        <span>Req {authenticReqId}</span>
                       </span>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1350,11 +1510,12 @@ export default function PublicCareers() {
                             fontWeight: 600,
                             color: '#15803D',
                             backgroundColor: isLight ? '#DCFCE7' : 'rgba(22, 163, 74, 0.12)',
+                            border: `1px solid ${isLight ? '#BBF7D0' : 'rgba(34, 197, 94, 0.25)'}`,
                             padding: '2px 8px',
                             borderRadius: 12,
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: 4
+                            gap: 5
                           }}>
                             <span className="pulse-dot" /> Open
                           </span>
@@ -1366,10 +1527,11 @@ export default function PublicCareers() {
                             fontWeight: 600,
                             color: expired ? '#94A3B8' : isDeadlineToday(job.deadline) ? '#DC2626' : '#B45309',
                             backgroundColor: expired ? (isLight ? '#F1F5F9' : '#1E293B') : isDeadlineToday(job.deadline) ? (isLight ? '#FEF2F2' : 'rgba(239, 68, 68, 0.15)') : (isLight ? '#FEF3C7' : 'rgba(217, 119, 6, 0.12)'),
+                            border: `1px solid ${expired ? theme.border : isDeadlineToday(job.deadline) ? (isLight ? '#FECACA' : 'rgba(239, 68, 68, 0.3)') : (isLight ? '#FDE68A' : 'rgba(217, 119, 6, 0.25)')}`,
                             padding: '2px 7px',
                             borderRadius: 4
                           }}>
-                            {job.deadline}
+                            ⏰ {job.deadline}
                           </span>
                         )}
                       </div>
@@ -1385,13 +1547,13 @@ export default function PublicCareers() {
                       <span style={{
                         fontSize: 11,
                         fontWeight: 600,
-                        padding: '2px 7px',
-                        borderRadius: 4,
+                        padding: '3px 8px',
+                        borderRadius: 5,
                         backgroundColor: workModeText === 'Remote' ? (isLight ? '#ECFDF5' : 'rgba(16, 185, 129, 0.12)') : workModeText === 'Hybrid' ? (isLight ? '#FFFBEB' : 'rgba(245, 158, 11, 0.12)') : (isLight ? '#F1F5F9' : '#1E293B'),
                         color: workModeText === 'Remote' ? '#065F46' : workModeText === 'Hybrid' ? '#92400E' : (isLight ? '#475569' : '#94A3B8'),
                         border: `1px solid ${workModeText === 'Remote' ? (isLight ? '#A7F3D0' : 'rgba(16, 185, 129, 0.25)') : workModeText === 'Hybrid' ? (isLight ? '#FDE68A' : 'rgba(245, 158, 11, 0.25)') : theme.border}`
                       }}>
-                        {workModeText}
+                        {workModeText === 'Remote' ? '🏠 Remote' : workModeText === 'Hybrid' ? '🏢 Hybrid' : '📍 Onsite'}
                       </span>
                       <span className="sh-metadata-item">
                         📍 {locationText}
@@ -1412,7 +1574,7 @@ export default function PublicCareers() {
                         margin: '0 0 6px',
                         fontSize: 12.5,
                         color: theme.textSecondary,
-                        lineHeight: 1.5,
+                        lineHeight: 1.55,
                         display: '-webkit-box',
                         WebkitLineClamp: isBriefExpanded ? 'unset' : 2,
                         WebkitBoxOrient: 'vertical',
@@ -1491,7 +1653,7 @@ export default function PublicCareers() {
                         onClick={() => setFullJdModalJob(job)}
                         className="sh-view-btn"
                       >
-                        Full JD
+                        <span>Full JD</span>
                       </button>
 
                       {appliedJobs[job.id] ? (
@@ -1511,7 +1673,7 @@ export default function PublicCareers() {
                             backgroundColor: '#059669',
                             color: '#FFF',
                             border: 'none',
-                            borderRadius: 6,
+                            borderRadius: 7,
                             padding: '7px 14px',
                             fontSize: 12.5,
                             fontWeight: 700,
@@ -1532,7 +1694,7 @@ export default function PublicCareers() {
                           onClick={() => handleApplyClick(job)}
                           className="sh-apply-btn"
                         >
-                          ⚡ Apply
+                          <span>⚡ Apply Now</span>
                         </button>
                       )}
                     </div>

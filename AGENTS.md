@@ -31,6 +31,26 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-05 — Public Careers (/jobs) Redesigned with LinkedIn / PraxiMinds Canvas & Zoho ATS UI/UX
+- **LinkedIn / PraxiMinds Textured Executive Canvas**:
+  - Replaced flat white background with subtle LinkedIn / PraxiMinds dot matrix textured canvas (`#F1F4F9` with `radial-gradient(#CBD5E1 0.85px, transparent 0.85px)` at 20px grid spacing; `#080C14` in dark mode).
+  - Pure `#FFFFFF` cards pop with rich 3D depth, eliminating bland all-white layout while maintaining ultra-clean contrast.
+- **PraxiMinds Executive Dark Tech Hero Banner**:
+  - Replaced plain white box with signature PraxiMinds dark tech gradient (`linear-gradient(135deg, #0B0F19 0%, #161E31 55%, #0F172A 100%)`) and subtle radial ambient glow.
+  - Added eyebrow badge (`✦ Direct Client Requisitions · State & Enterprise`) with orange/cyan accent highlights.
+  - Added 4 Executive KPI Stat Metric Counters (`66+ Active Requisitions`, `100% Direct End-Clients`, `< 24 hrs Recruiter Review`, `0 (Direct) Intermediary Layers`).
+  - Added elevated floating search console with search input, work mode dropdown, clear button, and Zoho segmented quick filter pills (`All Roles`, `⏰ Closing Today`, `Remote`, `Hybrid`, `Onsite`).
+- **Zoho ATS Job Card Typography & Button UI/UX**:
+  - Refined card layout (`border: 1px solid #E2E8F0`, `borderRadius: 12px`, soft hover elevation `translateY(-3px)` + soft blue glow).
+  - High-contrast job titles (`#0F172A`, 16.5px, 700 weight) with smooth hover color transition to royal blue (`#2563EB`).
+  - Authentic Req ID badges (`# Req {authenticReqId}`) and live status indicators (`🟢 Open` with animated pulsing dot / `⏰ Closing Today`).
+  - Pastel work mode pills (`Remote` in emerald, `Hybrid` in amber, `Onsite` in slate).
+  - Redesigned action buttons: Secondary `📋 Full JD` (clean outline button with hover elevation) and Primary `⚡ Apply Now` (royal blue gradient with shadow and lift).
+- **Header Direct ATS Portal Shortcut**:
+  - Added `⚡ ATS Portal ↗` button in the top navigation header for 1-click transition between candidate portal and Zoho ATS platform.
+- **Production Build Verified**:
+  - 0 errors or warnings on `npm run build` in `smarthire-react`.
+
 ### 2026-09-05 — Firebase Authentication Integration & Git Secret Security Hardening
 - **Git Secret Scanning Remediation**:
   - Sanitized `smarthire-backend/check-atlas-db.js` by replacing hardcoded MongoDB Atlas credentials with `process.env.MONGODB_URI`.
