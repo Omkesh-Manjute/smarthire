@@ -31,7 +31,19 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
-### 2026-09-04 — Reports & Analytics Module Redesigned to Zoho CRM Analytics Dashboard Layout
+### 2026-09-04 — Candidates Module Redesigned & Top Toolbar Squeeze / Scroll Overlap Fixed
+- **Fixed Squeezed Toolbar & Removed Duplicate Title**:
+  - Eliminated redundant stacked `Candidates` title; transformed subheader into a fixed 52px Zoho CRM toolbar with Starred View Preset dropdown (`★ {preset} ▾`), live count badges, and segmented status filter pills (`All`, `Shortlisted`, `Interviews`, `Placed`, `New`).
+  - Set `flexWrap: 'nowrap'` and fixed heights, preventing toolbar controls from collapsing into double rows or overlapping on laptop viewports.
+- **Eliminated Double-Scrollbars & Viewport Clipping**:
+  - Fixed `AtsPlatform.jsx` canvas container with `overflowY: activeTab === 'candidates' ? 'hidden' : 'auto'`, removing rogue outer scrollbars.
+  - Set `minHeight: 0, flex: 1, overflow: 'hidden'` across `CandidatesModule`, ensuring strict application-level viewport confinement.
+  - Implemented sticky table `thead` with solid background and shadow, allowing candidates table to scroll cleanly under pinned headers with zero overlap.
+  - Relocated pagination bar to a docked footer (`height: 42px`, `borderTop: 1px solid #e2e8f0`) so pagination is permanently accessible without scrolling to the table bottom.
+- **Enhanced Left Filter Drawer**:
+  - Added `48px` bottom padding and custom SVG chevron styling for the `Filter by Vacancy / Req` select dropdown, completely eliminating bottom edge clipping.
+- **Production Build Verified**:
+  - 0 errors or warnings on `npm run build` in `smarthire-react`.
 - **Zoho CRM Analytics Subheader Toolbar**:
   - Integrated header toolbar with `Analytics` brand, dashboard dropdown (`★ Org Overview ▾`), dynamic timeframe filter (`This Month ▾`), spin-refresh action `🔄`, secondary outline button `+ Add Component`, and primary royal blue button `Create Dashboard`.
   - Added interactive modals for adding components and creating custom analytics dashboards.

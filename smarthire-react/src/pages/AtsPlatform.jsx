@@ -928,7 +928,14 @@ export default function AtsPlatform() {
         </div>
 
         {/* ─── 3. MAIN WORKSPACE CANVAS ────────────────────────────────────── */}
-        <div style={{ flex: 1, overflowY: 'auto', background: '#f4f5f8' }}>
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0,
+          overflowY: activeTab === 'candidates' ? 'hidden' : 'auto',
+          background: '#f4f5f8'
+        }}>
 
           {/* ══════════════════════════════════════════════════════════════════
               VIEW A: ZOHO CRM HOME OVERVIEW (Screenshots 1 & 2)

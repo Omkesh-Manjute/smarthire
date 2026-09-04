@@ -9,12 +9,32 @@ function CandidatesModule({
   fetchCandidates,
   updateCandidateStatus,
   updateStatus,
-  handleQualifyCandidate
+  handleQualifyCandidate,
+  query: propQuery,
+  setQuery: propSetQuery,
+  selectedJob: propSelectedJob,
+  setSelectedJob: propSetSelectedJob,
+  statusFilter: propStatusFilter,
+  setStatusFilter: propSetStatusFilter,
+  selectedIds: propSelectedIds,
+  setSelectedIds: propSetSelectedIds,
+  setDetailCandidate
 }) {
-  const [selectedJob, setSelectedJob] = useState('All')
-  const [statusFilter, setStatusFilter] = useState('All')
-  const [query, setQuery] = useState('')
-  const [selectedIds, setSelectedIds] = useState([])
+  const [localSelectedJob, setLocalSelectedJob] = useState('All')
+  const selectedJob = propSelectedJob !== undefined ? propSelectedJob : localSelectedJob
+  const setSelectedJob = propSetSelectedJob || setLocalSelectedJob
+
+  const [localStatusFilter, setLocalStatusFilter] = useState('All')
+  const statusFilter = propStatusFilter !== undefined ? propStatusFilter : localStatusFilter
+  const setStatusFilter = propSetStatusFilter || setLocalStatusFilter
+
+  const [localQuery, setLocalQuery] = useState('')
+  const query = propQuery !== undefined ? propQuery : localQuery
+  const setQuery = propSetQuery || setLocalQuery
+
+  const [localSelectedIds, setLocalSelectedIds] = useState([])
+  const selectedIds = propSelectedIds !== undefined ? propSelectedIds : localSelectedIds
+  const setSelectedIds = propSetSelectedIds || setLocalSelectedIds
   const [pushingId, setPushingId] = useState(null)
   const [pushResults, setPushResults] = useState({})
   const [savingRate, setSavingRate] = useState(null)
@@ -441,67 +461,82 @@ function CandidatesModule({
       display: 'flex',
       flexDirection: 'column',
       height: '100%',
-      minHeight: 'calc(100vh - 120px)',
+      minHeight: 0,
+      flex: 1,
       background: '#f8fafc',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+      overflow: 'hidden'
     }}>
       
       {/* ─── 1. ZOHO CRM LEADS/CANDIDATES TOP ACTION TOOLBAR ──────────────── */}
       <div style={{
         background: '#ffffff',
         borderBottom: '1px solid #e2e8f0',
-        padding: '10px 20px',
+        padding: '0 20px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        flexWrap: 'wrap',
+        height: '52px',
+        minHeight: '52px',
+        maxHeight: '52px',
+        flexShrink: 0,
         gap: '12px',
-        position: 'sticky',
-        top: 0,
-        zIndex: 20
+        zIndex: 30,
+        boxSizing: 'border-box'
       }}>
-        
-        {/* Left: View Selector & Title */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.02em' }}>
-              Candidates
-            </span>
-            
-            {/* View Dropdown Selector (Zoho Style) */}
-            <div style={{ position: 'relative' }}>
-              <button
-                onClick={() => setShowViewDropdown(prev => !prev)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: '#f1f5f9',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '6px',
-                  padding: '4px 10px',
-                  fontSize: '13px',
-                  fontWeight: '700',
-                  color: '#1e293b',
-                  cursor: 'pointer',
-                  outline: 'none'
-                }}
-              >
-                <span>{activeViewPreset} ({safeFiltered.length})</span>
-                <span style={{ fontSize: '10px', color: '#64748b' }}>▼</span>
-              </button>
+        {/* Left: View Selector & Quick Counts */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, overflow: 'hidden' }}>
+          {/* View Dropdown Selector (Zoho Style) */}
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <button
+              onClick={() => setShowViewDropdown(prev => !prev)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: '#f8fafc',
+                border: '1px solid #cbd5e1',
+                borderRadius: '6px',
+                padding: '6px 12px',
+                fontSize: '13px',
+                fontWeight: '700',
+                color: '#0f172a',
+                cursor: 'pointer',
+                outline: 'none',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+              }}
+            >
+              <span style={{ color: '#f59e0b', fontSize: '13px' }}>★</span>
+              <span>{activeViewPreset}</span>
+              <span style={{
+                background: '#eff6ff',
+                color: '#1d4ed8',
+                padding: '1px 7px',
+                borderRadius: '10px',
+                fontSize: '11px',
+                fontWeight: '800'
+              }}>
+                {safeFiltered.length}
+              </span>
+              <span style={{ fontSize: '9px', color: '#64748b' }}>▼</span>
+            </button>
 
-              {showViewDropdown && (
+            {showViewDropdown && (
+              <>
+                <div
+                  onClick={() => setShowViewDropdown(false)}
+                  style={{ position: 'fixed', inset: 0, zIndex: 999 }}
+                />
                 <div style={{
                   position: 'absolute',
                   top: '100%',
                   left: 0,
-                  marginTop: '4px',
+                  marginTop: '6px',
                   background: '#ffffff',
                   border: '1px solid #e2e8f0',
                   borderRadius: '8px',
-                  boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-                  zIndex: 50,
+                  boxShadow: '0 12px 28px rgba(0,0,0,0.12)',
+                  zIndex: 1000,
                   minWidth: '220px',
                   padding: '6px 0'
                 }}>
@@ -539,14 +574,58 @@ function CandidatesModule({
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
+              </>
+            )}
+          </div>
+
+          <div style={{ width: 1, height: 20, backgroundColor: '#e2e8f0', flexShrink: 0 }} />
+
+          {/* Quick Segmented Status Filters */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflowX: 'auto' }}>
+            {[
+              { id: 'All', label: 'All', count: safeCandidates.length },
+              { id: 'Shortlisted', label: 'Shortlisted', count: countsByStatus['Shortlisted'] || 0 },
+              { id: 'Interview Scheduled', label: 'Interviews', count: countsByStatus['Interview Scheduled'] || 0 },
+              { id: 'Placed', label: 'Placed', count: (countsByStatus['Placed'] || 0) + (countsByStatus['Selected'] || 0) },
+              { id: 'New', label: 'New', count: countsByStatus['New'] || 0 },
+            ].map(pill => {
+              const isActive = statusFilter === pill.id
+              return (
+                <button
+                  key={pill.id}
+                  onClick={() => { setStatusFilter(pill.id); setCurrentPage(1) }}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    padding: '3px 9px',
+                    borderRadius: '12px',
+                    fontSize: '11.5px',
+                    fontWeight: isActive ? '700' : '500',
+                    background: isActive ? '#eff6ff' : '#ffffff',
+                    color: isActive ? '#1d4ed8' : '#64748b',
+                    border: isActive ? '1px solid #93c5fd' : '1px solid #e2e8f0',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.15s'
+                  }}
+                >
+                  <span>{pill.label}</span>
+                  <span style={{
+                    fontSize: '10.5px',
+                    fontWeight: '800',
+                    color: isActive ? '#1d4ed8' : '#94a3b8'
+                  }}>
+                    {pill.count}
+                  </span>
+                </button>
+              )
+            })}
           </div>
         </div>
 
         {/* Right: Actions, Sort, Filter Toggle, Create Button */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           {/* Filter Toggle Button */}
           <button
             onClick={() => setIsFilterDrawerOpen(prev => !prev)}
@@ -557,7 +636,7 @@ function CandidatesModule({
               gap: '6px',
               padding: '6px 12px',
               borderRadius: '6px',
-              fontSize: '12.5px',
+              fontSize: '12px',
               fontWeight: '600',
               background: isFilterDrawerOpen ? '#eff6ff' : '#ffffff',
               color: isFilterDrawerOpen ? '#2563eb' : '#475569',
@@ -568,6 +647,9 @@ function CandidatesModule({
           >
             <span style={{ fontSize: '13px' }}>⚡</span>
             <span>Filter</span>
+            {(selectedJob !== 'All' || statusFilter !== 'All' || Object.values(systemFilters).some(Boolean) || query) && (
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#2563eb' }} />
+            )}
           </button>
 
           {/* Sort Dropdown */}
@@ -580,7 +662,7 @@ function CandidatesModule({
                 gap: '6px',
                 padding: '6px 12px',
                 borderRadius: '6px',
-                fontSize: '12.5px',
+                fontSize: '12px',
                 fontWeight: '600',
                 background: '#ffffff',
                 color: '#475569',
@@ -590,53 +672,57 @@ function CandidatesModule({
             >
               <span style={{ fontSize: '13px' }}>⇅</span>
               <span>Sort: {sortBy === 'newest' ? 'Newest' : sortBy === 'score' ? 'AI Score' : sortBy === 'name' ? 'Name' : 'Status'}</span>
+              <span style={{ fontSize: '9px', color: '#94a3b8' }}>▼</span>
             </button>
 
             {showSortDropdown && (
-              <div style={{
-                position: 'absolute',
-                top: '100%',
-                right: 0,
-                marginTop: '4px',
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: '8px',
-                boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-                zIndex: 50,
-                minWidth: '180px',
-                padding: '6px 0'
-              }}>
-                {[
-                  { id: 'newest', label: 'Newest First' },
-                  { id: 'score', label: 'AI Match Score' },
-                  { id: 'name', label: 'Candidate Name (A-Z)' },
-                  { id: 'status', label: 'ATS Status' }
-                ].map(item => (
-                  <div
-                    key={item.id}
-                    onClick={() => {
-                      setSortBy(item.id)
-                      setShowSortDropdown(false)
-                    }}
-                    style={{
-                      padding: '8px 14px',
-                      fontSize: '12.5px',
-                      color: sortBy === item.id ? '#2563eb' : '#334155',
-                      fontWeight: sortBy === item.id ? '700' : '500',
-                      background: sortBy === item.id ? '#eff6ff' : 'transparent',
-                      cursor: 'pointer'
-                    }}
-                    onMouseEnter={e => { if (sortBy !== item.id) e.currentTarget.style.background = '#f8fafc' }}
-                    onMouseLeave={e => { if (sortBy !== item.id) e.currentTarget.style.background = 'transparent' }}
-                  >
-                    {item.label}
-                  </div>
-                ))}
-              </div>
+              <>
+                <div onClick={() => setShowSortDropdown(false)} style={{ position: 'fixed', inset: 0, zIndex: 999 }} />
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: 0,
+                  marginTop: '6px',
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  boxShadow: '0 12px 28px rgba(0,0,0,0.12)',
+                  zIndex: 1000,
+                  minWidth: '190px',
+                  padding: '6px 0'
+                }}>
+                  {[
+                    { id: 'newest', label: 'Newest First' },
+                    { id: 'score', label: 'AI Match Score' },
+                    { id: 'name', label: 'Candidate Name (A-Z)' },
+                    { id: 'status', label: 'ATS Status' }
+                  ].map(item => (
+                    <div
+                      key={item.id}
+                      onClick={() => {
+                        setSortBy(item.id)
+                        setShowSortDropdown(false)
+                      }}
+                      style={{
+                        padding: '8px 14px',
+                        fontSize: '12.5px',
+                        color: sortBy === item.id ? '#2563eb' : '#334155',
+                        fontWeight: sortBy === item.id ? '700' : '500',
+                        background: sortBy === item.id ? '#eff6ff' : 'transparent',
+                        cursor: 'pointer'
+                      }}
+                      onMouseEnter={e => { if (sortBy !== item.id) e.currentTarget.style.background = '#f8fafc' }}
+                      onMouseLeave={e => { if (sortBy !== item.id) e.currentTarget.style.background = 'transparent' }}
+                    >
+                      {item.label}
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
 
-          {/* View Mode Switchers (Zoho style: List, Kanban, Timeline) */}
+          {/* View Mode Switchers */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -722,55 +808,58 @@ function CandidatesModule({
             </button>
 
             {showCreateDropdown && (
-              <div style={{
-                position: 'absolute',
-                top: '100%',
-                right: 0,
-                marginTop: '4px',
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: '8px',
-                boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
-                zIndex: 50,
-                minWidth: '200px',
-                padding: '6px 0'
-              }}>
-                <div
-                  onClick={() => { setShowCreateModal(true); setShowCreateDropdown(false) }}
-                  style={{ padding: '8px 14px', fontSize: '13px', color: '#1e293b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >
-                  <span>👤</span>
-                  <span>Add Single Candidate</span>
-                </div>
-                <div
-                  onClick={() => { alert('Drop candidate resume PDF directly on any row or use Candidate Intake modal!'); setShowCreateDropdown(false) }}
-                  style={{ padding: '8px 14px', fontSize: '13px', color: '#1e293b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >
-                  <span>📄</span>
-                  <span>Upload Resume File</span>
-                </div>
-                {selectedIds.length > 0 && (
+              <>
+                <div onClick={() => setShowCreateDropdown(false)} style={{ position: 'fixed', inset: 0, zIndex: 999 }} />
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: 0,
+                  marginTop: '6px',
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  boxShadow: '0 12px 28px rgba(0,0,0,0.15)',
+                  zIndex: 1000,
+                  minWidth: '220px',
+                  padding: '6px 0'
+                }}>
                   <div
-                    onClick={() => {
-                      selectedIds.forEach(id => {
-                        const c = safeCandidates.find(item => item.id === id)
-                        if (c) handlePushToJobsInHand(c)
-                      })
-                      setShowCreateDropdown(false)
-                    }}
-                    style={{ padding: '8px 14px', fontSize: '13px', color: '#047857', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', borderTop: '1px solid #f1f5f9' }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#f0fdf4'}
+                    onClick={() => { setShowCreateModal(true); setShowCreateDropdown(false) }}
+                    style={{ padding: '9px 14px', fontSize: '13px', color: '#1e293b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
-                    <span>🚀</span>
-                    <span>Push Selected ({selectedIds.length}) to Req</span>
+                    <span>👤</span>
+                    <span>Add Single Candidate</span>
                   </div>
-                )}
-              </div>
+                  <div
+                    onClick={() => { alert('Drop candidate resume PDF directly on any row or use Candidate Intake modal!'); setShowCreateDropdown(false) }}
+                    style={{ padding: '9px 14px', fontSize: '13px', color: '#1e293b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <span>📄</span>
+                    <span>Upload Resume File</span>
+                  </div>
+                  {selectedIds.length > 0 && (
+                    <div
+                      onClick={() => {
+                        selectedIds.forEach(id => {
+                          const c = safeCandidates.find(item => item.id === id)
+                          if (c) handlePushToJobsInHand(c)
+                        })
+                        setShowCreateDropdown(false)
+                      }}
+                      style={{ padding: '9px 14px', fontSize: '13px', color: '#047857', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', borderTop: '1px solid #f1f5f9' }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#f0fdf4'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >
+                      <span>🚀</span>
+                      <span>Push Selected ({selectedIds.length}) to Req</span>
+                    </div>
+                  )}
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -782,15 +871,16 @@ function CandidatesModule({
         {/* ZOHO CRM LEFT FILTER DRAWER (Screenshot 3) */}
         {isFilterDrawerOpen && (
           <div style={{
-            width: '240px',
-            minWidth: '240px',
+            width: '250px',
+            minWidth: '250px',
             background: '#ffffff',
             borderRight: '1px solid #e2e8f0',
             display: 'flex',
             flexDirection: 'column',
             overflowY: 'auto',
-            padding: '16px 14px',
-            flexShrink: 0
+            padding: '16px 14px 48px 14px',
+            flexShrink: 0,
+            boxSizing: 'border-box'
           }}>
             
             {/* Filter Drawer Header */}
@@ -979,12 +1069,22 @@ function CandidatesModule({
                 onChange={e => { setSelectedJob(e.target.value); setCurrentPage(1) }}
                 style={{
                   width: '100%',
-                  padding: '6px 8px',
-                  fontSize: '11.5px',
+                  padding: '7px 24px 7px 10px',
+                  fontSize: '12px',
                   borderRadius: '6px',
                   border: '1px solid #cbd5e1',
                   background: '#ffffff',
-                  outline: 'none'
+                  outline: 'none',
+                  color: '#1e293b',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  appearance: 'none',
+                  WebkitAppearance: 'none',
+                  backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 8px center',
+                  backgroundSize: '11px 11px',
+                  boxSizing: 'border-box'
                 }}
               >
                 <option value="All">All Requisitions ({safeJobs.length})</option>
@@ -1005,13 +1105,15 @@ function CandidatesModule({
           display: 'flex',
           flexDirection: 'column',
           minWidth: 0,
+          minHeight: 0,
           background: '#f8fafc',
-          overflowY: 'auto'
+          overflow: 'hidden'
         }}>
           
           {/* Selected Candidates Action Bar (When checked) */}
           {selectedIds.length > 0 && (
             <div style={{
+              flexShrink: 0,
               background: '#eff6ff',
               borderBottom: '1px solid #bfdbfe',
               padding: '8px 20px',
@@ -1019,7 +1121,8 @@ function CandidatesModule({
               alignItems: 'center',
               justifyContent: 'space-between',
               fontSize: '12.5px',
-              color: '#1e40af'
+              color: '#1e40af',
+              zIndex: 12
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span style={{ fontWeight: '800' }}>✓ {selectedIds.length} candidates selected</span>
@@ -1057,23 +1160,35 @@ function CandidatesModule({
             </div>
           )}
 
-          {/* TABLE CONTAINER */}
-          <div style={{ flex: 1, overflowX: 'auto', padding: '16px 20px' }}>
+          {/* TABLE CONTAINER WITH SMOOTH SCROLL */}
+          <div style={{
+            flex: 1,
+            minHeight: 0,
+            overflow: 'auto',
+            padding: '12px 18px',
+            boxSizing: 'border-box'
+          }}>
             <div style={{
               background: '#ffffff',
               border: '1px solid #e2e8f0',
-              borderRadius: '8px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-              overflow: 'hidden'
+              borderRadius: '6px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
             }}>
               <table style={{
                 width: '100%',
-                minWidth: '980px',
+                minWidth: '1080px',
                 borderCollapse: 'collapse',
                 textAlign: 'left',
                 fontSize: '12px'
               }}>
-                <thead>
+                <thead style={{
+                  position: 'sticky',
+                  top: 0,
+                  zIndex: 10,
+                  background: '#f8fafc',
+                  borderBottom: '1px solid #e2e8f0',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+                }}>
                   <tr style={{
                     background: '#f8fafc',
                     borderBottom: '1px solid #e2e8f0',
@@ -1473,81 +1588,88 @@ function CandidatesModule({
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
 
-              {/* ─── 3. ZOHO CRM PAGINATION BAR ─────────────────────────── */}
-              <div style={{
-                background: '#ffffff',
-                borderTop: '1px solid #e2e8f0',
-                padding: '10px 18px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                fontSize: '12px',
-                color: '#64748b'
-              }}>
-                <div>
-                  Total Records: <strong style={{ color: '#0f172a' }}>{totalRecords}</strong>
-                </div>
+          {/* ─── 3. DOCKED ZOHO CRM PAGINATION BAR ─────────────────────────── */}
+          <div style={{
+            flexShrink: 0,
+            height: '42px',
+            background: '#ffffff',
+            borderTop: '1px solid #e2e8f0',
+            padding: '0 18px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontSize: '12px',
+            color: '#64748b',
+            boxSizing: 'border-box',
+            zIndex: 15
+          }}>
+            <div>
+              Total Records: <strong style={{ color: '#0f172a' }}>{totalRecords}</strong>
+            </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  {/* Page Size Selector */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span>Records per page:</span>
-                    <select
-                      value={pageSize}
-                      onChange={e => { setPageSize(Number(e.target.value)); setCurrentPage(1) }}
-                      style={{
-                        padding: '2px 6px',
-                        fontSize: '11.5px',
-                        borderRadius: '4px',
-                        border: '1px solid #cbd5e1',
-                        background: '#ffffff',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <option value="10">10</option>
-                      <option value="25">25</option>
-                      <option value="50">50</option>
-                    </select>
-                  </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              {/* Page Size Selector */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>Records per page:</span>
+                <select
+                  value={pageSize}
+                  onChange={e => { setPageSize(Number(e.target.value)); setCurrentPage(1) }}
+                  style={{
+                    padding: '3px 8px',
+                    fontSize: '11.5px',
+                    borderRadius: '4px',
+                    border: '1px solid #cbd5e1',
+                    background: '#ffffff',
+                    cursor: 'pointer',
+                    outline: 'none'
+                  }}
+                >
+                  <option value="10">10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                </select>
+              </div>
 
-                  {/* Navigation Arrows */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                      disabled={currentPage === 1}
-                      style={{
-                        padding: '3px 8px',
-                        background: currentPage === 1 ? '#f1f5f9' : '#ffffff',
-                        color: currentPage === 1 ? '#94a3b8' : '#1e293b',
-                        border: '1px solid #cbd5e1',
-                        borderRadius: '4px',
-                        cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-                        fontSize: '12px'
-                      }}
-                    >
-                      ‹
-                    </button>
-                    <span>
-                      {Math.min(1 + (currentPage - 1) * pageSize, totalRecords)} - {Math.min(currentPage * pageSize, totalRecords)} of {totalRecords}
-                    </span>
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                      disabled={currentPage === totalPages || totalRecords === 0}
-                      style={{
-                        padding: '3px 8px',
-                        background: (currentPage === totalPages || totalRecords === 0) ? '#f1f5f9' : '#ffffff',
-                        color: (currentPage === totalPages || totalRecords === 0) ? '#94a3b8' : '#1e293b',
-                        border: '1px solid #cbd5e1',
-                        borderRadius: '4px',
-                        cursor: (currentPage === totalPages || totalRecords === 0) ? 'not-allowed' : 'pointer',
-                        fontSize: '12px'
-                      }}
-                    >
-                      ›
-                    </button>
-                  </div>
-                </div>
+              {/* Navigation Arrows */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  style={{
+                    padding: '3px 9px',
+                    background: currentPage === 1 ? '#f8fafc' : '#ffffff',
+                    color: currentPage === 1 ? '#cbd5e1' : '#1e293b',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '4px',
+                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                    fontSize: '12px',
+                    fontWeight: '700'
+                  }}
+                >
+                  ‹
+                </button>
+                <span>
+                  {totalRecords === 0 ? '0 of 0' : `${Math.min(1 + (currentPage - 1) * pageSize, totalRecords)} - ${Math.min(currentPage * pageSize, totalRecords)} of ${totalRecords}`}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages || totalRecords === 0}
+                  style={{
+                    padding: '3px 9px',
+                    background: (currentPage === totalPages || totalRecords === 0) ? '#f8fafc' : '#ffffff',
+                    color: (currentPage === totalPages || totalRecords === 0) ? '#cbd5e1' : '#1e293b',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '4px',
+                    cursor: (currentPage === totalPages || totalRecords === 0) ? 'not-allowed' : 'pointer',
+                    fontSize: '12px',
+                    fontWeight: '700'
+                  }}
+                >
+                  ›
+                </button>
               </div>
             </div>
           </div>
