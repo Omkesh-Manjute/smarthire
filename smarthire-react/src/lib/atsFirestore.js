@@ -408,8 +408,10 @@ export async function saveTeamUsersFirestore(usersList) {
     for (const u of usersList) {
       const uid = String(u.id || u._id || u.email || '').replace(/[^a-zA-Z0-9]/g, '_')
       if (uid) {
+        // Explicitly strip password so sensitive credentials are never written to Firestore
+        const { password: _p, ...cleanUser } = u
         await setDoc(doc(db, USERS_COLLECTION, uid), {
-          ...u,
+          ...cleanUser,
           updatedAt: serverTimestamp()
         }, { merge: true })
       }
@@ -427,12 +429,37 @@ export async function getTeamUsersFirestore() {
     const snap = await getDocs(collection(db, USERS_COLLECTION))
     const users = []
     snap.forEach(docSnap => {
-      users.push({ id: docSnap.id, ...docSnap.data() })
+      const data = docSnap.data() || {}
+      delete data.password // Defensive: never expose password
+      users.push({ id: docSnap.id, ...data })
     })
     return users
   } catch (err) {
     console.warn('Failed to fetch team users from Firestore:', err)
     return []
+  }
+}
+
+/**
+ * Look up user profile by email in Firestore
+ */
+export async function getUserProfileByEmailFirestore(email) {
+  try {
+    if (!email) return null
+    const clean = String(email).toLowerCase().trim()
+    const snap = await getDocs(collection(db, USERS_COLLECTION))
+    let found = null
+    snap.forEach(docSnap => {
+      const data = docSnap.data() || {}
+      if ((data.email || '').toLowerCase().trim() === clean) {
+        delete data.password
+        found = { id: docSnap.id, ...data }
+      }
+    })
+    return found
+  } catch (err) {
+    console.warn('Firestore user lookup error:', err)
+    return null
   }
 }
 

@@ -5,6 +5,7 @@ import {
   signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signOut,
   onAuthStateChanged
 } from 'firebase/auth'
@@ -85,6 +86,16 @@ export async function signupWithEmail(email, password) {
 }
 
 /**
+ * Send Password Reset Email via Firebase
+ */
+export async function resetPasswordWithEmail(email) {
+  if (!auth) {
+    throw new Error('Firebase is not configured.')
+  }
+  await sendPasswordResetEmail(auth, email)
+}
+
+/**
  * Sign out from Firebase
  */
 export async function logoutFirebase() {
@@ -92,3 +103,4 @@ export async function logoutFirebase() {
     await signOut(auth)
   }
 }
+

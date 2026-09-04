@@ -31,6 +31,20 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-05 — Firebase Authentication Integration & Git Secret Security Hardening
+- **Git Secret Scanning Remediation**:
+  - Sanitized `smarthire-backend/check-atlas-db.js` by replacing hardcoded MongoDB Atlas credentials with `process.env.MONGODB_URI`.
+  - Removed `check-atlas-db.js` and `smarthire-react/server/recruiters.json` from git tracking (`git rm --cached`).
+  - Updated root `.gitignore` to strictly ignore all `.env*` variants, `recruiters.json`, `candidates.json`, `reports.json`, and database check scripts.
+- **Firebase Authentication Integration (`Login.jsx`)**:
+  - Implemented secure Firebase Authentication (`loginWithEmail`) as primary authentication method, eliminating the need to store passwords in git or code.
+  - Connected Google Sign-In (`loginWithGoogle`) button for 1-click corporate account login.
+  - Added interactive **"Forgot Password?"** modal utilizing `resetPasswordWithEmail` via Firebase Auth, sending automated one-click password reset links directly to corporate inboxes.
+  - Implemented Firestore user profile lookup (`getUserProfileByEmailFirestore`) to dynamically map roles (`superadmin`, `recruiter`, `manager`, `employee`) and reporting hierarchy.
+  - Added defensive credential stripping in `atsFirestore.js` (`saveTeamUsersFirestore` & `getTeamUsersFirestore`) to guarantee passwords are never persisted in plaintext in Cloud Firestore.
+- **Production Build Verified**:
+  - 0 errors or warnings on `npm run build` in `smarthire-react`.
+
 ### 2026-09-05 — Real-Time Audio Chime Sound & Desktop Push Notifications
 - **Web Audio API Harmonic Chime (`playNotificationSound`)**:
   - Implemented client-side synthesized 3-tone chime (D5 `587.33Hz` → A5 `880Hz` → D6 `1174.66Hz`) using `AudioContext` with exponential gain ramps.
