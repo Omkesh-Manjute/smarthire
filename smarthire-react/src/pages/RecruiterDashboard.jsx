@@ -124,6 +124,8 @@ const legacyCandidateData = []
 
 function RecruiterDashboard() {
   const [jobs, setJobs] = useState([])
+  const knownJobIdsRef = useRef(new Set())
+  const initialJobsLoadedRef = useRef(false)
   const [candidates, setCandidates] = useState(() => {
     try {
       const saved = localStorage.getItem('smarthire_all_candidates')
@@ -1004,24 +1006,67 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     const token = localStorage.getItem('smarthire_token') || ''
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
 
-    fetch('/api/jobs', { headers })
-      .then(res => res.json())
-      .then(data => {
-        const list = Array.isArray(data) ? data : data.jobs || data.data || []
-        if (list.length > 0) {
-          setJobs(processJobsList(list))
-        } else {
-          getAtsJobs().then(fsJobs => {
-            if (fsJobs && fsJobs.length > 0) setJobs(processJobsList(fsJobs))
-          }).catch(() => {})
-        }
-      })
-      .catch(err => {
-        console.warn('Backend /api/jobs notice, loading from Firestore...', err)
-        getAtsJobs().then(fsJobs => {
-          if (fsJobs && fsJobs.length > 0) setJobs(processJobsList(fsJobs))
-        }).catch(() => {})
-      })
+    const loadJobsData = (isBackgroundSync = false) => {
+      fetch('/api/jobs', { headers })
+        .then(res => res.json())
+        .then(data => {
+          const list = Array.isArray(data) ? data : data.jobs || data.data || []
+          if (list.length > 0) {
+            const processed = processJobsList(list)
+            if (isBackgroundSync && initialJobsLoadedRef.current) {
+              const newlyAdded = []
+              processed.forEach(j => {
+                const key = j.reqId || j.id
+                if (key && !knownJobIdsRef.current.has(key)) {
+                  newlyAdded.push(j)
+                  knownJobIdsRef.current.add(key)
+                }
+              })
+
+              if (newlyAdded.length > 0) {
+                setJobs(processed)
+                pushActivityNotification({
+                  title: `💼 ${newlyAdded.length} New Requisition${newlyAdded.length > 1 ? 's' : ''} Synced!`,
+                  message: newlyAdded.length === 1
+                    ? `${newlyAdded[0].title} (Req #${newlyAdded[0].reqId || newlyAdded[0].id}) is now live.`
+                    : `${newlyAdded[0].title} (Req #${newlyAdded[0].reqId}) and ${newlyAdded.length - 1} more jobs ingested from JobsInHand.`,
+                  type: 'requisition',
+                  category: 'team',
+                  actor: 'Ingestion Engine',
+                  actorRole: 'Automation Scraper',
+                  reqId: newlyAdded[0].reqId || newlyAdded[0].id
+                })
+              }
+            } else {
+              processed.forEach(j => {
+                const key = j.reqId || j.id
+                if (key) knownJobIdsRef.current.add(key)
+              })
+              setJobs(processed)
+              initialJobsLoadedRef.current = true
+            }
+          } else {
+            getAtsJobs().then(fsJobs => {
+              if (fsJobs && fsJobs.length > 0) setJobs(processJobsList(fsJobs))
+            }).catch(() => {})
+          }
+        })
+        .catch(err => {
+          if (!isBackgroundSync) {
+            console.warn('Backend /api/jobs notice, loading from Firestore...', err)
+            getAtsJobs().then(fsJobs => {
+              if (fsJobs && fsJobs.length > 0) setJobs(processJobsList(fsJobs))
+            }).catch(() => {})
+          }
+        })
+    }
+
+    loadJobsData(false)
+
+    // Periodic live sync for 6-minute background scraper runs (polls every 35s)
+    const syncInterval = setInterval(() => {
+      loadJobsData(true)
+    }, 35000)
 
     // Sync team members from backend server
     fetch('/api/admin/recruiters', { headers })
@@ -1080,6 +1125,8 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     }
 
     syncCandidatesAndRoster()
+
+    return () => clearInterval(syncInterval)
   }, [])
 
   // Toggle recruiter selection for current requisition (case-insensitive and trimmed)

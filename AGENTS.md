@@ -31,6 +31,25 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-05 — Real-Time Audio Chime Sound & Desktop Push Notifications
+- **Web Audio API Harmonic Chime (`playNotificationSound`)**:
+  - Implemented client-side synthesized 3-tone chime (D5 `587.33Hz` → A5 `880Hz` → D6 `1174.66Hz`) using `AudioContext` with exponential gain ramps.
+  - Zero external `.mp3` assets required, zero latency, and zero CORS/404 issues across all modern browsers.
+  - Handles browser audio context suspension with automatic `.resume()`.
+- **Native OS / Browser Push Notifications (`triggerNativePushNotification`)**:
+  - Added HTML5 `Notification` API support with permission requester (`requestPushNotificationPermission`).
+  - Added prompt banner inside `ActivityNotificationBell` popover allowing one-click activation.
+  - Sends native OS desktop notifications for new requisitions, candidate updates, and team alerts.
+- **Sound Control & Testing**:
+  - Added persistent sound toggle (`🔊 Sound ON` / `🔇 Muted`) in the notification popover header saved to `localStorage`.
+  - Added `🔔 Test` button so recruiters can preview the chime sound instantly.
+  - Added live status pill indicators in the popover footer (`🟢 Push Active` / `🟡 In-App`, `🔊 Sound ON` / `🔇 Muted`).
+- **Live Background Sync for 6-Minute Scraper Updates**:
+  - Integrated 35-second background polling in both `RecruiterDashboard.jsx` and `AtsPlatform.jsx`.
+  - When the 6-minute scraper ingests new jobs from JobsInHand, SmartHire automatically triggers an in-app toast, audio chime sound, and native desktop push notification.
+- **Production Build Verified**:
+  - 0 errors or warnings on `npm run build` in `smarthire-react`.
+
 ### 2026-09-05 — Scraping Interval Updated to 6 Minutes & Complete Requirement Number Extraction Fix
 - **6-Minute Cron Job Interval**:
   - Updated `INGESTION_INTERVAL_MS` in `server/index.js` to **6 minutes** (`6 * 60 * 1000`), ensuring rapid automatic background ingestion cycles.

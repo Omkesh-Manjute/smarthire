@@ -1,5 +1,91 @@
 import React, { useState, useEffect, useRef } from 'react'
 
+// ─── Web Audio API Notification Chime ─────────────────────────────────────────
+export function playNotificationSound() {
+  try {
+    const soundEnabled = typeof window !== 'undefined' && localStorage.getItem('smarthire_notification_sound_enabled') !== 'false'
+    if (!soundEnabled) return
+
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext
+    if (!AudioContextClass) return
+
+    const ctx = new AudioContextClass()
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {})
+    }
+
+    const t = ctx.currentTime
+
+    // Note 1: High crisp chime (D5 = 587.33 Hz)
+    const osc1 = ctx.createOscillator()
+    const gain1 = ctx.createGain()
+    osc1.type = 'sine'
+    osc1.frequency.setValueAtTime(587.33, t)
+    gain1.gain.setValueAtTime(0.25, t)
+    gain1.gain.exponentialRampToValueAtTime(0.0001, t + 0.35)
+    osc1.connect(gain1)
+    gain1.connect(ctx.destination)
+    osc1.start(t)
+    osc1.stop(t + 0.35)
+
+    // Note 2: Resolution chime (A5 = 880 Hz)
+    const osc2 = ctx.createOscillator()
+    const gain2 = ctx.createGain()
+    osc2.type = 'sine'
+    osc2.frequency.setValueAtTime(880, t + 0.1)
+    gain2.gain.setValueAtTime(0.3, t + 0.1)
+    gain2.gain.exponentialRampToValueAtTime(0.0001, t + 0.6)
+    osc2.connect(gain2)
+    gain2.connect(ctx.destination)
+    osc2.start(t + 0.1)
+    osc2.stop(t + 0.6)
+
+    // Note 3: Harmonic sparkle (D6 = 1174.66 Hz)
+    const osc3 = ctx.createOscillator()
+    const gain3 = ctx.createGain()
+    osc3.type = 'triangle'
+    osc3.frequency.setValueAtTime(1174.66, t + 0.2)
+    gain3.gain.setValueAtTime(0.18, t + 0.2)
+    gain3.gain.exponentialRampToValueAtTime(0.0001, t + 0.8)
+    osc3.connect(gain3)
+    gain3.connect(ctx.destination)
+    osc3.start(t + 0.2)
+    osc3.stop(t + 0.8)
+  } catch (err) {
+    console.warn('Notification sound error:', err)
+  }
+}
+
+// ─── Native Desktop Push Notifications ────────────────────────────────────────
+export function requestPushNotificationPermission() {
+  if (typeof window === 'undefined' || !('Notification' in window)) {
+    return Promise.resolve('unsupported')
+  }
+  return Notification.requestPermission()
+}
+
+export function triggerNativePushNotification(notif) {
+  try {
+    if (typeof window === 'undefined' || !('Notification' in window)) return
+    if (Notification.permission !== 'granted') return
+
+    const title = notif.title || 'SmartHire ATS Notification'
+    const body = notif.message || 'New activity in SmartHire ATS'
+    const nativeNotif = new Notification(title, {
+      body,
+      icon: '/favicon.ico',
+      tag: notif.id || `notif-${Date.now()}`
+    })
+
+    nativeNotif.onclick = () => {
+      window.focus()
+      nativeNotif.close()
+    }
+  } catch (e) {
+    console.warn('Native notification error:', e)
+  }
+}
+
 // Helper function to push real-time notifications anywhere in the app
 export const pushActivityNotification = (notif) => {
   const newEntry = {
@@ -30,6 +116,13 @@ export const pushActivityNotification = (notif) => {
     localStorage.setItem('smarthire_activity_notifications', JSON.stringify(updated))
   } catch (e) {}
 
+  // 1. Play audio chime sound
+  playNotificationSound()
+
+  // 2. Trigger native OS / desktop push notification
+  triggerNativePushNotification(newEntry)
+
+  // 3. Dispatch in-app notification event
   window.dispatchEvent(new CustomEvent('smarthire_new_activity_notification', { detail: newEntry }))
 }
 
@@ -51,6 +144,19 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
 
   const [activeFilter, setActiveFilter] = useState('all') // 'all', 'status', 'team', 'ai'
   const [liveToast, setLiveToast] = useState(null)
+  const [isSoundEnabled, setIsSoundEnabled] = useState(() => {
+    try {
+      return localStorage.getItem('smarthire_notification_sound_enabled') !== 'false'
+    } catch (_) {
+      return true
+    }
+  })
+  const [permissionStatus, setPermissionStatus] = useState(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      return Notification.permission
+    }
+    return 'unsupported'
+  })
   const dropdownRef = useRef(null)
 
   // Sync to local storage
@@ -59,6 +165,35 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
     try {
       localStorage.setItem('smarthire_activity_notifications', JSON.stringify(newList))
     } catch (e) {}
+  }
+
+  const toggleSound = () => {
+    const next = !isSoundEnabled
+    setIsSoundEnabled(next)
+    try {
+      localStorage.setItem('smarthire_notification_sound_enabled', String(next))
+    } catch (_) {}
+    if (next) {
+      playNotificationSound()
+    }
+  }
+
+  const handleEnablePushNotifications = async () => {
+    try {
+      const res = await requestPushNotificationPermission()
+      setPermissionStatus(res)
+      if (res === 'granted') {
+        pushActivityNotification({
+          title: '🎉 Push Notifications Enabled!',
+          message: 'You will receive desktop push alerts and sound when candidates or jobs update.',
+          type: 'info',
+          category: 'system',
+          actor: 'SmartHire System'
+        })
+      }
+    } catch (e) {
+      console.warn('Error enabling notifications:', e)
+    }
   }
 
   // Calculate unread count
@@ -79,6 +214,9 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
         } catch (err) {}
         return updated
       })
+
+      // Ensure sound is triggered
+      playNotificationSound()
 
       // Trigger live popup banner for 4.5 seconds
       setLiveToast(newNotif)
@@ -273,7 +411,9 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
             padding: '10px 14px',
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center'
+            alignItems: 'center',
+            gap: '8px',
+            flexWrap: 'wrap'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ fontSize: '14px' }}>🔔</span>
@@ -294,13 +434,55 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
               )}
             </div>
 
-            <div style={{ display: 'flex', gap: '8px', fontSize: '11px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px' }}>
+              {/* Sound Toggle Button */}
+              <button
+                type="button"
+                onClick={toggleSound}
+                title={isSoundEnabled ? "Notification sound is ON (click to mute)" : "Notification sound is MUTED (click to enable)"}
+                style={{
+                  background: isSoundEnabled ? '#ecfdf5' : '#fef2f2',
+                  border: isSoundEnabled ? '1px solid #a7f3d0' : '1px solid #fecaca',
+                  color: isSoundEnabled ? '#047857' : '#b91c1c',
+                  borderRadius: '4px',
+                  padding: '2px 6px',
+                  fontSize: '10.5px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '3px'
+                }}
+              >
+                <span>{isSoundEnabled ? '🔊' : '🔇'}</span>
+                <span>{isSoundEnabled ? 'Sound ON' : 'Muted'}</span>
+              </button>
+
+              {/* Test Sound Button */}
+              <button
+                type="button"
+                onClick={() => playNotificationSound()}
+                title="Test notification sound chime"
+                style={{
+                  background: '#f1f5f9',
+                  border: '1px solid #cbd5e1',
+                  color: '#334155',
+                  borderRadius: '4px',
+                  padding: '2px 6px',
+                  fontSize: '10.5px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                🔔 Test
+              </button>
+
               <button
                 type="button"
                 onClick={handleMarkAllRead}
                 style={{ background: 'none', border: 'none', color: '#0284c7', cursor: 'pointer', fontWeight: 'bold', padding: 0 }}
               >
-                Mark all read
+                Mark read
               </button>
               <span style={{ color: '#cbd5e1' }}>|</span>
               <button
@@ -312,6 +494,43 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
               </button>
             </div>
           </div>
+
+          {/* Desktop Push Notification Prompt Banner */}
+          {permissionStatus !== 'granted' && (
+            <div style={{
+              background: '#eff6ff',
+              borderBottom: '1px solid #bfdbfe',
+              padding: '7px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '8px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '13px' }}>📢</span>
+                <span style={{ fontSize: '11px', color: '#1e40af', fontWeight: '500' }}>
+                  Enable desktop pop-up alerts with sound?
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleEnablePushNotifications}
+                style={{
+                  background: '#2563eb',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  padding: '3px 8px',
+                  fontSize: '10.5px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                Turn On
+              </button>
+            </div>
+          )}
 
           {/* Filter Tabs */}
           <div style={{
@@ -465,12 +684,21 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
             background: '#f8fafc',
             borderTop: '1px solid #e2e8f0',
             padding: '8px 14px',
-            textAlign: 'center',
-            fontSize: '11px'
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            fontSize: '10.5px'
           }}>
             <span style={{ color: '#0284c7', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => setIsOpen(false)}>
-              ⚡ Live Team Activity Stream Active
+              ⚡ Live Team Activity
             </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b' }}>
+              <span>{isSoundEnabled ? '🔊 Sound ON' : '🔇 Muted'}</span>
+              <span>•</span>
+              <span style={{ color: permissionStatus === 'granted' ? '#16a34a' : '#ea580c', fontWeight: '500' }}>
+                {permissionStatus === 'granted' ? '🟢 Push Active' : '🟡 In-App'}
+              </span>
+            </div>
           </div>
 
         </div>

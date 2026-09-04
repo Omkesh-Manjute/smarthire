@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import CandidateMessengerWidget from '../components/CandidateMessengerWidget'
+import ActivityNotificationBell, { pushActivityNotification } from '../components/ActivityNotificationBell'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
   DashboardModule,
@@ -162,13 +163,16 @@ export default function AtsPlatform() {
   const [selectedIds, setSelectedIds] = useState([])
   const [detailCandidate, setDetailCandidate] = useState(null)
 
+  const knownAtsJobIdsRef = useRef(new Set())
+  const initialAtsLoadRef = useRef(false)
+
   useEffect(() => {
     fetch(`${API_BASE}/api/health`)
       .then(r => r.ok ? setApiOnline(true) : setApiOnline(false))
       .catch(() => setApiOnline(false))
   }, [])
 
-  const fetchJobs = useCallback(async () => {
+  const fetchJobs = useCallback(async (isBackground = false) => {
     try {
       const res = await fetch(`${API_BASE}/api/jobs`)
       if (res.ok) {
@@ -184,13 +188,46 @@ export default function AtsPlatform() {
               : j.description
           }
         })
-        setJobsList(list)
+
+        if (isBackground && initialAtsLoadRef.current) {
+          const newlyAdded = []
+          list.forEach(j => {
+            const key = j.reqId || j.id
+            if (key && !knownAtsJobIdsRef.current.has(key)) {
+              newlyAdded.push(j)
+              knownAtsJobIdsRef.current.add(key)
+            }
+          })
+          if (newlyAdded.length > 0) {
+            setJobsList(list)
+            pushActivityNotification({
+              title: `💼 ${newlyAdded.length} New Requisition${newlyAdded.length > 1 ? 's' : ''} Ingested!`,
+              message: newlyAdded.length === 1
+                ? `${newlyAdded[0].title} (Req #${newlyAdded[0].reqId || newlyAdded[0].id}) is now active in ATS.`
+                : `${newlyAdded[0].title} (Req #${newlyAdded[0].reqId}) and ${newlyAdded.length - 1} more requisitions synced from JobsInHand.`,
+              type: 'requisition',
+              category: 'team',
+              actor: 'Ingestion Engine',
+              actorRole: 'Automation Scraper',
+              reqId: newlyAdded[0].reqId || newlyAdded[0].id
+            })
+          }
+        } else {
+          list.forEach(j => {
+            const key = j.reqId || j.id
+            if (key) knownAtsJobIdsRef.current.add(key)
+          })
+          setJobsList(list)
+          initialAtsLoadRef.current = true
+        }
       } else {
-        setJobsList([])
+        if (!isBackground) setJobsList([])
       }
     } catch (err) {
-      console.error('Failed to fetch jobs:', err)
-      setJobsList([])
+      if (!isBackground) {
+        console.error('Failed to fetch jobs:', err)
+        setJobsList([])
+      }
     }
   }, [])
 
@@ -270,6 +307,12 @@ export default function AtsPlatform() {
     fetchJobs()
     fetchCandidates()
     fetchSubmissions()
+
+    const intervalId = setInterval(() => {
+      fetchJobs(true)
+    }, 35000)
+
+    return () => clearInterval(intervalId)
   }, [fetchJobs, fetchCandidates, fetchSubmissions])
 
   const rawCandidates = Array.isArray(allCandidates) ? allCandidates : []
@@ -830,14 +873,14 @@ export default function AtsPlatform() {
               <span>Chat</span>
             </button>
 
-            {/* Notification Bell */}
-            <div style={{ position: 'relative', cursor: 'pointer', padding: '4px' }} title="Notifications">
-              <span style={{ fontSize: '16px' }}>🔔</span>
-              <span style={{
-                position: 'absolute', top: '2px', right: '2px',
-                width: '7px', height: '7px', borderRadius: '50%', background: '#ef4444'
-              }} />
-            </div>
+            {/* Live Activity & Push Notification Bell with Sound */}
+            <ActivityNotificationBell
+              theme="default"
+              onSelectNotification={(notif) => {
+                if (notif.candidateId) setActiveTab('candidates')
+                else if (notif.reqId) navigate('/dashboard')
+              }}
+            />
 
             {/* Requisitions Switcher Shortcut */}
             <button
