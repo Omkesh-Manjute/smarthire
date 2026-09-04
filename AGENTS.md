@@ -31,6 +31,21 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-04 — Reports & Analytics Module Redesigned to Zoho CRM Analytics Dashboard Layout
+- **Zoho CRM Analytics Subheader Toolbar**:
+  - Integrated header toolbar with `Analytics` brand, dashboard dropdown (`★ Org Overview ▾`), dynamic timeframe filter (`This Month ▾`), spin-refresh action `🔄`, secondary outline button `+ Add Component`, and primary royal blue button `Create Dashboard`.
+  - Added interactive modals for adding components and creating custom analytics dashboards.
+- **Zoho CRM Metric KPI Cards**:
+  - Replaced legacy emoji stat cards with clean Zoho metric cards (`#ffffff`, 1px `#e2e8f0` border, muted uppercase labels, 24px bold metric values, inline `▲ 100%` trend badges, and subtitle comparisons).
+  - Configured 4 key cards: `CANDIDATES THIS MONTH`, `ACTIVE REQUISITIONS`, `DEALS / RTR IN PIPELINE`, and `INTERVIEWS & PLACEMENTS`.
+- **Zoho Signature Speedometer & Target Achievement Bar**:
+  - Built custom SVG Speedometer Dial Gauge for candidate sourcing target with arc stroke, needle indicator, min `0`, current value, target, and dynamic `Remaining : N` centered label.
+  - Built horizontal Target Achievement Bullet Bar for `Entire Org` with achieved progress bar (`#86efac`), target label, axis tick steps (`0` to `100`), and clean achieved legend.
+- **Refined Pipeline & Performance Analytics**:
+  - Formatted Candidates by Stage, Weekly Submissions, Conversion Rate Donut rings, Recruitment Funnel progress bars, Most Common Skills, and Job Performance Breakdown table with Zoho CRM minimalist styling.
+- **Production Build Verified**:
+  - 0 errors or warnings on `npm run build` in `smarthire-react`.
+
 ### 2026-09-04 — Public Careers (/jobs) Redesigned with Zoho CRM Minimalist Styling
 - **Eliminated AI-Template Artifacts & Floating Pinned Elements**:
   - Removed awkward floating left "US Clocks ▶" pill button hanging on the viewport edge; cleanly integrated US Live Clocks directly into the enterprise top navigation header with a sleek popover dropdown for EDT/EST, CDT/CST, MDT/MST, and PDT/PST.
