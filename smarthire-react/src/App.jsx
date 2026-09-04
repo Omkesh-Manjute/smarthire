@@ -17,6 +17,7 @@ import CandidateChat from './pages/CandidateChat'
 import Pricing from './pages/Pricing'
 import PublicCareers from './pages/PublicCareers'
 import RecruiterInbox from './pages/RecruiterInbox'
+import Blog from './pages/Blog'
 
 function ProtectedRoute({ children }) {
   const isAuth = localStorage.getItem('verifyhire_authenticated') === 'true' || localStorage.getItem('smarthire_authenticated') === 'true'
@@ -62,6 +63,8 @@ function App() {
         <Route path="/" element={<Homepage />} />
         <Route path="/jobs" element={<PublicCareers />} />
         <Route path="/careers" element={<PublicCareers />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/:slug" element={<Blog />} />
         <Route path="/dashboard" element={<ProtectedRoute><RecruiterDashboard /></ProtectedRoute>} />
         <Route path="/verify" element={<Navigate to="/ats" replace />} />
         <Route path="/ats" element={<ProtectedRoute><AtsPlatform /></ProtectedRoute>} />

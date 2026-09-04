@@ -3,6 +3,7 @@ User-agent: *
 Allow: /
 Allow: /jobs
 Allow: /careers
+Allow: /blog
 Allow: /about
 Allow: /contact
 Allow: /privacy
@@ -19,5 +20,4 @@ Disallow: /inbox
 Disallow: /linkedin-posts
 Disallow: /candidate-chat/
 
-# Replace the URL below with your actual custom domain if you connect one
-Sitemap: https://smarthire.vercel.app/sitemap.xml
+Sitemap: https://smarthire-4zqf.onrender.com/sitemap.xml

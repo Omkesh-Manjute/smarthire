@@ -75,6 +75,106 @@ export default function PublicCareers() {
     }
   }, [searchParams])
 
+  // ─── SEO: Dynamic meta tags & JSON-LD for /jobs page ─────────────────────
+  useEffect(() => {
+    // Page title
+    document.title = 'IT Jobs & Direct Client Contracts | SmartHire by PraxiMinds'
+
+    const setMeta = (name, content, isProperty = false) => {
+      const attr = isProperty ? 'property' : 'name'
+      let el = document.querySelector(`meta[${attr}="${name}"]`)
+      if (!el) {
+        el = document.createElement('meta')
+        el.setAttribute(attr, name)
+        document.head.appendChild(el)
+      }
+      el.setAttribute('content', content)
+    }
+
+    // Primary SEO meta
+    setMeta('description', 'Browse 60+ direct-client IT contract jobs across State, Healthcare & Enterprise clients. Remote, Hybrid & Onsite roles. Apply in 1 click via SmartHire by PraxiMinds.')
+    setMeta('keywords', 'IT jobs, direct client contracts, IT staffing, remote IT jobs, government IT contracts, C2C jobs, W2 jobs, healthcare IT, enterprise contracts, PraxiMinds SmartHire')
+    setMeta('robots', 'index, follow')
+    setMeta('author', 'PraxiMinds SmartHire')
+
+    // OpenGraph
+    setMeta('og:type', 'website', true)
+    setMeta('og:title', 'IT Jobs & Direct Client Contracts | SmartHire by PraxiMinds', true)
+    setMeta('og:description', 'Browse 60+ verified direct-client IT requisitions. State, Healthcare & Enterprise contracts — Remote, Hybrid, Onsite. 1-click apply.', true)
+    setMeta('og:url', 'https://smarthire-4zqf.onrender.com/jobs', true)
+    setMeta('og:image', 'https://smarthire-4zqf.onrender.com/career-hero-slide1.jpg', true)
+    setMeta('og:site_name', 'SmartHire by PraxiMinds', true)
+    setMeta('og:locale', 'en_US', true)
+
+    // Twitter Card
+    setMeta('twitter:card', 'summary_large_image')
+    setMeta('twitter:title', 'IT Jobs & Direct Client Contracts | SmartHire by PraxiMinds')
+    setMeta('twitter:description', 'Browse 60+ verified direct-client IT requisitions. State, Healthcare & Enterprise. 1-click apply.')
+    setMeta('twitter:image', 'https://smarthire-4zqf.onrender.com/career-hero-slide1.jpg')
+
+    // Canonical URL
+    let canonical = document.querySelector('link[rel="canonical"]')
+    if (!canonical) {
+      canonical = document.createElement('link')
+      canonical.setAttribute('rel', 'canonical')
+      document.head.appendChild(canonical)
+    }
+    canonical.setAttribute('href', 'https://smarthire-4zqf.onrender.com/jobs')
+
+    // JSON-LD: WebSite + JobPosting structured data
+    const existingLd = document.getElementById('smarthire-jobs-jsonld')
+    if (existingLd) existingLd.remove()
+    const ldScript = document.createElement('script')
+    ldScript.id = 'smarthire-jobs-jsonld'
+    ldScript.type = 'application/ld+json'
+    ldScript.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://smarthire-4zqf.onrender.com/#website",
+          "url": "https://smarthire-4zqf.onrender.com",
+          "name": "SmartHire by PraxiMinds",
+          "description": "Direct-client IT staffing & ATS platform by PraxiMinds",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://smarthire-4zqf.onrender.com/jobs?search={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        },
+        {
+          "@type": "WebPage",
+          "@id": "https://smarthire-4zqf.onrender.com/jobs#webpage",
+          "url": "https://smarthire-4zqf.onrender.com/jobs",
+          "name": "IT Jobs & Direct Client Contracts | SmartHire by PraxiMinds",
+          "isPartOf": { "@id": "https://smarthire-4zqf.onrender.com/#website" },
+          "description": "Browse 60+ verified direct-client IT contract positions across State, Healthcare & Enterprise clients. Remote, Hybrid & Onsite roles available.",
+          "breadcrumb": {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://smarthire-4zqf.onrender.com" },
+              { "@type": "ListItem", "position": 2, "name": "Jobs", "item": "https://smarthire-4zqf.onrender.com/jobs" }
+            ]
+          }
+        },
+        {
+          "@type": "Organization",
+          "name": "PraxiMinds",
+          "url": "https://smarthire-4zqf.onrender.com",
+          "logo": "https://smarthire-4zqf.onrender.com/favicon.svg",
+          "sameAs": ["https://www.linkedin.com/company/praximinds"]
+        }
+      ]
+    })
+    document.head.appendChild(ldScript)
+
+    return () => {
+      const ld = document.getElementById('smarthire-jobs-jsonld')
+      if (ld) ld.remove()
+    }
+  }, [])
+  // ─────────────────────────────────────────────────────────────────────────
+
   const [themeMode, setThemeMode] = useState('light')
   const [activeChatCandidate, setActiveChatCandidate] = useState(null)
 
@@ -1050,6 +1150,29 @@ export default function PublicCareers() {
             </button>
           )}
 
+          {/* Blog Link */}
+          <button
+            onClick={() => navigate('/blog')}
+            title="SmartHire IT Career Blog"
+            style={{
+              background: 'none',
+              border: `1px solid ${isLight ? '#E2E8F0' : '#374151'}`,
+              color: isLight ? '#475569' : '#94A3B8',
+              fontSize: 13,
+              fontWeight: 600,
+              padding: '6px 13px',
+              borderRadius: 8,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <span>📝</span>
+            <span>Blog</span>
+          </button>
+
           {/* ATS Portal Direct Link */}
           <button
             onClick={() => navigate('/ats')}
@@ -1243,8 +1366,8 @@ export default function PublicCareers() {
             <span>Direct Client Requisitions · State & Enterprise</span>
           </div>
 
-          {/* Main Headline */}
-          <h2 style={{
+          {/* Main Headline — H1 for SEO */}
+          <h1 style={{
             fontSize: 'clamp(28px, 4.5vw, 42px)',
             fontWeight: 900,
             margin: '0 0 14px',
@@ -1263,7 +1386,7 @@ export default function PublicCareers() {
             }}>
               SmartHire
             </span>
-          </h2>
+          </h1>
 
           {/* Subtitle */}
           <p style={{
@@ -1535,8 +1658,8 @@ export default function PublicCareers() {
       <section id="jobs-list" style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px 80px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22, flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <h3 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: theme.textPrimary, letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span>Active Vacancies</span>
+            <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: theme.textPrimary, letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span>Active IT Contract Vacancies</span>
               <span style={{
                 fontSize: 12,
                 fontWeight: 700,
@@ -1548,7 +1671,7 @@ export default function PublicCareers() {
               }}>
                 {filteredJobs.length} Verified
               </span>
-            </h3>
+            </h2>
             <p style={{ margin: '3px 0 0', fontSize: 13, color: theme.textSecondary }}>
               Direct client contracts and full-time opportunities · Auto-refreshed in real-time
             </p>
@@ -1693,9 +1816,9 @@ export default function PublicCareers() {
                     </div>
 
                     {/* Job Title */}
-                    <h4 className="sh-job-title" title={displayTitle}>
+                    <h3 className="sh-job-title" title={displayTitle}>
                       {displayTitle}
-                    </h4>
+                    </h3>
 
                     {/* Metadata Items: Location & Experience */}
                     <div className="sh-metadata-container">
@@ -1715,58 +1838,38 @@ export default function PublicCareers() {
                     {/* Clean Narrative Description (NO Box-Inside-Box) */}
                     <div style={{ marginTop: 'auto', marginBottom: 12 }}>
                       <p style={{
-                        margin: '0 0 6px',
+                        margin: '0 0 8px',
                         fontSize: 12.5,
                         color: theme.textSecondary,
                         lineHeight: 1.55,
                         display: '-webkit-box',
-                        WebkitLineClamp: isBriefExpanded ? 'unset' : 2,
+                        WebkitLineClamp: 2,
                         WebkitBoxOrient: 'vertical',
-                        overflow: isBriefExpanded ? 'visible' : 'hidden',
-                        whiteSpace: isBriefExpanded ? 'pre-wrap' : 'normal'
+                        overflow: 'hidden'
                       }}>
-                        {isBriefExpanded ? fullDesc : summaryText}
+                        {summaryText}
                       </p>
-                      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setExpandedBriefJobId(isBriefExpanded ? null : job.id)
-                          }}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#2563EB',
-                            fontSize: 11.5,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            padding: 0
-                          }}
-                        >
-                          {isBriefExpanded ? '▲ Collapse Summary' : '▼ Read Summary'}
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setFullJdModalJob(job)
-                          }}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#64748B',
-                            fontSize: 11.5,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            padding: 0,
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 3
-                          }}
-                        >
-                          <span>Full JD</span>
-                          <span>↗</span>
-                        </button>
-                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setFullJdModalJob(job)
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#2563EB',
+                          fontSize: 11.5,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          padding: 0,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 3
+                        }}
+                      >
+                        <span>Full JD</span>
+                        <span>↗</span>
+                      </button>
                     </div>
 
                     {/* Skills pills */}
