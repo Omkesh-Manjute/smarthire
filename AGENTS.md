@@ -31,6 +31,19 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-05 — Auto-Playing Hero Background Image Slider with Smooth Crossfade & Controls
+- **Auto-Playing Hero Background Carousel (`HERO_SLIDES`)**:
+  - Replaced static low-opacity hero image with a multi-scene auto-advancing background carousel featuring 3 high-res corporate/tech workplace environments:
+    1. `/career-hero-slide1.jpg` — Digital Constellation Hub (Direct Enterprise & State Contracts)
+    2. `/career-hero-slide2.jpg` — Executive Boardroom (Direct Client Boardroom & Strategic Roles)
+    3. `/career-hero-slide3.jpg` — Modern Engineering Lab (Cloud, Data Systems & Tech Innovation)
+  - Enhanced visibility (`0.44` light / `0.34` dark) with smooth cross-fade animation (`transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), transform 7s ease-out`) and gentle Ken Burns slow-scale zoom (`scale(1.04)`).
+  - Preserved 100% text and search console legibility using an optimized vertical contrast scrim (`linear-gradient(180deg, rgba(250, 251, 253, 0.76) 0%, rgba(250, 251, 253, 0.86) 55%, rgba(250, 251, 253, 0.98) 100%)`).
+  - Added interactive slide control pill bar with previous (`‹`), next (`›`), expandable orange indicator dots (`#FF6B00`), and live scene labels.
+  - Auto-pauses smoothly on mouse hover (`isSliderHovered`).
+- **Production Build Verified**:
+  - 0 errors or warnings on `npm run build` in `smarthire-react`.
+
 ### 2026-09-05 — PraxiMinds Full-Canvas Grid Lining, Career Hero Background Image & Req Number Removed
 - **PraxiMinds Full-Canvas Grid Lining Pattern**:
   - Replaced dots with the authentic PraxiMinds technical grid lining (`linear-gradient(to right, rgba(100, 116, 139, 0.12) 1px, transparent 1px), linear-gradient(to bottom, rgba(100, 116, 139, 0.12) 1px, transparent 1px)` at `32px 32px` spacing).

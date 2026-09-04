@@ -217,6 +217,40 @@ export default function PublicCareers() {
     cardHoverShadow: isLight ? '0 14px 30px -4px rgba(37, 99, 235, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.06)' : '0 20px 40px rgba(0, 0, 0, 0.6)'
   }
 
+  // Hero Background Carousel Slides
+  const HERO_SLIDES = [
+    {
+      id: 1,
+      image: '/career-hero-slide1.jpg',
+      label: 'Digital Constellation Hub',
+      caption: 'Direct Enterprise & State Contracts'
+    },
+    {
+      id: 2,
+      image: '/career-hero-slide2.jpg',
+      label: 'Executive Boardroom',
+      caption: 'Direct Client Boardroom & Strategic Roles'
+    },
+    {
+      id: 3,
+      image: '/career-hero-slide3.jpg',
+      label: 'Modern Engineering Lab',
+      caption: 'Cloud, Data Systems & Tech Innovation'
+    }
+  ]
+
+  const [currentHeroSlide, setCurrentHeroSlide] = useState(0)
+  const [isSliderHovered, setIsSliderHovered] = useState(false)
+
+  // Auto-play slider with hover pause
+  useEffect(() => {
+    if (isSliderHovered) return
+    const timer = setInterval(() => {
+      setCurrentHeroSlide((prev) => (prev + 1) % HERO_SLIDES.length)
+    }, 5000)
+    return () => clearInterval(timer)
+  }, [isSliderHovered, HERO_SLIDES.length])
+
   const [expandedBriefJobId, setExpandedBriefJobId] = useState(null)
 
   // Helper to extract clean human name from resume filename
@@ -1060,35 +1094,50 @@ export default function PublicCareers() {
         </div>
       </header>
 
-      {/* Executive Hero Section with Real Career Image Background & PraxiMinds Grid Canvas */}
-      <section style={{
-        position: 'relative',
-        overflow: 'hidden',
-        borderBottom: `1px solid ${theme.border}`,
-        padding: '52px 24px 46px',
-        textAlign: 'center'
-      }}>
-        {/* Real Workplace & Digital Network Background Image Layer */}
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundImage: `url('/career-hero-bg.jpg')`,
-          backgroundPosition: 'center 35%',
-          backgroundSize: 'cover',
-          backgroundRepeat: 'no-repeat',
-          opacity: isLight ? 0.22 : 0.16,
-          filter: 'blur(1.5px)',
-          pointerEvents: 'none',
-          zIndex: 0
-        }} />
+      {/* Executive Hero Section with Real Career Image Background Slider & PraxiMinds Grid Canvas */}
+      <section 
+        onMouseEnter={() => setIsSliderHovered(true)}
+        onMouseLeave={() => setIsSliderHovered(false)}
+        style={{
+          position: 'relative',
+          overflow: 'hidden',
+          borderBottom: `1px solid ${theme.border}`,
+          padding: '52px 24px 46px',
+          textAlign: 'center'
+        }}
+      >
+        {/* Real Workplace Background Image Carousel / Slider */}
+        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0, pointerEvents: 'none' }}>
+          {HERO_SLIDES.map((slide, idx) => {
+            const isActive = currentHeroSlide === idx
+            return (
+              <div
+                key={slide.id}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  backgroundImage: `url('${slide.image}')`,
+                  backgroundPosition: 'center 35%',
+                  backgroundSize: 'cover',
+                  backgroundRepeat: 'no-repeat',
+                  opacity: isActive ? (isLight ? 0.44 : 0.34) : 0,
+                  transform: isActive ? 'scale(1.04)' : 'scale(1.0)',
+                  transition: 'opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), transform 7s ease-out',
+                  filter: 'blur(0.5px)',
+                  willChange: 'opacity, transform'
+                }}
+              />
+            )
+          })}
+        </div>
 
-        {/* Soft Vignette Overlay to merge with Grid Canvas seamlessly */}
+        {/* Soft Contrast Gradient Overlay - Balanced to keep images clearly recognizable while text remains 100% crisp */}
         <div style={{
           position: 'absolute',
           inset: 0,
           background: isLight 
-            ? 'radial-gradient(ellipse 85% 75% at 50% 40%, rgba(250, 251, 253, 0.82) 0%, rgba(250, 251, 253, 0.96) 100%)'
-            : 'radial-gradient(ellipse 85% 75% at 50% 40%, rgba(8, 12, 20, 0.84) 0%, rgba(8, 12, 20, 0.98) 100%)',
+            ? 'linear-gradient(180deg, rgba(250, 251, 253, 0.76) 0%, rgba(250, 251, 253, 0.86) 55%, rgba(250, 251, 253, 0.98) 100%)'
+            : 'linear-gradient(180deg, rgba(8, 12, 20, 0.78) 0%, rgba(8, 12, 20, 0.88) 55%, rgba(8, 12, 20, 0.98) 100%)',
           pointerEvents: 'none',
           zIndex: 0
         }} />
@@ -1432,6 +1481,104 @@ export default function PublicCareers() {
             >
               📍 Onsite ({onsiteCount})
             </button>
+          </div>
+
+          {/* Hero Background Slider Interactive Controls */}
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 12,
+            marginTop: 22,
+            backgroundColor: isLight ? 'rgba(255, 255, 255, 0.88)' : 'rgba(17, 24, 39, 0.85)',
+            border: `1px solid ${isLight ? '#CBD5E1' : 'rgba(255, 255, 255, 0.12)'}`,
+            backdropFilter: 'blur(10px)',
+            borderRadius: 30,
+            padding: '4px 14px 4px 8px',
+            boxShadow: isLight ? '0 2px 8px rgba(15, 23, 42, 0.05)' : '0 4px 14px rgba(0, 0, 0, 0.35)'
+          }}>
+            {/* Prev Button */}
+            <button
+              type="button"
+              onClick={() => setCurrentHeroSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length)}
+              title="Previous Background"
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: '50%',
+                backgroundColor: isLight ? '#F1F5F9' : '#1E293B',
+                border: 'none',
+                color: theme.textSecondary,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                fontSize: 13,
+                fontWeight: 800,
+                transition: 'all 0.15s ease'
+              }}
+            >
+              ‹
+            </button>
+
+            {/* Slide Indicators */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {HERO_SLIDES.map((slide, idx) => {
+                const isActive = currentHeroSlide === idx
+                return (
+                  <button
+                    key={slide.id}
+                    type="button"
+                    onClick={() => setCurrentHeroSlide(idx)}
+                    title={slide.label}
+                    style={{
+                      height: 6,
+                      width: isActive ? 22 : 6,
+                      borderRadius: 3,
+                      backgroundColor: isActive ? '#FF6B00' : (isLight ? '#CBD5E1' : '#475569'),
+                      border: 'none',
+                      padding: 0,
+                      cursor: 'pointer',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                    }}
+                  />
+                )
+              })}
+            </div>
+
+            {/* Next Button */}
+            <button
+              type="button"
+              onClick={() => setCurrentHeroSlide((prev) => (prev + 1) % HERO_SLIDES.length)}
+              title="Next Background"
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: '50%',
+                backgroundColor: isLight ? '#F1F5F9' : '#1E293B',
+                border: 'none',
+                color: theme.textSecondary,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                fontSize: 13,
+                fontWeight: 800,
+                transition: 'all 0.15s ease'
+              }}
+            >
+              ›
+            </button>
+
+            {/* Active Slide Info Text */}
+            <span style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: isLight ? '#334155' : '#CBD5E1',
+              letterSpacing: '0.02em',
+              whiteSpace: 'nowrap'
+            }}>
+              {HERO_SLIDES[currentHeroSlide].label}
+            </span>
           </div>
         </div>
       </section>
