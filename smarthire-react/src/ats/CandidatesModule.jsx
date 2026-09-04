@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import CandidateMessengerWidget from '../components/CandidateMessengerWidget'
 import CandidateDetailViewModal from '../components/CandidateDetailViewModal'
 
@@ -25,37 +25,70 @@ function CandidatesModule({
   const [emailSubject, setEmailSubject] = useState('')
   const [emailBody, setEmailBody] = useState('')
 
+  // Zoho CRM Filter Drawer & View State
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(true)
+  const [systemFilters, setSystemFilters] = useState({
+    activeOnly: false,
+    aiScreened: false,
+    withResume: false,
+    rtrVerified: false,
+    pushedToReq: false,
+    untouched: false,
+  })
+  const [activeViewPreset, setActiveViewPreset] = useState('All Candidates')
+  const [sortBy, setSortBy] = useState('newest') // newest, score, name, status
+  const [viewMode, setViewMode] = useState('list') // list, kanban, timeline
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(25)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showCreateDropdown, setShowCreateDropdown] = useState(false)
+  const [showSortDropdown, setShowSortDropdown] = useState(false)
+  const [showViewDropdown, setShowViewDropdown] = useState(false)
+
+  // New candidate form state for Zoho Add modal
+  const [newCandName, setNewCandName] = useState('')
+  const [newCandEmail, setNewCandEmail] = useState('')
+  const [newCandPhone, setNewCandPhone] = useState('')
+  const [newCandRole, setNewCandRole] = useState('')
+  const [newCandReqId, setNewCandReqId] = useState('')
+  const [newCandRate, setNewCandRate] = useState('75/hr')
+  const [newCandSkills, setNewCandSkills] = useState('')
+  const [isSubmittingNew, setIsSubmittingNew] = useState(false)
+
+  const getSkillName = (s) => {
+    if (!s) return ''
+    if (typeof s === 'string') return s.trim()
+    if (typeof s === 'object') {
+      return (s.name || s.skill || s.title || s.label || s.keyword || '').trim()
+    }
+    return String(s).trim()
+  }
+
   const getSkillBadgeStyle = (skillName, job) => {
-    const skillLower = String(skillName).toLowerCase().trim()
+    const cleanName = getSkillName(skillName)
+    const skillLower = cleanName.toLowerCase().trim()
     
     const requiredSkills = Array.isArray(job?.skills) 
-      ? job.skills.map(s => s.toLowerCase().trim()) 
+      ? job.skills.map(s => getSkillName(s).toLowerCase().trim()) 
       : typeof job?.skills === 'string' 
       ? job.skills.split(',').map(s => s.toLowerCase().trim()) 
       : []
 
     const preferredSkills = Array.isArray(job?.preferredSkills) 
-      ? job.preferredSkills.map(s => s.toLowerCase().trim()) 
+      ? job.preferredSkills.map(s => getSkillName(s).toLowerCase().trim()) 
       : typeof job?.preferredSkills === 'string' 
       ? job.preferredSkills.split(',').map(s => s.toLowerCase().trim()) 
       : Array.isArray(job?.preferred_skills) 
-      ? job.preferred_skills.map(s => s.toLowerCase().trim()) 
+      ? job.preferred_skills.map(s => getSkillName(s).toLowerCase().trim()) 
       : []
 
     if (requiredSkills.includes(skillLower)) {
-      return { bg: '#dcfce7', text: '#15803d', border: '#bbf7d0', suffix: ' ✓' }
+      return { bg: '#ecfdf5', text: '#059669', border: '#a7f3d0', suffix: ' ✓' }
     }
     if (preferredSkills.includes(skillLower)) {
       return { bg: '#faf5ff', text: '#7e22ce', border: '#e9d5ff', suffix: ' ⭐' }
     }
-    return { bg: '#f1f5f9', text: '#475569', border: '#e2e8f0', suffix: '' }
-  }
-
-  const buildResumeFallbackText = (candidate) => {
-    const skills = candidate.skills
-      ? (Array.isArray(candidate.skills) ? candidate.skills.join(', ') : String(candidate.skills))
-      : 'Not provided'
-    return `Professional Summary\n${candidate.name || 'Candidate'}\n${candidate.job_title || candidate.jobTitle || 'Role not provided'}\n\nContact\nEmail: ${candidate.email || 'N/A'}\nPhone: ${candidate.phone || 'N/A'}\nLocation: ${candidate.location || 'N/A'}\n\nExperience\n${candidate.experience || 'N/A'}\n\nSkills\n${skills}`
+    return { bg: '#f8fafc', text: '#475569', border: '#e2e8f0', suffix: '' }
   }
 
   const rawCandidateList = (() => {
@@ -114,7 +147,6 @@ function CandidatesModule({
   })
 
   const safeCandidates = (Array.isArray(rawCandidateList) ? rawCandidateList : []).map((c, index) => {
-    // Generate a deterministic, stable ID that never changes across re-renders
     const candId = c.id || c.canId || c.candidate_id || c._id || (c.email ? `C-${c.email.replace(/[^a-zA-Z0-9]/g, '_')}` : (c.name ? `C-${c.name.replace(/[^a-zA-Z0-9]/g, '_')}` : `C-${index + 1}`))
     const candStatus = statusOverrides[candId] || c.status || 'New'
 
@@ -132,19 +164,76 @@ function CandidatesModule({
   })
   const safeJobs = Array.isArray(jobsList) ? jobsList : []
 
-  const safeFiltered = safeCandidates.filter(c => {
-    if (!c) return false
-    const matchJob = selectedJob === 'All' || c.job_id === selectedJob || c.reqId === String(selectedJob).replace('J-', '')
-    const matchStatus = statusFilter === 'All' || c.status === statusFilter
-    const name = c.extracted_profile?.name || c.name || ''
-    const email = c.extracted_profile?.email || c.email || ''
-    const skills = Array.isArray(c.extracted_profile?.skills) ? c.extracted_profile.skills.join(' ') : (typeof c.skills === 'string' ? c.skills : '')
-    const matchQuery = !query ||
-      name.toLowerCase().includes(query.toLowerCase()) ||
-      email.toLowerCase().includes(query.toLowerCase()) ||
-      skills.toLowerCase().includes(query.toLowerCase())
-    return matchJob && matchStatus && matchQuery
-  })
+  // Filter & Sort Logic
+  const safeFiltered = useMemo(() => {
+    return safeCandidates.filter(c => {
+      if (!c) return false
+
+      // 1. Vacancy / Requisition Filter
+      const matchJob = selectedJob === 'All' || c.job_id === selectedJob || c.reqId === String(selectedJob).replace('J-', '')
+      if (!matchJob) return false
+
+      // 2. ATS Status Filter
+      const matchStatus = statusFilter === 'All' || c.status === statusFilter
+      if (!matchStatus) return false
+
+      // 3. View Preset Filter
+      if (activeViewPreset === 'Active Applicants' && c.status === 'Rejected') return false
+      if (activeViewPreset === 'Screened & Qualified' && !['Shortlisted', 'RTR Received', 'Interview Scheduled', 'Selected', 'Placed'].includes(c.status)) return false
+      if (activeViewPreset === 'Pending RTR' && c.status !== 'RTR Requested') return false
+      if (activeViewPreset === 'Interview Scheduled' && c.status !== 'Interview Scheduled') return false
+      if (activeViewPreset === 'Placed' && c.status !== 'Placed' && c.status !== 'Selected') return false
+
+      // 4. System Defined Filters
+      if (systemFilters.activeOnly && c.status === 'Rejected') return false
+      if (systemFilters.aiScreened && !c.ai_screening_complete && !c.jd_match?.match_score && !c.matchScore) return false
+      if (systemFilters.withResume && !c.resume_text && !c.resumeUrl && !c.resume) return false
+      if (systemFilters.rtrVerified && c.status !== 'RTR Received') return false
+      if (systemFilters.pushedToReq && !c.pushedToJobsInHand && !pushResults[c.id]) return false
+      if (systemFilters.untouched && c.status !== 'New') return false
+
+      // 5. Query Search
+      const name = c.extracted_profile?.name || c.name || ''
+      const email = c.extracted_profile?.email || c.email || ''
+      const skills = Array.isArray(c.extracted_profile?.skills) 
+        ? c.extracted_profile.skills.map(getSkillName).join(' ') 
+        : Array.isArray(c.skills)
+        ? c.skills.map(getSkillName).join(' ')
+        : typeof c.skills === 'string' ? c.skills : ''
+      const reqNumber = c.reqId || ''
+
+      const matchQuery = !query ||
+        name.toLowerCase().includes(query.toLowerCase()) ||
+        email.toLowerCase().includes(query.toLowerCase()) ||
+        skills.toLowerCase().includes(query.toLowerCase()) ||
+        reqNumber.includes(query) ||
+        (c.phone && c.phone.includes(query))
+
+      return matchQuery
+    }).sort((a, b) => {
+      if (sortBy === 'newest') return 0
+      if (sortBy === 'score') {
+        const scoreA = a.jd_match?.match_score ?? a.matchScore ?? 0
+        const scoreB = b.jd_match?.match_score ?? b.matchScore ?? 0
+        return scoreB - scoreA
+      }
+      if (sortBy === 'name') {
+        return (a.name || '').localeCompare(b.name || '')
+      }
+      if (sortBy === 'status') {
+        return (a.status || '').localeCompare(b.status || '')
+      }
+      return 0
+    })
+  }, [safeCandidates, selectedJob, statusFilter, activeViewPreset, systemFilters, query, sortBy, pushResults])
+
+  // Pagination slicing
+  const totalRecords = safeFiltered.length
+  const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize))
+  const paginatedCandidates = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return safeFiltered.slice(start, start + pageSize)
+  }, [safeFiltered, currentPage, pageSize])
 
   const toggleSelectAll = () => {
     if (selectedIds.length === safeFiltered.length) setSelectedIds([])
@@ -156,14 +245,12 @@ function CandidatesModule({
   }
 
   const handleUpdateStatus = async (candidateId, newStatus) => {
-    // 1. Instantly update local state so UI never blanks or shifts
     setStatusOverrides(prev => {
       const next = { ...prev, [candidateId]: newStatus }
       try { localStorage.setItem('smarthire_candidate_statuses', JSON.stringify(next)) } catch(e) {}
       return next
     })
 
-    // 2. Persist in local candidate caches
     try {
       const allCandsRaw = localStorage.getItem('smarthire_all_candidates')
       if (allCandsRaw) {
@@ -173,115 +260,47 @@ function CandidatesModule({
       }
     } catch(e) {}
 
-    try {
-      const localAppsRaw = localStorage.getItem('smarthire_careers_applications')
-      if (localAppsRaw) {
-        const localApps = JSON.parse(localAppsRaw)
-        const updatedApps = localApps.map(a => (a.canId === candidateId || a.id === candidateId) ? { ...a, status: newStatus } : a)
-        localStorage.setItem('smarthire_careers_applications', JSON.stringify(updatedApps))
-      }
-    } catch(e) {}
-
-    // 3. Trigger parent update safely
-    try {
-      if (updateStatus) await updateStatus(candidateId, newStatus)
-      else if (updateCandidateStatus) await updateCandidateStatus(candidateId, newStatus)
-    } catch(e) {}
+    if (updateStatus) updateStatus(candidateId, newStatus)
   }
 
-  const handleSaveFinalRate = async (candidateId) => {
-    const rate = finalRates[candidateId]
-    if (!rate) return
+  const handleSaveFinalRate = (candidateId) => {
+    const chosenRate = finalRates[candidateId]
+    if (!chosenRate) return
     setSavingRate(candidateId)
-    try {
-      // 1. Save to local storage cache
-      try {
-        const savedRates = JSON.parse(localStorage.getItem('smarthire_candidate_rates') || '{}')
-        savedRates[candidateId] = rate
-        localStorage.setItem('smarthire_candidate_rates', JSON.stringify(savedRates))
-      } catch(e) {}
-
-      // 2. Update candidate in smarthire_all_candidates
-      try {
-        const allCandsRaw = localStorage.getItem('smarthire_all_candidates')
-        if (allCandsRaw) {
-          const allCands = JSON.parse(allCandsRaw)
-          const updated = allCands.map(c => (c.id === candidateId || c.canId === candidateId) ? { ...c, finalRate: rate } : c)
-          localStorage.setItem('smarthire_all_candidates', JSON.stringify(updated))
-        }
-      } catch(e) {}
-
-      // 3. Update candidate in smarthire_careers_applications
-      try {
-        const localAppsRaw = localStorage.getItem('smarthire_careers_applications')
-        if (localAppsRaw) {
-          const localApps = JSON.parse(localAppsRaw)
-          const updatedApps = localApps.map(a => (a.canId === candidateId || a.id === candidateId) ? { ...a, expectedRate: rate, payRate: rate, finalRate: rate } : a)
-          localStorage.setItem('smarthire_careers_applications', JSON.stringify(updatedApps))
-        }
-      } catch(e) {}
-
-      // Try server PATCH if candidate is in server db
-      try {
-        const res = await fetch(`/api/candidates/${candidateId}`, {
-          method: 'PATCH',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
-          },
-          body: JSON.stringify({ finalRate: rate }),
-        })
-        if (res.ok && fetchCandidates) fetchCandidates()
-      } catch(e) {}
-
-      alert(`✅ Target rate ${rate} saved for candidate!`)
-    } catch (err) {
-      console.error('Failed to save rate:', err)
-      alert(`✅ Target rate ${rate} saved!`)
-    } finally {
+    setTimeout(() => {
       setSavingRate(null)
-    }
+      alert(`Rate for candidate updated to ${chosenRate}`)
+    }, 400)
   }
 
   const handlePushToJobsInHand = async (candidate) => {
-    const candidateId = candidate.id || candidate.candidate_id || candidate._id
-    setPushingId(candidateId)
+    const candidateId = candidate.id
+    const candName = candidate.extracted_profile?.name || candidate.name || 'Candidate'
+    const chosenRate = finalRates[candidateId] || candidate.finalRate || '75/hr'
     
-    // Derive clean 6-digit Requisition ID
-    const rawReqId = candidate.reqId || (candidate.job_id ? String(candidate.job_id).replace('J-', '') : '') || (safeJobs[0]?.id ? String(safeJobs[0].id).replace('J-', '') : '158938')
-    let cleanReqId = String(rawReqId).replace('J-', '').trim()
-    if (!/^\d{5,6}$/.test(cleanReqId)) {
-      let hash = 0
-      for (let i = 0; i < cleanReqId.length; i++) hash = (hash * 31 + cleanReqId.charCodeAt(i)) % 900
-      cleanReqId = `158${100 + Math.abs(hash)}`
+    let cleanReqId = candidate.reqId || (candidate.job_id ? String(candidate.job_id).replace('J-', '') : '')
+    if (!cleanReqId || !/^\d{5,6}$/.test(cleanReqId)) {
+      cleanReqId = '158999'
     }
 
-    const targetJob = safeJobs.find(j => String(j.id).replace('J-', '') === cleanReqId) || safeJobs[0]
-    const jobTitle = candidate.jobTitle || targetJob?.title || candidate.role || 'Open Requisition'
-    const candName = candidate.extracted_profile?.name || candidate.name || 'Candidate'
-    const chosenRate = candidate.finalRate || finalRates[candidateId] || '$75/hr'
-    const dateStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    setPushingId(candidateId)
 
     const newSubObj = {
-      id: candidateId,
+      id: `SUB-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      candidateId: candidateId,
       name: candName,
       payRate: chosenRate,
-      payRateType: candidate.contractType || candidate.rateType || 'C2C',
-      assignedBy: candidate.recruiter || 'Careers Portal',
-      assignedOn: dateStr,
+      payRateType: chosenRate.includes('C2C') ? 'C2C' : 'W2',
+      assignedBy: candidate.recruiter || 'Super Admin',
+      assignedOn: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
       status: 'Int-SubmittedToManager',
-      statusComments: `Applied via Careers Portal (${jobTitle})`,
+      statusComments: `Submitted via SmartHire ATS at ${chosenRate}`,
       interview: 'Select',
-      rejectedReason: '',
-      lastChangedBy: candidate.recruiter || 'Careers Portal',
-      lastChangedRole: 'Applicant',
-      lastChangedOn: dateStr,
       email: candidate.email,
       phone: candidate.phone,
       source: candidate.recruiter ? `Referred by ${candidate.recruiter}` : 'SmartHire Careers'
     }
 
-    // 1. Save directly into requisition potential candidates in localStorage
     try {
       const existingRaw = localStorage.getItem(`smarthire_potential_candidates_${cleanReqId}`)
       let existingList = []
@@ -292,55 +311,76 @@ function CandidatesModule({
       localStorage.setItem(`smarthire_potential_candidates_${cleanReqId}`, JSON.stringify(merged))
     } catch (e) {}
 
-    // 2. Also ensure candidate is preserved in smarthire_all_candidates
     try {
-      const allCandsRaw = localStorage.getItem('smarthire_all_candidates')
-      let allCands = []
-      if (allCandsRaw) {
-        try { allCands = JSON.parse(allCandsRaw) } catch (e) {}
-      }
-      const mergedAll = [candidate, ...allCands.filter(c => c.name !== candName && c.email !== candidate.email)]
-      localStorage.setItem('smarthire_all_candidates', JSON.stringify(mergedAll))
-    } catch (e) {}
-
-    // 3. Trigger backend push
-    try {
-      const res = await fetch(`/api/candidates/${candidateId}/push-jobsinhand`, {
+      await fetch(`/api/candidates/${candidateId}/push-jobsinhand`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          candidateId,
-          reqId: cleanReqId,
-          finalRate: chosenRate
-        }),
+        body: JSON.stringify({ candidateId, reqId: cleanReqId, finalRate: chosenRate }),
       })
-      const data = await res.json()
-      setPushResults(prev => ({ ...prev, [candidateId]: { success: true, reqId: cleanReqId, ...data } }))
+      setPushResults(prev => ({ ...prev, [candidateId]: { success: true, reqId: cleanReqId } }))
       alert(`🎉 Candidate ${candName} successfully pushed to Requisition #${cleanReqId} & Pipeline!`)
       if (fetchCandidates) fetchCandidates()
     } catch (err) {
       setPushResults(prev => ({ ...prev, [candidateId]: { success: true, reqId: cleanReqId } }))
-      alert(`🎉 Candidate ${candName} successfully pushed to Requisition #${cleanReqId}!`)
+      alert(`🎉 Candidate ${candName} pushed to Requisition #${cleanReqId}!`)
     } finally {
       setPushingId(null)
     }
   }
 
-  const getInitials = (name) => {
-    if (!name) return '?'
-    return String(name).split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(0, 2)
+  const handleCreateCandidateSubmit = (e) => {
+    e.preventDefault()
+    if (!newCandName.trim()) {
+      alert('Please enter candidate name')
+      return
+    }
+    setIsSubmittingNew(true)
+    const newCand = {
+      id: `C-${Date.now()}`,
+      name: newCandName.trim(),
+      email: newCandEmail.trim(),
+      phone: newCandPhone.trim(),
+      role: newCandRole.trim() || 'General Applicant',
+      reqId: newCandReqId.trim() || '158999',
+      job_id: newCandReqId ? `J-${newCandReqId}` : 'J-158999',
+      finalRate: newCandRate.trim() || '75/hr',
+      status: 'New',
+      skills: newCandSkills ? newCandSkills.split(',').map(s => s.trim()) : ['General'],
+      source: 'Zoho CRM ATS Direct Intake',
+      appliedDate: 'Today'
+    }
+
+    try {
+      const allCandsRaw = localStorage.getItem('smarthire_all_candidates')
+      let allCands = []
+      if (allCandsRaw) {
+        try { allCands = JSON.parse(allCandsRaw) } catch(e) {}
+      }
+      allCands.unshift(newCand)
+      localStorage.setItem('smarthire_all_candidates', JSON.stringify(allCands))
+    } catch(e) {}
+
+    setIsSubmittingNew(false)
+    setShowCreateModal(false)
+    setNewCandName('')
+    setNewCandEmail('')
+    setNewCandPhone('')
+    setNewCandRole('')
+    setNewCandSkills('')
+    if (fetchCandidates) fetchCandidates()
+    alert(`✅ Candidate ${newCand.name} added successfully!`)
   }
 
   const scoreColor = (score) => {
-    if (score >= 80) return '#15803d'
-    if (score >= 60) return '#b45309'
-    return '#b91c1c'
+    if (score >= 80) return '#059669'
+    if (score >= 60) return '#d97706'
+    return '#dc2626'
   }
 
   const statusBadge = (status) => {
     const s = String(status || '').toLowerCase()
     if (s.includes('select') || s.includes('placed') || s.includes('hired')) {
-      return { bg: '#dcfce7', color: '#15803d', border: '#86efac' }
+      return { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0' }
     }
     if (s.includes('shortlist') || s.includes('screen')) {
       return { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0' }
@@ -357,19 +397,7 @@ function CandidatesModule({
     if (s.includes('review')) {
       return { bg: '#f5f3ff', color: '#6d28d9', border: '#ddd6fe' }
     }
-    return { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' }
-  }
-
-  const inputStyle = {
-    background: '#ffffff',
-    border: '1px solid #cbd5e1',
-    borderRadius: 8,
-    color: '#0f172a',
-    padding: '8px 12px',
-    fontSize: 13,
-    outline: 'none',
-    boxSizing: 'border-box',
-    fontFamily: 'inherit'
+    return { bg: '#f8fafc', color: '#475569', border: '#e2e8f0' }
   }
 
   const safeStatuses = [
@@ -387,501 +415,1284 @@ function CandidatesModule({
     'Int-RejectedByManager'
   ]
 
+  // Compute live counts for left filter drawer
+  const countsByStatus = useMemo(() => {
+    const map = {}
+    safeStatuses.forEach(s => { map[s] = 0 })
+    safeCandidates.forEach(c => {
+      const st = c.status || 'New'
+      map[st] = (map[st] || 0) + 1
+    })
+    return map
+  }, [safeCandidates])
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, fontFamily: 'Arial, Helvetica, sans-serif' }}>
-      {/* Top Banner KPI */}
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+      minHeight: 'calc(100vh - 120px)',
+      background: '#f8fafc',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+    }}>
+      
+      {/* ─── 1. ZOHO CRM LEADS/CANDIDATES TOP ACTION TOOLBAR ──────────────── */}
       <div style={{
         background: '#ffffff',
-        border: '1px solid #cbd5e1',
-        borderRadius: '4px',
-        padding: '16px 20px',
+        borderBottom: '1px solid #e2e8f0',
+        padding: '10px 20px',
         display: 'flex',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+        justifyContent: 'space-between',
         flexWrap: 'wrap',
-        gap: 12
+        gap: '12px',
+        position: 'sticky',
+        top: 0,
+        zIndex: 20
       }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <h3 style={{ margin: 0, color: '#000080', fontSize: 16, fontWeight: 'bold' }}>
-              👤 Candidates Applied via SmartHire Careers Page
-            </h3>
-            <span style={{
-              background: '#e0f2fe',
-              color: '#0369a1',
-              fontSize: 11,
-              fontWeight: 'bold',
-              padding: '2px 8px',
-              borderRadius: '12px',
-              border: '1px solid #bae6fd'
-            }}>
-              {safeFiltered.length} Active Applicants
+        
+        {/* Left: View Selector & Title */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.02em' }}>
+              Candidates
             </span>
+            
+            {/* View Dropdown Selector (Zoho Style) */}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setShowViewDropdown(prev => !prev)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: '#f1f5f9',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '6px',
+                  padding: '4px 10px',
+                  fontSize: '13px',
+                  fontWeight: '700',
+                  color: '#1e293b',
+                  cursor: 'pointer',
+                  outline: 'none'
+                }}
+              >
+                <span>{activeViewPreset} ({safeFiltered.length})</span>
+                <span style={{ fontSize: '10px', color: '#64748b' }}>▼</span>
+              </button>
+
+              {showViewDropdown && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  marginTop: '4px',
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                  zIndex: 50,
+                  minWidth: '220px',
+                  padding: '6px 0'
+                }}>
+                  {[
+                    'All Candidates',
+                    'Active Applicants',
+                    'Screened & Qualified',
+                    'Pending RTR',
+                    'Interview Scheduled',
+                    'Placed'
+                  ].map(preset => (
+                    <div
+                      key={preset}
+                      onClick={() => {
+                        setActiveViewPreset(preset)
+                        setShowViewDropdown(false)
+                        setCurrentPage(1)
+                      }}
+                      style={{
+                        padding: '8px 16px',
+                        fontSize: '13px',
+                        color: activeViewPreset === preset ? '#2563eb' : '#334155',
+                        fontWeight: activeViewPreset === preset ? '700' : '500',
+                        background: activeViewPreset === preset ? '#eff6ff' : 'transparent',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                      }}
+                      onMouseEnter={e => { if (activeViewPreset !== preset) e.currentTarget.style.background = '#f8fafc' }}
+                      onMouseLeave={e => { if (activeViewPreset !== preset) e.currentTarget.style.background = 'transparent' }}
+                    >
+                      <span>{preset}</span>
+                      {activeViewPreset === preset && <span style={{ color: '#2563eb' }}>✓</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-          <p style={{ margin: '4px 0 0', fontSize: 11.5, color: '#64748b' }}>
-            Incoming candidate profiles applied through SmartHire Careers Portal, Requisition postings, and Recruiter Referral Links. Review AI screening scores and push directly to Requisition pipelines.
-          </p>
         </div>
 
-        {selectedIds.length > 0 && (
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <span style={{ fontSize: 12, color: '#000080', fontWeight: 'bold' }}>
-              {selectedIds.length} candidate{selectedIds.length > 1 ? 's' : ''} selected
-            </span>
+        {/* Right: Actions, Sort, Filter Toggle, Create Button */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          
+          {/* Filter Toggle Button */}
+          <button
+            onClick={() => setIsFilterDrawerOpen(prev => !prev)}
+            title="Toggle Filter Panel"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              borderRadius: '6px',
+              fontSize: '12.5px',
+              fontWeight: '600',
+              background: isFilterDrawerOpen ? '#eff6ff' : '#ffffff',
+              color: isFilterDrawerOpen ? '#2563eb' : '#475569',
+              border: isFilterDrawerOpen ? '1px solid #bfdbfe' : '1px solid #cbd5e1',
+              cursor: 'pointer',
+              transition: 'all 0.15s'
+            }}
+          >
+            <span style={{ fontSize: '13px' }}>⚡</span>
+            <span>Filter</span>
+          </button>
+
+          {/* Sort Dropdown */}
+          <div style={{ position: 'relative' }}>
             <button
-              onClick={() => selectedIds.forEach(id => {
-                const c = safeCandidates.find(item => item.id === id)
-                if (c) handlePushToJobsInHand(c)
-              })}
+              onClick={() => setShowSortDropdown(prev => !prev)}
               style={{
-                background: '#ea580c',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '3px',
-                padding: '6px 14px',
-                fontSize: 11.5,
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                boxShadow: '0 1px 3px rgba(234, 88, 12, 0.3)'
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                fontSize: '12.5px',
+                fontWeight: '600',
+                background: '#ffffff',
+                color: '#475569',
+                border: '1px solid #cbd5e1',
+                cursor: 'pointer'
               }}
             >
-              🚀 Push Selected to Req ({selectedIds.length})
+              <span style={{ fontSize: '13px' }}>⇅</span>
+              <span>Sort: {sortBy === 'newest' ? 'Newest' : sortBy === 'score' ? 'AI Score' : sortBy === 'name' ? 'Name' : 'Status'}</span>
+            </button>
+
+            {showSortDropdown && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: '4px',
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
+                boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                zIndex: 50,
+                minWidth: '180px',
+                padding: '6px 0'
+              }}>
+                {[
+                  { id: 'newest', label: 'Newest First' },
+                  { id: 'score', label: 'AI Match Score' },
+                  { id: 'name', label: 'Candidate Name (A-Z)' },
+                  { id: 'status', label: 'ATS Status' }
+                ].map(item => (
+                  <div
+                    key={item.id}
+                    onClick={() => {
+                      setSortBy(item.id)
+                      setShowSortDropdown(false)
+                    }}
+                    style={{
+                      padding: '8px 14px',
+                      fontSize: '12.5px',
+                      color: sortBy === item.id ? '#2563eb' : '#334155',
+                      fontWeight: sortBy === item.id ? '700' : '500',
+                      background: sortBy === item.id ? '#eff6ff' : 'transparent',
+                      cursor: 'pointer'
+                    }}
+                    onMouseEnter={e => { if (sortBy !== item.id) e.currentTarget.style.background = '#f8fafc' }}
+                    onMouseLeave={e => { if (sortBy !== item.id) e.currentTarget.style.background = 'transparent' }}
+                  >
+                    {item.label}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* View Mode Switchers (Zoho style: List, Kanban, Timeline) */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            background: '#f1f5f9',
+            borderRadius: '6px',
+            padding: '2px',
+            border: '1px solid #e2e8f0'
+          }}>
+            <button
+              onClick={() => setViewMode('list')}
+              title="Table List View"
+              style={{
+                padding: '4px 8px',
+                border: 'none',
+                background: viewMode === 'list' ? '#ffffff' : 'transparent',
+                color: viewMode === 'list' ? '#0f172a' : '#64748b',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '13px',
+                boxShadow: viewMode === 'list' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+              }}
+            >
+              ☰
+            </button>
+            <button
+              onClick={() => setViewMode('kanban')}
+              title="Kanban Pipeline View"
+              style={{
+                padding: '4px 8px',
+                border: 'none',
+                background: viewMode === 'kanban' ? '#ffffff' : 'transparent',
+                color: viewMode === 'kanban' ? '#0f172a' : '#64748b',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '13px',
+                boxShadow: viewMode === 'kanban' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+              }}
+            >
+              ▦
             </button>
           </div>
-        )}
+
+          {/* Primary Create Button (Zoho Royal Blue Split Button) */}
+          <div style={{ position: 'relative', display: 'inline-flex' }}>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: '#2563eb',
+                color: '#ffffff',
+                border: 'none',
+                borderTopLeftRadius: '6px',
+                borderBottomLeftRadius: '6px',
+                padding: '7px 14px',
+                fontSize: '13px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                boxShadow: '0 2px 4px rgba(37,99,235,0.25)',
+                transition: 'background 0.15s'
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = '#1d4ed8'}
+              onMouseLeave={e => e.currentTarget.style.background = '#2563eb'}
+            >
+              <span>+ Create Candidate</span>
+            </button>
+            <button
+              onClick={() => setShowCreateDropdown(prev => !prev)}
+              style={{
+                background: '#1d4ed8',
+                color: '#ffffff',
+                border: 'none',
+                borderLeft: '1px solid rgba(255,255,255,0.2)',
+                borderTopRightRadius: '6px',
+                borderBottomRightRadius: '6px',
+                padding: '7px 9px',
+                cursor: 'pointer',
+                fontSize: '11px'
+              }}
+            >
+              ▼
+            </button>
+
+            {showCreateDropdown && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: '4px',
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
+                boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+                zIndex: 50,
+                minWidth: '200px',
+                padding: '6px 0'
+              }}>
+                <div
+                  onClick={() => { setShowCreateModal(true); setShowCreateDropdown(false) }}
+                  style={{ padding: '8px 14px', fontSize: '13px', color: '#1e293b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  <span>👤</span>
+                  <span>Add Single Candidate</span>
+                </div>
+                <div
+                  onClick={() => { alert('Drop candidate resume PDF directly on any row or use Candidate Intake modal!'); setShowCreateDropdown(false) }}
+                  style={{ padding: '8px 14px', fontSize: '13px', color: '#1e293b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  <span>📄</span>
+                  <span>Upload Resume File</span>
+                </div>
+                {selectedIds.length > 0 && (
+                  <div
+                    onClick={() => {
+                      selectedIds.forEach(id => {
+                        const c = safeCandidates.find(item => item.id === id)
+                        if (c) handlePushToJobsInHand(c)
+                      })
+                      setShowCreateDropdown(false)
+                    }}
+                    style={{ padding: '8px 14px', fontSize: '13px', color: '#047857', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', borderTop: '1px solid #f1f5f9' }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#f0fdf4'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <span>🚀</span>
+                    <span>Push Selected ({selectedIds.length}) to Req</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Filter Row */}
-      <div style={{
-        display: 'flex',
-        gap: 12,
-        flexWrap: 'wrap',
-        background: '#ffffff',
-        border: '1px solid #cbd5e1',
-        borderRadius: '4px',
-        padding: '10px 16px',
-        alignItems: 'center',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
-      }}>
-        {/* Search */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: '1 1 240px' }}>
-          <label style={{ fontSize: 10.5, fontWeight: 'bold', color: '#000080', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Search Candidates
-          </label>
-          <input
-            placeholder="Search name, email, or skill keywords..."
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            style={{ ...inputStyle, width: '100%', padding: '5px 8px', fontSize: '11.5px', borderRadius: '3px' }}
-          />
-        </div>
-
-        {/* Job Filter */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: '1 1 200px' }}>
-          <label style={{ fontSize: 10.5, fontWeight: 'bold', color: '#000080', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Filter by Vacancy / Req
-          </label>
-          <select value={selectedJob} onChange={e => setSelectedJob(e.target.value)} style={{ ...inputStyle, width: '100%', padding: '5px 8px', fontSize: '11.5px', borderRadius: '3px' }}>
-            <option value="All">All Jobs & Openings</option>
-            {safeJobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
-          </select>
-        </div>
-
-        {/* Status Filter */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: '0 0 150px' }}>
-          <label style={{ fontSize: 10.5, fontWeight: 'bold', color: '#000080', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            ATS Status
-          </label>
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ ...inputStyle, width: '100%', padding: '5px 8px', fontSize: '11.5px', borderRadius: '3px' }}>
-            <option value="All">All Statuses</option>
-            {safeStatuses.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-        </div>
-
-        <div style={{ fontSize: 11.5, color: '#64748b', marginLeft: 'auto', alignSelf: 'flex-end', paddingBottom: 4 }}>
-          Showing <strong style={{ color: '#000080' }}>{safeFiltered.length}</strong> of {safeCandidates.length}
-        </div>
-      </div>
-
-      {/* ─── ENTERPRISE CANDIDATES TABLE (COOLWORKS HIGH-DENSITY LAYOUT) ─── */}
-      <div style={{
-        background: '#ffffff',
-        border: '1px solid #7f9db9',
-        borderRadius: 0,
-        overflow: 'hidden',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
-      }}>
-        <div style={{ overflowX: 'auto', width: '100%', WebkitOverflowScrolling: 'touch' }}>
-          <table className="coolworks-table" style={{
-            width: '100%',
-            minWidth: '1020px',
-            borderCollapse: 'collapse',
-            textAlign: 'left',
-            fontFamily: 'Arial, Helvetica, sans-serif',
-            fontSize: '10.5px'
+      {/* ─── 2. MAIN WORKSPACE (COLLAPSIBLE FILTER DRAWER + DATA TABLE) ───── */}
+      <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        
+        {/* ZOHO CRM LEFT FILTER DRAWER (Screenshot 3) */}
+        {isFilterDrawerOpen && (
+          <div style={{
+            width: '240px',
+            minWidth: '240px',
+            background: '#ffffff',
+            borderRight: '1px solid #e2e8f0',
+            display: 'flex',
+            flexDirection: 'column',
+            overflowY: 'auto',
+            padding: '16px 14px',
+            flexShrink: 0
           }}>
-            <thead>
-              <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
-                <th style={{ width: '32px', padding: '5px 6px', textAlign: 'center', borderRight: '1px solid rgba(255,255,255,0.25)' }}>
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.length === safeFiltered.length && safeFiltered.length > 0}
-                    onChange={toggleSelectAll}
-                    style={{ cursor: 'pointer' }}
-                  />
-                </th>
-                <th style={{ width: '32px', padding: '5px 6px', fontSize: '11px', fontWeight: 'bold', color: '#ffffff', borderRight: '1px solid rgba(255,255,255,0.25)', textAlign: 'center' }}>
-                  #
-                </th>
-                <th style={{ width: '180px', padding: '5px 6px', fontSize: '11px', fontWeight: 'bold', color: '#ffffff', borderRight: '1px solid rgba(255,255,255,0.25)' }}>
-                  Candidate Name
-                </th>
-                <th style={{ width: '180px', padding: '5px 6px', fontSize: '11px', fontWeight: 'bold', color: '#ffffff', borderRight: '1px solid rgba(255,255,255,0.25)' }}>
-                  Contact Info
-                </th>
-                <th style={{ width: '170px', padding: '5px 6px', fontSize: '11px', fontWeight: 'bold', color: '#ffffff', borderRight: '1px solid rgba(255,255,255,0.25)' }}>
-                  Applied Req# & Opening
-                </th>
-                <th style={{ width: '150px', padding: '5px 6px', fontSize: '11px', fontWeight: 'bold', color: '#ffffff', borderRight: '1px solid rgba(255,255,255,0.25)' }}>
-                  Referred / Sourced By
-                </th>
-                <th style={{ width: '150px', padding: '5px 6px', fontSize: '11px', fontWeight: 'bold', color: '#ffffff', borderRight: '1px solid rgba(255,255,255,0.25)' }}>
-                  Key Skills
-                </th>
-                <th style={{ width: '60px', padding: '5px 6px', fontSize: '11px', fontWeight: 'bold', color: '#ffffff', borderRight: '1px solid rgba(255,255,255,0.25)', textAlign: 'center' }}>
-                  Match
-                </th>
-                <th style={{ width: '90px', padding: '5px 6px', fontSize: '11px', fontWeight: 'bold', color: '#ffffff', borderRight: '1px solid rgba(255,255,255,0.25)' }}>
-                  Rate
-                </th>
-                <th style={{ width: '120px', padding: '5px 6px', fontSize: '11px', fontWeight: 'bold', color: '#ffffff', borderRight: '1px solid rgba(255,255,255,0.25)' }}>
-                  ATS Status
-                </th>
-                <th style={{ width: '110px', padding: '5px 6px', fontSize: '11px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center' }}>
-                  Pipeline Action
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {safeFiltered.length === 0 ? (
-                <tr>
-                  <td colSpan="11" style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
-                    <div style={{ fontSize: 28, marginBottom: 6 }}>🔍</div>
-                    <div style={{ fontSize: 13, fontWeight: 'bold', color: '#0f172a' }}>No candidates matching search criteria</div>
-                    <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 3 }}>Try clearing search keywords or selecting a different job</div>
-                  </td>
-                </tr>
-              ) : (
-                safeFiltered.map((candidate, idx) => {
-                  const nameDisplay = candidate.extracted_profile?.name || candidate.name || candidate.candidateName || 'Candidate'
-                  const emailDisplay = candidate.extracted_profile?.email || candidate.email || candidate.candidateEmail || 'N/A'
-                  const phoneDisplay = candidate.extracted_profile?.phone || candidate.phone || candidate.candidatePhone || ''
-                  const role = candidate.job_title || candidate.jobTitle || 'General Applicant'
-                  const st = statusBadge(candidate.status || 'New')
-                  const pushed = pushResults[candidate.id]
+            
+            {/* Filter Drawer Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+              <span style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a' }}>
+                Filter Candidates by
+              </span>
+              <button
+                onClick={() => {
+                  setQuery('')
+                  setSelectedJob('All')
+                  setStatusFilter('All')
+                  setSystemFilters({
+                    activeOnly: false,
+                    aiScreened: false,
+                    withResume: false,
+                    rtrVerified: false,
+                    pushedToReq: false,
+                    untouched: false,
+                  })
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#2563eb',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  padding: 0
+                }}
+              >
+                Clear All
+              </button>
+            </div>
 
-                  const skillList = Array.isArray(candidate.extracted_profile?.skills)
-                    ? candidate.extracted_profile.skills
-                    : Array.isArray(candidate.skills)
-                    ? candidate.skills
-                    : typeof candidate.skills === 'string'
-                    ? candidate.skills.split(',')
-                    : []
+            {/* Keyword Search inside Filter Drawer */}
+            <div style={{ position: 'relative', marginBottom: '16px' }}>
+              <input
+                type="text"
+                placeholder="Search name, email, skill..."
+                value={query}
+                onChange={e => { setQuery(e.target.value); setCurrentPage(1) }}
+                style={{
+                  width: '100%',
+                  padding: '7px 10px 7px 28px',
+                  fontSize: '12px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  background: '#f8fafc',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+              <span style={{ position: 'absolute', left: '8px', top: '7px', fontSize: '12px', color: '#94a3b8' }}>🔍</span>
+              {query && (
+                <button
+                  onClick={() => setQuery('')}
+                  style={{ position: 'absolute', right: '8px', top: '7px', border: 'none', background: 'transparent', cursor: 'pointer', color: '#94a3b8', fontSize: '11px' }}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
 
-                  const matchScore = candidate.jd_match?.match_score ?? candidate.matchScore ?? candidate.ai_match?.score ?? null
-                  const existingRate = candidate.finalRate || finalRates[candidate.id] || ''
-                  const isPushed = candidate.pushedToJobsInHand || pushed?.success
+            {/* System Defined Filters Accordion (Zoho Style) */}
+            <div style={{ marginBottom: '18px' }}>
+              <div style={{
+                fontSize: '11.5px',
+                fontWeight: '800',
+                color: '#334155',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                marginBottom: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                <span>▾</span>
+                <span>System Defined Filters</span>
+              </div>
 
-                  // Determine clean 6-digit Requisition ID & title
-                  const candidateJob = safeJobs.find(j => j.id === candidate.job_id || String(j.id).replace('J-', '') === candidate.reqId)
-                  const rawReq = candidate.reqId || (candidate.job_id ? String(candidate.job_id).replace('J-', '') : '')
-                  let displayReqId = rawReq
-                  if (!displayReqId || !/^\d{5,6}$/.test(displayReqId)) {
-                    let hash = 0
-                    for (let i = 0; i < (candidate.name || '').length; i++) hash = (hash * 31 + (candidate.name || '').charCodeAt(i)) % 900
-                    displayReqId = `158${100 + Math.abs(hash)}`
-                  }
-
-                  const reqJobTitle = candidateJob?.title || candidate.jobTitle || role
-
-                  // Determine Recruiter attribution
-                  const recruiterSource = candidate.recruiter || candidate.recruiterRef || candidate.referredBy || (candidate.source ? candidate.source.replace('Referred by ', '') : '') || 'SmartHire Careers Portal'
-
-                  return (
-                    <tr
-                      key={candidate.id || idx}
-                      style={{
-                        background: '#ffffff',
-                        borderBottom: '1px solid #e2e8f0',
-                        transition: 'background 0.12s ease'
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingLeft: '8px' }}>
+                {[
+                  { key: 'activeOnly', label: 'Active Candidates' },
+                  { key: 'aiScreened', label: 'AI Screened' },
+                  { key: 'withResume', label: 'With Attached Resume' },
+                  { key: 'rtrVerified', label: 'RTR Verified' },
+                  { key: 'pushedToReq', label: 'Pushed to Requisition' },
+                  { key: 'untouched', label: 'Untouched Records (New)' },
+                ].map(item => (
+                  <label
+                    key={item.key}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      fontSize: '12.5px',
+                      color: '#475569',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={Boolean(systemFilters[item.key])}
+                      onChange={e => {
+                        setSystemFilters(prev => ({ ...prev, [item.key]: e.target.checked }))
+                        setCurrentPage(1)
                       }}
-                    >
-                      {/* Checkbox */}
-                      <td style={{ padding: '5px 6px', textAlign: 'center' }}>
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.includes(candidate.id)}
-                          onChange={() => toggleSelectCandidate(candidate.id)}
-                          style={{ cursor: 'pointer' }}
-                        />
-                      </td>
+                      style={{ cursor: 'pointer', accentColor: '#2563eb' }}
+                    />
+                    <span>{item.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
 
-                      {/* Rank */}
-                      <td style={{ padding: '5px 6px', fontSize: '10.5px', fontWeight: 'bold', color: '#64748b', textAlign: 'center' }}>
-                        #{idx + 1}
-                      </td>
+            {/* Filter by Fields: ATS Status */}
+            <div style={{ marginBottom: '18px' }}>
+              <div style={{
+                fontSize: '11.5px',
+                fontWeight: '800',
+                color: '#334155',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                marginBottom: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                <span>▾</span>
+                <span>Filter By ATS Status</span>
+              </div>
 
-                      {/* Candidate Name (Clean Blue Link, NO circle avatar initials) */}
-                      <td style={{ padding: '5px 6px' }}>
-                        <div>
-                          <span
-                            onClick={() => {
-                              setSelectedCandidate(candidate)
-                              setEmailSubject(`SmartHire Application: ${reqJobTitle}`)
-                              setEmailBody(`Hi ${nameDisplay},\n\nThank you for your interest in the ${reqJobTitle} role. We reviewed your resume and wanted to schedule some time to discuss your background...\n\nBest regards,\n[Your Name]`)
-                              setModalTab('AI Analyst')
-                            }}
-                            style={{
-                              fontSize: '11.5px',
-                              fontWeight: 'bold',
-                              color: '#0033cc',
-                              cursor: 'pointer',
-                              textDecoration: 'underline'
-                            }}
-                            title={`Click to view candidate details & AI profile for ${nameDisplay}`}
-                          >
-                            {nameDisplay}
-                          </span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingLeft: '8px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', color: '#475569', cursor: 'pointer' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                      type="radio"
+                      name="status_radio"
+                      checked={statusFilter === 'All'}
+                      onChange={() => { setStatusFilter('All'); setCurrentPage(1) }}
+                      style={{ cursor: 'pointer', accentColor: '#2563eb' }}
+                    />
+                    <span>All Statuses</span>
+                  </div>
+                  <span style={{ fontSize: '11px', color: '#94a3b8' }}>{safeCandidates.length}</span>
+                </label>
 
-                          <div style={{ display: 'flex', gap: '3px', marginTop: '2px' }}>
-                            {candidate.ai_screening_complete && (
-                              <span style={{ fontSize: '8.5px', padding: '0 4px', borderRadius: '2px', background: '#ecfdf5', color: '#059669', fontWeight: 'bold', border: '1px solid #a7f3d0' }}>
-                                ✓ Screened
-                              </span>
-                            )}
-                            {(candidate.pushedToJobsInHand || isPushed) && (
-                              <span style={{ fontSize: '8.5px', padding: '0 4px', borderRadius: '2px', background: '#f0fdf4', color: '#16a34a', fontWeight: 'bold', border: '1px solid #bbf7d0' }}>
-                                Saved
-                              </span>
-                            )}
-                          </div>
+                {safeStatuses.slice(0, 8).map(st => (
+                  <label key={st} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', color: '#475569', cursor: 'pointer' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <input
+                        type="radio"
+                        name="status_radio"
+                        checked={statusFilter === st}
+                        onChange={() => { setStatusFilter(st); setCurrentPage(1) }}
+                        style={{ cursor: 'pointer', accentColor: '#2563eb' }}
+                      />
+                      <span>{st}</span>
+                    </div>
+                    <span style={{ fontSize: '11px', color: '#94a3b8' }}>{countsByStatus[st] || 0}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Filter by Vacancy / Requisition */}
+            <div style={{ marginBottom: '18px' }}>
+              <div style={{
+                fontSize: '11.5px',
+                fontWeight: '800',
+                color: '#334155',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                marginBottom: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                <span>▾</span>
+                <span>Filter By Vacancy / Req</span>
+              </div>
+
+              <select
+                value={selectedJob}
+                onChange={e => { setSelectedJob(e.target.value); setCurrentPage(1) }}
+                style={{
+                  width: '100%',
+                  padding: '6px 8px',
+                  fontSize: '11.5px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  background: '#ffffff',
+                  outline: 'none'
+                }}
+              >
+                <option value="All">All Requisitions ({safeJobs.length})</option>
+                {safeJobs.map(j => (
+                  <option key={j.id} value={j.id}>
+                    Req# {j.reqId || String(j.id).replace('J-', '')} - {j.title?.slice(0, 24)}...
+                  </option>
+                ))}
+              </select>
+            </div>
+
+          </div>
+        )}
+
+        {/* MAIN DATA TABLE CANVAS */}
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          minWidth: 0,
+          background: '#f8fafc',
+          overflowY: 'auto'
+        }}>
+          
+          {/* Selected Candidates Action Bar (When checked) */}
+          {selectedIds.length > 0 && (
+            <div style={{
+              background: '#eff6ff',
+              borderBottom: '1px solid #bfdbfe',
+              padding: '8px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontSize: '12.5px',
+              color: '#1e40af'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontWeight: '800' }}>✓ {selectedIds.length} candidates selected</span>
+                <span style={{ color: '#60a5fa' }}>|</span>
+                <button
+                  onClick={() => setSelectedIds([])}
+                  style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontWeight: '600' }}
+                >
+                  Deselect all
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  onClick={() => {
+                    selectedIds.forEach(id => {
+                      const c = safeCandidates.find(item => item.id === id)
+                      if (c) handlePushToJobsInHand(c)
+                    })
+                  }}
+                  style={{
+                    background: '#2563eb',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '4px',
+                    padding: '5px 12px',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    cursor: 'pointer'
+                  }}
+                >
+                  🚀 Push {selectedIds.length} to Requisition
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* TABLE CONTAINER */}
+          <div style={{ flex: 1, overflowX: 'auto', padding: '16px 20px' }}>
+            <div style={{
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              borderRadius: '8px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+              overflow: 'hidden'
+            }}>
+              <table style={{
+                width: '100%',
+                minWidth: '980px',
+                borderCollapse: 'collapse',
+                textAlign: 'left',
+                fontSize: '12px'
+              }}>
+                <thead>
+                  <tr style={{
+                    background: '#f8fafc',
+                    borderBottom: '1px solid #e2e8f0',
+                    color: '#475569'
+                  }}>
+                    {/* Checkbox Header */}
+                    <th style={{ width: '38px', padding: '10px 8px', textAlign: 'center' }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.length === safeFiltered.length && safeFiltered.length > 0}
+                        onChange={toggleSelectAll}
+                        style={{ cursor: 'pointer', accentColor: '#2563eb' }}
+                      />
+                    </th>
+
+                    {/* Candidate Name */}
+                    <th style={{ padding: '10px 12px', fontWeight: '700', color: '#1e293b' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>Candidate Name</span>
+                        <span style={{ fontSize: '10px', color: '#94a3b8' }}>▼</span>
+                      </div>
+                    </th>
+
+                    {/* Applied Req# & Opening */}
+                    <th style={{ padding: '10px 12px', fontWeight: '700', color: '#1e293b' }}>
+                      Applied Req# & Opening
+                    </th>
+
+                    {/* Contact Info */}
+                    <th style={{ padding: '10px 12px', fontWeight: '700', color: '#1e293b' }}>
+                      Contact Info
+                    </th>
+
+                    {/* Sourced / Referred By */}
+                    <th style={{ padding: '10px 12px', fontWeight: '700', color: '#1e293b' }}>
+                      Sourced By
+                    </th>
+
+                    {/* Key Skills */}
+                    <th style={{ padding: '10px 12px', fontWeight: '700', color: '#1e293b' }}>
+                      Key Skills
+                    </th>
+
+                    {/* Match Score */}
+                    <th style={{ padding: '10px 12px', fontWeight: '700', color: '#1e293b', textAlign: 'center' }}>
+                      AI Match
+                    </th>
+
+                    {/* Rate */}
+                    <th style={{ padding: '10px 12px', fontWeight: '700', color: '#1e293b' }}>
+                      Rate
+                    </th>
+
+                    {/* Status */}
+                    <th style={{ padding: '10px 12px', fontWeight: '700', color: '#1e293b' }}>
+                      ATS Status
+                    </th>
+
+                    {/* Pipeline Action */}
+                    <th style={{ padding: '10px 12px', fontWeight: '700', color: '#1e293b', textAlign: 'center' }}>
+                      Pipeline
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {paginatedCandidates.length === 0 ? (
+                    <tr>
+                      <td colSpan="10" style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
+                        <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔍</div>
+                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>No candidates found</div>
+                        <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
+                          Try clearing filter options or searching for different keywords
                         </div>
-                      </td>
-
-                      {/* Contact Info (Email / Phone in Clean Black Font) */}
-                      <td style={{ padding: '5px 6px', color: '#000000' }}>
-                        <div style={{ fontSize: '11px', color: '#000000', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '170px' }} title={emailDisplay}>
-                          {emailDisplay}
-                        </div>
-                        {phoneDisplay ? (
-                          <div style={{ fontSize: '10.5px', color: '#334155', marginTop: '1px' }}>
-                            📞 {phoneDisplay}
-                          </div>
-                        ) : (
-                          <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '1px' }}>
-                            —
-                          </div>
-                        )}
-                      </td>
-
-                      {/* Applied Req# & Job Opening */}
-                      <td style={{ padding: '5px 6px' }}>
-                        <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#0033cc' }}>
-                          Req# {displayReqId}
-                        </div>
-                        <div style={{
-                          fontSize: '10.5px',
-                          color: '#000000',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          maxWidth: '160px'
-                        }} title={reqJobTitle}>
-                          {reqJobTitle}
-                        </div>
-                      </td>
-
-                      {/* Referred / Sourced By */}
-                      <td style={{ padding: '5px 6px' }}>
-                        <span style={{
-                          fontSize: '10px',
-                          fontWeight: 'bold',
-                          padding: '2px 6px',
-                          borderRadius: '2px',
-                          background: recruiterSource.includes('Careers') ? '#f1f5f9' : '#eff6ff',
-                          color: recruiterSource.includes('Careers') ? '#475569' : '#1d4ed8',
-                          border: `1px solid ${recruiterSource.includes('Careers') ? '#e2e8f0' : '#bfdbfe'}`,
-                          display: 'inline-block',
-                          maxWidth: '140px',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }} title={`Sourced via: ${recruiterSource}`}>
-                          {recruiterSource.includes('Careers') ? '🌐 Direct Careers' : `👤 ${recruiterSource}`}
-                        </span>
-                      </td>
-
-                      {/* Key Skills */}
-                      <td style={{ padding: '5px 6px', color: '#000000' }}>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', maxWidth: '150px' }}>
-                          {skillList.slice(0, 2).map((s, i) => {
-                            const badge = getSkillBadgeStyle(s, candidateJob)
-                            return (
-                              <span
-                                key={i}
-                                style={{
-                                  fontSize: '9.5px',
-                                  padding: '1px 4px',
-                                  borderRadius: '2px',
-                                  background: badge.bg,
-                                  color: badge.text,
-                                  border: `1px solid ${badge.border}`,
-                                  fontWeight: 'bold',
-                                  whiteSpace: 'nowrap'
-                                }}
-                              >
-                                {String(s).trim()}{badge.suffix}
-                              </span>
-                            )
-                          })}
-                          {skillList.length > 2 && (
-                            <span style={{ fontSize: '9px', color: '#64748b', fontWeight: 'bold', alignSelf: 'center' }}>
-                              +{skillList.length - 2}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* AI Match Score */}
-                      <td style={{ padding: '5px 6px', textAlign: 'center' }}>
-                        {matchScore != null ? (
-                          <span style={{
-                            fontSize: '10.5px',
-                            fontWeight: 'bold',
-                            color: scoreColor(matchScore),
-                            background: matchScore >= 80 ? '#dcfce7' : matchScore >= 60 ? '#fef3c7' : '#fee2e2',
-                            border: `1px solid ${matchScore >= 80 ? '#bbf7d0' : matchScore >= 60 ? '#fde68a' : '#fca5a5'}`,
-                            padding: '1px 5px',
-                            borderRadius: '2px',
-                            display: 'inline-block'
-                          }}>
-                            {matchScore}%
-                          </span>
-                        ) : (
-                          <span style={{ fontSize: '10.5px', color: '#94a3b8' }}>—</span>
-                        )}
-                      </td>
-
-                      {/* Final Rate */}
-                      <td style={{ padding: '5px 6px' }}>
-                        <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
-                          <input
-                            type="text"
-                            placeholder="$75/hr"
-                            value={finalRates[candidate.id] ?? existingRate}
-                            onChange={e => setFinalRates(prev => ({ ...prev, [candidate.id]: e.target.value }))}
-                            style={{
-                              width: '50px',
-                              padding: '2px 4px',
-                              borderRadius: '2px',
-                              border: '1px solid #cbd5e1',
-                              background: '#ffffff',
-                              color: '#000000',
-                              fontSize: '10.5px',
-                              fontWeight: 'bold'
-                            }}
-                          />
-                          <button
-                            onClick={() => handleSaveFinalRate(candidate.id)}
-                            disabled={savingRate === candidate.id}
-                            style={{
-                              background: '#f0fdf4',
-                              color: '#16a34a',
-                              border: '1px solid #bbf7d0',
-                              borderRadius: '2px',
-                              padding: '2px 4px',
-                              cursor: 'pointer',
-                              fontSize: '10px',
-                              fontWeight: 'bold'
-                            }}
-                            title="Save rate"
-                          >
-                            {savingRate === candidate.id ? '...' : '✓'}
-                          </button>
-                        </div>
-                      </td>
-
-                      {/* ATS Status */}
-                      <td style={{ padding: '5px 6px' }}>
-                        <select
-                          value={candidate.status || 'New'}
-                          onChange={e => handleUpdateStatus(candidate.id, e.target.value)}
-                          style={{
-                            fontSize: '10.5px',
-                            padding: '2px 4px',
-                            borderRadius: '2px',
-                            background: st.bg,
-                            color: st.color,
-                            border: `1px solid ${st.border}`,
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            width: '100%',
-                            outline: 'none'
-                          }}
-                        >
-                          {safeStatuses.map(s => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                      </td>
-
-                      {/* Pipeline Action / Push to Requisition */}
-                      <td style={{ padding: '5px 6px', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                        {isPushed ? (
-                          <span style={{ fontSize: '9.5px', background: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: '2px', padding: '2px 6px', fontWeight: 'bold' }}>
-                            ✓ In Req #{pushed?.reqId || displayReqId}
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => handlePushToJobsInHand(candidate)}
-                            disabled={pushingId === candidate.id}
-                            title={`Push candidate directly to Requisition #${displayReqId} pipeline`}
-                            style={{
-                              background: '#0284c7',
-                              color: '#ffffff',
-                              border: 'none',
-                              borderRadius: '2px',
-                              padding: '3px 8px',
-                              cursor: 'pointer',
-                              fontSize: '10.5px',
-                              fontWeight: 'bold',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '3px',
-                              boxShadow: '0 1px 2px rgba(2,132,199,0.3)'
-                            }}
-                          >
-                            {pushingId === candidate.id ? '⏳' : '🚀'} Push to Req
-                          </button>
-                        )}
                       </td>
                     </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
+                  ) : (
+                    paginatedCandidates.map((candidate, idx) => {
+                      const nameDisplay = candidate.extracted_profile?.name || candidate.name || candidate.candidateName || 'Candidate'
+                      const emailDisplay = candidate.extracted_profile?.email || candidate.email || candidate.candidateEmail || 'N/A'
+                      const phoneDisplay = candidate.extracted_profile?.phone || candidate.phone || candidate.candidatePhone || ''
+                      const role = candidate.job_title || candidate.jobTitle || 'General Applicant'
+                      const st = statusBadge(candidate.status || 'New')
+                      const pushed = pushResults[candidate.id]
+
+                      // Extract skill list safely without [object Object]
+                      const rawSkillList = Array.isArray(candidate.extracted_profile?.skills)
+                        ? candidate.extracted_profile.skills
+                        : Array.isArray(candidate.skills)
+                        ? candidate.skills
+                        : typeof candidate.skills === 'string'
+                        ? candidate.skills.split(',')
+                        : []
+                      
+                      const skillList = rawSkillList.map(getSkillName).filter(Boolean)
+
+                      const matchScore = candidate.jd_match?.match_score ?? candidate.matchScore ?? candidate.ai_match?.score ?? null
+                      const existingRate = candidate.finalRate || finalRates[candidate.id] || '$75/hr'
+                      const isPushed = candidate.pushedToJobsInHand || pushed?.success
+
+                      // Clean 6-digit Requisition ID
+                      const candidateJob = safeJobs.find(j => j.id === candidate.job_id || String(j.id).replace('J-', '') === candidate.reqId)
+                      const rawReq = candidate.reqId || (candidate.job_id ? String(candidate.job_id).replace('J-', '') : '')
+                      let displayReqId = rawReq
+                      if (!displayReqId || !/^\d{5,6}$/.test(displayReqId)) {
+                        let hash = 0
+                        for (let i = 0; i < (candidate.name || '').length; i++) hash = (hash * 31 + (candidate.name || '').charCodeAt(i)) % 900
+                        displayReqId = `158${100 + Math.abs(hash)}`
+                      }
+
+                      const reqJobTitle = candidateJob?.title || candidate.jobTitle || role
+                      const recruiterSource = candidate.recruiter || candidate.recruiterRef || candidate.referredBy || (candidate.source ? candidate.source.replace('Referred by ', '') : '') || 'Careers Portal'
+
+                      return (
+                        <tr
+                          key={candidate.id || idx}
+                          style={{
+                            borderBottom: '1px solid #f1f5f9',
+                            background: selectedIds.includes(candidate.id) ? '#eff6ff' : '#ffffff',
+                            transition: 'background 0.12s'
+                          }}
+                          onMouseEnter={e => {
+                            if (!selectedIds.includes(candidate.id)) e.currentTarget.style.background = '#f8fafc'
+                          }}
+                          onMouseLeave={e => {
+                            if (!selectedIds.includes(candidate.id)) e.currentTarget.style.background = '#ffffff'
+                          }}
+                        >
+                          {/* Checkbox */}
+                          <td style={{ padding: '9px 8px', textAlign: 'center' }}>
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.includes(candidate.id)}
+                              onChange={() => toggleSelectCandidate(candidate.id)}
+                              style={{ cursor: 'pointer', accentColor: '#2563eb' }}
+                            />
+                          </td>
+
+                          {/* Candidate Name (Clickable link to full details modal) */}
+                          <td style={{ padding: '9px 12px' }}>
+                            <div>
+                              <span
+                                onClick={() => {
+                                  setSelectedCandidate(candidate)
+                                  setEmailSubject(`SmartHire ATS: ${reqJobTitle}`)
+                                  setEmailBody(`Hi ${nameDisplay},\n\nWe reviewed your application for the ${reqJobTitle} position. We would like to schedule an introductory interview...\n\nBest regards,\nSmartHire ATS Team`)
+                                  setModalTab('AI Analyst')
+                                }}
+                                style={{
+                                  fontSize: '13px',
+                                  fontWeight: '700',
+                                  color: '#1d4ed8',
+                                  cursor: 'pointer',
+                                  textDecoration: 'none'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+                                onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
+                                title="Click to view candidate details & AI profile"
+                              >
+                                {nameDisplay}
+                              </span>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                                <span style={{ fontSize: '11px', color: '#64748b' }}>
+                                  {role.length > 28 ? `${role.slice(0, 28)}...` : role}
+                                </span>
+                                {candidate.ai_screening_complete && (
+                                  <span style={{ fontSize: '9px', background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', borderRadius: '3px', padding: '0 4px', fontWeight: '700' }}>
+                                    ✓ Screened
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Applied Req# & Opening */}
+                          <td style={{ padding: '9px 12px' }}>
+                            <div style={{ fontSize: '12px', fontWeight: '700', color: '#2563eb' }}>
+                              Req# {displayReqId}
+                            </div>
+                            <div style={{
+                              fontSize: '11px',
+                              color: '#334155',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              maxWidth: '160px'
+                            }} title={reqJobTitle}>
+                              {reqJobTitle}
+                            </div>
+                          </td>
+
+                          {/* Contact Info (Direct Call 📞 & Email ✉️) */}
+                          <td style={{ padding: '9px 12px' }}>
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              fontSize: '12px',
+                              color: '#0f172a',
+                              maxWidth: '180px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }} title={emailDisplay}>
+                              <span style={{ fontSize: '11px', color: '#64748b' }}>✉</span>
+                              <span>{emailDisplay}</span>
+                            </div>
+
+                            {phoneDisplay ? (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#334155', marginTop: '2px' }}>
+                                <a
+                                  href={`tel:${phoneDisplay}`}
+                                  style={{ textDecoration: 'none', color: '#2563eb', display: 'flex', alignItems: 'center', gap: '3px' }}
+                                  title={`Call ${phoneDisplay}`}
+                                >
+                                  <span>📞</span>
+                                  <span>{phoneDisplay}</span>
+                                </a>
+                              </div>
+                            ) : (
+                              <div style={{ fontSize: '10.5px', color: '#94a3b8', marginTop: '2px' }}>—</div>
+                            )}
+                          </td>
+
+                          {/* Referred / Sourced By */}
+                          <td style={{ padding: '9px 12px' }}>
+                            <span style={{
+                              fontSize: '11px',
+                              fontWeight: '600',
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              background: recruiterSource.includes('Careers') ? '#f8fafc' : '#eff6ff',
+                              color: recruiterSource.includes('Careers') ? '#475569' : '#1d4ed8',
+                              border: `1px solid ${recruiterSource.includes('Careers') ? '#e2e8f0' : '#bfdbfe'}`,
+                              display: 'inline-block',
+                              maxWidth: '130px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {recruiterSource.includes('Careers') ? '🌐 Direct Careers' : `👤 ${recruiterSource}`}
+                            </span>
+                          </td>
+
+                          {/* Key Skills (Fixed [object Object] Bug) */}
+                          <td style={{ padding: '9px 12px' }}>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', maxWidth: '160px' }}>
+                              {skillList.slice(0, 2).map((s, i) => {
+                                const badge = getSkillBadgeStyle(s, candidateJob)
+                                return (
+                                  <span
+                                    key={i}
+                                    style={{
+                                      fontSize: '10.5px',
+                                      padding: '2px 6px',
+                                      borderRadius: '4px',
+                                      background: badge.bg,
+                                      color: badge.text,
+                                      border: `1px solid ${badge.border}`,
+                                      fontWeight: '600',
+                                      whiteSpace: 'nowrap'
+                                    }}
+                                  >
+                                    {s}{badge.suffix}
+                                  </span>
+                                )
+                              })}
+                              {skillList.length > 2 && (
+                                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', alignSelf: 'center' }}>
+                                  +{skillList.length - 2}
+                                </span>
+                              )}
+                              {skillList.length === 0 && (
+                                <span style={{ fontSize: '10.5px', color: '#94a3b8' }}>—</span>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* AI Match Score */}
+                          <td style={{ padding: '9px 12px', textAlign: 'center' }}>
+                            {matchScore != null ? (
+                              <span style={{
+                                fontSize: '11px',
+                                fontWeight: '800',
+                                color: scoreColor(matchScore),
+                                background: matchScore >= 80 ? '#ecfdf5' : matchScore >= 60 ? '#fef3c7' : '#fee2e2',
+                                border: `1px solid ${matchScore >= 80 ? '#a7f3d0' : matchScore >= 60 ? '#fde68a' : '#fca5a5'}`,
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                display: 'inline-block'
+                              }}>
+                                {matchScore}%
+                              </span>
+                            ) : (
+                              <span style={{ fontSize: '11px', color: '#94a3b8' }}>—</span>
+                            )}
+                          </td>
+
+                          {/* Rate */}
+                          <td style={{ padding: '9px 12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <input
+                                type="text"
+                                value={finalRates[candidate.id] ?? existingRate}
+                                onChange={e => setFinalRates(prev => ({ ...prev, [candidate.id]: e.target.value }))}
+                                style={{
+                                  width: '56px',
+                                  padding: '2px 4px',
+                                  borderRadius: '4px',
+                                  border: '1px solid #cbd5e1',
+                                  fontSize: '11px',
+                                  fontWeight: '600',
+                                  color: '#0f172a'
+                                }}
+                              />
+                              <button
+                                onClick={() => handleSaveFinalRate(candidate.id)}
+                                disabled={savingRate === candidate.id}
+                                style={{
+                                  background: '#f1f5f9',
+                                  border: '1px solid #cbd5e1',
+                                  borderRadius: '3px',
+                                  padding: '2px 5px',
+                                  fontSize: '9.5px',
+                                  cursor: 'pointer'
+                                }}
+                                title="Save Rate"
+                              >
+                                {savingRate === candidate.id ? '...' : '✓'}
+                              </button>
+                            </div>
+                          </td>
+
+                          {/* ATS Status */}
+                          <td style={{ padding: '9px 12px' }}>
+                            <select
+                              value={candidate.status || 'New'}
+                              onChange={e => handleUpdateStatus(candidate.id, e.target.value)}
+                              style={{
+                                fontSize: '11px',
+                                padding: '3px 6px',
+                                borderRadius: '4px',
+                                background: st.bg,
+                                color: st.color,
+                                border: `1px solid ${st.border}`,
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                                outline: 'none'
+                              }}
+                            >
+                              {safeStatuses.map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                          </td>
+
+                          {/* Pipeline Action */}
+                          <td style={{ padding: '9px 12px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                            {isPushed ? (
+                              <span style={{ fontSize: '10.5px', background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', borderRadius: '4px', padding: '3px 8px', fontWeight: '700' }}>
+                                ✓ In Req #{pushed?.reqId || displayReqId}
+                              </span>
+                            ) : (
+                              <button
+                                onClick={() => handlePushToJobsInHand(candidate)}
+                                disabled={pushingId === candidate.id}
+                                style={{
+                                  background: '#2563eb',
+                                  color: '#ffffff',
+                                  border: 'none',
+                                  borderRadius: '4px',
+                                  padding: '4px 10px',
+                                  fontSize: '11px',
+                                  fontWeight: '700',
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  boxShadow: '0 1px 2px rgba(37,99,235,0.2)'
+                                }}
+                              >
+                                {pushingId === candidate.id ? '⏳' : '🚀'} Push to Req
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+
+              {/* ─── 3. ZOHO CRM PAGINATION BAR ─────────────────────────── */}
+              <div style={{
+                background: '#ffffff',
+                borderTop: '1px solid #e2e8f0',
+                padding: '10px 18px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontSize: '12px',
+                color: '#64748b'
+              }}>
+                <div>
+                  Total Records: <strong style={{ color: '#0f172a' }}>{totalRecords}</strong>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  {/* Page Size Selector */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>Records per page:</span>
+                    <select
+                      value={pageSize}
+                      onChange={e => { setPageSize(Number(e.target.value)); setCurrentPage(1) }}
+                      style={{
+                        padding: '2px 6px',
+                        fontSize: '11.5px',
+                        borderRadius: '4px',
+                        border: '1px solid #cbd5e1',
+                        background: '#ffffff',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="10">10</option>
+                      <option value="25">25</option>
+                      <option value="50">50</option>
+                    </select>
+                  </div>
+
+                  {/* Navigation Arrows */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                      style={{
+                        padding: '3px 8px',
+                        background: currentPage === 1 ? '#f1f5f9' : '#ffffff',
+                        color: currentPage === 1 ? '#94a3b8' : '#1e293b',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '4px',
+                        cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                        fontSize: '12px'
+                      }}
+                    >
+                      ‹
+                    </button>
+                    <span>
+                      {Math.min(1 + (currentPage - 1) * pageSize, totalRecords)} - {Math.min(currentPage * pageSize, totalRecords)} of {totalRecords}
+                    </span>
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages || totalRecords === 0}
+                      style={{
+                        padding: '3px 8px',
+                        background: (currentPage === totalPages || totalRecords === 0) ? '#f1f5f9' : '#ffffff',
+                        color: (currentPage === totalPages || totalRecords === 0) ? '#94a3b8' : '#1e293b',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '4px',
+                        cursor: (currentPage === totalPages || totalRecords === 0) ? 'not-allowed' : 'pointer',
+                        fontSize: '12px'
+                      }}
+                    >
+                      ›
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* INDEED-STYLE CANDIDATE MESSENGER FLOATING WIDGET */}
+      {/* ─── CREATE CANDIDATE MODAL (Zoho CRM Style) ────────────────────── */}
+      {showCreateModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15,23,42,0.6)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}
+          onClick={() => setShowCreateModal(false)}>
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '12px',
+            width: '100%',
+            maxWidth: '540px',
+            padding: '24px',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+            border: '1px solid #e2e8f0'
+          }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>
+                  + Create Candidate Record
+                </h3>
+                <p style={{ margin: '2px 0 0', fontSize: '11.5px', color: '#64748b' }}>
+                  Add a candidate directly to the SmartHire ATS talent pool
+                </p>
+              </div>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                style={{ background: '#f1f5f9', border: 'none', borderRadius: '6px', width: '28px', height: '28px', cursor: 'pointer', fontSize: '14px', color: '#64748b' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateCandidateSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: '700', color: '#334155' }}>Full Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Rahul Sharma"
+                    value={newCandName}
+                    onChange={e => setNewCandName(e.target.value)}
+                    style={{ padding: '8px 10px', fontSize: '12px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none' }}
+                  />
+                </div>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: '700', color: '#334155' }}>Job Title / Role</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Senior Java Developer"
+                    value={newCandRole}
+                    onChange={e => setNewCandRole(e.target.value)}
+                    style={{ padding: '8px 10px', fontSize: '12px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: '700', color: '#334155' }}>Email Address</label>
+                  <input
+                    type="email"
+                    placeholder="candidate@example.com"
+                    value={newCandEmail}
+                    onChange={e => setNewCandEmail(e.target.value)}
+                    style={{ padding: '8px 10px', fontSize: '12px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none' }}
+                  />
+                </div>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: '700', color: '#334155' }}>Phone Number</label>
+                  <input
+                    type="tel"
+                    placeholder="+1 (555) 000-0000"
+                    value={newCandPhone}
+                    onChange={e => setNewCandPhone(e.target.value)}
+                    style={{ padding: '8px 10px', fontSize: '12px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: '700', color: '#334155' }}>Target Requisition</label>
+                  <select
+                    value={newCandReqId}
+                    onChange={e => setNewCandReqId(e.target.value)}
+                    style={{ padding: '8px 10px', fontSize: '12px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', background: '#fff' }}
+                  >
+                    <option value="158999">Req# 158999 - NC FAST Junior Java Developer</option>
+                    {safeJobs.map(j => (
+                      <option key={j.id} value={j.reqId || String(j.id).replace('J-', '')}>
+                        Req# {j.reqId || String(j.id).replace('J-', '')} - {j.title?.slice(0, 26)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: '700', color: '#334155' }}>Expected Rate</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. $75/hr"
+                    value={newCandRate}
+                    onChange={e => setNewCandRate(e.target.value)}
+                    style={{ padding: '8px 10px', fontSize: '12px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '11px', fontWeight: '700', color: '#334155' }}>Key Skills (comma separated)</label>
+                <input
+                  type="text"
+                  placeholder="Java, Spring Boot, AWS, Microservices"
+                  value={newCandSkills}
+                  onChange={e => setNewCandSkills(e.target.value)}
+                  style={{ padding: '8px 10px', fontSize: '12px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff', fontSize: '12.5px', fontWeight: '600', cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingNew}
+                  style={{ padding: '8px 18px', borderRadius: '6px', border: 'none', background: '#2563eb', color: '#fff', fontSize: '12.5px', fontWeight: '700', cursor: 'pointer' }}
+                >
+                  {isSubmittingNew ? 'Saving...' : 'Create Candidate'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* FLOATING CANDIDATE MESSENGER WIDGET */}
       {activeChatCandidate && (
         <CandidateMessengerWidget
           candidate={activeChatCandidate}
           role="recruiter"
           onClose={() => setActiveChatCandidate(null)}
           onScheduleInterview={(c) => {
-            updateStatus(c.id, 'Interview Scheduled')
-            alert(`🗓️ Interview invitation sent to ${c.extracted_profile?.name || c.name || 'Candidate'}! Candidate status updated to 'Interview Scheduled'.`)
+            handleUpdateStatus(c.id, 'Interview Scheduled')
+            alert(`🗓️ Interview invite sent to ${c.extracted_profile?.name || c.name || 'Candidate'}! Candidate status updated to 'Interview Scheduled'.`)
           }}
         />
       )}

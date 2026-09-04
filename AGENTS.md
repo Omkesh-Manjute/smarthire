@@ -31,6 +31,33 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-04 — Zoho CRM Ultra-Modern ATS Redesign (/ats)
+- **Zoho CRM Deep-Slate Navy Sidebar (`#161e31`)**:
+  - Full-height dark navy sidebar with `SmartHire ATS` brand, collapse button, upper items (Home, Workqueue, Reports, AI Agents), collapsible `ATS Teamspace` with inline search, categorized navigation (Talent Acquisition, Operations & Admin, Quick Portals), and bottom pinned tools.
+- **Enterprise White Top Navigation Bar (`#ffffff`)**:
+  - Global search with shortcut, quick add `+`, candidate chat trigger, notification bell, user avatar with green online badge, and instant switch button to Requisitions Dashboard.
+- **Zoho CRM Home Overview Screen**:
+  - "Welcome Omkesh Manjute" banner, 4 clean white KPI cards (Active Requisitions, Total Candidates, Interviews Scheduled, Submissions & RTR), interactive setup & onboarding checklist widget, and 2-column split widgets (My Open Tasks & Sourcing Queue + Recent Applicants & Scheduled Interviews).
+- **Zoho CRM Candidates / Leads View**:
+  - View presets dropdown, `⚡ Filter` toggle button, `⇅ Sort` button, view switchers, and Royal Blue `+ Create Candidate ▾` split button with modal.
+  - Collapsible left filter drawer with search, System Defined Filters with live counts, and status/req filters.
+  - High-density data table with direct phone/email actions, pastel status badges, and fixed `[object Object]` bug in Key Skills.
+- **Production Build Verified**:
+  - 0 errors or warnings on `npm run build`.
+
+### 2026-09-03 — Multi-Page Requisition Extraction Across All JobsInHand Pages & Gap Elimination (66 Active Requisitions)
+- **Comprehensive Multi-Page ASP.NET WebForms Pagination**:
+  - Implemented automatic pagination (`Page$1` to `Page$5`+) in `playwright-scraper.js` and `jobsinhand-scraper.js`, scanning and extracting all 66+ active requisitions from JobsInHand.
+- **Eliminated Destructive Filters**:
+  - Removed "Rebid" rejection filter so valid rebidded requisitions (e.g. `159015` "Systems Administrator III - 165231 - Rebid") are captured.
+  - Removed `isToday` drop filter and increased `MAX_JOBS` limit to 150 to guarantee zero skipped requisitions.
+- **Authentic Requirement ID Keying & Collision Elimination**:
+  - Keyed deduplication in `run-ingestion.js`, `server/index.js`, and `RecruiterDashboard.jsx` strictly by `req_${reqId}` so generic title duplicates (e.g. `IT Data Analyst` req 159013 vs 158988) are never merged.
+  - Aligned all 66 active requisitions with authentic 6-digit JobsInHand IDs (`159023`, `159021`, `159020`, `159019`, `159016`, `159015`, `159014`, `159012`, `159010`, `159009`, `159008`, `159007`, `159006`, `159005`, `159004`, `159003`, `159002`, `159000`, `158999`, ...).
+- **Synced Database & Cloud Firestore (`atsJobs`)**:
+  - Synced complete 66-requisition dataset to `jobs.json`, MongoDB Atlas, and Firebase Firestore `atsJobs`.
+  - Requisitions table strictly ordered descending newest-first.
+
 ### 2026-09-01 — Two-Way Real-Time Team & Candidate Messaging Sync (Sukamal-Naveen & Hierarchy)
 - **Two-Way Supervisor & Employee Messaging**:
   - Connected `RecruiterInbox.jsx` with Cloud Firestore (`atsMessages`) and backend `/api/messages`.
