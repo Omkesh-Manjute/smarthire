@@ -15,7 +15,7 @@ import {
   AuditActivityLogModule,
 } from '../ats'
 import { formatJobDescription, cleanJobTitleWithPositionNumber } from '../utils/formatJobDescription'
-import { getAllCandidates, deduplicateCandidates } from '../lib/atsFirestore'
+import { getAllCandidates, deduplicateCandidates, subscribeAtsJobs } from '../lib/atsFirestore'
 
 const API_BASE = ''
 
@@ -308,11 +308,53 @@ export default function AtsPlatform() {
     fetchCandidates()
     fetchSubmissions()
 
+    // Real-time Firestore job listener for instant audio notification when any JD is posted
+    const unsubJobs = subscribeAtsJobs(({ jobs: fsJobs, changes }) => {
+      if (!initialAtsLoadRef.current) return
+      const newlyAdded = []
+      const addedChanges = changes.filter(c => c.type === 'added').map(c => c.doc)
+      addedChanges.forEach(j => {
+        const key = j.reqId || j.id
+        if (key && !knownAtsJobIdsRef.current.has(key)) {
+          newlyAdded.push(j)
+          knownAtsJobIdsRef.current.add(key)
+        }
+      })
+      if (newlyAdded.length > 0) {
+        setJobsList(prev => {
+          const map = new Map(prev.map(j => [j.reqId || j.id, j]))
+          newlyAdded.forEach(j => {
+            const finalTitle = cleanJobTitleWithPositionNumber(j.title)
+            map.set(j.reqId || j.id, {
+              ...j,
+              title: finalTitle,
+              description: formatJobDescription(j.description || '', { ...j, title: finalTitle })
+            })
+          })
+          return Array.from(map.values())
+        })
+        pushActivityNotification({
+          title: `💼 ${newlyAdded.length} New Requisition${newlyAdded.length > 1 ? 's' : ''} Synced!`,
+          message: newlyAdded.length === 1
+            ? `${newlyAdded[0].title} (Req #${newlyAdded[0].reqId || newlyAdded[0].id}) is now active in ATS.`
+            : `${newlyAdded[0].title} and ${newlyAdded.length - 1} more requisitions live in ATS.`,
+          type: 'requisition',
+          category: 'team',
+          actor: newlyAdded[0].postedByName || 'SmartHire ATS',
+          actorRole: 'Recruiter',
+          reqId: newlyAdded[0].reqId || newlyAdded[0].id
+        })
+      }
+    })
+
     const intervalId = setInterval(() => {
       fetchJobs(true)
     }, 35000)
 
-    return () => clearInterval(intervalId)
+    return () => {
+      clearInterval(intervalId)
+      if (typeof unsubJobs === 'function') unsubJobs()
+    }
   }, [fetchJobs, fetchCandidates, fetchSubmissions])
 
   const rawCandidates = Array.isArray(allCandidates) ? allCandidates : []

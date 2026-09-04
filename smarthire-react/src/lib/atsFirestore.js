@@ -20,6 +20,7 @@ import {
   query,
   orderBy,
   limit,
+  onSnapshot,
   serverTimestamp
 } from 'firebase/firestore'
 import {
@@ -230,6 +231,38 @@ export async function getAtsJobs() {
   } catch (err) {
     console.warn('Failed to fetch jobs from Firestore:', err)
     return []
+  }
+}
+
+/**
+ * Real-time listener for ATS Job Requisitions in Firestore
+ * Enables sub-second audio & toast notifications whenever a job is created
+ */
+export function subscribeAtsJobs(callback, onError) {
+  try {
+    const q = collection(db, JOBS_COLLECTION)
+    return onSnapshot(q, (snapshot) => {
+      const jobs = []
+      const changes = []
+      snapshot.docChanges().forEach((change) => {
+        changes.push({
+          type: change.type, // 'added', 'modified', 'removed'
+          doc: { id: change.doc.id, ...change.doc.data() }
+        })
+      })
+      snapshot.forEach(docSnap => {
+        jobs.push({ id: docSnap.id, ...docSnap.data() })
+      })
+      if (typeof callback === 'function') {
+        callback({ jobs, changes })
+      }
+    }, (err) => {
+      if (typeof onError === 'function') onError(err)
+      else console.warn('subscribeAtsJobs error:', err)
+    })
+  } catch (err) {
+    if (typeof onError === 'function') onError(err)
+    return () => {}
   }
 }
 

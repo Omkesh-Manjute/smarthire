@@ -1,15 +1,129 @@
 import React, { useState, useEffect, useRef } from 'react'
 
-// ─── Web Audio API Notification Chime ─────────────────────────────────────────
-export function playNotificationSound() {
+// ─── Web Audio API Notification Engine (Singleton with Autoplay Unlock) ──────────
+let sharedAudioCtx = null
+let lastSoundTimestamp = 0
+
+export function getSharedAudioContext() {
+  if (typeof window === 'undefined') return null
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext
+  if (!AudioContextClass) return null
+  if (!sharedAudioCtx || sharedAudioCtx.state === 'closed') {
+    try {
+      sharedAudioCtx = new AudioContextClass()
+    } catch (_) {}
+  }
+  if (sharedAudioCtx && sharedAudioCtx.state === 'suspended') {
+    sharedAudioCtx.resume().catch(() => {})
+  }
+  return sharedAudioCtx
+}
+
+// Global user-gesture warm-up to pre-unlock AudioContext across Chrome, Safari, Edge, Firefox
+if (typeof window !== 'undefined') {
+  const warmUpAudio = () => {
+    try {
+      const ctx = getSharedAudioContext()
+      if (ctx && ctx.state === 'suspended') {
+        ctx.resume().catch(() => {})
+      }
+    } catch (_) {}
+  }
+  ['click', 'keydown', 'touchstart', 'pointerdown'].forEach(ev => {
+    window.addEventListener(ev, warmUpAudio, { passive: true })
+  })
+}
+
+/**
+ * Dedicated Requisition / New JD Audio Chime (4-Tone Ascending Major Arpeggio Chord)
+ * C5 (523.25Hz) → E5 (659.25Hz) → G5 (783.99Hz) → C6 (1046.50Hz) + High Shimmer
+ */
+export function playRequisitionSound() {
   try {
     const soundEnabled = typeof window !== 'undefined' && localStorage.getItem('smarthire_notification_sound_enabled') !== 'false'
     if (!soundEnabled) return
 
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext
-    if (!AudioContextClass) return
+    const ctx = getSharedAudioContext()
+    if (!ctx) return
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {})
+    }
 
-    const ctx = new AudioContextClass()
+    const t = ctx.currentTime
+
+    // Tone 1: Warm Foundation (C5 = 523.25 Hz)
+    const osc1 = ctx.createOscillator()
+    const gain1 = ctx.createGain()
+    osc1.type = 'sine'
+    osc1.frequency.setValueAtTime(523.25, t)
+    gain1.gain.setValueAtTime(0.28, t)
+    gain1.gain.exponentialRampToValueAtTime(0.0001, t + 0.45)
+    osc1.connect(gain1)
+    gain1.connect(ctx.destination)
+    osc1.start(t)
+    osc1.stop(t + 0.45)
+
+    // Tone 2: Major Third (E5 = 659.25 Hz)
+    const osc2 = ctx.createOscillator()
+    const gain2 = ctx.createGain()
+    osc2.type = 'sine'
+    osc2.frequency.setValueAtTime(659.25, t + 0.08)
+    gain2.gain.setValueAtTime(0.32, t + 0.08)
+    gain2.gain.exponentialRampToValueAtTime(0.0001, t + 0.55)
+    osc2.connect(gain2)
+    gain2.connect(ctx.destination)
+    osc2.start(t + 0.08)
+    osc2.stop(t + 0.55)
+
+    // Tone 3: Perfect Fifth (G5 = 783.99 Hz)
+    const osc3 = ctx.createOscillator()
+    const gain3 = ctx.createGain()
+    osc3.type = 'sine'
+    osc3.frequency.setValueAtTime(783.99, t + 0.16)
+    gain3.gain.setValueAtTime(0.35, t + 0.16)
+    gain3.gain.exponentialRampToValueAtTime(0.0001, t + 0.7)
+    osc3.connect(gain3)
+    gain3.connect(ctx.destination)
+    osc3.start(t + 0.16)
+    osc3.stop(t + 0.7)
+
+    // Tone 4: Octave Crown (C6 = 1046.50 Hz) + Subtle Harmonic Shimmer (E6 = 1318.51 Hz)
+    const osc4 = ctx.createOscillator()
+    const gain4 = ctx.createGain()
+    osc4.type = 'sine'
+    osc4.frequency.setValueAtTime(1046.50, t + 0.25)
+    gain4.gain.setValueAtTime(0.38, t + 0.25)
+    gain4.gain.exponentialRampToValueAtTime(0.0001, t + 0.95)
+    osc4.connect(gain4)
+    gain4.connect(ctx.destination)
+    osc4.start(t + 0.25)
+    osc4.stop(t + 0.95)
+
+    const oscSparkle = ctx.createOscillator()
+    const gainSparkle = ctx.createGain()
+    oscSparkle.type = 'triangle'
+    oscSparkle.frequency.setValueAtTime(1318.51, t + 0.27)
+    gainSparkle.gain.setValueAtTime(0.16, t + 0.27)
+    gainSparkle.gain.exponentialRampToValueAtTime(0.0001, t + 0.85)
+    oscSparkle.connect(gainSparkle)
+    gainSparkle.connect(ctx.destination)
+    oscSparkle.start(t + 0.27)
+    oscSparkle.stop(t + 0.85)
+  } catch (err) {
+    console.warn('Requisition notification sound error:', err)
+  }
+}
+
+/**
+ * Standard Notification Chime (D5 → A5 → D6 Harmonic)
+ */
+export function playStandardNotificationSound() {
+  try {
+    const soundEnabled = typeof window !== 'undefined' && localStorage.getItem('smarthire_notification_sound_enabled') !== 'false'
+    if (!soundEnabled) return
+
+    const ctx = getSharedAudioContext()
+    if (!ctx) return
     if (ctx.state === 'suspended') {
       ctx.resume().catch(() => {})
     }
@@ -52,7 +166,24 @@ export function playNotificationSound() {
     osc3.start(t + 0.2)
     osc3.stop(t + 0.8)
   } catch (err) {
-    console.warn('Notification sound error:', err)
+    console.warn('Standard notification sound error:', err)
+  }
+}
+
+/**
+ * Universal Sound Trigger with Debounce and Requisition Routing
+ */
+export function playNotificationSound(soundType = 'default', force = false) {
+  const now = Date.now()
+  if (!force && now - lastSoundTimestamp < 220) {
+    return
+  }
+  lastSoundTimestamp = now
+
+  if (soundType === 'requisition' || soundType === 'job') {
+    playRequisitionSound()
+  } else {
+    playStandardNotificationSound()
   }
 }
 
@@ -116,8 +247,8 @@ export const pushActivityNotification = (notif) => {
     localStorage.setItem('smarthire_activity_notifications', JSON.stringify(updated))
   } catch (e) {}
 
-  // 1. Play audio chime sound
-  playNotificationSound()
+  // 1. Play audio chime sound (requisitions get dedicated 4-tone arpeggio)
+  playNotificationSound(newEntry.type)
 
   // 2. Trigger native OS / desktop push notification
   triggerNativePushNotification(newEntry)
@@ -215,8 +346,8 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
         return updated
       })
 
-      // Ensure sound is triggered
-      playNotificationSound()
+      // Ensure sound is triggered (debounced to avoid duplicate play)
+      playNotificationSound(newNotif.type)
 
       // Trigger live popup banner for 4.5 seconds
       setLiveToast(newNotif)
@@ -353,10 +484,10 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
           zIndex: 99999,
           background: '#0f172a',
           color: '#ffffff',
-          border: '1px solid #38bdf8',
+          border: liveToast.type === 'requisition' ? '1px solid #f97316' : '1px solid #38bdf8',
           borderRadius: '6px',
           padding: '10px 14px',
-          boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
+          boxShadow: liveToast.type === 'requisition' ? '0 10px 25px rgba(249, 115, 22, 0.35)' : '0 10px 25px rgba(0,0,0,0.3)',
           maxWidth: '360px',
           display: 'flex',
           alignItems: 'flex-start',
@@ -364,10 +495,32 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
           animation: 'slideIn 0.3s ease-out',
           fontFamily: 'Arial, sans-serif'
         }}>
-          <span style={{ fontSize: '18px' }}>🔔</span>
+          <span style={{ fontSize: '18px' }}>
+            {liveToast.type === 'requisition' ? '💼' : '🔔'}
+          </span>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#38bdf8' }}>
-              {liveToast.title}
+            <div style={{
+              fontSize: '11.5px',
+              fontWeight: 'bold',
+              color: liveToast.type === 'requisition' ? '#fb923c' : '#38bdf8',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              <span>{liveToast.title}</span>
+              {liveToast.type === 'requisition' && (
+                <span style={{
+                  fontSize: '9px',
+                  background: '#ea580c',
+                  color: '#ffffff',
+                  padding: '1px 5px',
+                  borderRadius: '3px',
+                  fontWeight: '700',
+                  letterSpacing: '0.4px'
+                }}>
+                  LIVE REQ
+                </span>
+              )}
             </div>
             <div style={{ fontSize: '11px', color: '#f1f5f9', marginTop: '2px', lineHeight: '1.3' }}>
               {liveToast.message}
@@ -458,11 +611,11 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
                 <span>{isSoundEnabled ? 'Sound ON' : 'Muted'}</span>
               </button>
 
-              {/* Test Sound Button */}
+              {/* Test Standard Sound Button */}
               <button
                 type="button"
-                onClick={() => playNotificationSound()}
-                title="Test notification sound chime"
+                onClick={() => playNotificationSound('default', true)}
+                title="Test standard notification sound chime"
                 style={{
                   background: '#f1f5f9',
                   border: '1px solid #cbd5e1',
@@ -475,6 +628,29 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
                 }}
               >
                 🔔 Test
+              </button>
+
+              {/* Test JD Requisition Sound Button */}
+              <button
+                type="button"
+                onClick={() => playNotificationSound('requisition', true)}
+                title="Test new job requisition audio chime (4-tone arpeggio)"
+                style={{
+                  background: '#ffedd5',
+                  border: '1px solid #fed7aa',
+                  color: '#9a3412',
+                  borderRadius: '4px',
+                  padding: '2px 6px',
+                  fontSize: '10.5px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '2px'
+                }}
+              >
+                <span>💼</span>
+                <span>JD Sound</span>
               </button>
 
               <button

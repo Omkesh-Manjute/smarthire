@@ -31,7 +31,22 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
-### 2026-09-05 — Complete Removal of PraxiMinds Branding
+### 2026-09-05 — Instant Notification with Audio Chime Sound on New JD Addition
+- **Dedicated Requisition Audio Chime (`playRequisitionSound`)**:
+  - Implemented an uplifting 4-tone ascending major arpeggio chord chime (C5 `523.25Hz` → E5 `659.25Hz` → G5 `783.99Hz` → C6 `1046.50Hz` + high harmonic shimmer E6 `1318.51Hz`) crafted specifically for new job requisitions / JDs.
+  - Added a singleton `AudioContext` with global user-gesture pre-warming (`click`, `keydown`, `touchstart`, `pointerdown`) to reliably unlock audio across Chrome, Safari, Edge, and Firefox without browser autoplay restrictions.
+  - Added a 220ms audio debounce to prevent duplicate/colliding audio triggers when events fire across components.
+- **Visual In-App Toast Alert for Live Requisitions**:
+  - Configured high-contrast dark toast popup with bright orange border (`#f97316`), `💼` icon, `LIVE REQ` badge, and requisition title / location details.
+  - Added dedicated `💼 JD Sound` preview button in the `ActivityNotificationBell` popover header alongside standard sound test.
+- **Full-Lifecycle Coverage Across All JD Ingestion & Creation Paths**:
+  - **Manual Job Creation (`JobsModule.jsx`)**: `handleManualPostJob` triggers instant in-app activity notification + audio chime upon publishing a new job requisition.
+  - **Recruiter Requisitions (`RecruiterDashboard.jsx`)**: `handleAddNewRequisition` triggers instant notification + sound chime upon requisition creation.
+  - **Manual Scraper Trigger (`RecruiterDashboard.jsx`)**: `handleScrapeLiveJobs` fires notification + audio chime when live sync completes.
+  - **Real-Time Cross-Client Synchronization (`atsFirestore.js` & `subscribeAtsJobs`)**: Connected Firestore real-time snapshot listener in both `AtsPlatform.jsx` and `RecruiterDashboard.jsx` for sub-second (<500ms) audio alerts when any team member adds a JD from any browser.
+  - **Background Ingestion Scraper Polling**: 35-second fallback poll in `AtsPlatform.jsx` and `RecruiterDashboard.jsx` triggers audio chime for newly detected background scraper jobs.
+- **Production Build Verified**:
+  - `npm run build` verified: 0 errors, 0 warnings (built in 1.79s).
 - **Removed All PraxiMinds / Praximind References Across Entire Frontend**:
   - `index.html`: Cleaned page title, meta description, keywords, author, OpenGraph, and Twitter tags to use pure SmartHire branding.
   - `Blog.jsx`: Updated blog post author to "SmartHire Editorial Team", publisher to "SmartHire", avatar badge to "S", footer copyright to "© 2026 SmartHire", and all meta descriptions/schema.

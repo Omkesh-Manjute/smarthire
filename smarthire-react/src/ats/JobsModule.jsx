@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { saveAtsJob } from '../lib/atsFirestore'
+import { pushActivityNotification } from '../components/ActivityNotificationBell'
 import { formatJobDescription, resolveJobLocation, cleanJobTitleWithPositionNumber, resolveReqId } from '../utils/formatJobDescription'
 
 function JobsModule({
@@ -135,7 +136,7 @@ function JobsModule({
         console.warn('Firebase saveAtsJob error:', fErr)
       }
 
-      // 2. Also notify backend if available
+      let finalJobId = tempId
       try {
         const res = await fetch('/api/jobs', {
           method: 'POST',
@@ -143,12 +144,23 @@ function JobsModule({
           body: JSON.stringify(payload)
         })
         const data = res.ok ? await res.json() : null
-        const finalJobId = data?.id || data?.data?.id || data?.job?.id || tempId
+        finalJobId = data?.id || data?.data?.id || data?.job?.id || tempId
         const appLink = getRecruiterJobLink(finalJobId, selectedRecruiterPoster.refCode)
         setPostedJobLink(appLink)
       } catch (backendErr) {
         setPostedJobLink(getRecruiterJobLink(tempId, selectedRecruiterPoster.refCode))
       }
+
+      // 3. Trigger instant in-app activity notification and audio chime
+      pushActivityNotification({
+        title: '💼 New Requisition Live!',
+        message: `${payload.title} (${payload.client || 'Enterprise'} · ${payload.location || 'Remote'}) is now active in ATS.`,
+        type: 'requisition',
+        category: 'team',
+        actor: payload.postedByName || recruiterInfo?.name || 'Recruiter',
+        actorRole: 'Recruiter',
+        reqId: finalJobId
+      })
 
       setPostForm({ title: '', client: '', location: '', work_mode: 'Onsite', employment_type: 'Contract', experience: '', skills: '', description: '' })
       if (fetchJobs) fetchJobs()

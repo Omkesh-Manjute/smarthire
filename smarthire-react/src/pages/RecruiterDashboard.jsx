@@ -17,6 +17,7 @@ import {
   saveTeamUsersFirestore,
   getTeamUsersFirestore,
   getAtsJobs,
+  subscribeAtsJobs,
   deduplicateCandidates
 } from '../lib/atsFirestore'
 
@@ -462,6 +463,14 @@ We are currently reviewing candidate profiles and scheduling immediate interview
         setJobs(list)
         setSaveToastMessage(`🎉 Successfully synced ${list.length} live job requisitions into your portal!`)
         setTimeout(() => setSaveToastMessage(null), 4000)
+        pushActivityNotification({
+          title: `💼 ${list.length} Requisitions Synced!`,
+          message: `Live job requisitions refreshed from JobsInHand.`,
+          type: 'requisition',
+          category: 'team',
+          actor: 'Ingestion Engine',
+          actorRole: 'Automation Scraper'
+        })
       }
     } catch (e) {
       console.error(e)
@@ -1063,6 +1072,34 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
     loadJobsData(false)
 
+    // Real-time Firestore job listener (sub-second audio notification when any job is posted)
+    const unsubJobs = subscribeAtsJobs(({ jobs: fsJobs, changes }) => {
+      if (!initialJobsLoadedRef.current) return
+      const newlyAdded = []
+      const addedChanges = changes.filter(c => c.type === 'added').map(c => c.doc)
+      addedChanges.forEach(j => {
+        const key = j.reqId || j.id
+        if (key && !knownJobIdsRef.current.has(key)) {
+          newlyAdded.push(j)
+          knownJobIdsRef.current.add(key)
+        }
+      })
+      if (newlyAdded.length > 0) {
+        setJobs(prev => processJobsList([...newlyAdded, ...prev]))
+        pushActivityNotification({
+          title: `💼 ${newlyAdded.length} New Requisition${newlyAdded.length > 1 ? 's' : ''} Synced!`,
+          message: newlyAdded.length === 1
+            ? `${newlyAdded[0].title} (Req #${newlyAdded[0].reqId || newlyAdded[0].id}) is now live.`
+            : `${newlyAdded[0].title} and ${newlyAdded.length - 1} more jobs added to ATS.`,
+          type: 'requisition',
+          category: 'team',
+          actor: newlyAdded[0].postedByName || 'SmartHire Recruiter',
+          actorRole: 'Recruiter',
+          reqId: newlyAdded[0].reqId || newlyAdded[0].id
+        })
+      }
+    })
+
     // Periodic live sync for 6-minute background scraper runs (polls every 35s)
     const syncInterval = setInterval(() => {
       loadJobsData(true)
@@ -1126,7 +1163,10 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
     syncCandidatesAndRoster()
 
-    return () => clearInterval(syncInterval)
+    return () => {
+      clearInterval(syncInterval)
+      if (typeof unsubJobs === 'function') unsubJobs()
+    }
   }, [])
 
   // Toggle recruiter selection for current requisition (case-insensitive and trimmed)
@@ -1827,6 +1867,18 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       deadline: 'Aug 28, 2026'
     }
     handleOpenReq(newJobObj)
+
+    // Trigger instant in-app activity notification and requisition sound chime
+    pushActivityNotification({
+      title: '💼 New Requisition Created!',
+      message: `${newJobObj.title} (Req #${newReqId}) is ready for sourcing.`,
+      type: 'requisition',
+      category: 'team',
+      actor: currentUser?.name || userName || 'Recruiter',
+      actorRole: currentUser?.role || 'Recruiter',
+      reqId: newReqId
+    })
+
     // Run AI Matchmaker automatically in background to alert recruiters
     setTimeout(() => {
       runAiMatchForJob(newJobObj, { notifyRecruiter: true })
