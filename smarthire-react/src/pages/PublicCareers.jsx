@@ -217,12 +217,12 @@ export default function PublicCareers() {
     cardHoverShadow: isLight ? '0 14px 30px -4px rgba(37, 99, 235, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.06)' : '0 20px 40px rgba(0, 0, 0, 0.6)'
   }
 
-  // Hero Background Carousel Slides
+  // Hero Background Carousel Slides (Ultra-sharp 100% in-focus images + preserved previous scenes)
   const HERO_SLIDES = [
     {
       id: 1,
       image: '/career-hero-slide1.jpg',
-      label: 'Digital Constellation Hub',
+      label: 'Corporate Tech HQ',
       caption: 'Direct Enterprise & State Contracts'
     },
     {
@@ -234,8 +234,14 @@ export default function PublicCareers() {
     {
       id: 3,
       image: '/career-hero-slide3.jpg',
-      label: 'Modern Engineering Lab',
+      label: 'Cloud Engineering Center',
       caption: 'Cloud, Data Systems & Tech Innovation'
+    },
+    {
+      id: 4,
+      image: '/career-hero-prev-slide1.jpg',
+      label: 'Digital Constellation Hub',
+      caption: 'High-Impact Consulting & Systems Architecture'
     }
   ]
 
@@ -879,8 +885,8 @@ export default function PublicCareers() {
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <h1 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: theme.textPrimary, letterSpacing: '-0.02em' }}>
-                SmartHire
+              <h1 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: theme.textPrimary, letterSpacing: '-0.02em' }}>
+                Smart<span style={{ color: '#FF6B00', textShadow: '0 0 12px rgba(255, 107, 0, 0.35)' }}>Hire</span>
               </h1>
               <span style={{
                 color: '#2563EB',
@@ -1198,13 +1204,11 @@ export default function PublicCareers() {
           })}
         </div>
 
-        {/* Crystal Clear Transparent Scrim - Zero Fog, Zero Blur, Full Natural Brightness */}
+        {/* Ultra-Sharp Cinematic Contrast Layer - Zero Fog, Zero Blur, 100% Crisp Visual Depth */}
         <div style={{
           position: 'absolute',
           inset: 0,
-          background: isLight 
-            ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.14) 50%, rgba(250, 251, 253, 0.82) 100%)'
-            : 'linear-gradient(180deg, rgba(8, 12, 20, 0.10) 0%, rgba(8, 12, 20, 0.20) 50%, rgba(8, 12, 20, 0.85) 100%)',
+          background: 'linear-gradient(180deg, rgba(11, 15, 25, 0.72) 0%, rgba(11, 15, 25, 0.40) 38%, rgba(11, 15, 25, 0.75) 82%, rgba(11, 15, 25, 0.96) 100%)',
           pointerEvents: 'none',
           zIndex: 1
         }} />
@@ -1216,17 +1220,16 @@ export default function PublicCareers() {
             alignItems: 'center',
             gap: 8,
             fontSize: 11.5,
-            fontWeight: 700,
-            color: '#EA580C',
-            backgroundColor: isLight ? 'rgba(255, 255, 255, 0.92)' : 'rgba(255, 107, 0, 0.18)',
-            border: '1px solid rgba(255, 107, 0, 0.35)',
-            padding: '5px 16px',
+            fontWeight: 800,
+            color: '#FFA500',
+            backgroundColor: 'rgba(15, 23, 42, 0.85)',
+            border: '1px solid rgba(255, 107, 0, 0.45)',
+            padding: '6px 18px',
             borderRadius: 24,
             textTransform: 'uppercase',
             letterSpacing: '0.06em',
             marginBottom: 18,
-            backdropFilter: 'blur(10px)',
-            boxShadow: isLight ? '0 2px 8px rgba(0, 0, 0, 0.05)' : 'none'
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.45), 0 0 14px rgba(255, 107, 0, 0.25)'
           }}>
             <span style={{
               width: 7,
@@ -1234,6 +1237,7 @@ export default function PublicCareers() {
               borderRadius: '50%',
               backgroundColor: '#FF6B00',
               display: 'inline-block',
+              boxShadow: '0 0 8px #FF6B00',
               animation: 'pulse-orange 2s infinite'
             }} />
             <span>Direct Client Requisitions · State & Enterprise</span>
@@ -1242,30 +1246,34 @@ export default function PublicCareers() {
           {/* Main Headline */}
           <h2 style={{
             fontSize: 'clamp(28px, 4.5vw, 42px)',
-            fontWeight: 800,
+            fontWeight: 900,
             margin: '0 0 14px',
-            color: theme.textPrimary,
+            color: '#FFFFFF',
             letterSpacing: '-0.03em',
             lineHeight: 1.18,
-            textShadow: isLight ? '0 1px 3px rgba(255, 255, 255, 0.95), 0 2px 10px rgba(255, 255, 255, 0.8)' : '0 2px 12px rgba(0, 0, 0, 0.8)'
+            textShadow: '0 2px 14px rgba(0, 0, 0, 0.9), 0 4px 28px rgba(0, 0, 0, 0.6)'
           }}>
-            Explore Career Opportunities with <span style={{
-              background: 'linear-gradient(135deg, #FF6B00 0%, #EA580C 45%, #2563EB 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              display: 'inline-block'
-            }}>SmartHire</span>
+            Explore Career Opportunities with{' '}
+            <span style={{
+              color: '#FF6B00',
+              fontWeight: 900,
+              display: 'inline-block',
+              textShadow: '0 0 35px rgba(255, 107, 0, 0.85), 0 2px 10px rgba(0, 0, 0, 0.95)',
+              letterSpacing: '-0.01em'
+            }}>
+              SmartHire
+            </span>
           </h2>
 
           {/* Subtitle */}
           <p style={{
-            fontSize: 15,
-            color: isLight ? '#1E293B' : '#E2E8F0',
+            fontSize: 15.5,
+            color: '#E2E8F0',
             fontWeight: 500,
             maxWidth: 680,
             margin: '0 auto 28px',
             lineHeight: 1.6,
-            textShadow: isLight ? '0 1px 3px rgba(255, 255, 255, 0.95)' : '0 1px 4px rgba(0, 0, 0, 0.7)'
+            textShadow: '0 2px 8px rgba(0, 0, 0, 0.85)'
           }}>
             Verified high-impact contracts (C2C, W2, 1099) with direct North Carolina, Virginia, and Fortune 500 enterprise clients. 0 intermediary layers.
           </p>
@@ -1279,28 +1287,27 @@ export default function PublicCareers() {
             margin: '0 auto 32px'
           }}>
             {[
-              { label: 'Active Requisitions', val: `${activeOpenJobs.length > 0 ? activeOpenJobs.length : 66}+`, icon: '⚡' },
-              { label: 'Direct End-Clients', val: '100%', icon: '🏢' },
-              { label: 'Recruiter Review', val: '< 24 hrs', icon: '⏱️' },
-              { label: 'Intermediary Layers', val: '0 (Direct)', icon: '🛡️' }
+              { label: 'Active Requisitions', val: `${activeOpenJobs.length > 0 ? activeOpenJobs.length : 66}+`, icon: '⚡', accent: '#38BDF8' },
+              { label: 'Direct End-Clients', val: '100%', icon: '🏢', accent: '#4ADE80' },
+              { label: 'Recruiter Review', val: '< 24 hrs', icon: '⏱️', accent: '#FBBF24' },
+              { label: 'Intermediary Layers', val: '0 (Direct)', icon: '🛡️', accent: '#FF6B00' }
             ].map((stat, i) => (
               <div key={i} style={{
-                backgroundColor: isLight ? 'rgba(255, 255, 255, 0.92)' : 'rgba(17, 24, 39, 0.8)',
-                border: `1px solid ${theme.border}`,
-                backdropFilter: 'blur(10px)',
+                backgroundColor: 'rgba(15, 23, 42, 0.85)',
+                border: '1px solid rgba(255, 255, 255, 0.16)',
                 borderRadius: 10,
-                padding: '10px 14px',
+                padding: '11px 14px',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: isLight ? '0 1px 4px rgba(15, 23, 42, 0.04)' : '0 4px 12px rgba(0, 0, 0, 0.25)'
+                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.15)'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 16, fontWeight: 800, color: theme.textPrimary }}>
-                  <span style={{ fontSize: 13 }}>{stat.icon}</span>
-                  <span>{stat.val}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 16, fontWeight: 800, color: '#FFFFFF' }}>
+                  <span style={{ fontSize: 14 }}>{stat.icon}</span>
+                  <span style={{ color: stat.accent }}>{stat.val}</span>
                 </div>
-                <span style={{ fontSize: 11, color: theme.textSecondary, fontWeight: 500, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                <span style={{ fontSize: 10.5, color: '#94A3B8', fontWeight: 600, marginTop: 3, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   {stat.label}
                 </span>
               </div>
@@ -1317,7 +1324,7 @@ export default function PublicCareers() {
             alignItems: 'center',
             maxWidth: 820,
             margin: '0 auto',
-            boxShadow: isLight ? '0 10px 30px -4px rgba(15, 23, 42, 0.08)' : '0 16px 40px rgba(0,0,0,0.5)',
+            boxShadow: '0 20px 48px rgba(0, 0, 0, 0.42), 0 4px 14px rgba(0, 0, 0, 0.2)',
             flexWrap: 'wrap',
             transition: 'box-shadow 0.2s ease, border-color 0.2s ease'
           }}>
@@ -1422,18 +1429,18 @@ export default function PublicCareers() {
               style={{
                 background: (deadlineFilter === 'All' && selectedLocation === 'All')
                   ? 'linear-gradient(180deg, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.08) 50%, rgba(0,0,0,0.03) 51%, rgba(0,0,0,0.14) 100%), #2563EB'
-                  : (isLight ? 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.85) 50%, rgba(241,245,249,0.95) 100%)' : 'linear-gradient(180deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.9) 100%)'),
-                color: (deadlineFilter === 'All' && selectedLocation === 'All') ? '#FFFFFF' : theme.textSecondary,
-                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'All') ? 'rgba(255, 255, 255, 0.45)' : (isLight ? 'rgba(203, 213, 225, 0.95)' : 'rgba(255,255,255,0.15)')}`,
+                  : (isLight ? 'linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 100%)' : 'linear-gradient(180deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.9) 100%)'),
+                color: (deadlineFilter === 'All' && selectedLocation === 'All') ? '#FFFFFF' : (isLight ? '#0F172A' : '#F1F5F9'),
+                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'All') ? 'rgba(255, 255, 255, 0.45)' : (isLight ? 'rgba(203, 213, 225, 0.95)' : 'rgba(255,255,255,0.2)')}`,
                 borderBottomColor: (deadlineFilter === 'All' && selectedLocation === 'All') ? 'rgba(0,0,0,0.35)' : (isLight ? 'rgba(148, 163, 184, 0.85)' : 'rgba(0,0,0,0.4)'),
                 borderRadius: 20,
                 padding: '6px 15px',
                 fontSize: 12,
-                fontWeight: 700,
+                fontWeight: 750,
                 cursor: 'pointer',
                 boxShadow: (deadlineFilter === 'All' && selectedLocation === 'All')
                   ? 'inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 3px 10px rgba(37, 99, 235, 0.4)'
-                  : 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 5px rgba(15, 23, 42, 0.05)',
+                  : 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 6px rgba(0, 0, 0, 0.15)',
                 transition: 'all 0.15s ease'
               }}
             >
@@ -1454,18 +1461,18 @@ export default function PublicCareers() {
               style={{
                 background: (deadlineFilter === 'Today' || selectedLocation === 'Today')
                   ? 'linear-gradient(180deg, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.08) 50%, rgba(0,0,0,0.03) 51%, rgba(0,0,0,0.14) 100%), #DC2626'
-                  : (isLight ? 'linear-gradient(180deg, #FEF2F2 0%, #FEE2E2 100%)' : 'rgba(220, 38, 38, 0.18)'),
+                  : (isLight ? 'linear-gradient(180deg, #FFFFFF 0%, #FEF2F2 100%)' : 'rgba(220, 38, 38, 0.18)'),
                 color: (deadlineFilter === 'Today' || selectedLocation === 'Today') ? '#FFFFFF' : '#DC2626',
-                border: `1px solid ${(deadlineFilter === 'Today' || selectedLocation === 'Today') ? 'rgba(255, 255, 255, 0.45)' : 'rgba(239, 68, 68, 0.45)'}`,
-                borderBottomColor: (deadlineFilter === 'Today' || selectedLocation === 'Today') ? 'rgba(0,0,0,0.35)' : 'rgba(220, 38, 38, 0.5)',
+                border: `1px solid ${(deadlineFilter === 'Today' || selectedLocation === 'Today') ? 'rgba(255, 255, 255, 0.45)' : 'rgba(239, 68, 68, 0.5)'}`,
+                borderBottomColor: (deadlineFilter === 'Today' || selectedLocation === 'Today') ? 'rgba(0,0,0,0.35)' : 'rgba(220, 38, 38, 0.6)',
                 borderRadius: 20,
                 padding: '6px 15px',
                 fontSize: 12,
-                fontWeight: 700,
+                fontWeight: 750,
                 cursor: 'pointer',
                 boxShadow: (deadlineFilter === 'Today' || selectedLocation === 'Today')
                   ? 'inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 3px 10px rgba(220, 38, 38, 0.4)'
-                  : 'inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 2px 4px rgba(220, 38, 38, 0.08)',
+                  : 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 6px rgba(0, 0, 0, 0.15)',
                 transition: 'all 0.15s ease',
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -1491,18 +1498,18 @@ export default function PublicCareers() {
               style={{
                 background: (deadlineFilter === 'All' && selectedLocation === 'Remote')
                   ? 'linear-gradient(180deg, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.08) 50%, rgba(0,0,0,0.03) 51%, rgba(0,0,0,0.14) 100%), #2563EB'
-                  : (isLight ? 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.85) 50%, rgba(241,245,249,0.95) 100%)' : 'linear-gradient(180deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.9) 100%)'),
-                color: (deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#FFFFFF' : theme.textSecondary,
-                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Remote') ? 'rgba(255, 255, 255, 0.45)' : (isLight ? 'rgba(203, 213, 225, 0.95)' : 'rgba(255,255,255,0.15)')}`,
+                  : (isLight ? 'linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 100%)' : 'linear-gradient(180deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.9) 100%)'),
+                color: (deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#FFFFFF' : (isLight ? '#0F172A' : '#F1F5F9'),
+                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Remote') ? 'rgba(255, 255, 255, 0.45)' : (isLight ? 'rgba(203, 213, 225, 0.95)' : 'rgba(255,255,255,0.2)')}`,
                 borderBottomColor: (deadlineFilter === 'All' && selectedLocation === 'Remote') ? 'rgba(0,0,0,0.35)' : (isLight ? 'rgba(148, 163, 184, 0.85)' : 'rgba(0,0,0,0.4)'),
                 borderRadius: 20,
                 padding: '6px 15px',
                 fontSize: 12,
-                fontWeight: 700,
+                fontWeight: 750,
                 cursor: 'pointer',
                 boxShadow: (deadlineFilter === 'All' && selectedLocation === 'Remote')
                   ? 'inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 3px 10px rgba(37, 99, 235, 0.4)'
-                  : 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 5px rgba(15, 23, 42, 0.05)',
+                  : 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 6px rgba(0, 0, 0, 0.15)',
                 transition: 'all 0.15s ease'
               }}
             >
@@ -1515,18 +1522,18 @@ export default function PublicCareers() {
               style={{
                 background: (deadlineFilter === 'All' && selectedLocation === 'Hybrid')
                   ? 'linear-gradient(180deg, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.08) 50%, rgba(0,0,0,0.03) 51%, rgba(0,0,0,0.14) 100%), #2563EB'
-                  : (isLight ? 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.85) 50%, rgba(241,245,249,0.95) 100%)' : 'linear-gradient(180deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.9) 100%)'),
-                color: (deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#FFFFFF' : theme.textSecondary,
-                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? 'rgba(255, 255, 255, 0.45)' : (isLight ? 'rgba(203, 213, 225, 0.95)' : 'rgba(255,255,255,0.15)')}`,
+                  : (isLight ? 'linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 100%)' : 'linear-gradient(180deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.9) 100%)'),
+                color: (deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#FFFFFF' : (isLight ? '#0F172A' : '#F1F5F9'),
+                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? 'rgba(255, 255, 255, 0.45)' : (isLight ? 'rgba(203, 213, 225, 0.95)' : 'rgba(255,255,255,0.2)')}`,
                 borderBottomColor: (deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? 'rgba(0,0,0,0.35)' : (isLight ? 'rgba(148, 163, 184, 0.85)' : 'rgba(0,0,0,0.4)'),
                 borderRadius: 20,
                 padding: '6px 15px',
                 fontSize: 12,
-                fontWeight: 700,
+                fontWeight: 750,
                 cursor: 'pointer',
                 boxShadow: (deadlineFilter === 'All' && selectedLocation === 'Hybrid')
                   ? 'inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 3px 10px rgba(37, 99, 235, 0.4)'
-                  : 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 5px rgba(15, 23, 42, 0.05)',
+                  : 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 6px rgba(0, 0, 0, 0.15)',
                 transition: 'all 0.15s ease'
               }}
             >
@@ -1539,18 +1546,18 @@ export default function PublicCareers() {
               style={{
                 background: (deadlineFilter === 'All' && selectedLocation === 'Onsite')
                   ? 'linear-gradient(180deg, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.08) 50%, rgba(0,0,0,0.03) 51%, rgba(0,0,0,0.14) 100%), #2563EB'
-                  : (isLight ? 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.85) 50%, rgba(241,245,249,0.95) 100%)' : 'linear-gradient(180deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.9) 100%)'),
-                color: (deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#FFFFFF' : theme.textSecondary,
-                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Onsite') ? 'rgba(255, 255, 255, 0.45)' : (isLight ? 'rgba(203, 213, 225, 0.95)' : 'rgba(255,255,255,0.15)')}`,
+                  : (isLight ? 'linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 100%)' : 'linear-gradient(180deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.9) 100%)'),
+                color: (deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#FFFFFF' : (isLight ? '#0F172A' : '#F1F5F9'),
+                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Onsite') ? 'rgba(255, 255, 255, 0.45)' : (isLight ? 'rgba(203, 213, 225, 0.95)' : 'rgba(255,255,255,0.2)')}`,
                 borderBottomColor: (deadlineFilter === 'All' && selectedLocation === 'Onsite') ? 'rgba(0,0,0,0.35)' : (isLight ? 'rgba(148, 163, 184, 0.85)' : 'rgba(0,0,0,0.4)'),
                 borderRadius: 20,
                 padding: '6px 15px',
                 fontSize: 12,
-                fontWeight: 700,
+                fontWeight: 750,
                 cursor: 'pointer',
                 boxShadow: (deadlineFilter === 'All' && selectedLocation === 'Onsite')
                   ? 'inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 3px 10px rgba(37, 99, 235, 0.4)'
-                  : 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 5px rgba(15, 23, 42, 0.05)',
+                  : 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 6px rgba(0, 0, 0, 0.15)',
                 transition: 'all 0.15s ease'
               }}
             >
@@ -1564,18 +1571,14 @@ export default function PublicCareers() {
             alignItems: 'center',
             gap: 10,
             marginTop: 22,
-            background: isLight 
-              ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.92) 100%)' 
-              : 'linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.9) 100%)',
-            border: `1px solid ${isLight ? 'rgba(203, 213, 225, 0.9)' : 'rgba(255, 255, 255, 0.15)'}`,
+            background: 'rgba(15, 23, 42, 0.88)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
             borderRadius: 30,
             padding: '4px 14px 4px 6px',
-            boxShadow: isLight 
-              ? 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 4px 16px rgba(15, 23, 42, 0.08)' 
-              : 'inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 6px 20px rgba(0, 0, 0, 0.4)'
+            boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.18), 0 8px 24px rgba(0, 0, 0, 0.45)'
           }}>
             {/* Mode Switch: Video vs Slides */}
-            <div style={{ display: 'inline-flex', background: isLight ? '#F1F5F9' : '#0F172A', borderRadius: 20, padding: 2 }}>
+            <div style={{ display: 'inline-flex', background: 'rgba(2, 6, 23, 0.7)', borderRadius: 20, padding: 2 }}>
               <button
                 type="button"
                 onClick={() => setHeroMediaMode('video')}
@@ -1584,7 +1587,7 @@ export default function PublicCareers() {
                   background: heroMediaMode === 'video'
                     ? 'linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.06) 50%, rgba(0,0,0,0.12) 100%), #2563EB'
                     : 'transparent',
-                  color: heroMediaMode === 'video' ? '#FFF' : theme.textSecondary,
+                  color: heroMediaMode === 'video' ? '#FFF' : '#94A3B8',
                   border: 'none',
                   borderRadius: 16,
                   padding: '4px 10px',
@@ -1608,7 +1611,7 @@ export default function PublicCareers() {
                   background: heroMediaMode === 'slides'
                     ? 'linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.06) 50%, rgba(0,0,0,0.12) 100%), #2563EB'
                     : 'transparent',
-                  color: heroMediaMode === 'slides' ? '#FFF' : theme.textSecondary,
+                  color: heroMediaMode === 'slides' ? '#FFF' : '#94A3B8',
                   border: 'none',
                   borderRadius: 16,
                   padding: '4px 10px',
@@ -1638,18 +1641,16 @@ export default function PublicCareers() {
                 width: 24,
                 height: 24,
                 borderRadius: '50%',
-                background: isLight 
-                  ? 'linear-gradient(180deg, #FFFFFF 0%, #E2E8F0 100%)' 
-                  : 'linear-gradient(180deg, #334155 0%, #1E293B 100%)',
-                border: `1px solid ${isLight ? '#CBD5E1' : '#475569'}`,
-                color: theme.textSecondary,
+                background: 'linear-gradient(180deg, #334155 0%, #1E293B 100%)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                color: '#F1F5F9',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
                 fontSize: 13,
                 fontWeight: 800,
-                boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.9)',
+                boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3)',
                 transition: 'all 0.15s ease'
               }}
             >
@@ -1675,7 +1676,7 @@ export default function PublicCareers() {
                       borderRadius: 3,
                       background: isActive 
                         ? 'linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(0,0,0,0.1) 100%), #FF6B00' 
-                        : (isLight ? '#CBD5E1' : '#475569'),
+                        : 'rgba(255, 255, 255, 0.3)',
                       border: 'none',
                       padding: 0,
                       cursor: 'pointer',
@@ -1699,18 +1700,16 @@ export default function PublicCareers() {
                 width: 24,
                 height: 24,
                 borderRadius: '50%',
-                background: isLight 
-                  ? 'linear-gradient(180deg, #FFFFFF 0%, #E2E8F0 100%)' 
-                  : 'linear-gradient(180deg, #334155 0%, #1E293B 100%)',
-                border: `1px solid ${isLight ? '#CBD5E1' : '#475569'}`,
-                color: theme.textSecondary,
+                background: 'linear-gradient(180deg, #334155 0%, #1E293B 100%)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                color: '#F1F5F9',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
                 fontSize: 13,
                 fontWeight: 800,
-                boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.9)',
+                boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3)',
                 transition: 'all 0.15s ease'
               }}
             >
@@ -1721,7 +1720,7 @@ export default function PublicCareers() {
             <span style={{
               fontSize: 11,
               fontWeight: 800,
-              color: isLight ? '#1E293B' : '#F1F5F9',
+              color: '#F1F5F9',
               letterSpacing: '0.02em',
               whiteSpace: 'nowrap'
             }}>

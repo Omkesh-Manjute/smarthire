@@ -31,6 +31,26 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-05 — Zero-Blur Image Sharpness, Radiant PraxiMinds Orange SmartHire Branding & Full Contrast Matching
+- **Zero-Blur Ultra-Sharp Imagery**:
+  - Replaced camera-bokeh blurred slide 1 with hyper-realistic deep depth-of-field architectural photography (`career_hero_sharp1`), with 100% crystal-sharp focus from foreground workstations to background glass rooms (f/11, zero blur).
+  - Re-rendered 1080p looping video (`career-hero-video.mp4`) with the new razor-sharp image set.
+  - Eliminated the foggy milky white overlay (`rgba(250, 251, 253, 0.82)`) that was washing out the photos; replaced with an ultra-sharp cinematic contrast gradient (`rgba(11, 15, 25, 0.72) -> 0.40 -> 0.75 -> 0.96`) providing deep, rich, natural colors with 0 haze.
+- **Saved & Preserved All Previous Images**:
+  - Safely backed up previous generation assets on disk in `/public/`: `career-hero-prev-slide1.jpg`, `career-hero-prev-slide2.jpg`, `career-hero-prev-slide3.jpg`.
+  - Added the previous digital constellation scene to `HERO_SLIDES` as slide 4, so all past and present scenes remain accessible in the carousel.
+- **Radiant PraxiMinds Orange SmartHire Brand Pop**:
+  - Replaced transparent gradient text on "SmartHire" that was disappearing into the photo with vibrant PraxiMinds brand orange (`#FF6B00`) and luminous 35px amber glow with deep backing shadow (`textShadow: '0 0 35px rgba(255, 107, 0, 0.85), 0 2px 10px rgba(0, 0, 0, 0.95)'`).
+  - Added orange accent highlight to top navbar logo (`Smart<span style={{ color: '#FF6B00' }}>Hire</span>`).
+- **Full Contrast Image Matching (Baaki Elements Sahi Match)**:
+  - **Main Headline**: Upgraded "Explore Career Opportunities with" to pure brilliant `#FFFFFF` (900 weight) with deep drop shadow for 100% legibility over any photo.
+  - **Subtitle**: Crisp high-contrast silver `#E2E8F0` with text shadow.
+  - **Eyebrow Badge**: High-tech PraxiMinds dark glass badge (`rgba(15, 23, 42, 0.85)`) with amber border and pulsing orange dot.
+  - **4 KPI Stat Cards**: Upgraded to dark glass cards (`rgba(15, 23, 42, 0.85)`) with pure `#FFFFFF` metrics and accent highlights (`#38BDF8`, `#4ADE80`, `#FBBF24`, `#FF6B00`).
+  - **Segmented Filter Chips & Media Controller**: High-contrast specular glossy finish (`#0F172A` bold text on glossy white pills in light mode, `#F1F5F9` on dark navy glass).
+- **Production Build Verified**:
+  - 0 errors or warnings on `npm run build` in `smarthire-react` (built in 1.78s).
+
 ### 2026-09-05 — Live 1080p Video Background, Zero-Blur Crystal Clarity & Glossy Specular Buttons
 - **Live 1080p Video Background (`/career-hero-video.mp4`)**:
   - Rendered a lightweight 1080p looping tech motion video (`career-hero-video.mp4`, 2.5MB) using FFmpeg with smooth cross-fade dissolves between high-res enterprise workplace scenes.
