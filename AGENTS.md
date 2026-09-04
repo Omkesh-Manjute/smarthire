@@ -31,12 +31,18 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
-### 2026-09-05 — Hero Section Transparency & Vivid Carousel Image Visibility
-- **Transparent Hero Scrim & Full Visibility**:
-  - Eliminated the opaque white gradient overlay (`rgba(250, 251, 253, 0.76 - 0.98)`) and center radial glow discs that were washing out the background images.
-  - Replaced with a truly transparent scrim (`linear-gradient(180deg, rgba(250, 251, 253, 0.12) 0%, rgba(250, 251, 253, 0.26) 55%, rgba(250, 251, 253, 0.90) 100%)`), allowing >80% of the workplace photos to show through vibrantly.
-  - Boosted slide image opacity from `0.44` to **`0.92`** (light) / **`0.86`** (dark) and removed image blur filter for maximum clarity.
-  - Added subtle text-shadows to eyebrow badge, main headline, and subtitle to guarantee 100% crisp legibility over the vivid photos.
+### 2026-09-05 — Live 1080p Video Background, Zero-Blur Crystal Clarity & Glossy Specular Buttons
+- **Live 1080p Video Background (`/career-hero-video.mp4`)**:
+  - Rendered a lightweight 1080p looping tech motion video (`career-hero-video.mp4`, 2.5MB) using FFmpeg with smooth cross-fade dissolves between high-res enterprise workplace scenes.
+  - Implemented seamless HTML5 `<video autoPlay loop muted playsInline>` background player with instantaneous local loading and zero CDN latency.
+  - Added interactive mode switcher: `[🎬 Live Video]` vs `[🖼️ Photo Slides]` in the floating controller bar.
+- **Zero-Blur 100% Crystal Clarity**:
+  - Removed all blur filters and foggy white scrim overlays; slide images and video play at 100% full natural clarity (`opacity: 1.0`, `filter: none`).
+- **Glossy Specular Luster Effects on Buttons & Keys**:
+  - **Primary Action Buttons (`⚡ Apply Now`, `⚡ Positions`)**: Applied rich glossy royal blue gradient with 3D specular highlight reflection (`rgba(255,255,255,0.32) -> 0.08`), inset top glow (`inset 0 1px 1px rgba(255,255,255,0.8)`), and deep button shadow.
+  - **Secondary Outline Buttons (`📋 Full JD`, `⚡ ATS Portal ↗`)**: Applied glossy metallic glass sheen with inset highlight bevel and smooth hover lift.
+  - **Segmented Quick Filter Chips**: Applied glossy specular finish across `All Roles`, `⏰ Closing Today`, `Remote`, `Hybrid`, and `Onsite`.
+  - **Key Skills & Work Mode Badges**: Upgraded to glossy pill badges with specular top reflection.
 - **Production Build Verified**:
   - 0 errors or warnings on `npm run build` in `smarthire-react`.
 

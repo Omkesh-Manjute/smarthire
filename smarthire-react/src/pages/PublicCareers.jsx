@@ -239,17 +239,18 @@ export default function PublicCareers() {
     }
   ]
 
+  const [heroMediaMode, setHeroMediaMode] = useState('video') // 'video' | 'slides'
   const [currentHeroSlide, setCurrentHeroSlide] = useState(0)
   const [isSliderHovered, setIsSliderHovered] = useState(false)
 
-  // Auto-play slider with hover pause
+  // Auto-play slider with hover pause when in slides mode
   useEffect(() => {
-    if (isSliderHovered) return
+    if (isSliderHovered || heroMediaMode !== 'slides') return
     const timer = setInterval(() => {
       setCurrentHeroSlide((prev) => (prev + 1) % HERO_SLIDES.length)
     }, 5000)
     return () => clearInterval(timer)
-  }, [isSliderHovered, HERO_SLIDES.length])
+  }, [isSliderHovered, heroMediaMode, HERO_SLIDES.length])
 
   const [expandedBriefJobId, setExpandedBriefJobId] = useState(null)
 
@@ -727,18 +728,22 @@ export default function PublicCareers() {
         }
         .sh-skill-pill {
           font-size: 11px;
-          font-weight: 600;
-          background-color: ${theme.tagBg};
-          color: ${theme.tagText};
-          padding: 3px 9px;
-          border-radius: 5px;
+          font-weight: 700;
+          background: ${isLight ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.8) 100%)' : 'linear-gradient(180deg, rgba(37, 99, 235, 0.2) 0%, rgba(37, 99, 235, 0.08) 100%)'};
+          color: ${isLight ? '#1E293B' : '#93C5FD'};
+          padding: 3px 10px;
+          border-radius: 6px;
           transition: all 0.15s ease;
-          border: 1px solid ${theme.border};
+          border: 1px solid ${isLight ? 'rgba(203, 213, 225, 0.85)' : 'rgba(37, 99, 235, 0.3)'};
+          border-bottom-color: ${isLight ? 'rgba(148, 163, 184, 0.8)' : 'rgba(0, 0, 0, 0.3)'};
+          box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 1px 2px rgba(0, 0, 0, 0.04);
           letter-spacing: 0.01em;
         }
         .sh-job-card:not(.expired):hover .sh-skill-pill {
-          border-color: rgba(37, 99, 235, 0.35);
-          background-color: ${isLight ? '#EFF6FF' : 'rgba(37, 99, 235, 0.2)'};
+          border-color: rgba(37, 99, 235, 0.4);
+          background: ${isLight ? 'linear-gradient(180deg, #EFF6FF 0%, #DBEAFE 100%)' : 'linear-gradient(180deg, rgba(37, 99, 235, 0.35) 0%, rgba(37, 99, 235, 0.15) 100%)'};
+          color: #1D4ED8;
+          box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 5px rgba(37, 99, 235, 0.15);
         }
         .sh-card-footer {
           border-top: 1px solid ${theme.border};
@@ -749,43 +754,50 @@ export default function PublicCareers() {
           align-items: center;
         }
         .sh-apply-btn {
-          background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+          background: linear-gradient(180deg, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(0, 0, 0, 0.03) 51%, rgba(0, 0, 0, 0.14) 100%), #2563EB;
           color: #FFF;
-          border: none;
-          border-radius: 7px;
-          padding: 7px 16px;
+          border: 1px solid rgba(255, 255, 255, 0.45);
+          border-bottom-color: rgba(0, 0, 0, 0.35);
+          border-radius: 8px;
+          padding: 8px 18px;
           font-size: 12.5px;
+          font-weight: 800;
+          cursor: pointer;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 4px 12px rgba(37, 99, 235, 0.38), 0 1px 2px rgba(0, 0, 0, 0.15);
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+          letter-spacing: 0.02em;
+        }
+        .sh-apply-btn:hover {
+          background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.12) 50%, rgba(0, 0, 0, 0.02) 51%, rgba(0, 0, 0, 0.10) 100%), #1D4ED8;
+          transform: translateY(-2px);
+          box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.95), 0 6px 18px rgba(37, 99, 235, 0.5), 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .sh-view-btn {
+          background: ${isLight ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.85) 50%, rgba(241, 245, 249, 0.95) 100%)' : 'linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.9) 100%)'};
+          color: ${isLight ? '#1E293B' : '#F1F5F9'};
+          border: 1px solid ${isLight ? 'rgba(203, 213, 225, 0.95)' : 'rgba(255, 255, 255, 0.2)'};
+          border-bottom-color: ${isLight ? 'rgba(148, 163, 184, 0.85)' : 'rgba(0, 0, 0, 0.4)'};
+          border-radius: 8px;
+          padding: 7px 15px;
+          font-size: 12px;
           font-weight: 700;
           cursor: pointer;
-          transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
           display: inline-flex;
           align-items: center;
           gap: 5px;
-          box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
-        }
-        .sh-apply-btn:hover {
-          background: linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%);
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
-        }
-        .sh-view-btn {
-          background-color: ${isLight ? '#FFFFFF' : '#1E293B'};
-          color: ${isLight ? '#334155' : '#E2E8F0'};
-          border: 1px solid ${isLight ? '#CBD5E1' : 'rgba(255,255,255,0.15)'};
-          border-radius: 7px;
-          padding: 6px 13px;
-          font-size: 12px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.15s ease;
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
+          box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 5px rgba(15, 23, 42, 0.06);
         }
         .sh-view-btn:hover {
-          background-color: ${isLight ? '#F8FAFC' : '#334155'};
-          color: ${isLight ? '#0F172A' : '#FFFFFF'};
-          border-color: ${isLight ? '#94A3B8' : 'rgba(255,255,255,0.3)'};
+          background: ${isLight ? 'linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 100%)' : 'linear-gradient(180deg, #334155 0%, #1E293B 100%)'};
+          color: #2563EB;
+          border-color: #93C5FD;
+          transform: translateY(-2px);
+          box-shadow: inset 0 1px 2px rgba(255, 255, 255, 1), 0 4px 12px rgba(37, 99, 235, 0.15);
         }
         .sh-expired-btn {
           background-color: ${isLight ? '#F1F5F9' : '#334155'};
@@ -895,17 +907,20 @@ export default function PublicCareers() {
             <button
               onClick={() => setClocksExpanded(!clocksExpanded)}
               style={{
-                backgroundColor: clocksExpanded ? (isLight ? '#EFF6FF' : 'rgba(37,99,235,0.2)') : (isLight ? '#F8FAFC' : '#1E293B'),
-                color: clocksExpanded ? '#2563EB' : theme.textSecondary,
-                border: `1px solid ${clocksExpanded ? '#93C5FD' : theme.border}`,
-                borderRadius: 6,
+                background: clocksExpanded 
+                  ? (isLight ? 'linear-gradient(180deg, #EFF6FF 0%, #DBEAFE 100%)' : 'rgba(37,99,235,0.25)') 
+                  : (isLight ? 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.85) 50%, rgba(241,245,249,0.95) 100%)' : 'rgba(30,41,59,0.9)'),
+                color: clocksExpanded ? '#1D4ED8' : theme.textSecondary,
+                border: `1px solid ${clocksExpanded ? '#93C5FD' : isLight ? 'rgba(203, 213, 225, 0.9)' : theme.border}`,
+                borderRadius: 8,
                 padding: '6px 12px',
                 fontSize: 12,
-                fontWeight: 600,
+                fontWeight: 700,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 6,
+                boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 5px rgba(15, 23, 42, 0.05)',
                 transition: 'all 0.15s ease'
               }}
             >
@@ -1008,17 +1023,20 @@ export default function PublicCareers() {
             <button
               onClick={() => setShowLoginModal(true)}
               style={{
-                backgroundColor: isLight ? '#EFF6FF' : 'rgba(37,99,235,0.15)',
-                color: '#2563EB',
-                border: `1px solid ${isLight ? '#BFDBFE' : 'rgba(37,99,235,0.3)'}`,
-                borderRadius: 6,
-                padding: '6px 12px',
+                background: 'linear-gradient(180deg, rgba(239,246,255,0.98) 0%, rgba(219,234,254,0.85) 50%, rgba(191,219,254,0.95) 100%)',
+                color: '#1D4ED8',
+                border: '1px solid rgba(147, 197, 253, 0.9)',
+                borderBottomColor: 'rgba(59, 130, 246, 0.6)',
+                borderRadius: 8,
+                padding: '7px 14px',
                 fontSize: 12,
-                fontWeight: 600,
+                fontWeight: 700,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 5
+                gap: 6,
+                boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 6px rgba(37, 99, 235, 0.15)',
+                transition: 'all 0.18s ease'
               }}
             >
               <span>🔑</span>
@@ -1031,18 +1049,22 @@ export default function PublicCareers() {
             onClick={() => navigate('/ats')}
             title="Open Internal ATS Platform"
             style={{
-              backgroundColor: isLight ? '#F8FAFC' : '#1E293B',
+              background: isLight 
+                ? 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.85) 50%, rgba(241,245,249,0.95) 100%)' 
+                : 'linear-gradient(180deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.9) 100%)',
               color: theme.textPrimary,
-              border: `1px solid ${theme.border}`,
-              borderRadius: 6,
-              padding: '6px 12px',
+              border: `1px solid ${isLight ? 'rgba(203, 213, 225, 0.95)' : 'rgba(255,255,255,0.2)'}`,
+              borderBottomColor: isLight ? 'rgba(148, 163, 184, 0.85)' : 'rgba(0,0,0,0.4)',
+              borderRadius: 8,
+              padding: '7px 14px',
               fontSize: 12,
-              fontWeight: 600,
+              fontWeight: 700,
               cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 5,
-              transition: 'all 0.15s ease'
+              gap: 6,
+              boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 6px rgba(15, 23, 42, 0.06)',
+              transition: 'all 0.18s ease'
             }}
           >
             <span style={{ color: '#2563EB' }}>⚡</span>
@@ -1054,17 +1076,20 @@ export default function PublicCareers() {
           <button
             onClick={() => setThemeMode(isLight ? 'dark' : 'light')}
             style={{
-              backgroundColor: isLight ? '#F1F5F9' : '#1E293B',
+              background: isLight 
+                ? 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.85) 50%, rgba(241,245,249,0.95) 100%)' 
+                : 'linear-gradient(180deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.9) 100%)',
               color: theme.textSecondary,
-              border: `1px solid ${theme.border}`,
-              borderRadius: 6,
-              padding: '6px 10px',
+              border: `1px solid ${isLight ? 'rgba(203, 213, 225, 0.9)' : theme.border}`,
+              borderRadius: 8,
+              padding: '6px 11px',
               fontSize: 12,
-              fontWeight: 600,
+              fontWeight: 700,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: 4,
+              boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.85), 0 2px 5px rgba(15, 23, 42, 0.05)',
               transition: 'all 0.15s ease'
             }}
           >
@@ -1078,15 +1103,18 @@ export default function PublicCareers() {
               if (el) el.scrollIntoView({ behavior: 'smooth' })
             }}
             style={{
-              backgroundColor: '#2563EB',
+              background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(0, 0, 0, 0.03) 51%, rgba(0, 0, 0, 0.14) 100%), #2563EB',
               color: '#FFF',
-              border: 'none',
-              borderRadius: 6,
-              padding: '7px 14px',
+              border: '1px solid rgba(255, 255, 255, 0.45)',
+              borderBottomColor: 'rgba(0, 0, 0, 0.35)',
+              borderRadius: 8,
+              padding: '7px 16px',
               fontSize: 12.5,
-              fontWeight: 600,
+              fontWeight: 800,
               cursor: 'pointer',
-              transition: 'background-color 0.15s ease'
+              boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 3px 10px rgba(37, 99, 235, 0.35)',
+              textShadow: '0 1px 2px rgba(0, 0, 0, 0.25)',
+              transition: 'all 0.18s ease'
             }}
           >
             ⚡ {jobs.length} Positions
@@ -1106,8 +1134,47 @@ export default function PublicCareers() {
           textAlign: 'center'
         }}
       >
-        {/* Real Workplace Background Image Carousel / Slider - High Clarity & Visibility */}
-        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0, pointerEvents: 'none' }}>
+        {/* Live Looping 1080p Video Background - 100% Crystal Clear, Zero Blur */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          overflow: 'hidden',
+          zIndex: 0,
+          pointerEvents: 'none',
+          opacity: heroMediaMode === 'video' ? 1 : 0,
+          transition: 'opacity 0.6s ease-in-out'
+        }}>
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            poster="/career-hero-slide1.jpg"
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              transform: 'translate(-50%, -50%)',
+              filter: 'none'
+            }}
+          >
+            <source src="/career-hero-video.mp4" type="video/mp4" />
+          </video>
+        </div>
+
+        {/* Real Workplace Background Image Carousel / Slider - 100% Crystal Clarity, Zero Blur */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          overflow: 'hidden',
+          zIndex: 0,
+          pointerEvents: 'none',
+          opacity: heroMediaMode === 'slides' ? 1 : 0,
+          transition: 'opacity 0.6s ease-in-out'
+        }}>
           {HERO_SLIDES.map((slide, idx) => {
             const isActive = currentHeroSlide === idx
             return (
@@ -1120,9 +1187,10 @@ export default function PublicCareers() {
                   backgroundPosition: 'center 35%',
                   backgroundSize: 'cover',
                   backgroundRepeat: 'no-repeat',
-                  opacity: isActive ? (isLight ? 0.92 : 0.86) : 0,
-                  transform: isActive ? 'scale(1.03)' : 'scale(1.0)',
+                  opacity: isActive ? 1.0 : 0,
+                  transform: isActive ? 'scale(1.02)' : 'scale(1.0)',
                   transition: 'opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), transform 7s ease-out',
+                  filter: 'none',
                   willChange: 'opacity, transform'
                 }}
               />
@@ -1130,13 +1198,13 @@ export default function PublicCareers() {
           })}
         </div>
 
-        {/* Truly Transparent Contrast Scrim - Allows background workplace imagery to shine through vividly */}
+        {/* Crystal Clear Transparent Scrim - Zero Fog, Zero Blur, Full Natural Brightness */}
         <div style={{
           position: 'absolute',
           inset: 0,
           background: isLight 
-            ? 'linear-gradient(180deg, rgba(250, 251, 253, 0.12) 0%, rgba(250, 251, 253, 0.26) 55%, rgba(250, 251, 253, 0.90) 100%)'
-            : 'linear-gradient(180deg, rgba(8, 12, 20, 0.18) 0%, rgba(8, 12, 20, 0.35) 55%, rgba(8, 12, 20, 0.92) 100%)',
+            ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.14) 50%, rgba(250, 251, 253, 0.82) 100%)'
+            : 'linear-gradient(180deg, rgba(8, 12, 20, 0.10) 0%, rgba(8, 12, 20, 0.20) 50%, rgba(8, 12, 20, 0.85) 100%)',
           pointerEvents: 'none',
           zIndex: 1
         }} />
@@ -1346,21 +1414,26 @@ export default function PublicCareers() {
             )}
           </div>
 
-          {/* Zoho Style Segmented Quick Chips */}
+          {/* Zoho Style Segmented Quick Chips - Glossy Specular Finish */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 18, justifyContent: 'center', alignItems: 'center' }}>
             <button
               type="button"
               onClick={() => { setDeadlineFilter('All'); setSelectedLocation('All') }}
               style={{
-                backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'All') ? '#2563EB' : (isLight ? '#FFFFFF' : 'rgba(255,255,255,0.08)'),
+                background: (deadlineFilter === 'All' && selectedLocation === 'All')
+                  ? 'linear-gradient(180deg, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.08) 50%, rgba(0,0,0,0.03) 51%, rgba(0,0,0,0.14) 100%), #2563EB'
+                  : (isLight ? 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.85) 50%, rgba(241,245,249,0.95) 100%)' : 'linear-gradient(180deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.9) 100%)'),
                 color: (deadlineFilter === 'All' && selectedLocation === 'All') ? '#FFFFFF' : theme.textSecondary,
-                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'All') ? '#2563EB' : theme.border}`,
+                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'All') ? 'rgba(255, 255, 255, 0.45)' : (isLight ? 'rgba(203, 213, 225, 0.95)' : 'rgba(255,255,255,0.15)')}`,
+                borderBottomColor: (deadlineFilter === 'All' && selectedLocation === 'All') ? 'rgba(0,0,0,0.35)' : (isLight ? 'rgba(148, 163, 184, 0.85)' : 'rgba(0,0,0,0.4)'),
                 borderRadius: 20,
-                padding: '5px 14px',
+                padding: '6px 15px',
                 fontSize: 12,
-                fontWeight: 600,
+                fontWeight: 700,
                 cursor: 'pointer',
-                boxShadow: isLight ? '0 1px 2px rgba(0,0,0,0.04)' : 'none',
+                boxShadow: (deadlineFilter === 'All' && selectedLocation === 'All')
+                  ? 'inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 3px 10px rgba(37, 99, 235, 0.4)'
+                  : 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 5px rgba(15, 23, 42, 0.05)',
                 transition: 'all 0.15s ease'
               }}
             >
@@ -1379,14 +1452,20 @@ export default function PublicCareers() {
                 }
               }}
               style={{
-                backgroundColor: (deadlineFilter === 'Today' || selectedLocation === 'Today') ? '#DC2626' : (isLight ? '#FEF2F2' : 'rgba(220, 38, 38, 0.15)'),
+                background: (deadlineFilter === 'Today' || selectedLocation === 'Today')
+                  ? 'linear-gradient(180deg, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.08) 50%, rgba(0,0,0,0.03) 51%, rgba(0,0,0,0.14) 100%), #DC2626'
+                  : (isLight ? 'linear-gradient(180deg, #FEF2F2 0%, #FEE2E2 100%)' : 'rgba(220, 38, 38, 0.18)'),
                 color: (deadlineFilter === 'Today' || selectedLocation === 'Today') ? '#FFFFFF' : '#DC2626',
-                border: `1px solid ${(deadlineFilter === 'Today' || selectedLocation === 'Today') ? '#DC2626' : (isLight ? '#FECACA' : 'rgba(239, 68, 68, 0.4)')}`,
+                border: `1px solid ${(deadlineFilter === 'Today' || selectedLocation === 'Today') ? 'rgba(255, 255, 255, 0.45)' : 'rgba(239, 68, 68, 0.45)'}`,
+                borderBottomColor: (deadlineFilter === 'Today' || selectedLocation === 'Today') ? 'rgba(0,0,0,0.35)' : 'rgba(220, 38, 38, 0.5)',
                 borderRadius: 20,
-                padding: '5px 14px',
+                padding: '6px 15px',
                 fontSize: 12,
                 fontWeight: 700,
                 cursor: 'pointer',
+                boxShadow: (deadlineFilter === 'Today' || selectedLocation === 'Today')
+                  ? 'inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 3px 10px rgba(220, 38, 38, 0.4)'
+                  : 'inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 2px 4px rgba(220, 38, 38, 0.08)',
                 transition: 'all 0.15s ease',
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -1410,15 +1489,20 @@ export default function PublicCareers() {
               type="button"
               onClick={() => { setDeadlineFilter('All'); setSelectedLocation('Remote') }}
               style={{
-                backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#2563EB' : (isLight ? '#FFFFFF' : 'rgba(255,255,255,0.08)'),
+                background: (deadlineFilter === 'All' && selectedLocation === 'Remote')
+                  ? 'linear-gradient(180deg, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.08) 50%, rgba(0,0,0,0.03) 51%, rgba(0,0,0,0.14) 100%), #2563EB'
+                  : (isLight ? 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.85) 50%, rgba(241,245,249,0.95) 100%)' : 'linear-gradient(180deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.9) 100%)'),
                 color: (deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#FFFFFF' : theme.textSecondary,
-                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#2563EB' : theme.border}`,
+                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Remote') ? 'rgba(255, 255, 255, 0.45)' : (isLight ? 'rgba(203, 213, 225, 0.95)' : 'rgba(255,255,255,0.15)')}`,
+                borderBottomColor: (deadlineFilter === 'All' && selectedLocation === 'Remote') ? 'rgba(0,0,0,0.35)' : (isLight ? 'rgba(148, 163, 184, 0.85)' : 'rgba(0,0,0,0.4)'),
                 borderRadius: 20,
-                padding: '5px 14px',
+                padding: '6px 15px',
                 fontSize: 12,
-                fontWeight: 600,
+                fontWeight: 700,
                 cursor: 'pointer',
-                boxShadow: isLight ? '0 1px 2px rgba(0,0,0,0.04)' : 'none',
+                boxShadow: (deadlineFilter === 'All' && selectedLocation === 'Remote')
+                  ? 'inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 3px 10px rgba(37, 99, 235, 0.4)'
+                  : 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 5px rgba(15, 23, 42, 0.05)',
                 transition: 'all 0.15s ease'
               }}
             >
@@ -1429,15 +1513,20 @@ export default function PublicCareers() {
               type="button"
               onClick={() => { setDeadlineFilter('All'); setSelectedLocation('Hybrid') }}
               style={{
-                backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#2563EB' : (isLight ? '#FFFFFF' : 'rgba(255,255,255,0.08)'),
+                background: (deadlineFilter === 'All' && selectedLocation === 'Hybrid')
+                  ? 'linear-gradient(180deg, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.08) 50%, rgba(0,0,0,0.03) 51%, rgba(0,0,0,0.14) 100%), #2563EB'
+                  : (isLight ? 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.85) 50%, rgba(241,245,249,0.95) 100%)' : 'linear-gradient(180deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.9) 100%)'),
                 color: (deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#FFFFFF' : theme.textSecondary,
-                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#2563EB' : theme.border}`,
+                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? 'rgba(255, 255, 255, 0.45)' : (isLight ? 'rgba(203, 213, 225, 0.95)' : 'rgba(255,255,255,0.15)')}`,
+                borderBottomColor: (deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? 'rgba(0,0,0,0.35)' : (isLight ? 'rgba(148, 163, 184, 0.85)' : 'rgba(0,0,0,0.4)'),
                 borderRadius: 20,
-                padding: '5px 14px',
+                padding: '6px 15px',
                 fontSize: 12,
-                fontWeight: 600,
+                fontWeight: 700,
                 cursor: 'pointer',
-                boxShadow: isLight ? '0 1px 2px rgba(0,0,0,0.04)' : 'none',
+                boxShadow: (deadlineFilter === 'All' && selectedLocation === 'Hybrid')
+                  ? 'inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 3px 10px rgba(37, 99, 235, 0.4)'
+                  : 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 5px rgba(15, 23, 42, 0.05)',
                 transition: 'all 0.15s ease'
               }}
             >
@@ -1448,15 +1537,20 @@ export default function PublicCareers() {
               type="button"
               onClick={() => { setDeadlineFilter('All'); setSelectedLocation('Onsite') }}
               style={{
-                backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#2563EB' : (isLight ? '#FFFFFF' : 'rgba(255,255,255,0.08)'),
+                background: (deadlineFilter === 'All' && selectedLocation === 'Onsite')
+                  ? 'linear-gradient(180deg, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.08) 50%, rgba(0,0,0,0.03) 51%, rgba(0,0,0,0.14) 100%), #2563EB'
+                  : (isLight ? 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.85) 50%, rgba(241,245,249,0.95) 100%)' : 'linear-gradient(180deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.9) 100%)'),
                 color: (deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#FFFFFF' : theme.textSecondary,
-                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#2563EB' : theme.border}`,
+                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Onsite') ? 'rgba(255, 255, 255, 0.45)' : (isLight ? 'rgba(203, 213, 225, 0.95)' : 'rgba(255,255,255,0.15)')}`,
+                borderBottomColor: (deadlineFilter === 'All' && selectedLocation === 'Onsite') ? 'rgba(0,0,0,0.35)' : (isLight ? 'rgba(148, 163, 184, 0.85)' : 'rgba(0,0,0,0.4)'),
                 borderRadius: 20,
-                padding: '5px 14px',
+                padding: '6px 15px',
                 fontSize: 12,
-                fontWeight: 600,
+                fontWeight: 700,
                 cursor: 'pointer',
-                boxShadow: isLight ? '0 1px 2px rgba(0,0,0,0.04)' : 'none',
+                boxShadow: (deadlineFilter === 'All' && selectedLocation === 'Onsite')
+                  ? 'inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 3px 10px rgba(37, 99, 235, 0.4)'
+                  : 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 5px rgba(15, 23, 42, 0.05)',
                 transition: 'all 0.15s ease'
               }}
             >
@@ -1464,30 +1558,90 @@ export default function PublicCareers() {
             </button>
           </div>
 
-          {/* Hero Background Slider Interactive Controls */}
+          {/* Hero Media Controller Bar (Live Video / Photo Slides + Glossy Controls) */}
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 12,
+            gap: 10,
             marginTop: 22,
-            backgroundColor: isLight ? 'rgba(255, 255, 255, 0.88)' : 'rgba(17, 24, 39, 0.85)',
-            border: `1px solid ${isLight ? '#CBD5E1' : 'rgba(255, 255, 255, 0.12)'}`,
-            backdropFilter: 'blur(10px)',
+            background: isLight 
+              ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.92) 100%)' 
+              : 'linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.9) 100%)',
+            border: `1px solid ${isLight ? 'rgba(203, 213, 225, 0.9)' : 'rgba(255, 255, 255, 0.15)'}`,
             borderRadius: 30,
-            padding: '4px 14px 4px 8px',
-            boxShadow: isLight ? '0 2px 8px rgba(15, 23, 42, 0.05)' : '0 4px 14px rgba(0, 0, 0, 0.35)'
+            padding: '4px 14px 4px 6px',
+            boxShadow: isLight 
+              ? 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 4px 16px rgba(15, 23, 42, 0.08)' 
+              : 'inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 6px 20px rgba(0, 0, 0, 0.4)'
           }}>
+            {/* Mode Switch: Video vs Slides */}
+            <div style={{ display: 'inline-flex', background: isLight ? '#F1F5F9' : '#0F172A', borderRadius: 20, padding: 2 }}>
+              <button
+                type="button"
+                onClick={() => setHeroMediaMode('video')}
+                title="Play Looping 1080p Video Background"
+                style={{
+                  background: heroMediaMode === 'video'
+                    ? 'linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.06) 50%, rgba(0,0,0,0.12) 100%), #2563EB'
+                    : 'transparent',
+                  color: heroMediaMode === 'video' ? '#FFF' : theme.textSecondary,
+                  border: 'none',
+                  borderRadius: 16,
+                  padding: '4px 10px',
+                  fontSize: 11,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  boxShadow: heroMediaMode === 'video' ? 'inset 0 1px 1px rgba(255,255,255,0.7), 0 2px 6px rgba(37,99,235,0.3)' : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <span>🎬 Live Video</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setHeroMediaMode('slides')}
+                title="Switch to Photo Carousel Slides"
+                style={{
+                  background: heroMediaMode === 'slides'
+                    ? 'linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.06) 50%, rgba(0,0,0,0.12) 100%), #2563EB'
+                    : 'transparent',
+                  color: heroMediaMode === 'slides' ? '#FFF' : theme.textSecondary,
+                  border: 'none',
+                  borderRadius: 16,
+                  padding: '4px 10px',
+                  fontSize: 11,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  boxShadow: heroMediaMode === 'slides' ? 'inset 0 1px 1px rgba(255,255,255,0.7), 0 2px 6px rgba(37,99,235,0.3)' : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <span>🖼️ Photo Slides</span>
+              </button>
+            </div>
+
             {/* Prev Button */}
             <button
               type="button"
-              onClick={() => setCurrentHeroSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length)}
-              title="Previous Background"
+              onClick={() => {
+                setHeroMediaMode('slides')
+                setCurrentHeroSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length)
+              }}
+              title="Previous Slide"
               style={{
                 width: 24,
                 height: 24,
                 borderRadius: '50%',
-                backgroundColor: isLight ? '#F1F5F9' : '#1E293B',
-                border: 'none',
+                background: isLight 
+                  ? 'linear-gradient(180deg, #FFFFFF 0%, #E2E8F0 100%)' 
+                  : 'linear-gradient(180deg, #334155 0%, #1E293B 100%)',
+                border: `1px solid ${isLight ? '#CBD5E1' : '#475569'}`,
                 color: theme.textSecondary,
                 display: 'flex',
                 alignItems: 'center',
@@ -1495,6 +1649,7 @@ export default function PublicCareers() {
                 cursor: 'pointer',
                 fontSize: 13,
                 fontWeight: 800,
+                boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.9)',
                 transition: 'all 0.15s ease'
               }}
             >
@@ -1504,21 +1659,27 @@ export default function PublicCareers() {
             {/* Slide Indicators */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               {HERO_SLIDES.map((slide, idx) => {
-                const isActive = currentHeroSlide === idx
+                const isActive = heroMediaMode === 'slides' && currentHeroSlide === idx
                 return (
                   <button
                     key={slide.id}
                     type="button"
-                    onClick={() => setCurrentHeroSlide(idx)}
+                    onClick={() => {
+                      setHeroMediaMode('slides')
+                      setCurrentHeroSlide(idx)
+                    }}
                     title={slide.label}
                     style={{
                       height: 6,
                       width: isActive ? 22 : 6,
                       borderRadius: 3,
-                      backgroundColor: isActive ? '#FF6B00' : (isLight ? '#CBD5E1' : '#475569'),
+                      background: isActive 
+                        ? 'linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(0,0,0,0.1) 100%), #FF6B00' 
+                        : (isLight ? '#CBD5E1' : '#475569'),
                       border: 'none',
                       padding: 0,
                       cursor: 'pointer',
+                      boxShadow: isActive ? '0 0 8px rgba(255, 107, 0, 0.7)' : 'none',
                       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                     }}
                   />
@@ -1529,14 +1690,19 @@ export default function PublicCareers() {
             {/* Next Button */}
             <button
               type="button"
-              onClick={() => setCurrentHeroSlide((prev) => (prev + 1) % HERO_SLIDES.length)}
-              title="Next Background"
+              onClick={() => {
+                setHeroMediaMode('slides')
+                setCurrentHeroSlide((prev) => (prev + 1) % HERO_SLIDES.length)
+              }}
+              title="Next Slide"
               style={{
                 width: 24,
                 height: 24,
                 borderRadius: '50%',
-                backgroundColor: isLight ? '#F1F5F9' : '#1E293B',
-                border: 'none',
+                background: isLight 
+                  ? 'linear-gradient(180deg, #FFFFFF 0%, #E2E8F0 100%)' 
+                  : 'linear-gradient(180deg, #334155 0%, #1E293B 100%)',
+                border: `1px solid ${isLight ? '#CBD5E1' : '#475569'}`,
                 color: theme.textSecondary,
                 display: 'flex',
                 alignItems: 'center',
@@ -1544,21 +1710,22 @@ export default function PublicCareers() {
                 cursor: 'pointer',
                 fontSize: 13,
                 fontWeight: 800,
+                boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.9)',
                 transition: 'all 0.15s ease'
               }}
             >
               ›
             </button>
 
-            {/* Active Slide Info Text */}
+            {/* Active Scene Info Text */}
             <span style={{
               fontSize: 11,
-              fontWeight: 700,
-              color: isLight ? '#334155' : '#CBD5E1',
+              fontWeight: 800,
+              color: isLight ? '#1E293B' : '#F1F5F9',
               letterSpacing: '0.02em',
               whiteSpace: 'nowrap'
             }}>
-              {HERO_SLIDES[currentHeroSlide].label}
+              {heroMediaMode === 'video' ? '🎬 Live 1080p Motion' : HERO_SLIDES[currentHeroSlide].label}
             </span>
           </div>
         </div>
