@@ -279,7 +279,7 @@ function LinkedInPosts() {
               Daily LinkedIn Posts
             </h1>
             <p className="lead" style={{ fontSize: 16.5, color: 'var(--ink-soft)', lineHeight: 1.6, maxWidth: 640 }}>
-              Review today's AI-generated marketing content and interactive visuals for <strong style={{ color: 'var(--brand)', fontWeight: 700 }}>Praximind Pvt Ltd</strong> before scheduling.
+              Review today's AI-generated marketing content and interactive visuals for <strong style={{ color: 'var(--brand)', fontWeight: 700 }}>SmartHire</strong> before scheduling.
             </p>
           </div>
 
@@ -473,7 +473,7 @@ function LinkedInPosts() {
                   </div>
                 </div>
                 <a
-                  href="https://www.linkedin.com/company/praximind-pvt-ltd"
+                  href="https://www.linkedin.com/company/smarthire"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn"

@@ -18,7 +18,7 @@ function useSEO({ title, description, url, image, ldJson }) {
     set('og:description', description, true)
     set('og:url', url, true)
     set('og:image', image, true)
-    set('og:site_name', 'SmartHire Blog by PraxiMinds', true)
+    set('og:site_name', 'SmartHire Blog', true)
     set('twitter:card', 'summary_large_image')
     set('twitter:title', title)
     set('twitter:description', description)
@@ -48,7 +48,7 @@ const BLOG_POSTS = [
     category: 'IT Career Guide',
     readTime: '9 min read',
     date: 'September 5, 2026',
-    author: 'PraxiMinds Editorial Team',
+    author: 'SmartHire Editorial Team',
     tags: ['C2C', 'W2', '1099', 'IT Contracts', 'IT Consulting', 'Tax', 'Staffing'],
     image: '/career-hero-slide2.jpg',
   }
@@ -70,8 +70,8 @@ function BlogPostContent({ post }) {
       "image": `https://smarthire-4zqf.onrender.com${post.image}`,
       "datePublished": "2026-09-05T00:00:00+05:30",
       "dateModified": "2026-09-05T00:00:00+05:30",
-      "author": { "@type": "Organization", "name": "PraxiMinds Editorial Team", "url": "https://smarthire-4zqf.onrender.com" },
-      "publisher": { "@type": "Organization", "name": "PraxiMinds SmartHire", "logo": { "@type": "ImageObject", "url": "https://smarthire-4zqf.onrender.com/favicon.svg" } },
+      "author": { "@type": "Organization", "name": "SmartHire Editorial Team", "url": "https://smarthire-4zqf.onrender.com" },
+      "publisher": { "@type": "Organization", "name": "SmartHire", "logo": { "@type": "ImageObject", "url": "https://smarthire-4zqf.onrender.com/favicon.svg" } },
       "mainEntityOfPage": { "@type": "WebPage", "@id": `https://smarthire-4zqf.onrender.com/blog/${post.slug}` },
       "keywords": post.tags.join(', '),
       "articleSection": post.category,
@@ -129,10 +129,10 @@ function BlogPostContent({ post }) {
 
       {/* Author */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 10, marginBottom: 32 }}>
-        <div style={{ width: 42, height: 42, borderRadius: '50%', background: 'linear-gradient(135deg, #FF6B00, #FFA040)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 16, flexShrink: 0 }}>P</div>
+        <div style={{ width: 42, height: 42, borderRadius: '50%', background: 'linear-gradient(135deg, #FF6B00, #FFA040)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 16, flexShrink: 0 }}>S</div>
         <div>
           <div style={{ fontWeight: 700, fontSize: 14, color: '#0F172A' }}>{post.author}</div>
-          <div style={{ fontSize: 12.5, color: '#64748B' }}>IT Staffing & Career Experts · PraxiMinds SmartHire</div>
+          <div style={{ fontSize: 12.5, color: '#64748B' }}>IT Staffing & Career Experts · SmartHire</div>
         </div>
       </div>
 
@@ -363,17 +363,17 @@ function BlogPostContent({ post }) {
 function BlogIndex() {
   const navigate = useNavigate()
   useSEO({
-    title: 'IT Career & Staffing Blog | SmartHire by PraxiMinds',
-    description: 'Expert guides on IT contracting, C2C vs W2 vs 1099, direct-client staffing, government IT contracts, and career tips for IT consultants in the US. Updated regularly by PraxiMinds.',
+    title: 'IT Career & Staffing Blog | SmartHire',
+    description: 'Expert guides on IT contracting, C2C vs W2 vs 1099, direct-client staffing, government IT contracts, and career tips for IT consultants in the US. Updated regularly by SmartHire.',
     url: 'https://smarthire-4zqf.onrender.com/blog',
     image: 'https://smarthire-4zqf.onrender.com/career-hero-slide1.jpg',
     ldJson: {
       "@context": "https://schema.org",
       "@type": "Blog",
       "name": "SmartHire IT Career Blog",
-      "description": "Expert articles on IT contracting, staffing, and career development by PraxiMinds SmartHire",
+      "description": "Expert articles on IT contracting, staffing, and career development by SmartHire",
       "url": "https://smarthire-4zqf.onrender.com/blog",
-      "publisher": { "@type": "Organization", "name": "PraxiMinds SmartHire", "url": "https://smarthire-4zqf.onrender.com" },
+      "publisher": { "@type": "Organization", "name": "SmartHire", "url": "https://smarthire-4zqf.onrender.com" },
       "blogPost": BLOG_POSTS.map(p => ({
         "@type": "BlogPosting",
         "headline": p.title,
@@ -395,7 +395,7 @@ function BlogIndex() {
           IT Career & Staffing Insights
         </h1>
         <p style={{ fontSize: 17, color: '#64748B', lineHeight: 1.65, maxWidth: 640, margin: '0 auto', fontWeight: 400 }}>
-          Expert guides on IT contracting, direct-client opportunities, tax strategies, and career growth — written by the PraxiMinds staffing team.
+          Expert guides on IT contracting, direct-client opportunities, tax strategies, and career growth — written by the SmartHire staffing team.
         </p>
       </header>
 
@@ -486,7 +486,7 @@ export default function Blog() {
       <footer role="contentinfo" style={{ backgroundColor: '#0B0F19', color: '#94A3B8', padding: '32px 24px', textAlign: 'center', fontSize: 13.5 }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <p style={{ margin: '0 0 8px', fontWeight: 700, color: '#CBD5E1', fontSize: 15 }}>
-            Smart<span style={{ color: '#FF6B00' }}>Hire</span> by PraxiMinds
+            Smart<span style={{ color: '#FF6B00' }}>Hire</span>
           </p>
           <p style={{ margin: '0 0 16px', lineHeight: 1.6 }}>
             Direct-client IT staffing | State, Healthcare & Enterprise Contracts | Remote · Hybrid · Onsite
@@ -496,7 +496,7 @@ export default function Blog() {
               <a key={label} href={href} style={{ color: '#64748B', textDecoration: 'none', fontWeight: 500 }}>{label}</a>
             ))}
           </div>
-          <p style={{ margin: 0, color: '#334155', fontSize: 12 }}>© 2026 PraxiMinds. All rights reserved.</p>
+          <p style={{ margin: 0, color: '#334155', fontSize: 12 }}>© 2026 SmartHire. All rights reserved.</p>
         </div>
       </footer>
     </div>

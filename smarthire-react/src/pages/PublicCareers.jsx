@@ -78,7 +78,7 @@ export default function PublicCareers() {
   // ─── SEO: Dynamic meta tags & JSON-LD for /jobs page ─────────────────────
   useEffect(() => {
     // Page title
-    document.title = 'IT Jobs & Direct Client Contracts | SmartHire by PraxiMinds'
+    document.title = 'IT Jobs & Direct Client Contracts | SmartHire'
 
     const setMeta = (name, content, isProperty = false) => {
       const attr = isProperty ? 'property' : 'name'
@@ -92,23 +92,23 @@ export default function PublicCareers() {
     }
 
     // Primary SEO meta
-    setMeta('description', 'Browse 60+ direct-client IT contract jobs across State, Healthcare & Enterprise clients. Remote, Hybrid & Onsite roles. Apply in 1 click via SmartHire by PraxiMinds.')
-    setMeta('keywords', 'IT jobs, direct client contracts, IT staffing, remote IT jobs, government IT contracts, C2C jobs, W2 jobs, healthcare IT, enterprise contracts, PraxiMinds SmartHire')
+    setMeta('description', 'Browse 60+ direct-client IT contract jobs across State, Healthcare & Enterprise clients. Remote, Hybrid & Onsite roles. Apply in 1 click via SmartHire.')
+    setMeta('keywords', 'IT jobs, direct client contracts, IT staffing, remote IT jobs, government IT contracts, C2C jobs, W2 jobs, healthcare IT, enterprise contracts, SmartHire')
     setMeta('robots', 'index, follow')
-    setMeta('author', 'PraxiMinds SmartHire')
+    setMeta('author', 'SmartHire')
 
     // OpenGraph
     setMeta('og:type', 'website', true)
-    setMeta('og:title', 'IT Jobs & Direct Client Contracts | SmartHire by PraxiMinds', true)
+    setMeta('og:title', 'IT Jobs & Direct Client Contracts | SmartHire', true)
     setMeta('og:description', 'Browse 60+ verified direct-client IT requisitions. State, Healthcare & Enterprise contracts — Remote, Hybrid, Onsite. 1-click apply.', true)
     setMeta('og:url', 'https://smarthire-4zqf.onrender.com/jobs', true)
     setMeta('og:image', 'https://smarthire-4zqf.onrender.com/career-hero-slide1.jpg', true)
-    setMeta('og:site_name', 'SmartHire by PraxiMinds', true)
+    setMeta('og:site_name', 'SmartHire', true)
     setMeta('og:locale', 'en_US', true)
 
     // Twitter Card
     setMeta('twitter:card', 'summary_large_image')
-    setMeta('twitter:title', 'IT Jobs & Direct Client Contracts | SmartHire by PraxiMinds')
+    setMeta('twitter:title', 'IT Jobs & Direct Client Contracts | SmartHire')
     setMeta('twitter:description', 'Browse 60+ verified direct-client IT requisitions. State, Healthcare & Enterprise. 1-click apply.')
     setMeta('twitter:image', 'https://smarthire-4zqf.onrender.com/career-hero-slide1.jpg')
 
@@ -134,8 +134,8 @@ export default function PublicCareers() {
           "@type": "WebSite",
           "@id": "https://smarthire-4zqf.onrender.com/#website",
           "url": "https://smarthire-4zqf.onrender.com",
-          "name": "SmartHire by PraxiMinds",
-          "description": "Direct-client IT staffing & ATS platform by PraxiMinds",
+          "name": "SmartHire",
+          "description": "Direct-client IT staffing & ATS platform",
           "potentialAction": {
             "@type": "SearchAction",
             "target": "https://smarthire-4zqf.onrender.com/jobs?search={search_term_string}",
@@ -146,7 +146,7 @@ export default function PublicCareers() {
           "@type": "WebPage",
           "@id": "https://smarthire-4zqf.onrender.com/jobs#webpage",
           "url": "https://smarthire-4zqf.onrender.com/jobs",
-          "name": "IT Jobs & Direct Client Contracts | SmartHire by PraxiMinds",
+          "name": "IT Jobs & Direct Client Contracts | SmartHire",
           "isPartOf": { "@id": "https://smarthire-4zqf.onrender.com/#website" },
           "description": "Browse 60+ verified direct-client IT contract positions across State, Healthcare & Enterprise clients. Remote, Hybrid & Onsite roles available.",
           "breadcrumb": {
@@ -159,10 +159,9 @@ export default function PublicCareers() {
         },
         {
           "@type": "Organization",
-          "name": "PraxiMinds",
+          "name": "SmartHire",
           "url": "https://smarthire-4zqf.onrender.com",
-          "logo": "https://smarthire-4zqf.onrender.com/favicon.svg",
-          "sameAs": ["https://www.linkedin.com/company/praximinds"]
+          "logo": "https://smarthire-4zqf.onrender.com/favicon.svg"
         }
       ]
     })
@@ -294,7 +293,7 @@ export default function PublicCareers() {
   const [submitError, setSubmitError] = useState('')
   const [submitSuccess, setSubmitSuccess] = useState(null)
 
-  // Theme Palette (Zoho ATS + PraxiMinds Executive Canvas)
+  // Theme Palette (Zoho ATS + Executive Canvas)
   const isLight = themeMode === 'light'
   const theme = {
     bg: isLight ? '#FAFBFD' : '#080C14',
@@ -1251,7 +1250,7 @@ export default function PublicCareers() {
         </div>
       </header>
 
-      {/* Executive Hero Section with Real Career Image Background Slider & PraxiMinds Grid Canvas */}
+      {/* Executive Hero Section with Real Career Image Background Slider & Grid Canvas */}
       <section 
         onMouseEnter={() => setIsSliderHovered(true)}
         onMouseLeave={() => setIsSliderHovered(false)}
@@ -1337,7 +1336,7 @@ export default function PublicCareers() {
         }} />
 
         <div style={{ maxWidth: 960, margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 2 }}>
-          {/* PraxiMinds Signature Eyebrow Badge */}
+          {/* Signature Eyebrow Badge */}
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',

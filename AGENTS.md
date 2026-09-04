@@ -31,6 +31,17 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-05 — Complete Removal of PraxiMinds Branding
+- **Removed All PraxiMinds / Praximind References Across Entire Frontend**:
+  - `index.html`: Cleaned page title, meta description, keywords, author, OpenGraph, and Twitter tags to use pure SmartHire branding.
+  - `Blog.jsx`: Updated blog post author to "SmartHire Editorial Team", publisher to "SmartHire", avatar badge to "S", footer copyright to "© 2026 SmartHire", and all meta descriptions/schema.
+  - `PublicCareers.jsx`: Removed PraxiMinds from document title, meta tags, OpenGraph, Twitter cards, Organization JSON-LD schema, and internal section comments.
+  - `Login.jsx`: Updated visual testimonial title to "VP of Operations, SmartHire ATS".
+  - `LinkedInPosts.jsx`: Replaced "Praximind Pvt Ltd" references and company URL with SmartHire.
+  - `BrandingCenter.jsx`: Replaced all "Praximind" strategist engines, B2B console titles, mock cards, avatar tags, and download filenames with SmartHire.
+- **Production Build Verified**:
+  - `npm run build` verified: 0 errors, 0 warnings (built in 1.77s).
+
 ### 2026-09-05 — Hero Streamlining: Media Bar & Stat Cards Removed, Client/Vendor Subtitle & Search Bar Lowered
 - **Removed Floating Media Controller Bar**:
   - Eliminated the floating `[🎬 Live Video]` / `[🖼️ Photo Slides]` mode switcher and slide control bar from the hero section, keeping background playback completely clean and unobstructed.

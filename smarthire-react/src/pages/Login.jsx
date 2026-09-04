@@ -488,7 +488,7 @@ function Login() {
                   </p>
                   <div className="testimonial-author">
                     <span className="author-name">Anjali Sharma</span>
-                    <span className="author-title">VP of Operations, Praximind Pvt Ltd</span>
+                    <span className="author-title">VP of Operations, SmartHire ATS</span>
                   </div>
                 </div>
               </div>

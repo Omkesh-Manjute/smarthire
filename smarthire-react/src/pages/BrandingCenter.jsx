@@ -359,7 +359,7 @@ function BrandingCenter() {
     
     // Simulate thinking process steps
     const loadingSteps = [
-      'Establishing Praximind Pvt Ltd brand context...',
+      'Establishing SmartHire brand context...',
       'Applying B2B content strategy frameworks...',
       'Injecting tone variable constraints...',
       'Formatting bullet points and engaging hooks...',
@@ -583,12 +583,12 @@ function BrandingCenter() {
             <div>
               <div className="strategist-status-badge">
                 <span className="status-dot"></span>
-                <span>Active Strategy: Praximind Content Strategist Engine</span>
+                <span>Active Strategy: SmartHire Content Strategist Engine</span>
               </div>
-              <span className="eyebrow">Praximind B2B Social Console</span>
+              <span className="eyebrow">SmartHire B2B Social Console</span>
               <h1 className="page-title">AI Branding Center</h1>
               <p className="lead">
-                Generate, edit, and schedule authority-building LinkedIn posts for Praximind Pvt Ltd.
+                Generate, edit, and schedule authority-building LinkedIn posts for SmartHire.
                 Automate B2B marketing pipelines and inspect the database publishing agent in real-time.
               </p>
             </div>
@@ -857,7 +857,7 @@ function BrandingCenter() {
                   <div className="card shadow-premium fade-in">
                     <h3 className="section-title">Configure Social Campaign</h3>
                   <p className="section-subtitle">
-                    Enter the topic and tone preferences. The model will design a LinkedIn post tailored to Praximind's services.
+                    Enter the topic and tone preferences. The model will design a LinkedIn post tailored to SmartHire's services.
                   </p>
 
                   {/* Suggestion Chips */}
@@ -988,7 +988,7 @@ function BrandingCenter() {
                   <h3>AI Content Engine Processing</h3>
                   <p className="loading-status-text">{loadingMessage}</p>
                   <p className="loading-sub">
-                    Writing professional B2B content for <strong>Praximind Pvt Ltd</strong> using B2B copy frameworks.
+                    Writing professional B2B content for <strong>SmartHire</strong> using B2B copy frameworks.
                   </p>
                 </div>
               )}
@@ -1020,11 +1020,11 @@ function BrandingCenter() {
                   <div className="linkedin-card-container">
                     <div className="linkedin-card-header">
                       <div className="linkedin-avatar-circle">
-                        <span>PM</span>
+                        <span>SH</span>
                       </div>
                       <div className="linkedin-header-meta">
                         <div className="company-name-row">
-                          <span className="linkedin-company-name">Praximind Pvt Ltd</span>
+                          <span className="linkedin-company-name">SmartHire</span>
                           <span className="linkedin-verified-badge" title="Verified Brand Profile">
                             <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
                               <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
@@ -1084,7 +1084,7 @@ function BrandingCenter() {
                         <span className="like-icon-circle">👍</span>
                         <span className="insightful-icon-circle">💡</span>
                         <span className="celebrate-icon-circle">👏</span>
-                        <span className="engagement-count">Praximind and 42 others</span>
+                        <span className="engagement-count">SmartHire and 42 others</span>
                       </div>
                       <div className="engagement-comments">
                         <span>7 comments • 2 reposts</span>
@@ -1180,7 +1180,7 @@ function BrandingCenter() {
                         <div style={{ padding: '10px', display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #eee' }}>
                           <a 
                             href={generatedBannerUrl} 
-                            download="praximind_social_card.jpg" 
+                            download="smarthire_social_card.jpg" 
                             className="btn btn-sm btn-ghost"
                             style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
                             target="_blank"
@@ -1374,7 +1374,7 @@ WHERE status = 'scheduled'
                             fontSize: '13px',
                             color: '#114b43'
                           }}>
-                            <strong>🤖 Praximind (AI):</strong> "{c.reply}"
+                            <strong>🤖 SmartHire (AI):</strong> "{c.reply}"
                           </div>
                         )}
                       </div>
