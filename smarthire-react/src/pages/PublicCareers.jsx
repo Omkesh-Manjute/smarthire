@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import CandidateMessengerWidget from '../components/CandidateMessengerWidget'
 import SmartHireBotWidget from '../components/SmartHireBotWidget'
 import { saveCareerApplication, getAtsJobs } from '../lib/atsFirestore'
-import { formatJobDescription, resolveJobLocation, resolveReqId, cleanJobTitleWithPositionNumber } from '../utils/formatJobDescription'
+import { formatJobDescription, resolveJobLocation, cleanJobTitleWithPositionNumber } from '../utils/formatJobDescription'
 
 export default function PublicCareers() {
   const navigate = useNavigate()
@@ -197,11 +197,10 @@ export default function PublicCareers() {
   // Theme Palette (Zoho ATS + PraxiMinds Executive Canvas)
   const isLight = themeMode === 'light'
   const theme = {
-    bg: isLight ? '#F1F4F9' : '#080C14',
-    dotColor: isLight ? '#CBD5E1' : 'rgba(255, 255, 255, 0.08)',
+    bg: isLight ? '#FAFBFD' : '#080C14',
+    gridLine: isLight ? 'rgba(100, 116, 139, 0.12)' : 'rgba(255, 255, 255, 0.06)',
     cardBg: isLight ? '#FFFFFF' : '#111827',
-    headerBg: isLight ? '#FFFFFF' : '#070A10',
-    heroBg: isLight ? 'linear-gradient(135deg, #0B0F19 0%, #161E31 55%, #0F172A 100%)' : 'linear-gradient(135deg, #05070A 0%, #0B0F19 55%, #111827 100%)',
+    headerBg: isLight ? 'rgba(255, 255, 255, 0.92)' : 'rgba(8, 12, 20, 0.92)',
     textPrimary: isLight ? '#0F172A' : '#F8FAFC',
     textSecondary: isLight ? '#475569' : '#94A3B8',
     border: isLight ? '#E2E8F0' : 'rgba(255, 255, 255, 0.08)',
@@ -214,7 +213,7 @@ export default function PublicCareers() {
     purple: '#7C3AED',
     tagBg: isLight ? '#F8FAFC' : 'rgba(37, 99, 235, 0.12)',
     tagText: isLight ? '#334155' : '#93C5FD',
-    cardShadow: isLight ? '0 2px 10px -2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03)' : '0 10px 30px rgba(0, 0, 0, 0.4)',
+    cardShadow: isLight ? '0 2px 8px -2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03)' : '0 10px 30px rgba(0, 0, 0, 0.4)',
     cardHoverShadow: isLight ? '0 14px 30px -4px rgba(37, 99, 235, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.06)' : '0 20px 40px rgba(0, 0, 0, 0.6)'
   }
 
@@ -604,8 +603,14 @@ export default function PublicCareers() {
   return (
     <div style={{
       backgroundColor: theme.bg,
-      backgroundImage: `radial-gradient(${theme.dotColor} 0.85px, transparent 0.85px)`,
-      backgroundSize: '20px 20px',
+      backgroundImage: `
+        radial-gradient(circle at 82% 180px, rgba(255, 107, 0, ${isLight ? '0.07' : '0.04'}) 0%, rgba(255, 154, 60, 0.02) 40%, transparent 65%),
+        radial-gradient(circle at 15% 140px, rgba(37, 99, 235, ${isLight ? '0.06' : '0.03'}) 0%, transparent 50%),
+        linear-gradient(to right, ${theme.gridLine} 1px, transparent 1px),
+        linear-gradient(to bottom, ${theme.gridLine} 1px, transparent 1px)
+      `,
+      backgroundSize: '100% 100%, 100% 100%, 32px 32px, 32px 32px',
+      backgroundRepeat: 'no-repeat, no-repeat, repeat, repeat',
       color: theme.textPrimary,
       minHeight: '100vh',
       fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
@@ -781,11 +786,27 @@ export default function PublicCareers() {
             box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
           }
         }
+        @keyframes pulse-orange {
+          0% {
+            transform: scale(0.95);
+            box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.7);
+          }
+          70% {
+            transform: scale(1);
+            box-shadow: 0 0 0 6px rgba(255, 107, 0, 0);
+          }
+          100% {
+            transform: scale(0.95);
+            box-shadow: 0 0 0 0 rgba(255, 107, 0, 0);
+          }
+        }
       `}</style>
 
       {/* Enterprise Header with SmartHire Brand & Integrated Tools */}
       <header style={{
         backgroundColor: theme.headerBg,
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
         borderBottom: `1px solid ${theme.border}`,
         position: 'sticky',
         top: 0,
@@ -794,7 +815,7 @@ export default function PublicCareers() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        boxShadow: isLight ? '0 1px 3px rgba(0,0,0,0.03)' : '0 1px 3px rgba(0,0,0,0.2)'
+        boxShadow: isLight ? '0 1px 4px rgba(0,0,0,0.03)' : '0 1px 4px rgba(0,0,0,0.2)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{
@@ -1039,61 +1060,101 @@ export default function PublicCareers() {
         </div>
       </header>
 
-      {/* Executive Hero & Filter Console (PraxiMinds Dark Tech Banner + Zoho ATS Floating Search) */}
+      {/* Executive Hero Section with Real Career Image Background & PraxiMinds Grid Canvas */}
       <section style={{
-        background: theme.heroBg,
         position: 'relative',
         overflow: 'hidden',
-        borderBottom: `1px solid ${isLight ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255,255,255,0.08)'}`,
-        padding: '46px 24px 50px',
-        color: '#FFFFFF'
+        borderBottom: `1px solid ${theme.border}`,
+        padding: '52px 24px 46px',
+        textAlign: 'center'
       }}>
-        {/* Subtle decorative radial glow behind hero */}
+        {/* Real Workplace & Digital Network Background Image Layer */}
         <div style={{
           position: 'absolute',
-          top: '-20%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: 800,
-          height: 380,
-          background: 'radial-gradient(circle, rgba(37, 99, 235, 0.18) 0%, rgba(255, 107, 0, 0.08) 45%, transparent 70%)',
+          inset: 0,
+          backgroundImage: `url('/career-hero-bg.jpg')`,
+          backgroundPosition: 'center 35%',
+          backgroundSize: 'cover',
+          backgroundRepeat: 'no-repeat',
+          opacity: isLight ? 0.22 : 0.16,
+          filter: 'blur(1.5px)',
+          pointerEvents: 'none',
+          zIndex: 0
+        }} />
+
+        {/* Soft Vignette Overlay to merge with Grid Canvas seamlessly */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: isLight 
+            ? 'radial-gradient(ellipse 85% 75% at 50% 40%, rgba(250, 251, 253, 0.82) 0%, rgba(250, 251, 253, 0.96) 100%)'
+            : 'radial-gradient(ellipse 85% 75% at 50% 40%, rgba(8, 12, 20, 0.84) 0%, rgba(8, 12, 20, 0.98) 100%)',
+          pointerEvents: 'none',
+          zIndex: 0
+        }} />
+
+        {/* PraxiMinds Ambient Orange & Royal Blue Edge Glows */}
+        <div style={{
+          position: 'absolute',
+          top: '-15%',
+          right: '10%',
+          width: 500,
+          height: 340,
+          background: 'radial-gradient(circle, rgba(255, 107, 0, 0.1) 0%, rgba(255, 154, 60, 0.03) 45%, transparent 70%)',
+          pointerEvents: 'none',
+          zIndex: 0
+        }} />
+        <div style={{
+          position: 'absolute',
+          top: '10%',
+          left: '8%',
+          width: 420,
+          height: 300,
+          background: 'radial-gradient(circle, rgba(37, 99, 235, 0.08) 0%, transparent 65%)',
           pointerEvents: 'none',
           zIndex: 0
         }} />
 
         <div style={{ maxWidth: 960, margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
-          {/* Eyebrow badge */}
+          {/* PraxiMinds Signature Eyebrow Badge */}
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
             gap: 8,
-            fontSize: 11,
+            fontSize: 11.5,
             fontWeight: 700,
-            color: '#93C5FD',
-            backgroundColor: 'rgba(37, 99, 235, 0.16)',
-            border: '1px solid rgba(147, 197, 253, 0.28)',
-            padding: '4px 14px',
-            borderRadius: 20,
+            color: '#EA580C',
+            backgroundColor: isLight ? 'rgba(255, 107, 0, 0.08)' : 'rgba(255, 107, 0, 0.16)',
+            border: '1px solid rgba(255, 107, 0, 0.32)',
+            padding: '5px 16px',
+            borderRadius: 24,
             textTransform: 'uppercase',
             letterSpacing: '0.06em',
-            marginBottom: 16,
+            marginBottom: 18,
             backdropFilter: 'blur(8px)'
           }}>
-            <span style={{ color: '#FF6B00', fontSize: 13 }}>✦</span>
+            <span style={{
+              width: 7,
+              height: 7,
+              borderRadius: '50%',
+              backgroundColor: '#FF6B00',
+              display: 'inline-block',
+              animation: 'pulse-orange 2s infinite'
+            }} />
             <span>Direct Client Requisitions · State & Enterprise</span>
           </div>
 
-          {/* Main Title */}
+          {/* Main Headline */}
           <h2 style={{
-            fontSize: 'clamp(26px, 4vw, 36px)',
+            fontSize: 'clamp(28px, 4.5vw, 42px)',
             fontWeight: 800,
-            margin: '0 0 12px',
-            color: '#FFFFFF',
-            letterSpacing: '-0.025em',
-            lineHeight: 1.2
+            margin: '0 0 14px',
+            color: theme.textPrimary,
+            letterSpacing: '-0.03em',
+            lineHeight: 1.18
           }}>
             Explore Career Opportunities with <span style={{
-              background: 'linear-gradient(135deg, #60A5FA 0%, #93C5FD 50%, #FDBA74 100%)',
+              background: 'linear-gradient(135deg, #FF6B00 0%, #EA580C 45%, #2563EB 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               display: 'inline-block'
@@ -1102,21 +1163,21 @@ export default function PublicCareers() {
 
           {/* Subtitle */}
           <p style={{
-            fontSize: 14.5,
-            color: '#94A3B8',
+            fontSize: 15,
+            color: theme.textSecondary,
             maxWidth: 680,
             margin: '0 auto 28px',
             lineHeight: 1.6
           }}>
-            Verified high-impact contracts (C2C, W2, 1099) with direct North Carolina, Virginia, and Fortune 500 enterprise clients. 0 third-party layers.
+            Verified high-impact contracts (C2C, W2, 1099) with direct North Carolina, Virginia, and Fortune 500 enterprise clients. 0 intermediary layers.
           </p>
 
           {/* 4 PraxiMinds / Zoho ATS KPI Stat Metric Counters */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))',
             gap: 12,
-            maxWidth: 720,
+            maxWidth: 740,
             margin: '0 auto 32px'
           }}>
             {[
@@ -1126,21 +1187,22 @@ export default function PublicCareers() {
               { label: 'Intermediary Layers', val: '0 (Direct)', icon: '🛡️' }
             ].map((stat, i) => (
               <div key={i} style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                backgroundColor: isLight ? 'rgba(255, 255, 255, 0.92)' : 'rgba(17, 24, 39, 0.8)',
+                border: `1px solid ${theme.border}`,
                 backdropFilter: 'blur(10px)',
                 borderRadius: 10,
                 padding: '10px 14px',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                boxShadow: isLight ? '0 1px 4px rgba(15, 23, 42, 0.04)' : '0 4px 12px rgba(0, 0, 0, 0.25)'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 16, fontWeight: 800, color: '#F8FAFC' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 16, fontWeight: 800, color: theme.textPrimary }}>
                   <span style={{ fontSize: 13 }}>{stat.icon}</span>
                   <span>{stat.val}</span>
                 </div>
-                <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 500, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                <span style={{ fontSize: 11, color: theme.textSecondary, fontWeight: 500, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
                   {stat.label}
                 </span>
               </div>
@@ -1149,15 +1211,15 @@ export default function PublicCareers() {
 
           {/* Elevated Floating Search Box */}
           <div style={{
-            backgroundColor: theme.cardBg,
-            border: `1px solid ${isLight ? '#CBD5E1' : 'rgba(255,255,255,0.12)'}`,
+            backgroundColor: isLight ? '#FFFFFF' : '#111827',
+            border: `1px solid ${isLight ? '#CBD5E1' : '#374151'}`,
             borderRadius: 12,
             padding: '6px',
             display: 'flex',
             alignItems: 'center',
             maxWidth: 820,
             margin: '0 auto',
-            boxShadow: isLight ? '0 12px 32px rgba(15, 23, 42, 0.16)' : '0 16px 40px rgba(0,0,0,0.5)',
+            boxShadow: isLight ? '0 10px 30px -4px rgba(15, 23, 42, 0.08)' : '0 16px 40px rgba(0,0,0,0.5)',
             flexWrap: 'wrap',
             transition: 'box-shadow 0.2s ease, border-color 0.2s ease'
           }}>
@@ -1260,14 +1322,15 @@ export default function PublicCareers() {
               type="button"
               onClick={() => { setDeadlineFilter('All'); setSelectedLocation('All') }}
               style={{
-                backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'All') ? '#2563EB' : 'rgba(255,255,255,0.08)',
-                color: (deadlineFilter === 'All' && selectedLocation === 'All') ? '#FFFFFF' : '#CBD5E1',
-                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'All') ? '#2563EB' : 'rgba(255,255,255,0.15)'}`,
+                backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'All') ? '#2563EB' : (isLight ? '#FFFFFF' : 'rgba(255,255,255,0.08)'),
+                color: (deadlineFilter === 'All' && selectedLocation === 'All') ? '#FFFFFF' : theme.textSecondary,
+                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'All') ? '#2563EB' : theme.border}`,
                 borderRadius: 20,
                 padding: '5px 14px',
                 fontSize: 12,
                 fontWeight: 600,
                 cursor: 'pointer',
+                boxShadow: isLight ? '0 1px 2px rgba(0,0,0,0.04)' : 'none',
                 transition: 'all 0.15s ease'
               }}
             >
@@ -1286,9 +1349,9 @@ export default function PublicCareers() {
                 }
               }}
               style={{
-                backgroundColor: (deadlineFilter === 'Today' || selectedLocation === 'Today') ? '#DC2626' : 'rgba(220, 38, 38, 0.15)',
-                color: (deadlineFilter === 'Today' || selectedLocation === 'Today') ? '#FFFFFF' : '#FCA5A5',
-                border: `1px solid ${(deadlineFilter === 'Today' || selectedLocation === 'Today') ? '#DC2626' : 'rgba(239, 68, 68, 0.4)'}`,
+                backgroundColor: (deadlineFilter === 'Today' || selectedLocation === 'Today') ? '#DC2626' : (isLight ? '#FEF2F2' : 'rgba(220, 38, 38, 0.15)'),
+                color: (deadlineFilter === 'Today' || selectedLocation === 'Today') ? '#FFFFFF' : '#DC2626',
+                border: `1px solid ${(deadlineFilter === 'Today' || selectedLocation === 'Today') ? '#DC2626' : (isLight ? '#FECACA' : 'rgba(239, 68, 68, 0.4)')}`,
                 borderRadius: 20,
                 padding: '5px 14px',
                 fontSize: 12,
@@ -1317,14 +1380,15 @@ export default function PublicCareers() {
               type="button"
               onClick={() => { setDeadlineFilter('All'); setSelectedLocation('Remote') }}
               style={{
-                backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#2563EB' : 'rgba(255,255,255,0.08)',
-                color: (deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#FFFFFF' : '#CBD5E1',
-                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#2563EB' : 'rgba(255,255,255,0.15)'}`,
+                backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#2563EB' : (isLight ? '#FFFFFF' : 'rgba(255,255,255,0.08)'),
+                color: (deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#FFFFFF' : theme.textSecondary,
+                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#2563EB' : theme.border}`,
                 borderRadius: 20,
                 padding: '5px 14px',
                 fontSize: 12,
                 fontWeight: 600,
                 cursor: 'pointer',
+                boxShadow: isLight ? '0 1px 2px rgba(0,0,0,0.04)' : 'none',
                 transition: 'all 0.15s ease'
               }}
             >
@@ -1335,14 +1399,15 @@ export default function PublicCareers() {
               type="button"
               onClick={() => { setDeadlineFilter('All'); setSelectedLocation('Hybrid') }}
               style={{
-                backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#2563EB' : 'rgba(255,255,255,0.08)',
-                color: (deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#FFFFFF' : '#CBD5E1',
-                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#2563EB' : 'rgba(255,255,255,0.15)'}`,
+                backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#2563EB' : (isLight ? '#FFFFFF' : 'rgba(255,255,255,0.08)'),
+                color: (deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#FFFFFF' : theme.textSecondary,
+                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#2563EB' : theme.border}`,
                 borderRadius: 20,
                 padding: '5px 14px',
                 fontSize: 12,
                 fontWeight: 600,
                 cursor: 'pointer',
+                boxShadow: isLight ? '0 1px 2px rgba(0,0,0,0.04)' : 'none',
                 transition: 'all 0.15s ease'
               }}
             >
@@ -1353,14 +1418,15 @@ export default function PublicCareers() {
               type="button"
               onClick={() => { setDeadlineFilter('All'); setSelectedLocation('Onsite') }}
               style={{
-                backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#2563EB' : 'rgba(255,255,255,0.08)',
-                color: (deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#FFFFFF' : '#CBD5E1',
-                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#2563EB' : 'rgba(255,255,255,0.15)'}`,
+                backgroundColor: (deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#2563EB' : (isLight ? '#FFFFFF' : 'rgba(255,255,255,0.08)'),
+                color: (deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#FFFFFF' : theme.textSecondary,
+                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#2563EB' : theme.border}`,
                 borderRadius: 20,
                 padding: '5px 14px',
                 fontSize: 12,
                 fontWeight: 600,
                 cursor: 'pointer',
+                boxShadow: isLight ? '0 1px 2px rgba(0,0,0,0.04)' : 'none',
                 transition: 'all 0.15s ease'
               }}
             >
@@ -1454,7 +1520,6 @@ export default function PublicCareers() {
               const workModeText = job.work_mode || job.workMode || job.type || 'Onsite'
               const locationText = resolveJobLocation(job)
               const fullDesc = getFullDescriptionText(job)
-              const authenticReqId = resolveReqId(job.reqId || job.id, job)
               const displayTitle = cleanJobTitleWithPositionNumber(job.title, job)
 
               // Extract clean narrative preview summary (NO [object Object], NO raw separators)
@@ -1473,23 +1538,18 @@ export default function PublicCareers() {
                   className={`sh-job-card ${expired ? 'expired' : ''}`}
                 >
                   <div className="sh-card-body">
-                    {/* Header: Req ID & Status/Deadline */}
+                    {/* Header: Work Mode & Status/Deadline (Req number omitted for public careers) */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                       <span style={{
                         fontSize: 11.5,
-                        fontWeight: 700,
-                        color: isLight ? '#334155' : '#CBD5E1',
-                        backgroundColor: isLight ? '#F1F5F9' : '#1E293B',
-                        border: `1px solid ${isLight ? '#CBD5E1' : 'rgba(255,255,255,0.12)'}`,
+                        fontWeight: 600,
                         padding: '3px 9px',
                         borderRadius: 6,
-                        letterSpacing: '0.02em',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 4
+                        backgroundColor: workModeText === 'Remote' ? (isLight ? '#ECFDF5' : 'rgba(16, 185, 129, 0.12)') : workModeText === 'Hybrid' ? (isLight ? '#FFFBEB' : 'rgba(245, 158, 11, 0.12)') : (isLight ? '#F1F5F9' : '#1E293B'),
+                        color: workModeText === 'Remote' ? '#065F46' : workModeText === 'Hybrid' ? '#92400E' : (isLight ? '#475569' : '#94A3B8'),
+                        border: `1px solid ${workModeText === 'Remote' ? (isLight ? '#A7F3D0' : 'rgba(16, 185, 129, 0.25)') : workModeText === 'Hybrid' ? (isLight ? '#FDE68A' : 'rgba(245, 158, 11, 0.25)') : theme.border}`
                       }}>
-                        <span style={{ color: '#2563EB', fontWeight: 800 }}>#</span>
-                        <span>Req {authenticReqId}</span>
+                        {workModeText === 'Remote' ? '🏠 Remote' : workModeText === 'Hybrid' ? '🏢 Hybrid' : '📍 Onsite'}
                       </span>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1542,19 +1602,8 @@ export default function PublicCareers() {
                       {displayTitle}
                     </h4>
 
-                    {/* Metadata Items: Work Mode, Location & Experience */}
+                    {/* Metadata Items: Location & Experience */}
                     <div className="sh-metadata-container">
-                      <span style={{
-                        fontSize: 11,
-                        fontWeight: 600,
-                        padding: '3px 8px',
-                        borderRadius: 5,
-                        backgroundColor: workModeText === 'Remote' ? (isLight ? '#ECFDF5' : 'rgba(16, 185, 129, 0.12)') : workModeText === 'Hybrid' ? (isLight ? '#FFFBEB' : 'rgba(245, 158, 11, 0.12)') : (isLight ? '#F1F5F9' : '#1E293B'),
-                        color: workModeText === 'Remote' ? '#065F46' : workModeText === 'Hybrid' ? '#92400E' : (isLight ? '#475569' : '#94A3B8'),
-                        border: `1px solid ${workModeText === 'Remote' ? (isLight ? '#A7F3D0' : 'rgba(16, 185, 129, 0.25)') : workModeText === 'Hybrid' ? (isLight ? '#FDE68A' : 'rgba(245, 158, 11, 0.25)') : theme.border}`
-                      }}>
-                        {workModeText === 'Remote' ? '🏠 Remote' : workModeText === 'Hybrid' ? '🏢 Hybrid' : '📍 Onsite'}
-                      </span>
                       <span className="sh-metadata-item">
                         📍 {locationText}
                       </span>

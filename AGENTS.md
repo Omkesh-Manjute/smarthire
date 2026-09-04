@@ -31,7 +31,19 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
-### 2026-09-05 — Public Careers (/jobs) Redesigned with LinkedIn / PraxiMinds Canvas & Zoho ATS UI/UX
+### 2026-09-05 — PraxiMinds Full-Canvas Grid Lining, Career Hero Background Image & Req Number Removed
+- **PraxiMinds Full-Canvas Grid Lining Pattern**:
+  - Replaced dots with the authentic PraxiMinds technical grid lining (`linear-gradient(to right, rgba(100, 116, 139, 0.12) 1px, transparent 1px), linear-gradient(to bottom, rgba(100, 116, 139, 0.12) 1px, transparent 1px)` at `32px 32px` spacing).
+  - Background flows seamlessly across the entire page canvas (`#FAFBFD` light / `#080C14` dark) with warm PraxiMinds ambient orange/amber blur (`rgba(255, 107, 0, 0.07)`) and royal blue radial glow.
+- **Hero Section Background Image Layer (`/career-hero-bg.jpg`)**:
+  - Added corporate workplace & digital network background image layer behind "Explore Career Opportunities with SmartHire".
+  - Soft blur and elliptical vignette overlay ensure high text legibility and smooth blending into the surrounding grid lines.
+  - Added PraxiMinds signature pulsing orange dot eyebrow badge (`DIRECT CLIENT REQUISITIONS · STATE & ENTERPRISE`).
+- **Removed Req Numbers from Public Careers Page**:
+  - Completely removed internal requisition numbers (`Req #159023`) from candidate job cards.
+  - Replaced with clean pastel work mode badge (`🏠 Remote` / `🏢 Hybrid` / `📍 Onsite`) in the card header next to live status (`🟢 Open` / `⏰ {deadline}`).
+- **Production Build Verified**:
+  - 0 errors or warnings on `npm run build` in `smarthire-react`.
 - **LinkedIn / PraxiMinds Textured Executive Canvas**:
   - Replaced flat white background with subtle LinkedIn / PraxiMinds dot matrix textured canvas (`#F1F4F9` with `radial-gradient(#CBD5E1 0.85px, transparent 0.85px)` at 20px grid spacing; `#080C14` in dark mode).
   - Pure `#FFFFFF` cards pop with rich 3D depth, eliminating bland all-white layout while maintaining ultra-clean contrast.
