@@ -1270,51 +1270,15 @@ export default function PublicCareers() {
             fontSize: 15.5,
             color: '#E2E8F0',
             fontWeight: 500,
-            maxWidth: 680,
-            margin: '0 auto 28px',
-            lineHeight: 1.6,
+            maxWidth: 740,
+            margin: '0 auto 10px',
+            lineHeight: 1.65,
             textShadow: '0 2px 8px rgba(0, 0, 0, 0.85)'
           }}>
-            Verified high-impact contracts (C2C, W2, 1099) with direct North Carolina, Virginia, and Fortune 500 enterprise clients. 0 intermediary layers.
+            Explore verified requisitions across top State, Healthcare, and Enterprise clients and partner vendor networks. Review job requirements and submit your application directly with seamless 1-click apply.
           </p>
 
-          {/* 4 PraxiMinds / Zoho ATS KPI Stat Metric Counters */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))',
-            gap: 12,
-            maxWidth: 740,
-            margin: '0 auto 32px'
-          }}>
-            {[
-              { label: 'Active Requisitions', val: `${activeOpenJobs.length > 0 ? activeOpenJobs.length : 66}+`, icon: '⚡', accent: '#38BDF8' },
-              { label: 'Direct End-Clients', val: '100%', icon: '🏢', accent: '#4ADE80' },
-              { label: 'Recruiter Review', val: '< 24 hrs', icon: '⏱️', accent: '#FBBF24' },
-              { label: 'Intermediary Layers', val: '0 (Direct)', icon: '🛡️', accent: '#FF6B00' }
-            ].map((stat, i) => (
-              <div key={i} style={{
-                backgroundColor: 'rgba(15, 23, 42, 0.85)',
-                border: '1px solid rgba(255, 255, 255, 0.16)',
-                borderRadius: 10,
-                padding: '11px 14px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.15)'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 16, fontWeight: 800, color: '#FFFFFF' }}>
-                  <span style={{ fontSize: 14 }}>{stat.icon}</span>
-                  <span style={{ color: stat.accent }}>{stat.val}</span>
-                </div>
-                <span style={{ fontSize: 10.5, color: '#94A3B8', fontWeight: 600, marginTop: 3, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  {stat.label}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Elevated Floating Search Box */}
+          {/* Elevated Floating Search Box - Positioned Comfortably Lower */}
           <div style={{
             backgroundColor: isLight ? '#FFFFFF' : '#111827',
             border: `1px solid ${isLight ? '#CBD5E1' : '#374151'}`,
@@ -1323,7 +1287,7 @@ export default function PublicCareers() {
             display: 'flex',
             alignItems: 'center',
             maxWidth: 820,
-            margin: '0 auto',
+            margin: '38px auto 0',
             boxShadow: '0 20px 48px rgba(0, 0, 0, 0.42), 0 4px 14px rgba(0, 0, 0, 0.2)',
             flexWrap: 'wrap',
             transition: 'box-shadow 0.2s ease, border-color 0.2s ease'
@@ -1563,169 +1527,6 @@ export default function PublicCareers() {
             >
               📍 Onsite ({onsiteCount})
             </button>
-          </div>
-
-          {/* Hero Media Controller Bar (Live Video / Photo Slides + Glossy Controls) */}
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 10,
-            marginTop: 22,
-            background: 'rgba(15, 23, 42, 0.88)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            borderRadius: 30,
-            padding: '4px 14px 4px 6px',
-            boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.18), 0 8px 24px rgba(0, 0, 0, 0.45)'
-          }}>
-            {/* Mode Switch: Video vs Slides */}
-            <div style={{ display: 'inline-flex', background: 'rgba(2, 6, 23, 0.7)', borderRadius: 20, padding: 2 }}>
-              <button
-                type="button"
-                onClick={() => setHeroMediaMode('video')}
-                title="Play Looping 1080p Video Background"
-                style={{
-                  background: heroMediaMode === 'video'
-                    ? 'linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.06) 50%, rgba(0,0,0,0.12) 100%), #2563EB'
-                    : 'transparent',
-                  color: heroMediaMode === 'video' ? '#FFF' : '#94A3B8',
-                  border: 'none',
-                  borderRadius: 16,
-                  padding: '4px 10px',
-                  fontSize: 11,
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  boxShadow: heroMediaMode === 'video' ? 'inset 0 1px 1px rgba(255,255,255,0.7), 0 2px 6px rgba(37,99,235,0.3)' : 'none',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                <span>🎬 Live Video</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setHeroMediaMode('slides')}
-                title="Switch to Photo Carousel Slides"
-                style={{
-                  background: heroMediaMode === 'slides'
-                    ? 'linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.06) 50%, rgba(0,0,0,0.12) 100%), #2563EB'
-                    : 'transparent',
-                  color: heroMediaMode === 'slides' ? '#FFF' : '#94A3B8',
-                  border: 'none',
-                  borderRadius: 16,
-                  padding: '4px 10px',
-                  fontSize: 11,
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  boxShadow: heroMediaMode === 'slides' ? 'inset 0 1px 1px rgba(255,255,255,0.7), 0 2px 6px rgba(37,99,235,0.3)' : 'none',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                <span>🖼️ Photo Slides</span>
-              </button>
-            </div>
-
-            {/* Prev Button */}
-            <button
-              type="button"
-              onClick={() => {
-                setHeroMediaMode('slides')
-                setCurrentHeroSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length)
-              }}
-              title="Previous Slide"
-              style={{
-                width: 24,
-                height: 24,
-                borderRadius: '50%',
-                background: 'linear-gradient(180deg, #334155 0%, #1E293B 100%)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                color: '#F1F5F9',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                fontSize: 13,
-                fontWeight: 800,
-                boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3)',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              ‹
-            </button>
-
-            {/* Slide Indicators */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              {HERO_SLIDES.map((slide, idx) => {
-                const isActive = heroMediaMode === 'slides' && currentHeroSlide === idx
-                return (
-                  <button
-                    key={slide.id}
-                    type="button"
-                    onClick={() => {
-                      setHeroMediaMode('slides')
-                      setCurrentHeroSlide(idx)
-                    }}
-                    title={slide.label}
-                    style={{
-                      height: 6,
-                      width: isActive ? 22 : 6,
-                      borderRadius: 3,
-                      background: isActive 
-                        ? 'linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(0,0,0,0.1) 100%), #FF6B00' 
-                        : 'rgba(255, 255, 255, 0.3)',
-                      border: 'none',
-                      padding: 0,
-                      cursor: 'pointer',
-                      boxShadow: isActive ? '0 0 8px rgba(255, 107, 0, 0.7)' : 'none',
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-                    }}
-                  />
-                )
-              })}
-            </div>
-
-            {/* Next Button */}
-            <button
-              type="button"
-              onClick={() => {
-                setHeroMediaMode('slides')
-                setCurrentHeroSlide((prev) => (prev + 1) % HERO_SLIDES.length)
-              }}
-              title="Next Slide"
-              style={{
-                width: 24,
-                height: 24,
-                borderRadius: '50%',
-                background: 'linear-gradient(180deg, #334155 0%, #1E293B 100%)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                color: '#F1F5F9',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                fontSize: 13,
-                fontWeight: 800,
-                boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3)',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              ›
-            </button>
-
-            {/* Active Scene Info Text */}
-            <span style={{
-              fontSize: 11,
-              fontWeight: 800,
-              color: '#F1F5F9',
-              letterSpacing: '0.02em',
-              whiteSpace: 'nowrap'
-            }}>
-              {heroMediaMode === 'video' ? '🎬 Live 1080p Motion' : HERO_SLIDES[currentHeroSlide].label}
-            </span>
           </div>
         </div>
       </section>

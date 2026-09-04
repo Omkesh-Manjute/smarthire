@@ -31,6 +31,18 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-05 — Hero Streamlining: Media Bar & Stat Cards Removed, Client/Vendor Subtitle & Search Bar Lowered
+- **Removed Floating Media Controller Bar**:
+  - Eliminated the floating `[🎬 Live Video]` / `[🖼️ Photo Slides]` mode switcher and slide control bar from the hero section, keeping background playback completely clean and unobstructed.
+- **Removed 24h Review & 0 Direct Stat Cards**:
+  - Removed the 4 KPI stat counters (`< 24 hrs Recruiter Review`, `0 (Direct) Intermediary Layers`, `100% Direct End-Clients`, etc.) from the hero, creating an elegant, distraction-free executive banner.
+- **Client & Vendor Partner Requisitions Subtitle**:
+  - Updated explanatory copy under the headline to clearly explain that requisitions originate from diverse State, Healthcare, and Enterprise clients as well as partner vendor networks, with seamless 1-click candidate application submission.
+- **Search Bar Repositioned Lower**:
+  - Adjusted top margin on the search box container to `38px auto 0` with increased hero breathing room, giving the headline and search console a balanced, spacious proportion.
+- **Production Build Verified**:
+  - 0 errors or warnings on `npm run build` in `smarthire-react` (built in 1.85s).
+
 ### 2026-09-05 — Zero-Blur Image Sharpness, Radiant PraxiMinds Orange SmartHire Branding & Full Contrast Matching
 - **Zero-Blur Ultra-Sharp Imagery**:
   - Replaced camera-bokeh blurred slide 1 with hyper-realistic deep depth-of-field architectural photography (`career_hero_sharp1`), with 100% crystal-sharp focus from foreground workstations to background glass rooms (f/11, zero blur).
