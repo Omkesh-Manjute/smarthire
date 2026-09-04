@@ -31,16 +31,12 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
-### 2026-09-05 — Auto-Playing Hero Background Image Slider with Smooth Crossfade & Controls
-- **Auto-Playing Hero Background Carousel (`HERO_SLIDES`)**:
-  - Replaced static low-opacity hero image with a multi-scene auto-advancing background carousel featuring 3 high-res corporate/tech workplace environments:
-    1. `/career-hero-slide1.jpg` — Digital Constellation Hub (Direct Enterprise & State Contracts)
-    2. `/career-hero-slide2.jpg` — Executive Boardroom (Direct Client Boardroom & Strategic Roles)
-    3. `/career-hero-slide3.jpg` — Modern Engineering Lab (Cloud, Data Systems & Tech Innovation)
-  - Enhanced visibility (`0.44` light / `0.34` dark) with smooth cross-fade animation (`transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), transform 7s ease-out`) and gentle Ken Burns slow-scale zoom (`scale(1.04)`).
-  - Preserved 100% text and search console legibility using an optimized vertical contrast scrim (`linear-gradient(180deg, rgba(250, 251, 253, 0.76) 0%, rgba(250, 251, 253, 0.86) 55%, rgba(250, 251, 253, 0.98) 100%)`).
-  - Added interactive slide control pill bar with previous (`‹`), next (`›`), expandable orange indicator dots (`#FF6B00`), and live scene labels.
-  - Auto-pauses smoothly on mouse hover (`isSliderHovered`).
+### 2026-09-05 — Hero Section Transparency & Vivid Carousel Image Visibility
+- **Transparent Hero Scrim & Full Visibility**:
+  - Eliminated the opaque white gradient overlay (`rgba(250, 251, 253, 0.76 - 0.98)`) and center radial glow discs that were washing out the background images.
+  - Replaced with a truly transparent scrim (`linear-gradient(180deg, rgba(250, 251, 253, 0.12) 0%, rgba(250, 251, 253, 0.26) 55%, rgba(250, 251, 253, 0.90) 100%)`), allowing >80% of the workplace photos to show through vibrantly.
+  - Boosted slide image opacity from `0.44` to **`0.92`** (light) / **`0.86`** (dark) and removed image blur filter for maximum clarity.
+  - Added subtle text-shadows to eyebrow badge, main headline, and subtitle to guarantee 100% crisp legibility over the vivid photos.
 - **Production Build Verified**:
   - 0 errors or warnings on `npm run build` in `smarthire-react`.
 

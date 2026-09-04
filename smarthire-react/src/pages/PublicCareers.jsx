@@ -1106,7 +1106,7 @@ export default function PublicCareers() {
           textAlign: 'center'
         }}
       >
-        {/* Real Workplace Background Image Carousel / Slider */}
+        {/* Real Workplace Background Image Carousel / Slider - High Clarity & Visibility */}
         <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0, pointerEvents: 'none' }}>
           {HERO_SLIDES.map((slide, idx) => {
             const isActive = currentHeroSlide === idx
@@ -1120,10 +1120,9 @@ export default function PublicCareers() {
                   backgroundPosition: 'center 35%',
                   backgroundSize: 'cover',
                   backgroundRepeat: 'no-repeat',
-                  opacity: isActive ? (isLight ? 0.44 : 0.34) : 0,
-                  transform: isActive ? 'scale(1.04)' : 'scale(1.0)',
+                  opacity: isActive ? (isLight ? 0.92 : 0.86) : 0,
+                  transform: isActive ? 'scale(1.03)' : 'scale(1.0)',
                   transition: 'opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), transform 7s ease-out',
-                  filter: 'blur(0.5px)',
                   willChange: 'opacity, transform'
                 }}
               />
@@ -1131,40 +1130,18 @@ export default function PublicCareers() {
           })}
         </div>
 
-        {/* Soft Contrast Gradient Overlay - Balanced to keep images clearly recognizable while text remains 100% crisp */}
+        {/* Truly Transparent Contrast Scrim - Allows background workplace imagery to shine through vividly */}
         <div style={{
           position: 'absolute',
           inset: 0,
           background: isLight 
-            ? 'linear-gradient(180deg, rgba(250, 251, 253, 0.76) 0%, rgba(250, 251, 253, 0.86) 55%, rgba(250, 251, 253, 0.98) 100%)'
-            : 'linear-gradient(180deg, rgba(8, 12, 20, 0.78) 0%, rgba(8, 12, 20, 0.88) 55%, rgba(8, 12, 20, 0.98) 100%)',
+            ? 'linear-gradient(180deg, rgba(250, 251, 253, 0.12) 0%, rgba(250, 251, 253, 0.26) 55%, rgba(250, 251, 253, 0.90) 100%)'
+            : 'linear-gradient(180deg, rgba(8, 12, 20, 0.18) 0%, rgba(8, 12, 20, 0.35) 55%, rgba(8, 12, 20, 0.92) 100%)',
           pointerEvents: 'none',
-          zIndex: 0
+          zIndex: 1
         }} />
 
-        {/* PraxiMinds Ambient Orange & Royal Blue Edge Glows */}
-        <div style={{
-          position: 'absolute',
-          top: '-15%',
-          right: '10%',
-          width: 500,
-          height: 340,
-          background: 'radial-gradient(circle, rgba(255, 107, 0, 0.1) 0%, rgba(255, 154, 60, 0.03) 45%, transparent 70%)',
-          pointerEvents: 'none',
-          zIndex: 0
-        }} />
-        <div style={{
-          position: 'absolute',
-          top: '10%',
-          left: '8%',
-          width: 420,
-          height: 300,
-          background: 'radial-gradient(circle, rgba(37, 99, 235, 0.08) 0%, transparent 65%)',
-          pointerEvents: 'none',
-          zIndex: 0
-        }} />
-
-        <div style={{ maxWidth: 960, margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+        <div style={{ maxWidth: 960, margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 2 }}>
           {/* PraxiMinds Signature Eyebrow Badge */}
           <div style={{
             display: 'inline-flex',
@@ -1173,14 +1150,15 @@ export default function PublicCareers() {
             fontSize: 11.5,
             fontWeight: 700,
             color: '#EA580C',
-            backgroundColor: isLight ? 'rgba(255, 107, 0, 0.08)' : 'rgba(255, 107, 0, 0.16)',
-            border: '1px solid rgba(255, 107, 0, 0.32)',
+            backgroundColor: isLight ? 'rgba(255, 255, 255, 0.92)' : 'rgba(255, 107, 0, 0.18)',
+            border: '1px solid rgba(255, 107, 0, 0.35)',
             padding: '5px 16px',
             borderRadius: 24,
             textTransform: 'uppercase',
             letterSpacing: '0.06em',
             marginBottom: 18,
-            backdropFilter: 'blur(8px)'
+            backdropFilter: 'blur(10px)',
+            boxShadow: isLight ? '0 2px 8px rgba(0, 0, 0, 0.05)' : 'none'
           }}>
             <span style={{
               width: 7,
@@ -1200,7 +1178,8 @@ export default function PublicCareers() {
             margin: '0 0 14px',
             color: theme.textPrimary,
             letterSpacing: '-0.03em',
-            lineHeight: 1.18
+            lineHeight: 1.18,
+            textShadow: isLight ? '0 1px 3px rgba(255, 255, 255, 0.95), 0 2px 10px rgba(255, 255, 255, 0.8)' : '0 2px 12px rgba(0, 0, 0, 0.8)'
           }}>
             Explore Career Opportunities with <span style={{
               background: 'linear-gradient(135deg, #FF6B00 0%, #EA580C 45%, #2563EB 100%)',
@@ -1213,10 +1192,12 @@ export default function PublicCareers() {
           {/* Subtitle */}
           <p style={{
             fontSize: 15,
-            color: theme.textSecondary,
+            color: isLight ? '#1E293B' : '#E2E8F0',
+            fontWeight: 500,
             maxWidth: 680,
             margin: '0 auto 28px',
-            lineHeight: 1.6
+            lineHeight: 1.6,
+            textShadow: isLight ? '0 1px 3px rgba(255, 255, 255, 0.95)' : '0 1px 4px rgba(0, 0, 0, 0.7)'
           }}>
             Verified high-impact contracts (C2C, W2, 1099) with direct North Carolina, Virginia, and Fortune 500 enterprise clients. 0 intermediary layers.
           </p>
