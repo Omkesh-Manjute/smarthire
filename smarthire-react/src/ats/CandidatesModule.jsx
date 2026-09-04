@@ -64,6 +64,16 @@ function CandidatesModule({
     return String(s).trim()
   }
 
+  const formatTitleCase = (str) => {
+    if (!str) return ''
+    return String(str)
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+  }
+
   const getSkillBadgeStyle = (skillName, job) => {
     const cleanName = getSkillName(skillName)
     const skillLower = cleanName.toLowerCase().trim()
@@ -1080,7 +1090,7 @@ function CandidatesModule({
                     </th>
 
                     {/* Candidate Name */}
-                    <th style={{ padding: '10px 12px', fontWeight: '700', color: '#1e293b' }}>
+                    <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#475569' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span>Candidate Name</span>
                         <span style={{ fontSize: '10px', color: '#94a3b8' }}>▼</span>
@@ -1088,42 +1098,42 @@ function CandidatesModule({
                     </th>
 
                     {/* Applied Req# & Opening */}
-                    <th style={{ padding: '10px 12px', fontWeight: '700', color: '#1e293b' }}>
+                    <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#475569' }}>
                       Applied Req# & Opening
                     </th>
 
                     {/* Contact Info */}
-                    <th style={{ padding: '10px 12px', fontWeight: '700', color: '#1e293b' }}>
+                    <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#475569' }}>
                       Contact Info
                     </th>
 
                     {/* Sourced / Referred By */}
-                    <th style={{ padding: '10px 12px', fontWeight: '700', color: '#1e293b' }}>
+                    <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#475569' }}>
                       Sourced By
                     </th>
 
                     {/* Key Skills */}
-                    <th style={{ padding: '10px 12px', fontWeight: '700', color: '#1e293b' }}>
+                    <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#475569' }}>
                       Key Skills
                     </th>
 
                     {/* Match Score */}
-                    <th style={{ padding: '10px 12px', fontWeight: '700', color: '#1e293b', textAlign: 'center' }}>
+                    <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#475569', textAlign: 'center' }}>
                       AI Match
                     </th>
 
                     {/* Rate */}
-                    <th style={{ padding: '10px 12px', fontWeight: '700', color: '#1e293b' }}>
+                    <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#475569' }}>
                       Rate
                     </th>
 
                     {/* Status */}
-                    <th style={{ padding: '10px 12px', fontWeight: '700', color: '#1e293b' }}>
+                    <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#475569' }}>
                       ATS Status
                     </th>
 
                     {/* Pipeline Action */}
-                    <th style={{ padding: '10px 12px', fontWeight: '700', color: '#1e293b', textAlign: 'center' }}>
+                    <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#475569', textAlign: 'center' }}>
                       Pipeline
                     </th>
                   </tr>
@@ -1142,7 +1152,8 @@ function CandidatesModule({
                     </tr>
                   ) : (
                     paginatedCandidates.map((candidate, idx) => {
-                      const nameDisplay = candidate.extracted_profile?.name || candidate.name || candidate.candidateName || 'Candidate'
+                      const rawName = candidate.extracted_profile?.name || candidate.name || candidate.candidateName || 'Candidate'
+                      const nameDisplay = formatTitleCase(rawName)
                       const emailDisplay = candidate.extracted_profile?.email || candidate.email || candidate.candidateEmail || 'N/A'
                       const phoneDisplay = candidate.extracted_profile?.phone || candidate.phone || candidate.candidatePhone || ''
                       const role = candidate.job_title || candidate.jobTitle || 'General Applicant'
@@ -1400,23 +1411,31 @@ function CandidatesModule({
 
                           {/* ATS Status */}
                           <td style={{ padding: '9px 12px' }}>
-                            <select
-                              value={candidate.status || 'New'}
-                              onChange={e => handleUpdateStatus(candidate.id, e.target.value)}
-                              style={{
-                                fontSize: '11px',
-                                padding: '3px 6px',
-                                borderRadius: '4px',
-                                background: st.bg,
-                                color: st.color,
-                                border: `1px solid ${st.border}`,
-                                fontWeight: '700',
-                                cursor: 'pointer',
-                                outline: 'none'
-                              }}
-                            >
-                              {safeStatuses.map(s => <option key={s} value={s}>{s}</option>)}
-                            </select>
+                            <div style={{ position: 'relative', display: 'inline-block' }}>
+                              <select
+                                value={candidate.status || 'New'}
+                                onChange={e => handleUpdateStatus(candidate.id, e.target.value)}
+                                style={{
+                                  fontSize: '11px',
+                                  padding: '3px 20px 3px 9px',
+                                  borderRadius: '12px',
+                                  background: st.bg,
+                                  color: st.color,
+                                  border: `1px solid ${st.border}`,
+                                  fontWeight: '600',
+                                  cursor: 'pointer',
+                                  outline: 'none',
+                                  appearance: 'none',
+                                  WebkitAppearance: 'none',
+                                  backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+                                  backgroundRepeat: 'no-repeat',
+                                  backgroundPosition: 'right 6px center',
+                                  backgroundSize: '9px 9px'
+                                }}
+                              >
+                                {safeStatuses.map(s => <option key={s} value={s}>{s}</option>)}
+                              </select>
+                            </div>
                           </td>
 
                           {/* Pipeline Action */}

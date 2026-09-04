@@ -23,6 +23,16 @@ const STATUSES = [
   'Interview Scheduled', 'Selected', 'Rejected', 'Placed',
 ]
 
+const formatTitleCase = (str) => {
+  if (!str) return ''
+  return String(str)
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
 const ALL_MODULES = [
   { id: 'home',        label: 'Home',            icon: '🏠', category: 'main' },
   { id: 'candidates',  label: 'Candidates',      icon: '👤', category: 'talent', countKey: 'candidates' },
@@ -1227,7 +1237,7 @@ export default function AtsPlatform() {
                           onMouseLeave={e => e.currentTarget.style.background = '#ffffff'}
                         >
                           <td style={{ padding: '9px 14px', fontWeight: '700', color: '#2563eb' }}>
-                            {cand.name}
+                            {formatTitleCase(cand.name)}
                           </td>
                           <td style={{ padding: '9px 14px', color: '#475569' }}>
                             {cand.role?.slice(0, 20)}...

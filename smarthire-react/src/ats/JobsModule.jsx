@@ -563,29 +563,29 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
         </div>
       </div>
 
-      {/* Active Jobs Table (High-Density Clean CoolWorks Layout) */}
-      <div style={{ overflowX: 'auto', border: '1px solid #7f9db9', borderRadius: 0, background: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-        <table className="coolworks-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', fontFamily: 'Arial, Helvetica, sans-serif', background: '#ffffff' }}>
+      {/* Active Jobs Table (Zoho CRM Clean Layout) */}
+      <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', background: '#ffffff' }}>
           <thead>
-            <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
-              <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Req#</th>
-              <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Position Title</th>
-              <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Client / Customer</th>
-              <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Location</th>
-              <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Work Mode</th>
-              <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Key Skills</th>
-              <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Deadline</th>
-              <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Candidates</th>
+            <tr style={{ background: '#f8fafc', color: '#475569', borderBottom: '1px solid #e2e8f0' }}>
+              <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Req#</th>
+              <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Position Title</th>
+              <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Client / Customer</th>
+              <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Location</th>
+              <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Work Mode</th>
+              <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Key Skills</th>
+              <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Deadline</th>
+              <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', whiteSpace: 'nowrap' }}>Candidates</th>
               {isSuperAdmin && (
-                <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>LinkedIn Post</th>
+                <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', whiteSpace: 'nowrap' }}>LinkedIn Post</th>
               )}
-              <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap', fontSize: '11px' }}>Actions</th>
+              <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', whiteSpace: 'nowrap' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredJobs.length === 0 ? (
               <tr>
-                <td colSpan={isSuperAdmin ? 10 : 9} style={{ padding: '24px', textAlign: 'center', color: '#64748b' }}>
+                <td colSpan={isSuperAdmin ? 10 : 9} style={{ padding: '36px 20px', textAlign: 'center', color: '#64748b' }}>
                   No active job postings found matching search criteria.
                 </td>
               </tr>
@@ -599,47 +599,52 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
                 const skillsList = Array.isArray(job.skills) ? job.skills : []
 
                 return (
-                  <tr key={job.id} style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '5px 6px', color: '#0033cc', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
-                      <span onClick={() => setJdModalJob(job)} style={{ cursor: 'pointer', textDecoration: 'underline' }}>
+                  <tr
+                    key={job.id}
+                    style={{ background: '#ffffff', borderBottom: '1px solid #f1f5f9', transition: 'background-color 0.12s' }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = '#ffffff'}
+                  >
+                    <td style={{ padding: '10px 14px', color: '#2563eb', fontWeight: '700', whiteSpace: 'nowrap' }}>
+                      <span onClick={() => setJdModalJob(job)} style={{ cursor: 'pointer' }} title="View Requisition">
                         {displayReqId}
                       </span>
                     </td>
-                    <td style={{ padding: '5px 6px', color: '#0033cc', fontWeight: 'bold', maxWidth: '200px' }}>
-                      <span onClick={() => setJdModalJob(job)} style={{ cursor: 'pointer', textDecoration: 'underline' }}>
+                    <td style={{ padding: '10px 14px', color: '#0f172a', fontWeight: '600', maxWidth: '240px' }}>
+                      <span onClick={() => setJdModalJob(job)} style={{ cursor: 'pointer' }} title={cleanTitle}>
                         {cleanTitle}
                       </span>
                     </td>
-                    <td style={{ padding: '5px 6px', color: '#000000', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '10px 14px', color: '#475569', whiteSpace: 'nowrap' }}>
                       {job.client || 'Verified Client'}
                     </td>
-                    <td style={{ padding: '5px 6px', color: '#000000', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '10px 14px', color: '#64748b', whiteSpace: 'nowrap' }}>
                       {locationText}
                     </td>
-                    <td style={{ padding: '5px 6px', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
                       <span style={{
-                        padding: '1px 6px',
-                        borderRadius: '2px',
-                        fontSize: '10px',
-                        fontWeight: 'bold',
-                        background: workMode === 'Remote' ? '#dcfce7' : workMode === 'Hybrid' ? '#fef3c7' : '#eff6ff',
-                        color: workMode === 'Remote' ? '#15803d' : workMode === 'Hybrid' ? '#b45309' : '#1d4ed8',
-                        border: '1px solid rgba(0,0,0,0.1)'
+                        padding: '2px 7px',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        background: workMode === 'Remote' ? '#ecfdf5' : workMode === 'Hybrid' ? '#fef3c7' : '#eff6ff',
+                        color: workMode === 'Remote' ? '#047857' : workMode === 'Hybrid' ? '#b45309' : '#1d4ed8',
+                        border: `1px solid ${workMode === 'Remote' ? '#a7f3d0' : workMode === 'Hybrid' ? '#fde68a' : '#bfdbfe'}`
                       }}>
                         {workMode}
                       </span>
                     </td>
-                    <td style={{ padding: '5px 6px', color: '#000000', maxWidth: '220px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <td style={{ padding: '10px 14px', color: '#475569', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {skillsList.slice(0, 3).join(', ')}{skillsList.length > 3 ? ` +${skillsList.length - 3}` : ''}
                     </td>
-                    <td style={{ padding: '5px 6px', color: '#000000', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '10px 14px', color: '#64748b', whiteSpace: 'nowrap' }}>
                       {job.deadline || '—'}
                     </td>
-                    <td style={{ padding: '5px 6px', textAlign: 'center', fontWeight: 'bold', color: candidateCount > 0 ? '#16a34a' : '#64748b' }}>
+                    <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: '700', color: candidateCount > 0 ? '#16a34a' : '#94a3b8' }}>
                       {candidateCount}
                     </td>
                     {isSuperAdmin && (
-                      <td style={{ padding: '5px 6px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '10px 14px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                         <button
                           type="button"
                           onClick={(e) => handleOpenLinkedInModal(e, job)}
@@ -647,10 +652,10 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
                             background: '#0a66c2',
                             color: '#ffffff',
                             border: 'none',
-                            padding: '2px 8px',
-                            fontSize: '10px',
-                            fontWeight: 'bold',
-                            borderRadius: '2px',
+                            padding: '3px 8px',
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            borderRadius: '4px',
                             cursor: 'pointer',
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -662,8 +667,8 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
                         </button>
                       </td>
                     )}
-                    <td style={{ padding: '5px 6px', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                      <div style={{ display: 'inline-flex', gap: '4px' }}>
+                    <td style={{ padding: '10px 14px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'inline-flex', gap: '6px' }}>
                         <button
                           type="button"
                           onClick={(e) => {
@@ -673,7 +678,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
                             setCopyLinkToast(`✅ Referral link copied for ${selectedRecruiterPoster?.name}!`)
                             setTimeout(() => setCopyLinkToast(''), 3500)
                           }}
-                          style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '1px 5px', fontSize: '10px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer', color: '#0033cc' }}
+                          style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '3px 8px', fontSize: '11px', fontWeight: '600', borderRadius: '4px', cursor: 'pointer', color: '#2563eb' }}
                           title="Copy candidate application link"
                         >
                           🔗 Apply
@@ -681,7 +686,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
                         <button
                           type="button"
                           onClick={() => setJdModalJob(job)}
-                          style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '1px 5px', fontSize: '10px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer', color: '#0f172a' }}
+                          style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '3px 8px', fontSize: '11px', fontWeight: '600', borderRadius: '4px', cursor: 'pointer', color: '#334155' }}
                           title="View Full Job Description"
                         >
                           📄 JD
@@ -690,7 +695,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
                           <button
                             type="button"
                             onClick={(e) => handleOpenEdit(e, job)}
-                            style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '1px 5px', fontSize: '10px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer', color: '#0f172a' }}
+                            style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '3px 8px', fontSize: '11px', fontWeight: '600', borderRadius: '4px', cursor: 'pointer', color: '#334155' }}
                             title="Edit Job"
                           >
                             ✏️
@@ -700,7 +705,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); handleDeleteJob(job.id) }}
-                            style={{ background: '#fee2e2', border: '1px solid #fca5a5', padding: '1px 5px', fontSize: '10px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer', color: '#b91c1c' }}
+                            style={{ background: '#fff1f2', border: '1px solid #fecdd3', padding: '3px 8px', fontSize: '11px', fontWeight: '600', borderRadius: '4px', cursor: 'pointer', color: '#e11d48' }}
                             title="Delete Job"
                           >
                             🗑️

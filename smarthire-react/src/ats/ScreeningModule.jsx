@@ -210,27 +210,27 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
     })
   }
 
-  // Status badges mapping
+  // Status badges mapping (Zoho CRM Pastel Style)
   const statusBadge = (status) => {
     switch (status) {
-      case 'pending': return <span className="pill review">⏳ Link Sent</span>
-      case 'active': return <span className="pill review">📄 Started</span>
-      case 'analyzing': return <span className="pill review">🔍 Analyzing</span>
-      case 'screening': return <span className="pill review">💬 Screening</span>
-      case 'verification': return <span className="pill review">✅ Verifying</span>
-      case 'submitted': return <span className="pill trusted">✅ Completed</span>
-      case 'rejected': return <span className="pill risk">❌ Rejected</span>
-      default: return <span className="pill">{status}</span>
+      case 'pending': return <span style={{ fontSize: '11.5px', fontWeight: '700', padding: '3px 8px', borderRadius: '4px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe' }}>⏳ Link Sent</span>
+      case 'active': return <span style={{ fontSize: '11.5px', fontWeight: '700', padding: '3px 8px', borderRadius: '4px', background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0' }}>📄 Started</span>
+      case 'analyzing': return <span style={{ fontSize: '11.5px', fontWeight: '700', padding: '3px 8px', borderRadius: '4px', background: '#f5f3ff', color: '#6d28d9', border: '1px solid #ddd6fe' }}>🔍 Analyzing</span>
+      case 'screening': return <span style={{ fontSize: '11.5px', fontWeight: '700', padding: '3px 8px', borderRadius: '4px', background: '#fef3c7', color: '#b45309', border: '1px solid #fde68a' }}>💬 Screening</span>
+      case 'verification': return <span style={{ fontSize: '11.5px', fontWeight: '700', padding: '3px 8px', borderRadius: '4px', background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0' }}>✅ Verifying</span>
+      case 'submitted': return <span style={{ fontSize: '11.5px', fontWeight: '700', padding: '3px 8px', borderRadius: '4px', background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0' }}>✅ Completed</span>
+      case 'rejected': return <span style={{ fontSize: '11.5px', fontWeight: '700', padding: '3px 8px', borderRadius: '4px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}>❌ Rejected</span>
+      default: return <span style={{ fontSize: '11.5px', fontWeight: '700', padding: '3px 8px', borderRadius: '4px', background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0' }}>{status}</span>
     }
   }
 
   // Match score color helper
   const scoreBadge = (score) => {
-    if (score === null || score === undefined) return '—'
-    let className = 'risk'
-    if (score >= 80) className = 'trusted'
-    else if (score >= 50) className = 'review'
-    return <strong className={`pill ${className}`} style={{ fontSize: 13, padding: '4px 10px' }}>{score}%</strong>
+    if (score === null || score === undefined) return <span style={{ color: '#94a3b8' }}>—</span>
+    let bg = '#fee2e2', color = '#dc2626', border = '#fca5a5'
+    if (score >= 80) { bg = '#ecfdf5'; color = '#047857'; border = '#a7f3d0' }
+    else if (score >= 50) { bg = '#fef3c7'; color = '#b45309'; border = '#fde68a' }
+    return <span style={{ fontSize: '11.5px', fontWeight: '800', background: bg, color: color, border: `1px solid ${border}`, padding: '2px 8px', borderRadius: '4px' }}>{score}%</span>
   }
 
   // Active positions list filtering (Active/Posted only, sorted newest first)
@@ -321,32 +321,42 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, animation: 'fadeIn 0.3s ease-out' }}>
       
-      {/* Overview Stats Dashboard */}
+      {/* Overview Stats Dashboard (Zoho CRM Minimal Style) */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-        gap: 12
+        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+        gap: '14px',
+        marginBottom: '4px'
       }}>
-        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 18px', borderLeft: '4px solid #3b82f6', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-          <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a' }}>{totalCount}</div>
-          <div style={{ fontSize: 11.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: 2 }}>Total Sessions</div>
-        </div>
-        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 18px', borderLeft: '4px solid #06b6d4', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-          <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a' }}>{screeningCount}</div>
-          <div style={{ fontSize: 11.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: 2 }}>Active Chats</div>
-        </div>
-        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 18px', borderLeft: '4px solid #10b981', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-          <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a' }}>{completedCount}</div>
-          <div style={{ fontSize: 11.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: 2 }}>Submitted Profiles</div>
-        </div>
-        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 18px', borderLeft: '4px solid #ef4444', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-          <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a' }}>{rejectedCount}</div>
-          <div style={{ fontSize: 11.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: 2 }}>Auto-Rejected</div>
-        </div>
-        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 18px', borderLeft: '4px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-          <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a' }}>{pendingCount}</div>
-          <div style={{ fontSize: 11.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: 2 }}>Awaiting Response</div>
-        </div>
+        {[
+          { label: 'Total Sessions', value: totalCount, sub: 'All candidates', color: '#2563eb' },
+          { label: 'Active Chats', value: screeningCount, sub: 'In progress', color: '#0891b2' },
+          { label: 'Submitted Profiles', value: completedCount, sub: 'Screening passed', color: '#059669' },
+          { label: 'Auto-Rejected', value: rejectedCount, sub: 'Did not match', color: '#dc2626' },
+          { label: 'Awaiting Response', value: pendingCount, sub: 'Link dispatched', color: '#d97706' },
+        ].map((item, i) => (
+          <div
+            key={i}
+            style={{
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              borderRadius: '8px',
+              padding: '16px 20px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              {item.label}
+            </div>
+            <div style={{ fontSize: '26px', fontWeight: '800', color: item.color, marginTop: '4px', lineHeight: 1.1 }}>
+              {item.value}
+            </div>
+            <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
+              {item.sub}
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* TOP COLLAPSIBLE: Generate Candidate Screening Link */}
@@ -401,22 +411,23 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
 
           <button
             type="button"
+            onClick={() => setIsLinkCardOpen(!isLinkCardOpen)}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: 6,
-              background: isLinkCardOpen ? '#f1f5f9' : '#0F766E',
+              background: isLinkCardOpen ? '#f8fafc' : '#2563eb',
               color: isLinkCardOpen ? '#0f172a' : '#ffffff',
               border: isLinkCardOpen ? '1px solid #cbd5e1' : 'none',
-              borderRadius: 8,
+              borderRadius: 6,
               padding: '7px 14px',
               fontSize: 12.5,
-              fontWeight: 700,
+              fontWeight: 600,
               cursor: 'pointer',
-              boxShadow: isLinkCardOpen ? 'none' : '0 2px 4px rgba(15,118,110,0.2)'
+              boxShadow: isLinkCardOpen ? 'none' : '0 1px 3px rgba(37,99,235,0.25)'
             }}
           >
-            {isLinkCardOpen ? '▲ Collapse Form' : '➕ Generate Link ▾'}
+            {isLinkCardOpen ? '▲ Collapse Form' : '+ Generate Link ▾'}
           </button>
         </div>
 
@@ -543,15 +554,15 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
                 type="button"
                 onClick={handleGenerateLink}
                 style={{
-                  background: '#0F766E',
+                  background: '#2563eb',
                   color: '#ffffff',
                   border: 'none',
-                  borderRadius: 8,
+                  borderRadius: 6,
                   padding: '9px 18px',
-                  fontSize: 13,
-                  fontWeight: 700,
+                  fontSize: 12.5,
+                  fontWeight: 600,
                   cursor: 'pointer',
-                  boxShadow: '0 2px 4px rgba(15,118,110,0.2)'
+                  boxShadow: '0 1px 3px rgba(37,99,235,0.25)'
                 }}
               >
                 Generate One-Time Link →
@@ -566,13 +577,13 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
                     alert(`🌐 Public Job Link Copied!\n\nLink: ${publicUrl}\n\nPaste this link on LinkedIn / Job Posts. Candidates who click it will automatically be screened by AI and added to your queue!`)
                   }}
                   style={{
-                    background: '#f8fafc',
-                    color: '#0F766E',
-                    border: '1px solid #0F766E',
-                    borderRadius: 8,
+                    background: '#ffffff',
+                    color: '#2563eb',
+                    border: '1px solid #bfdbfe',
+                    borderRadius: 6,
                     padding: '9px 16px',
-                    fontSize: 13,
-                    fontWeight: 700,
+                    fontSize: 12.5,
+                    fontWeight: 600,
                     cursor: 'pointer'
                   }}
                 >

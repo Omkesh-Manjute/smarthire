@@ -22,7 +22,7 @@
 * { box-sizing: border-box; }
 html, body, #root { margin: 0; min-height: 100%; overflow-x: clip; }
 body, button, input, select, textarea {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

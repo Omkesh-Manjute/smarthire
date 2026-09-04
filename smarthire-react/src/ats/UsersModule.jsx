@@ -436,38 +436,38 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
         {subTab === 'recruiters' && (
           <div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '16px' }}>
-              <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '12px 14px' }}>
-                <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b' }}>TOTAL TEAM USERS</div>
-                <div style={{ fontSize: '22px', fontWeight: '800', color: '#0f172a', marginTop: '2px' }}>{totalUsersCount}</div>
-                <div style={{ fontSize: '10.5px', color: '#94a3b8' }}>Entire Organization</div>
+              <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px 16px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+                <div style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>TOTAL TEAM USERS</div>
+                <div style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', marginTop: '4px' }}>{totalUsersCount}</div>
+                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>Entire Organization</div>
               </div>
 
-              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '12px 14px' }}>
-                <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#1d4ed8' }}>👑 SUPER ADMINS</div>
-                <div style={{ fontSize: '22px', fontWeight: '800', color: '#1e3a8a', marginTop: '2px' }}>{adminCount}</div>
-                <div style={{ fontSize: '10.5px', color: '#60a5fa' }}>Full Platform Control</div>
+              <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px 16px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+                <div style={{ fontSize: '11px', fontWeight: '600', color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>👑 SUPER ADMINS</div>
+                <div style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', marginTop: '4px' }}>{adminCount}</div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Full Platform Control</div>
               </div>
 
-              <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '8px', padding: '12px 14px' }}>
-                <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#b45309' }}>🛡️ MANAGERS & LEADS</div>
-                <div style={{ fontSize: '22px', fontWeight: '800', color: '#78350f', marginTop: '2px' }}>{managerCount}</div>
-                <div style={{ fontSize: '10.5px', color: '#f59e0b' }}>Candidate Review & AI</div>
+              <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px 16px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+                <div style={{ fontSize: '11px', fontWeight: '600', color: '#b45309', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🛡️ MANAGERS & LEADS</div>
+                <div style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', marginTop: '4px' }}>{managerCount}</div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Candidate Review & AI</div>
               </div>
 
-              <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '8px', padding: '12px 14px' }}>
-                <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#c2410c' }}>💼 LEAD RECRUITERS</div>
-                <div style={{ fontSize: '22px', fontWeight: '800', color: '#9a3412', marginTop: '2px' }}>{leadRecruiterCount}</div>
-                <div style={{ fontSize: '10.5px', color: '#fb923c' }}>Managing Requisitions</div>
+              <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px 16px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+                <div style={{ fontSize: '11px', fontWeight: '600', color: '#4338ca', textTransform: 'uppercase', letterSpacing: '0.05em' }}>💼 LEAD RECRUITERS</div>
+                <div style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', marginTop: '4px' }}>{leadRecruiterCount}</div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Managing Requisitions</div>
               </div>
 
-              <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '8px', padding: '12px 14px' }}>
-                <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#047857' }}>👤 SOURCING EMPLOYEES</div>
-                <div style={{ fontSize: '22px', fontWeight: '800', color: '#065f46', marginTop: '2px' }}>{employeeCount}</div>
-                <div style={{ fontSize: '10.5px', color: '#34d399' }}>Assigned Sub-Recruiters</div>
+              <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px 16px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+                <div style={{ fontSize: '11px', fontWeight: '600', color: '#047857', textTransform: 'uppercase', letterSpacing: '0.05em' }}>👤 SOURCING EMPLOYEES</div>
+                <div style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', marginTop: '4px' }}>{employeeCount}</div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Assigned Sub-Recruiters</div>
               </div>
             </div>
 
-            <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', padding: '10px 14px', borderRadius: '8px', marginBottom: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
+            <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', padding: '12px 16px', borderRadius: '8px', marginBottom: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                 <div style={{ position: 'relative' }}>
                   <input
@@ -475,17 +475,17 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                     placeholder="🔍 Search name, email, ref code..."
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
-                    style={{ padding: '6px 10px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '220px' }}
+                    style={{ padding: '7px 12px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '6px', width: '230px', outline: 'none', background: '#f8fafc' }}
                   />
                   {searchQuery && (
-                    <span onClick={() => setSearchQuery('')} style={{ position: 'absolute', right: 8, top: 6, cursor: 'pointer', color: '#94a3b8', fontSize: '12px' }}>✕</span>
+                    <span onClick={() => setSearchQuery('')} style={{ position: 'absolute', right: 10, top: 7, cursor: 'pointer', color: '#94a3b8', fontSize: '12px' }}>✕</span>
                   )}
                 </div>
 
                 <select
                   value={roleFilter}
                   onChange={e => setRoleFilter(e.target.value)}
-                  style={{ padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#ffffff', fontWeight: 'bold' }}
+                  style={{ padding: '7px 10px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#ffffff', color: '#334155', fontWeight: '600', outline: 'none' }}
                 >
                   <option value="All">All Roles ({recruiters.length})</option>
                   <option value="superadmin">👑 Super Admins ({adminCount})</option>
@@ -497,7 +497,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                 <select
                   value={statusFilter}
                   onChange={e => setStatusFilter(e.target.value)}
-                  style={{ padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#ffffff' }}
+                  style={{ padding: '7px 10px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#ffffff', color: '#334155', outline: 'none' }}
                 >
                   <option value="All">All Status</option>
                   <option value="Active">🟢 Active Accounts</option>
@@ -505,64 +505,64 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                 </select>
               </div>
 
-              <div style={{ fontSize: '11.5px', color: '#64748b' }}>
-                Showing <strong style={{ color: '#4f46e5' }}>{filteredRecruiters.length}</strong> of <strong>{recruiters.length}</strong> team members
+              <div style={{ fontSize: '12px', color: '#64748b' }}>
+                Showing <strong style={{ color: '#2563eb' }}>{filteredRecruiters.length}</strong> of <strong>{recruiters.length}</strong> team members
               </div>
             </div>
 
-            <div className="card shadow-sm" style={{ padding: 0, overflow: 'hidden', border: '1px solid #cbd5e1', borderRadius: '8px' }}>
+            <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
               {loading ? (
-                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--ink-soft)' }}>
+                <div style={{ textAlign: 'center', padding: '40px 0', color: '#64748b' }}>
                   <span className="loader-spinner"></span> Loading team members...
                 </div>
               ) : (
-                <div style={{ overflowX: 'auto', border: '1px solid #7f9db9', borderRadius: 0 }}>
-                  <table className="users-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', fontFamily: 'Arial, Helvetica, sans-serif', textAlign: 'left', background: '#ffffff' }}>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left', background: '#ffffff', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
                     <thead>
-                      <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
-                        <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', borderRight: '1px solid rgba(255,255,255,0.2)' }}>TEAM MEMBER</th>
-                        <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', borderRight: '1px solid rgba(255,255,255,0.2)' }}>SYSTEM ROLE</th>
-                        <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', borderRight: '1px solid rgba(255,255,255,0.2)' }}>TEAM HIERARCHY / REPORTING</th>
-                        <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', borderRight: '1px solid rgba(255,255,255,0.2)' }}>COMPANY & REF</th>
-                        <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', textAlign: 'center', borderRight: '1px solid rgba(255,255,255,0.2)' }}>SOURCED</th>
-                        <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', borderRight: '1px solid rgba(255,255,255,0.2)' }}>ACCOUNT STATUS</th>
-                        <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', borderRight: '1px solid rgba(255,255,255,0.2)' }}>LAST ACTIVE</th>
-                        <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', textAlign: 'center', width: '140px' }}>ACTIONS</th>
+                      <tr style={{ background: '#f8fafc', color: '#475569', borderBottom: '1px solid #e2e8f0' }}>
+                        <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>TEAM MEMBER</th>
+                        <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>SYSTEM ROLE</th>
+                        <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>TEAM HIERARCHY / REPORTING</th>
+                        <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>COMPANY & REF</th>
+                        <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.05em' }}>SOURCED</th>
+                        <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>ACCOUNT STATUS</th>
+                        <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>LAST ACTIVE</th>
+                        <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textAlign: 'center', width: '150px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>ACTIONS</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredRecruiters.length === 0 ? (
                         <tr>
-                          <td colSpan="8" style={{ padding: '24px', textAlign: 'center', color: '#64748b' }}>
+                          <td colSpan="8" style={{ padding: '36px 20px', textAlign: 'center', color: '#64748b' }}>
                             No team members found matching your filter criteria.
                           </td>
                         </tr>
                       ) : (
                         filteredRecruiters.map(rec => {
                           const count = getSourcedCount(rec)
-                          const isMaster = rec.email === 'omkesh@coolsofttech.com'
+                          const isMaster = rec.email === 'omkeshmanjute@coolsofttech.com'
                           const subordinates = getSubordinateEmployees(rec)
                           const isExpanded = Boolean(expandedRecruiters[rec.id || rec._id])
 
-                          let roleBadgeBg = '#dbeafe'
-                          let roleBadgeColor = '#1e40af'
+                          let roleBadgeBg = '#eff6ff'
+                          let roleBadgeColor = '#1d4ed8'
                           let roleBadgeBorder = '#bfdbfe'
                           let roleLabel = '💼 Lead Recruiter'
 
                           if (rec.role === 'superadmin' || rec.role === 'admin') {
-                            roleBadgeBg = '#e0f2fe'
-                            roleBadgeColor = '#0369a1'
-                            roleBadgeBorder = '#bae6fd'
+                            roleBadgeBg = '#eff6ff'
+                            roleBadgeColor = '#1d4ed8'
+                            roleBadgeBorder = '#bfdbfe'
                             roleLabel = '👑 Super Admin'
                           } else if (rec.role === 'manager') {
                             roleBadgeBg = '#fef3c7'
-                            roleBadgeColor = '#92400e'
+                            roleBadgeColor = '#b45309'
                             roleBadgeBorder = '#fde68a'
                             roleLabel = '🛡️ Manager / Lead'
                           } else if (rec.role === 'employee') {
-                            roleBadgeBg = '#dcfce7'
-                            roleBadgeColor = '#15803d'
-                            roleBadgeBorder = '#bbf7d0'
+                            roleBadgeBg = '#ecfdf5'
+                            roleBadgeColor = '#047857'
+                            roleBadgeBorder = '#a7f3d0'
                             roleLabel = '👤 Employee (Sourcer)'
                           }
 
@@ -570,28 +570,31 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                             <React.Fragment key={rec.id || rec._id}>
                               <tr style={{
                                 opacity: rec.isActive !== false ? 1 : 0.65,
-                                background: isExpanded ? '#eff6ff' : '#ffffff',
-                                borderBottom: '1px solid #e2e8f0',
-                                transition: 'background-color 0.15s ease'
-                              }}>
-                                {/* Team Member without Circle Avatar */}
-                                <td style={{ padding: '6px 10px' }}>
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                                    <span style={{ fontWeight: 'bold', color: '#0033cc', fontSize: '11.5px' }}>
+                                background: isExpanded ? '#f8fafc' : '#ffffff',
+                                borderBottom: '1px solid #f1f5f9',
+                                transition: 'background-color 0.12s ease'
+                              }}
+                              onMouseEnter={e => { if (!isExpanded) e.currentTarget.style.backgroundColor = '#f8fafc' }}
+                              onMouseLeave={e => { if (!isExpanded) e.currentTarget.style.backgroundColor = '#ffffff' }}
+                              >
+                                {/* Team Member */}
+                                <td style={{ padding: '10px 14px' }}>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    <span style={{ fontWeight: '600', color: '#0f172a', fontSize: '13px' }}>
                                       {rec.name} {isMaster ? '(Primary Owner)' : ''}
                                     </span>
-                                    <span style={{ fontSize: '10px', color: '#475569', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                                    <span style={{ fontSize: '11px', color: '#64748b' }}>
                                       {rec.email}
                                     </span>
                                   </div>
                                 </td>
 
                                 {/* System Role */}
-                                <td style={{ padding: '6px 10px' }}>
+                                <td style={{ padding: '10px 14px' }}>
                                   <span style={{
                                     background: roleBadgeBg, color: roleBadgeColor,
                                     border: `1px solid ${roleBadgeBorder}`,
-                                    borderRadius: '2px', padding: '2px 7px', fontSize: '10.5px', fontWeight: 'bold',
+                                    borderRadius: '4px', padding: '3px 8px', fontSize: '11px', fontWeight: '600',
                                     display: 'inline-block'
                                   }}>
                                     {roleLabel}
@@ -599,9 +602,9 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                                 </td>
 
                                 {/* Team Hierarchy / Reporting */}
-                                <td style={{ padding: '6px 10px' }}>
+                                <td style={{ padding: '10px 14px' }}>
                                   {rec.role === 'employee' ? (
-                                    <span style={{ color: '#0284c7', fontWeight: 'bold', fontSize: '10.5px', background: '#eff6ff', padding: '2px 7px', borderRadius: '2px', border: '1px solid #bfdbfe', display: 'inline-block' }}>
+                                    <span style={{ color: '#0369a1', fontWeight: '600', fontSize: '11px', background: '#f0f9ff', padding: '3px 8px', borderRadius: '4px', border: '1px solid #bae6fd', display: 'inline-block' }}>
                                       ↳ Reports to: {rec.parentRecruiterName || 'Lead Recruiter'}
                                     </span>
                                   ) : subordinates.length > 0 ? (
@@ -609,33 +612,33 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                                       type="button"
                                       onClick={() => toggleExpandRecruiter(rec.id || rec._id)}
                                       style={{
-                                        background: isExpanded ? '#dcfce7' : '#f1f5f9',
-                                        color: isExpanded ? '#15803d' : '#1e3a8a',
-                                        border: `1px solid ${isExpanded ? '#86efac' : '#cbd5e1'}`,
-                                        padding: '2px 8px',
-                                        borderRadius: '2px',
-                                        fontSize: '10.5px',
-                                        fontWeight: 'bold',
+                                        background: isExpanded ? '#ecfdf5' : '#f8fafc',
+                                        color: isExpanded ? '#047857' : '#334155',
+                                        border: `1px solid ${isExpanded ? '#a7f3d0' : '#cbd5e1'}`,
+                                        padding: '3px 10px',
+                                        borderRadius: '4px',
+                                        fontSize: '11.5px',
+                                        fontWeight: '600',
                                         cursor: 'pointer',
                                         display: 'inline-flex',
                                         alignItems: 'center',
-                                        gap: '4px'
+                                        gap: '6px'
                                       }}
                                       title="Click to view employees reporting under this recruiter"
                                     >
                                       <span>👥 {subordinates.length} Subordinate{subordinates.length === 1 ? '' : 's'}</span>
-                                      <span>{isExpanded ? '▲ Hide' : '▼ View'}</span>
+                                      <span style={{ fontSize: '10px' }}>{isExpanded ? '▲' : '▼'}</span>
                                     </button>
                                   ) : (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                                      <span style={{ fontSize: '10.5px', color: '#64748b' }}>Independent Lead</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                      <span style={{ fontSize: '11px', color: '#64748b' }}>Independent Lead</span>
                                       {(rec.role === 'recruiter' || rec.role === 'manager' || rec.role === 'superadmin') && (
                                         <button
                                           type="button"
                                           onClick={() => openAddModal(rec.name)}
                                           style={{
-                                            background: '#eff6ff', color: '#0033cc', border: '1px solid #bfdbfe',
-                                            padding: '1px 6px', borderRadius: '2px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer'
+                                            background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe',
+                                            padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '600', cursor: 'pointer'
                                           }}
                                           title={`Add an employee under ${rec.name}`}
                                         >
@@ -647,23 +650,23 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                                 </td>
 
                                 {/* Company & Ref */}
-                                <td style={{ padding: '6px 10px' }}>
-                                  <div style={{ fontSize: '11px', color: '#0f172a', fontWeight: 'bold' }}>{rec.company || 'SmartHire'}</div>
+                                <td style={{ padding: '10px 14px' }}>
+                                  <div style={{ fontSize: '12px', color: '#0f172a', fontWeight: '600' }}>{rec.company || 'SmartHire'}</div>
                                   {rec.refCode && (
-                                    <span style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '2px', padding: '0 4px', fontSize: '9.5px', color: '#475569', fontFamily: 'monospace' }}>
+                                    <span style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '3px', padding: '1px 5px', fontSize: '10px', color: '#475569', fontFamily: 'monospace' }}>
                                       {rec.refCode}
                                     </span>
                                   )}
                                 </td>
 
                                 {/* Sourced */}
-                                <td style={{ padding: '6px 10px', textAlign: 'center' }}>
-                                  <span style={{ fontWeight: 'bold', color: count > 0 ? '#0033cc' : '#64748b', fontSize: '11.5px' }}>{count}</span>
+                                <td style={{ padding: '10px 14px', textAlign: 'center' }}>
+                                  <span style={{ fontWeight: '700', color: count > 0 ? '#0f172a' : '#94a3b8', fontSize: '12px' }}>{count}</span>
                                 </td>
 
                                 {/* Account Status */}
-                                <td style={{ padding: '6px 10px' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <td style={{ padding: '10px 14px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <label style={{ position: 'relative', display: 'inline-block', width: '28px', height: '16px', margin: 0, cursor: isMaster ? 'not-allowed' : 'pointer' }}>
                                       <input 
                                         type="checkbox" 
@@ -674,7 +677,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                                       />
                                       <span style={{
                                         position: 'absolute', cursor: isMaster ? 'not-allowed' : 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                                        backgroundColor: rec.isActive !== false ? '#4f46e5' : '#cbd5e1',
+                                        backgroundColor: rec.isActive !== false ? '#2563eb' : '#cbd5e1',
                                         transition: '.2s', borderRadius: '16px'
                                       }}>
                                         <span style={{
@@ -683,24 +686,24 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                                         }}></span>
                                       </span>
                                     </label>
-                                    <span style={{ fontSize: '10.5px', fontWeight: 'bold', color: rec.isActive !== false ? '#16a34a' : '#dc2626' }}>
-                                      {rec.isActive !== false ? '🟢 Active' : '🔴 Inactive'}
+                                    <span style={{ fontSize: '11px', fontWeight: '600', color: rec.isActive !== false ? '#16a34a' : '#dc2626' }}>
+                                      {rec.isActive !== false ? 'Active' : 'Inactive'}
                                     </span>
                                   </div>
                                 </td>
 
                                 {/* Last Active */}
-                                <td style={{ padding: '6px 10px', fontSize: '10.5px', color: '#475569' }}>
+                                <td style={{ padding: '10px 14px', fontSize: '11.5px', color: '#64748b' }}>
                                   {formatDate(rec.lastLogin)}
                                 </td>
 
                                 {/* Action Buttons */}
-                                <td style={{ padding: '6px 10px', textAlign: 'center' }}>
-                                  <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center' }}>
+                                <td style={{ padding: '10px 14px', textAlign: 'center' }}>
+                                  <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', alignItems: 'center' }}>
                                     {(rec.role === 'recruiter' || rec.role === 'manager') && (
                                       <button 
                                         type="button"
-                                        style={{ background: '#eff6ff', color: '#0284c7', border: '1px solid #bfdbfe', padding: '2px 6px', fontSize: '10px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer' }}
+                                        style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', padding: '3px 8px', fontSize: '11px', fontWeight: '600', borderRadius: '4px', cursor: 'pointer' }}
                                         onClick={() => openAddModal(rec.name)}
                                         title={`Add new employee under ${rec.name}`}
                                       >
@@ -709,7 +712,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                                     )}
                                     <button 
                                       type="button"
-                                      style={{ background: '#f1f5f9', color: '#0033cc', border: '1px solid #cbd5e1', padding: '2px 7px', fontSize: '10.5px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer' }}
+                                      style={{ background: '#ffffff', color: '#334155', border: '1px solid #cbd5e1', padding: '3px 9px', fontSize: '11.5px', fontWeight: '600', borderRadius: '4px', cursor: 'pointer' }}
                                       onClick={() => openEditModal(rec)}
                                     >
                                       Edit
@@ -717,11 +720,11 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                                     {!isMaster && (
                                       <button 
                                         type="button"
-                                        style={{ background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5', padding: '2px 7px', fontSize: '10.5px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer' }}
+                                        style={{ background: '#fff1f2', color: '#e11d48', border: '1px solid #fecdd3', padding: '3px 8px', fontSize: '11.5px', fontWeight: '600', borderRadius: '4px', cursor: 'pointer' }}
                                         onClick={() => handleDeleteRecruiter(rec.id || rec._id, rec.name)}
                                         title="Permanently delete user"
                                       >
-                                        🗑️ Delete
+                                        Delete
                                       </button>
                                     )}
                                   </div>
@@ -730,13 +733,13 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
 
                               {isExpanded && (
                                 <tr style={{ background: '#f8fafc' }}>
-                                  <td colSpan="8" style={{ padding: '10px 14px', borderBottom: '1px solid #cbd5e1' }}>
-                                    <div style={{ background: '#ffffff', border: '1px solid #86efac', borderRadius: '4px', padding: '10px 12px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+                                  <td colSpan="8" style={{ padding: '12px 18px', borderBottom: '1px solid #e2e8f0' }}>
+                                    <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '12px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
                                       
-                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px' }}>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                           <span style={{ fontSize: '14px' }}>👥</span>
-                                          <strong style={{ color: '#166534', fontSize: '11.5px' }}>
+                                          <strong style={{ color: '#0f172a', fontSize: '12px' }}>
                                             Direct Reporting Sub-Team for {rec.name} ({subordinates.length} Employee{subordinates.length === 1 ? '' : 's'})
                                           </strong>
                                         </div>
@@ -744,8 +747,8 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                                           type="button"
                                           onClick={() => openAddModal(rec.name)}
                                           style={{
-                                            background: '#16a34a', color: '#ffffff', border: 'none',
-                                            padding: '2px 10px', fontSize: '10.5px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer'
+                                            background: '#2563eb', color: '#ffffff', border: 'none',
+                                            padding: '4px 10px', fontSize: '11px', fontWeight: '600', borderRadius: '4px', cursor: 'pointer'
                                           }}
                                         >
                                           + Add Employee under {rec.name}
@@ -760,45 +763,45 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                                               key={subEmp.id || subEmp._id || index}
                                               style={{
                                                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                                background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '2px', padding: '6px 10px', fontSize: '11px'
+                                                background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '8px 12px', fontSize: '11.5px'
                                               }}
                                             >
                                               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                <span style={{ fontWeight: 'bold', color: '#15803d', width: '16px', fontSize: '11px' }}>
+                                                <span style={{ fontWeight: '700', color: '#64748b', width: '18px', fontSize: '11px' }}>
                                                   {index + 1}.
                                                 </span>
                                                 <div>
-                                                  <strong style={{ color: '#0033cc', fontSize: '11.5px' }}>{subEmp.name}</strong>
-                                                  <span style={{ color: '#475569', fontSize: '10px', fontFamily: 'monospace', marginLeft: '6px' }}>({subEmp.email})</span>
+                                                  <strong style={{ color: '#0f172a', fontSize: '12px' }}>{subEmp.name}</strong>
+                                                  <span style={{ color: '#64748b', fontSize: '11px', marginLeft: '6px' }}>({subEmp.email})</span>
                                                 </div>
-                                                <span style={{ background: '#dcfce7', color: '#166534', padding: '1px 6px', borderRadius: '2px', fontSize: '10px', fontWeight: 'bold' }}>
+                                                <span style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', padding: '2px 7px', borderRadius: '4px', fontSize: '10.5px', fontWeight: '600' }}>
                                                   👤 Sourcing Employee
                                                 </span>
-                                                <span style={{ color: subEmp.isActive !== false ? '#16a34a' : '#dc2626', fontSize: '10.5px', fontWeight: 'bold' }}>
-                                                  {subEmp.isActive !== false ? '🟢 Active' : '🔴 Inactive'}
+                                                <span style={{ color: subEmp.isActive !== false ? '#16a34a' : '#dc2626', fontSize: '11px', fontWeight: '600' }}>
+                                                  {subEmp.isActive !== false ? '● Active' : '● Inactive'}
                                                 </span>
-                                                <span style={{ fontSize: '10.5px', color: '#475569' }}>
-                                                  Sourced: <strong style={{ color: '#15803d' }}>{subSourced} Candidates</strong>
+                                                <span style={{ fontSize: '11px', color: '#64748b' }}>
+                                                  Sourced: <strong style={{ color: '#0f172a' }}>{subSourced} Candidates</strong>
                                                 </span>
                                               </div>
 
-                                              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                                                <span style={{ fontSize: '10px', color: '#64748b', marginRight: '6px' }}>
+                                              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                                <span style={{ fontSize: '11px', color: '#94a3b8', marginRight: '6px' }}>
                                                   Last login: {formatDate(subEmp.lastLogin)}
                                                 </span>
                                                 <button
                                                   type="button"
                                                   onClick={() => openEditModal(subEmp)}
-                                                  style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '1px 6px', fontSize: '10.5px', borderRadius: '2px', cursor: 'pointer', color: '#0033cc', fontWeight: 'bold' }}
+                                                  style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '3px 8px', fontSize: '11px', borderRadius: '4px', cursor: 'pointer', color: '#334155', fontWeight: '600' }}
                                                 >
                                                   Edit
                                                 </button>
                                                 <button
                                                   type="button"
                                                   onClick={() => handleDeleteRecruiter(subEmp.id || subEmp._id, subEmp.name)}
-                                                  style={{ background: '#fee2e2', border: '1px solid #fca5a5', padding: '1px 6px', fontSize: '10.5px', borderRadius: '2px', cursor: 'pointer', color: '#dc2626', fontWeight: 'bold' }}
+                                                  style={{ background: '#fff1f2', border: '1px solid #fecdd3', padding: '3px 8px', fontSize: '11px', borderRadius: '4px', cursor: 'pointer', color: '#e11d48', fontWeight: '600' }}
                                                 >
-                                                  🗑️
+                                                  Delete
                                                 </button>
                                               </div>
                                             </div>
@@ -823,47 +826,54 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
         )}
 
         {subTab === 'candidates' && (
-          <div className="card shadow-sm" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ overflowX: 'auto', border: '1px solid #7f9db9', borderRadius: 0 }}>
-              <table className="users-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', fontFamily: 'Arial, Helvetica, sans-serif', textAlign: 'left', background: '#ffffff' }}>
+          <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left', background: '#ffffff', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
                 <thead>
-                  <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
-                    <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', borderRight: '1px solid rgba(255,255,255,0.2)' }}>CANDIDATE NAME</th>
-                    <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', borderRight: '1px solid rgba(255,255,255,0.2)' }}>ROLE / SKILL</th>
-                    <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', borderRight: '1px solid rgba(255,255,255,0.2)' }}>EMAIL ADDRESS</th>
-                    <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', borderRight: '1px solid rgba(255,255,255,0.2)' }}>SOURCED BY</th>
-                    <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', textAlign: 'center', borderRight: '1px solid rgba(255,255,255,0.2)' }}>SCREENING TRUST</th>
-                    <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', borderRight: '1px solid rgba(255,255,255,0.2)' }}>STATUS</th>
-                    <th style={{ padding: '6px 10px', fontWeight: 'bold', fontSize: '11px', textAlign: 'center', width: '100px' }}>ACTIONS</th>
+                  <tr style={{ background: '#f8fafc', color: '#475569', borderBottom: '1px solid #e2e8f0' }}>
+                    <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CANDIDATE NAME</th>
+                    <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>ROLE / SKILL</th>
+                    <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>EMAIL ADDRESS</th>
+                    <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>SOURCED BY</th>
+                    <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.05em' }}>SCREENING TRUST</th>
+                    <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>STATUS</th>
+                    <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textAlign: 'center', width: '110px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>ACTIONS</th>
                   </tr>
                 </thead>
                 <tbody>
                   {allCandidates && allCandidates.length > 0 ? (
                     allCandidates.map(cand => (
-                      <tr key={cand.id || cand._id} style={{ borderBottom: '1px solid #e2e8f0', background: '#ffffff' }}>
-                        <td style={{ padding: '6px 10px' }}>
-                          <strong style={{ color: '#0033cc', fontSize: '11.5px' }}>{cand.name}</strong>
+                      <tr
+                        key={cand.id || cand._id}
+                        style={{ borderBottom: '1px solid #f1f5f9', background: '#ffffff', transition: 'background-color 0.12s' }}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = '#ffffff'}
+                      >
+                        <td style={{ padding: '10px 14px' }}>
+                          <strong style={{ color: '#0f172a', fontSize: '12.5px', fontWeight: '600' }}>{cand.name}</strong>
                         </td>
-                        <td style={{ padding: '6px 10px', color: '#0f172a' }}>{cand.role || 'Software Consultant'}</td>
-                        <td style={{ padding: '6px 10px', color: '#475569', fontFamily: 'monospace' }}>{cand.email}</td>
-                        <td style={{ padding: '6px 10px' }}>
-                          <span style={{ background: '#eff6ff', color: '#1e40af', padding: '2px 6px', borderRadius: '2px', fontSize: '10.5px', fontWeight: 'bold', border: '1px solid #bfdbfe' }}>
+                        <td style={{ padding: '10px 14px', color: '#475569' }}>{cand.role || 'Software Consultant'}</td>
+                        <td style={{ padding: '10px 14px', color: '#64748b', fontSize: '11.5px' }}>{cand.email}</td>
+                        <td style={{ padding: '10px 14px' }}>
+                          <span style={{ background: '#eff6ff', color: '#1d4ed8', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '600', border: '1px solid #bfdbfe' }}>
                             {cand.referredByRecruiterName || cand.recruiter || 'Direct'}
                           </span>
                         </td>
-                        <td style={{ padding: '6px 10px', textAlign: 'center' }}>
-                          <strong style={{ color: '#16a34a', fontSize: '11.5px' }}>{cand.trustScore || '88'}%</strong>
+                        <td style={{ padding: '10px 14px', textAlign: 'center' }}>
+                          <span style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '700' }}>
+                            {cand.trustScore || '88'}%
+                          </span>
                         </td>
-                        <td style={{ padding: '6px 10px' }}>
-                          <span className={`pill-status status-${(cand.status || 'new').toLowerCase().replace(' ', '-')}`} style={{ fontSize: '10.5px', padding: '2px 6px', borderRadius: '2px' }}>
+                        <td style={{ padding: '10px 14px' }}>
+                          <span style={{ background: '#f8fafc', color: '#334155', border: '1px solid #e2e8f0', fontSize: '11px', padding: '3px 8px', borderRadius: '4px', fontWeight: '600' }}>
                             {cand.status || 'Screened'}
                           </span>
                         </td>
-                        <td style={{ padding: '6px 10px', textAlign: 'center' }}>
+                        <td style={{ padding: '10px 14px', textAlign: 'center' }}>
                           <button 
                             type="button"
                             onClick={() => setSelectedCandidate(cand)}
-                            style={{ background: '#f1f5f9', color: '#0033cc', border: '1px solid #cbd5e1', padding: '2px 8px', fontSize: '10.5px', fontWeight: 'bold', borderRadius: '2px', cursor: 'pointer' }}
+                            style={{ background: '#ffffff', color: '#334155', border: '1px solid #cbd5e1', padding: '3px 9px', fontSize: '11.5px', fontWeight: '600', borderRadius: '4px', cursor: 'pointer' }}
                           >
                             Details
                           </button>
@@ -872,7 +882,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="7" style={{ textAlign: 'center', padding: '40px 0', color: 'var(--ink-soft)' }}>
+                      <td colSpan="7" style={{ textAlign: 'center', padding: '40px 0', color: '#64748b' }}>
                         No candidates have applied yet.
                       </td>
                     </tr>
