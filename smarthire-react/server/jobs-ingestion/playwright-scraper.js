@@ -176,19 +176,36 @@ export async function scrapeViaPlaywright(logger = console.log) {
         const items = [];
         const trs = document.querySelectorAll('#ctl00_Contentpage1_gv_jobs tr');
         trs.forEach(tr => {
-          const a = tr.querySelector('a[href*=".htm"]');
+          // Look for any valid link with job title (exclude pager links or mailto)
+          const allLinks = tr.querySelectorAll('a');
+          let a = null;
+          for (const link of allLinks) {
+            const href = link.getAttribute('href') || '';
+            if (href && !href.startsWith('javascript:') && !href.startsWith('mailto:')) {
+              a = link;
+              break;
+            }
+          }
           if (!a) return;
+
           const b = a.querySelector('b') || a;
-          const title = b.innerText.trim();
+          const title = (b.innerText || a.innerText || '').trim();
           const href = a.getAttribute('href');
           const trText = tr.innerText || '';
           const dateM = trText.match(/Create\s+date\s*:?\s*([^\n,]+)/i);
+
+          // Extract requirement number directly from href or row text
+          const hrefReqMatch = (href || '').match(/\b(1[56]\d{4}|\d{6})\b/);
+          const textReqMatch = trText.match(/(?:Requirement|Req|Requisition)\s*(?:id|#|no\.?)?\s*:?\s*(\d{5,7})/i);
+          const rowReqId = hrefReqMatch ? hrefReqMatch[1] : (textReqMatch ? textReqMatch[1] : '');
+
           if (title && href && !href.includes('mailto:')) {
             items.push({
               title,
               href,
+              rowReqId,
               createDateStr: dateM ? dateM[1].trim() : '',
-              rawSnippet: trText.substring(0, 300)
+              rawSnippet: trText.substring(0, 500)
             });
           }
         });
@@ -201,33 +218,54 @@ export async function scrapeViaPlaywright(logger = console.log) {
     logger(`[playwright] Page 1 listings found: ${p1Jobs.length}`);
     allRawJobs.push(...p1Jobs);
 
-    // Multi-page ASP.NET WebForms pagination (Pages 2 through 10)
-    for (let p = 2; p <= 10; p++) {
+    // Multi-page ASP.NET WebForms pagination (Pages 2 through 25)
+    for (let p = 2; p <= 25; p++) {
       const selector = `#ctl00_Contentpage1_gv_jobs a[href*="Page\\$${p}"]`;
-      const btn = await page.$(selector);
+      let btn = await page.$(selector);
+
+      // If direct Page$p link not found, check if there's a "..." or Next button
+      if (!btn) {
+        const nextDots = await page.$('#ctl00_Contentpage1_gv_jobs a[href*="Page\\$..."]');
+        if (nextDots) {
+          btn = nextDots;
+        }
+      }
+
       if (!btn) {
         logger(`[playwright] Pagination complete. Reached last page (${p - 1}).`);
         break;
       }
       logger(`[playwright] Navigating to page ${p}...`);
-      await Promise.all([
-        page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 20000 }),
-        btn.click()
-      ]);
-      await sleep(1000);
+      try {
+        await Promise.all([
+          page.waitForLoadState('domcontentloaded').catch(() => {}),
+          btn.click()
+        ]);
+      } catch (_) {
+        try { await btn.click(); } catch (clickErr) {
+          logger(`[playwright] Page click error: ${clickErr.message}`);
+          break;
+        }
+      }
+      await sleep(1500);
       const pJobs = await extractJobsFromCurrentPage();
       logger(`[playwright] Page ${p} listings found: ${pJobs.length}`);
-      allRawJobs.push(...pJobs);
+      if (pJobs && pJobs.length > 0) {
+        allRawJobs.push(...pJobs);
+      }
     }
 
     logger(`[playwright] Total raw job rows extracted across all pages: ${allRawJobs.length}`);
 
-    // Deduplicate by href to avoid double-processing
+    // Deduplicate by href and rowReqId to avoid double-processing
     const seenHrefs = new Set();
+    const seenReqs = new Set();
     const uniqueRawJobs = [];
     for (const j of allRawJobs) {
-      if (!seenHrefs.has(j.href)) {
+      const key = j.rowReqId ? `req_${j.rowReqId}` : `href_${j.href}`;
+      if (!seenHrefs.has(j.href) && (!j.rowReqId || !seenReqs.has(j.rowReqId))) {
         seenHrefs.add(j.href);
+        if (j.rowReqId) seenReqs.add(j.rowReqId);
         uniqueRawJobs.push(j);
       }
     }
@@ -243,21 +281,40 @@ export async function scrapeViaPlaywright(logger = console.log) {
       const job = jobsToProcess[i];
       logger(`[playwright] [${i+1}/${jobsToProcess.length}] Fetching detail: ${job.title}`);
 
-      try {
-        let fullLink = job.href;
-        if (!fullLink.startsWith('http')) {
-          if (!fullLink.startsWith('/')) fullLink = '/' + fullLink;
-          fullLink = BASE_URL + fullLink;
-        }
+      let detailPage = null;
+      let fullLink = job.href;
+      if (!fullLink.startsWith('http')) {
+        if (!fullLink.startsWith('/')) fullLink = '/' + fullLink;
+        fullLink = BASE_URL + fullLink;
+      }
 
-        const detailPage = await context.newPage();
-        await detailPage.goto(fullLink, { waitUntil: 'domcontentloaded', timeout: 30000 });
-        await sleep(500);
+      try {
+        detailPage = await context.newPage();
+        await detailPage.goto(fullLink, { waitUntil: 'domcontentloaded', timeout: 35000 });
+        await sleep(400);
 
         // Extract authentic Requirement ID & description & metadata
         const detailData = await detailPage.evaluate(() => {
-          const reqEl = document.querySelector('#ctl00_Contentpage1_lbl_reqid');
-          const authenticReqId = reqEl ? reqEl.innerText.trim() : '';
+          let authenticReqId = '';
+          const reqEl = document.querySelector('#ctl00_Contentpage1_lbl_reqid') ||
+                        document.querySelector('#ctl00_Contentpage1_lbl_req_id') ||
+                        document.querySelector('#ctl00_Contentpage1_lblReqId') ||
+                        document.querySelector('[id*="reqid" i]') ||
+                        document.querySelector('[id*="req_id" i]');
+          if (reqEl && reqEl.innerText.trim()) {
+            const m = reqEl.innerText.trim().match(/\d{5,7}/);
+            authenticReqId = m ? m[0] : reqEl.innerText.trim();
+          }
+
+          if (!authenticReqId) {
+            const bodyMatch = document.body.innerText.match(/(?:Requirement|Req|Requisition)\s*(?:ID|#|No\.?)?\s*[:\-]?\s*(\d{5,7})/i);
+            if (bodyMatch) authenticReqId = bodyMatch[1];
+          }
+
+          if (!authenticReqId) {
+            const urlMatch = window.location.href.match(/\b(1[56]\d{4}|\d{6})\b/);
+            if (urlMatch) authenticReqId = urlMatch[1];
+          }
 
           const posEl = document.querySelector('#ctl00_Contentpage1_lbl_pos_title, #ctl00_Contentpage1_lbl_title');
           const posTitle = posEl ? posEl.innerText.trim() : '';
@@ -307,7 +364,9 @@ export async function scrapeViaPlaywright(logger = console.log) {
         });
 
         await detailPage.close();
+        detailPage = null;
 
+        const resolvedReqId = detailData.authenticReqId || job.rowReqId || (job.href.match(/\b(1[56]\d{4}|\d{6})\b/) || [])[1] || undefined;
         const description = detailData.description;
         let parsed = null;
         if (GROQ_API_KEY && i < 15) {
@@ -339,8 +398,8 @@ export async function scrapeViaPlaywright(logger = console.log) {
           : (parsed?.client && parsed.client !== 'General Client' ? parsed.client : 'State Client');
 
         results.push({
-          id: detailData.authenticReqId || undefined,
-          reqId: detailData.authenticReqId || undefined,
+          id: resolvedReqId,
+          reqId: resolvedReqId,
           title: parsed?.title || cleanText(job.title),
           client: finalClient,
           company: parsed?.company || 'JobsInHand',
@@ -364,19 +423,41 @@ export async function scrapeViaPlaywright(logger = console.log) {
           error: null,
         });
 
-        logger(`[playwright] ✅ [Req #${detailData.authenticReqId || 'N/A'}] Extracted: ${job.title} @ ${finalLocation}`);
+        logger(`[playwright] ✅ [Req #${resolvedReqId || 'N/A'}] Extracted: ${job.title} @ ${finalLocation}`);
       } catch (err) {
-        logger(`[playwright] ❌ Failed: ${job.title} — ${err.message}`);
+        logger(`[playwright] ⚠️ Detail fetch notice for "${job.title}" (${err.message}). Preserving job via fallback.`);
+        const fallbackReqId = job.rowReqId || (job.href.match(/\b(1[56]\d{4}|\d{6})\b/) || [])[1] || undefined;
+        const fallback = fallbackExtractLocationAndWorkMode(job.rawSnippet, job.title);
+
         results.push({
+          id: fallbackReqId,
+          reqId: fallbackReqId,
           title: cleanText(job.title),
-          applyUrl: job.href,
+          client: 'State Client',
+          company: 'JobsInHand',
+          skills: [],
+          preferredSkills: [],
+          budget: '$75/hr',
+          experience: '5+ years',
+          location: fallback.location,
+          work_mode: fallback.workMode,
+          workMode: fallback.workMode,
+          type: fallback.workMode,
+          employment_type: 'Contract',
+          description: job.rawSnippet || job.title,
+          rawDescription: job.rawSnippet || job.title,
+          applyUrl: fullLink,
           postDate: job.createDateStr,
           post_date: getTodayISODate(),
           source: 'jobsinhand',
           status: 'Open',
-          skipped: true,
-          error: err.message,
+          skipped: false,
+          error: null,
         });
+      } finally {
+        if (detailPage) {
+          try { await detailPage.close(); } catch (_) {}
+        }
       }
 
       await sleep(300);

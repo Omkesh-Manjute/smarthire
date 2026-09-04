@@ -555,7 +555,10 @@ const KNOWN_TITLE_MAP = [
 ];
 
 function resolveReqId(rawId = '', job = {}) {
-  const strId = String(rawId || job?.reqId || job?.id || '').replace('J-', '').trim();
+  const strId = String(rawId || job?.reqId || job?.id || '').replace('J-', '').replace('REQ-', '').trim();
+  if (/^1[56]\d{4}$/.test(strId) || (/^\d{6}$/.test(strId) && !strId.startsWith('178'))) {
+    return strId;
+  }
   const idMap = {
     '84392': '159005',
     '84391': '159000',
@@ -628,7 +631,7 @@ async function loadJobsFromDisk() {
             const cleanT = cleanJobTitleWithPositionNumber(j.title, j);
             const cleanI = resolveReqId(j.id, j);
             const pNum = j.positionNumber || extractPositionNumber(cleanT, j.description);
-            const dedupeKey = pNum ? `pos_${pNum}` : `req_${cleanI}`;
+            const dedupeKey = cleanI ? `req_${cleanI}` : (pNum ? `pos_${pNum}` : `title_${cleanT}`);
             if (!map.has(dedupeKey)) {
               map.set(dedupeKey, { ...j, id: cleanI, reqId: cleanI, title: cleanT, positionNumber: pNum || '' });
             }
@@ -643,7 +646,7 @@ async function loadJobsFromDisk() {
             const cleanT = cleanJobTitleWithPositionNumber(j.title, j);
             const cleanI = resolveReqId(j.id, j);
             const pNum = j.positionNumber || extractPositionNumber(cleanT, j.description);
-            const dedupeKey = pNum ? `pos_${pNum}` : `req_${cleanI}`;
+            const dedupeKey = cleanI ? `req_${cleanI}` : (pNum ? `pos_${pNum}` : `title_${cleanT}`);
             if (!map.has(dedupeKey)) {
               map.set(dedupeKey, { ...j, id: cleanI, reqId: cleanI, title: cleanT, positionNumber: pNum || '' });
             }
@@ -662,7 +665,7 @@ async function loadJobsFromDisk() {
           const cleanT = cleanJobTitleWithPositionNumber(j.title, j);
           const cleanI = resolveReqId(j.id, j);
           const pNum = j.positionNumber || extractPositionNumber(cleanT, j.description);
-          const dedupeKey = pNum ? `pos_${pNum}` : `req_${cleanI}`;
+          const dedupeKey = cleanI ? `req_${cleanI}` : (pNum ? `pos_${pNum}` : `title_${cleanT}`);
           if (!map.has(dedupeKey)) {
             map.set(dedupeKey, { ...j, id: cleanI, reqId: cleanI, title: cleanT, positionNumber: pNum || '' });
           }
@@ -4067,23 +4070,23 @@ app.get('/api/jobs/ingestion/run-now', async (_req, res) => {
   }
 });
 
-// ─── 10-Minute Automatic Background Ingestion Scheduler ──────────────────────
-const INGESTION_INTERVAL_MS = 10 * 60 * 1000; // 10 Minutes
+// ─── 6-Minute Automatic Background Ingestion Scheduler ──────────────────────
+const INGESTION_INTERVAL_MS = 6 * 60 * 1000; // 6 Minutes
 setInterval(async () => {
   if (ingestionRunning) {
-    console.log('⏰ [10-Min Cron] Skipping: Ingestion is currently running.');
+    console.log('⏰ [6-Min Cron] Skipping: Ingestion is currently running.');
     return;
   }
-  console.log('⏰ [10-Min Cron] Triggering automatic 10-minute job scraper ingestion...');
+  console.log('⏰ [6-Min Cron] Triggering automatic 6-minute job scraper ingestion...');
   ingestionRunning = true;
   try {
     const { runIngestion } = await import('./jobs-ingestion/run-ingestion.js');
     const result = await runIngestion();
     await loadJobsFromDisk();
     await loadReportsFromDisk();
-    console.log(`✅ [10-Min Cron] Scraper run complete. Status: ${result.status}, Added: ${result.jobs_added}`);
+    console.log(`✅ [6-Min Cron] Scraper run complete. Status: ${result.status}, Added: ${result.jobs_added}`);
   } catch (err) {
-    console.error('❌ [10-Min Cron] Scraper run error:', err.message);
+    console.error('❌ [6-Min Cron] Scraper run error:', err.message);
   } finally {
     ingestionRunning = false;
   }

@@ -23,7 +23,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const BASE_URL = 'https://www.jobsinhand.com';
 const SEARCH_URL = `${BASE_URL}/search_jobs.aspx`;
-const MAX_JOBS = 30;
+const MAX_JOBS = 150;
 const REQUEST_DELAY_MS = 800; // Be polite between requests
 
 // ─── Utilities ───────────────────────────────────────────────────────────────
@@ -333,7 +333,12 @@ function parseJobListingPage(html) {
       link = BASE_URL + link;
     }
 
-    jobs.push({ title, link, createDateStr });
+    // Extract requirement ID from link or row HTML
+    const hrefReqMatch = (link || '').match(/\b(1[56]\d{4}|\d{6})\b/);
+    const textReqMatch = rowHtml.match(/(?:Requirement|Req|Requisition)\s*(?:id|#|no\.?)?\s*:?\s*(\d{5,7})/i);
+    const rowReqId = hrefReqMatch ? hrefReqMatch[1] : (textReqMatch ? textReqMatch[1] : '');
+
+    jobs.push({ title, link, createDateStr, rowReqId });
   }
 
   // Strategy 2: fallback — look for spans with Label1 pattern (from test_scraper.js)
@@ -355,7 +360,11 @@ function parseJobListingPage(html) {
         link = BASE_URL + link;
       }
 
-      jobs.push({ title, link, createDateStr });
+      const hrefReqMatch = (link || '').match(/\b(1[56]\d{4}|\d{6})\b/);
+      const textReqMatch = spanHtml.match(/(?:Requirement|Req|Requisition)\s*(?:id|#|no\.?)?\s*:?\s*(\d{5,7})/i);
+      const rowReqId = hrefReqMatch ? hrefReqMatch[1] : (textReqMatch ? textReqMatch[1] : '');
+
+      jobs.push({ title, link, createDateStr, rowReqId });
     }
   }
 
@@ -433,21 +442,18 @@ export async function scrapeViaHttp(logger = console.log) {
   let rawJobs = parseJobListingPage(html);
   logger(`[scraper] Found ${rawJobs.length} total job entries on the listing page.`);
 
-  // Filter 1: Remove "Rebid" jobs
-  const beforeRebid = rawJobs.length;
-  rawJobs = rawJobs.filter(j => !/rebid/i.test(j.title));
-  const rebidCount = beforeRebid - rawJobs.length;
-  logger(`[scraper] Filtered ${rebidCount} Rebid listings. Remaining: ${rawJobs.length}`);
+  // Filter 1: Preserve all active jobs (do not drop valid rebids)
+  const rebidCount = 0;
 
   // Filter 2: Only today's jobs (fallback to all latest jobs if today count is 0)
   const beforeDate = rawJobs.length;
   const todayJobs = rawJobs.filter(j => isToday(j.createDateStr));
   const notTodayCount = beforeDate - todayJobs.length;
-  logger(`[scraper] Filtered ${notTodayCount} jobs not created today. Today's jobs: ${todayJobs.length} (out of ${rawJobs.length} active)`);
+  logger(`[scraper] Today's jobs: ${todayJobs.length} (out of ${rawJobs.length} total active)`);
 
   const eligibleJobs = todayJobs.length > 0 ? todayJobs : rawJobs;
   if (todayJobs.length === 0) {
-    logger(`[scraper] ℹ️  Using latest ${rawJobs.length} active jobs from JobsInHand.`);
+    logger(`[scraper] ℹ️  Using all ${rawJobs.length} active jobs from JobsInHand.`);
   }
 
   // Limit to MAX_JOBS
@@ -467,15 +473,21 @@ export async function scrapeViaHttp(logger = console.log) {
 
       if (isBlockedResponse(detailHtml, detailStatus)) {
         logger(`[scraper] ⚠️  Detail page blocked for: ${job.title}`);
-        results.push({ ...job, error: 'Detail page blocked', skipped: true });
+        results.push({ ...job, id: job.rowReqId || undefined, reqId: job.rowReqId || undefined, error: 'Detail page blocked', skipped: true });
         continue;
       }
 
       const rawDescription = parseJobDetailPage(detailHtml);
 
+      // Extract authentic Req ID from detail HTML or rowReqId
+      const reqMatch = detailHtml.match(/id=["']ctl00_Contentpage1_lbl_reqid["'][^>]*>([^<]+)<\/span>/i) ||
+                       detailHtml.match(/id=["']ctl00_Contentpage1_lbl_req_id["'][^>]*>([^<]+)<\/span>/i) ||
+                       detailHtml.match(/(?:Requirement|Req|Requisition)\s*(?:ID|#|No\.?)?\s*[:\-]?\s*(\d{6})/i);
+      const authenticReqId = reqMatch ? cleanHtml(reqMatch[1]).trim() : (job.rowReqId || undefined);
+
       if (!rawDescription || rawDescription.length < 50) {
         logger(`[scraper] ⚠️  Could not extract description for: ${job.title}`);
-        results.push({ ...job, rawDescription: '', skipped: true, error: 'Empty description' });
+        results.push({ ...job, id: authenticReqId, reqId: authenticReqId, rawDescription: '', skipped: false });
         continue;
       }
 
@@ -488,6 +500,8 @@ export async function scrapeViaHttp(logger = console.log) {
       const finalEmpType = parsed.employment_type || (['Contract','Full-time','C2H','C2C','W2'].includes(parsed.type) ? parsed.type : 'Contract');
 
       results.push({
+        id: authenticReqId,
+        reqId: authenticReqId,
         title: parsed.title || job.title,
         client: parsed.client || 'General Client',
         company: parsed.company || '',
@@ -515,13 +529,15 @@ export async function scrapeViaHttp(logger = console.log) {
     } catch (err) {
       logger(`[scraper] ❌ Failed to process "${job.title}": ${err.message}`);
       results.push({
+        id: job.rowReqId || undefined,
+        reqId: job.rowReqId || undefined,
         title: job.title,
         applyUrl: job.link,
         postDate: job.createDateStr,
         post_date: todayISODate(),
         source: 'jobsinhand',
         status: 'Active',
-        skipped: true,
+        skipped: false,
         error: err.message,
       });
     }

@@ -199,18 +199,27 @@ async function saveReportsDb(reports) {
  * Match key: title (normalised) + client + post_date
  */
 function isDuplicate(newJob, existingJobs) {
-  const newPos = extractPositionNumber(newJob.title, newJob.description || newJob.rawDescription);
   const newResolvedId = resolveReqId(newJob.id || newJob.reqId || newJob.title, newJob);
+  const newPos = extractPositionNumber(newJob.title, newJob.description || newJob.rawDescription);
 
   return existingJobs.some(existing => {
-    const ePos = existing.positionNumber || extractPositionNumber(existing.title, existing.description);
     const eResolvedId = resolveReqId(existing.id || existing.reqId || existing.title, existing);
+    const ePos = existing.positionNumber || extractPositionNumber(existing.title, existing.description);
 
-    // If both have resolved authentic req IDs and they match
-    if (newResolvedId && eResolvedId && newResolvedId === eResolvedId && /^15[89]\d{3}$/.test(newResolvedId)) return true;
+    // Rule 1: If both have authentic 6-digit Req IDs (15xxxx, 16xxxx, or \d{6})
+    const isNew6Digit = /^\d{6}$/.test(newResolvedId);
+    const isE6Digit = /^\d{6}$/.test(eResolvedId);
 
-    // If both have valid non-empty position numbers and they match
-    if (newPos && ePos && newPos === ePos) return true;
+    if (isNew6Digit && isE6Digit) {
+      // If authentic Req IDs match, it's a duplicate. If they differ, they are DISTINCT requisitions!
+      return newResolvedId === eResolvedId;
+    }
+
+    // Rule 2: If both have resolved IDs and they match
+    if (newResolvedId && eResolvedId && newResolvedId === eResolvedId) return true;
+
+    // Rule 3: Only check position numbers as fallback if neither has an authentic 6-digit Req ID
+    if (!isNew6Digit && !isE6Digit && newPos && ePos && newPos === ePos) return true;
 
     return false;
   });

@@ -27,12 +27,12 @@ echo.
 REM Delete existing task if it exists (suppress error if not found)
 schtasks /delete /tn "%TASK_NAME%" /f >nul 2>&1
 
-REM Create new scheduled task (runs every 15 minutes)
+REM Create new scheduled task (runs every 6 minutes)
 schtasks /create ^
   /tn "%TASK_NAME%" ^
   /tr "\"%NODE_EXE%\" \"%SCRIPT_PATH%\"" ^
   /sc MINUTE ^
-  /mo 15 ^
+  /mo 6 ^
   /rl HIGHEST ^
   /f
 
@@ -40,7 +40,7 @@ IF %ERRORLEVEL% EQU 0 (
   echo.
   echo ✅ SUCCESS! Task scheduled successfully.
   echo.
-  echo  The ingestion job will run automatically every 15 minutes.
+  echo  The ingestion job will run automatically every 6 minutes.
   echo  To verify: schtasks /query /tn "%TASK_NAME%"
   echo  To verify: schtasks /query /tn "%TASK_NAME%"
   echo  To run now: schtasks /run /tn "%TASK_NAME%"

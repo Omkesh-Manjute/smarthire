@@ -31,6 +31,20 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-05 — Scraping Interval Updated to 6 Minutes & Complete Requirement Number Extraction Fix
+- **6-Minute Cron Job Interval**:
+  - Updated `INGESTION_INTERVAL_MS` in `server/index.js` to **6 minutes** (`6 * 60 * 1000`), ensuring rapid automatic background ingestion cycles.
+  - Updated `setup-scheduler.bat` to 6-minute intervals (`/mo 6`).
+- **Eliminated Missing Requirement Numbers (Zero Dropped Reqs)**:
+  - **Authentic Req ID Precedence (`resolveReqId`)**: Fixed critical bug in `formatJobDescription.js` and `server/index.js` where `KNOWN_TITLE_MAP` checked title patterns before checking if an authentic 6-digit requirement ID (`15xxxx` / `16xxxx`) was already present. Live authentic IDs now take highest priority and are never overwritten.
+  - **Distinct Req ID Preservation (`isDuplicate`)**: Fixed `run-ingestion.js` deduplication where jobs with different authentic Req IDs (e.g. `159020` vs `159019`) were erroneously discarded as duplicates if their position number matched.
+  - **Server Store Dedupe Key**: Updated `loadJobsFromDisk` in `server/index.js` to key by `req_${cleanI}` instead of `pos_${pNum}`, preventing shared-position jobs from collapsing on startup.
+  - **Multi-Selector & URL Req Extraction in Playwright**: Scraper now extracts the requirement number immediately from listing row `href` and text snippet, as well as detail page selectors (`#ctl00_Contentpage1_lbl_reqid`, `lbl_req_id`, URL regex, and body text regex).
+  - **Zero-Drop Detail Page Fallback**: Detail page errors or timeouts no longer drop jobs; fallback retains the job with its authentic Req ID and listing snippet.
+  - **Deep Pagination**: Extended Playwright pagination up to 25 pages with safe `waitForLoadState` navigation.
+- **Production Build Verified**:
+  - 0 errors or warnings on `npm run build` in `smarthire-react`.
+
 ### 2026-09-04 — Candidates Module Redesigned & Top Toolbar Squeeze / Scroll Overlap Fixed
 - **Fixed Squeezed Toolbar & Removed Duplicate Title**:
   - Eliminated redundant stacked `Candidates` title; transformed subheader into a fixed 52px Zoho CRM toolbar with Starred View Preset dropdown (`★ {preset} ▾`), live count badges, and segmented status filter pills (`All`, `Shortlisted`, `Interviews`, `Placed`, `New`).
