@@ -175,10 +175,58 @@ function JobsModule({
 
   const openJobs = safeJobs.filter(j => j && (j.status === 'Active' || j.status === 'Posted')).length
 
-  const getJobCandidateCount = (jobId) => safeCandidates.filter(c => c && c.job_id === jobId).length
-  const getJobSubmissionCount = (jobId) => safeSubmissions.filter(s => s && s.jobId === jobId).length
-  const getJobInterviewCount = (jobId) => safeCandidates.filter(c => c && c.job_id === jobId && c.status === 'Interview Scheduled').length
-  const getJobSubmittedCount = (jobId) => safeCandidates.filter(c => c && c.job_id === jobId && (c.status === 'Shortlisted' || c.status === 'RTR Received')).length
+  const getJobCandidateCount = (jobId) => {
+    const cleanJId = String(jobId || '').replace('J-', '').trim()
+    const fromSafeCandidates = safeCandidates.filter(c => {
+      if (!c) return false
+      const cleanCId = String(c.job_id || c.reqId || '').replace('J-', '').trim()
+      return c.job_id === jobId || (cleanJId && cleanCId && cleanCId === cleanJId)
+    })
+    let fromLocal = []
+    try {
+      const raw = localStorage.getItem(`smarthire_potential_candidates_${cleanJId}`) ||
+                  localStorage.getItem(`smarthire_potential_candidates_J-${cleanJId}`) ||
+                  (cleanJId === '84384' ? localStorage.getItem('smarthire_potential_candidates_158997') : null) ||
+                  (cleanJId === '158997' ? localStorage.getItem('smarthire_potential_candidates_84384') : null)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed)) fromLocal = parsed
+      }
+    } catch (e) {}
+    const map = new Map()
+    fromSafeCandidates.forEach(c => map.set(c.id || c.name || c.email, c))
+    fromLocal.forEach(c => map.set(c.id || c.name || c.email || c.candidateId, c))
+    return map.size
+  }
+
+  const getJobSubmissionCount = (jobId) => {
+    const cleanJId = String(jobId || '').replace('J-', '').trim()
+    return safeSubmissions.filter(s => {
+      if (!s) return false
+      const cleanSId = String(s.jobId || s.reqId || '').replace('J-', '').trim()
+      return s.jobId === jobId || (cleanJId && cleanSId && cleanSId === cleanJId)
+    }).length
+  }
+
+  const getJobInterviewCount = (jobId) => {
+    const cleanJId = String(jobId || '').replace('J-', '').trim()
+    return safeCandidates.filter(c => {
+      if (!c) return false
+      const cleanCId = String(c.job_id || c.reqId || '').replace('J-', '').trim()
+      const matchJob = c.job_id === jobId || (cleanJId && cleanCId && cleanCId === cleanJId)
+      return matchJob && c.status === 'Interview Scheduled'
+    }).length
+  }
+
+  const getJobSubmittedCount = (jobId) => {
+    const cleanJId = String(jobId || '').replace('J-', '').trim()
+    return safeCandidates.filter(c => {
+      if (!c) return false
+      const cleanCId = String(c.job_id || c.reqId || '').replace('J-', '').trim()
+      const matchJob = c.job_id === jobId || (cleanJId && cleanCId && cleanCId === cleanJId)
+      return matchJob && (c.status === 'Shortlisted' || c.status === 'RTR Received' || c.status === 'Int-SubmittedToManager')
+    }).length
+  }
 
   const getFullDescriptionText = (job) => {
     if (!job) return ''
