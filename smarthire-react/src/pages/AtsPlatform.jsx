@@ -120,16 +120,34 @@ export default function AtsPlatform() {
       const params = new URLSearchParams(window.location.search)
       const tab = params.get('tab')
       if (tab === 'jobs' || tab === 'dashboard') return 'home'
-      return tab
+      if (tab) return tab
+      const saved = localStorage.getItem('smarthire_ats_active_tab')
+      if (saved && saved !== 'jobs' && saved !== 'dashboard') return saved
     } catch (e) {
       return null
     }
+    return null
   }
 
   const [activeTab, setActiveTab] = useState(() => {
     const urlTab = getTabFromUrl()
     return urlTab || 'home'
   })
+
+  // Synchronize activeTab to URL query parameters & localStorage so refresh always preserves the active tab
+  useEffect(() => {
+    if (activeTab) {
+      try {
+        localStorage.setItem('smarthire_ats_active_tab', activeTab)
+        const params = new URLSearchParams(window.location.search)
+        if (params.get('tab') !== activeTab) {
+          const url = new URL(window.location.href)
+          url.searchParams.set('tab', activeTab)
+          window.history.replaceState(null, '', url.pathname + url.search)
+        }
+      } catch (e) {}
+    }
+  }, [activeTab])
 
   useEffect(() => {
     const urlTab = getTabFromUrl()
@@ -150,9 +168,18 @@ export default function AtsPlatform() {
   const [activeChatCandidate, setActiveChatCandidate] = useState(null)
   const [showCandidatePicker, setShowCandidatePicker] = useState(false)
 
-  // Data state
+  // Data state - Hydrate immediately from cache to eliminate 0-data lag on refresh
   const [jobsList, setJobsList] = useState([])
-  const [allCandidates, setAllCandidates] = useState([])
+  const [allCandidates, setAllCandidates] = useState(() => {
+    try {
+      const cached = localStorage.getItem('smarthire_all_candidates')
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+    } catch (e) {}
+    return []
+  })
   const [submissions, setSubmissions] = useState([])
   const [apiOnline, setApiOnline] = useState(true)
 
@@ -233,35 +260,39 @@ export default function AtsPlatform() {
 
   const fetchCandidates = useCallback(async () => {
     try {
+      // 1. Parallel fetch with 4.5s timeout on backend to prevent freeze during spin-up
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 4500)
+
+      const [firestoreRes, apiRes] = await Promise.allSettled([
+        getAllCandidates(),
+        fetch(`${API_BASE}/api/candidates`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}` },
+          signal: controller.signal
+        }).then(res => res.ok ? res.json() : null).catch(() => null)
+      ])
+      clearTimeout(timeoutId)
+
       let combined = []
-      try {
-        const firestoreList = await getAllCandidates()
-        if (Array.isArray(firestoreList) && firestoreList.length > 0) {
-          combined = firestoreList
-        }
-      } catch (fErr) {
-        console.warn('Firestore getAllCandidates:', fErr)
+      if (firestoreRes.status === 'fulfilled' && Array.isArray(firestoreRes.value)) {
+        combined = firestoreRes.value
       }
 
-      try {
-        const res = await fetch(`${API_BASE}/api/candidates`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}` }
+      if (apiRes.status === 'fulfilled' && apiRes.value) {
+        const data = apiRes.value
+        const apiList = Array.isArray(data) ? data : Array.isArray(data.candidates) ? data.candidates : Array.isArray(data.data?.candidates) ? data.data.candidates : []
+        const map = new Map()
+        combined.forEach(c => { if (c && (c.id || c.name)) map.set(String(c.id || c.name), c) })
+        apiList.forEach(c => {
+          if (c && (c.id || c.name)) {
+            const existing = map.get(String(c.id || c.name)) || {}
+            map.set(String(c.id || c.name), { ...existing, ...c })
+          }
         })
-        if (res.ok) {
-          const data = await res.json()
-          const apiList = Array.isArray(data) ? data : Array.isArray(data.candidates) ? data.candidates : Array.isArray(data.data?.candidates) ? data.data.candidates : []
-          const map = new Map()
-          combined.forEach(c => { if (c && (c.id || c.name)) map.set(String(c.id || c.name), c) })
-          apiList.forEach(c => {
-            if (c && (c.id || c.name)) {
-              const existing = map.get(String(c.id || c.name)) || {}
-              map.set(String(c.id || c.name), { ...existing, ...c })
-            }
-          })
-          combined = Array.from(map.values())
-        }
-      } catch (bErr) {}
+        combined = Array.from(map.values())
+      }
 
+      // Merge cached local candidates
       try {
         const localRaw = localStorage.getItem('smarthire_all_candidates')
         if (localRaw) {
@@ -280,10 +311,47 @@ export default function AtsPlatform() {
         }
       } catch (lErr) {}
 
-      setAllCandidates(combined)
+      // Sort newest candidates to the top
+      combined.sort((a, b) => {
+        const getT = (c) => {
+          if (!c) return 0
+          if (c.createdAt) {
+            const t = typeof c.createdAt === 'object' && c.createdAt?.seconds ? c.createdAt.seconds * 1000 : Date.parse(c.createdAt)
+            if (!isNaN(t) && t > 0) return t
+          }
+          if (c.timestamp) {
+            const t = typeof c.timestamp === 'object' && c.timestamp?.seconds ? c.timestamp.seconds * 1000 : Date.parse(c.timestamp)
+            if (!isNaN(t) && t > 0) return t
+          }
+          if (c.appliedDate) {
+            const s = String(c.appliedDate).toLowerCase().trim()
+            if (s === 'today' || s === 'just now' || s === 'recent') return Date.now()
+            const t = Date.parse(c.appliedDate)
+            if (!isNaN(t) && t > 0) return t
+          }
+          if (c.id) {
+            const m = String(c.id).match(/\d{10,13}/)
+            if (m) {
+              const n = parseInt(m[0], 10)
+              if (n > 1500000000000) return n
+              if (n > 1500000000) return n * 1000
+            }
+          }
+          return 0
+        }
+        const diff = getT(b) - getT(a)
+        if (diff !== 0) return diff
+        return String(b.id || '').localeCompare(String(a.id || ''))
+      })
+
+      if (combined.length > 0) {
+        setAllCandidates(combined)
+        try {
+          localStorage.setItem('smarthire_all_candidates', JSON.stringify(combined))
+        } catch (e) {}
+      }
     } catch (err) {
       console.error('Failed to fetch candidates:', err)
-      setAllCandidates([])
     }
   }, [])
 
@@ -308,8 +376,24 @@ export default function AtsPlatform() {
     fetchCandidates()
     fetchSubmissions()
 
-    // Real-time Firestore job listener for instant audio notification when any JD is posted
+    // Real-time Firestore job listener: guard against initial snapshot so existing jobs NEVER trigger demo notifications
+    let isInitialJobsSnapshot = true
     const unsubJobs = subscribeAtsJobs(({ jobs: fsJobs, changes }) => {
+      if (isInitialJobsSnapshot) {
+        isInitialJobsSnapshot = false
+        // Baseline existing jobs into known Set without firing false notification
+        changes.forEach(c => {
+          const j = c.doc
+          const key = j.reqId || j.id
+          if (key) knownAtsJobIdsRef.current.add(key)
+        })
+        fsJobs.forEach(j => {
+          const key = j.reqId || j.id
+          if (key) knownAtsJobIdsRef.current.add(key)
+        })
+        return
+      }
+
       if (!initialAtsLoadRef.current) return
       const newlyAdded = []
       const addedChanges = changes.filter(c => c.type === 'added').map(c => c.doc)
@@ -365,32 +449,47 @@ export default function AtsPlatform() {
   const recruiterUserId = String(currentUser?.id || currentUser?._id || '').toLowerCase().trim()
   const recruiterRef = (currentUser?.refCode || '').toLowerCase().trim()
 
-  const safeCandidates = deduplicateCandidates((isSuperAdmin || realUserRole === 'admin' || isManager)
-    ? rawCandidates
-    : rawCandidates.filter(c => {
-        if (!c) return false
-        const cOwner = (c.createdBy || c.recruiterEmail || c.submittedBy || c.recruiterId || '').toLowerCase().trim()
-        const cRecruiter = (c.recruiter || c.assignedBy || c.addedByName || c.referredByRecruiterName || '').toLowerCase().trim()
-        return cOwner === recruiterUserEmail || cOwner === recruiterUserId || cRecruiter === recruiterUserName
-      }))
+  const safeCandidates = useMemo(() => {
+    const raw = (isSuperAdmin || realUserRole === 'admin' || isManager)
+      ? rawCandidates
+      : rawCandidates.filter(c => {
+          if (!c) return false
+          const cOwner = (c.createdBy || c.recruiterEmail || c.submittedBy || c.recruiterId || '').toLowerCase().trim()
+          const cRecruiter = (c.recruiter || c.assignedBy || c.addedByName || c.referredByRecruiterName || '').toLowerCase().trim()
+          return cOwner === recruiterUserEmail || cOwner === recruiterUserId || cRecruiter === recruiterUserName
+        })
+    return deduplicateCandidates(raw)
+  }, [rawCandidates, isSuperAdmin, realUserRole, isManager, recruiterUserEmail, recruiterUserId, recruiterUserName])
 
-  const filteredCandidates = deduplicateCandidates(safeCandidates.filter(c => {
-    if (!c) return false
-    const matchJob = selectedJob === 'All' || c.job_id === selectedJob
-    const matchStatus = statusFilter === 'All' || c.status === statusFilter
-    const nameStr = c.extracted_profile?.name || c.name || ''
-    const matchQuery = !query || nameStr.toLowerCase().includes(query.toLowerCase())
-    return matchJob && matchStatus && matchQuery
-  }))
+  const filteredCandidates = useMemo(() => {
+    return safeCandidates.filter(c => {
+      if (!c) return false
+      const matchJob = selectedJob === 'All' || c.job_id === selectedJob
+      const matchStatus = statusFilter === 'All' || c.status === statusFilter
+      const nameStr = c.extracted_profile?.name || c.name || ''
+      const matchQuery = !query || nameStr.toLowerCase().includes(query.toLowerCase())
+      return matchJob && matchStatus && matchQuery
+    })
+  }, [safeCandidates, selectedJob, statusFilter, query])
 
-  const liveCandidates = safeCandidates.filter(c => c && c.status !== 'Rejected')
-  const qualified = safeCandidates.filter(c =>
-    c && ['Shortlisted', 'RTR Received', 'Interview Scheduled', 'Selected', 'Placed'].includes(c.status)
-  ).length
-  const newCandidates = safeCandidates.filter(c => c && c.status === 'New').length
-  const pendingRtr = safeCandidates.filter(c => c && c.status === 'RTR Requested').length
-  const activeJobs = safeJobs.filter(j => j && (j.status === 'Active' || j.status === 'Posted')).length
-  const interviewsCount = safeCandidates.filter(c => c && c.status === 'Interview Scheduled').length
+  const { liveCandidates, qualified, newCandidates, pendingRtr, activeJobs, interviewsCount } = useMemo(() => {
+    const live = safeCandidates.filter(c => c && c.status !== 'Rejected')
+    const qual = safeCandidates.filter(c =>
+      c && ['Shortlisted', 'RTR Received', 'Interview Scheduled', 'Selected', 'Placed'].includes(c.status)
+    ).length
+    const nCands = safeCandidates.filter(c => c && c.status === 'New').length
+    const pRtr = safeCandidates.filter(c => c && c.status === 'RTR Requested').length
+    const aJobs = safeJobs.filter(j => j && (j.status === 'Active' || j.status === 'Posted')).length
+    const iCount = safeCandidates.filter(c => c && c.status === 'Interview Scheduled').length
+    return {
+      liveCandidates: live,
+      qualified: qual,
+      newCandidates: nCands,
+      pendingRtr: pRtr,
+      activeJobs: aJobs,
+      interviewsCount: iCount
+    }
+  }, [safeCandidates, safeJobs])
 
   const updateStatus = async (candidateId, newStatus) => {
     try {

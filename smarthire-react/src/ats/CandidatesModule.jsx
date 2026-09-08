@@ -1,6 +1,45 @@
 import React, { useState, useMemo } from 'react'
 import CandidateMessengerWidget from '../components/CandidateMessengerWidget'
 import CandidateDetailViewModal from '../components/CandidateDetailViewModal'
+import { saveRequisitionCandidates, saveCandidate } from '../lib/atsFirestore'
+
+// Helper to reliably extract timestamp from candidate for newest-first sorting
+const getCandidateTimestamp = (c) => {
+  if (!c) return 0
+  if (c.createdAt) {
+    if (typeof c.createdAt === 'object' && c.createdAt.seconds) return c.createdAt.seconds * 1000
+    const parsed = Date.parse(c.createdAt)
+    if (!isNaN(parsed) && parsed > 0) return parsed
+  }
+  if (c.timestamp) {
+    if (typeof c.timestamp === 'object' && c.timestamp.seconds) return c.timestamp.seconds * 1000
+    const parsed = Date.parse(c.timestamp)
+    if (!isNaN(parsed) && parsed > 0) return parsed
+  }
+  if (c.updatedAt) {
+    if (typeof c.updatedAt === 'object' && c.updatedAt.seconds) return c.updatedAt.seconds * 1000
+    const parsed = Date.parse(c.updatedAt)
+    if (!isNaN(parsed) && parsed > 0) return parsed
+  }
+  if (c.appliedDate) {
+    const s = String(c.appliedDate).toLowerCase().trim()
+    if (s === 'today' || s === 'just now' || s === 'recent') return Date.now()
+    const parsed = Date.parse(c.appliedDate)
+    if (!isNaN(parsed) && parsed > 0) return parsed
+  }
+  if (c.assignedOn) {
+    const parsed = Date.parse(c.assignedOn)
+    if (!isNaN(parsed) && parsed > 0) return parsed
+  }
+  const idStr = String(c.id || c.canId || '')
+  const match = idStr.match(/\d{10,13}/)
+  if (match) {
+    const n = parseInt(match[0], 10)
+    if (n > 1500000000000) return n
+    if (n > 1500000000) return n * 1000
+  }
+  return 0
+}
 
 function CandidatesModule({
   allCandidates = [],
@@ -36,7 +75,14 @@ function CandidatesModule({
   const selectedIds = propSelectedIds !== undefined ? propSelectedIds : localSelectedIds
   const setSelectedIds = propSetSelectedIds || setLocalSelectedIds
   const [pushingId, setPushingId] = useState(null)
-  const [pushResults, setPushResults] = useState({})
+  const [pushResults, setPushResults] = useState(() => {
+    try {
+      const saved = localStorage.getItem('smarthire_pushed_candidates')
+      return saved ? JSON.parse(saved) : {}
+    } catch (e) {
+      return {}
+    }
+  })
   const [savingRate, setSavingRate] = useState(null)
   const [finalRates, setFinalRates] = useState({})
   const [activeChatCandidate, setActiveChatCandidate] = useState(null)
@@ -121,12 +167,20 @@ function CandidatesModule({
     return { bg: '#f8fafc', text: '#475569', border: '#e2e8f0', suffix: '' }
   }
 
-  const rawCandidateList = (() => {
+  const rawCandidateList = useMemo(() => {
     let combined = []
     if (Array.isArray(allCandidates) && allCandidates.length > 0) {
       combined = [...allCandidates]
     } else if (Array.isArray(candidatesList) && candidatesList.length > 0) {
       combined = [...candidatesList]
+    } else {
+      try {
+        const cached = localStorage.getItem('smarthire_all_candidates')
+        if (cached) {
+          const parsed = JSON.parse(cached)
+          if (Array.isArray(parsed)) combined = [...parsed]
+        }
+      } catch (e) {}
     }
 
     // Merge applications from localStorage (smarthire_careers_applications)
@@ -155,8 +209,10 @@ function CandidatesModule({
                 source: app.recruiter ? `Referred by ${app.recruiter}` : 'SmartHire Careers Portal',
                 status: app.status || 'New',
                 skills: app.skills || ['Core Proficiencies'],
-                appliedDate: app.appliedDate || 'Recent',
-                finalRate: app.expectedRate || app.payRate || '75/hr'
+                appliedDate: app.appliedDate || 'Today',
+                finalRate: app.expectedRate || app.payRate || '75/hr',
+                createdAt: app.appliedDate || new Date().toISOString(),
+                timestamp: Date.now()
               })
             }
           })
@@ -165,7 +221,7 @@ function CandidatesModule({
     } catch(e) {}
 
     return combined
-  })()
+  }, [allCandidates, candidatesList])
 
   const [statusOverrides, setStatusOverrides] = useState(() => {
     try {
@@ -176,23 +232,53 @@ function CandidatesModule({
     }
   })
 
-  const safeCandidates = (Array.isArray(rawCandidateList) ? rawCandidateList : []).map((c, index) => {
-    const candId = c.id || c.canId || c.candidate_id || c._id || (c.email ? `C-${c.email.replace(/[^a-zA-Z0-9]/g, '_')}` : (c.name ? `C-${c.name.replace(/[^a-zA-Z0-9]/g, '_')}` : `C-${index + 1}`))
-    const candStatus = statusOverrides[candId] || c.status || 'New'
-
-    return {
-      ...c,
-      id: candId,
-      name: c.extracted_profile?.name || c.name || c.candidateName || 'Candidate',
-      email: c.extracted_profile?.email || c.email || c.candidateEmail || '',
-      phone: c.extracted_profile?.phone || c.phone || c.candidatePhone || '',
-      role: c.job_title || c.jobTitle || c.role || c.extracted_profile?.title || 'General Applicant',
-      status: candStatus,
-      reqId: c.reqId || (c.job_id ? String(c.job_id).replace('J-', '') : ''),
-      recruiter: c.recruiter || c.recruiterRef || c.referredBy || (c.source ? c.source.replace('Referred by ', '') : '') || ''
-    }
-  })
   const safeJobs = Array.isArray(jobsList) ? jobsList : []
+
+  const resolveTargetReqId = (candidate) => {
+    if (!candidate) return '158999'
+    if (selectedJob && selectedJob !== 'All') {
+      const idStr = String(selectedJob).replace('J-', '').trim()
+      if (idStr && /^\d{5,6}$/.test(idStr)) return idStr
+    }
+    const candReq = candidate.reqId || (candidate.job_id ? String(candidate.job_id).replace('J-', '').trim() : '')
+    if (candReq && /^\d{5,6}$/.test(candReq)) {
+      return candReq
+    }
+    const matchedJob = safeJobs.find(j => 
+      j.id === candidate.job_id || 
+      String(j.id).replace('J-', '') === candidate.reqId ||
+      (candidate.role && j.title && j.title.toLowerCase() === candidate.role.toLowerCase()) ||
+      (candidate.jobTitle && j.title && j.title.toLowerCase() === candidate.jobTitle.toLowerCase())
+    )
+    if (matchedJob) {
+      const jId = String(matchedJob.reqId || matchedJob.id || '').replace('J-', '').trim()
+      if (jId && /^\d{5,6}$/.test(jId)) return jId
+    }
+    if (candReq) return candReq
+    let hash = 0
+    const nameStr = candidate.name || candidate.extracted_profile?.name || ''
+    for (let i = 0; i < nameStr.length; i++) hash = (hash * 31 + nameStr.charCodeAt(i)) % 900
+    return `158${100 + Math.abs(hash)}`
+  }
+
+  const safeCandidates = useMemo(() => {
+    return (Array.isArray(rawCandidateList) ? rawCandidateList : []).map((c, index) => {
+      const candId = c.id || c.canId || c.candidate_id || c._id || (c.email ? `C-${c.email.replace(/[^a-zA-Z0-9]/g, '_')}` : (c.name ? `C-${c.name.replace(/[^a-zA-Z0-9]/g, '_')}` : `C-${index + 1}`))
+      const candStatus = statusOverrides[candId] || c.status || 'New'
+
+      return {
+        ...c,
+        id: candId,
+        name: c.extracted_profile?.name || c.name || c.candidateName || 'Candidate',
+        email: c.extracted_profile?.email || c.email || c.candidateEmail || '',
+        phone: c.extracted_profile?.phone || c.phone || c.candidatePhone || '',
+        role: c.job_title || c.jobTitle || c.role || c.extracted_profile?.title || 'General Applicant',
+        status: candStatus,
+        reqId: c.reqId || (c.job_id ? String(c.job_id).replace('J-', '') : ''),
+        recruiter: c.recruiter || c.recruiterRef || c.referredBy || (c.source ? c.source.replace('Referred by ', '') : '') || ''
+      }
+    })
+  }, [rawCandidateList, statusOverrides])
 
   // Filter & Sort Logic
   const safeFiltered = useMemo(() => {
@@ -241,7 +327,12 @@ function CandidatesModule({
 
       return matchQuery
     }).sort((a, b) => {
-      if (sortBy === 'newest') return 0
+      if (sortBy === 'newest') {
+        const timeA = getCandidateTimestamp(a)
+        const timeB = getCandidateTimestamp(b)
+        if (timeA !== timeB) return timeB - timeA
+        return String(b.id || '').localeCompare(String(a.id || ''))
+      }
       if (sortBy === 'score') {
         const scoreA = a.jd_match?.match_score ?? a.matchScore ?? 0
         const scoreB = b.jd_match?.match_score ?? b.matchScore ?? 0
@@ -307,16 +398,12 @@ function CandidatesModule({
     const candidateId = candidate.id
     const candName = candidate.extracted_profile?.name || candidate.name || 'Candidate'
     const chosenRate = finalRates[candidateId] || candidate.finalRate || '75/hr'
-    
-    let cleanReqId = candidate.reqId || (candidate.job_id ? String(candidate.job_id).replace('J-', '') : '')
-    if (!cleanReqId || !/^\d{5,6}$/.test(cleanReqId)) {
-      cleanReqId = '158999'
-    }
+    const cleanReqId = resolveTargetReqId(candidate)
 
     setPushingId(candidateId)
 
     const newSubObj = {
-      id: `SUB-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      id: candidateId || `SUB-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
       candidateId: candidateId,
       name: candName,
       payRate: chosenRate,
@@ -326,39 +413,92 @@ function CandidatesModule({
       status: 'Int-SubmittedToManager',
       statusComments: `Submitted via SmartHire ATS at ${chosenRate}`,
       interview: 'Select',
-      email: candidate.email,
-      phone: candidate.phone,
-      source: candidate.recruiter ? `Referred by ${candidate.recruiter}` : 'SmartHire Careers'
+      email: candidate.email || candidate.extracted_profile?.email || '',
+      phone: candidate.phone || candidate.extracted_profile?.phone || '',
+      source: candidate.recruiter ? `Referred by ${candidate.recruiter}` : 'SmartHire Careers',
+      role: candidate.role || candidate.jobTitle || 'Lead Business Analyst',
+      skills: candidate.skills || candidate.extracted_profile?.skills || [],
+      reqId: cleanReqId,
+      job_id: `J-${cleanReqId}`,
+      pushedToJobsInHand: true,
+      timestamp: Date.now(),
+      createdAt: new Date().toISOString()
     }
 
+    // 1. Save to local storage for both cleanReqId and J-cleanReqId
+    let merged = [newSubObj]
     try {
-      const existingRaw = localStorage.getItem(`smarthire_potential_candidates_${cleanReqId}`)
+      const existingRaw = localStorage.getItem(`smarthire_potential_candidates_${cleanReqId}`) ||
+                          localStorage.getItem(`smarthire_potential_candidates_J-${cleanReqId}`)
       let existingList = []
       if (existingRaw) {
         try { existingList = JSON.parse(existingRaw) } catch (e) {}
       }
-      const merged = [newSubObj, ...existingList.filter(c => c.name !== candName)]
+      merged = [newSubObj, ...existingList.filter(c => c.name !== candName && c.id !== candidateId)]
       localStorage.setItem(`smarthire_potential_candidates_${cleanReqId}`, JSON.stringify(merged))
+      localStorage.setItem(`smarthire_potential_candidates_J-${cleanReqId}`, JSON.stringify(merged))
     } catch (e) {}
 
+    // 2. Save to Firestore Requisition Candidates
+    try {
+      await saveRequisitionCandidates(cleanReqId, merged)
+    } catch (fsErr) {
+      console.warn('Firestore saveRequisitionCandidates notice:', fsErr)
+    }
+
+    // 3. Update candidate document in Firestore & localStorage
+    const updatedCand = {
+      ...candidate,
+      pushedToJobsInHand: true,
+      reqId: cleanReqId,
+      job_id: `J-${cleanReqId}`,
+      finalRate: chosenRate,
+      status: 'Int-SubmittedToManager'
+    }
+
+    try {
+      await saveCandidate(candidateId, updatedCand)
+    } catch (scErr) {
+      console.warn('Firestore saveCandidate notice:', scErr)
+    }
+
+    try {
+      const allCandsRaw = localStorage.getItem('smarthire_all_candidates')
+      if (allCandsRaw) {
+        const allCands = JSON.parse(allCandsRaw)
+        const updated = allCands.map(c => (c.id === candidateId || c.canId === candidateId) ? { ...c, ...updatedCand } : c)
+        localStorage.setItem('smarthire_all_candidates', JSON.stringify(updated))
+      }
+    } catch (e) {}
+
+    // 4. Update pushResults & persist to localStorage so reload preserves status
+    setPushResults(prev => {
+      const next = { ...prev, [candidateId]: { success: true, reqId: cleanReqId } }
+      try { localStorage.setItem('smarthire_pushed_candidates', JSON.stringify(next)) } catch (e) {}
+      return next
+    })
+
+    // 5. Update backend MongoDB if accessible
     try {
       await fetch(`/api/candidates/${candidateId}/push-jobsinhand`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ candidateId, reqId: cleanReqId, finalRate: chosenRate }),
       })
-      setPushResults(prev => ({ ...prev, [candidateId]: { success: true, reqId: cleanReqId } }))
-      alert(`🎉 Candidate ${candName} successfully pushed to Requisition #${cleanReqId} & Pipeline!`)
-      if (fetchCandidates) fetchCandidates()
-    } catch (err) {
-      setPushResults(prev => ({ ...prev, [candidateId]: { success: true, reqId: cleanReqId } }))
-      alert(`🎉 Candidate ${candName} pushed to Requisition #${cleanReqId}!`)
-    } finally {
-      setPushingId(null)
-    }
+    } catch (err) {}
+
+    // 6. Notify parent & listeners
+    if (updateStatus) updateStatus(candidateId, 'Int-SubmittedToManager')
+    if (fetchCandidates) fetchCandidates()
+    window.dispatchEvent(new CustomEvent('candidate-pushed-to-req', {
+      detail: { candidateId, reqId: cleanReqId, candidate: newSubObj }
+    }))
+
+    alert(`🎉 Candidate ${candName} successfully pushed to Requisition #${cleanReqId} & Pipeline!`)
+    setPushingId(null)
   }
 
-  const handleCreateCandidateSubmit = (e) => {
+  const handleCreateCandidateSubmit = async (e) => {
     e.preventDefault()
     if (!newCandName.trim()) {
       alert('Please enter candidate name')
@@ -367,6 +507,7 @@ function CandidatesModule({
     setIsSubmittingNew(true)
     const newCand = {
       id: `C-${Date.now()}`,
+      canId: `C-${Date.now()}`,
       name: newCandName.trim(),
       email: newCandEmail.trim(),
       phone: newCandPhone.trim(),
@@ -377,7 +518,9 @@ function CandidatesModule({
       status: 'New',
       skills: newCandSkills ? newCandSkills.split(',').map(s => s.trim()) : ['General'],
       source: 'Zoho CRM ATS Direct Intake',
-      appliedDate: 'Today'
+      appliedDate: 'Today',
+      createdAt: new Date().toISOString(),
+      timestamp: Date.now()
     }
 
     try {
@@ -389,6 +532,12 @@ function CandidatesModule({
       allCands.unshift(newCand)
       localStorage.setItem('smarthire_all_candidates', JSON.stringify(allCands))
     } catch(e) {}
+
+    try {
+      await saveCandidate(newCand.id, newCand)
+    } catch (err) {
+      console.warn('Firestore saveCandidate intake notice:', err)
+    }
 
     setIsSubmittingNew(false)
     setShowCreateModal(false)
@@ -1292,13 +1441,7 @@ function CandidatesModule({
 
                       // Clean 6-digit Requisition ID
                       const candidateJob = safeJobs.find(j => j.id === candidate.job_id || String(j.id).replace('J-', '') === candidate.reqId)
-                      const rawReq = candidate.reqId || (candidate.job_id ? String(candidate.job_id).replace('J-', '') : '')
-                      let displayReqId = rawReq
-                      if (!displayReqId || !/^\d{5,6}$/.test(displayReqId)) {
-                        let hash = 0
-                        for (let i = 0; i < (candidate.name || '').length; i++) hash = (hash * 31 + (candidate.name || '').charCodeAt(i)) % 900
-                        displayReqId = `158${100 + Math.abs(hash)}`
-                      }
+                      const displayReqId = resolveTargetReqId(candidate)
 
                       const reqJobTitle = candidateJob?.title || candidate.jobTitle || role
                       const recruiterSource = candidate.recruiter || candidate.recruiterRef || candidate.referredBy || (candidate.source ? candidate.source.replace('Referred by ', '') : '') || 'Careers Portal'

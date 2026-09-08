@@ -267,7 +267,16 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
       const raw = localStorage.getItem('smarthire_activity_notifications')
       if (raw) {
         const parsed = JSON.parse(raw)
-        if (Array.isArray(parsed)) return parsed
+        if (Array.isArray(parsed)) {
+          // Filter out synthetic/repeated demo sync notifications
+          const clean = parsed.filter(n => 
+            !n.title?.includes('New Requisition Synced') && 
+            !n.title?.includes('New Requisition Ingested') &&
+            !n.message?.includes('JobsInHand')
+          )
+          localStorage.setItem('smarthire_activity_notifications', JSON.stringify(clean))
+          return clean
+        }
       }
     } catch (e) {}
     return DEFAULT_NOTIFICATIONS

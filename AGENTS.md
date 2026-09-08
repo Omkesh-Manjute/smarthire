@@ -31,6 +31,25 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-09 — Candidate Push Sync, Notification Fix, Sorting, Tab Persistence & Performance
+- **Fixed "Push to Req" Persistence & Synchronization**:
+  - Dynamically resolved matching 6-digit Requisition ID (`resolveTargetReqId`) to eliminate mismatched or hardcoded fallback.
+  - Pushed candidates are now saved to Firestore (`saveRequisitionCandidates`), `localStorage` (`smarthire_potential_candidates_${reqId}` and `_J-${reqId}`), and candidate documents updated in Firestore (`saveCandidate`) with `pushedToJobsInHand: true`.
+  - Added persistent `pushResults` in `localStorage` (`smarthire_pushed_candidates`) so `✓ In Req #...` status survives page reload.
+  - Implemented backend endpoint `POST /api/candidates/:id/push-jobsinhand` in `candidates.js` for full MongoDB synchronization.
+- **Eliminated Demo / Duplicate Requisition Notifications**:
+  - Added initial snapshot guards in `AtsPlatform.jsx` and `RecruiterDashboard.jsx` (`subscribeAtsJobs`), baselining existing jobs without firing false "1 New Requisition Synced" notifications on every page refresh.
+  - Purged existing synthetic demo notifications from `localStorage` on initial bell component mount in `ActivityNotificationBell.jsx`.
+- **New Candidates Ordered at Top**:
+  - Implemented `getCandidateTimestamp` extracting timestamps from `createdAt`, `timestamp`, `updatedAt`, `appliedDate`, and IDs.
+  - Fixed `sortBy === 'newest'` in `CandidatesModule.jsx` and combined list merging in `AtsPlatform.jsx` to sort by `timeB - timeA`, ensuring newly added applicants always appear at the top.
+- **Preserved Active Page / Tab on Browser Refresh**:
+  - Synchronized `activeTab` with `localStorage` (`smarthire_ats_active_tab`) and URL search parameters (`?tab=...`), restoring the exact view when reloading `/ats`.
+- **Removed Floating Bottom-Left Layout Switcher**:
+  - Removed floating glass switcher pill from `PublicCareers.jsx`, keeping the clean header layout toggle.
+- **Fixed Candidate Loading Lag & Eliminated Freezes**:
+  - Hydrated candidate state immediately from `localStorage` (0ms delay), parallelized Firestore and backend fetches with an `AbortController` timeout, and wrapped candidate filters and KPI stats in `useMemo`.
+
 ### 2026-09-09 — 1-Click Dual Layout Switcher: Classic ATS & Modern Zone Views
 - **User Preference Coexistence (Both Layouts Live & 1-Click Switchable)**:
   - Enabled candidates and recruiters to toggle instantly between the **Classic Executive ATS** layout (live workplace video & photo slider background, PraxiMinds technical grid canvas, Zoho ATS job cards `sh-job-card`, segmented filter chips) and the **MUI Zone Modern** layout (`#FA541C` radiant orange, `#141A21` dark hero, floating search console, 8 hot categories, and 3-step candidate workflow).

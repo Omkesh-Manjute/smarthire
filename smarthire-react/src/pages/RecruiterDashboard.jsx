@@ -1073,7 +1073,23 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     loadJobsData(false)
 
     // Real-time Firestore job listener (sub-second audio notification when any job is posted)
+    let isInitialDashboardJobsSnapshot = true
     const unsubJobs = subscribeAtsJobs(({ jobs: fsJobs, changes }) => {
+      if (isInitialDashboardJobsSnapshot) {
+        isInitialDashboardJobsSnapshot = false
+        // Baseline existing jobs from Firestore into knownJobIdsRef to prevent false notifications on load
+        changes.forEach(c => {
+          const j = c.doc
+          const key = j.reqId || j.id
+          if (key) knownJobIdsRef.current.add(key)
+        })
+        fsJobs.forEach(j => {
+          const key = j.reqId || j.id
+          if (key) knownJobIdsRef.current.add(key)
+        })
+        return
+      }
+
       if (!initialJobsLoadedRef.current) return
       const newlyAdded = []
       const addedChanges = changes.filter(c => c.type === 'added').map(c => c.doc)
