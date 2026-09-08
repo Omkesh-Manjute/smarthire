@@ -50,17 +50,37 @@ export async function autoApplyCandidateToJobsInHand({ reqId, candidate, finalRa
   console.log(`\n🤖 Starting JobsInHand Auto-Apply Bot for Req #${reqId}...`);
   console.log(`👤 Candidate: ${candidate.name} (${candidate.email})`);
 
-  let cleanReqId = reqId || '158864';
-  if (String(cleanReqId).includes('reqid=')) {
-    const match = String(cleanReqId).match(/reqid=(\d+)/i);
+  let cleanReqId = String(reqId || '158997').replace(/^J-/, '').trim();
+  if (cleanReqId.includes('reqid=')) {
+    const match = cleanReqId.match(/reqid=(\d+)/i);
     if (match) cleanReqId = match[1];
-  } else if (String(cleanReqId).includes('/')) {
-    const match = String(cleanReqId).match(/(\d+)\.htm/i) || String(cleanReqId).match(/(\d+)/);
+  } else if (cleanReqId.includes('/')) {
+    const match = cleanReqId.match(/(\d+)\.htm/i) || cleanReqId.match(/(\d+)/);
     if (match) cleanReqId = match[1];
   }
 
+  // Resolve State Position Numbers & Scraped IDs to real JobsInHand Requisition IDs
+  if (cleanReqId === '808496' || cleanReqId === '84384') {
+    cleanReqId = '158997'; // NC DHHS AWS Senior Developer (808496) -> JobsInHand Req #158997
+  } else {
+    try {
+      const jobsFilePath = path.resolve(__dirname, '../jobs.json');
+      if (fs.existsSync(jobsFilePath)) {
+        const rawJobs = JSON.parse(fs.readFileSync(jobsFilePath, 'utf8'));
+        const matched = rawJobs.find(j => 
+          String(j.positionNumber || '').trim() === cleanReqId ||
+          (j.applyUrl && j.applyUrl.includes(cleanReqId)) ||
+          (j.title && j.title.includes(`(${cleanReqId})`))
+        );
+        if (matched && matched.reqId && /^\d{5,6}$/.test(String(matched.reqId).trim())) {
+          cleanReqId = String(matched.reqId).trim();
+        }
+      }
+    } catch (e) {}
+  }
+
   const targetUrl = `https://www.jobsinhand.com/post_resume1.aspx?reqid=${cleanReqId}`;
-  console.log(`🔗 Target URL: ${targetUrl}`);
+  console.log(`🔗 Target JobsInHand URL: ${targetUrl} (Resolved Req #${cleanReqId})`);
 
   // Split Name into First Name & Last Name
   const nameParts = (candidate.name || 'Candidate').trim().split(/\s+/);
@@ -272,6 +292,9 @@ export async function autoApplyCandidateToJobsInHand({ reqId, candidate, finalRa
           page.click(finalSubmit).catch(() => {}),
           page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => {})
         ]);
+        await page.waitForTimeout(2000);
+        const postSubmitUrl = page.url();
+        console.log(`📍 JobsInHand Page URL after Questionnaire Submit: ${postSubmitUrl}`);
       }
     }
 

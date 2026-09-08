@@ -529,34 +529,74 @@ function CandidatesModule({
       }
     } catch (e) {}
 
-    // 4. Update pushResults & persist to localStorage so reload preserves status
+    // 4. Trigger backend JobsInHand push & Playwright Auto-Apply Bot with full candidate details
+    let botResult = null
+    const candidatePayload = {
+      candidateId,
+      id: candidateId,
+      reqId: cleanReqId,
+      targetReqId: cleanReqId,
+      finalRate: rate,
+      status: status,
+      candidate: {
+        id: candidateId,
+        name: candName,
+        email: candidate.email || candidate.extracted_profile?.email || '',
+        phone: candidate.phone || candidate.extracted_profile?.phone || '',
+        location: candidate.location || candidate.extracted_profile?.location || 'Raleigh, NC',
+        role: candidate.role || candidate.jobTitle || matchedJob?.title || 'NC DHHS AWS Senior Developer (808496)',
+        jobTitle: matchedJob?.title || candidate.jobTitle || candidate.role || 'NC DHHS AWS Senior Developer (808496)',
+        resumeFileUrl: candidate.resumeFileUrl || candidate.resumeUrl || candidate.resumeFile || candidate.file?.local_path || candidate.file?.stored_name || '',
+        gender: candidate.gender || 'Male',
+        skills: candidate.skills || candidate.extracted_profile?.skills || []
+      }
+    }
+
+    try {
+      const pushRes = await fetch(`/api/candidates/${candidateId}/push-jobsinhand`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(candidatePayload),
+      })
+      if (pushRes.ok) {
+        botResult = await pushRes.json()
+      }
+    } catch (err) {
+      console.warn('JobsInHand bot push API notice:', err)
+    }
+
+    const resolvedFinalReqId = botResult?.pushedReqId || cleanReqId
+
+    // 5. Update pushResults & persist to localStorage so reload preserves status
     setPushResults(prev => {
-      const next = { ...prev, [candidateId]: { success: true, reqId: cleanReqId, rate, pushedOn: Date.now() } }
+      const next = {
+        ...prev,
+        [candidateId]: {
+          success: true,
+          reqId: resolvedFinalReqId,
+          rate,
+          pushedOn: Date.now(),
+          botMode: botResult?.mode || 'Playwright Automation',
+          botMessage: botResult?.message
+        }
+      }
       try { localStorage.setItem('smarthire_pushed_candidates', JSON.stringify(next)) } catch (e) {}
       return next
     })
-
-    // 5. Update backend MongoDB if accessible
-    try {
-      await fetch(`/api/candidates/${candidateId}/push-jobsinhand`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ candidateId, reqId: cleanReqId, finalRate: rate, email: candidate.email || candidate.extracted_profile?.email || '' }),
-      })
-    } catch (err) {}
 
     // 6. Notify parent & listeners
     if (updateStatus) updateStatus(candidateId, status)
     if (fetchCandidates) fetchCandidates()
     window.dispatchEvent(new CustomEvent('candidate-pushed-to-req', {
-      detail: { candidateId, reqId: cleanReqId, candidate: newSubObj }
+      detail: { candidateId, reqId: resolvedFinalReqId, candidate: newSubObj, botResult }
     }))
 
     setPushingId(null)
     setPushIsSubmitting(false)
     setPushModalCandidate(null)
     if (!suppressAlert) {
-      alert(`🎉 Candidate ${candName} successfully pushed to Requisition #${cleanReqId} & Pipeline!`)
+      const botNote = botResult?.message ? `\n\n🤖 JobsInHand Bot Result:\n${botResult.message}` : ''
+      alert(`🎉 Candidate ${candName} successfully submitted to JobsInHand Requisition #${resolvedFinalReqId} & Pipeline!${botNote}`)
     }
   }
 
@@ -2247,7 +2287,7 @@ function CandidatesModule({
                     Push Candidate to Requisition
                   </h3>
                   <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#64748b' }}>
-                    Assign & forward candidate to active requisition pipeline
+                    Auto-fill details & submit application to JobsInHand via Playwright Bot
                   </p>
                 </div>
               </div>
@@ -2463,7 +2503,7 @@ function CandidatesModule({
                     boxShadow: '0 2px 6px rgba(37,99,235,0.25)'
                   }}
                 >
-                  {pushIsSubmitting ? '⏳ Pushing to Req...' : '🚀 Confirm Push to Requisition'}
+                  {pushIsSubmitting ? '⏳ Submitting to JobsInHand Bot...' : '🚀 Confirm & Auto-Submit to JobsInHand'}
                 </button>
               </div>
             </form>

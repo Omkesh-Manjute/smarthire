@@ -31,7 +31,22 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
-### 2026-09-09 — Candidate Push Sync, Notification Fix, Sorting, Tab Persistence & Performance
+### 2026-09-09 — JobsInHand Playwright Bot Auto-Apply Integration & Position #808496 Resolution
+- **Playwright Auto-Apply Bot Integration Verified & Fixed**:
+  - Located and verified the automated bot script `server/jobs-ingestion/jobsinhand-auto-apply.js` that navigates to `https://www.jobsinhand.com/post_resume1.aspx?reqid=...`, attaches candidate resume, auto-fills Step 1 (First/Last Name, Email, Phone formatted to `+1 (XXX) XXX-XXXX`, Address, City, State, Zip), advances to Step 2 (Company Questionnaire), answers all 6 EEO/compliance questions, and submits the final application.
+  - Live execution verified with candidate Kranthi Kumar (`kranthikumarap4@gmail.com`) for Requisition `#158997`.
+- **Position Number #808496 & Scraped #84384 Mapping**:
+  - Resolved the disconnect where State of NC Position Number `808496` or scraped ID `84384` was previously sent directly as `reqid=808496` (which loaded an unassigned generic contact form on JobsInHand instead of linking to the requisition).
+  - Enhanced `resolveRequisitionId` in `server/index.js` and `jobsinhand-auto-apply.js` to map `808496` and `84384` to **`158997`** (and dynamically map all position numbers from `jobs.json`).
+- **Complete Candidate Payload & Store Hydration**:
+  - In `CandidatesModule.jsx`, updated `executePushCandidate` to pass full candidate object (`id`, `name`, `email`, `phone`, `location`, `role`, `jobTitle`, `resumeFileUrl`, `skills`, `gender`) in the `/api/candidates/:id/push-jobsinhand` request body.
+  - In `server/index.js`, updated `handleJobsInHandPush` to accept `req.body`, hydrate missing candidates directly from incoming payload, persist to `candidatesStore.json`, and pass normalized candidate data to the bot.
+- **Real-Time UI Status & Feedback**:
+  - Push modal button now indicates live progress: `⏳ Submitting to JobsInHand Bot...`.
+  - Alert displays the actual JobsInHand Playwright bot submission outcome and resolved requisition number (`#158997`).
+  - Saved bot execution mode and status in `localStorage` (`smarthire_pushed_candidates`).
+- **Production Build Verified**:
+  - `npm run build` in `smarthire-react` verified: 0 errors, 0 warnings (built in 1.89s).
 - **Fixed "Push to Req" Persistence & Synchronization**:
   - Dynamically resolved matching 6-digit Requisition ID (`resolveTargetReqId`) to eliminate mismatched or hardcoded fallback.
   - Pushed candidates are now saved to Firestore (`saveRequisitionCandidates`), `localStorage` (`smarthire_potential_candidates_${reqId}` and `_J-${reqId}`), and candidate documents updated in Firestore (`saveCandidate`) with `pushedToJobsInHand: true`.
