@@ -42,6 +42,10 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 - **Dual Switching Access Points**:
   - Top Navigation Header Switcher: Integrated `[ 🏛️ Classic ATS | ✨ Zone Modern ]` segmented toggle in the header navbar of both layouts.
   - Floating Quick-Switch Pill: Added bottom-left persistent glass switcher pill (`Layout: [ 🏛️ Classic ATS | ✨ Zone Modern ]`) for seamless 1-click toggling from any scroll position.
+- **Bugfix for Classic ATS View Rendering**:
+  - Resolved `ReferenceError: expandedBriefJobId is not defined` by removing obsolete leftover expand-brief variable from the card loop in `ClassicCareersView.jsx`.
+  - Added `getFullDescriptionText` helper and imported `formatJobDescription` in `ClassicCareersView.jsx` for clean narrative job summaries.
+  - Verified with Babel AST traversal that all 3 career view files now have 0 undeclared variables.
 - **Production Build Verified**:
   - `npm run build` in `smarthire-react` verified: 0 errors, 0 warnings (built in 1.64s).
 

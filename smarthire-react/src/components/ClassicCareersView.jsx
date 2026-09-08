@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { formatJobDescription } from '../utils/formatJobDescription'
 
 export default function ClassicCareersView({
   jobs = [],
@@ -80,6 +81,15 @@ export default function ClassicCareersView({
     }, 5000)
     return () => clearInterval(timer)
   }, [isSliderHovered, heroMediaMode, HERO_SLIDES.length])
+
+  const getFullDescriptionText = (job) => {
+    if (!job) return ''
+    const raw = job.rawDescription || job.fullDescription || job.rawText || job.details || job.rawJd || job.description
+    if (raw && typeof raw === 'string' && raw.length > 30) {
+      return formatJobDescription(raw, job)
+    }
+    return formatJobDescription('', job)
+  }
 
   return (
     <div style={{
@@ -1124,7 +1134,6 @@ export default function ClassicCareersView({
           }}>
             {filteredJobs.map((job) => {
               const expired = isJobExpired(job)
-              const isBriefExpanded = expandedBriefJobId === job.id
               const workModeText = job.work_mode || job.workMode || job.type || 'Onsite'
               const locationText = resolveJobLocation(job)
               const fullDesc = getFullDescriptionText(job)
