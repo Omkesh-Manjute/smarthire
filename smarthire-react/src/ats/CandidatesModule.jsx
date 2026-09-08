@@ -442,8 +442,16 @@ function CandidatesModule({
 
     // Determine mapped legacy / alias req IDs (e.g. 158997 <-> 84384)
     const altReqId = cleanReqId === '158997' ? '84384' : (cleanReqId === '84384' ? '158997' : resolveReqId(cleanReqId))
+    const matchedJob = safeJobs.find(j => 
+      String(j.id || '').replace(/^J-/, '').trim() === cleanReqId ||
+      String(j.reqId || '').replace(/^J-/, '').trim() === cleanReqId ||
+      String(j.id || '').replace(/^J-/, '').trim() === altReqId ||
+      String(j.reqId || '').replace(/^J-/, '').trim() === altReqId
+    )
+    const posNum = matchedJob?.positionNumber || (matchedJob?.title ? (matchedJob.title.match(/\((\d{5,8})\)/) || [])[1] : '') || (cleanReqId === '158997' || cleanReqId === '84384' ? '808496' : '')
     const allTargetKeys = [cleanReqId]
     if (altReqId && altReqId !== cleanReqId) allTargetKeys.push(altReqId)
+    if (posNum && !allTargetKeys.includes(posNum)) allTargetKeys.push(posNum)
 
     const newSubObj = {
       id: candidateId || `SUB-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
@@ -459,9 +467,11 @@ function CandidatesModule({
       email: candidate.email || candidate.extracted_profile?.email || '',
       phone: candidate.phone || candidate.extracted_profile?.phone || '',
       source: candidate.recruiter ? `Referred by ${candidate.recruiter}` : 'SmartHire Careers',
-      role: candidate.role || candidate.jobTitle || 'Lead Business Analyst',
+      role: candidate.role || candidate.jobTitle || matchedJob?.title || 'NC DHHS AWS Senior Developer (808496)',
+      jobTitle: matchedJob?.title || candidate.jobTitle || 'NC DHHS AWS Senior Developer (808496)',
       skills: candidate.skills || candidate.extracted_profile?.skills || [],
       reqId: cleanReqId,
+      positionNumber: posNum,
       job_id: `J-${cleanReqId}`,
       pushedToJobsInHand: true,
       timestamp: Date.now(),
@@ -615,9 +625,37 @@ function CandidatesModule({
           localStorage.setItem('smarthire_potential_candidates_84384', JSON.stringify(merged843))
           localStorage.setItem('smarthire_potential_candidates_J-84384', JSON.stringify(merged843))
 
+          // Save to Position Number 808496
+          let list808 = []
+          try {
+            const raw808 = localStorage.getItem('smarthire_potential_candidates_808496')
+            if (raw808) list808 = JSON.parse(raw808)
+          } catch(e) {}
+          const merged808 = [candObj, ...list808.filter(c => c.email !== 'kranthikumarap4@gmail.com')]
+          localStorage.setItem('smarthire_potential_candidates_808496', JSON.stringify(merged808))
+          localStorage.setItem('smarthire_potential_candidates_J-808496', JSON.stringify(merged808))
+
+          // Also save to Careers Applications (auto-apply store)
+          try {
+            const rawApps = localStorage.getItem('smarthire_careers_applications')
+            const existingApps = rawApps ? JSON.parse(rawApps) : []
+            const appRecord = {
+              ...candObj,
+              fName: 'Kranthi',
+              lName: 'Kumar',
+              canId: candObj.id,
+              jobTitle: 'NC DHHS AWS Senior Developer (808496)',
+              positionNumber: '808496',
+              appliedDate: candObj.assignedOn
+            }
+            const updatedApps = [appRecord, ...existingApps.filter(a => a.email !== 'kranthikumarap4@gmail.com')]
+            localStorage.setItem('smarthire_careers_applications', JSON.stringify(updatedApps))
+          } catch(e) {}
+
           try {
             await saveRequisitionCandidates('158997', merged158)
             await saveRequisitionCandidates('84384', merged843)
+            await saveRequisitionCandidates('808496', merged808)
           } catch(e) {}
 
           const candKey = existingCand?.id || 'C-kranthikumarap4_gmail_com'

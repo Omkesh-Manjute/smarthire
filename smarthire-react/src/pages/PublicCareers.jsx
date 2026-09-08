@@ -2,9 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import CandidateMessengerWidget from '../components/CandidateMessengerWidget'
 import SmartHireBotWidget from '../components/SmartHireBotWidget'
-import { saveCareerApplication, getAtsJobs } from '../lib/atsFirestore'
+import { saveCareerApplication, getAtsJobs, saveRequisitionCandidates, saveCandidate } from '../lib/atsFirestore'
 import { loginWithGoogle } from '../lib/firebase'
-import { formatJobDescription, resolveJobLocation, cleanJobTitleWithPositionNumber } from '../utils/formatJobDescription'
+import { formatJobDescription, resolveJobLocation, cleanJobTitleWithPositionNumber, resolveReqId } from '../utils/formatJobDescription'
 import ClassicCareersView from '../components/ClassicCareersView'
 import ZoneCareersView from '../components/ZoneCareersView'
 import {
@@ -844,6 +844,67 @@ export default function PublicCareers() {
           const existingApps = JSON.parse(localStorage.getItem('smarthire_careers_applications') || '[]')
           localStorage.setItem('smarthire_careers_applications', JSON.stringify([newApp, ...existingApps]))
         } catch(e) {}
+
+        // Multi-key auto-apply sync to Requisition Pipeline (Req ID, Resolved ID, Position Number)
+        const cleanReqId = String(selectedJob.id || '').replace(/^J-/, '').trim()
+        const resolvedReqId = resolveReqId(cleanReqId, selectedJob)
+        const posNum = selectedJob.positionNumber || (selectedJob.title ? (selectedJob.title.match(/\((\d{5,8})\)/) || [])[1] : '') || ''
+        const candidateId = data.candidateId || `APP-${Date.now()}`
+        const allTargetKeys = Array.from(new Set([cleanReqId, resolvedReqId, posNum].filter(Boolean)))
+
+        const candPipelineObj = {
+          id: candidateId,
+          candidateId: candidateId,
+          name: parsedName,
+          email: candidateEmail.trim(),
+          phone: candidatePhone.trim() || '—',
+          role: selectedJob.title || 'Applicant',
+          jobTitle: selectedJob.title,
+          payRate: expectedRate || '75/hr',
+          payRateType: contractType || 'C2C',
+          assignedBy: activeRecruiter.name || 'SmartHire Careers Auto-Apply',
+          assignedOn: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+          status: 'Int-SubmittedToManager',
+          statusComments: `Auto-applied from SmartHire Careers Portal at ${expectedRate || '$75/hr'}`,
+          interview: 'Select',
+          source: 'SmartHire Careers (Auto-Apply)',
+          skills: Array.isArray(selectedJob.skills) ? selectedJob.skills : ['Core Proficiencies'],
+          reqId: resolvedReqId || cleanReqId,
+          positionNumber: posNum,
+          job_id: `J-${resolvedReqId || cleanReqId}`,
+          pushedToJobsInHand: true,
+          timestamp: Date.now(),
+          createdAt: new Date().toISOString()
+        }
+
+        allTargetKeys.forEach(tKey => {
+          try {
+            const existingRaw = localStorage.getItem(`smarthire_potential_candidates_${tKey}`) ||
+                                localStorage.getItem(`smarthire_potential_candidates_J-${tKey}`)
+            let existingList = []
+            if (existingRaw) {
+              try { existingList = JSON.parse(existingRaw) } catch (e) {}
+            }
+            const merged = [candPipelineObj, ...existingList.filter(c => c.email !== candidateEmail.trim() && c.id !== candidateId)]
+            localStorage.setItem(`smarthire_potential_candidates_${tKey}`, JSON.stringify(merged))
+            localStorage.setItem(`smarthire_potential_candidates_J-${tKey}`, JSON.stringify(merged))
+          } catch (e) {}
+        })
+
+        for (const tKey of allTargetKeys) {
+          try {
+            const existingRaw = localStorage.getItem(`smarthire_potential_candidates_${tKey}`)
+            const listToSave = existingRaw ? JSON.parse(existingRaw) : [candPipelineObj]
+            saveRequisitionCandidates(tKey, listToSave).catch(() => {})
+          } catch (e) {}
+        }
+
+        try {
+          const allCandsRaw = localStorage.getItem('smarthire_all_candidates')
+          const allCands = allCandsRaw ? JSON.parse(allCandsRaw) : []
+          const updatedAll = [candPipelineObj, ...allCands.filter(c => c.email !== candidateEmail.trim() && c.id !== candidateId)]
+          localStorage.setItem('smarthire_all_candidates', JSON.stringify(updatedAll))
+        } catch (e) {}
 
         try {
           await saveCareerApplication({
