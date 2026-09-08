@@ -31,6 +31,20 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-09 — 1-Click Dual Layout Switcher: Classic ATS & Modern Zone Views
+- **User Preference Coexistence (Both Layouts Live & 1-Click Switchable)**:
+  - Enabled candidates and recruiters to toggle instantly between the **Classic Executive ATS** layout (live workplace video & photo slider background, PraxiMinds technical grid canvas, Zoho ATS job cards `sh-job-card`, segmented filter chips) and the **MUI Zone Modern** layout (`#FA541C` radiant orange, `#141A21` dark hero, floating search console, 8 hot categories, and 3-step candidate workflow).
+  - Default layout set to `'classic'` per user preference, with persistent selection stored in `localStorage` (`'smarthire_career_layout_view'`).
+- **Component Architecture Separation**:
+  - `ClassicCareersView.jsx`: Encapsulates the complete Classic Executive ATS presentation, hero carousel with video playback mode, filter chips, job listing grid, and dedicated ATS footer.
+  - `ZoneCareersView.jsx`: Encapsulates the complete MUI Zone Career portal layout, orbital illustrations, 3-step candidate workflow, 8 hot categories grid, and recruiter banner.
+  - `PublicCareers.jsx`: Acts as the unified master controller managing shared data (`jobs`, `filteredJobs`, search/location/category filters, `savedJobs`, `appliedJobs`, `candidateUser`), candidate authentication, AI resume auto-parsing, and global modals (Full JD Reader, 1-Click Apply, CV Upload, Login, Recruiter Messenger, and Career Bot).
+- **Dual Switching Access Points**:
+  - Top Navigation Header Switcher: Integrated `[ 🏛️ Classic ATS | ✨ Zone Modern ]` segmented toggle in the header navbar of both layouts.
+  - Floating Quick-Switch Pill: Added bottom-left persistent glass switcher pill (`Layout: [ 🏛️ Classic ATS | ✨ Zone Modern ]`) for seamless 1-click toggling from any scroll position.
+- **Production Build Verified**:
+  - `npm run build` in `smarthire-react` verified: 0 errors, 0 warnings (built in 1.64s).
+
 ### 2026-09-08 — MUI Zone Career Landing Page UI/UX Redesign
 - **Exact MUI Zone Landing Page Design & Color Scheme Integration**:
   - Rebuilt the public careers portal (`PublicCareers.jsx`) with the exact design tokens, typography, and layout of the MUI Store Zone Career template (`#FA541C` primary radiant orange, `#141A21` deep navy hero background, `#1C252E` dark card surfaces, and Barlow/DM Sans typography).
