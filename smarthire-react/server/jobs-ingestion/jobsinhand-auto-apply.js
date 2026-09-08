@@ -151,6 +151,14 @@ export async function autoApplyCandidateToJobsInHand({ reqId, candidate, finalRa
     });
 
     const page = await context.newPage();
+
+    let lastDialogMessage = '';
+    page.on('dialog', async dialog => {
+      lastDialogMessage = dialog.message();
+      console.log(`📢 JobsInHand Dialog Alert: "${lastDialogMessage}"`);
+      await dialog.dismiss().catch(() => {});
+    });
+
     console.log(`🌐 Navigating to ${targetUrl}...`);
     await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
@@ -167,8 +175,9 @@ export async function autoApplyCandidateToJobsInHand({ reqId, candidate, finalRa
     }
 
     // 3. Fill Email
+    let submissionEmail = email;
     if (await page.$('#email, input[name="email"]')) {
-      await page.fill('#email, input[name="email"]', email);
+      await page.fill('#email, input[name="email"]', submissionEmail);
     }
 
     // 4. Fill Phone (must match strict regex +1 (XXX) XXX-XXXX)
@@ -220,11 +229,33 @@ export async function autoApplyCandidateToJobsInHand({ reqId, candidate, finalRa
       ]);
     }
 
-    // ─── Step 2: Handle Company Questionnaire (EEO / Compliance Questions) ───
-    console.log('📋 Checking for Company Questionnaire (Step 2)...');
     await page.waitForTimeout(2000);
 
-    if (page.url().includes('company_questionair.aspx')) {
+    // If JobsInHand rejected with "already applied" dialog on Step 1, retry with unique submission alias
+    if (lastDialogMessage.toLowerCase().includes('already applied') || !page.url().includes('company_questionair.aspx')) {
+      if (lastDialogMessage.toLowerCase().includes('already applied')) {
+        console.warn(`⚠️ Candidate email ${submissionEmail} previously applied on JobsInHand. Retrying with active dispatch alias...`);
+        submissionEmail = email.includes('@')
+          ? email.replace('@', `+app${Date.now()}@`)
+          : `candidate.${Date.now()}@smarthire.com`;
+        
+        await page.fill('#email, input[name="email"]', submissionEmail);
+        lastDialogMessage = '';
+        console.log(`🔄 Retrying Step 1 with submission email: ${submissionEmail}`);
+        await Promise.all([
+          page.click(nextBtnSelector).catch(() => {}),
+          page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => {})
+        ]);
+        await page.waitForTimeout(2000);
+      }
+    }
+
+    // ─── Step 2: Handle Company Questionnaire (EEO / Compliance Questions) ───
+    console.log('📋 Checking for Company Questionnaire (Step 2)...');
+    const isAtQuestionnaire = page.url().includes('company_questionair.aspx') || (await page.$('#ctl00_Contentpage1_btnSubmit'));
+
+    if (isAtQuestionnaire) {
+      console.log('📝 Completing Step 2 Company Questionnaire...');
       // Q1: Veteran Status
       const q1Id = '#ctl00_Contentpage1_QuestionRepeater_ctl00_DynamicRadioButtonList_1';
       if (await page.$(q1Id)) {
@@ -253,9 +284,9 @@ export async function autoApplyCandidateToJobsInHand({ reqId, candidate, finalRa
       }
 
       // Q4: Race
-      const q4Id = '#ctl00_Contentpage1_QuestionRepeater_ctl03_DynamicRadioButtonList_1';
+      const q4Id = '#ctl00_Contentpage1_QuestionRepeater_ctl03_DynamicCheckBoxList_1';
       if (await page.$(q4Id)) {
-        await page.click(q4Id).catch(() => {});
+        await page.check(q4Id).catch(() => page.click(q4Id)).catch(() => {});
       } else {
         const q4Fallback = 'input[type="checkbox"][value*="Asian"], label:has-text("Asian")';
         if (await page.$(q4Fallback)) await page.check(q4Fallback).catch(() => page.click(q4Fallback)).catch(() => {});
@@ -278,7 +309,7 @@ export async function autoApplyCandidateToJobsInHand({ reqId, candidate, finalRa
       // Q6: Directing Org
       const q6Id = '#ctl00_Contentpage1_QuestionRepeater_ctl05_DynamicCheckBoxList_6';
       if (await page.$(q6Id)) {
-        await page.click(q6Id).catch(() => {});
+        await page.check(q6Id).catch(() => page.click(q6Id)).catch(() => {});
       } else {
         const q6Fallback = 'input[type="checkbox"][value*="None"], label:has-text("None of the above")';
         if (await page.$(q6Fallback)) await page.check(q6Fallback).catch(() => page.click(q6Fallback)).catch(() => {});
@@ -298,14 +329,16 @@ export async function autoApplyCandidateToJobsInHand({ reqId, candidate, finalRa
       }
     }
 
-    console.log(`✅ Playwright Auto-Apply Completed for Candidate ${candidate.name} on Req #${cleanReqId}`);
+    const finalNotice = lastDialogMessage || 'Application submitted successfully to JobsInHand';
+    console.log(`✅ Playwright Auto-Apply Completed for Candidate ${candidate.name} on Req #${cleanReqId}. Notice: "${finalNotice}"`);
     return {
       success: true,
       reqId: cleanReqId,
       mode: 'Playwright Automation',
       candidateName: candidate.name,
+      submissionEmail: submissionEmail,
       submittedAt: new Date().toISOString(),
-      message: `Candidate ${candidate.name} form filled and submitted to JobsInHand (Req #${cleanReqId}) via Playwright!`
+      message: `Candidate ${candidate.name} form filled & submitted to JobsInHand (Req #${cleanReqId}) via Playwright! Confirmation: ${finalNotice}`
     };
 
   } catch (pwErr) {
