@@ -31,6 +31,29 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-08 — MUI Zone Career Landing Page UI/UX Redesign
+- **Exact MUI Zone Landing Page Design & Color Scheme Integration**:
+  - Rebuilt the public careers portal (`PublicCareers.jsx`) with the exact design tokens, typography, and layout of the MUI Store Zone Career template (`#FA541C` primary radiant orange, `#141A21` deep navy hero background, `#1C252E` dark card surfaces, and Barlow/DM Sans typography).
+- **Zone Top Sticky Navigation**:
+  - Implemented `SmartHire•` logo with vibrant `#FA541C` accent dot, smooth anchor navigation links (`Home`, `Jobs`, `Categories`, `For Candidates`, `For Recruiters`, `Blog`), US timezone clocks popup tool, dark/light theme toggle, candidate profile indicator, and direct `⚡ ATS Portal ↗` action button.
+- **Zone Dark Hero Section (`#141A21`)**:
+  - Headline: *"Get the **Career** you deserve"* with radiant orange gradient emphasis.
+  - Floating white search console with live keyword input, location dropdown (`All`, `Remote`, `Hybrid`, `Onsite`), and square-rounded `#FA541C` search action button.
+  - Partner brand row (`Airbnb`, `Dropbox`, `Facebook`, `Google`) and 4 KPI metric stat counters.
+  - Right-side vector orbital graphic (`ZoneHeroOrbitalIllustration`) with orbit rings, satellite particle nodes, and floating 3D glass category badges (`Accounting`, `Health care`, `Software`, `Banking`).
+- **"FOR CANDIDATES" 3-Step Section & CV Upload**:
+  - Clean 3-step candidate workflow with custom orange line-art icons (`Step1SignUpIcon`, `Step2ProfileIcon`, `Step3SearchJobIcon`), step badges, and descriptions.
+  - Added `"Upload your CV"` dark pill button triggering general candidate resume intake modal with automatic AI parsing (`/api/parse-resume`) and direct Firestore candidate pool registration.
+- **"Hot categories" Interactive 8-Card Grid**:
+  - 8 category cards with outline vector icons and live job counts: `Accounting / Finance`, `Marketing`, `Design`, `Development`, `IT - Hardware`, `Customer Service`, `Health and Care`, `Banking`.
+  - 1-click filtering: clicking any category immediately filters the job vacancies below and smoothly scrolls down.
+- **Zone Job Cards & Active Vacancies Grid**:
+  - Redesigned job cards matching screenshot 4: client monogram badge, heart bookmark toggle (`savedJobs`), bold title, client link, location, posted date, 2x2 meta attribute grid (experience, contract type C2C/W2, hourly rate, work mode), and dual action buttons (`📋 Full JD` and `⚡ Apply Now`).
+- **"FOR RECRUITERS" Dark CTA Banner**:
+  - Dark container banner with `#FA541C` eyebrow, headline *"Do you have a position to post job?"*, orange `"Post a job"` button linking to recruiter portal, and interview vector illustration (`ZoneRecruiterMeetingIllustration`).
+- **Production Build Verified**:
+  - Local production build `npm run build` in `smarthire-react` verified: 0 errors, 0 warnings (built in 1.71s).
+
 ### 2026-09-05 — Instant Notification with Audio Chime Sound on New JD Addition
 - **Dedicated Requisition Audio Chime (`playRequisitionSound`)**:
   - Implemented an uplifting 4-tone ascending major arpeggio chord chime (C5 `523.25Hz` → E5 `659.25Hz` → G5 `783.99Hz` → C6 `1046.50Hz` + high harmonic shimmer E6 `1318.51Hz`) crafted specifically for new job requisitions / JDs.

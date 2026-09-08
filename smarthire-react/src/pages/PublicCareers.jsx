@@ -1,9 +1,36 @@
-import React, { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import React, { useState, useEffect, useMemo } from 'react'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import CandidateMessengerWidget from '../components/CandidateMessengerWidget'
 import SmartHireBotWidget from '../components/SmartHireBotWidget'
 import { saveCareerApplication, getAtsJobs } from '../lib/atsFirestore'
+import { loginWithGoogle } from '../lib/firebase'
+import { playRequisitionSound } from '../components/ActivityNotificationBell'
 import { formatJobDescription, resolveJobLocation, cleanJobTitleWithPositionNumber } from '../utils/formatJobDescription'
+import {
+  ZoneHeroOrbitalIllustration,
+  ZoneRecruiterMeetingIllustration,
+  AirbnbLogo,
+  DropboxLogo,
+  FacebookLogo,
+  GoogleLogo,
+  Step1SignUpIcon,
+  Step2ProfileIcon,
+  Step3SearchJobIcon,
+  CategoryFinanceIcon,
+  CategoryMarketingIcon,
+  CategoryDesignIcon,
+  CategoryDevIcon,
+  CategoryHardwareIcon,
+  CategoryCustomerServiceIcon,
+  CategoryHealthcareIcon,
+  CategoryBankingIcon,
+  BarChartExpIcon,
+  ClockContractIcon,
+  CashSalaryIcon,
+  WorkModeUserIcon,
+  HeartBookmarkIcon,
+  LocationPinIcon
+} from '../components/ZoneCareerAssets'
 
 export default function PublicCareers() {
   const navigate = useNavigate()
@@ -34,36 +61,36 @@ export default function PublicCareers() {
   }
 
   const getJobPostTimezones = (job) => {
-    let date = null;
+    let date = null
     if (job.id && job.id.startsWith('J-')) {
-      const ts = parseInt(job.id.replace('J-', ''), 10);
+      const ts = parseInt(job.id.replace('J-', ''), 10)
       if (!isNaN(ts)) {
-        date = new Date(ts);
+        date = new Date(ts)
       }
     }
     if (!date || isNaN(date.getTime())) {
-      date = job.creationDate ? new Date(job.creationDate) : new Date();
+      date = job.creationDate ? new Date(job.creationDate) : new Date()
     }
 
-    const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: true };
-    const dateOptions = { month: 'short', day: 'numeric', year: 'numeric' };
+    const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: true }
+    const dateOptions = { month: 'short', day: 'numeric', year: 'numeric' }
 
     const formatZone = (tz, tzName) => {
       try {
-        const dStr = new Intl.DateTimeFormat('en-US', { ...dateOptions, timeZone: tz }).format(date);
-        const tStr = new Intl.DateTimeFormat('en-US', { ...timeOptions, timeZone: tz }).format(date);
-        return `${dStr} at ${tStr} ${tzName}`;
+        const dStr = new Intl.DateTimeFormat('en-US', { ...dateOptions, timeZone: tz }).format(date)
+        const tStr = new Intl.DateTimeFormat('en-US', { ...timeOptions, timeZone: tz }).format(date)
+        return `${dStr} at ${tStr} ${tzName}`
       } catch (e) {
-        return date.toLocaleDateString();
+        return date.toLocaleDateString()
       }
-    };
+    }
 
     return {
       EST: formatZone('America/New_York', 'EST'),
       CST: formatZone('America/Chicago', 'CST'),
       MST: formatZone('America/Denver', 'MST'),
       PST: formatZone('America/Los_Angeles', 'PST')
-    };
+    }
   }
 
   // Capture referral parameter from URL (e.g. ?ref=vaibhav-bisen)
@@ -77,7 +104,6 @@ export default function PublicCareers() {
 
   // ─── SEO: Dynamic meta tags & JSON-LD for /jobs page ─────────────────────
   useEffect(() => {
-    // Page title
     document.title = 'IT Jobs & Direct Client Contracts | SmartHire'
 
     const setMeta = (name, content, isProperty = false) => {
@@ -91,28 +117,22 @@ export default function PublicCareers() {
       el.setAttribute('content', content)
     }
 
-    // Primary SEO meta
     setMeta('description', 'Browse 60+ direct-client IT contract jobs across State, Healthcare & Enterprise clients. Remote, Hybrid & Onsite roles. Apply in 1 click via SmartHire.')
     setMeta('keywords', 'IT jobs, direct client contracts, IT staffing, remote IT jobs, government IT contracts, C2C jobs, W2 jobs, healthcare IT, enterprise contracts, SmartHire')
     setMeta('robots', 'index, follow')
     setMeta('author', 'SmartHire')
 
-    // OpenGraph
     setMeta('og:type', 'website', true)
     setMeta('og:title', 'IT Jobs & Direct Client Contracts | SmartHire', true)
     setMeta('og:description', 'Browse 60+ verified direct-client IT requisitions. State, Healthcare & Enterprise contracts — Remote, Hybrid, Onsite. 1-click apply.', true)
     setMeta('og:url', 'https://smarthire-4zqf.onrender.com/jobs', true)
-    setMeta('og:image', 'https://smarthire-4zqf.onrender.com/career-hero-slide1.jpg', true)
     setMeta('og:site_name', 'SmartHire', true)
     setMeta('og:locale', 'en_US', true)
 
-    // Twitter Card
     setMeta('twitter:card', 'summary_large_image')
     setMeta('twitter:title', 'IT Jobs & Direct Client Contracts | SmartHire')
     setMeta('twitter:description', 'Browse 60+ verified direct-client IT requisitions. State, Healthcare & Enterprise. 1-click apply.')
-    setMeta('twitter:image', 'https://smarthire-4zqf.onrender.com/career-hero-slide1.jpg')
 
-    // Canonical URL
     let canonical = document.querySelector('link[rel="canonical"]')
     if (!canonical) {
       canonical = document.createElement('link')
@@ -121,7 +141,6 @@ export default function PublicCareers() {
     }
     canonical.setAttribute('href', 'https://smarthire-4zqf.onrender.com/jobs')
 
-    // JSON-LD: WebSite + JobPosting structured data
     const existingLd = document.getElementById('smarthire-jobs-jsonld')
     if (existingLd) existingLd.remove()
     const ldScript = document.createElement('script')
@@ -135,27 +154,13 @@ export default function PublicCareers() {
           "@id": "https://smarthire-4zqf.onrender.com/#website",
           "url": "https://smarthire-4zqf.onrender.com",
           "name": "SmartHire",
-          "description": "Direct-client IT staffing & ATS platform",
-          "potentialAction": {
-            "@type": "SearchAction",
-            "target": "https://smarthire-4zqf.onrender.com/jobs?search={search_term_string}",
-            "query-input": "required name=search_term_string"
-          }
+          "description": "Direct-client IT staffing & ATS platform"
         },
         {
           "@type": "WebPage",
           "@id": "https://smarthire-4zqf.onrender.com/jobs#webpage",
           "url": "https://smarthire-4zqf.onrender.com/jobs",
-          "name": "IT Jobs & Direct Client Contracts | SmartHire",
-          "isPartOf": { "@id": "https://smarthire-4zqf.onrender.com/#website" },
-          "description": "Browse 60+ verified direct-client IT contract positions across State, Healthcare & Enterprise clients. Remote, Hybrid & Onsite roles available.",
-          "breadcrumb": {
-            "@type": "BreadcrumbList",
-            "itemListElement": [
-              { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://smarthire-4zqf.onrender.com" },
-              { "@type": "ListItem", "position": 2, "name": "Jobs", "item": "https://smarthire-4zqf.onrender.com/jobs" }
-            ]
-          }
+          "name": "IT Jobs & Direct Client Contracts | SmartHire"
         },
         {
           "@type": "Organization",
@@ -172,18 +177,24 @@ export default function PublicCareers() {
       if (ld) ld.remove()
     }
   }, [])
-  // ─────────────────────────────────────────────────────────────────────────
 
-  const [themeMode, setThemeMode] = useState('light')
-  const [activeChatCandidate, setActiveChatCandidate] = useState(null)
+  // ─── THEME & LIVE CLOCKS ──────────────────────────────────────────────────
+  const [themeMode, setThemeMode] = useState(() => {
+    return localStorage.getItem('smarthire_theme') || 'light'
+  })
+  const isLight = themeMode === 'light'
+
+  const toggleTheme = () => {
+    const next = isLight ? 'dark' : 'light'
+    setThemeMode(next)
+    try { localStorage.setItem('smarthire_theme', next) } catch(e) {}
+  }
 
   const [currentTime, setCurrentTime] = useState(new Date())
   const [clocksExpanded, setClocksExpanded] = useState(false)
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date())
-    }, 1000)
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
     return () => clearInterval(timer)
   }, [])
 
@@ -210,23 +221,42 @@ export default function PublicCareers() {
     }
   }
 
+  // ─── STATE & DATA ─────────────────────────────────────────────────────────
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedLocation, setSelectedLocation] = useState('All')
+  const [selectedCategory, setSelectedCategory] = useState('all')
   const [deadlineFilter, setDeadlineFilter] = useState('All')
   const [chatEnabled, setChatEnabled] = useState(true)
   const [botWidgetOpen, setBotWidgetOpen] = useState(false)
-  
-  // Track applied jobs locally so candidate gets a direct "Message Recruiter" button on applied job cards
+  const [activeChatCandidate, setActiveChatCandidate] = useState(null)
+
+  // Saved / Bookmarked jobs
+  const [savedJobs, setSavedJobs] = useState(() => {
+    try {
+      const saved = localStorage.getItem('smarthire_saved_jobs')
+      return saved ? JSON.parse(saved) : {}
+    } catch(e) { return {} }
+  })
+
+  const handleToggleSaveJob = (jobId) => {
+    setSavedJobs(prev => {
+      const next = { ...prev, [jobId]: !prev[jobId] }
+      try { localStorage.setItem('smarthire_saved_jobs', JSON.stringify(next)) } catch(e) {}
+      return next
+    })
+  }
+
+  // Track applied jobs locally
   const [appliedJobs, setAppliedJobs] = useState(() => {
     try {
       const saved = localStorage.getItem('smarthire_applied_jobs')
       return saved ? JSON.parse(saved) : {}
     } catch(e) { return {} }
   })
-  
-  // Candidate Google Login State
+
+  // Candidate Auth State
   const [candidateUser, setCandidateUser] = useState(() => {
     try {
       const saved = localStorage.getItem('smarthire_candidate_user')
@@ -276,8 +306,8 @@ export default function PublicCareers() {
   const [contractType, setContractType] = useState('C2C')
   const [visaStatus, setVisaStatus] = useState('US Citizen')
   const [expectedRate, setExpectedRate] = useState('')
-  
-  // File Upload & Auto-Parsing State
+
+  // Resume File Upload & Auto-Parsing State
   const [resumeFile, setResumeFile] = useState(null)
   const [resumeText, setResumeText] = useState('')
   const [isParsingResume, setIsParsingResume] = useState(false)
@@ -293,84 +323,107 @@ export default function PublicCareers() {
   const [submitError, setSubmitError] = useState('')
   const [submitSuccess, setSubmitSuccess] = useState(null)
 
-  // Theme Palette (Zoho ATS + Executive Canvas)
-  const isLight = themeMode === 'light'
-  const theme = {
-    bg: isLight ? '#FAFBFD' : '#080C14',
-    gridLine: isLight ? 'rgba(100, 116, 139, 0.12)' : 'rgba(255, 255, 255, 0.06)',
-    cardBg: isLight ? '#FFFFFF' : '#111827',
-    headerBg: isLight ? 'rgba(255, 255, 255, 0.92)' : 'rgba(8, 12, 20, 0.92)',
-    textPrimary: isLight ? '#0F172A' : '#F8FAFC',
-    textSecondary: isLight ? '#475569' : '#94A3B8',
-    border: isLight ? '#E2E8F0' : 'rgba(255, 255, 255, 0.08)',
-    cardBorder: isLight ? '#E2E8F0' : 'rgba(255, 255, 255, 0.09)',
-    inputBg: isLight ? '#FFFFFF' : '#0F172A',
-    inputBorder: isLight ? '#CBD5E1' : 'rgba(255, 255, 255, 0.12)',
-    accent: '#2563EB',
-    accentHover: '#1D4ED8',
-    brandOrange: '#FF6B00',
-    purple: '#7C3AED',
-    tagBg: isLight ? '#F8FAFC' : 'rgba(37, 99, 235, 0.12)',
-    tagText: isLight ? '#334155' : '#93C5FD',
-    cardShadow: isLight ? '0 2px 8px -2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03)' : '0 10px 30px rgba(0, 0, 0, 0.4)',
-    cardHoverShadow: isLight ? '0 14px 30px -4px rgba(37, 99, 235, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.06)' : '0 20px 40px rgba(0, 0, 0, 0.6)'
-  }
+  // General CV Upload Modal State (Candidate 3-Steps CTA)
+  const [showCvUploadModal, setShowCvUploadModal] = useState(false)
+  const [cvCandidateName, setCvCandidateName] = useState('')
+  const [cvCandidateEmail, setCvCandidateEmail] = useState('')
+  const [cvCandidatePhone, setCvCandidatePhone] = useState('')
+  const [cvPreferredRole, setCvPreferredRole] = useState('')
+  const [cvFile, setCvFile] = useState(null)
+  const [cvParsing, setCvParsing] = useState(false)
+  const [cvSuccess, setCvSuccess] = useState(false)
 
-  // Hero Background Carousel Slides (Ultra-sharp 100% in-focus images + preserved previous scenes)
-  const HERO_SLIDES = [
+  // ─── HOT CATEGORIES DEFINITIONS (SCREENSHOT 3) ────────────────────────────
+  const HOT_CATEGORIES = [
     {
-      id: 1,
-      image: '/career-hero-slide1.jpg',
-      label: 'Corporate Tech HQ',
-      caption: 'Direct Enterprise & State Contracts'
+      id: 'accounting',
+      name: 'Accounting / Finance',
+      count: '497 jobs',
+      icon: CategoryFinanceIcon,
+      keywords: ['accounting', 'finance', 'financial', 'audit', 'tax', 'payroll', 'controller']
     },
     {
-      id: 2,
-      image: '/career-hero-slide2.jpg',
-      label: 'Executive Boardroom',
-      caption: 'Direct Client Boardroom & Strategic Roles'
+      id: 'marketing',
+      name: 'Marketing',
+      count: '763 jobs',
+      icon: CategoryMarketingIcon,
+      keywords: ['marketing', 'seo', 'growth', 'brand', 'content', 'social media', 'campaign']
     },
     {
-      id: 3,
-      image: '/career-hero-slide3.jpg',
-      label: 'Cloud Engineering Center',
-      caption: 'Cloud, Data Systems & Tech Innovation'
+      id: 'design',
+      name: 'Design',
+      count: '684 jobs',
+      icon: CategoryDesignIcon,
+      keywords: ['design', 'ui', 'ux', 'product design', 'graphic', 'figma', 'creative']
     },
     {
-      id: 4,
-      image: '/career-hero-prev-slide1.jpg',
-      label: 'Digital Constellation Hub',
-      caption: 'High-Impact Consulting & Systems Architecture'
+      id: 'development',
+      name: 'Development',
+      count: '451 jobs',
+      icon: CategoryDevIcon,
+      keywords: ['developer', 'engineer', 'full stack', 'react', 'java', 'node', 'software', 'frontend', 'backend', 'python', 'c#', '.net']
+    },
+    {
+      id: 'hardware',
+      name: 'IT - Hardware',
+      count: '433 jobs',
+      icon: CategoryHardwareIcon,
+      keywords: ['hardware', 'network', 'cloud', 'aws', 'infrastructure', 'devops', 'sysadmin', 'azure', 'cisco', 'security']
+    },
+    {
+      id: 'support',
+      name: 'Customer Service',
+      count: '462 jobs',
+      icon: CategoryCustomerServiceIcon,
+      keywords: ['support', 'customer', 'service', 'helpdesk', 'operations', 'tier', 'coordinator']
+    },
+    {
+      id: 'healthcare',
+      name: 'Health and Care',
+      count: '951 jobs',
+      icon: CategoryHealthcareIcon,
+      keywords: ['health', 'healthcare', 'medical', 'clinical', 'epic', 'cerner', 'hipaa', 'biomedical']
+    },
+    {
+      id: 'banking',
+      name: 'Banking',
+      count: '194 jobs',
+      icon: CategoryBankingIcon,
+      keywords: ['bank', 'banking', 'fintech', 'treasury', 'capital', 'risk', 'compliance', 'wealth']
     }
   ]
 
-  const [heroMediaMode, setHeroMediaMode] = useState('video') // 'video' | 'slides'
-  const [currentHeroSlide, setCurrentHeroSlide] = useState(0)
-  const [isSliderHovered, setIsSliderHovered] = useState(false)
+  // ─── THEME TOKENS (ZONE UI SPECS) ─────────────────────────────────────────
+  const theme = {
+    primary: '#FA541C',
+    primaryHover: '#B3200E',
+    primaryLight: '#FEE9D1',
+    bg: isLight ? '#FFFFFF' : '#141A21',
+    surface: isLight ? '#F4F6F8' : '#1C252E',
+    cardBg: isLight ? '#FFFFFF' : '#1C252E',
+    headerBg: isLight ? 'rgba(255, 255, 255, 0.92)' : 'rgba(20, 26, 33, 0.92)',
+    textPrimary: isLight ? '#1C252E' : '#FFFFFF',
+    textSecondary: isLight ? '#637381' : '#919EAB',
+    border: isLight ? 'rgba(145, 158, 171, 0.2)' : 'rgba(145, 158, 171, 0.24)',
+    inputBg: isLight ? '#FFFFFF' : '#1C252E',
+    inputBorder: isLight ? 'rgba(145, 158, 171, 0.28)' : 'rgba(145, 158, 171, 0.32)',
+    cardShadow: isLight
+      ? '0 0 2px 0 rgba(145, 158, 171, 0.2), 0 12px 24px -4px rgba(145, 158, 171, 0.12)'
+      : '0 0 2px 0 rgba(0, 0, 0, 0.4), 0 12px 24px -4px rgba(0, 0, 0, 0.3)',
+    cardHoverShadow: isLight
+      ? '0 0 2px 0 rgba(145, 158, 171, 0.24), 0 20px 40px -4px rgba(145, 158, 171, 0.18)'
+      : '0 0 2px 0 rgba(0, 0, 0, 0.5), 0 20px 40px -4px rgba(0, 0, 0, 0.5)'
+  }
 
-  // Auto-play slider with hover pause when in slides mode
-  useEffect(() => {
-    if (isSliderHovered || heroMediaMode !== 'slides') return
-    const timer = setInterval(() => {
-      setCurrentHeroSlide((prev) => (prev + 1) % HERO_SLIDES.length)
-    }, 5000)
-    return () => clearInterval(timer)
-  }, [isSliderHovered, heroMediaMode, HERO_SLIDES.length])
-
-  const [expandedBriefJobId, setExpandedBriefJobId] = useState(null)
-
-  // Helper to extract clean human name from resume filename
+  // ─── HELPERS ──────────────────────────────────────────────────────────────
   const cleanNameFromFileName = (fileName) => {
     if (!fileName) return ''
     let name = fileName.replace(/\.(pdf|docx|doc|txt)$/i, '')
-    // Split camelCase e.g. ResumeFrancisPribilovics -> Resume Francis Pribilovics
     name = name.replace(/([a-z])([A-Z])/g, '$1 $2')
     name = name.replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
     name = name.replace(/%20|_|-/g, ' ')
-    // Strip common resume labels
     name = name.replace(/\b(resume|cv|curriculum|vitae|profile|applicant|candidate|doc|docx|pdf|updated|latest|draft|final|202\d|201\d)\b/gi, '')
     name = name.replace(/[^a-zA-Z\s]/g, ' ').replace(/\s+/g, ' ').trim()
-    
     const words = name.split(' ').filter(w => w.length >= 2)
     if (words.length >= 2) {
       return words.slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
@@ -388,8 +441,27 @@ export default function PublicCareers() {
   }
 
   const formatExperience = (val) => {
-    if (!val || val === 'TBD' || val === 'Any') return 'Relevant Experience'
+    if (!val || val === 'TBD' || val === 'Any') return '5+ Years Exp'
+    if (/\d+/.test(val)) return val.includes('exp') ? val : `${val} Exp`
     return val
+  }
+
+  const formatRateOrSalary = (job) => {
+    const rate = job.payRate || job.hourlyRate || job.rate || job.salary
+    if (rate && rate !== 'TBD' && rate !== 'Competitive') {
+      return rate.includes('$') ? rate : `$${rate}/hr`
+    }
+    return 'Competitive'
+  }
+
+  const formatContractType = (job) => {
+    const ct = (job.contractType || job.jobType || job.type || '').toUpperCase()
+    if (ct.includes('C2C') || ct.includes('CORP')) return 'C2C'
+    if (ct.includes('W2')) return 'W2'
+    if (ct.includes('1099')) return '1099'
+    if (ct.includes('FULL')) return 'Full-time'
+    if (ct.includes('PART')) return 'Part-time'
+    return 'Contract'
   }
 
   const isJobExpired = (job) => {
@@ -410,6 +482,32 @@ export default function PublicCareers() {
     return false
   }
 
+  const isDeadlineToday = (deadlineStr) => {
+    if (!deadlineStr) return false
+    const now = new Date()
+    const yyyy = now.getFullYear()
+    const mm = String(now.getMonth() + 1).padStart(2, '0')
+    const dd = String(now.getDate()).padStart(2, '0')
+    const todayISO = `${yyyy}-${mm}-${dd}`
+    const clean = String(deadlineStr).trim()
+    if (clean.includes(todayISO)) return true
+
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+    const mStr = months[now.getMonth()]
+    if (clean.toLowerCase().includes(`${now.getDate()}-${mStr.toLowerCase()}`) || clean.toLowerCase().includes(`${mStr.toLowerCase()} ${now.getDate()}`)) return true
+
+    const dl = new Date(deadlineStr)
+    if (!isNaN(dl.getTime())) {
+      return (
+        dl.getFullYear() === now.getFullYear() &&
+        dl.getMonth() === now.getMonth() &&
+        dl.getDate() === now.getDate()
+      )
+    }
+    return false
+  }
+
+  // ─── DATA FETCHING ────────────────────────────────────────────────────────
   useEffect(() => {
     fetchJobs()
     fetchSiteSettings()
@@ -432,7 +530,6 @@ export default function PublicCareers() {
       const data = await res.json()
       if (data.success && Array.isArray(data.jobs) && data.jobs.length > 0) {
         setJobs(data.jobs)
-        
         if (targetJobId) {
           const cleanTarget = String(targetJobId).replace('J-', '')
           const match = data.jobs.find(j => 
@@ -449,7 +546,6 @@ export default function PublicCareers() {
       console.warn('Backend /api/jobs asleep/unavailable, loading from Firebase Firestore...', e)
     }
 
-    // Fallback: Load directly from Firebase Firestore (Always online, 0 sleep)
     try {
       const firestoreJobs = await getAtsJobs()
       if (firestoreJobs && firestoreJobs.length > 0) {
@@ -491,7 +587,7 @@ export default function PublicCareers() {
     setParsedSkills([])
   }
 
-  // Resume Upload Handler with Smart Name & Details Auto-Parsing
+  // ─── RESUME AUTO PARSING ──────────────────────────────────────────────────
   const handleFileChange = async (e) => {
     const file = e.target.files[0]
     if (!file) return
@@ -539,20 +635,6 @@ export default function PublicCareers() {
         const text = await file.text().catch(() => '')
         if (text && text.length > 50) {
           setResumeText(text)
-          const lines = text.split(/[\r\n]+/).map(l => l.trim()).filter(l => l.length > 2 && l.length < 40).filter(l => !/%pdf|pdf|adobe|stream|obj|endobj|resume|cv|curriculum|vitae|page|email|phone|tel|http|www|@/i.test(l))
-          for (const line of lines) {
-            const words = line.replace(/[^a-zA-Z\s]/g, '').trim().split(/\s+/)
-            if (words.length >= 2 && words.length <= 3 && words.every(w => w.length >= 2 && /^[A-Z]/.test(w))) {
-              const guessed = words.join(' ')
-              if (guessed.toUpperCase() !== 'PDF') {
-                setCandidateName(guessed)
-                break
-              }
-            }
-          }
-        }
-        if (result.email || result.phone || result.location || (result.name && result.name.toUpperCase() !== 'PDF')) {
-          setAutoFillSuccess(true)
         }
       }
     } catch (err) {
@@ -562,52 +644,103 @@ export default function PublicCareers() {
     }
   }
 
-  const isDeadlineToday = (deadlineStr) => {
-    if (!deadlineStr) return false
-    const now = new Date()
-    const yyyy = now.getFullYear()
-    const mm = String(now.getMonth() + 1).padStart(2, '0')
-    const dd = String(now.getDate()).padStart(2, '0')
-    const todayISO = `${yyyy}-${mm}-${dd}`
-    const clean = String(deadlineStr).trim()
-    if (clean.includes(todayISO)) return true
-
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-    const mStr = months[now.getMonth()]
-    if (clean.toLowerCase().includes(`${now.getDate()}-${mStr.toLowerCase()}`) || clean.toLowerCase().includes(`${mStr.toLowerCase()} ${now.getDate()}`)) return true
-
-    const dl = new Date(deadlineStr)
-    if (!isNaN(dl.getTime())) {
-      return (
-        dl.getFullYear() === now.getFullYear() &&
-        dl.getMonth() === now.getMonth() &&
-        dl.getDate() === now.getDate()
-      )
+  // ─── GENERAL CV UPLOAD MODAL PARSING ──────────────────────────────────────
+  const handleCvDropFile = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setCvFile(file)
+    setCvParsing(true)
+    try {
+      const formData = new FormData()
+      formData.append('resume', file)
+      const res = await fetch('/api/parse-resume', { method: 'POST', body: formData })
+      const result = await res.json()
+      if (result.success && result.profile) {
+        const p = result.profile
+        const name = p.name || cleanNameFromFileName(file.name)
+        if (name && name.toUpperCase() !== 'PDF') setCvCandidateName(name)
+        if (p.email) setCvCandidateEmail(p.email)
+        if (p.phone) setCvCandidatePhone(p.phone)
+        if (p.skills && p.skills[0]) setCvPreferredRole(p.skills.slice(0, 3).join(', '))
+      } else {
+        const fallbackName = cleanNameFromFileName(file.name)
+        if (fallbackName) setCvCandidateName(fallbackName)
+      }
+    } catch(err) {
+      console.warn('CV parse error:', err)
+    } finally {
+      setCvParsing(false)
     }
-    return false
   }
 
-  const filteredJobs = jobs.filter((j) => {
-    if (isJobExpired(j)) return false
-    const titleMatch = j.title?.toLowerCase().includes(searchQuery.toLowerCase())
-    const skillMatch = Array.isArray(j.skills) && j.skills.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()))
-    const locMatch = (resolveJobLocation(j) || 'Remote, US').toLowerCase().includes(searchQuery.toLowerCase())
-    const qMatch = titleMatch || skillMatch || locMatch
+  const handleGeneralCvSubmit = async (e) => {
+    e.preventDefault()
+    if (!cvCandidateName.trim() || !cvCandidateEmail.trim()) {
+      alert('Please enter your Name and Email.')
+      return
+    }
+    setCvParsing(true)
+    try {
+      const appRecord = {
+        name: cvCandidateName.trim(),
+        email: cvCandidateEmail.trim(),
+        phone: cvCandidatePhone.trim() || '—',
+        jobTitle: cvPreferredRole || 'General Candidate Submission',
+        status: 'New',
+        appliedDate: new Date().toLocaleDateString('en-US'),
+        comments: 'Submitted via Zone CV Quick Upload'
+      }
+      await saveCareerApplication(appRecord, cvFile)
+      setCvSuccess(true)
+    } catch(err) {
+      console.error('General CV submit error:', err)
+      alert('Upload failed. Please try again.')
+    } finally {
+      setCvParsing(false)
+    }
+  }
 
-    if ((deadlineFilter === 'Today' || selectedLocation === 'Today') && !isDeadlineToday(j.deadline)) return false
+  // ─── FILTERING ────────────────────────────────────────────────────────────
+  const filteredJobs = useMemo(() => {
+    return jobs.filter((j) => {
+      if (isJobExpired(j)) return false
 
-    if (selectedLocation === 'Remote') return qMatch && (j.location || 'Remote').toLowerCase().includes('remote')
-    if (selectedLocation === 'Hybrid') return qMatch && (j.location || '').toLowerCase().includes('hybrid')
-    if (selectedLocation === 'Onsite') return qMatch && ((j.location || '').toLowerCase().includes('onsite') || (j.location || '').toLowerCase().includes('on-site'))
-    return qMatch
-  })
+      // Category filter
+      if (selectedCategory !== 'all') {
+        const cat = HOT_CATEGORIES.find(c => c.id === selectedCategory)
+        if (cat) {
+          const matchCat = cat.keywords.some(kw => 
+            (j.title || '').toLowerCase().includes(kw) ||
+            (Array.isArray(j.skills) && j.skills.some(s => s.toLowerCase().includes(kw))) ||
+            (j.description || '').toLowerCase().includes(kw)
+          )
+          if (!matchCat) return false
+        }
+      }
 
-  const activeOpenJobs = jobs.filter(j => !isJobExpired(j))
-  const todayDeadlineCount = activeOpenJobs.filter(j => isDeadlineToday(j.deadline)).length
-  const remoteCount = activeOpenJobs.filter(j => (j.location || j.work_mode || '').toLowerCase().includes('remote')).length
-  const hybridCount = activeOpenJobs.filter(j => (j.location || j.work_mode || '').toLowerCase().includes('hybrid')).length
-  const onsiteCount = activeOpenJobs.filter(j => (j.location || j.work_mode || '').toLowerCase().includes('onsite') || (j.location || j.work_mode || '').toLowerCase().includes('on site')).length
+      // Keyword query match
+      const titleMatch = (j.title || '').toLowerCase().includes(searchQuery.toLowerCase())
+      const skillMatch = Array.isArray(j.skills) && j.skills.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()))
+      const locMatch = (resolveJobLocation(j) || 'Remote, US').toLowerCase().includes(searchQuery.toLowerCase())
+      const qMatch = titleMatch || skillMatch || locMatch
 
+      if ((deadlineFilter === 'Today' || selectedLocation === 'Today') && !isDeadlineToday(j.deadline)) return false
+
+      if (selectedLocation === 'Remote') return qMatch && (j.location || 'Remote').toLowerCase().includes('remote')
+      if (selectedLocation === 'Hybrid') return qMatch && (j.location || '').toLowerCase().includes('hybrid')
+      if (selectedLocation === 'Onsite') return qMatch && ((j.location || '').toLowerCase().includes('onsite') || (j.location || '').toLowerCase().includes('on-site'))
+      
+      return qMatch
+    })
+  }, [jobs, searchQuery, selectedLocation, selectedCategory, deadlineFilter])
+
+  const activeOpenJobs = useMemo(() => jobs.filter(j => !isJobExpired(j)), [jobs])
+  const todayDeadlineCount = useMemo(() => activeOpenJobs.filter(j => isDeadlineToday(j.deadline)).length, [activeOpenJobs])
+  const remoteCount = useMemo(() => activeOpenJobs.filter(j => (j.location || j.work_mode || '').toLowerCase().includes('remote')).length, [activeOpenJobs])
+  const hybridCount = useMemo(() => activeOpenJobs.filter(j => (j.location || j.work_mode || '').toLowerCase().includes('hybrid')).length, [activeOpenJobs])
+  const onsiteCount = useMemo(() => activeOpenJobs.filter(j => (j.location || j.work_mode || '').toLowerCase().includes('onsite') || (j.location || j.work_mode || '').toLowerCase().includes('on site')).length, [activeOpenJobs])
+
+  // ─── APPLICATION SUBMISSION ───────────────────────────────────────────────
   const handleApplySubmit = async (e) => {
     e.preventDefault()
     let validName = candidateName.trim()
@@ -620,13 +753,14 @@ export default function PublicCareers() {
       setSubmitError('Please enter your Full Name and Email Address.')
       return
     }
+
     setSubmitting(true)
     setSubmitError('')
 
+    const recruiterRef = sessionStorage.getItem('smarthire_recruiter_ref') || localStorage.getItem('smarthire_recruiter_ref') || searchParams.get('ref') || 'direct'
+    const activeRecruiter = resolveRecruiterFromRef(recruiterRef) || ALL_SMARTHIRE_RECRUITERS[0]
+
     try {
-      const urlParams = new URLSearchParams(window.location.search)
-      const recruiterRef = sessionStorage.getItem('smarthire_recruiter_ref') || localStorage.getItem('smarthire_recruiter_ref') || urlParams.get('ref') || urlParams.get('recruiter') || '';
-      const activeRecruiter = resolveRecruiterFromRef(recruiterRef) || ALL_SMARTHIRE_RECRUITERS[0]
       let res
       if (resumeFile) {
         const formData = new FormData()
@@ -640,10 +774,10 @@ export default function PublicCareers() {
         formData.append('contractType', contractType)
         formData.append('visaStatus', visaStatus)
         formData.append('expectedRate', expectedRate)
-        if (recruiterRef) formData.append('recruiterRef', recruiterRef)
-        if (resumeText) formData.append('resumeText', resumeText)
+        formData.append('recruiterRef', recruiterRef)
+        formData.append('resumeText', resumeText)
 
-        res = await fetch('/api/screening/public-submit-file', {
+        res = await fetch('/api/screening/public-submit', {
           method: 'POST',
           body: formData
         })
@@ -671,7 +805,7 @@ export default function PublicCareers() {
       const data = await res.json()
 
       if (data.success) {
-        const parsedName = data.candidateName || validName;
+        const parsedName = data.candidateName || validName
         const appRecord = {
           sessionId: data.sessionId || 'SCR-' + Date.now(),
           candidateId: data.candidateId || data.sessionId || 'SCR-' + Date.now(),
@@ -681,13 +815,11 @@ export default function PublicCareers() {
           candidateEmail: candidateEmail.trim(),
           appliedAt: new Date().toISOString()
         }
-        
-        // Save applied job mapping
+
         const updated = { ...appliedJobs, [selectedJob.id]: appRecord }
         setAppliedJobs(updated)
         try { localStorage.setItem('smarthire_applied_jobs', JSON.stringify(updated)) } catch(e) {}
 
-        // Save into smarthire_careers_applications so it immediately reflects in Reports & Dashboard
         const newApp = {
           fName: parsedName.split(' ')[0] || parsedName,
           lName: parsedName.split(' ').slice(1).join(' ') || '',
@@ -700,7 +832,6 @@ export default function PublicCareers() {
           jobTitle: selectedJob.title,
           appliedDate: new Date().toLocaleDateString('en-US') + ' ' + new Date().toLocaleTimeString('en-US'),
           status: 'Int-SubmittedToManager',
-          rejectReason: '',
           comments: `Submitted from SmartHire Careers via ${activeRecruiter.name}`,
           recruiter: activeRecruiter.name,
           recruiterEmail: activeRecruiter.email,
@@ -712,7 +843,6 @@ export default function PublicCareers() {
           localStorage.setItem('smarthire_careers_applications', JSON.stringify([newApp, ...existingApps]))
         } catch(e) {}
 
-        // Save to Firebase Firestore & Storage (Guaranteed cloud persistence)
         try {
           await saveCareerApplication({
             ...newApp,
@@ -740,31 +870,68 @@ export default function PublicCareers() {
     }
   }
 
+  // ─── RENDER ───────────────────────────────────────────────────────────────
   return (
     <div style={{
       backgroundColor: theme.bg,
-      backgroundImage: `
-        radial-gradient(circle at 82% 180px, rgba(255, 107, 0, ${isLight ? '0.07' : '0.04'}) 0%, rgba(255, 154, 60, 0.02) 40%, transparent 65%),
-        radial-gradient(circle at 15% 140px, rgba(37, 99, 235, ${isLight ? '0.06' : '0.03'}) 0%, transparent 50%),
-        linear-gradient(to right, ${theme.gridLine} 1px, transparent 1px),
-        linear-gradient(to bottom, ${theme.gridLine} 1px, transparent 1px)
-      `,
-      backgroundSize: '100% 100%, 100% 100%, 32px 32px, 32px 32px',
-      backgroundRepeat: 'no-repeat, no-repeat, repeat, repeat',
       color: theme.textPrimary,
       minHeight: '100vh',
-      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      fontFamily: "'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
       transition: 'background-color 0.2s, color 0.2s'
     }}>
       <style>{`
-        .sh-search-container {
-          transition: all 0.2s ease-in-out;
+        /* Global & Zone Fonts */
+        h1, h2, h3, h4, .zone-font-heading {
+          font-family: 'Barlow', 'DM Sans', sans-serif;
         }
-        .sh-job-card {
+
+        /* Search Console */
+        .zone-search-box {
+          background: #FFFFFF;
+          border-radius: 16px;
+          padding: 8px 8px 8px 18px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          box-shadow: 0 20px 40px -4px rgba(0, 0, 0, 0.45);
+          width: 100%;
+          max-width: 620px;
+          margin-top: 28px;
+        }
+
+        /* Category Card Hover */
+        .zone-cat-card {
           background-color: ${theme.cardBg};
-          border: 1px solid ${theme.cardBorder};
-          border-radius: 12px;
-          padding: 20px 22px 18px;
+          border: 1px solid ${theme.border};
+          border-radius: 16px;
+          padding: 32px 20px;
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justifyContent: center;
+          gap: 12px;
+          cursor: pointer;
+          transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: ${theme.cardShadow};
+        }
+        .zone-cat-card:hover {
+          transform: translateY(-4px);
+          box-shadow: ${theme.cardHoverShadow};
+          border-color: ${theme.primary};
+        }
+        .zone-cat-card.active {
+          border-color: ${theme.primary};
+          background-color: ${isLight ? '#FFF8F5' : '#261C20'};
+          box-shadow: 0 0 0 2px ${theme.primary};
+        }
+
+        /* Zone Job Card */
+        .zone-job-card {
+          background-color: ${theme.cardBg};
+          border: 1px solid ${theme.border};
+          border-radius: 16px;
+          padding: 24px;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
@@ -772,188 +939,43 @@ export default function PublicCareers() {
           box-shadow: ${theme.cardShadow};
           position: relative;
         }
-        .sh-card-body {
-          display: flex;
-          flex-direction: column;
-          flex: 1 1 auto;
-        }
-        .sh-job-card:hover {
-          transform: translateY(-3px);
+        .zone-job-card:hover {
+          transform: translateY(-4px);
           box-shadow: ${theme.cardHoverShadow};
-          border-color: ${isLight ? '#93C5FD' : 'rgba(147, 197, 253, 0.4)'};
+          border-color: ${theme.primary};
         }
-        .sh-job-card.expired {
-          background-color: ${isLight ? '#F8FAFC' : '#0F172A'};
-          border-color: ${isLight ? '#E2E8F0' : 'rgba(239, 68, 68, 0.2)'};
-          opacity: 0.78;
-        }
-        .sh-job-card.expired:hover {
-          transform: none;
-          box-shadow: none;
-          border-color: ${isLight ? '#E2E8F0' : 'rgba(239, 68, 68, 0.2)'};
-        }
-        .sh-job-title {
-          font-size: 16.5px;
+        .zone-job-title {
+          font-size: 18px;
           font-weight: 700;
           color: ${theme.textPrimary};
-          margin: 0 0 8px;
+          margin: 12px 0 6px;
           line-height: 1.35;
           letter-spacing: -0.015em;
           transition: color 0.15s ease;
+          font-family: 'Barlow', 'DM Sans', sans-serif;
         }
-        .sh-job-card:not(.expired):hover .sh-job-title {
-          color: #2563EB;
+        .zone-job-card:hover .zone-job-title {
+          color: ${theme.primary};
         }
-        .sh-metadata-container {
+
+        /* 3-Steps Candidate Cards */
+        .zone-step-card {
+          text-align: center;
+          padding: 32px 24px;
           display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          margin-bottom: 12px;
+          flex-direction: column;
           align-items: center;
         }
-        .sh-metadata-item {
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
-          font-size: 12px;
-          color: ${theme.textSecondary};
-          font-weight: 500;
-        }
-        .sh-metadata-divider {
-          width: 3px;
-          height: 3px;
-          background-color: ${theme.border};
-          border-radius: 50%;
-        }
-        .sh-skills-container {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 6px;
-          margin: 12px 0 14px;
-        }
-        .sh-skill-pill {
-          font-size: 11px;
-          font-weight: 700;
-          background: ${isLight ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.8) 100%)' : 'linear-gradient(180deg, rgba(37, 99, 235, 0.2) 0%, rgba(37, 99, 235, 0.08) 100%)'};
-          color: ${isLight ? '#1E293B' : '#93C5FD'};
-          padding: 3px 10px;
-          border-radius: 6px;
-          transition: all 0.15s ease;
-          border: 1px solid ${isLight ? 'rgba(203, 213, 225, 0.85)' : 'rgba(37, 99, 235, 0.3)'};
-          border-bottom-color: ${isLight ? 'rgba(148, 163, 184, 0.8)' : 'rgba(0, 0, 0, 0.3)'};
-          box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 1px 2px rgba(0, 0, 0, 0.04);
-          letter-spacing: 0.01em;
-        }
-        .sh-job-card:not(.expired):hover .sh-skill-pill {
-          border-color: rgba(37, 99, 235, 0.4);
-          background: ${isLight ? 'linear-gradient(180deg, #EFF6FF 0%, #DBEAFE 100%)' : 'linear-gradient(180deg, rgba(37, 99, 235, 0.35) 0%, rgba(37, 99, 235, 0.15) 100%)'};
-          color: #1D4ED8;
-          box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 5px rgba(37, 99, 235, 0.15);
-        }
-        .sh-card-footer {
-          border-top: 1px solid ${theme.border};
-          padding-top: 14px;
-          margin-top: 6px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        .sh-apply-btn {
-          background: linear-gradient(180deg, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(0, 0, 0, 0.03) 51%, rgba(0, 0, 0, 0.14) 100%), #2563EB;
-          color: #FFF;
-          border: 1px solid rgba(255, 255, 255, 0.45);
-          border-bottom-color: rgba(0, 0, 0, 0.35);
-          border-radius: 8px;
-          padding: 8px 18px;
-          font-size: 12.5px;
-          font-weight: 800;
-          cursor: pointer;
-          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 4px 12px rgba(37, 99, 235, 0.38), 0 1px 2px rgba(0, 0, 0, 0.15);
-          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-          letter-spacing: 0.02em;
-        }
-        .sh-apply-btn:hover {
-          background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.12) 50%, rgba(0, 0, 0, 0.02) 51%, rgba(0, 0, 0, 0.10) 100%), #1D4ED8;
-          transform: translateY(-2px);
-          box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.95), 0 6px 18px rgba(37, 99, 235, 0.5), 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-        .sh-view-btn {
-          background: ${isLight ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.85) 50%, rgba(241, 245, 249, 0.95) 100%)' : 'linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.9) 100%)'};
-          color: ${isLight ? '#1E293B' : '#F1F5F9'};
-          border: 1px solid ${isLight ? 'rgba(203, 213, 225, 0.95)' : 'rgba(255, 255, 255, 0.2)'};
-          border-bottom-color: ${isLight ? 'rgba(148, 163, 184, 0.85)' : 'rgba(0, 0, 0, 0.4)'};
-          border-radius: 8px;
-          padding: 7px 15px;
-          font-size: 12px;
-          font-weight: 700;
-          cursor: pointer;
-          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-          display: inline-flex;
-          align-items: center;
-          gap: 5px;
-          box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 5px rgba(15, 23, 42, 0.06);
-        }
-        .sh-view-btn:hover {
-          background: ${isLight ? 'linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 100%)' : 'linear-gradient(180deg, #334155 0%, #1E293B 100%)'};
-          color: #2563EB;
-          border-color: #93C5FD;
-          transform: translateY(-2px);
-          box-shadow: inset 0 1px 2px rgba(255, 255, 255, 1), 0 4px 12px rgba(37, 99, 235, 0.15);
-        }
-        .sh-expired-btn {
-          background-color: ${isLight ? '#F1F5F9' : '#334155'};
-          color: ${isLight ? '#94A3B8' : '#64748B'};
-          border: none;
-          border-radius: 7px;
-          padding: 7px 14px;
-          font-size: 12.5px;
-          font-weight: 600;
-          cursor: not-allowed;
-        }
-        .pulse-dot {
-          width: 7px;
-          height: 7px;
-          background-color: #22C55E;
-          border-radius: 50%;
-          display: inline-block;
-          box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
-          animation: pulse-green 2s infinite;
-        }
-        @keyframes pulse-green {
-          0% {
-            transform: scale(0.95);
-            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
-          }
-          70% {
-            transform: scale(1);
-            box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
-          }
-          100% {
-            transform: scale(0.95);
-            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
-          }
-        }
+
+        /* Pulse animation */
         @keyframes pulse-orange {
-          0% {
-            transform: scale(0.95);
-            box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.7);
-          }
-          70% {
-            transform: scale(1);
-            box-shadow: 0 0 0 6px rgba(255, 107, 0, 0);
-          }
-          100% {
-            transform: scale(0.95);
-            box-shadow: 0 0 0 0 rgba(255, 107, 0, 0);
-          }
+          0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(250, 84, 28, 0.7); }
+          70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(250, 84, 28, 0); }
+          100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(250, 84, 28, 0); }
         }
       `}</style>
 
-      {/* Enterprise Header with SmartHire Brand & Integrated Tools */}
+      {/* ─── 1. ZONE TOP NAVBAR ────────────────────────────────────────────── */}
       <header style={{
         backgroundColor: theme.headerBg,
         backdropFilter: 'blur(12px)',
@@ -961,62 +983,57 @@ export default function PublicCareers() {
         borderBottom: `1px solid ${theme.border}`,
         position: 'sticky',
         top: 0,
-        zIndex: 50,
-        padding: '12px 28px',
+        zIndex: 100,
+        padding: '14px 32px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         boxShadow: isLight ? '0 1px 4px rgba(0,0,0,0.03)' : '0 1px 4px rgba(0,0,0,0.2)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{
-            width: 36,
-            height: 36,
-            borderRadius: 8,
-            backgroundColor: '#2563EB',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 18,
-            color: '#FFF'
-          }}>
-            💼
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <h1 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: theme.textPrimary, letterSpacing: '-0.02em' }}>
-                Smart<span style={{ color: '#FF6B00', textShadow: '0 0 12px rgba(255, 107, 0, 0.35)' }}>Hire</span>
-              </h1>
-              <span style={{
-                color: '#2563EB',
-                fontSize: 11,
-                fontWeight: 700,
-                backgroundColor: isLight ? '#EFF6FF' : 'rgba(37, 99, 235, 0.15)',
-                border: '1px solid rgba(37, 99, 235, 0.25)',
-                borderRadius: 4,
-                padding: '1px 6px',
-                letterSpacing: '0.04em'
-              }}>
-                CAREERS
-              </span>
-            </div>
-            <p style={{ margin: 0, fontSize: 11, color: theme.textSecondary }}>Direct Candidate Job Portal</p>
-          </div>
+        {/* Left Brand: ZONE style SmartHire• */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 36 }}>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 2, textDecoration: 'none' }}>
+            <span style={{
+              fontFamily: "'Barlow', sans-serif",
+              fontSize: 24,
+              fontWeight: 800,
+              color: theme.textPrimary,
+              letterSpacing: '-0.03em'
+            }}>
+              Smart<span style={{ color: theme.primary }}>Hire</span>
+            </span>
+            <span style={{
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              backgroundColor: theme.primary,
+              display: 'inline-block',
+              marginLeft: 4,
+              marginBottom: 8
+            }} />
+          </Link>
+
+          {/* Navigation Links */}
+          <nav style={{ display: 'flex', alignItems: 'center', gap: 24, fontSize: 14, fontWeight: 600 }}>
+            <Link to="/" style={{ color: theme.textSecondary, textDecoration: 'none', transition: 'color 0.15s' }}>Home</Link>
+            <a href="#jobs-list" style={{ color: theme.primary, textDecoration: 'none', fontWeight: 700 }}>Jobs</a>
+            <a href="#categories" style={{ color: theme.textSecondary, textDecoration: 'none' }}>Categories</a>
+            <a href="#for-candidates" style={{ color: theme.textSecondary, textDecoration: 'none' }}>For Candidates</a>
+            <a href="#for-recruiters" style={{ color: theme.textSecondary, textDecoration: 'none' }}>For Recruiters</a>
+            <Link to="/blog" style={{ color: theme.textSecondary, textDecoration: 'none' }}>Blog</Link>
+          </nav>
         </div>
 
-        {/* Header Right Tools: Integrated US Live Clocks, Candidate Auth & Theme */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}>
-          
-          {/* Integrated US Clocks Dropdown */}
+        {/* Right Tools: Clocks, Auth, Theme, Portal CTA */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          {/* US Clocks Tooltip / Dropdown */}
           <div style={{ position: 'relative' }}>
             <button
               onClick={() => setClocksExpanded(!clocksExpanded)}
               style={{
-                background: clocksExpanded 
-                  ? (isLight ? 'linear-gradient(180deg, #EFF6FF 0%, #DBEAFE 100%)' : 'rgba(37,99,235,0.25)') 
-                  : (isLight ? 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.85) 50%, rgba(241,245,249,0.95) 100%)' : 'rgba(30,41,59,0.9)'),
-                color: clocksExpanded ? '#1D4ED8' : theme.textSecondary,
-                border: `1px solid ${clocksExpanded ? '#93C5FD' : isLight ? 'rgba(203, 213, 225, 0.9)' : theme.border}`,
+                background: clocksExpanded ? (isLight ? '#FEE9D1' : '#33201C') : (isLight ? '#F4F6F8' : '#1C252E'),
+                color: clocksExpanded ? theme.primary : theme.textSecondary,
+                border: `1px solid ${theme.border}`,
                 borderRadius: 8,
                 padding: '6px 12px',
                 fontSize: 12,
@@ -1025,7 +1042,6 @@ export default function PublicCareers() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 6,
-                boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 5px rgba(15, 23, 42, 0.05)',
                 transition: 'all 0.15s ease'
               }}
             >
@@ -1041,909 +1057,788 @@ export default function PublicCareers() {
                 right: 0,
                 backgroundColor: theme.cardBg,
                 border: `1px solid ${theme.border}`,
-                borderRadius: 8,
-                padding: 12,
+                borderRadius: 12,
+                padding: 14,
                 width: 270,
-                boxShadow: '0 10px 25px rgba(0,0,0,0.12)',
+                boxShadow: '0 16px 32px rgba(0,0,0,0.15)',
                 zIndex: 2100,
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 8
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.border}`, paddingBottom: 6 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: theme.textPrimary, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                    🇺🇸 US Live Timezones
-                  </span>
-                  <button
-                    onClick={() => setClocksExpanded(false)}
-                    style={{ background: 'none', border: 'none', color: theme.textSecondary, fontSize: 12, cursor: 'pointer', padding: 2 }}
-                  >
-                    ✕
-                  </button>
+                <div style={{ fontSize: 11, fontWeight: 800, color: theme.primary, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>
+                  US Real-Time Clocks
                 </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                  {[
-                    { label: 'EDT / EST', name: 'Eastern', tz: 'America/New_York', color: '#eff6ff', textColor: '#1d4ed8', border: '#bfdbfe' },
-                    { label: 'CDT / CST', name: 'Central', tz: 'America/Chicago', color: '#f5f3ff', textColor: '#6d28d9', border: '#ddd6fe' },
-                    { label: 'MDT / MST', name: 'Mountain', tz: 'America/Denver', color: '#fffbeb', textColor: '#b45309', border: '#fde68a' },
-                    { label: 'PDT / PST', name: 'Pacific', tz: 'America/Los_Angeles', color: '#f0fdf4', textColor: '#16a34a', border: '#bbf7d0' }
-                  ].map((zone) => {
-                    const live = formatLiveTime(zone.tz)
-                    return (
-                      <div key={zone.label} style={{
-                        backgroundColor: isLight ? zone.color : 'rgba(255,255,255,0.03)',
-                        border: `1px solid ${isLight ? zone.border : theme.border}`,
-                        borderRadius: 6,
-                        padding: '6px 8px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 2
-                      }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: 10, fontWeight: 800, color: isLight ? zone.textColor : theme.textPrimary }}>{zone.label}</span>
-                          <span style={{ fontSize: 9, color: theme.textSecondary }}>{zone.name}</span>
-                        </div>
-                        <span style={{ fontSize: 12, fontWeight: 800, color: theme.textPrimary, fontFamily: 'monospace', marginTop: 2 }}>{live.time}</span>
-                        <span style={{ fontSize: 9, color: theme.textSecondary }}>{live.date.split(', ')[1]}</span>
-                      </div>
-                    )
-                  })}
-                </div>
+                {[
+                  { name: 'Eastern (EST)', tz: 'America/New_York' },
+                  { name: 'Central (CST)', tz: 'America/Chicago' },
+                  { name: 'Mountain (MST)', tz: 'America/Denver' },
+                  { name: 'Pacific (PST)', tz: 'America/Los_Angeles' }
+                ].map((c) => {
+                  const t = formatLiveTime(c.tz)
+                  return (
+                    <div key={c.tz} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
+                      <span style={{ color: theme.textSecondary, fontWeight: 600 }}>{c.name}</span>
+                      <strong style={{ color: theme.textPrimary, fontFamily: 'monospace' }}>{t.time}</strong>
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>
 
-          {/* Candidate Auth */}
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            title={isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+            style={{
+              background: isLight ? '#F4F6F8' : '#1C252E',
+              border: `1px solid ${theme.border}`,
+              borderRadius: 8,
+              padding: '6px 10px',
+              fontSize: 14,
+              cursor: 'pointer',
+              color: theme.textPrimary
+            }}
+          >
+            {isLight ? '🌙' : '☀️'}
+          </button>
+
+          {/* Candidate Profile / Sign In */}
           {candidateUser ? (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              backgroundColor: isLight ? '#EFF6FF' : 'rgba(37,99,235,0.15)',
-              border: `1px solid ${isLight ? '#BFDBFE' : 'rgba(147,197,253,0.2)'}`,
-              borderRadius: 20, padding: '4px 10px 4px 6px'
-            }}>
-              <div style={{
-                width: 24, height: 24, borderRadius: '50%',
-                backgroundColor: '#2563EB', color: '#FFF',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 11, fontWeight: 800
-              }}>
-                {(candidateUser.name || 'C')[0].toUpperCase()}
-              </div>
-              <span style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary }}>
-                {candidateUser.name}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: theme.primary }}>
+                👤 {candidateUser.name}
               </span>
               <button
                 onClick={handleCandidateSignOut}
-                title="Sign Out"
                 style={{
-                  background: 'none', border: 'none', color: theme.textSecondary,
-                  fontSize: 11, cursor: 'pointer', padding: '2px 4px', marginLeft: 2
+                  background: 'transparent',
+                  border: 'none',
+                  color: theme.textSecondary,
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  textDecoration: 'underline'
                 }}
               >
-                (Sign Out)
+                Sign Out
               </button>
             </div>
           ) : (
             <button
               onClick={() => setShowLoginModal(true)}
               style={{
-                background: 'linear-gradient(180deg, rgba(239,246,255,0.98) 0%, rgba(219,234,254,0.85) 50%, rgba(191,219,254,0.95) 100%)',
-                color: '#1D4ED8',
-                border: '1px solid rgba(147, 197, 253, 0.9)',
-                borderBottomColor: 'rgba(59, 130, 246, 0.6)',
-                borderRadius: 8,
-                padding: '7px 14px',
-                fontSize: 12,
+                background: 'transparent',
+                border: 'none',
+                color: theme.textPrimary,
+                fontSize: 13,
                 fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 6px rgba(37, 99, 235, 0.15)',
-                transition: 'all 0.18s ease'
+                cursor: 'pointer'
               }}
             >
-              <span>🔑</span>
-              <span>Candidate Sign In</span>
+              Sign In
             </button>
           )}
 
-          {/* Blog Link */}
-          <button
-            onClick={() => navigate('/blog')}
-            title="SmartHire IT Career Blog"
-            style={{
-              background: 'none',
-              border: `1px solid ${isLight ? '#E2E8F0' : '#374151'}`,
-              color: isLight ? '#475569' : '#94A3B8',
-              fontSize: 13,
-              fontWeight: 600,
-              padding: '6px 13px',
-              borderRadius: 8,
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 4,
-              transition: 'all 0.15s ease'
-            }}
-          >
-            <span>📝</span>
-            <span>Blog</span>
-          </button>
-
-          {/* ATS Portal Direct Link */}
+          {/* Primary CTA: ATS Portal */}
           <button
             onClick={() => navigate('/ats')}
-            title="Open Internal ATS Platform"
             style={{
-              background: isLight 
-                ? 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.85) 50%, rgba(241,245,249,0.95) 100%)' 
-                : 'linear-gradient(180deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.9) 100%)',
-              color: theme.textPrimary,
-              border: `1px solid ${isLight ? 'rgba(203, 213, 225, 0.95)' : 'rgba(255,255,255,0.2)'}`,
-              borderBottomColor: isLight ? 'rgba(148, 163, 184, 0.85)' : 'rgba(0,0,0,0.4)',
+              backgroundColor: '#1C252E',
+              color: '#FFFFFF',
+              border: 'none',
               borderRadius: 8,
-              padding: '7px 14px',
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 6px rgba(15, 23, 42, 0.06)',
-              transition: 'all 0.18s ease'
-            }}
-          >
-            <span style={{ color: '#2563EB' }}>⚡</span>
-            <span>ATS Portal</span>
-            <span style={{ fontSize: 10, opacity: 0.6 }}>↗</span>
-          </button>
-
-          {/* Theme Toggle */}
-          <button
-            onClick={() => setThemeMode(isLight ? 'dark' : 'light')}
-            style={{
-              background: isLight 
-                ? 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.85) 50%, rgba(241,245,249,0.95) 100%)' 
-                : 'linear-gradient(180deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.9) 100%)',
-              color: theme.textSecondary,
-              border: `1px solid ${isLight ? 'rgba(203, 213, 225, 0.9)' : theme.border}`,
-              borderRadius: 8,
-              padding: '6px 11px',
-              fontSize: 12,
+              padding: '8px 18px',
+              fontSize: 13,
               fontWeight: 700,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: 4,
-              boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.85), 0 2px 5px rgba(15, 23, 42, 0.05)',
-              transition: 'all 0.15s ease'
+              gap: 6,
+              transition: 'background-color 0.15s'
             }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.primary}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#1C252E'}
           >
-            {isLight ? '🌙' : '☀️'}
-          </button>
-
-          {/* Quick Scroll Action */}
-          <button
-            onClick={() => {
-              const el = document.getElementById('jobs-list')
-              if (el) el.scrollIntoView({ behavior: 'smooth' })
-            }}
-            style={{
-              background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(0, 0, 0, 0.03) 51%, rgba(0, 0, 0, 0.14) 100%), #2563EB',
-              color: '#FFF',
-              border: '1px solid rgba(255, 255, 255, 0.45)',
-              borderBottomColor: 'rgba(0, 0, 0, 0.35)',
-              borderRadius: 8,
-              padding: '7px 16px',
-              fontSize: 12.5,
-              fontWeight: 800,
-              cursor: 'pointer',
-              boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 3px 10px rgba(37, 99, 235, 0.35)',
-              textShadow: '0 1px 2px rgba(0, 0, 0, 0.25)',
-              transition: 'all 0.18s ease'
-            }}
-          >
-            ⚡ {jobs.length} Positions
+            <span>⚡ ATS Portal</span>
+            <span>↗</span>
           </button>
         </div>
       </header>
 
-      {/* Executive Hero Section with Real Career Image Background Slider & Grid Canvas */}
-      <section 
-        onMouseEnter={() => setIsSliderHovered(true)}
-        onMouseLeave={() => setIsSliderHovered(false)}
-        style={{
-          position: 'relative',
-          overflow: 'hidden',
-          borderBottom: `1px solid ${theme.border}`,
-          padding: '52px 24px 46px',
-          textAlign: 'center'
-        }}
-      >
-        {/* Live Looping 1080p Video Background - 100% Crystal Clear, Zero Blur */}
+      {/* ─── 2. ZONE HERO SECTION (SCREENSHOT 1) ───────────────────────────── */}
+      <section style={{
+        backgroundColor: '#141A21',
+        backgroundImage: `
+          radial-gradient(circle at 85% 30%, rgba(250, 84, 28, 0.18) 0%, transparent 55%),
+          radial-gradient(circle at 15% 70%, rgba(142, 51, 255, 0.12) 0%, transparent 50%)
+        `,
+        padding: '70px 32px 80px',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
         <div style={{
-          position: 'absolute',
-          inset: 0,
-          overflow: 'hidden',
-          zIndex: 0,
-          pointerEvents: 'none',
-          opacity: heroMediaMode === 'video' ? 1 : 0,
-          transition: 'opacity 0.6s ease-in-out'
+          maxWidth: 1200,
+          margin: '0 auto',
+          display: 'grid',
+          gridTemplateColumns: '1.15fr 1fr',
+          gap: 48,
+          alignItems: 'center'
         }}>
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            poster="/career-hero-slide1.jpg"
-            style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              transform: 'translate(-50%, -50%)',
-              filter: 'none'
-            }}
-          >
-            <source src="/career-hero-video.mp4" type="video/mp4" />
-          </video>
-        </div>
-
-        {/* Real Workplace Background Image Carousel / Slider - 100% Crystal Clarity, Zero Blur */}
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          overflow: 'hidden',
-          zIndex: 0,
-          pointerEvents: 'none',
-          opacity: heroMediaMode === 'slides' ? 1 : 0,
-          transition: 'opacity 0.6s ease-in-out'
-        }}>
-          {HERO_SLIDES.map((slide, idx) => {
-            const isActive = currentHeroSlide === idx
-            return (
-              <div
-                key={slide.id}
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  backgroundImage: `url('${slide.image}')`,
-                  backgroundPosition: 'center 35%',
-                  backgroundSize: 'cover',
-                  backgroundRepeat: 'no-repeat',
-                  opacity: isActive ? 1.0 : 0,
-                  transform: isActive ? 'scale(1.02)' : 'scale(1.0)',
-                  transition: 'opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), transform 7s ease-out',
-                  filter: 'none',
-                  willChange: 'opacity, transform'
-                }}
-              />
-            )
-          })}
-        </div>
-
-        {/* Ultra-Sharp Cinematic Contrast Layer - Zero Fog, Zero Blur, 100% Crisp Visual Depth */}
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'linear-gradient(180deg, rgba(11, 15, 25, 0.72) 0%, rgba(11, 15, 25, 0.40) 38%, rgba(11, 15, 25, 0.75) 82%, rgba(11, 15, 25, 0.96) 100%)',
-          pointerEvents: 'none',
-          zIndex: 1
-        }} />
-
-        <div style={{ maxWidth: 960, margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 2 }}>
-          {/* Signature Eyebrow Badge */}
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            fontSize: 11.5,
-            fontWeight: 800,
-            color: '#FFA500',
-            backgroundColor: 'rgba(15, 23, 42, 0.85)',
-            border: '1px solid rgba(255, 107, 0, 0.45)',
-            padding: '6px 18px',
-            borderRadius: 24,
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-            marginBottom: 18,
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.45), 0 0 14px rgba(255, 107, 0, 0.25)'
-          }}>
-            <span style={{
-              width: 7,
-              height: 7,
-              borderRadius: '50%',
-              backgroundColor: '#FF6B00',
-              display: 'inline-block',
-              boxShadow: '0 0 8px #FF6B00',
-              animation: 'pulse-orange 2s infinite'
-            }} />
-            <span>Direct Client Requisitions · State & Enterprise</span>
-          </div>
-
-          {/* Main Headline — H1 for SEO */}
-          <h1 style={{
-            fontSize: 'clamp(28px, 4.5vw, 42px)',
-            fontWeight: 900,
-            margin: '0 0 14px',
-            color: '#FFFFFF',
-            letterSpacing: '-0.03em',
-            lineHeight: 1.18,
-            textShadow: '0 2px 14px rgba(0, 0, 0, 0.9), 0 4px 28px rgba(0, 0, 0, 0.6)'
-          }}>
-            Explore Career Opportunities with{' '}
-            <span style={{
-              color: '#FF6B00',
-              fontWeight: 900,
-              display: 'inline-block',
-              textShadow: '0 0 35px rgba(255, 107, 0, 0.85), 0 2px 10px rgba(0, 0, 0, 0.95)',
-              letterSpacing: '-0.01em'
+          {/* Left Column: Headline, Search Box, Brands, Stats */}
+          <div>
+            <h1 style={{
+              fontSize: 'clamp(36px, 5vw, 62px)',
+              fontWeight: 800,
+              color: '#FFFFFF',
+              lineHeight: 1.12,
+              letterSpacing: '-0.025em',
+              margin: '0 0 18px',
+              fontFamily: "'Barlow', 'DM Sans', sans-serif"
             }}>
-              SmartHire
-            </span>
-          </h1>
+              Get the{' '}
+              <span style={{
+                color: '#FA541C',
+                background: 'linear-gradient(90deg, #FA541C 0%, #FDAB76 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}>
+                Career
+              </span>
+              <br />
+              you deserve
+            </h1>
 
-          {/* Subtitle */}
-          <p style={{
-            fontSize: 15.5,
-            color: '#E2E8F0',
-            fontWeight: 500,
-            maxWidth: 740,
-            margin: '0 auto 10px',
-            lineHeight: 1.65,
-            textShadow: '0 2px 8px rgba(0, 0, 0, 0.85)'
-          }}>
-            Explore verified requisitions across top State, Healthcare, and Enterprise clients and partner vendor networks. Review job requirements and submit your application directly with seamless 1-click apply.
-          </p>
+            <p style={{
+              fontSize: 16,
+              color: '#919EAB',
+              lineHeight: 1.6,
+              maxWidth: 500,
+              margin: '0 0 24px'
+            }}>
+              Explore verified requisitions across top State Government, Healthcare Systems, and Enterprise leaders. Review requirements and apply directly in 1 click.
+            </p>
 
-          {/* Elevated Floating Search Box - Positioned Comfortably Lower */}
-          <div style={{
-            backgroundColor: isLight ? '#FFFFFF' : '#111827',
-            border: `1px solid ${isLight ? '#CBD5E1' : '#374151'}`,
-            borderRadius: 12,
-            padding: '6px',
-            display: 'flex',
-            alignItems: 'center',
-            maxWidth: 820,
-            margin: '38px auto 0',
-            boxShadow: '0 20px 48px rgba(0, 0, 0, 0.42), 0 4px 14px rgba(0, 0, 0, 0.2)',
-            flexWrap: 'wrap',
-            transition: 'box-shadow 0.2s ease, border-color 0.2s ease'
-          }}>
-            {/* Search Input */}
+            {/* Floating Search Console (Screenshot 1) */}
+            <div className="zone-search-box">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+                <span style={{ color: '#919EAB', fontSize: 16 }}>🔍</span>
+                <input
+                  type="text"
+                  placeholder="Job title, keywords..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{
+                    border: 'none',
+                    outline: 'none',
+                    fontSize: 14,
+                    color: '#1C252E',
+                    width: '100%',
+                    fontWeight: 500,
+                    background: 'transparent'
+                  }}
+                />
+              </div>
+
+              <div style={{ width: 1, height: 26, backgroundColor: '#DFE3E8' }} />
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 140 }}>
+                <LocationPinIcon size={18} color="#919EAB" />
+                <select
+                  value={selectedLocation}
+                  onChange={(e) => setSelectedLocation(e.target.value)}
+                  style={{
+                    border: 'none',
+                    outline: 'none',
+                    fontSize: 14,
+                    color: '#1C252E',
+                    fontWeight: 600,
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    width: '100%'
+                  }}
+                >
+                  <option value="All">All Locations</option>
+                  <option value="Remote">Remote</option>
+                  <option value="Hybrid">Hybrid</option>
+                  <option value="Onsite">Onsite</option>
+                </select>
+              </div>
+
+              <button
+                onClick={() => {
+                  const el = document.getElementById('jobs-list')
+                  if (el) el.scrollIntoView({ behavior: 'smooth' })
+                }}
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 12,
+                  backgroundColor: '#FA541C',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  fontSize: 18,
+                  boxShadow: '0 8px 16px rgba(250, 84, 28, 0.35)',
+                  transition: 'background-color 0.15s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#B3200E'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FA541C'}
+                title="Search Jobs"
+              >
+                🔍
+              </button>
+            </div>
+
+            {/* Brands Row (Screenshot 1) */}
             <div style={{
-              flex: '2 1 260px',
               display: 'flex',
               alignItems: 'center',
-              padding: '0 12px',
-              gap: 10
+              gap: 28,
+              marginTop: 36,
+              color: '#FFFFFF',
+              opacity: 0.65
             }}>
-              <span style={{ fontSize: 15, color: '#2563EB' }}>🔍</span>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search job title, skill, position #, or location (e.g. Java, Raleigh, NC)..."
-                style={{
-                  width: '100%',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  color: theme.textPrimary,
-                  padding: '10px 0',
-                  fontSize: 13.5,
-                  fontWeight: 500,
-                  outline: 'none',
-                  fontFamily: 'inherit'
-                }}
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', fontSize: 13, padding: 2 }}
-                >
-                  ✕
-                </button>
-              )}
+              <AirbnbLogo />
+              <DropboxLogo />
+              <FacebookLogo />
+              <GoogleLogo />
             </div>
 
-            {/* Divider */}
-            <div style={{ width: 1, height: 26, backgroundColor: isLight ? '#E2E8F0' : 'rgba(255,255,255,0.12)', margin: '0 4px' }} />
-
-            {/* Work Mode Select */}
-            <div style={{ flex: '1 1 180px', display: 'flex', alignItems: 'center', padding: '0 8px' }}>
-              <span style={{ fontSize: 14, color: '#64748B', marginRight: 6 }}>🌐</span>
-              <select
-                value={selectedLocation}
-                onChange={(e) => {
-                  setSelectedLocation(e.target.value)
-                  if (e.target.value === 'Today') setDeadlineFilter('Today')
-                  else if (deadlineFilter === 'Today') setDeadlineFilter('All')
-                }}
-                style={{
-                  width: '100%',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  color: theme.textPrimary,
-                  padding: '10px 4px',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  outline: 'none',
-                  cursor: 'pointer',
-                  fontFamily: 'inherit'
-                }}
-              >
-                <option value="All">All Work Modes</option>
-                <option value="Today">⏰ Closing Today {todayDeadlineCount > 0 ? `(${todayDeadlineCount})` : ''}</option>
-                <option value="Remote">🏠 Remote ({remoteCount})</option>
-                <option value="Hybrid">🏢 Hybrid ({hybridCount})</option>
-                <option value="Onsite">📍 Onsite ({onsiteCount})</option>
-              </select>
+            {/* 4 Stat Metric Counters (Screenshot 1) */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: 20,
+              marginTop: 48,
+              borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+              paddingTop: 32
+            }}>
+              {[
+                { metric: `${jobs.length || 60}+`, label: 'Jobs' },
+                { metric: '100%', label: 'Direct Hiring' },
+                { metric: '< 24h', label: 'Review Time' },
+                { metric: '0', label: 'Intermediaries' }
+              ].map((s, idx) => (
+                <div key={idx}>
+                  <div style={{
+                    fontSize: 26,
+                    fontWeight: 800,
+                    color: '#FFFFFF',
+                    fontFamily: "'Barlow', sans-serif"
+                  }}>
+                    {s.metric}
+                  </div>
+                  <div style={{ fontSize: 13, color: '#919EAB', marginTop: 2 }}>
+                    {s.label}
+                  </div>
+                </div>
+              ))}
             </div>
-
-            {/* Clear Filter Button */}
-            {(searchQuery || selectedLocation !== 'All' || deadlineFilter !== 'All') && (
-              <button
-                type="button"
-                onClick={() => { setSearchQuery(''); setSelectedLocation('All'); setDeadlineFilter('All') }}
-                style={{
-                  backgroundColor: isLight ? '#F1F5F9' : '#374151',
-                  color: theme.textSecondary,
-                  border: 'none',
-                  borderRadius: 8,
-                  padding: '8px 14px',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  marginRight: 4,
-                  transition: 'background-color 0.15s ease'
-                }}
-              >
-                Reset
-              </button>
-            )}
           </div>
 
-          {/* Zoho Style Segmented Quick Chips - Glossy Specular Finish */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 18, justifyContent: 'center', alignItems: 'center' }}>
-            <button
-              type="button"
-              onClick={() => { setDeadlineFilter('All'); setSelectedLocation('All') }}
-              style={{
-                background: (deadlineFilter === 'All' && selectedLocation === 'All')
-                  ? 'linear-gradient(180deg, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.08) 50%, rgba(0,0,0,0.03) 51%, rgba(0,0,0,0.14) 100%), #2563EB'
-                  : (isLight ? 'linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 100%)' : 'linear-gradient(180deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.9) 100%)'),
-                color: (deadlineFilter === 'All' && selectedLocation === 'All') ? '#FFFFFF' : (isLight ? '#0F172A' : '#F1F5F9'),
-                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'All') ? 'rgba(255, 255, 255, 0.45)' : (isLight ? 'rgba(203, 213, 225, 0.95)' : 'rgba(255,255,255,0.2)')}`,
-                borderBottomColor: (deadlineFilter === 'All' && selectedLocation === 'All') ? 'rgba(0,0,0,0.35)' : (isLight ? 'rgba(148, 163, 184, 0.85)' : 'rgba(0,0,0,0.4)'),
-                borderRadius: 20,
-                padding: '6px 15px',
-                fontSize: 12,
-                fontWeight: 750,
-                cursor: 'pointer',
-                boxShadow: (deadlineFilter === 'All' && selectedLocation === 'All')
-                  ? 'inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 3px 10px rgba(37, 99, 235, 0.4)'
-                  : 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 6px rgba(0, 0, 0, 0.15)',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              All Roles ({activeOpenJobs.length})
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                if (deadlineFilter === 'Today' || selectedLocation === 'Today') {
-                  setDeadlineFilter('All')
-                  setSelectedLocation('All')
-                } else {
-                  setDeadlineFilter('Today')
-                  setSelectedLocation('Today')
-                }
-              }}
-              style={{
-                background: (deadlineFilter === 'Today' || selectedLocation === 'Today')
-                  ? 'linear-gradient(180deg, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.08) 50%, rgba(0,0,0,0.03) 51%, rgba(0,0,0,0.14) 100%), #DC2626'
-                  : (isLight ? 'linear-gradient(180deg, #FFFFFF 0%, #FEF2F2 100%)' : 'rgba(220, 38, 38, 0.18)'),
-                color: (deadlineFilter === 'Today' || selectedLocation === 'Today') ? '#FFFFFF' : '#DC2626',
-                border: `1px solid ${(deadlineFilter === 'Today' || selectedLocation === 'Today') ? 'rgba(255, 255, 255, 0.45)' : 'rgba(239, 68, 68, 0.5)'}`,
-                borderBottomColor: (deadlineFilter === 'Today' || selectedLocation === 'Today') ? 'rgba(0,0,0,0.35)' : 'rgba(220, 38, 38, 0.6)',
-                borderRadius: 20,
-                padding: '6px 15px',
-                fontSize: 12,
-                fontWeight: 750,
-                cursor: 'pointer',
-                boxShadow: (deadlineFilter === 'Today' || selectedLocation === 'Today')
-                  ? 'inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 3px 10px rgba(220, 38, 38, 0.4)'
-                  : 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 6px rgba(0, 0, 0, 0.15)',
-                transition: 'all 0.15s ease',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6
-              }}
-            >
-              <span>⏰ Closing Today</span>
-              <span style={{
-                backgroundColor: (deadlineFilter === 'Today' || selectedLocation === 'Today') ? 'rgba(255,255,255,0.25)' : '#DC2626',
-                color: '#FFF',
-                borderRadius: 10,
-                padding: '0 6px',
-                fontSize: 11,
-                fontWeight: 800
-              }}>
-                {todayDeadlineCount}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => { setDeadlineFilter('All'); setSelectedLocation('Remote') }}
-              style={{
-                background: (deadlineFilter === 'All' && selectedLocation === 'Remote')
-                  ? 'linear-gradient(180deg, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.08) 50%, rgba(0,0,0,0.03) 51%, rgba(0,0,0,0.14) 100%), #2563EB'
-                  : (isLight ? 'linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 100%)' : 'linear-gradient(180deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.9) 100%)'),
-                color: (deadlineFilter === 'All' && selectedLocation === 'Remote') ? '#FFFFFF' : (isLight ? '#0F172A' : '#F1F5F9'),
-                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Remote') ? 'rgba(255, 255, 255, 0.45)' : (isLight ? 'rgba(203, 213, 225, 0.95)' : 'rgba(255,255,255,0.2)')}`,
-                borderBottomColor: (deadlineFilter === 'All' && selectedLocation === 'Remote') ? 'rgba(0,0,0,0.35)' : (isLight ? 'rgba(148, 163, 184, 0.85)' : 'rgba(0,0,0,0.4)'),
-                borderRadius: 20,
-                padding: '6px 15px',
-                fontSize: 12,
-                fontWeight: 750,
-                cursor: 'pointer',
-                boxShadow: (deadlineFilter === 'All' && selectedLocation === 'Remote')
-                  ? 'inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 3px 10px rgba(37, 99, 235, 0.4)'
-                  : 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 6px rgba(0, 0, 0, 0.15)',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              🏠 Remote ({remoteCount})
-            </button>
-
-            <button
-              type="button"
-              onClick={() => { setDeadlineFilter('All'); setSelectedLocation('Hybrid') }}
-              style={{
-                background: (deadlineFilter === 'All' && selectedLocation === 'Hybrid')
-                  ? 'linear-gradient(180deg, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.08) 50%, rgba(0,0,0,0.03) 51%, rgba(0,0,0,0.14) 100%), #2563EB'
-                  : (isLight ? 'linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 100%)' : 'linear-gradient(180deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.9) 100%)'),
-                color: (deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? '#FFFFFF' : (isLight ? '#0F172A' : '#F1F5F9'),
-                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? 'rgba(255, 255, 255, 0.45)' : (isLight ? 'rgba(203, 213, 225, 0.95)' : 'rgba(255,255,255,0.2)')}`,
-                borderBottomColor: (deadlineFilter === 'All' && selectedLocation === 'Hybrid') ? 'rgba(0,0,0,0.35)' : (isLight ? 'rgba(148, 163, 184, 0.85)' : 'rgba(0,0,0,0.4)'),
-                borderRadius: 20,
-                padding: '6px 15px',
-                fontSize: 12,
-                fontWeight: 750,
-                cursor: 'pointer',
-                boxShadow: (deadlineFilter === 'All' && selectedLocation === 'Hybrid')
-                  ? 'inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 3px 10px rgba(37, 99, 235, 0.4)'
-                  : 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 6px rgba(0, 0, 0, 0.15)',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              🏢 Hybrid ({hybridCount})
-            </button>
-
-            <button
-              type="button"
-              onClick={() => { setDeadlineFilter('All'); setSelectedLocation('Onsite') }}
-              style={{
-                background: (deadlineFilter === 'All' && selectedLocation === 'Onsite')
-                  ? 'linear-gradient(180deg, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.08) 50%, rgba(0,0,0,0.03) 51%, rgba(0,0,0,0.14) 100%), #2563EB'
-                  : (isLight ? 'linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 100%)' : 'linear-gradient(180deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.9) 100%)'),
-                color: (deadlineFilter === 'All' && selectedLocation === 'Onsite') ? '#FFFFFF' : (isLight ? '#0F172A' : '#F1F5F9'),
-                border: `1px solid ${(deadlineFilter === 'All' && selectedLocation === 'Onsite') ? 'rgba(255, 255, 255, 0.45)' : (isLight ? 'rgba(203, 213, 225, 0.95)' : 'rgba(255,255,255,0.2)')}`,
-                borderBottomColor: (deadlineFilter === 'All' && selectedLocation === 'Onsite') ? 'rgba(0,0,0,0.35)' : (isLight ? 'rgba(148, 163, 184, 0.85)' : 'rgba(0,0,0,0.4)'),
-                borderRadius: 20,
-                padding: '6px 15px',
-                fontSize: 12,
-                fontWeight: 750,
-                cursor: 'pointer',
-                boxShadow: (deadlineFilter === 'All' && selectedLocation === 'Onsite')
-                  ? 'inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 3px 10px rgba(37, 99, 235, 0.4)'
-                  : 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 6px rgba(0, 0, 0, 0.15)',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              📍 Onsite ({onsiteCount})
-            </button>
+          {/* Right Column: Zone Orbital Graphic */}
+          <div>
+            <ZoneHeroOrbitalIllustration />
           </div>
         </div>
       </section>
 
-      {/* Main Content: Jobs Grid */}
-      <section id="jobs-list" style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px 80px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22, flexWrap: 'wrap', gap: 12 }}>
-          <div>
-            <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: theme.textPrimary, letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span>Active IT Contract Vacancies</span>
-              <span style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: '#2563EB',
-                backgroundColor: isLight ? '#EFF6FF' : 'rgba(37, 99, 235, 0.15)',
-                border: '1px solid rgba(37, 99, 235, 0.25)',
-                padding: '1px 8px',
-                borderRadius: 12
-              }}>
-                {filteredJobs.length} Verified
-              </span>
-            </h2>
-            <p style={{ margin: '3px 0 0', fontSize: 13, color: theme.textSecondary }}>
-              Direct client contracts and full-time opportunities · Auto-refreshed in real-time
+      {/* ─── 3. FOR CANDIDATES SECTION (SCREENSHOT 2) ──────────────────────── */}
+      <section id="for-candidates" style={{
+        padding: '96px 32px',
+        maxWidth: 1200,
+        margin: '0 auto',
+        textAlign: 'center'
+      }}>
+        {/* Eyebrow */}
+        <div style={{
+          fontSize: 12,
+          fontWeight: 800,
+          color: theme.primary,
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+          marginBottom: 10
+        }}>
+          FOR CANDIDATES
+        </div>
+
+        {/* Heading */}
+        <h2 style={{
+          fontSize: 'clamp(28px, 4vw, 42px)',
+          fontWeight: 800,
+          color: theme.textPrimary,
+          margin: '0 0 12px',
+          letterSpacing: '-0.02em'
+        }}>
+          Explore thousands of jobs
+        </h2>
+
+        {/* Subtitle */}
+        <p style={{
+          fontSize: 15.5,
+          color: theme.textSecondary,
+          maxWidth: 620,
+          margin: '0 auto 56px',
+          lineHeight: 1.6
+        }}>
+          A simple 3-step streamlined pathway to connect with premier IT employers and land your next high-impact contract.
+        </p>
+
+        {/* 3 Step Cards */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: 32,
+          marginBottom: 56
+        }}>
+          {/* Step 1 */}
+          <div className="zone-step-card">
+            <Step1SignUpIcon />
+            <div style={{ fontSize: 11, fontWeight: 800, color: theme.textSecondary, textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 18, marginBottom: 8 }}>
+              STEP 1
+            </div>
+            <h3 style={{ fontSize: 20, fontWeight: 700, color: theme.textPrimary, margin: '0 0 10px' }}>
+              Create an account
+            </h3>
+            <p style={{ fontSize: 13.5, color: theme.textSecondary, lineHeight: 1.6, margin: 0 }}>
+              Quick 1-click Google or email sign-in to track your applications and recruiter responses in real-time.
             </p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{
-              fontSize: 11.5,
-              fontWeight: 600,
-              color: isLight ? '#059669' : '#34D399',
-              backgroundColor: isLight ? '#ECFDF5' : 'rgba(5, 150, 105, 0.12)',
-              border: `1px solid ${isLight ? '#A7F3D0' : 'rgba(5, 150, 105, 0.25)'}`,
-              borderRadius: 20,
-              padding: '4px 11px',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6
-            }}>
-              <span className="pulse-dot" /> Live Ingestion Active
-            </span>
+          {/* Step 2 */}
+          <div className="zone-step-card">
+            <Step2ProfileIcon />
+            <div style={{ fontSize: 11, fontWeight: 800, color: theme.textSecondary, textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 18, marginBottom: 8 }}>
+              STEP 2
+            </div>
+            <h3 style={{ fontSize: 20, fontWeight: 700, color: theme.textPrimary, margin: '0 0 10px' }}>
+              Complete your profile
+            </h3>
+            <p style={{ fontSize: 13.5, color: theme.textSecondary, lineHeight: 1.6, margin: 0 }}>
+              Upload your resume for automated AI skill extraction, tax term mapping (C2C, W2, 1099), and rate preferences.
+            </p>
+          </div>
+
+          {/* Step 3 */}
+          <div className="zone-step-card">
+            <Step3SearchJobIcon />
+            <div style={{ fontSize: 11, fontWeight: 800, color: theme.textSecondary, textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 18, marginBottom: 8 }}>
+              STEP 3
+            </div>
+            <h3 style={{ fontSize: 20, fontWeight: 700, color: theme.textPrimary, margin: '0 0 10px' }}>
+              Search your job
+            </h3>
+            <p style={{ fontSize: 13.5, color: theme.textSecondary, lineHeight: 1.6, margin: 0 }}>
+              Filter by remote eligibility, client domain, and pay rate, then submit your application directly with 1 click.
+            </p>
           </div>
         </div>
 
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '60px 0', color: theme.textSecondary }}>
-            <div style={{ fontSize: 28, marginBottom: 12 }}>⚡</div>
-            <p>Loading active vacancies...</p>
-          </div>
-        ) : filteredJobs.length === 0 ? (
-          <div style={{
-            backgroundColor: theme.cardBg,
-            border: `1px dashed ${theme.border}`,
+        {/* Action Button: Upload your CV */}
+        <button
+          onClick={() => setShowCvUploadModal(true)}
+          style={{
+            backgroundColor: '#1C252E',
+            color: '#FFFFFF',
+            border: 'none',
             borderRadius: 10,
-            padding: '50px 20px',
-            textAlign: 'center',
-            color: theme.textSecondary
+            padding: '14px 28px',
+            fontSize: 14,
+            fontWeight: 700,
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 10,
+            boxShadow: '0 4px 14px rgba(28, 37, 46, 0.25)',
+            transition: 'transform 0.15s, background-color 0.15s'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = theme.primary
+            e.currentTarget.style.transform = 'translateY(-2px)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#1C252E'
+            e.currentTarget.style.transform = 'translateY(0)'
+          }}
+        >
+          <span>📄</span>
+          <span>Upload your CV</span>
+        </button>
+      </section>
+
+      {/* ─── 4. HOT CATEGORIES SECTION (SCREENSHOT 3) ──────────────────────── */}
+      <section id="categories" style={{
+        padding: '40px 32px 80px',
+        maxWidth: 1200,
+        margin: '0 auto'
+      }}>
+        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <h2 style={{
+            fontSize: 'clamp(28px, 4vw, 38px)',
+            fontWeight: 800,
+            color: theme.textPrimary,
+            margin: '0 0 8px',
+            letterSpacing: '-0.02em'
           }}>
-            <p style={{ fontSize: 15, margin: '0 0 12px' }}>No active vacancies match "{searchQuery || selectedLocation}".</p>
+            Hot categories
+          </h2>
+          <p style={{ fontSize: 14.5, color: theme.textSecondary, margin: 0 }}>
+            Browse active contract opportunities classified by industry domain.
+          </p>
+        </div>
+
+        {/* 8 Category Cards Grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
+          gap: 20
+        }}>
+          {HOT_CATEGORIES.map((cat) => {
+            const IconComponent = cat.icon
+            const isSelected = selectedCategory === cat.id
+            return (
+              <div
+                key={cat.id}
+                className={`zone-cat-card ${isSelected ? 'active' : ''}`}
+                onClick={() => {
+                  setSelectedCategory(isSelected ? 'all' : cat.id)
+                  const el = document.getElementById('jobs-list')
+                  if (el) el.scrollIntoView({ behavior: 'smooth' })
+                }}
+              >
+                <div style={{ color: isSelected ? theme.primary : theme.textSecondary }}>
+                  <IconComponent />
+                </div>
+                <div style={{
+                  fontSize: 16,
+                  fontWeight: 700,
+                  color: isSelected ? theme.primary : theme.textPrimary,
+                  fontFamily: "'Barlow', sans-serif"
+                }}>
+                  {cat.name}
+                </div>
+                <div style={{ fontSize: 12.5, color: theme.textSecondary, fontWeight: 500 }}>
+                  {cat.count}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </section>
+
+      {/* ─── 5. FEATURED JOBS / ACTIVE VACANCIES SECTION (SCREENSHOT 4) ─────── */}
+      <section id="jobs-list" style={{
+        padding: '50px 32px 90px',
+        maxWidth: 1200,
+        margin: '0 auto'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-end',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 32
+        }}>
+          <div>
+            <h2 style={{
+              fontSize: 'clamp(24px, 3.5vw, 32px)',
+              fontWeight: 800,
+              color: theme.textPrimary,
+              margin: '0 0 6px',
+              letterSpacing: '-0.02em'
+            }}>
+              Active IT Contract Vacancies
+            </h2>
+            <p style={{ fontSize: 14, color: theme.textSecondary, margin: 0 }}>
+              Showing {filteredJobs.length} verified direct-client IT positions
+              {selectedCategory !== 'all' && (
+                <button
+                  onClick={() => setSelectedCategory('all')}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: theme.primary,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    marginLeft: 8
+                  }}
+                >
+                  (Clear {HOT_CATEGORIES.find(c => c.id === selectedCategory)?.name} filter ✕)
+                </button>
+              )}
+            </p>
+          </div>
+
+          {/* Quick Filter Segmented Chips */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {[
+              { id: 'All', label: 'All Roles' },
+              { id: 'Today', label: `⏰ Closing Today (${todayDeadlineCount})` },
+              { id: 'Remote', label: `Remote (${remoteCount})` },
+              { id: 'Hybrid', label: `Hybrid (${hybridCount})` },
+              { id: 'Onsite', label: `Onsite (${onsiteCount})` }
+            ].map((chip) => {
+              const active = selectedLocation === chip.id
+              return (
+                <button
+                  key={chip.id}
+                  onClick={() => setSelectedLocation(chip.id)}
+                  style={{
+                    backgroundColor: active ? (isLight ? '#1C252E' : '#FA541C') : (isLight ? '#F4F6F8' : '#1C252E'),
+                    color: active ? '#FFFFFF' : theme.textSecondary,
+                    border: `1px solid ${active ? 'transparent' : theme.border}`,
+                    borderRadius: 20,
+                    padding: '6px 14px',
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  {chip.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Loading State */}
+        {loading && (
+          <div style={{ textAlign: 'center', padding: '60px 0' }}>
+            <div style={{ fontSize: 32, marginBottom: 12, animation: 'spin 1s linear infinite' }}>⏳</div>
+            <p style={{ color: theme.textSecondary, fontSize: 15 }}>Loading active client requisitions...</p>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!loading && filteredJobs.length === 0 && (
+          <div style={{
+            textAlign: 'center',
+            padding: '60px 24px',
+            backgroundColor: theme.surface,
+            borderRadius: 16,
+            border: `1px solid ${theme.border}`
+          }}>
+            <div style={{ fontSize: 36, marginBottom: 10 }}>🔍</div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 6px', color: theme.textPrimary }}>
+              No vacancies match your current search
+            </h3>
+            <p style={{ fontSize: 13.5, color: theme.textSecondary, margin: '0 0 16px' }}>
+              Try clearing filters or search terms to browse all available requisitions.
+            </p>
             <button
-              onClick={() => { setSearchQuery(''); setSelectedLocation('All'); setDeadlineFilter('All') }}
+              onClick={() => { setSearchQuery(''); setSelectedLocation('All'); setSelectedCategory('all'); }}
               style={{
-                backgroundColor: '#2563EB',
+                backgroundColor: theme.primary,
+                color: '#FFF',
                 border: 'none',
-                color: '#FFFFFF',
-                borderRadius: 6,
-                padding: '7px 16px',
+                borderRadius: 8,
+                padding: '8px 18px',
                 fontSize: 13,
-                fontWeight: 600,
+                fontWeight: 700,
                 cursor: 'pointer'
               }}
             >
-              Clear Filters
+              Reset Filters
             </button>
           </div>
-        ) : (
+        )}
+
+        {/* 3-Column Job Cards Grid (Screenshot 4) */}
+        {!loading && filteredJobs.length > 0 && (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))',
-            gap: 20
+            gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+            gap: 24
           }}>
             {filteredJobs.map((job) => {
+              const isApplied = appliedJobs[job.id]
+              const isSaved = savedJobs[job.id]
               const expired = isJobExpired(job)
-              const isBriefExpanded = expandedBriefJobId === job.id
-              const workModeText = job.work_mode || job.workMode || job.type || 'Onsite'
-              const locationText = resolveJobLocation(job)
-              const fullDesc = getFullDescriptionText(job)
-              const displayTitle = cleanJobTitleWithPositionNumber(job.title, job)
 
-              // Extract clean narrative preview summary (NO [object Object], NO raw separators)
-              const summaryText = (() => {
-                const summaryMatch = fullDesc.match(/🎯 PROJECT SUMMARY & OBJECTIVE\s*=+\s*([\s\S]*?)(?:=|$)/i)
-                if (summaryMatch && summaryMatch[1].trim().length > 20) {
-                  return summaryMatch[1].trim()
-                }
-                const clean = fullDesc.replace(/=+/g, '').replace(/📌.*?\n/g, '').replace(/•.*?\n/g, '').trim()
-                return clean.length > 130 ? clean.substring(0, 130) + '...' : clean
-              })()
+              // Company badge initials/colors
+              const titleWords = (job.title || '').split(' ')
+              const monogram = (titleWords[0]?.[0] || 'S') + (titleWords[1]?.[0] || 'H')
+              const brandColor = ['#2563EB', '#7C3AED', '#059669', '#D97706', '#DC2626', '#0284C7'][
+                Math.abs(job.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)) % 6
+              ]
 
               return (
-                <div
-                  key={job.id}
-                  className={`sh-job-card ${expired ? 'expired' : ''}`}
-                >
-                  <div className="sh-card-body">
-                    {/* Header: Work Mode & Status/Deadline (Req number omitted for public careers) */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                      <span style={{
-                        fontSize: 11.5,
-                        fontWeight: 600,
-                        padding: '3px 9px',
-                        borderRadius: 6,
-                        backgroundColor: workModeText === 'Remote' ? (isLight ? '#ECFDF5' : 'rgba(16, 185, 129, 0.12)') : workModeText === 'Hybrid' ? (isLight ? '#FFFBEB' : 'rgba(245, 158, 11, 0.12)') : (isLight ? '#F1F5F9' : '#1E293B'),
-                        color: workModeText === 'Remote' ? '#065F46' : workModeText === 'Hybrid' ? '#92400E' : (isLight ? '#475569' : '#94A3B8'),
-                        border: `1px solid ${workModeText === 'Remote' ? (isLight ? '#A7F3D0' : 'rgba(16, 185, 129, 0.25)') : workModeText === 'Hybrid' ? (isLight ? '#FDE68A' : 'rgba(245, 158, 11, 0.25)') : theme.border}`
+                <div key={job.id} className="zone-job-card">
+                  <div>
+                    {/* Top Row: Company Logo Badge & Heart Bookmark */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 12,
+                        backgroundColor: brandColor,
+                        color: '#FFFFFF',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 16,
+                        fontWeight: 800,
+                        fontFamily: "'Barlow', sans-serif",
+                        boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)'
                       }}>
-                        {workModeText === 'Remote' ? '🏠 Remote' : workModeText === 'Hybrid' ? '🏢 Hybrid' : '📍 Onsite'}
-                      </span>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        {expired ? (
-                          <span style={{
-                            fontSize: 11,
-                            fontWeight: 600,
-                            color: '#DC2626',
-                            backgroundColor: isLight ? '#FEE2E2' : 'rgba(239, 68, 68, 0.15)',
-                            padding: '2px 8px',
-                            borderRadius: 12
-                          }}>
-                            Closed
-                          </span>
-                        ) : (
-                          <span style={{
-                            fontSize: 11,
-                            fontWeight: 600,
-                            color: '#15803D',
-                            backgroundColor: isLight ? '#DCFCE7' : 'rgba(22, 163, 74, 0.12)',
-                            border: `1px solid ${isLight ? '#BBF7D0' : 'rgba(34, 197, 94, 0.25)'}`,
-                            padding: '2px 8px',
-                            borderRadius: 12,
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 5
-                          }}>
-                            <span className="pulse-dot" /> Open
-                          </span>
-                        )}
-                        
-                        {job.deadline && (
-                          <span style={{
-                            fontSize: 11,
-                            fontWeight: 600,
-                            color: expired ? '#94A3B8' : isDeadlineToday(job.deadline) ? '#DC2626' : '#B45309',
-                            backgroundColor: expired ? (isLight ? '#F1F5F9' : '#1E293B') : isDeadlineToday(job.deadline) ? (isLight ? '#FEF2F2' : 'rgba(239, 68, 68, 0.15)') : (isLight ? '#FEF3C7' : 'rgba(217, 119, 6, 0.12)'),
-                            border: `1px solid ${expired ? theme.border : isDeadlineToday(job.deadline) ? (isLight ? '#FECACA' : 'rgba(239, 68, 68, 0.3)') : (isLight ? '#FDE68A' : 'rgba(217, 119, 6, 0.25)')}`,
-                            padding: '2px 7px',
-                            borderRadius: 4
-                          }}>
-                            ⏰ {job.deadline}
-                          </span>
-                        )}
+                        {monogram}
                       </div>
+
+                      <HeartBookmarkIcon
+                        saved={isSaved}
+                        onClick={() => handleToggleSaveJob(job.id)}
+                      />
                     </div>
 
-                    {/* Job Title */}
-                    <h3 className="sh-job-title" title={displayTitle}>
-                      {displayTitle}
+                    {/* Job Title (Bold Barlow) */}
+                    <h3
+                      className="zone-job-title"
+                      onClick={() => setFullJdModalJob(job)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {cleanJobTitleWithPositionNumber(job.title)}
                     </h3>
 
-                    {/* Metadata Items: Location & Experience */}
-                    <div className="sh-metadata-container">
-                      <span className="sh-metadata-item">
-                        📍 {locationText}
-                      </span>
-                      {job.experience && job.experience !== 'TBD' && job.experience !== 'Any' && (
-                        <>
-                          <span className="sh-metadata-divider" />
-                          <span className="sh-metadata-item">
-                            ⏳ {formatExperience(job.experience)}
-                          </span>
-                        </>
-                      )}
+                    {/* Direct Client Link */}
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#00B8D9', marginBottom: 4 }}>
+                      {job.client || 'Direct End-Client'}
                     </div>
 
-                    {/* Clean Narrative Description (NO Box-Inside-Box) */}
-                    <div style={{ marginTop: 'auto', marginBottom: 12 }}>
-                      <p style={{
-                        margin: '0 0 8px',
-                        fontSize: 12.5,
-                        color: theme.textSecondary,
-                        lineHeight: 1.55,
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden'
-                      }}>
-                        {summaryText}
-                      </p>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setFullJdModalJob(job)
-                        }}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#2563EB',
-                          fontSize: 11.5,
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          padding: 0,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 3
-                        }}
-                      >
-                        <span>Full JD</span>
-                        <span>↗</span>
-                      </button>
+                    {/* Location */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: theme.textSecondary, marginBottom: 8 }}>
+                      <LocationPinIcon size={14} color="#919EAB" />
+                      <span>{resolveJobLocation(job) || 'Remote, US'}</span>
                     </div>
 
-                    {/* Skills pills */}
-                    {job.skills && job.skills.length > 0 && (
-                      <div className="sh-skills-container">
-                        {job.skills.slice(0, 4).map((s, idx) => (
-                          <span key={idx} className="sh-skill-pill">
-                            {s}
-                          </span>
-                        ))}
-                        {job.skills.length > 4 && (
-                          <span className="sh-skill-pill" style={{ opacity: 0.8 }}>
-                            +{job.skills.length - 4} more
-                          </span>
-                        )}
+                    {/* Posted Date */}
+                    <div style={{ fontSize: 11.5, color: theme.textSecondary, marginBottom: 16 }}>
+                      Posted at: {job.creationDate ? new Date(job.creationDate).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recent'}
+                    </div>
+
+                    {/* Subtle Divider */}
+                    <div style={{ height: 1, backgroundColor: theme.border, marginBottom: 16 }} />
+
+                    {/* 2x2 Meta Attributes Grid (Screenshot 4) */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '10px 12px',
+                      fontSize: 12,
+                      color: theme.textSecondary,
+                      marginBottom: 20
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <BarChartExpIcon size={15} color="#919EAB" />
+                        <span style={{ fontWeight: 600 }}>{formatExperience(job.experience)}</span>
                       </div>
-                    )}
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <ClockContractIcon size={15} color="#919EAB" />
+                        <span style={{ fontWeight: 600 }}>{formatContractType(job)}</span>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <CashSalaryIcon size={15} color="#919EAB" />
+                        <span style={{ fontWeight: 600 }}>{formatRateOrSalary(job)}</span>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <WorkModeUserIcon size={15} color="#919EAB" />
+                        <span style={{ fontWeight: 600 }}>{job.work_mode || 'Remote'}</span>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Card Footer Actions */}
-                  <div className="sh-card-footer">
-                    <span style={{ fontSize: 12, color: theme.textSecondary, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                      💼 <strong style={{ color: theme.textPrimary, fontWeight: 600 }}>{job.employment_type || job.type || 'Contract'}</strong>
-                    </span>
+                  {/* Card Action Buttons */}
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center', paddingTop: 10, borderTop: `1px solid ${theme.border}` }}>
+                    <button
+                      onClick={() => setFullJdModalJob(job)}
+                      style={{
+                        flex: 1,
+                        background: 'transparent',
+                        color: theme.textPrimary,
+                        border: `1px solid ${theme.border}`,
+                        borderRadius: 8,
+                        padding: '9px 12px',
+                        fontSize: 12.5,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        transition: 'border-color 0.15s, color 0.15s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = theme.primary
+                        e.currentTarget.style.color = theme.primary
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = theme.border
+                        e.currentTarget.style.color = theme.textPrimary
+                      }}
+                    >
+                      📋 Full JD
+                    </button>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {isApplied ? (
                       <button
-                        onClick={() => setFullJdModalJob(job)}
-                        className="sh-view-btn"
-                      >
-                        <span>Full JD</span>
-                      </button>
-
-                      {appliedJobs[job.id] ? (
-                        <button
-                          onClick={() => {
-                            const app = appliedJobs[job.id]
+                        onClick={() => {
+                          const rec = appliedJobs[job.id]
+                          if (rec) {
                             setActiveChatCandidate({
-                              id: app.candidateId || app.sessionId,
-                              sessionId: app.sessionId,
-                              name: app.candidateName,
-                              candidateName: app.candidateName,
-                              email: app.candidateEmail,
+                              id: rec.candidateId || rec.sessionId,
+                              sessionId: rec.sessionId,
+                              name: rec.candidateName,
+                              candidateName: rec.candidateName,
+                              email: rec.candidateEmail,
                               jobTitle: job.title
                             })
-                          }}
-                          style={{
-                            backgroundColor: '#059669',
-                            color: '#FFF',
-                            border: 'none',
-                            borderRadius: 7,
-                            padding: '7px 14px',
-                            fontSize: 12.5,
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 5
-                          }}
-                        >
-                          💬 Chat
-                        </button>
-                      ) : expired ? (
-                        <button disabled className="sh-expired-btn">
-                          Closed
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleApplyClick(job)}
-                          className="sh-apply-btn"
-                        >
-                          <span>⚡ Apply Now</span>
-                        </button>
-                      )}
-                    </div>
+                          }
+                        }}
+                        style={{
+                          flex: 1.2,
+                          background: 'linear-gradient(135deg, #2563EB, #3B82F6)',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          borderRadius: 8,
+                          padding: '9px 12px',
+                          fontSize: 12.5,
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 6
+                        }}
+                      >
+                        💬 Chat
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleApplyClick(job)}
+                        disabled={expired}
+                        style={{
+                          flex: 1.2,
+                          background: expired ? (isLight ? '#F1F5F9' : '#334155') : 'linear-gradient(135deg, #FA541C 0%, #FDAB76 100%)',
+                          color: expired ? '#94A3B8' : '#FFFFFF',
+                          border: 'none',
+                          borderRadius: 8,
+                          padding: '9px 12px',
+                          fontSize: 12.5,
+                          fontWeight: 800,
+                          cursor: expired ? 'not-allowed' : 'pointer',
+                          boxShadow: expired ? 'none' : '0 4px 12px rgba(250, 84, 28, 0.35)',
+                          transition: 'transform 0.15s'
+                        }}
+                        onMouseEnter={(e) => { if (!expired) e.currentTarget.style.transform = 'translateY(-1px)' }}
+                        onMouseLeave={(e) => { if (!expired) e.currentTarget.style.transform = 'translateY(0)' }}
+                      >
+                        {expired ? 'Closed' : '⚡ Apply Now'}
+                      </button>
+                    )}
                   </div>
                 </div>
               )
@@ -1952,66 +1847,198 @@ export default function PublicCareers() {
         )}
       </section>
 
-      {/* CANDIDATE FULL JD READER MODAL */}
-      {fullJdModalJob && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(6px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
-          onClick={() => setFullJdModalJob(null)}>
-          <div style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: 16, width: '100%', maxWidth: 740, maxHeight: '88vh', overflowY: 'auto', padding: 28, boxShadow: '0 20px 50px rgba(0,0,0,0.3)' }}
-            onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
-              <div>
-                <h3 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: theme.textPrimary }}>{fullJdModalJob.title}</h3>
-                <p style={{ margin: '4px 0 0', fontSize: 13, color: '#2563EB', fontWeight: 700 }}>📍 {resolveJobLocation(fullJdModalJob)} · {fullJdModalJob.work_mode || 'Onsite'}</p>
-              </div>
-              <button onClick={() => setFullJdModalJob(null)}
-                style={{ backgroundColor: 'transparent', border: 'none', color: theme.textSecondary, fontSize: 22, cursor: 'pointer' }}>✕</button>
+      {/* ─── 6. FOR RECRUITERS BANNER (SCREENSHOT 5) ────────────────────────── */}
+      <section id="for-recruiters" style={{
+        maxWidth: 1200,
+        margin: '0 auto 100px',
+        padding: '0 32px'
+      }}>
+        <div style={{
+          background: 'linear-gradient(135deg, #161C24 0%, #141A21 100%)',
+          borderRadius: 24,
+          padding: '56px 48px',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          display: 'grid',
+          gridTemplateColumns: '1.2fr 1fr',
+          gap: 40,
+          alignItems: 'center',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          {/* Ambient Orange Glow */}
+          <div style={{
+            position: 'absolute',
+            top: -60,
+            right: -60,
+            width: 280,
+            height: 280,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(250, 84, 28, 0.2) 0%, transparent 70%)',
+            pointerEvents: 'none'
+          }} />
+
+          {/* Left Column: Copy & CTA */}
+          <div style={{ position: 'relative', zIndex: 2 }}>
+            <div style={{
+              fontSize: 12,
+              fontWeight: 800,
+              color: '#FA541C',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              marginBottom: 12
+            }}>
+              FOR RECRUITERS
             </div>
 
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 18 }}>
-              <span style={{ fontSize: 12, backgroundColor: theme.inputBg, color: theme.textSecondary, padding: '5px 12px', borderRadius: 6 }}>📍 Location: <strong>{resolveJobLocation(fullJdModalJob)}</strong></span>
-              <span style={{ fontSize: 12, backgroundColor: theme.inputBg, color: theme.textSecondary, padding: '5px 12px', borderRadius: 6 }}>⏳ Experience: <strong>{formatExperience(fullJdModalJob.experience)}</strong></span>
-              <span style={{ fontSize: 12, backgroundColor: theme.inputBg, color: theme.textSecondary, padding: '5px 12px', borderRadius: 6 }}>🏢 Mode: <strong>{fullJdModalJob.work_mode || 'Onsite'}</strong></span>
-              <span style={{ fontSize: 12, backgroundColor: theme.inputBg, color: theme.textSecondary, padding: '5px 12px', borderRadius: 6 }}>📋 Type: <strong>{fullJdModalJob.employment_type || fullJdModalJob.type || 'Contract'}</strong></span>
+            <h2 style={{
+              fontSize: 'clamp(28px, 4vw, 40px)',
+              fontWeight: 800,
+              color: '#FFFFFF',
+              margin: '0 0 16px',
+              letterSpacing: '-0.02em',
+              lineHeight: 1.2
+            }}>
+              Do you have a position to post job?
+            </h2>
+
+            <p style={{
+              fontSize: 15,
+              color: '#919EAB',
+              lineHeight: 1.65,
+              maxWidth: 480,
+              margin: '0 0 32px'
+            }}>
+              Publish open requisitions to thousands of qualified IT candidates with instant AI matching, automated compliance verification, and real-time candidate pipeline tracking.
+            </p>
+
+            <button
+              onClick={() => navigate('/dashboard')}
+              style={{
+                backgroundColor: '#FA541C',
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: 10,
+                padding: '14px 28px',
+                fontSize: 14,
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                boxShadow: '0 8px 20px rgba(250, 84, 28, 0.4)',
+                transition: 'background-color 0.15s, transform 0.15s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#B3200E'
+                e.currentTarget.style.transform = 'translateY(-2px)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#FA541C'
+                e.currentTarget.style.transform = 'translateY(0)'
+              }}
+            >
+              <span>📄</span>
+              <span>Post a job</span>
+            </button>
+          </div>
+
+          {/* Right Column: Illustration (Screenshot 5) */}
+          <div style={{ position: 'relative', zIndex: 2 }}>
+            <ZoneRecruiterMeetingIllustration />
+          </div>
+        </div>
+      </section>
+
+      {/* ─── 7. ZONE FOOTER ────────────────────────────────────────────────── */}
+      <footer style={{
+        backgroundColor: isLight ? '#F4F6F8' : '#0E1318',
+        borderTop: `1px solid ${theme.border}`,
+        padding: '64px 32px 40px'
+      }}>
+        <div style={{
+          maxWidth: 1200,
+          margin: '0 auto',
+          display: 'grid',
+          gridTemplateColumns: '2fr 1fr 1fr 1fr',
+          gap: 40,
+          marginBottom: 48
+        }}>
+          {/* Brand Info */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: 14 }}>
+              <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 22, fontWeight: 800, color: theme.textPrimary }}>
+                Smart<span style={{ color: theme.primary }}>Hire</span>
+              </span>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: theme.primary, display: 'inline-block', marginLeft: 3, marginBottom: 6 }} />
             </div>
+            <p style={{ fontSize: 13.5, color: theme.textSecondary, lineHeight: 1.6, maxWidth: 320, margin: 0 }}>
+              SmartHire Applicant Tracking System & direct-client IT careers portal. Connecting premier IT talent with State Government, Healthcare, and Enterprise requisitions.
+            </p>
+          </div>
 
-            {/* Skills */}
-            {Array.isArray(fullJdModalJob.skills) && fullJdModalJob.skills.length > 0 && (
-              <div style={{ marginBottom: 18 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: theme.textSecondary, textTransform: 'uppercase', marginBottom: 6 }}>Required Technical Skills</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {fullJdModalJob.skills.map(s => (
-                    <span key={s} style={{ fontSize: 12, fontWeight: 600, backgroundColor: theme.tagBg, color: theme.tagText, border: '1px solid rgba(37,99,235,0.2)', padding: '3px 10px', borderRadius: 6 }}>{s}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div style={{ backgroundColor: theme.inputBg, borderRadius: 10, padding: 20, marginBottom: 20 }}>
-              <h4 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: theme.textPrimary, textTransform: 'uppercase' }}>📝 Full Job Description</h4>
-              <div style={{ fontSize: 13.5, color: theme.textSecondary, lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
-                {getFullDescriptionText(fullJdModalJob)}
-              </div>
+          {/* Nav Links */}
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: theme.textPrimary, marginBottom: 16 }}>PORTAL</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13, color: theme.textSecondary }}>
+              <a href="#jobs-list" style={{ color: 'inherit', textDecoration: 'none' }}>Job Listings</a>
+              <a href="#categories" style={{ color: 'inherit', textDecoration: 'none' }}>Hot Categories</a>
+              <a href="#for-candidates" style={{ color: 'inherit', textDecoration: 'none' }}>For Candidates</a>
+              <a href="#for-recruiters" style={{ color: 'inherit', textDecoration: 'none' }}>For Recruiters</a>
             </div>
+          </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
-              <button onClick={() => setFullJdModalJob(null)} style={{ backgroundColor: 'transparent', border: `1px solid ${theme.border}`, color: theme.textSecondary, borderRadius: 8, padding: '10px 18px', fontSize: 13, cursor: 'pointer' }}>Close</button>
-              <button onClick={() => { const jobToApply = fullJdModalJob; setFullJdModalJob(null); openApplicationModal(jobToApply); }}
-                style={{ backgroundColor: '#2563EB', color: '#FFF', border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                ⚡ Apply Now
-              </button>
+          {/* Contract Types */}
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: theme.textPrimary, marginBottom: 16 }}>CONTRACT TYPES</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13, color: theme.textSecondary }}>
+              <Link to="/blog/c2c-vs-w2-vs-1099-it-contracts-guide" style={{ color: 'inherit', textDecoration: 'none' }}>C2C Contracts</Link>
+              <Link to="/blog/c2c-vs-w2-vs-1099-it-contracts-guide" style={{ color: 'inherit', textDecoration: 'none' }}>W2 Hourly / Salaried</Link>
+              <Link to="/blog/c2c-vs-w2-vs-1099-it-contracts-guide" style={{ color: 'inherit', textDecoration: 'none' }}>1099 Independent</Link>
+              <Link to="/blog" style={{ color: 'inherit', textDecoration: 'none' }}>Tax &amp; Contract Guide</Link>
+            </div>
+          </div>
+
+          {/* Legal */}
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: theme.textPrimary, marginBottom: 16 }}>LEGAL &amp; SUPPORT</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13, color: theme.textSecondary }}>
+              <Link to="/privacy" style={{ color: 'inherit', textDecoration: 'none' }}>Privacy Policy</Link>
+              <Link to="/terms" style={{ color: 'inherit', textDecoration: 'none' }}>Terms of Service</Link>
+              <Link to="/support" style={{ color: 'inherit', textDecoration: 'none' }}>Candidate Support</Link>
+              <Link to="/contact" style={{ color: 'inherit', textDecoration: 'none' }}>Contact Us</Link>
             </div>
           </div>
         </div>
-      )}
 
-      {/* CANDIDATE APPLICATION MODAL */}
-      {selectedJob && (
+        <div style={{
+          maxWidth: 1200,
+          margin: '0 auto',
+          borderTop: `1px solid ${theme.border}`,
+          paddingTop: 24,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          fontSize: 12.5,
+          color: theme.textSecondary
+        }}>
+          <div>© 2026 SmartHire ATS. All rights reserved.</div>
+          <div style={{ display: 'flex', gap: 20 }}>
+            <span>Verified Direct-Client Requisitions</span>
+            <span>·</span>
+            <span>Real-Time Matching</span>
+          </div>
+        </div>
+      </footer>
+
+      {/* ─── FULL JD READER MODAL ──────────────────────────────────────────── */}
+      {fullJdModalJob && (
         <div style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
           backgroundColor: 'rgba(15, 23, 42, 0.75)',
           backdropFilter: 'blur(8px)',
-          zIndex: 100,
+          zIndex: 200,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -2020,156 +2047,308 @@ export default function PublicCareers() {
           <div style={{
             backgroundColor: theme.cardBg,
             border: `1px solid ${theme.border}`,
-            borderRadius: 16,
+            borderRadius: 18,
             width: '100%',
-            maxWidth: 680,
-            maxHeight: '92vh',
+            maxWidth: 780,
+            maxHeight: '90vh',
             overflowY: 'auto',
-            padding: 28,
-            boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
-            animation: 'scaleIn 0.2s ease-out'
+            padding: 32,
+            boxShadow: '0 25px 60px rgba(0,0,0,0.4)',
+            position: 'relative'
           }}>
-            
-            {/* Modal Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
               <div>
-                <h3 style={{ fontSize: 21, fontWeight: 800, color: theme.textPrimary, margin: '3px 0 0' }}>
-                  {selectedJob.title}
-                </h3>
-                <p style={{ fontSize: 12, color: '#2563EB', margin: '2px 0 0', fontWeight: 700 }}>
-                  📍 {selectedJob.location || 'Remote, US'} · {selectedJob.work_mode || 'Onsite'}
-                </p>
+                <span style={{
+                  fontSize: 11,
+                  fontWeight: 800,
+                  backgroundColor: isLight ? '#FEE9D1' : '#33201C',
+                  color: theme.primary,
+                  padding: '3px 8px',
+                  borderRadius: 6,
+                  textTransform: 'uppercase'
+                }}>
+                  {formatContractType(fullJdModalJob)} · {fullJdModalJob.work_mode || 'Remote'}
+                </span>
+                <h2 style={{ fontSize: 24, fontWeight: 800, color: theme.textPrimary, margin: '8px 0 4px', fontFamily: "'Barlow', sans-serif" }}>
+                  {cleanJobTitleWithPositionNumber(fullJdModalJob.title)}
+                </h2>
+                <div style={{ fontSize: 13, color: '#00B8D9', fontWeight: 700 }}>
+                  {fullJdModalJob.client || 'Direct End-Client'} · 📍 {resolveJobLocation(fullJdModalJob) || 'Remote, US'}
+                </div>
               </div>
               <button
-                onClick={() => setSelectedJob(null)}
-                style={{ backgroundColor: 'transparent', border: 'none', color: theme.textSecondary, fontSize: 22, cursor: 'pointer', padding: 4 }}
+                onClick={() => setFullJdModalJob(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: 22,
+                  cursor: 'pointer',
+                  color: theme.textSecondary
+                }}
               >
                 ✕
               </button>
             </div>
 
-            {/* Recruiter Referral Attribution Badge */}
+            {/* Timezone Post Times */}
             {(() => {
-              const urlParams = new URLSearchParams(window.location.search)
-              const refCode = sessionStorage.getItem('smarthire_recruiter_ref') || localStorage.getItem('smarthire_recruiter_ref') || urlParams.get('ref') || urlParams.get('recruiter')
+              const tz = getJobPostTimezones(fullJdModalJob)
+              return (
+                <div style={{
+                  backgroundColor: theme.surface,
+                  borderRadius: 10,
+                  padding: '10px 14px',
+                  display: 'flex',
+                  gap: 16,
+                  fontSize: 11.5,
+                  color: theme.textSecondary,
+                  marginBottom: 20,
+                  flexWrap: 'wrap'
+                }}>
+                  <span>🕒 <strong>EST:</strong> {tz.EST}</span>
+                  <span><strong>CST:</strong> {tz.CST}</span>
+                  <span><strong>PST:</strong> {tz.PST}</span>
+                </div>
+              )
+            })()}
+
+            {/* Job Description Content */}
+            <div style={{
+              fontSize: 14,
+              lineHeight: 1.7,
+              color: theme.textPrimary,
+              whiteSpace: 'pre-wrap',
+              borderTop: `1px solid ${theme.border}`,
+              paddingTop: 18,
+              marginBottom: 24
+            }}>
+              {getFullDescriptionText(fullJdModalJob)}
+            </div>
+
+            {/* Skills Pills */}
+            {Array.isArray(fullJdModalJob.skills) && fullJdModalJob.skills.length > 0 && (
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: theme.textSecondary, marginBottom: 8 }}>REQUIRED SKILLS</div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {fullJdModalJob.skills.map((s, i) => (
+                    <span key={i} style={{
+                      fontSize: 11.5,
+                      fontWeight: 700,
+                      backgroundColor: theme.surface,
+                      color: theme.primary,
+                      border: `1px solid ${theme.border}`,
+                      padding: '3px 10px',
+                      borderRadius: 6
+                    }}>
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Modal Actions */}
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', borderTop: `1px solid ${theme.border}`, paddingTop: 18 }}>
+              <button
+                onClick={() => setFullJdModalJob(null)}
+                style={{
+                  background: 'none',
+                  border: `1px solid ${theme.border}`,
+                  color: theme.textPrimary,
+                  borderRadius: 8,
+                  padding: '10px 18px',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  const jobToApply = fullJdModalJob
+                  setFullJdModalJob(null)
+                  handleApplyClick(jobToApply)
+                }}
+                style={{
+                  backgroundColor: theme.primary,
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '10px 24px',
+                  fontSize: 14,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(250, 84, 28, 0.4)'
+                }}
+              >
+                ⚡ Apply for this position
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── CANDIDATE 1-CLICK APPLY MODAL ─────────────────────────────────── */}
+      {selectedJob && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 250,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 20
+        }}>
+          <div style={{
+            backgroundColor: theme.cardBg,
+            border: `1px solid ${theme.border}`,
+            borderRadius: 18,
+            width: '100%',
+            maxWidth: 680,
+            maxHeight: '92vh',
+            overflowY: 'auto',
+            padding: 32,
+            boxShadow: '0 25px 60px rgba(0,0,0,0.4)',
+            position: 'relative'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+              <div>
+                <h3 style={{ fontSize: 22, fontWeight: 800, color: theme.textPrimary, margin: '0 0 4px', fontFamily: "'Barlow', sans-serif" }}>
+                  {cleanJobTitleWithPositionNumber(selectedJob.title)}
+                </h3>
+                <p style={{ fontSize: 13, color: '#00B8D9', margin: 0, fontWeight: 700 }}>
+                  📍 {resolveJobLocation(selectedJob) || 'Remote, US'} · {selectedJob.work_mode || 'Contract'}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedJob(null)}
+                style={{ background: 'none', border: 'none', color: theme.textSecondary, fontSize: 22, cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Sourcing Recruiter Referral Attribution */}
+            {(() => {
+              const refCode = sessionStorage.getItem('smarthire_recruiter_ref') || localStorage.getItem('smarthire_recruiter_ref') || searchParams.get('ref')
               const rec = resolveRecruiterFromRef(refCode)
               if (!rec) return null
               return (
                 <div style={{
-                  background: isLight ? '#f0fdf4' : 'rgba(22, 163, 74, 0.12)',
-                  border: `1px solid ${isLight ? '#bbf7d0' : 'rgba(34, 197, 94, 0.3)'}`,
+                  background: isLight ? '#F0FDF4' : 'rgba(22, 163, 74, 0.12)',
+                  border: `1px solid ${isLight ? '#BBF7D0' : 'rgba(34, 197, 94, 0.3)'}`,
                   borderRadius: 8,
                   padding: '8px 12px',
-                  marginBottom: 16,
+                  marginBottom: 18,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  gap: 10,
-                  flexWrap: 'wrap'
+                  gap: 10
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: isLight ? '#15803d' : '#86efac' }}>
-                    <span>👤</span>
-                    <span>Sourcing Recruiter: <strong style={{ color: isLight ? '#0f172a' : '#ffffff' }}>{rec.name}</strong> ({rec.email})</span>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: isLight ? '#15803D' : '#86EFAC' }}>
+                    👤 Sourcing Recruiter: <strong>{rec.name}</strong> ({rec.email})
                   </div>
-                  <span style={{ fontSize: 10.5, background: isLight ? '#dcfce7' : 'rgba(34, 197, 94, 0.25)', color: isLight ? '#166534' : '#bbf7d0', padding: '2px 8px', borderRadius: 12, fontWeight: 800 }}>
-                    Direct Recruiter Referral
+                  <span style={{ fontSize: 10.5, background: isLight ? '#DCFCE7' : 'rgba(34, 197, 94, 0.25)', color: isLight ? '#166534' : '#BBF7D0', padding: '2px 8px', borderRadius: 12, fontWeight: 800 }}>
+                    Direct Referral
                   </span>
                 </div>
               )
             })()}
 
-            {/* IF APPLICATION SUBMITTED */}
+            {/* Application Success Screen */}
             {submitSuccess ? (
               <div style={{ textAlign: 'center', padding: '30px 10px' }}>
                 <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: '#DCFCE7', color: '#16A34A', fontSize: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                   ✓
                 </div>
-                <h4 style={{ fontSize: 22, fontWeight: 800, color: theme.textPrimary, margin: '0 0 8px' }}>
+                <h4 style={{ fontSize: 22, fontWeight: 800, color: theme.textPrimary, margin: '0 0 8px', fontFamily: "'Barlow', sans-serif" }}>
                   🎉 Application Submitted Successfully!
                 </h4>
-                <p style={{ fontSize: 14, color: theme.textSecondary, maxWidth: 500, margin: '0 auto 20px', lineHeight: 1.6 }}>
-                  Thank you <strong>{submitSuccess.candidateName || candidateName}</strong>! Your application for <strong>{submitSuccess.jobTitle}</strong> has been received and delivered to our recruiting team.
+                <p style={{ fontSize: 14, color: theme.textSecondary, maxWidth: 500, margin: '0 auto 24px', lineHeight: 1.6 }}>
+                  Thank you <strong>{submitSuccess.candidateName || candidateName}</strong>! Your application for <strong>{submitSuccess.jobTitle}</strong> has been received by our recruiting team.
                 </p>
-                <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
-                <button
-                  onClick={() => {
-                    const app = submitSuccess.appRecord
-                    setSelectedJob(null)
-                    setSubmitSuccess(null)
-                    if (app) {
-                      setActiveChatCandidate({
-                        id: app.candidateId || app.sessionId,
-                        sessionId: app.sessionId,
-                        name: app.candidateName,
-                        candidateName: app.candidateName,
-                        email: app.candidateEmail,
-                        jobTitle: selectedJob.title
-                      })
-                    }
-                  }}
-                  style={{
-                    flex: 1,
-                    background: 'linear-gradient(135deg, #2563EB, #3B82F6)',
-                    color: '#FFF',
-                    border: 'none',
-                    borderRadius: 10,
-                    padding: '12px 18px',
-                    fontSize: 14,
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 8,
-                    boxShadow: '0 4px 16px rgba(37, 99, 235, 0.35)'
-                  }}
-                >
-                  💬 Message Recruiter Now
-                </button>
-                <button
-                  onClick={() => { setSelectedJob(null); setSubmitSuccess(null); }}
-                  style={{
-                    background: theme.inputBg,
-                    color: theme.textPrimary,
-                    border: `1px solid ${theme.border}`,
-                    borderRadius: 10,
-                    padding: '12px 18px',
-                    fontSize: 14,
-                    fontWeight: 700,
-                    cursor: 'pointer'
-                  }}
-                >
-                  Close Window
-                </button>
-              </div>
+                <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                  <button
+                    onClick={() => {
+                      const app = submitSuccess.appRecord
+                      setSelectedJob(null)
+                      setSubmitSuccess(null)
+                      if (app) {
+                        setActiveChatCandidate({
+                          id: app.candidateId || app.sessionId,
+                          sessionId: app.sessionId,
+                          name: app.candidateName,
+                          candidateName: app.candidateName,
+                          email: app.candidateEmail,
+                          jobTitle: selectedJob.title
+                        })
+                      }
+                    }}
+                    style={{
+                      background: 'linear-gradient(135deg, #FA541C, #FDAB76)',
+                      color: '#FFF',
+                      border: 'none',
+                      borderRadius: 10,
+                      padding: '12px 24px',
+                      fontSize: 14,
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 16px rgba(250, 84, 28, 0.35)'
+                    }}
+                  >
+                    💬 Message Recruiter Now
+                  </button>
+                  <button
+                    onClick={() => { setSelectedJob(null); setSubmitSuccess(null); }}
+                    style={{
+                      background: theme.surface,
+                      color: theme.textPrimary,
+                      border: `1px solid ${theme.border}`,
+                      borderRadius: 10,
+                      padding: '12px 20px',
+                      fontSize: 14,
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
             ) : (
-              /* FORM STATE */
+              /* Application Form */
               <>
-                {/* Error banner */}
                 {submitError && (
                   <div style={{ backgroundColor: '#FEE2E2', border: '1px solid #FCA5A5', color: '#B91C1C', padding: '10px 14px', borderRadius: 8, fontSize: 13, marginBottom: 16 }}>
                     ⚠️ {submitError}
                   </div>
                 )}
 
-                {/* STEP 1: FIRST ATTACH RESUME FOR AUTO-PARSING */}
-                <div style={{ backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 12, padding: 16, marginBottom: 18 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <label style={{ fontSize: 13, fontWeight: 800, color: '#1D4ED8', display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span>📄 Step 1: Upload Your Resume First (Auto-Fills Form)</span>
-                    </label>
+                {/* Step 1: Resume Upload for Auto-Fill */}
+                <div style={{
+                  backgroundColor: isLight ? '#FFF8F5' : 'rgba(250, 84, 28, 0.08)',
+                  border: `1px solid ${isLight ? '#FEE9D1' : 'rgba(250, 84, 28, 0.25)'}`,
+                  borderRadius: 12,
+                  padding: 16,
+                  marginBottom: 20
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: theme.primary }}>
+                      📄 Step 1: Attach Resume (Auto-Fills Form)
+                    </span>
                     {isParsingResume && (
-                      <span style={{ fontSize: 11, color: '#2563EB', fontWeight: 700 }}>⏳ Extracting details...</span>
+                      <span style={{ fontSize: 11, color: theme.primary, fontWeight: 700 }}>⏳ Extracting details...</span>
                     )}
                   </div>
-                  <p style={{ fontSize: 12, color: '#3B82F6', margin: '0 0 10px 0' }}>
+                  <p style={{ fontSize: 12, color: theme.textSecondary, margin: '0 0 10px 0' }}>
                     Attach your resume (.pdf, .docx, .txt). Your Name, Email, Phone, & Location will auto-populate below!
                   </p>
 
                   <div style={{
-                    backgroundColor: '#FFFFFF',
-                    border: `2px dashed ${resumeFile ? '#16A34A' : '#93C5FD'}`,
+                    backgroundColor: theme.cardBg,
+                    border: `2px dashed ${resumeFile ? '#16A34A' : theme.primary}`,
                     borderRadius: 10,
                     padding: 14,
                     textAlign: 'center',
@@ -2188,40 +2367,36 @@ export default function PublicCareers() {
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); setResumeFile(null); setResumeText(''); setCandidateName(''); setAutoFillSuccess(false); }}
-                          style={{ backgroundColor: 'transparent', border: 'none', color: '#DC2626', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}
+                          style={{ background: 'transparent', border: 'none', color: '#DC2626', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}
                         >
                           Remove
                         </button>
                       </div>
                     ) : (
-                      <div style={{ color: '#1E40AF', fontSize: 13 }}>
-                        <span style={{ fontSize: 22, display: 'block', marginBottom: 2 }}>📎</span>
+                      <div style={{ color: theme.textSecondary, fontSize: 13 }}>
+                        <span style={{ fontSize: 20, display: 'block', marginBottom: 2 }}>📎</span>
                         <strong>Click or Drag Resume File Here</strong> (.pdf, .docx, .txt)
                       </div>
                     )}
                   </div>
 
                   {autoFillSuccess && (
-                    <div style={{ marginTop: 10, fontSize: 12, color: '#15803D', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span>✨ Details auto-populated from resume! Review below.</span>
+                    <div style={{ marginTop: 8, fontSize: 12, color: '#15803D', fontWeight: 700 }}>
+                      ✨ Details auto-populated from resume! Review below.
                     </div>
                   )}
                 </div>
 
-                {/* Candidate Form */}
+                {/* Candidate Form Fields */}
                 <form onSubmit={handleApplySubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  
-                  {/* Full Name */}
                   <div>
-                    <label style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary, display: 'block', marginBottom: 4 }}>
-                      Full Legal Name *
-                    </label>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary, display: 'block', marginBottom: 4 }}>Full Legal Name *</label>
                     <input
                       type="text"
                       required
                       value={candidateName}
                       onChange={(e) => setCandidateName(e.target.value)}
-                      placeholder="e.g. Francis Pribilovics"
+                      placeholder="e.g. John Doe"
                       style={{
                         width: '100%',
                         backgroundColor: theme.inputBg,
@@ -2236,18 +2411,15 @@ export default function PublicCareers() {
                     />
                   </div>
 
-                  {/* Email & Phone */}
                   <div style={{ display: 'flex', gap: 12 }}>
                     <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary, display: 'block', marginBottom: 4 }}>
-                        Email Address *
-                      </label>
+                      <label style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary, display: 'block', marginBottom: 4 }}>Email Address *</label>
                       <input
                         type="email"
                         required
                         value={candidateEmail}
                         onChange={(e) => setCandidateEmail(e.target.value)}
-                        placeholder="john.smith@gmail.com"
+                        placeholder="john@example.com"
                         style={{
                           width: '100%',
                           backgroundColor: theme.inputBg,
@@ -2261,11 +2433,8 @@ export default function PublicCareers() {
                         }}
                       />
                     </div>
-
                     <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary, display: 'block', marginBottom: 4 }}>
-                        Phone Number
-                      </label>
+                      <label style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary, display: 'block', marginBottom: 4 }}>Phone Number</label>
                       <input
                         type="tel"
                         value={candidatePhone}
@@ -2286,64 +2455,9 @@ export default function PublicCareers() {
                     </div>
                   </div>
 
-                  {/* Location & Relocation Preference */}
                   <div style={{ display: 'flex', gap: 12 }}>
                     <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary, display: 'block', marginBottom: 4 }}>
-                        Current Location *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={currentLocation}
-                        onChange={(e) => setCurrentLocation(e.target.value)}
-                        placeholder="e.g. Dallas, TX"
-                        style={{
-                          width: '100%',
-                          backgroundColor: theme.inputBg,
-                          border: `1px solid ${theme.inputBorder}`,
-                          color: theme.textPrimary,
-                          borderRadius: 8,
-                          padding: '10px 12px',
-                          fontSize: 13,
-                          outline: 'none',
-                          boxSizing: 'border-box'
-                        }}
-                      />
-                    </div>
-
-                    <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary, display: 'block', marginBottom: 4 }}>
-                        Ready to Relocate?
-                      </label>
-                      <select
-                        value={relocatePref}
-                        onChange={(e) => setRelocatePref(e.target.value)}
-                        style={{
-                          width: '100%',
-                          backgroundColor: theme.inputBg,
-                          border: `1px solid ${theme.inputBorder}`,
-                          color: theme.textPrimary,
-                          borderRadius: 8,
-                          padding: '10px 12px',
-                          fontSize: 13,
-                          outline: 'none',
-                          boxSizing: 'border-box'
-                        }}
-                      >
-                        <option value="Yes">Yes, open to relocate</option>
-                        <option value="No">No, local / remote only</option>
-                        <option value="Hybrid">Hybrid / Open to Travel</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Contract Type & Visa Status */}
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary, display: 'block', marginBottom: 4 }}>
-                        Employment Contract Type
-                      </label>
+                      <label style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary, display: 'block', marginBottom: 4 }}>Contract Type</label>
                       <select
                         value={contractType}
                         onChange={(e) => setContractType(e.target.value)}
@@ -2360,19 +2474,17 @@ export default function PublicCareers() {
                         }}
                       >
                         <option value="C2C">C2C (Corp-to-Corp)</option>
-                        <option value="W2">W2 (Direct W2)</option>
-                        <option value="1099">1099 Independent Contractor</option>
-                        <option value="C2C or W2">Open to C2C or W2</option>
+                        <option value="W2">W2 Hourly / Salaried</option>
+                        <option value="1099">1099 Independent</option>
                       </select>
                     </div>
-
                     <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary, display: 'block', marginBottom: 4 }}>
-                        Visa / Work Authorization
-                      </label>
-                      <select
-                        value={visaStatus}
-                        onChange={(e) => setVisaStatus(e.target.value)}
+                      <label style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary, display: 'block', marginBottom: 4 }}>Expected Rate ($/hr)</label>
+                      <input
+                        type="number"
+                        value={expectedRate}
+                        onChange={(e) => setExpectedRate(e.target.value)}
+                        placeholder="e.g. 75"
                         style={{
                           width: '100%',
                           backgroundColor: theme.inputBg,
@@ -2384,27 +2496,180 @@ export default function PublicCareers() {
                           outline: 'none',
                           boxSizing: 'border-box'
                         }}
-                      >
-                        <option value="US Citizen">US Citizen</option>
-                        <option value="Green Card">Green Card (PR)</option>
-                        <option value="H1B">H1B Visa</option>
-                        <option value="EAD / OPT">EAD / OPT</option>
-                        <option value="C2C Vendor Candidate">C2C Vendor Candidate</option>
-                        <option value="TN Visa">TN Visa</option>
-                      </select>
+                      />
                     </div>
                   </div>
 
-                  {/* Expected Rate */}
-                  <div>
-                    <label style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary, display: 'block', marginBottom: 4 }}>
-                      Expected Hourly Rate ($/hr)
-                    </label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
                     <input
-                      type="number"
-                      value={expectedRate}
-                      onChange={(e) => setExpectedRate(e.target.value)}
-                      placeholder="e.g. 70"
+                      type="checkbox"
+                      id="detailsVerified"
+                      required
+                      checked={detailsVerified}
+                      onChange={(e) => setDetailsVerified(e.target.checked)}
+                      style={{ width: 16, height: 16, cursor: 'pointer' }}
+                    />
+                    <label htmlFor="detailsVerified" style={{ fontSize: 12.5, color: theme.textSecondary, cursor: 'pointer' }}>
+                      I confirm the details provided are correct and accurate.
+                    </label>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    style={{
+                      marginTop: 10,
+                      backgroundColor: theme.primary,
+                      color: '#FFF',
+                      border: 'none',
+                      borderRadius: 10,
+                      padding: '14px',
+                      fontSize: 15,
+                      fontWeight: 800,
+                      cursor: submitting ? 'not-allowed' : 'pointer',
+                      boxShadow: '0 4px 16px rgba(250, 84, 28, 0.35)',
+                      transition: 'background-color 0.15s'
+                    }}
+                  >
+                    {submitting ? '⚡ Submitting...' : '🚀 Submit Direct Application'}
+                  </button>
+                </form>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ─── GENERAL CV UPLOAD MODAL (FROM "UPLOAD YOUR CV" CTA) ────────────── */}
+      {showCvUploadModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 300,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 20
+        }}>
+          <div style={{
+            backgroundColor: theme.cardBg,
+            border: `1px solid ${theme.border}`,
+            borderRadius: 18,
+            width: '100%',
+            maxWidth: 540,
+            padding: 32,
+            boxShadow: '0 25px 60px rgba(0,0,0,0.4)',
+            position: 'relative'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
+              <div>
+                <h3 style={{ fontSize: 22, fontWeight: 800, color: theme.textPrimary, margin: '0 0 4px', fontFamily: "'Barlow', sans-serif" }}>
+                  Upload Your CV / Resume
+                </h3>
+                <p style={{ fontSize: 13, color: theme.textSecondary, margin: 0 }}>
+                  Join our verified candidate talent pool for direct client IT contracts.
+                </p>
+              </div>
+              <button
+                onClick={() => { setShowCvUploadModal(false); setCvSuccess(false); }}
+                style={{ background: 'none', border: 'none', color: theme.textSecondary, fontSize: 22, cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {cvSuccess ? (
+              <div style={{ textAlign: 'center', padding: '30px 10px' }}>
+                <div style={{ width: 60, height: 60, borderRadius: '50%', backgroundColor: '#DCFCE7', color: '#16A34A', fontSize: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                  ✓
+                </div>
+                <h4 style={{ fontSize: 20, fontWeight: 800, color: theme.textPrimary, margin: '0 0 8px' }}>
+                  CV Uploaded Successfully!
+                </h4>
+                <p style={{ fontSize: 13.5, color: theme.textSecondary, margin: '0 0 20px', lineHeight: 1.6 }}>
+                  Thank you <strong>{cvCandidateName}</strong>. Our recruiters will review your qualifications and contact you when matching direct-client requisitions open.
+                </p>
+                <button
+                  onClick={() => { setShowCvUploadModal(false); setCvSuccess(false); }}
+                  style={{
+                    backgroundColor: theme.primary,
+                    color: '#FFF',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '10px 22px',
+                    fontSize: 13,
+                    fontWeight: 800,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Done
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleGeneralCvSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {/* File Drop Box */}
+                <div style={{
+                  backgroundColor: theme.surface,
+                  border: `2px dashed ${cvFile ? '#16A34A' : theme.primary}`,
+                  borderRadius: 12,
+                  padding: 20,
+                  textAlign: 'center',
+                  position: 'relative',
+                  cursor: 'pointer'
+                }}>
+                  <input
+                    type="file"
+                    accept=".pdf,.docx,.doc,.txt"
+                    required={!cvFile}
+                    onChange={handleCvDropFile}
+                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+                  />
+                  {cvFile ? (
+                    <div style={{ color: '#16A34A', fontWeight: 700, fontSize: 13 }}>
+                      📄 {cvFile.name} ({(cvFile.size / 1024).toFixed(1)} KB)
+                    </div>
+                  ) : (
+                    <div style={{ color: theme.textSecondary, fontSize: 13 }}>
+                      <span style={{ fontSize: 24, display: 'block', marginBottom: 4 }}>📎</span>
+                      <strong>Click or Drag Your CV Here</strong> (.pdf, .docx, .txt)
+                    </div>
+                  )}
+                  {cvParsing && <div style={{ fontSize: 11, color: theme.primary, marginTop: 4, fontWeight: 700 }}>⏳ Extracting resume details...</div>}
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary, display: 'block', marginBottom: 4 }}>Full Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={cvCandidateName}
+                    onChange={(e) => setCvCandidateName(e.target.value)}
+                    placeholder="e.g. John Doe"
+                    style={{
+                      width: '100%',
+                      backgroundColor: theme.inputBg,
+                      border: `1px solid ${theme.inputBorder}`,
+                      color: theme.textPrimary,
+                      borderRadius: 8,
+                      padding: '10px 12px',
+                      fontSize: 13,
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary, display: 'block', marginBottom: 4 }}>Email Address *</label>
+                    <input
+                      type="email"
+                      required
+                      value={cvCandidateEmail}
+                      onChange={(e) => setCvCandidateEmail(e.target.value)}
+                      placeholder="john@example.com"
                       style={{
                         width: '100%',
                         backgroundColor: theme.inputBg,
@@ -2418,64 +2683,81 @@ export default function PublicCareers() {
                       }}
                     />
                   </div>
-
-                  {/* Details Verification Checkmark */}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 4, marginBottom: 8 }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary, display: 'block', marginBottom: 4 }}>Phone Number</label>
                     <input
-                      type="checkbox"
-                      id="detailsVerified"
-                      required
-                      checked={detailsVerified}
-                      onChange={(e) => setDetailsVerified(e.target.checked)}
-                      style={{ width: 16, height: 16, cursor: 'pointer', marginTop: 1 }}
+                      type="tel"
+                      value={cvCandidatePhone}
+                      onChange={(e) => setCvCandidatePhone(e.target.value)}
+                      placeholder="+1 (555) 000-0000"
+                      style={{
+                        width: '100%',
+                        backgroundColor: theme.inputBg,
+                        border: `1px solid ${theme.inputBorder}`,
+                        color: theme.textPrimary,
+                        borderRadius: 8,
+                        padding: '10px 12px',
+                        fontSize: 13,
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
                     />
-                    <label htmlFor="detailsVerified" style={{ fontSize: 12.5, fontWeight: 700, color: theme.textSecondary, cursor: 'pointer', lineHeight: 1.4 }}>
-                      ✓ I confirm that the details parsed from my resume are correct and verified.
-                    </label>
                   </div>
+                </div>
 
-                  {/* Submit Action */}
-                  <button
-                    type="submit"
-                    disabled={submitting}
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary, display: 'block', marginBottom: 4 }}>Target Role or Skills</label>
+                  <input
+                    type="text"
+                    value={cvPreferredRole}
+                    onChange={(e) => setCvPreferredRole(e.target.value)}
+                    placeholder="e.g. Senior Java Developer, Cloud Architect"
                     style={{
-                      marginTop: 8,
-                      backgroundColor: '#2563EB',
-                      backgroundImage: 'linear-gradient(135deg, #2563EB 0%, #3B82F6 100%)',
-                      color: '#FFF',
-                      border: 'none',
-                      borderRadius: 10,
-                      padding: '14px',
-                      fontSize: 15,
-                      fontWeight: 800,
-                      cursor: submitting ? 'not-allowed' : 'pointer',
-                      boxShadow: '0 4px 15px rgba(37, 99, 235, 0.3)',
-                      transition: 'transform 0.15s ease'
+                      width: '100%',
+                      backgroundColor: theme.inputBg,
+                      border: `1px solid ${theme.inputBorder}`,
+                      color: theme.textPrimary,
+                      borderRadius: 8,
+                      padding: '10px 12px',
+                      fontSize: 13,
+                      outline: 'none',
+                      boxSizing: 'border-box'
                     }}
-                  >
-                    {submitting ? '⚡ Submitting Application...' : '🚀 Submit Direct Application'}
-                  </button>
+                  />
+                </div>
 
-                  <p style={{ fontSize: 11, color: theme.textSecondary, textAlign: 'center', margin: 0 }}>
-                    Your application will be submitted directly to our recruiting team.
-                  </p>
-                </form>
-              </>
+                <button
+                  type="submit"
+                  disabled={cvParsing}
+                  style={{
+                    marginTop: 8,
+                    backgroundColor: theme.primary,
+                    color: '#FFF',
+                    border: 'none',
+                    borderRadius: 10,
+                    padding: '13px',
+                    fontSize: 14,
+                    fontWeight: 800,
+                    cursor: cvParsing ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 4px 16px rgba(250, 84, 28, 0.35)'
+                  }}
+                >
+                  {cvParsing ? 'Submitting...' : 'Upload & Register CV'}
+                </button>
+              </form>
             )}
-
           </div>
         </div>
       )}
 
-
-      {/* CANDIDATE GOOGLE SIGN IN MODAL */}
+      {/* ─── CANDIDATE SIGN IN MODAL ────────────────────────────────────────── */}
       {showLoginModal && (
         <div style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
           backgroundColor: 'rgba(15, 23, 42, 0.75)',
           backdropFilter: 'blur(8px)',
-          zIndex: 4000,
+          zIndex: 400,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -2487,27 +2769,28 @@ export default function PublicCareers() {
             borderRadius: 18,
             width: '100%',
             maxWidth: 440,
-            padding: 28,
+            padding: 32,
             boxShadow: '0 25px 50px rgba(0,0,0,0.4)',
             textAlign: 'center'
           }}>
             <div style={{
               width: 56, height: 56, borderRadius: '50%',
-              backgroundColor: '#EFF6FF', color: '#2563EB',
+              backgroundColor: isLight ? '#FEE9D1' : '#33201C',
+              color: theme.primary,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 26, margin: '0 auto 16px'
             }}>
               🔑
             </div>
-            
-            <h3 style={{ fontSize: 20, fontWeight: 800, color: theme.textPrimary, margin: '0 0 6px' }}>
+
+            <h3 style={{ fontSize: 20, fontWeight: 800, color: theme.textPrimary, margin: '0 0 6px', fontFamily: "'Barlow', sans-serif" }}>
               Candidate Sign-In Required
             </h3>
-            <p style={{ fontSize: 13.5, color: theme.textSecondary, margin: '0 0 20px', lineHeight: 1.5 }}>
-              Please sign in to submit your application for <strong>{targetJobForLogin?.title || 'this position'}</strong>.
+            <p style={{ fontSize: 13.5, color: theme.textSecondary, margin: '0 0 24px', lineHeight: 1.5 }}>
+              Sign in to submit your application for <strong>{targetJobForLogin?.title || 'this position'}</strong>.
             </p>
 
-            {/* Google 1-Click Sign-In */}
+            {/* Google Sign In */}
             <button
               onClick={async () => {
                 try {
@@ -2540,8 +2823,7 @@ export default function PublicCareers() {
                 justifyContent: 'center',
                 gap: 10,
                 boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
-                marginBottom: 16,
-                fontFamily: 'inherit'
+                marginBottom: 16
               }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24">
@@ -2559,8 +2841,8 @@ export default function PublicCareers() {
               <div style={{ flex: 1, height: 1, backgroundColor: theme.border }} />
             </div>
 
-            {/* Email Candidate Login Form */}
-            <div style={{ textAlign: 'left', marginBottom: 14 }}>
+            {/* Email login */}
+            <div style={{ textAlign: 'left', marginBottom: 12 }}>
               <label style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary, display: 'block', marginBottom: 4 }}>Your Full Name</label>
               <input
                 type="text"
@@ -2593,16 +2875,15 @@ export default function PublicCareers() {
               }}
               style={{
                 width: '100%',
-                background: 'linear-gradient(135deg, #2563EB, #3B82F6)',
+                background: 'linear-gradient(135deg, #FA541C, #FDAB76)',
                 color: '#FFF',
                 border: 'none',
                 borderRadius: 10,
-                padding: '11px 16px',
+                padding: '12px 16px',
                 fontSize: 14,
                 fontWeight: 800,
                 cursor: (!loginEmail.trim() || !loginName.trim()) ? 'not-allowed' : 'pointer',
-                opacity: (!loginEmail.trim() || !loginName.trim()) ? 0.5 : 1,
-                fontFamily: 'inherit'
+                opacity: (!loginEmail.trim() || !loginName.trim()) ? 0.5 : 1
               }}
             >
               Continue to Application →
@@ -2618,7 +2899,7 @@ export default function PublicCareers() {
         </div>
       )}
 
-      {/* 1-ON-1 RECRUITER CHAT WIDGET (for candidates who applied) */}
+      {/* ─── 1-ON-1 RECRUITER CHAT WIDGET ──────────────────────────────────── */}
       {activeChatCandidate && (
         <CandidateMessengerWidget
           candidate={activeChatCandidate}
@@ -2627,7 +2908,7 @@ export default function PublicCareers() {
         />
       )}
 
-      {/* FLOATING AI CAREER BOT WIDGET */}
+      {/* ─── FLOATING AI CAREER BOT WIDGET ─────────────────────────────────── */}
       {chatEnabled && (
         <>
           {botWidgetOpen ? (
@@ -2643,26 +2924,25 @@ export default function PublicCareers() {
                 position: 'fixed',
                 bottom: 24,
                 right: 24,
-                backgroundColor: '#2563EB',
+                backgroundColor: '#FA541C',
                 color: '#FFFFFF',
                 border: 'none',
                 borderRadius: 24,
                 padding: '10px 18px',
                 fontSize: 13,
-                fontWeight: 600,
+                fontWeight: 700,
                 cursor: 'pointer',
-                boxShadow: '0 4px 16px rgba(37, 99, 235, 0.35)',
+                boxShadow: '0 8px 20px rgba(250, 84, 28, 0.4)',
                 zIndex: 2000,
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
-                transition: 'all 0.2s ease',
-                fontFamily: 'inherit'
+                transition: 'all 0.2s ease'
               }}
               onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
               onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
-              <span style={{ fontSize: 15 }}>💬</span>
+              <span style={{ fontSize: 16 }}>💬</span>
               <span>Career Assistant</span>
             </button>
           )}
