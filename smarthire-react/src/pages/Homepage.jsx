@@ -163,12 +163,12 @@ function Homepage() {
                 </div>
 
                 <h1 className="tf-hero-title">
-                  Beautiful data representation{' '}
-                  <span className="tf-highlight-box">built with SmartHire</span>
+                  Next-Gen Recruitment Operating System{' '}
+                  <span className="tf-highlight-box">Built for Precision Staffing</span>
                 </h1>
 
                 <p className="tf-hero-subtitle">
-                  Autonomous AI screening, private recruiter talent vaults, instant JD-to-candidate matching, and anti-proxy vetting in one high-velocity recruitment command center.
+                  Empower your staffing agency from candidate sourcing to client placement. Featuring placement-trained AI screening, private recruiter vaults, sub-second requisition sync, and anti-proxy biometric trust.
                 </p>
 
                 <div className="tf-hero-actions">
@@ -946,13 +946,16 @@ function Homepage() {
         {/* =========================================================================
             SECTION 5: CUSTOMIZATION & OVERLAPPING PERSPECTIVE MOCKUP (Screenshot 5)
             ========================================================================= */}
-        <section className="tf-customization-section">
+        <section className="tf-customization-section" id="workflows">
           <div className="tf-container">
             <div className="tf-customization-header text-center">
-              <span className="tf-eyebrow-amber">CUSTOMIZATION & WORKFLOWS</span>
-              <h2 className="tf-section-title">Customize your product</h2>
+              <span className="tf-eyebrow-amber">⚡ REAL-TIME RECRUITMENT INTELLIGENCE</span>
+              <h2 className="tf-section-title">
+                Total command over your{' '}
+                <span className="tf-highlight-box">entire recruiting pipeline</span>
+              </h2>
               <p className="tf-section-subtitle">
-                We aim to take care of you. Need customized candidate screening questionnaires, specialized pay rates, or custom scraper rules for your client requisitions? We'll be there to lend a helping hand.
+                Gain complete executive visibility across all recruiter pipelines, active client requisitions, sourcing targets, and placement conversions. Every chart, metric, and table reflects live data from your ATS operations.
               </p>
 
               <div className="tf-customization-actions">
@@ -961,18 +964,24 @@ function Homepage() {
                   onClick={() => isAuthenticated ? navigate('/ats') : setShowLoginModal(true)} 
                   className="tf-btn tf-btn-primary"
                 >
-                  Start now
+                  Explore ATS Portal →
                 </button>
-                <a href="#calculator" className="tf-btn tf-btn-outline">
-                  Learn more
-                </a>
+                <button
+                  type="button"
+                  onClick={() => isAuthenticated ? navigate('/ats?tab=reports') : setShowLoginModal(true)}
+                  className="tf-btn tf-btn-outline"
+                >
+                  View Reports & Metrics
+                </button>
               </div>
             </div>
 
-            {/* Overlapping Perspective Mockup Cards */}
+            {/* Overlapping Perspective Mockup Container */}
             <div className="tf-perspective-container">
               
-              {/* Card 1: Overview Chart in Left Perspective */}
+              {/* =======================================================
+                  LEFT CARD: Real SmartHire Reports Dashboard (Screenshot 2)
+                  ======================================================= */}
               <div className="tf-persp-card tf-persp-left">
                 <div className="tf-persp-header">
                   <div className="tf-persp-dots">
@@ -980,25 +989,176 @@ function Homepage() {
                     <span className="dot-yellow" />
                     <span className="dot-green" />
                   </div>
-                  <span className="tf-persp-title">Overview Analytics</span>
-                </div>
-                <div className="tf-persp-content">
-                  <div className="tf-mini-kpis-row">
-                    <div className="tf-mini-kpi"><span>Unresolved</span><strong>60</strong></div>
-                    <div className="tf-mini-kpi tf-active-kpi"><span>Overdue</span><strong>16</strong></div>
-                    <div className="tf-mini-kpi"><span>Open</span><strong>43</strong></div>
-                    <div className="tf-mini-kpi"><span>On hold</span><strong>64</strong></div>
+                  <div className="tf-persp-title-box">
+                    <span className="tf-persp-title">SmartHire ATS — Executive Reports Dashboard</span>
+                    <span className="tf-persp-live-pill">● Synced</span>
                   </div>
-                  <div className="tf-persp-chart-preview">
-                    <svg viewBox="0 0 300 90" className="tf-mini-chart-svg">
-                      <path d="M 10,70 Q 50,20 100,50 T 180,25 T 250,60 T 290,20" fill="none" stroke="#2563eb" strokeWidth="2.5" />
-                      <circle cx="180" cy="25" r="3.5" fill="#2563eb" />
-                    </svg>
+                </div>
+
+                <div className="tf-persp-dashboard-layout">
+                  {/* Left Micro Dark Sidebar */}
+                  <div className="tf-persp-sidebar">
+                    <div className="tf-persp-side-logo">⚡</div>
+                    <div className="tf-persp-side-item" title="Home">🏠</div>
+                    <div className="tf-persp-side-item" title="Workqueue">📋</div>
+                    <div className="tf-persp-side-item active" title="Reports">📊</div>
+                    <div className="tf-persp-side-item" title="AI Agents">🤖</div>
+                    <div className="tf-persp-side-item" title="Settings">⚙️</div>
+                  </div>
+
+                  {/* Main Dashboard Canvas */}
+                  <div className="tf-persp-main-view">
+                    {/* Top sub-bar */}
+                    <div className="tf-persp-subbar">
+                      <div className="tf-persp-subbar-left">
+                        <span className="tf-persp-subbar-title">Reports</span>
+                        <span className="tf-persp-subbar-sep">/</span>
+                        <span className="tf-persp-subbar-pill">Analytics ⭐ Org Overview</span>
+                      </div>
+                      <div className="tf-persp-subbar-right">
+                        <span className="tf-persp-date-badge">📅 This Month</span>
+                        <span className="tf-persp-btn-mini">+ Add Component</span>
+                      </div>
+                    </div>
+
+                    {/* 4 Live KPI Cards */}
+                    <div className="tf-persp-kpis-grid">
+                      <div className="tf-persp-kpi-box">
+                        <span className="kpi-label">Candidates (Month)</span>
+                        <div className="kpi-val-row">
+                          <strong className="kpi-num">39</strong>
+                          <span className="kpi-growth green">▲ 100%</span>
+                        </div>
+                      </div>
+                      <div className="tf-persp-kpi-box">
+                        <span className="kpi-label">Active Requisitions</span>
+                        <div className="kpi-val-row">
+                          <strong className="kpi-num">40</strong>
+                          <span className="kpi-growth green">▲ 14%</span>
+                        </div>
+                      </div>
+                      <div className="tf-persp-kpi-box">
+                        <span className="kpi-label">Deals / RTR Pipeline</span>
+                        <div className="kpi-val-row">
+                          <strong className="kpi-num">12</strong>
+                          <span className="kpi-growth blue">▲ 28%</span>
+                        </div>
+                      </div>
+                      <div className="tf-persp-kpi-box">
+                        <span className="kpi-label">Interviews & Placed</span>
+                        <div className="kpi-val-row">
+                          <strong className="kpi-num">6</strong>
+                          <span className="kpi-growth amber">▲ 50%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Mid Section: Speedometer Gauge + Sourcing Progress */}
+                    <div className="tf-persp-mid-grid">
+                      {/* Speedometer Gauge Widget */}
+                      <div className="tf-persp-gauge-card">
+                        <div className="gauge-card-header">
+                          <span>Candidate Sourcing Target — This Year</span>
+                          <span className="gauge-sub">Target: 100</span>
+                        </div>
+                        <div className="gauge-canvas-wrap">
+                          <svg viewBox="0 0 200 115" className="gauge-svg">
+                            {/* Gauge Background Track */}
+                            <path 
+                              d="M 25,100 A 75,75 0 0,1 175,100" 
+                              fill="none" 
+                              stroke="#e2e8f0" 
+                              strokeWidth="14" 
+                              strokeLinecap="round" 
+                            />
+                            {/* Gauge Colored Arc (39% = ~70.2 deg out of 180) */}
+                            <path 
+                              d="M 25,100 A 75,75 0 0,1 88,31" 
+                              fill="none" 
+                              stroke="url(#gaugeGradient)" 
+                              strokeWidth="14" 
+                              strokeLinecap="round" 
+                            />
+                            {/* Gauge Needle */}
+                            <line 
+                              x1="100" 
+                              y1="100" 
+                              x2="84" 
+                              y2="36" 
+                              stroke="#0f172a" 
+                              strokeWidth="3.5" 
+                              strokeLinecap="round" 
+                            />
+                            <circle cx="100" cy="100" r="7" fill="#0f172a" />
+                            <circle cx="100" cy="100" r="3" fill="#ffffff" />
+                            <defs>
+                              <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="#3b82f6" />
+                                <stop offset="100%" stopColor="#2563eb" />
+                              </linearGradient>
+                            </defs>
+                          </svg>
+                          <div className="gauge-readout">
+                            <span className="gauge-big-num">39</span>
+                            <span className="gauge-lbl">Sourced</span>
+                          </div>
+                        </div>
+                        <div className="gauge-meta-row">
+                          <span>Progress: <strong>39%</strong></span>
+                          <span>Remaining: <strong>61</strong></span>
+                        </div>
+                      </div>
+
+                      {/* Right Stage Analytics Widget */}
+                      <div className="tf-persp-stages-card">
+                        <div className="stage-card-header">
+                          <span>Candidates by Stage</span>
+                          <span className="stage-total">39 Total</span>
+                        </div>
+                        
+                        <div className="stage-bars-list">
+                          <div className="stage-bar-item">
+                            <div className="stage-bar-label">
+                              <span>New Candidates</span>
+                              <strong>35 (89.7%)</strong>
+                            </div>
+                            <div className="stage-progress-track">
+                              <div className="stage-progress-fill stage-blue" style={{ width: '89.7%' }} />
+                            </div>
+                          </div>
+
+                          <div className="stage-bar-item">
+                            <div className="stage-bar-label">
+                              <span>Submitted to Client</span>
+                              <strong>4 (10.3%)</strong>
+                            </div>
+                            <div className="stage-progress-track">
+                              <div className="stage-progress-fill stage-emerald" style={{ width: '10.3%' }} />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Weekly Velocity Bars */}
+                        <div className="weekly-velocity-wrap">
+                          <span className="weekly-velocity-title">Submission Velocity (Weeks)</span>
+                          <div className="weekly-bars-flex">
+                            <div className="weekly-col"><div className="w-bar" style={{ height: '22%' }} /><span className="w-lbl">W1</span></div>
+                            <div className="weekly-col"><div className="w-bar" style={{ height: '12%' }} /><span className="w-lbl">W2</span></div>
+                            <div className="weekly-col"><div className="w-bar" style={{ height: '48%' }} /><span className="w-lbl">W3</span></div>
+                            <div className="weekly-col"><div className="w-bar active" style={{ height: '88%' }} /><span className="w-lbl">W4</span></div>
+                            <div className="weekly-col"><div className="w-bar" style={{ height: '65%' }} /><span className="w-lbl">W5</span></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                   </div>
                 </div>
               </div>
 
-              {/* Card 2: Tickets / Requisition Table in Right Perspective */}
+              {/* =======================================================
+                  RIGHT CARD: Real SmartHire Candidates Table (Screenshot 3)
+                  ======================================================= */}
               <div className="tf-persp-card tf-persp-right">
                 <div className="tf-persp-header">
                   <div className="tf-persp-dots">
@@ -1006,25 +1166,186 @@ function Homepage() {
                     <span className="dot-yellow" />
                     <span className="dot-green" />
                   </div>
-                  <span className="tf-persp-title">All Requisition Candidates</span>
-                </div>
-                <div className="tf-persp-content">
-                  <div className="tf-persp-row">
-                    <span className="tf-persp-tag red">HIGH</span>
-                    <span>Jordan Lee — NC DHHS AWS Dev</span>
-                    <strong>$75/hr</strong>
-                  </div>
-                  <div className="tf-persp-row">
-                    <span className="tf-persp-tag yellow">LOW</span>
-                    <span>Sarah Jenkins — Cloud Lead</span>
-                    <strong>$85/hr</strong>
-                  </div>
-                  <div className="tf-persp-row">
-                    <span className="tf-persp-tag green">NORMAL</span>
-                    <span>Robert Davis — DevOps</span>
-                    <strong>$70/hr</strong>
+                  <div className="tf-persp-title-box">
+                    <span className="tf-persp-title">SmartHire ATS — Live Candidate Talent Directory (39)</span>
+                    <span className="tf-persp-live-pill-blue">Active Pool</span>
                   </div>
                 </div>
+
+                <div className="tf-persp-table-layout">
+                  {/* Filter Sub-Column */}
+                  <div className="tf-persp-filter-pane">
+                    <span className="pane-title">Filter Candidates</span>
+                    
+                    <div className="pane-group">
+                      <span className="pane-group-lbl">System Filters</span>
+                      <div className="pane-filter-item active">
+                        <span className="check-box">✓</span>
+                        <span>Active Talent</span>
+                      </div>
+                      <div className="pane-filter-item active">
+                        <span className="check-box">✓</span>
+                        <span>AI Screened</span>
+                      </div>
+                      <div className="pane-filter-item">
+                        <span className="check-box empty" />
+                        <span>RTR Signed</span>
+                      </div>
+                    </div>
+
+                    <div className="pane-group">
+                      <span className="pane-group-lbl">Pipeline Status</span>
+                      <div className="pane-status-row active">
+                        <span>All Candidates</span>
+                        <strong>39</strong>
+                      </div>
+                      <div className="pane-status-row">
+                        <span>New Candidates</span>
+                        <strong>35</strong>
+                      </div>
+                      <div className="pane-status-row">
+                        <span>Client Submitted</span>
+                        <strong>4</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Main Candidate Table */}
+                  <div className="tf-persp-table-wrap">
+                    <div className="tf-persp-table-head">
+                      <div className="th-cell th-name">Candidate Name</div>
+                      <div className="th-cell th-job">Target Requisition</div>
+                      <div className="th-cell th-recruiter">Sourced By</div>
+                      <div className="th-cell th-skills">Key Skills</div>
+                      <div className="th-cell th-rate">Pay Rate</div>
+                    </div>
+
+                    <div className="tf-persp-table-body">
+                      {/* Row 1: Vinod Jarugula */}
+                      <div className="tf-persp-trow">
+                        <div className="td-cell td-name">
+                          <strong>Vinod Jarugula</strong>
+                          <span className="td-sub-email">jvinod9876@gmail.com</span>
+                        </div>
+                        <div className="td-cell td-job">
+                          <span className="req-pill">Req #159070</span>
+                          <span className="req-sub">FDOT Job 2210</span>
+                        </div>
+                        <div className="td-cell td-recruiter">
+                          <span className="recruiter-tag">👤 Omkesh</span>
+                        </div>
+                        <div className="td-cell td-skills">
+                          <span className="skill-chip">python</span>
+                          <span className="skill-chip">sql</span>
+                          <span className="skill-chip more">+17</span>
+                        </div>
+                        <div className="td-cell td-rate">
+                          <strong className="rate-num">$75/hr</strong>
+                        </div>
+                      </div>
+
+                      {/* Row 2: Sandeep Guntupalli */}
+                      <div className="tf-persp-trow">
+                        <div className="td-cell td-name">
+                          <strong>Sandeep Guntupalli</strong>
+                          <span className="td-sub-email">sandeep@gmail.com</span>
+                        </div>
+                        <div className="td-cell td-job">
+                          <span className="req-pill">Req #158667</span>
+                          <span className="req-sub">General Applicant</span>
+                        </div>
+                        <div className="td-cell td-recruiter">
+                          <span className="recruiter-tag">👤 Omkesh</span>
+                        </div>
+                        <div className="td-cell td-skills">
+                          <span className="skill-chip">python</span>
+                          <span className="skill-chip">sql</span>
+                          <span className="skill-chip more">+35</span>
+                        </div>
+                        <div className="td-cell td-rate">
+                          <strong className="rate-num">$75/hr</strong>
+                        </div>
+                      </div>
+
+                      {/* Row 3: Laxmi V */}
+                      <div className="tf-persp-trow">
+                        <div className="td-cell td-name">
+                          <strong>Laxmi V</strong>
+                          <span className="td-sub-email">padugupadulaxmi@...</span>
+                        </div>
+                        <div className="td-cell td-job">
+                          <span className="req-pill">Req #159070</span>
+                          <span className="req-sub">FDOT Customer S...</span>
+                        </div>
+                        <div className="td-cell td-recruiter">
+                          <span className="recruiter-tag">👤 Omkesh</span>
+                        </div>
+                        <div className="td-cell td-skills">
+                          <span className="skill-chip">javascript</span>
+                          <span className="skill-chip">html</span>
+                          <span className="skill-chip more">+12</span>
+                        </div>
+                        <div className="td-cell td-rate">
+                          <strong className="rate-num">$75/hr</strong>
+                        </div>
+                      </div>
+
+                      {/* Row 4: Hemanth Pinninti */}
+                      <div className="tf-persp-trow">
+                        <div className="td-cell td-name">
+                          <strong>Hemanth Pinninti</strong>
+                          <span className="td-sub-email">hemanthpinninti@...</span>
+                        </div>
+                        <div className="td-cell td-job">
+                          <span className="req-pill">Req #159070</span>
+                          <span className="req-sub">FDOT Job 2210</span>
+                        </div>
+                        <div className="td-cell td-recruiter">
+                          <span className="recruiter-tag">👤 Omkesh</span>
+                        </div>
+                        <div className="td-cell td-skills">
+                          <span className="skill-chip">python</span>
+                          <span className="skill-chip">sql</span>
+                          <span className="skill-chip more">+69</span>
+                        </div>
+                        <div className="td-cell td-rate">
+                          <strong className="rate-num">$75/hr</strong>
+                        </div>
+                      </div>
+
+                      {/* Row 5: Kranthi Kumar Asike */}
+                      <div className="tf-persp-trow highlight-row">
+                        <div className="td-cell td-name">
+                          <strong>Kranthi Kumar Asike</strong>
+                          <span className="td-sub-email">kranthikumarap4@gmail.com</span>
+                        </div>
+                        <div className="td-cell td-job">
+                          <span className="req-pill pulse-pill">Req #158997</span>
+                          <span className="req-sub">NC DHHS AWS Dev</span>
+                        </div>
+                        <div className="td-cell td-recruiter">
+                          <span className="recruiter-tag">👤 Omkesh</span>
+                        </div>
+                        <div className="td-cell td-skills">
+                          <span className="skill-chip">aws</span>
+                          <span className="skill-chip">python</span>
+                          <span className="skill-chip more">+74</span>
+                        </div>
+                        <div className="td-cell td-rate">
+                          <strong className="rate-num rate-high">$88/hr</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Table Footer */}
+                    <div className="tf-persp-table-foot">
+                      <span>Total Records: <strong>39</strong></span>
+                      <span>Records per page: <strong>25</strong></span>
+                      <span className="foot-pages">1 - 25 of 39</span>
+                    </div>
+                  </div>
+                </div>
+
               </div>
 
             </div>
@@ -2348,28 +2669,28 @@ function Homepage() {
           margin-top: 22px;
         }
 
-        /* Overlapping Perspective Cards */
+        /* Overlapping Perspective Cards & Real ATS Mockups */
         .tf-perspective-container {
           position: relative;
-          max-width: 860px;
-          margin: 28px auto 0;
-          height: 270px;
+          max-width: 1180px;
+          margin: 36px auto 0;
+          height: 480px;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 992px) {
           .tf-perspective-container {
             height: auto;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 28px;
           }
         }
 
         .tf-persp-card {
           background: #ffffff;
-          border: 1px solid #e2e8f0;
+          border: 1px solid #cbd5e1;
           border-radius: 12px;
-          box-shadow: 0 20px 45px rgba(15, 23, 42, 0.1);
+          box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(15, 23, 42, 0.05);
           overflow: hidden;
         }
 
@@ -2379,32 +2700,46 @@ function Homepage() {
           top: 0;
           width: 58%;
           z-index: 2;
-          transform: rotate(-1deg);
-          transition: transform 0.3s ease;
+          transform: perspective(1200px) rotateY(3deg) rotateX(1.5deg) scale(0.98);
+          transform-origin: left center;
+          transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+        }
+
+        .tf-persp-left:hover {
+          transform: perspective(1200px) rotateY(0deg) rotateX(0deg) scale(1);
+          z-index: 5;
+          box-shadow: 0 30px 70px -15px rgba(15, 23, 42, 0.25);
         }
 
         .tf-persp-right {
           position: absolute;
           right: 0;
-          top: 35px;
-          width: 55%;
+          top: 36px;
+          width: 58%;
           z-index: 3;
-          transform: rotate(1.5deg);
-          transition: transform 0.3s ease;
+          transform: perspective(1200px) rotateY(-3deg) rotateX(1.5deg) scale(1);
+          transform-origin: right center;
+          transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
         }
 
-        @media (max-width: 768px) {
+        .tf-persp-right:hover {
+          transform: perspective(1200px) rotateY(0deg) rotateX(0deg) scale(1.02);
+          z-index: 6;
+          box-shadow: 0 35px 80px -15px rgba(15, 23, 42, 0.28);
+        }
+
+        @media (max-width: 992px) {
           .tf-persp-left, .tf-persp-right {
             position: static;
             width: 100%;
-            transform: none;
+            transform: none !important;
           }
         }
 
         .tf-persp-header {
-          background: #f8fafc;
-          border-bottom: 1px solid #e2e8f0;
-          padding: 10px 14px;
+          background: #0f172a;
+          border-bottom: 1px solid #1e293b;
+          padding: 9px 14px;
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -2421,64 +2756,623 @@ function Homepage() {
           border-radius: 50%;
         }
 
-        .dot-red { background: #ff5f56; }
-        .dot-yellow { background: #ffbd2e; }
-        .dot-green { background: #27c93f; }
+        .dot-red { background: #ef4444; }
+        .dot-yellow { background: #f59e0b; }
+        .dot-green { background: #10b981; }
+
+        .tf-persp-title-box {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
 
         .tf-persp-title {
           font-size: 11px;
           font-weight: 700;
-          color: #64748b;
+          color: #e2e8f0;
+          letter-spacing: -0.01em;
         }
 
-        .tf-persp-content {
-          padding: 16px;
+        .tf-persp-live-pill {
+          background: rgba(16, 185, 129, 0.15);
+          color: #34d399;
+          font-size: 9px;
+          font-weight: 800;
+          padding: 1.5px 6px;
+          border-radius: 9999px;
+          text-transform: uppercase;
+          border: 1px solid rgba(16, 185, 129, 0.3);
         }
 
-        .tf-mini-kpis-row {
+        .tf-persp-live-pill-blue {
+          background: rgba(59, 130, 246, 0.15);
+          color: #60a5fa;
+          font-size: 9px;
+          font-weight: 800;
+          padding: 1.5px 6px;
+          border-radius: 9999px;
+          text-transform: uppercase;
+          border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        /* ─── LEFT CARD: Reports Dashboard Styles ─── */
+        .tf-persp-dashboard-layout {
           display: flex;
-          gap: 8px;
-          margin-bottom: 12px;
+          height: 410px;
+          background: #f8fafc;
         }
 
-        .tf-mini-kpi {
-          flex: 1;
-          border: 1px solid #e2e8f0;
-          border-radius: 6px;
-          padding: 6px;
-          text-align: center;
+        .tf-persp-sidebar {
+          width: 44px;
+          background: #161e31;
           display: flex;
           flex-direction: column;
+          align-items: center;
+          padding: 10px 0;
+          gap: 12px;
+          border-right: 1px solid #1e293b;
         }
 
-        .tf-mini-kpi span { font-size: 9px; color: #64748b; }
-        .tf-mini-kpi strong { font-size: 13px; color: #0f172a; }
-
-        .tf-active-kpi {
-          border-color: #93c5fd;
-          background: #eff6ff;
+        .tf-persp-side-logo {
+          font-size: 14px;
+          color: #3b82f6;
+          margin-bottom: 2px;
         }
-        .tf-active-kpi strong { color: #2563eb; }
 
-        .tf-persp-row {
+        .tf-persp-side-item {
+          width: 28px;
+          height: 28px;
+          border-radius: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+          color: #94a3b8;
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+
+        .tf-persp-side-item.active {
+          background: #24324f;
+          color: #ffffff;
+          box-shadow: 0 0 0 1px #3b82f6;
+        }
+
+        .tf-persp-main-view {
+          flex: 1;
+          padding: 10px 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          overflow: hidden;
+        }
+
+        .tf-persp-subbar {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          font-size: 11px;
-          padding: 8px 0;
-          border-bottom: 1px solid #f8fafc;
+          font-size: 10.5px;
         }
 
-        .tf-persp-tag {
-          font-size: 8px;
+        .tf-persp-subbar-left {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .tf-persp-subbar-title {
           font-weight: 800;
+          color: #0f172a;
+        }
+
+        .tf-persp-subbar-sep {
+          color: #94a3b8;
+        }
+
+        .tf-persp-subbar-pill {
+          background: #e2e8f0;
+          color: #334155;
+          font-weight: 700;
+          padding: 2px 7px;
+          border-radius: 4px;
+          font-size: 9.5px;
+        }
+
+        .tf-persp-subbar-right {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .tf-persp-date-badge {
+          background: #ffffff;
+          border: 1px solid #cbd5e1;
+          color: #475569;
+          font-size: 9.5px;
+          font-weight: 600;
           padding: 2px 6px;
           border-radius: 4px;
         }
 
-        .tf-persp-tag.red { background: #fee2e2; color: #dc2626; }
-        .tf-persp-tag.yellow { background: #fef3c7; color: #d97706; }
-        .tf-persp-tag.green { background: #dcfce7; color: #16a34a; }
+        .tf-persp-btn-mini {
+          background: #2563eb;
+          color: #ffffff;
+          font-size: 9.5px;
+          font-weight: 700;
+          padding: 2.5px 8px;
+          border-radius: 4px;
+        }
+
+        /* 4 Live KPI Cards */
+        .tf-persp-kpis-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 7px;
+        }
+
+        .tf-persp-kpi-box {
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 7px;
+          padding: 7px 9px;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+
+        .kpi-label {
+          font-size: 8.5px;
+          color: #64748b;
+          font-weight: 600;
+          display: block;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .kpi-val-row {
+          display: flex;
+          align-items: baseline;
+          justify-content: space-between;
+          margin-top: 2px;
+        }
+
+        .kpi-num {
+          font-size: 15px;
+          font-weight: 800;
+          color: #0f172a;
+          line-height: 1;
+        }
+
+        .kpi-growth {
+          font-size: 8.5px;
+          font-weight: 700;
+        }
+
+        .kpi-growth.green { color: #16a34a; }
+        .kpi-growth.blue { color: #2563eb; }
+        .kpi-growth.amber { color: #d97706; }
+
+        /* Mid Analytics Grid */
+        .tf-persp-mid-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 9px;
+          flex: 1;
+        }
+
+        .tf-persp-gauge-card, .tf-persp-stages-card {
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          padding: 9px 11px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+
+        .gauge-card-header, .stage-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 9.5px;
+          font-weight: 700;
+          color: #1e293b;
+        }
+
+        .gauge-sub, .stage-total {
+          font-size: 8.5px;
+          color: #64748b;
+          font-weight: 600;
+        }
+
+        .gauge-canvas-wrap {
+          position: relative;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 4px 0;
+        }
+
+        .gauge-svg {
+          width: 140px;
+          height: 80px;
+        }
+
+        .gauge-readout {
+          position: absolute;
+          bottom: 12px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          line-height: 1;
+        }
+
+        .gauge-big-num {
+          font-size: 16px;
+          font-weight: 800;
+          color: #0f172a;
+        }
+
+        .gauge-lbl {
+          font-size: 8px;
+          color: #64748b;
+          font-weight: 600;
+          text-transform: uppercase;
+        }
+
+        .gauge-meta-row {
+          display: flex;
+          justify-content: space-between;
+          font-size: 9px;
+          color: #64748b;
+          border-top: 1px solid #f1f5f9;
+          padding-top: 5px;
+        }
+
+        .gauge-meta-row strong {
+          color: #0f172a;
+        }
+
+        .stage-bars-list {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          margin: 4px 0;
+        }
+
+        .stage-bar-item {
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+        }
+
+        .stage-bar-label {
+          display: flex;
+          justify-content: space-between;
+          font-size: 8.5px;
+          color: #475569;
+        }
+
+        .stage-bar-label strong {
+          color: #0f172a;
+        }
+
+        .stage-progress-track {
+          height: 6px;
+          background: #f1f5f9;
+          border-radius: 9999px;
+          overflow: hidden;
+        }
+
+        .stage-progress-fill {
+          height: 100%;
+          border-radius: 9999px;
+        }
+
+        .stage-blue { background: #3b82f6; }
+        .stage-emerald { background: #10b981; }
+
+        .weekly-velocity-wrap {
+          border-top: 1px solid #f1f5f9;
+          padding-top: 5px;
+        }
+
+        .weekly-velocity-title {
+          font-size: 8px;
+          color: #64748b;
+          font-weight: 700;
+          display: block;
+          margin-bottom: 4px;
+        }
+
+        .weekly-bars-flex {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          height: 28px;
+          gap: 4px;
+        }
+
+        .weekly-col {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          height: 100%;
+          justify-content: flex-end;
+        }
+
+        .w-bar {
+          width: 100%;
+          max-width: 14px;
+          background: #cbd5e1;
+          border-radius: 3px 3px 0 0;
+          transition: height 0.2s ease;
+        }
+
+        .w-bar.active {
+          background: #2563eb;
+        }
+
+        .w-lbl {
+          font-size: 7.5px;
+          color: #94a3b8;
+          margin-top: 2px;
+          font-weight: 600;
+        }
+
+        /* ─── RIGHT CARD: Candidates Table Styles ─── */
+        .tf-persp-table-layout {
+          display: flex;
+          height: 410px;
+          background: #ffffff;
+        }
+
+        .tf-persp-filter-pane {
+          width: 125px;
+          background: #f8fafc;
+          border-right: 1px solid #e2e8f0;
+          padding: 10px 8px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          font-size: 9.5px;
+        }
+
+        .pane-title {
+          font-size: 9px;
+          font-weight: 800;
+          color: #0f172a;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+        }
+
+        .pane-group {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .pane-group-lbl {
+          font-size: 8px;
+          font-weight: 700;
+          color: #64748b;
+          text-transform: uppercase;
+        }
+
+        .pane-filter-item {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          color: #475569;
+          cursor: pointer;
+          padding: 2px 4px;
+          border-radius: 4px;
+        }
+
+        .pane-filter-item.active {
+          background: #eff6ff;
+          color: #1d4ed8;
+          font-weight: 700;
+        }
+
+        .check-box {
+          font-size: 8px;
+          font-weight: 800;
+          color: #2563eb;
+        }
+
+        .check-box.empty {
+          display: inline-block;
+          width: 8px;
+          height: 8px;
+          border: 1px solid #cbd5e1;
+          border-radius: 2px;
+        }
+
+        .pane-status-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 2px 4px;
+          color: #475569;
+          border-radius: 4px;
+        }
+
+        .pane-status-row.active {
+          background: #eff6ff;
+          color: #1d4ed8;
+          font-weight: 700;
+        }
+
+        .pane-status-row strong {
+          font-size: 9px;
+        }
+
+        /* Main Candidate Table */
+        .tf-persp-table-wrap {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+
+        .tf-persp-table-head {
+          display: grid;
+          grid-template-columns: 2.2fr 1.8fr 1.2fr 1.8fr 1fr;
+          gap: 6px;
+          background: #f8fafc;
+          border-bottom: 1px solid #e2e8f0;
+          padding: 8px 10px;
+          font-size: 8.5px;
+          font-weight: 700;
+          color: #64748b;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+        }
+
+        .tf-persp-table-body {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          overflow-y: auto;
+        }
+
+        .tf-persp-trow {
+          display: grid;
+          grid-template-columns: 2.2fr 1.8fr 1.2fr 1.8fr 1fr;
+          gap: 6px;
+          align-items: center;
+          padding: 7px 10px;
+          border-bottom: 1px solid #f1f5f9;
+          font-size: 9.5px;
+          transition: background 0.15s ease;
+        }
+
+        .tf-persp-trow:hover {
+          background: #f8fafc;
+        }
+
+        .tf-persp-trow.highlight-row {
+          background: #f0fdf4;
+          border-left: 2.5px solid #10b981;
+        }
+
+        .td-name {
+          display: flex;
+          flex-direction: column;
+          line-height: 1.2;
+        }
+
+        .td-name strong {
+          color: #0f172a;
+          font-size: 10px;
+        }
+
+        .td-sub-email {
+          font-size: 8px;
+          color: #64748b;
+        }
+
+        .td-job {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5px;
+        }
+
+        .req-pill {
+          display: inline-block;
+          font-size: 7.5px;
+          font-weight: 700;
+          background: #eff6ff;
+          color: #2563eb;
+          padding: 1px 4px;
+          border-radius: 3px;
+          width: fit-content;
+        }
+
+        .req-pill.pulse-pill {
+          background: #dcfce7;
+          color: #15803d;
+          font-weight: 800;
+        }
+
+        .req-sub {
+          font-size: 8px;
+          color: #64748b;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .td-recruiter {
+          display: flex;
+          align-items: center;
+        }
+
+        .recruiter-tag {
+          font-size: 8.5px;
+          font-weight: 600;
+          color: #334155;
+          background: #f1f5f9;
+          padding: 1.5px 5px;
+          border-radius: 4px;
+        }
+
+        .td-skills {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 3px;
+          align-items: center;
+        }
+
+        .skill-chip {
+          font-size: 7.5px;
+          background: #f1f5f9;
+          color: #475569;
+          padding: 1px 4px;
+          border-radius: 3px;
+          font-weight: 600;
+        }
+
+        .skill-chip.more {
+          background: #e2e8f0;
+          color: #1e293b;
+          font-weight: 700;
+        }
+
+        .td-rate {
+          text-align: right;
+        }
+
+        .rate-num {
+          font-size: 11px;
+          font-weight: 800;
+          color: #0f172a;
+        }
+
+        .rate-num.rate-high {
+          color: #16a34a;
+        }
+
+        .tf-persp-table-foot {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 6px 12px;
+          background: #f8fafc;
+          border-top: 1px solid #e2e8f0;
+          font-size: 8.5px;
+          color: #64748b;
+        }
+
+        .tf-persp-table-foot strong {
+          color: #0f172a;
+        }
+
+        .foot-pages {
+          font-weight: 600;
+        }
 
         /* =========================================================================
            SECTION 6: OPTIMIZED RATE & PRICING WITH MARGIN CALCULATOR
