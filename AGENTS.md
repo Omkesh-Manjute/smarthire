@@ -31,6 +31,20 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-09 — Candidate Table Dashboard Mockup Polish, SmartHire ATS Branding & Workflow Headline
+- **Added Full Dark Sidebar to Candidate Table Mockup (Screenshot 3 Match)**:
+  - Replaced the standalone white table with a full desktop application dashboard kit mockup featuring the signature `#181F2C` dark sidebar on the left and crisp Zoho ATS candidate table on the right (`tf-table-dashboard-mockup`).
+  - Active navigation indicator set to **Candidates** (`#60a5fa` highlight) with Requisitions, Overview, AI Screening, Reports, and Settings links.
+- **Updated Sidebar Brand to "SmartHire ATS"**:
+  - Replaced all generic "Dashboard Kit" labels at the top of both Hero and Feature showcase sidebars with branded **SmartHire ATS** and vector shield logo.
+- **Replaced Generic Developer Headline with High-Impact Recruitment Copy**:
+  - Replaced *"Use flexible components to place talent quickly"* with:
+    > *"Streamline candidate placement `<span className="tf-highlight-box">from sourcing to offer</span>`"*
+  - Subtitle updated to emphasize end-to-end recruiter command: tracking candidate stages, reviewing AI match scores, enforcing private vault security, and seamless movement from intake to client interview.
+- **Production Build Verified**:
+  - `npm run build` in `smarthire-react` verified: 0 errors, 0 warnings (built in 1.91s).
+  - Pushed commit `b32e651` to GitHub main.
+
 ### 2026-09-09 — Replaced Real Names, Removed External Bot Mentions & Expanded Enterprise ATS Features
 - **Removed Real Team Names & Specific Bot Mentions**:
   - Replaced all personal names with global enterprise representatives: **Alex Morgan** (VP of Talent Solutions & Enterprise), **Elena Rostova** (Head of AI Screening & Client Success), **David Chen** (Compliance & Identity Systems Lead), and **Marcus Vance** (Senior Recruitment Workflow Architect).
