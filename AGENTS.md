@@ -31,6 +31,127 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-10 — 24x7 Autonomous Recruitment Workflow Timeline & Continuous Laser Beam Animation
+- **Continuous Animated Recruitment Workflow Timeline (`Homepage.jsx`)**:
+  - Implemented continuous animated timeline section inspired by Tasklet.ai workflow architecture, adapted specifically to real ATS operations.
+  - Features a continuous 60fps glowing neon laser beam (`@keyframes workflowBeam`) sweeping horizontally across the 24-hour time axis (`12 AM` -> `6 AM` -> `12 PM` -> `6 PM` -> `12 AM 🌙`) with a luminous gradient tail, leading laser head, and pulsating milestone rail nodes.
+  - Built 6 milestone event cards alternating above and below the horizontal rail with vertical dashed connector stems:
+    1. **Above (2:14 AM)**: `Ingested new requisition` (Req #158997: NC DHHS Cloud Dev • VMS Sync).
+    2. **Below (7:00 AM)**: `Top candidate matched & scored` (Kranthi Kumar - 96% Match, $88/hr • Placement AI).
+    3. **Above (8:00 AM)**: `AI Agent sent pre-screen & intake` (Confirmed C2C, $88/hr & immediate availability • Pre-Screen).
+    4. **Below (11:30 AM)**: `1-Click Digital RTR signed & received` (Verified ID & Right-to-Represent • RTR Signed).
+    5. **Above (3:45 PM)**: `Posted candidate alert to #recruiter-desk` (Recruiter Omkesh alerted on Slack & push • Slack Alert).
+    6. **Below (10:05 PM)**: `Client portal submission logged` (CoolWorks ATS upload & audit trail • VMS Upload).
+- **Dual Governance Sub-Cards**:
+  - `Delegate real staffing work`: Autonomous agents trigger automatically based on live staffing events (VMS requisition sync, vault matching, digital RTR).
+  - `Keep recruiters in full control`: Recruiter governance ensuring AI drafts shortlists and rates while human recruiters retain 100% final authorization on client submissions.
+- **Mobile Responsive Track**:
+  - Added dedicated `.tf-mobile-timeline-stage` for devices $\le$ 900px, rendering sequential vertical event cards with connected indicator stems.
+- **Production Build Verified**:
+  - `npm run build` in `smarthire-react` verified: 0 errors, 0 warnings (built in 1.99s).
+
+
+### 2026-09-09 — Global Real-Time New Job Notification Engine & Purge Filter Fix
+- **Identified & Fixed Root Cause of Missing Job Notifications**:
+  - Found a legacy purge filter in `ActivityNotificationBell.jsx` on initial state load that was actively wiping any notification with `New Requisition Synced`, `New Requisition Ingested`, or `JobsInHand` from state and `localStorage`.
+  - Removed this harmful purge filter so all live requisition notifications persist and render in the activity list.
+- **Global Real-Time Firestore & Background Ingestion Listener**:
+  - Attached `subscribeAtsJobs` directly inside `ActivityNotificationBell.jsx` (which is mounted in `Navigation.jsx` globally on all platform pages).
+  - Baselines previous database entries on first snapshot to prevent false alerts on refresh, then fires instant 4-tone arpeggio audio chime (`playRequisitionSound`), desktop push notification, live floating banner (`setLiveToast`), and red badge increment for genuine new requisitions.
+  - Added periodic background `/api/jobs` polling (every 25s) to detect new JDs ingested by the scraper.
+- **Intelligent 12-Second Deduplication**:
+  - Added deduplication check in `pushActivityNotification` to prevent duplicate chimes if multiple listeners detect the same requisition key simultaneously.
+- **Dedicated "Jobs" Filter Tab & 1-Click Requisition Routing**:
+  - Added dedicated `Jobs` category tab in `ActivityNotificationBell` popover.
+  - Enhanced notification click handler in `Navigation.jsx` to navigate directly to `/dashboard?tab=requisitions&reqId=<ID>` and emit `smarthire_open_req_detail`.
+- **Firestore Persistence on Requisition Creation**:
+  - Attached `saveAtsJob` to `handleAddNewRequisition` in `RecruiterDashboard.jsx` to ensure newly added requisitions broadcast to all connected sessions.
+- **Production Build Verified**:
+  - `npm run build` in `smarthire-react` verified: 0 errors, 0 warnings (built in 2.12s).
+
+### 2026-09-09 — Top Header Modernization, Clutter Removal & Executive Profile Hub (MUI theFront UI/UX)
+- **Brand Logo & Typography Modernization**:
+  - Redesigned logo with precision geometric vector mark in electric blue gradient (`#2563eb` -> `#1d4ed8`), checkmark accent, and soft ambient drop-shadow.
+  - Upgraded brand name to Plus Jakarta Sans bold slate `#0f172a` with electric blue accent (`Smart<span style={{ color: '#2563eb' }}>Hire</span>`) and refined edition pill badge (`PRO` / `ENTERPRISE` / `MANAGER` / `EMPLOYEE`).
+- **Streamlined Center Navigation**:
+  - Removed secondary items (`LinkedIn Auto`, `Branding`, `Pricing`) from the center navigation tabs.
+  - Center tabs now display only core enterprise pillars: `📊 Dashboard`, `💼 ATS Workspace` (with submodules dropdown), `📑 Reports`, and `🚀 Careers`.
+- **Removed Bulky Search Input Box**:
+  - Removed the ~220px search input box from top navbar, eliminating horizontal crowding.
+  - Maintained global `⌘K` / `Ctrl+K` keyboard shortcut listener across the entire platform so Spotlight Search remains instantly accessible.
+- **Relocated Secondary Tools to Executive Profile Command Hub**:
+  - Transformed the User Profile Dropdown into an organized **Executive Command Hub**:
+    - **Quick Actions & Tools**: `🌐 LinkedIn Automation Studio` (`/linkedin-posts`), `🔍 Spotlight Search (⌘K)`, `💼 Post New Vacancy` (`/ats?tab=jobs`), `👤 Add / Parse Candidate` (`/ats?tab=candidates`), `⚡ Launch AI Screening` (`/ats?tab=screening`), `💬 Candidate Inbox & Messages` (`/inbox`).
+    - **Workspace Management**: `⇄ Switch View Mode`, `⚙️ Workspace Settings`, `👥 Manage Team & Hierarchy`, `🎨 AI Branding Studio`, `💳 Enterprise Plans & Billing`.
+    - **Session**: `Sign Out of SmartHire ⎋`.
+- **Refined Right Button Cluster**:
+  - Replaced 7-8 cluttered buttons with an elegant 3-item cluster:
+    1. Modern `Role Switcher Pill` (`👑 Admin ⇄` / `💼 Recruiter ⇄`).
+    2. `Activity Notification Bell` with live red counter.
+    3. `User Profile Pill` (Avatar + First Name + Live green telemetry beacon + chevron).
+- **Frosted Glassmorphism Header (`.site-header.enterprise-nav-root`)**:
+  - Upgraded header with `backdrop-filter: blur(20px); background: rgba(255, 255, 255, 0.88); border-bottom: 1px solid rgba(226, 232, 240, 0.85);` for smooth page-scroll glide.
+- **Production Build Verified**:
+  - `npm run build` in `smarthire-react` verified: 0 errors, 0 warnings (built in 2.11s).
+
+### 2026-09-09 — Requisitions Portal View Modernization to MUI theFront UI/UX
+- **Modern Enterprise Sub-Navigation Bar**:
+  - Replaced legacy orange `#ea580c` with Enterprise Dark Slate (`#0f172a`) bar with `#1e293b` border and soft shadow.
+  - Redesigned tabs (`My Requisitions`, `Team Candidates`, `My Team`, `Team Submissions & Reports`) with vibrant electric blue (`#2563eb`) active pill indicators and hover states.
+  - Quick Search upgraded to modern glass pill input with search icon `🔍` and active focus ring.
+  - User identity upgraded with modern role tag (`👤 Omkesh • Lead Recruiter`).
+- **Requisition Search & Filter Engine Card**:
+  - Replaced old `#bfdbfe` bar with modern 12px rounded card (`.tf-portal-card`), filter toggle banner with match count pill, clean grid, `.tf-input` fields, styled dropdowns, and "Reset" / "⚡ Search Requisitions" buttons.
+- **Modern Requisitions Directory Table (`.tf-portal-table`)**:
+  - Replaced legacy `#708090` table with light slate header `#f8fafc`, uppercase tracking, and clean column layout.
+  - Req ID rendered as clickable electric blue pill (`.tf-req-pill`), position title in bold Plus Jakarta Sans, skills formatted as modern chips (`.tf-skill-chip`), location with pin (`📍`), pay rates in bold green, status as soft pill (`● Open`), and visual submission pills (`.tf-sub-pill`).
+  - Added live sync indicator: `<span className="tf-live-telemetry-badge"><span className="tf-telemetry-dot" /> LIVE SYNC ACTIVE</span>`.
+  - Modernized "Scrape Live JDs" and "LinkedIn Auto Hub" action buttons.
+- **Modern theFront Pagination Footer**:
+  - Upgraded raw text links into modern pill buttons (`← Prev`, numbered pills with active `#2563eb`, `Next →`) and styled page size selector.
+- **Production Build Verified**:
+  - `npm run build` in `smarthire-react` verified: 0 errors, 0 warnings (built in 2.29s).
+  - Pushed commit `cba68e2` to GitHub `main`.
+
+### 2026-09-09 — Hero Overview Sourcing Wave Animations, Radar Ping & 3D Floating Mockup
+- **Dynamic Sourcing Trends Curve Animations**:
+  - Main blue bezier curve and area gradient fill animated with `@keyframes curveDraw` (smooth left-to-right stroke draw on load) and `@keyframes curveBreathe` / `areaBreathe` (continuous 60fps organic wave oscillation up & down by 4.5px).
+  - Peak point (`38`) equipped with dual translucent radial ripple ping rings (`@keyframes radarPing` & `radarPingInner`) simulating active real-time sourcing telemetry.
+  - "38" white tooltip badge given smooth floating bob animation (`@keyframes floatTooltip`).
+  - Added live streaming indicator: `<span className="tf-live-stream-badge"><span className="tf-pulse-dot" /> LIVE TELEMETRY</span>` with pulsing green beacon next to timestamp.
+- **Floating 3D Hero Mockup Container**:
+  - Implemented `@keyframes heroFloat` smooth 6s vertical levitation (`translateY(0px)` to `-8px`) on `.tf-dashboard-mockup` with hover pause and elevated drop-shadow.
+  - Added electric blue breathing glow to `.tf-kpi-highlighted` (`Pending Review: 16`) and subtle pulse on bottom submission badges (`⚡ AI SCREENED`, `✓ RTR CONFIRMED`).
+- **Production Build Verified**:
+  - `npm run build` in `smarthire-react` verified: 0 errors, 0 warnings (built in 1.97s).
+  - Pushed commit `596d2ba` to GitHub `main`.
+
+### 2026-09-09 — Homepage Perspective Mockups Overhaul with Real ATS Dashboards & theFront Redesign of Privacy & Terms
+- **Homepage Hero Headline & Subtitle Realignment**:
+  - Replaced generic template copy (*"Beautiful data representation built with SmartHire"*) with recruitment-native positioning:
+    > *"Next-Gen Recruitment Operating System `<span className="tf-highlight-box">Built for Precision Staffing</span>`"*
+  - Subtitle upgraded: *"Empower your staffing agency from candidate sourcing to client placement. Featuring placement-trained AI screening, private recruiter vaults, sub-second requisition sync, and anti-proxy biometric trust."*
+- **Section 5 Overlapping Perspective Mockup Overhaul (Exact Match with Real ATS Dashboards)**:
+  - Replaced basic mockup boxes with two high-fidelity, interactive 3D perspective cards matching user-provided screenshots:
+  - **Left Card (`.tf-persp-left`) — Real SmartHire Reports Dashboard (`/ats?tab=reports`)**:
+    - Dark `#161e31` micro-sidebar with ATS logo and active Reports icon (`#24324f`).
+    - 4 Live KPI cards: `Candidates (Month): 39 (▲ 100%)`, `Active Requisitions: 40 (▲ 14%)`, `Deals / RTR Pipeline: 12 (▲ 28%)`, `Interviews & Placed: 6 (▲ 50%)`.
+    - SVG Sourcing Target Speedometer Gauge (0 to 100 with blue gradient arc, center needle at 39%, `39 Sourced`, `Target: 100`, `Remaining: 61`).
+    - Candidates by Stage bar chart (`New Candidates: 35 (89.7%)`, `Submitted to Client: 4 (10.3%)`).
+    - Weekly submission velocity bar chart (`W1` through `W5`).
+  - **Right Card (`.tf-persp-right`) — Real SmartHire Candidates Talent Directory (`/ats?tab=candidates`)**:
+    - Filter sidebar with System Filters (Active Talent, AI Screened, RTR Signed) and Pipeline Status counts (`All Candidates: 39`, `New Candidates: 35`, `Client Submitted: 4`).
+    - Live candidate table populated with real records: **Vinod Jarugula** (Req# 159070, FDOT Job 2210, $75/hr), **Sandeep Guntupalli** (Req# 158667, $75/hr), **Laxmi V** (Req# 159070, $75/hr), **Hemanth Pinninti** (Req# 159070, $75/hr), and highlighted **Kranthi Kumar Asike** (Req# 158997, NC DHHS AWS Senior Dev, $88/hr) with `👤 Omkesh` recruiter tag and skill chips.
+    - Standard records pagination footer: `Total Records: 39 | Records per page: 25 | 1 - 25 of 39`.
+  - Expanded 3D container `.tf-perspective-container` to `1180px` max-width with smooth hover perspective flattening and responsive mobile stacking.
+- **Privacy Policy (`PrivacyPolicy.jsx`) & Terms of Service (`Terms.jsx`) Upgraded to MUI theFront Design System**:
+  - Replaced old dark-gradient banner headers with clean white-to-slate hero headers, Plus Jakarta Sans typography, electric blue accents (`#2563eb`), dark slate text (`#0f172a`), and the signature `.tf-highlight-box` styling.
+  - 4 Live Trust & Compliance metric cards on each page (AES-256 & TLS 1.3, Zero Data Selling, Explainable AI, GDPR/CCPA Sovereignty on Privacy; Enterprise VMS & ATS, 99.9% Uptime SLA, EEOC & Fair Staffing, 100% Talent Ownership on Terms).
+  - Clean 2-column layout with sticky table-of-contents navigation on the left, smooth scrolling to sections, and direct links to Legal/DPO desk and inquiry submission (`/about#inquiry`).
+- **Production Build Verified**:
+  - `npm run build` in `smarthire-react` verified: 0 errors, 0 warnings (built in 1.84s).
+  - Pushed commit `e911efe` to GitHub `main`.
+
 ### 2026-09-09 — Unified About & Support Hub, "Train AI with 100s of Placed Resumes" Showcase & Admin Inquiry Alerts
 - **Unified About & Support Center (`About.jsx`) with MUI theFront Design System**:
   - Replaced outdated 27-line "About VerifyHire" placeholder with a comprehensive, unified **About & Support Hub** designed with the exact MUI **theFront** visual design system.
