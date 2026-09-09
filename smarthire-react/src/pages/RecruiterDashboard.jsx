@@ -2708,14 +2708,885 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
   return (
     <SiteLayout>
+<style>{`
+        /* ═════════════════════════════════════════════════════════════════════
+           MUI THEFRONT PORTAL STYLES (RECRUITER DASHBOARD & REQUISITIONS TABLE)
+           ═════════════════════════════════════════════════════════════════════ */
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+        /* Sub-navigation Bar */
+        .tf-dash-subbar {
+          background: #0f172a;
+          border-bottom: 1px solid #1e293b;
+          color: #ffffff;
+          box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+          font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .tf-subbar-container {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          min-height: 48px;
+          padding: 4px 16px;
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+
+        .tf-subbar-nav-left {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex-wrap: wrap;
+        }
+
+        .tf-subbar-brand {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          padding: 6px 12px;
+          border-radius: 7px;
+          background: #1e293b;
+          color: #ffffff;
+          font-weight: 800;
+          font-size: 13.5px;
+          cursor: pointer;
+          user-select: none;
+          transition: background 0.15s ease;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tf-subbar-brand:hover {
+          background: #27354f;
+        }
+
+        .tf-subbar-brand-icon {
+          color: #3b82f6;
+          font-size: 15px;
+        }
+
+        .tf-subbar-tabs {
+          display: flex;
+          gap: 4px;
+          flex-wrap: wrap;
+        }
+
+        .tf-subbar-tab {
+          background: transparent;
+          color: #94a3b8;
+          border: none;
+          font-size: 12px;
+          font-weight: 600;
+          padding: 6px 12px;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .tf-subbar-tab:hover {
+          color: #ffffff;
+          background: rgba(255, 255, 255, 0.06);
+        }
+
+        .tf-subbar-tab.active {
+          background: #2563eb;
+          color: #ffffff;
+          font-weight: 700;
+          box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+        }
+
+        .tf-subbar-nav-right {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          flex-wrap: wrap;
+        }
+
+        .tf-subbar-user-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          padding: 4px 10px;
+          border-radius: 9999px;
+          font-size: 11.5px;
+        }
+
+        .tf-subbar-user-name {
+          font-weight: 700;
+          color: #f8fafc;
+        }
+
+        .tf-subbar-user-role {
+          background: rgba(59, 130, 246, 0.2);
+          color: #60a5fa;
+          padding: 1.5px 7px;
+          border-radius: 9999px;
+          font-size: 10px;
+          font-weight: 700;
+          border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .tf-quick-search-form {
+          display: flex;
+          align-items: center;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.16);
+          border-radius: 7px;
+          padding: 2px 4px 2px 9px;
+          gap: 6px;
+          transition: border-color 0.15s ease;
+        }
+
+        .tf-quick-search-form:focus-within {
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        .tf-quick-search-input {
+          background: transparent;
+          border: none;
+          color: #ffffff;
+          font-size: 11.5px;
+          width: 135px;
+          outline: none;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .tf-quick-search-input::placeholder {
+          color: #64748b;
+        }
+
+        .tf-quick-search-btn {
+          background: #2563eb;
+          color: #ffffff;
+          border: none;
+          padding: 4px 10px;
+          border-radius: 5px;
+          font-size: 11px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: background 0.15s ease;
+        }
+
+        .tf-quick-search-btn:hover {
+          background: #1d4ed8;
+        }
+
+        /* Portal Layout & Cards */
+        .tf-portal-view-container {
+          font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+        }
+
+        .tf-portal-breadcrumbs {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          font-size: 12px;
+          color: #64748b;
+          font-weight: 600;
+          margin-bottom: 14px;
+        }
+
+        .crumb-link {
+          color: #2563eb;
+          cursor: pointer;
+        }
+
+        .crumb-link:hover {
+          text-decoration: underline;
+        }
+
+        .crumb-current {
+          color: #0f172a;
+          font-weight: 700;
+        }
+
+        .crumb-tag {
+          background: #eff6ff;
+          color: #1d4ed8;
+          border: 1px solid #bfdbfe;
+          font-size: 10px;
+          font-weight: 700;
+          padding: 1px 7px;
+          border-radius: 9999px;
+        }
+
+        .tf-portal-card {
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
+          box-shadow: 0 4px 14px rgba(15, 23, 42, 0.03);
+          margin-bottom: 20px;
+          overflow: hidden;
+        }
+
+        .tf-search-card {
+          padding: 18px 22px;
+        }
+
+        .tf-search-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 14px;
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+
+        .tf-search-title {
+          font-size: 17px;
+          font-weight: 800;
+          color: #0f172a;
+          margin: 0 0 3px 0;
+          letter-spacing: -0.02em;
+        }
+
+        .tf-search-subtitle {
+          font-size: 12.5px;
+          color: #64748b;
+          margin: 0;
+        }
+
+        .tf-btn-create-req {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: #2563eb;
+          color: #ffffff;
+          border: none;
+          padding: 8px 16px;
+          border-radius: 7px;
+          font-size: 12.5px;
+          font-weight: 700;
+          cursor: pointer;
+          box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+          transition: all 0.15s ease;
+        }
+
+        .tf-btn-create-req:hover {
+          background: #1d4ed8;
+          transform: translateY(-1px);
+        }
+
+        .tf-filter-toggle-bar {
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          padding: 9px 14px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          cursor: pointer;
+          font-size: 12.5px;
+          font-weight: 700;
+          color: #1e293b;
+          transition: all 0.15s ease;
+        }
+
+        .tf-filter-toggle-bar:hover {
+          background: #eff6ff;
+          border-color: #bfdbfe;
+        }
+
+        .tf-filter-toggle-bar.open {
+          border-radius: 8px 8px 0 0;
+          background: #eff6ff;
+          border-color: #bfdbfe;
+        }
+
+        .toggle-left {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .toggle-count-pill {
+          background: #e2e8f0;
+          color: #475569;
+          font-size: 10.5px;
+          padding: 2px 7px;
+          border-radius: 9999px;
+          font-weight: 700;
+        }
+
+        .toggle-right {
+          color: #2563eb;
+          font-size: 11.5px;
+        }
+
+        .tf-filter-form {
+          border: 1px solid #bfdbfe;
+          border-top: none;
+          background: #fcfdfe;
+          padding: 18px 20px;
+          border-radius: 0 0 8px 8px;
+        }
+
+        .tf-filter-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 16px 28px;
+        }
+
+        @media (max-width: 768px) {
+          .tf-filter-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        .tf-filter-field {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          margin-bottom: 10px;
+        }
+
+        .tf-filter-field label {
+          font-size: 11.5px;
+          font-weight: 700;
+          color: #334155;
+        }
+
+        .tf-input {
+          width: 100%;
+          padding: 7px 10px;
+          border: 1px solid #cbd5e1;
+          border-radius: 6px;
+          background: #ffffff;
+          font-size: 12px;
+          color: #0f172a;
+          outline: none;
+          box-sizing: border-box;
+          transition: border-color 0.15s ease;
+        }
+
+        .tf-input:focus {
+          border-color: #2563eb;
+          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+        }
+
+        .tf-filter-actions {
+          display: flex;
+          justify-content: flex-end;
+          gap: 10px;
+          margin-top: 14px;
+          padding-top: 12px;
+          border-top: 1px solid #e2e8f0;
+        }
+
+        .tf-btn-filter-reset {
+          background: #ffffff;
+          border: 1px solid #cbd5e1;
+          color: #475569;
+          font-size: 12px;
+          font-weight: 600;
+          padding: 7px 16px;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+
+        .tf-btn-filter-reset:hover {
+          background: #f1f5f9;
+        }
+
+        .tf-btn-filter-search {
+          background: #2563eb;
+          border: none;
+          color: #ffffff;
+          font-size: 12px;
+          font-weight: 700;
+          padding: 7px 20px;
+          border-radius: 6px;
+          cursor: pointer;
+          box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
+          transition: all 0.15s ease;
+        }
+
+        .tf-btn-filter-search:hover {
+          background: #1d4ed8;
+        }
+
+        /* Requisitions Table Card */
+        .tf-table-card {
+          padding: 0;
+        }
+
+        .tf-table-card-header {
+          padding: 16px 20px;
+          border-bottom: 1px solid #e2e8f0;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 12px;
+          background: #fafbfd;
+        }
+
+        .tf-table-header-title-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .tf-table-main-title {
+          font-size: 16px;
+          font-weight: 800;
+          color: #0f172a;
+          margin: 0;
+          letter-spacing: -0.01em;
+        }
+
+        .tf-live-telemetry-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          background: #ecfdf5;
+          border: 1px solid #a7f3d0;
+          color: #059669;
+          font-size: 8.5px;
+          font-weight: 800;
+          padding: 2px 7px;
+          border-radius: 9999px;
+          letter-spacing: 0.04em;
+        }
+
+        .tf-telemetry-dot {
+          width: 5px;
+          height: 5px;
+          background: #10b981;
+          border-radius: 50%;
+          animation: dotPulse 1.8s infinite;
+        }
+
+        .tf-table-subtext {
+          font-size: 12px;
+          color: #64748b;
+          margin: 3px 0 0 0;
+        }
+
+        .tf-table-header-right {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .tf-btn-action-scrape {
+          background: #10b981;
+          color: #ffffff;
+          border: none;
+          padding: 6px 13px;
+          border-radius: 6px;
+          font-size: 11.5px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: background 0.15s ease;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+        }
+
+        .tf-btn-action-scrape:hover {
+          background: #059669;
+        }
+
+        .tf-btn-action-linkedin {
+          background: #0a66c2;
+          color: #ffffff;
+          border: none;
+          padding: 6px 13px;
+          border-radius: 6px;
+          font-size: 11.5px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: background 0.15s ease;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+        }
+
+        .tf-btn-action-linkedin:hover {
+          background: #004182;
+        }
+
+        .tf-records-counter-pill {
+          background: #eff6ff;
+          border: 1px solid #bfdbfe;
+          color: #1d4ed8;
+          font-size: 11px;
+          font-weight: 700;
+          padding: 5px 11px;
+          border-radius: 9999px;
+        }
+
+        /* Modern Table */
+        .tf-table-scroll-wrap {
+          overflow-x: auto;
+          width: 100%;
+        }
+
+        .tf-portal-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 11.5px;
+          text-align: left;
+          background: #ffffff;
+        }
+
+        .tf-portal-table thead tr {
+          background: #f8fafc;
+          border-bottom: 2px solid #e2e8f0;
+        }
+
+        .tf-portal-table thead th {
+          padding: 10px 9px;
+          font-size: 10.5px;
+          font-weight: 700;
+          color: #64748b;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          white-space: nowrap;
+          border-right: 1px solid #f1f5f9;
+        }
+
+        .tf-portal-trow {
+          border-bottom: 1px solid #f1f5f9;
+          cursor: pointer;
+          transition: background 0.12s ease;
+        }
+
+        .tf-portal-trow:hover {
+          background: #f8fafc;
+        }
+
+        .td-cell {
+          padding: 8px 9px;
+          vertical-align: middle;
+          border-right: 1px solid #f8fafc;
+        }
+
+        .tf-req-pill {
+          display: inline-block;
+          font-size: 11px;
+          font-weight: 700;
+          background: #eff6ff;
+          color: #2563eb;
+          padding: 2.5px 7px;
+          border-radius: 4px;
+          border: 1px solid #bfdbfe;
+          transition: all 0.12s ease;
+        }
+
+        .tf-portal-trow:hover .tf-req-pill {
+          background: #2563eb;
+          color: #ffffff;
+          border-color: #2563eb;
+        }
+
+        .tf-pos-wrap {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5px;
+        }
+
+        .tf-pos-title {
+          font-size: 12px;
+          font-weight: 700;
+          color: #0f172a;
+          transition: color 0.12s ease;
+        }
+
+        .tf-portal-trow:hover .tf-pos-title {
+          color: #2563eb;
+        }
+
+        .tf-pos-sub {
+          font-size: 10px;
+          color: #94a3b8;
+        }
+
+        .tf-skills-flex {
+          display: flex;
+          align-items: center;
+          gap: 3px;
+          flex-wrap: wrap;
+        }
+
+        .tf-skill-chip {
+          background: #f1f5f9;
+          color: #475569;
+          font-size: 10px;
+          font-weight: 600;
+          padding: 1.5px 5px;
+          border-radius: 4px;
+          border: 1px solid #e2e8f0;
+        }
+
+        .tf-skill-chip.more {
+          background: #e2e8f0;
+          color: #1e293b;
+          font-weight: 700;
+        }
+
+        .tf-customer-name {
+          font-weight: 600;
+          color: #334155;
+          font-size: 11.5px;
+        }
+
+        .tf-loc-tag {
+          color: #64748b;
+          font-size: 11px;
+          white-space: nowrap;
+        }
+
+        .tf-deadline-tag {
+          color: #475569;
+          font-size: 11px;
+          white-space: nowrap;
+        }
+
+        .tf-rate-bold {
+          color: #15803d;
+          font-weight: 800;
+          font-size: 12px;
+        }
+
+        .tf-rate-tbd {
+          color: #94a3b8;
+          font-size: 11px;
+        }
+
+        .tf-recruiter-tag {
+          font-size: 10.5px;
+          color: #334155;
+          background: #f8fafc;
+          padding: 2px 6px;
+          border-radius: 4px;
+          border: 1px solid #e2e8f0;
+          white-space: nowrap;
+        }
+
+        .tf-status-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 10.5px;
+          font-weight: 700;
+          padding: 2px 7px;
+          border-radius: 9999px;
+        }
+
+        .tf-status-pill.open {
+          background: #dcfce7;
+          color: #15803d;
+        }
+
+        .tf-status-pill.hold {
+          background: #fef3c7;
+          color: #b45309;
+        }
+
+        .tf-status-pill.closed {
+          background: #fee2e2;
+          color: #b91c1c;
+        }
+
+        .tf-status-dot {
+          width: 5px;
+          height: 5px;
+          border-radius: 50%;
+          background: currentColor;
+        }
+
+        .tf-badge-ctg, .tf-badge-type {
+          font-size: 10px;
+          font-weight: 600;
+          color: #64748b;
+          background: #f1f5f9;
+          padding: 1.5px 6px;
+          border-radius: 3px;
+        }
+
+        .tf-sub-pill {
+          display: inline-block;
+          font-size: 11px;
+          font-weight: 700;
+          background: #f1f5f9;
+          color: #334155;
+          padding: 2px 7px;
+          border-radius: 4px;
+        }
+
+        .tf-sub-pill.full {
+          background: #fee2e2;
+          color: #dc2626;
+        }
+
+        .tf-max-sub-text {
+          font-size: 11px;
+          color: #64748b;
+        }
+
+        .tf-date-sub {
+          font-size: 10.5px;
+          color: #64748b;
+          white-space: nowrap;
+        }
+
+        .tf-dur-pill {
+          font-size: 10.5px;
+          font-weight: 600;
+          color: #475569;
+        }
+
+        .text-center {
+          text-align: center;
+        }
+
+        .tf-empty-table-cell {
+          padding: 48px 20px;
+          text-align: center;
+        }
+
+        .tf-empty-box {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .tf-empty-icon {
+          font-size: 28px;
+          margin-bottom: 2px;
+        }
+
+        .tf-empty-box strong {
+          font-size: 14px;
+          color: #0f172a;
+        }
+
+        .tf-empty-box p {
+          font-size: 12px;
+          color: #64748b;
+          max-width: 440px;
+          margin: 0;
+        }
+
+        /* Modern theFront Pagination Bar */
+        .tf-portal-pagination-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 12px 20px;
+          background: #f8fafc;
+          border-top: 1px solid #e2e8f0;
+          flex-wrap: wrap;
+          gap: 12px;
+          font-size: 12px;
+        }
+
+        .tf-pagination-summary {
+          color: #64748b;
+        }
+
+        .tf-pagination-summary strong {
+          color: #0f172a;
+        }
+
+        .tf-pagination-buttons-wrap {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+        }
+
+        .tf-page-pill-btn {
+          background: #ffffff;
+          border: 1px solid #cbd5e1;
+          color: #475569;
+          font-size: 11.5px;
+          font-weight: 600;
+          padding: 5px 12px;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+
+        .tf-page-pill-btn:hover:not(:disabled) {
+          background: #eff6ff;
+          border-color: #93c5fd;
+          color: #2563eb;
+        }
+
+        .tf-page-pill-btn:disabled {
+          opacity: 0.45;
+          cursor: not-allowed;
+        }
+
+        .tf-page-num-btn {
+          background: #ffffff;
+          border: 1px solid #cbd5e1;
+          color: #334155;
+          font-size: 11.5px;
+          font-weight: 600;
+          min-width: 30px;
+          height: 30px;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+
+        .tf-page-num-btn:hover {
+          border-color: #2563eb;
+          color: #2563eb;
+        }
+
+        .tf-page-num-btn.active {
+          background: #2563eb;
+          border-color: #2563eb;
+          color: #ffffff;
+          font-weight: 700;
+          box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+        }
+
+        .tf-page-dots {
+          color: #94a3b8;
+          padding: 0 4px;
+        }
+
+        .tf-pagination-pagesize {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          color: #64748b;
+          font-weight: 600;
+        }
+
+        .tf-pagesize-select {
+          background: #ffffff;
+          border: 1px solid #cbd5e1;
+          border-radius: 6px;
+          padding: 4px 8px;
+          font-size: 11.5px;
+          font-weight: 700;
+          color: #0f172a;
+          outline: none;
+          cursor: pointer;
+        }
+`}</style>
+
       <div style={{ background: '#f1f5f9', minHeight: '92vh', paddingBottom: '30px', fontFamily: 'Arial, sans-serif' }}>
         
-        {/* ═══════════ SMARTWORKS ORANGE HEADER NAVIGATION BAR ═══════════ */}
-        <header style={{ background: '#ea580c', borderBottom: '2px solid #c2410c', color: '#ffffff' }}>
-          <div className="container-wide" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '42px', padding: '0 16px' }}>
+        {/* ═══════════ SMARTWORKS MODERN ENTERPRISE NAVIGATION BAR (MUI THEFRONT STYLE) ═══════════ */}
+        <header className="tf-dash-subbar">
+          <div className="container-wide tf-subbar-container">
             
-            <div style={{ display: 'flex', gap: '2px', height: '100%', alignItems: 'stretch' }}>
-              {/* SmartWorks Logo / Home Button */}
+            <div className="tf-subbar-nav-left">
+              {/* SmartWorks Hub Home Button */}
               <div
                 onClick={() => {
                   setActiveMainTab('requisitions')
@@ -2723,87 +3594,58 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                   setCurrentPage(1)
                   setReqFilters({ reqId: '', title: '', skills: '', city: '', state: 'Select State', status: 'In-Progress', assignedTo: 'Any', reqType: 'Select Req Type' })
                 }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '0 16px',
-                  fontWeight: '900',
-                  fontSize: '15px',
-                  letterSpacing: '0.03em',
-                  background: '#9a3412',
-                  cursor: 'pointer',
-                  color: '#ffffff',
-                  userSelect: 'none',
-                  gap: '6px',
-                  borderRight: '1px solid rgba(255,255,255,0.25)',
-                  transition: 'background-color 0.15s ease'
-                }}
-                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#7c2d12'}
-                onMouseLeave={e => e.currentTarget.style.backgroundColor = '#9a3412'}
+                className="tf-subbar-brand"
                 title="SmartWorks Home — Click to return to Requisitions Home"
               >
-                <span style={{ fontSize: '16px' }}>🏢</span> SmartWorks
+                <span className="tf-subbar-brand-icon">⚡</span>
+                <span className="tf-subbar-brand-title">SmartWorks</span>
               </div>
 
-              {navTabs.map(t => (
-                <div
-                  key={t.id}
-                  onClick={() => {
-                    if (t.link) {
-                      window.location.href = t.link
-                    } else {
-                      setActiveMainTab(t.id)
-                      setViewMode('portal')
-                      setCurrentPage(1)
-                    }
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '0 16px',
-                    fontSize: '12.5px',
-                    fontWeight: 'bold',
-                    background: activeMainTab === t.id && viewMode === 'portal' ? '#d97706' : 'transparent',
-                    borderRight: '1px solid rgba(255,255,255,0.2)',
-                    cursor: 'pointer',
-                    transition: 'background-color 0.15s ease'
-                  }}
-                  onMouseEnter={e => {
-                    if (!(activeMainTab === t.id && viewMode === 'portal')) {
-                      e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.1)'
-                    }
-                  }}
-                  onMouseLeave={e => {
-                    if (!(activeMainTab === t.id && viewMode === 'portal')) {
-                      e.currentTarget.style.backgroundColor = 'transparent'
-                    }
-                  }}
-                >
-                  {t.name}
-                </div>
-              ))}
+              {/* Navigation Tabs */}
+              <div className="tf-subbar-tabs">
+                {navTabs.map(t => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => {
+                      if (t.link) {
+                        window.location.href = t.link
+                      } else {
+                        setActiveMainTab(t.id)
+                        setViewMode('portal')
+                        setCurrentPage(1)
+                      }
+                    }}
+                    className={`tf-subbar-tab ${activeMainTab === t.id && viewMode === 'portal' ? 'active' : ''}`}
+                  >
+                    {t.name}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Right Side: Welcome User & Quick Search */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <span style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#ffedd5' }}>
-                Welcome: <span style={{ color: '#ffffff', textDecoration: 'underline' }}>{userName}</span>
-              </span>
+            <div className="tf-subbar-nav-right">
+              {/* User Identity Pill */}
+              <div className="tf-subbar-user-badge">
+                <span className="tf-subbar-user-avatar">👤</span>
+                <span className="tf-subbar-user-name">{userName}</span>
+                <span className="tf-subbar-user-role">
+                  {isSuperAdmin ? 'Super Admin' : (isAdmin ? 'Admin' : (isManager ? 'Manager' : (isRecruiter ? 'Recruiter' : 'Employee')))}
+                </span>
+              </div>
 
-              {/* Quick Search Input */}
-              <form onSubmit={handleQuickSearch} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 'bold' }}>Requisition #</span>
+              {/* Quick Search Form */}
+              <form onSubmit={handleQuickSearch} className="tf-quick-search-form">
+                <span className="tf-search-icon">🔍</span>
                 <input
                   type="text"
                   value={quickSearchId}
                   onChange={e => setQuickSearchId(e.target.value)}
-                  placeholder="Req ID / Title"
-                  style={{ padding: '3px 8px', fontSize: '11px', width: '130px', border: '1px solid #ffffff', borderRadius: '3px', outline: 'none' }}
+                  placeholder="Req ID or Title..."
+                  className="tf-quick-search-input"
                 />
-                <button
-                  type="submit"
-                  style={{ background: '#f8fafc', color: '#0f172a', border: 'none', padding: '3px 10px', fontSize: '11px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer' }}
-                >
+                <button type="submit" className="tf-quick-search-btn">
                   Quick Search
                 </button>
               </form>
@@ -6683,168 +7525,152 @@ We are currently reviewing candidate profiles and scheduling immediate interview
               TAB 1: REQUISITIONS VIEW (PORTAL HOME + SEARCH REQUISITIONS)
               ───────────────────────────────────────────────────────────── */}
           {activeMainTab === 'requisitions' && viewMode === 'portal' && (
-            <div>
-              <div style={{ fontSize: '11px', color: '#1e3a8a', fontWeight: 'bold', marginBottom: '8px' }}>
-                You are here: <span style={{ color: '#0066cc', cursor: 'pointer' }}>Home</span> &gt; Requisitions
+            <div className="tf-portal-view-container">
+              {/* Breadcrumbs */}
+              <div className="tf-portal-breadcrumbs">
+                <span onClick={() => { setActiveMainTab('requisitions'); setViewMode('portal'); }} className="crumb-link">
+                  🏠 Home
+                </span>
+                <span className="crumb-sep">/</span>
+                <span className="crumb-current">Requisitions</span>
+                <span className="crumb-sep">/</span>
+                <span className="crumb-tag">Live Portal Directory</span>
               </div>
 
-              {/* Search Requisitions Filter Panel */}
-              <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 18px', marginBottom: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <h2 style={{ margin: 0, fontSize: '15px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                    {isEmployee ? 'My Assigned Requisitions' : 'Search Requisitions'}
-                  </h2>
+              {/* Search Requisitions Modern Card */}
+              <div className="tf-portal-card tf-search-card">
+                <div className="tf-search-card-header">
+                  <div>
+                    <h2 className="tf-search-title">
+                      {isEmployee ? 'My Assigned Requisitions' : 'Search Requisitions'}
+                    </h2>
+                    <p className="tf-search-subtitle">
+                      Filter client job requisitions by keyword, required skills, customer, location, and rates.
+                    </p>
+                  </div>
                   {canCreateRequisition && (
-                    <span
+                    <button
+                      type="button"
                       onClick={handleAddNewRequisition}
-                      style={{ color: '#0066cc', fontWeight: 'bold', fontSize: '12px', textDecoration: 'underline', cursor: 'pointer' }}
+                      className="tf-btn-create-req"
                     >
-                      + Add new Requisition
-                    </span>
+                      <span>+</span> Add New Requisition
+                    </button>
                   )}
                 </div>
 
+                {/* Filter Accordion Header */}
                 <div
                   onClick={() => setShowFilterPanel(prev => !prev)}
-                  style={{
-                    background: '#bfdbfe', border: '1px solid #93c5fd', padding: '6px 12px',
-                    fontSize: '11.5px', fontWeight: 'bold', color: '#1e3a8a', cursor: 'pointer',
-                    borderRadius: '3px 3px 0 0', display: 'flex', justifyContent: 'space-between'
-                  }}
+                  className={`tf-filter-toggle-bar ${showFilterPanel ? 'open' : ''}`}
                 >
-                  <span>Modify Search &gt;&gt;</span>
-                  <span>{showFilterPanel ? '▲ Hide Filters' : '▼ Show Filters'}</span>
+                  <div className="toggle-left">
+                    <span className="toggle-icon">🔍</span>
+                    <span>Advanced Requisition Filters</span>
+                    <span className="toggle-count-pill">{filteredJobs.length} matches</span>
+                  </div>
+                  <div className="toggle-right">
+                    <span>{showFilterPanel ? '▲ Hide Filters' : '▼ Expand Filters'}</span>
+                  </div>
                 </div>
 
+                {/* Expanded Filter Panel */}
                 {showFilterPanel && (
-                  <form onSubmit={e => { e.preventDefault(); setCurrentPage(1); }} style={{ border: '1px solid #cbd5e1', borderTop: 'none', padding: '14px 16px', background: '#fdfdfe' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '14px 30px', fontSize: '11.5px' }}>
+                  <form onSubmit={e => { e.preventDefault(); setCurrentPage(1); }} className="tf-filter-form">
+                    <div className="tf-filter-grid">
                       
-                      {/* Left Column */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '6px 10px', alignItems: 'center' }}>
-                        <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Requisition #:</label>
-                        <input type="text" value={reqFilters.reqId} onChange={e => setReqFilters({ ...reqFilters, reqId: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                      {/* Column 1 */}
+                      <div className="tf-filter-col">
+                        <div className="tf-filter-field">
+                          <label>Requisition #</label>
+                          <input type="text" value={reqFilters.reqId} onChange={e => setReqFilters({ ...reqFilters, reqId: e.target.value })} placeholder="e.g. 159070" className="tf-input" />
+                        </div>
 
-                        <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Position Title:</label>
-                        <input type="text" value={reqFilters.title} onChange={e => setReqFilters({ ...reqFilters, title: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                        <div className="tf-filter-field">
+                          <label>Position Title</label>
+                          <input type="text" value={reqFilters.title} onChange={e => setReqFilters({ ...reqFilters, title: e.target.value })} placeholder="e.g. AWS Developer" className="tf-input" />
+                        </div>
 
-                        <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Skills:</label>
-                        <input type="text" value={reqFilters.skills} onChange={e => setReqFilters({ ...reqFilters, skills: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                        <div className="tf-filter-field">
+                          <label>Required Skills</label>
+                          <input type="text" value={reqFilters.skills} onChange={e => setReqFilters({ ...reqFilters, skills: e.target.value })} placeholder="e.g. Python, SQL" className="tf-input" />
+                        </div>
 
-                        <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>City:</label>
-                        <input type="text" value={reqFilters.city} onChange={e => setReqFilters({ ...reqFilters, city: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
+                        <div className="tf-filter-field">
+                          <label>City</label>
+                          <input type="text" value={reqFilters.city} onChange={e => setReqFilters({ ...reqFilters, city: e.target.value })} placeholder="e.g. Raleigh" className="tf-input" />
+                        </div>
 
-                        <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>State:</label>
-                        <select value={reqFilters.state} onChange={e => setReqFilters({ ...reqFilters, state: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
-                          <option value="Select State">Select State</option>
-                          {US_STATES.map(st => (
-                            <option key={st.code} value={st.code}>{st.code} - {st.name}</option>
-                          ))}
-                        </select>
+                        <div className="tf-filter-field">
+                          <label>State</label>
+                          <select value={reqFilters.state} onChange={e => setReqFilters({ ...reqFilters, state: e.target.value })} className="tf-input">
+                            <option value="Select State">Select State</option>
+                            {US_STATES.map(st => (
+                              <option key={st.code} value={st.code}>{st.code} - {st.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
 
-                        <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Office:</label>
-                        <select value={reqFilters.office} onChange={e => setReqFilters({ ...reqFilters, office: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
-                          <option>All</option>
-                          <option>Columbia</option>
-                          <option>Richmond</option>
-                          <option>Austin</option>
-                        </select>
-
-                        <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Assigned To:</label>
-                        <select value={reqFilters.assignedTo} onChange={e => setReqFilters({ ...reqFilters, assignedTo: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
-                          <option value="Any">Any</option>
-                          {allRecruitersList.map(r => (
-                            <option key={r.name} value={r.name}>{r.name} {r.name === userName ? '(You)' : ''}</option>
-                          ))}
-                        </select>
-
-                        <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Zip Code:</label>
-                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                          <input type="text" value={reqFilters.zipCode} onChange={e => setReqFilters({ ...reqFilters, zipCode: e.target.value })} style={{ width: '60px', padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
-                          <select value={reqFilters.radius} onChange={e => setReqFilters({ ...reqFilters, radius: e.target.value })} style={{ padding: '3px 4px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
-                            <option>Within Miles</option>
-                            <option>10</option>
-                            <option>25</option>
-                            <option>50</option>
-                            <option>100</option>
+                      {/* Column 2 */}
+                      <div className="tf-filter-col">
+                        <div className="tf-filter-field">
+                          <label>Office Branch</label>
+                          <select value={reqFilters.office} onChange={e => setReqFilters({ ...reqFilters, office: e.target.value })} className="tf-input">
+                            <option>All</option>
+                            <option>Columbia</option>
+                            <option>Richmond</option>
+                            <option>Austin</option>
+                            <option>Tallahassee</option>
                           </select>
                         </div>
 
-                        <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Req Category:</label>
-                        <select value={reqFilters.category} onChange={e => setReqFilters({ ...reqFilters, category: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
-                          <option>Select Req Category</option>
-                          <option>SP</option>
-                          <option>IT</option>
-                          <option>ENG</option>
-                        </select>
-                      </div>
-
-                      {/* Right Column */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '6px 10px', alignItems: 'center' }}>
-                        <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Creation Date:</label>
-                        <input type="text" placeholder="MM/DD/YYYY" value={reqFilters.creationDate} onChange={e => setReqFilters({ ...reqFilters, creationDate: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
-
-                        <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Deadline Date:</label>
-                        <input type="text" placeholder="MM/DD/YYYY" value={reqFilters.deadlineDate} onChange={e => setReqFilters({ ...reqFilters, deadlineDate: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
-
-                        <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Status:</label>
-                        <select value={reqFilters.status} onChange={e => setReqFilters({ ...reqFilters, status: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
-                          <option>Select Status</option>
-                          <option>In-Progress</option>
-                          <option>Ready</option>
-                          <option>Closed</option>
-                          <option>All</option>
-                        </select>
-
-                        <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>End client:</label>
-                        <select value={reqFilters.endClient} onChange={e => setReqFilters({ ...reqFilters, endClient: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
-                          <option>Any</option>
-                          <option>State Of SC</option>
-                          <option>DFA</option>
-                          <option>DBHDS</option>
-                          <option>VDOT</option>
-                        </select>
-
-                        <div style={{ gridColumn: 'span 2', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', margin: '4px 0' }}>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                            <input type="checkbox" checked={reqFilters.govtReqs} onChange={e => setReqFilters({ ...reqFilters, govtReqs: e.target.checked })} /> Govt Requisitions
-                          </label>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                            <input type="checkbox" checked={reqFilters.directClient} onChange={e => setReqFilters({ ...reqFilters, directClient: e.target.checked })} /> Direct Client
-                          </label>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                            <input type="checkbox" checked={reqFilters.working} onChange={e => setReqFilters({ ...reqFilters, working: e.target.checked })} /> Working(W)
-                          </label>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                            <input type="checkbox" checked={reqFilters.keyReq} onChange={e => setReqFilters({ ...reqFilters, keyReq: e.target.checked })} /> Key (K)
-                          </label>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                            <input type="checkbox" checked={reqFilters.hotReq} onChange={e => setReqFilters({ ...reqFilters, hotReq: e.target.checked })} /> Hot Req
-                          </label>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                            <input type="checkbox" checked={reqFilters.incumbentVendor} onChange={e => setReqFilters({ ...reqFilters, incumbentVendor: e.target.checked })} /> IncumbentVendor(IV)
-                          </label>
+                        <div className="tf-filter-field">
+                          <label>Assigned Recruiter</label>
+                          <select value={reqFilters.assignedTo} onChange={e => setReqFilters({ ...reqFilters, assignedTo: e.target.value })} className="tf-input">
+                            <option value="Any">Any</option>
+                            {teamUsers.filter(u => u.role === 'recruiter' || u.role === 'manager').map(u => (
+                              <option key={u.id || u.email} value={u.name || u.email}>{u.name || u.email}</option>
+                            ))}
+                          </select>
                         </div>
 
-                        <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Subcontractable:</label>
-                        <select value={reqFilters.subcontractable} onChange={e => setReqFilters({ ...reqFilters, subcontractable: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
-                          <option>Select</option>
-                          <option>No</option>
-                          <option>Yes</option>
-                        </select>
+                        <div className="tf-filter-field">
+                          <label>Status</label>
+                          <select value={reqFilters.status} onChange={e => setReqFilters({ ...reqFilters, status: e.target.value })} className="tf-input">
+                            <option value="Select Status">Select Status</option>
+                            <option value="Open">Open</option>
+                            <option value="Hold">Hold</option>
+                            <option value="Closed">Closed</option>
+                          </select>
+                        </div>
 
-                        <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Req Type:</label>
-                        <select value={reqFilters.reqType} onChange={e => setReqFilters({ ...reqFilters, reqType: e.target.value })} style={{ padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }}>
-                          <option>Select Req Type</option>
-                          <option>Contract</option>
-                          <option>Permanent</option>
-                          <option>C2H</option>
-                        </select>
+                        <div className="tf-filter-field">
+                          <label>Requisition Category</label>
+                          <select value={reqFilters.category} onChange={e => setReqFilters({ ...reqFilters, category: e.target.value })} className="tf-input">
+                            <option value="Select Req Category">Select Category</option>
+                            <option value="SP">SP (Standard Placement)</option>
+                            <option value="Direct">Direct Client</option>
+                            <option value="VMS">VMS / Vendor Portal</option>
+                          </select>
+                        </div>
+
+                        <div className="tf-filter-field">
+                          <label>Contract Type</label>
+                          <select value={reqFilters.reqType} onChange={e => setReqFilters({ ...reqFilters, reqType: e.target.value })} className="tf-input">
+                            <option value="Select Req Type">Select Req Type</option>
+                            <option>Contract</option>
+                            <option>Full-time</option>
+                            <option>Hybrid</option>
+                            <option>C2H</option>
+                          </select>
+                        </div>
                       </div>
 
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '12px' }}>
+                    {/* Filter Actions */}
+                    <div className="tf-filter-actions">
                       <button
                         type="button"
                         onClick={() => {
@@ -6873,141 +7699,118 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                             reqType: 'Select Req Type'
                           })
                         }}
-                        style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '3px 12px', fontSize: '11.5px', cursor: 'pointer' }}
+                        className="tf-btn-filter-reset"
                       >
-                        Reset
+                        Reset Filters
                       </button>
                       <button
                         type="submit"
-                        style={{ background: '#f1f5f9', border: '1px solid #94a3b8', padding: '3px 18px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer' }}
+                        className="tf-btn-filter-search"
                       >
-                        Search
+                        ⚡ Search Requisitions
                       </button>
                     </div>
                   </form>
                 )}
               </div>
 
-              {/* All Open Requisitions Table */}
-              <div style={{ background: '#ffffff', padding: '14px 18px', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                <h2 style={{ margin: '0 0 2px', fontSize: '13.5px', color: '#008000', fontWeight: 'bold', fontFamily: 'Arial, Helvetica, sans-serif' }}>
-                  {isEmployee
-                    ? '🔒 Employee Workspace — Assigned Requisitions'
-                    : isRecruiter
-                    ? `💼 SmartWorks Talent Workspace — ${userName}`
-                    : 'SmartHire Recruitment Portal Home'}
-                </h2>
-                <div style={{ fontSize: '11.5px', color: '#000080', fontWeight: 'bold', marginBottom: '10px', fontFamily: 'Arial, Helvetica, sans-serif' }}>
-                  {isEmployee
-                    ? `Welcome back, ${userName}. You have ${filteredJobs.length} assigned requisition(s).`
-                    : `Welcome back to SmartWorks, ${userName}. You have ${jobs.length} tasks.`}
-                </div>
+              {/* All Open Requisitions Main Modern Card */}
+              <div className="tf-portal-card tf-table-card">
+                
+                {/* Table Card Top Banner */}
+                <div className="tf-table-card-header">
+                  <div className="tf-table-header-left">
+                    <div className="tf-table-header-title-row">
+                      <h2 className="tf-table-main-title">
+                        {isEmployee
+                          ? '🔒 Employee Workspace — Assigned Requisitions'
+                          : isRecruiter
+                          ? `💼 SmartWorks Talent Workspace — ${userName}`
+                          : 'SmartHire Recruitment Portal'}
+                      </h2>
+                      <span className="tf-live-telemetry-badge">
+                        <span className="tf-telemetry-dot" /> LIVE SYNC ACTIVE
+                      </span>
+                    </div>
+                    <p className="tf-table-subtext">
+                      {isEmployee
+                        ? `Welcome back, ${userName}. You have ${filteredJobs.length} assigned requisition(s).`
+                        : `Welcome back to SmartWorks, ${userName}. You have ${jobs.length} total requisitions in active database.`}
+                    </p>
+                  </div>
 
-                <div style={{
-                  background: '#bfdbfe',
-                  border: '1px solid #93c5fd',
-                  padding: '5px 10px',
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  borderRadius: '2px 2px 0 0',
-                  fontFamily: 'Arial, Helvetica, sans-serif',
-                  flexWrap: 'wrap', gap: '6px'
-                }}>
-                  <span style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#000080' }}>
-                    {isEmployee ? `My Assigned Requisitions (${filteredJobs.length})` : 'All Open Requisitions'}
-                  </span>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  {/* Actions & Live Scrape */}
+                  <div className="tf-table-header-right">
                     {(isSuperAdmin || isAdmin) && (
                       <>
                         <button
                           type="button"
                           onClick={handleScrapeLiveJobs}
                           disabled={isScrapingJobs}
-                          style={{
-                            background: '#16a34a',
-                            color: '#ffffff',
-                            border: 'none',
-                            padding: '2px 10px',
-                            fontSize: '11px',
-                            fontWeight: 'bold',
-                            borderRadius: '2px',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}
+                          className="tf-btn-action-scrape"
                           title="Scrape and sync live job requisitions from JobsInHand"
                         >
-                          {isScrapingJobs ? '⏳ Syncing...' : '⚡ Scrape Live JDs'}
+                          {isScrapingJobs ? '⏳ Syncing Requisitions...' : '⚡ Scrape Live JDs'}
                         </button>
                         <button
                           type="button"
                           onClick={() => window.open('/linkedin-posts', '_blank')}
-                          style={{
-                            background: '#0a66c2',
-                            color: '#ffffff',
-                            border: 'none',
-                            padding: '2px 10px',
-                            fontSize: '11px',
-                            fontWeight: 'bold',
-                            borderRadius: '2px',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}
+                          className="tf-btn-action-linkedin"
                           title="Open LinkedIn Auto-Poster Studio"
                         >
                           <span>🌐 LinkedIn Auto Hub</span>
                         </button>
                       </>
                     )}
-                    <span style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#000080' }}>
-                      (Requisitions {filteredJobs.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, filteredJobs.length)} of {filteredJobs.length})
+                    <span className="tf-records-counter-pill">
+                      Showing {filteredJobs.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, filteredJobs.length)} of {filteredJobs.length}
                     </span>
                   </div>
                 </div>
 
-                <div style={{ overflowX: 'auto', border: '1px solid #cbd5e1', borderTop: 'none' }}>
-                  <table className="coolworks-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', fontFamily: 'Arial, Helvetica, sans-serif', background: '#ffffff' }}>
+                {/* Table Container */}
+                <div className="tf-table-scroll-wrap">
+                  <table className="tf-portal-table">
                     <thead>
-                      <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
-                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Req#</th>
-                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Position</th>
-                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Skills</th>
-                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Customer</th>
-                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Location</th>
-                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Deadline</th>
-                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Pay Rate</th>
-                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Recruiters</th>
-                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Status</th>
-                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Req Ctg</th>
-                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Req Type</th>
-                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 5px', fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Sub</th>
-                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 5px', fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Max sub</th>
-                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Creation Date</th>
-                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap', fontSize: '11px' }}>Duration</th>
+                      <tr>
+                        <th className="th-req">Req #</th>
+                        <th className="th-pos">Position Title</th>
+                        <th className="th-skills">Required Skills</th>
+                        <th className="th-cust">Client / Department</th>
+                        <th className="th-loc">Location</th>
+                        <th className="th-deadline">Deadline</th>
+                        <th className="th-rate">Pay Rate</th>
+                        <th className="th-rec">Recruiter</th>
+                        <th className="th-status">Status</th>
+                        <th className="th-ctg">Category</th>
+                        <th className="th-type">Type</th>
+                        <th className="th-sub text-center">Sub</th>
+                        <th className="th-max text-center">Max</th>
+                        <th className="th-date">Created</th>
+                        <th className="th-dur text-center">Dur</th>
                       </tr>
                     </thead>
                     <tbody>
                       {paginatedJobs.length === 0 ? (
                         <tr>
-                          <td colSpan="15" style={{ padding: '30px', textAlign: 'center', color: '#64748b' }}>
+                          <td colSpan="15" className="tf-empty-table-cell">
                             {isEmployee ? (
-                              <div>
-                                <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#0f172a', marginBottom: '4px' }}>
-                                  🔒 No Requisitions Assigned Yet
-                                </div>
-                                <div style={{ fontSize: '11px', color: '#64748b' }}>
-                                  You are in Employee restricted mode. When your lead recruiter assigns a requisition to you, it will appear here.
-                                </div>
+                              <div className="tf-empty-box">
+                                <span className="tf-empty-icon">🔒</span>
+                                <strong>No Requisitions Assigned Yet</strong>
+                                <p>You are in Employee restricted mode. When your lead recruiter assigns a requisition to you, it will appear here.</p>
                               </div>
                             ) : (
-                              'No open requisitions found matching search criteria.'
+                              <div className="tf-empty-box">
+                                <span className="tf-empty-icon">🔍</span>
+                                <strong>No open requisitions found</strong>
+                                <p>Try adjusting your search terms or clearing active filters to see all open requisitions.</p>
+                              </div>
                             )}
                           </td>
                         </tr>
                       ) : (
-                        paginatedJobs.map((job, idx) => {
+                        paginatedJobs.map((job) => {
                           const displayReqId = resolveReqId(job.reqId || job.id, job)
                           const rawTitle = cleanJobTitleWithPositionNumber(job.title, job) || job.title || 'Consultant'
                           let truncatedTitle = rawTitle
@@ -7022,10 +7825,14 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                           }
                           
                           const allSkills = Array.isArray(job.skills) ? job.skills.join(', ') : (job.skills || 'Troubleshooting, Project Management')
-                          const truncatedSkills = allSkills.length > 12 ? allSkills.slice(0, 10) + '..' : allSkills
+                          const skillArray = Array.isArray(job.skills) 
+                            ? job.skills 
+                            : String(job.skills || 'General Tech').split(/[,;]+/).map(s => s.trim()).filter(Boolean)
+                          const visibleSkills = skillArray.slice(0, 2)
+                          const remainingSkillsCount = skillArray.length - visibleSkills.length
 
                           const custName = job.client || job.customer || 'State Of SC'
-                          const locName = job.location || 'Columbia,SC'
+                          const locName = job.location || 'Columbia, SC'
                           const deadDate = job.deadline || 'Sep 4, 2026'
                           const rateStr = job.budget ? String(job.budget).replace('/hr', '').trim() : ''
 
@@ -7047,8 +7854,8 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                             shortCustomer = 'DOJ'
                           } else if (cLower.includes('south carolina') || cLower.includes('sc ') || lStr.includes('SC') || lStr.includes('COLUMBIA')) {
                             shortCustomer = 'State Of SC'
-                          } else if (shortCustomer.length > 14) {
-                            shortCustomer = shortCustomer.slice(0, 12) + '..'
+                          } else if (shortCustomer.length > 15) {
+                            shortCustomer = shortCustomer.slice(0, 13) + '..'
                           }
 
                           const recList = Array.isArray(job.assignedRecruiters) && job.assignedRecruiters.length > 0
@@ -7064,7 +7871,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                           let subList = []
                           try {
                             const jobRawId = String(job.id || job.reqId || '').replace(/^J-/, '').trim()
-                            const jobPosNum = job.positionNumber || (job.title ? (job.title.match(/\((\d{5,8})\)/) || [])[1] : '') || ''
+                            const jobPosNum = job.positionNumber || (job.title ? (job.title.match(/\(\d{5,8}\)/) || [])[1] : '') || ''
                             const raw = localStorage.getItem(`smarthire_potential_candidates_${displayReqId}`) ||
                                         localStorage.getItem(`smarthire_potential_candidates_${jobRawId}`) ||
                                         (jobPosNum ? localStorage.getItem(`smarthire_potential_candidates_${jobPosNum}`) : null) ||
@@ -7075,122 +7882,122 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
                           const subCount = subList.length
                           const maxSub = job.maxSubmissions || (subCount > 2 ? subCount : 2)
-                          const createdDateStr = job.creationDate || 'Aug 25, 2026 05:08 PM'
+                          const createdDateStr = job.creationDate || 'Aug 25, 2026'
                           const durationMonths = String(job.duration || '12').replace(/[^0-9]/g, '') || '12'
 
                           return (
                             <tr
                               key={job.id}
-                              style={{
-                                background: '#ffffff',
-                                borderBottom: '1px solid #e2e8f0',
-                                transition: 'background-color 0.12s ease'
-                              }}
+                              className="tf-portal-trow"
+                              onClick={() => handleOpenReq(job)}
                             >
-                              {/* 1. Req# (Clean Light Blue Link) */}
-                              <td style={{ padding: '4px 6px' }}>
-                                <span
-                                  onClick={() => handleOpenReq(job)}
-                                  style={{ color: '#0033cc', cursor: 'pointer', textDecoration: 'none' }}
-                                  title={`Requisition #${displayReqId}\nClick to View Requisition Details`}
-                                >
-                                  {displayReqId}
+                              {/* 1. Req# (Electric Blue Pill Badge) */}
+                              <td className="td-cell td-req">
+                                <span className="tf-req-pill" title={`Requisition #${displayReqId}\nClick to View Full Requisition Details`}>
+                                  #{displayReqId}
                                 </span>
                               </td>
 
-                              {/* 2. Position (Clean Light Blue Link with Hover Tooltip) */}
-                              <td style={{ padding: '4px 6px' }}>
-                                <span
-                                  onClick={() => handleOpenReq(job)}
-                                  style={{ color: '#0033cc', cursor: 'pointer', textDecoration: 'none', fontWeight: 'normal' }}
-                                  title={`Position Title: ${rawTitle}\nReq ID: #${displayReqId}\nCustomer: ${custName}`}
-                                >
-                                  {truncatedTitle}
-                                </span>
+                              {/* 2. Position Title */}
+                              <td className="td-cell td-pos">
+                                <div className="tf-pos-wrap" title={`Position Title: ${rawTitle}\nReq ID: #${displayReqId}\nCustomer: ${custName}`}>
+                                  <strong className="tf-pos-title">{truncatedTitle}</strong>
+                                  <span className="tf-pos-sub">{custName}</span>
+                                </div>
                               </td>
 
-                              {/* 3. Skills (Clean Black Font) */}
-                              <td style={{ padding: '4px 6px', color: '#000000' }}>
-                                <span title={`Required Skills:\n${allSkills}`}>
-                                  {truncatedSkills}
-                                </span>
+                              {/* 3. Skills (Modern Chips) */}
+                              <td className="td-cell td-skills">
+                                <div className="tf-skills-flex" title={`Required Skills:\n${allSkills}`}>
+                                  {visibleSkills.map((sk, skIdx) => (
+                                    <span key={skIdx} className="tf-skill-chip">{sk.toLowerCase()}</span>
+                                  ))}
+                                  {remainingSkillsCount > 0 && (
+                                    <span className="tf-skill-chip more">+{remainingSkillsCount}</span>
+                                  )}
+                                </div>
                               </td>
 
-                              {/* 4. Customer (Clean Black Font) */}
-                              <td style={{ padding: '4px 6px', color: '#000000', lineHeight: '1.2', whiteSpace: 'pre-line' }}>
-                                <span title={`Customer / Client Department:\n${custName}`}>
+                              {/* 4. Customer / Agency */}
+                              <td className="td-cell td-cust">
+                                <span className="tf-customer-name" title={`Customer / Client:\n${custName}`}>
                                   {shortCustomer}
                                 </span>
                               </td>
 
-                              {/* 5. Location (Clean Black Font) */}
-                              <td style={{ padding: '4px 6px', color: '#000000' }}>
-                                <span title={`Job Location:\n${locName}`}>
-                                  {locName}
+                              {/* 5. Location */}
+                              <td className="td-cell td-loc">
+                                <span className="tf-loc-tag" title={`Location:\n${locName}`}>
+                                  📍 {locName}
                                 </span>
                               </td>
 
-                              {/* 6. Deadline (Clean Black Font) */}
-                              <td style={{ padding: '4px 6px', color: '#000000', whiteSpace: 'nowrap' }}>
-                                <span title={`Submission Deadline:\n${deadDate}`}>
+                              {/* 6. Deadline */}
+                              <td className="td-cell td-deadline">
+                                <span className="tf-deadline-tag" title={`Submission Deadline:\n${deadDate}`}>
                                   {deadDate}
                                 </span>
                               </td>
 
                               {/* 7. Pay Rate */}
-                              <td style={{ padding: '4px 6px', color: '#000000' }}>
-                                {rateStr ? `$${rateStr}` : ''}
+                              <td className="td-cell td-rate">
+                                {rateStr ? (
+                                  <strong className="tf-rate-bold">${rateStr}/hr</strong>
+                                ) : (
+                                  <span className="tf-rate-tbd">$TBD</span>
+                                )}
                               </td>
 
-                              {/* 8. Recruiters (Clean Black Font) */}
-                              <td style={{ padding: '4px 6px', color: '#000000' }}>
-                                <span title={`Assigned Recruiters:\n${recList || 'None Assigned'}`}>
-                                  {truncatedRec || ''}
+                              {/* 8. Recruiter */}
+                              <td className="td-cell td-rec">
+                                <span className="tf-recruiter-tag" title={`Assigned Recruiters:\n${recList || 'None Assigned'}`}>
+                                  👤 {truncatedRec || 'Team'}
                                 </span>
                               </td>
 
-                              {/* 9. Status (Clean Black Font) */}
-                              <td style={{ padding: '4px 6px', color: '#000000' }}>
-                                <span title={`Requisition Status: ${reqStatus}`}>
+                              {/* 9. Status */}
+                              <td className="td-cell td-status">
+                                <span className={`tf-status-pill ${reqStatus.toLowerCase()}`}>
+                                  <span className="tf-status-dot" />
                                   {reqStatus}
                                 </span>
                               </td>
 
                               {/* 10. Req Ctg */}
-                              <td style={{ padding: '4px 6px', color: '#000000' }}>
-                                {reqCategory}
+                              <td className="td-cell td-ctg">
+                                <span className="tf-badge-ctg">{reqCategory}</span>
                               </td>
 
                               {/* 11. Req Type */}
-                              <td style={{ padding: '4px 6px', color: '#000000' }}>
-                                {reqTypeVal}
+                              <td className="td-cell td-type">
+                                <span className="tf-badge-type">{reqTypeVal}</span>
                               </td>
 
-                              {/* 12. Sub */}
-                              <td style={{ padding: '4px 5px', textAlign: 'center', color: '#000000' }}>
-                                <span title={`Total Submissions: ${subCount}`}>
+                              {/* 12. Submissions */}
+                              <td className="td-cell td-sub text-center">
+                                <span className={`tf-sub-pill ${subCount >= maxSub && maxSub > 0 ? 'full' : ''}`} title={`Total Submissions: ${subCount}`}>
                                   {subCount}
                                 </span>
                               </td>
 
-                              {/* 13. Max sub */}
-                              <td style={{ padding: '4px 5px', textAlign: 'center', color: '#000000' }}>
-                                <span title={`Maximum Allowed Submissions: ${maxSub}`}>
+                              {/* 13. Max Sub */}
+                              <td className="td-cell td-max text-center">
+                                <span className="tf-max-sub-text" title={`Max Allowed Submissions: ${maxSub}`}>
                                   {maxSub}
                                 </span>
                               </td>
 
                               {/* 14. Creation Date */}
-                              <td style={{ padding: '4px 6px', color: '#000000', whiteSpace: 'nowrap' }}>
-                                <span title={`Requisition Creation Date:\n${createdDateStr}`}>
-                                  {createdDateStr}
+                              <td className="td-cell td-date">
+                                <span className="tf-date-sub" title={`Created:\n${createdDateStr}`}>
+                                  {createdDateStr.split(' ')[0]}
                                 </span>
                               </td>
 
                               {/* 15. Duration */}
-                              <td style={{ padding: '4px 6px', textAlign: 'center', color: '#000000' }}>
-                                <span title={`Contract Duration: ${durationMonths} Months`}>
-                                  {durationMonths}
+                              <td className="td-cell td-dur text-center">
+                                <span className="tf-dur-pill" title={`Duration: ${durationMonths} Months`}>
+                                  {durationMonths}m
                                 </span>
                               </td>
                             </tr>
@@ -7201,35 +8008,74 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                   </table>
                 </div>
 
-                {/* Pagination */}
-                <div style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  background: '#f8fafc', border: '1px solid #cbd5e1', borderTop: 'none', padding: '5px 12px',
-                  fontFamily: 'Arial, Helvetica, sans-serif'
-                }}>
-                  <div style={{ display: 'flex', gap: '8px', fontSize: '11px', fontWeight: 'bold' }}>
+                {/* Modern theFront Pagination Bar */}
+                <div className="tf-portal-pagination-footer">
+                  <div className="tf-pagination-summary">
+                    Showing <strong>{filteredJobs.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}</strong> to <strong>{Math.min(currentPage * pageSize, filteredJobs.length)}</strong> of <strong>{filteredJobs.length}</strong> Requisitions
+                  </div>
+
+                  <div className="tf-pagination-buttons-wrap">
+                    {/* Previous Button */}
+                    <button
+                      type="button"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      className="tf-page-pill-btn"
+                    >
+                      ← Prev
+                    </button>
+
+                    {/* Page Numbers */}
                     {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
                       const p = i + 1
                       return (
-                        <span key={p} onClick={() => setCurrentPage(p)} style={{
-                          color: currentPage === p ? '#ea580c' : '#0033cc',
-                          cursor: 'pointer',
-                          textDecoration: currentPage === p ? 'none' : 'underline'
-                        }}>
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => setCurrentPage(p)}
+                          className={`tf-page-num-btn ${currentPage === p ? 'active' : ''}`}
+                        >
                           {p}
-                        </span>
+                        </button>
                       )
                     })}
-                    <span style={{ color: '#0033cc', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}>Next</span>
-                    <span style={{ color: '#0033cc', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setCurrentPage(totalPages)}>Last</span>
+
+                    {totalPages > 5 && (
+                      <>
+                        <span className="tf-page-dots">...</span>
+                        <button
+                          type="button"
+                          onClick={() => setCurrentPage(totalPages)}
+                          className={`tf-page-num-btn ${currentPage === totalPages ? 'active' : ''}`}
+                        >
+                          {totalPages}
+                        </button>
+                      </>
+                    )}
+
+                    {/* Next Button */}
+                    <button
+                      type="button"
+                      disabled={currentPage >= totalPages}
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      className="tf-page-pill-btn"
+                    >
+                      Next →
+                    </button>
                   </div>
 
-                  <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#1e3a8a' }}>
-                    Page Size:
-                    <select value={pageSize} onChange={e => { setPageSize(parseInt(e.target.value)); setCurrentPage(1); }} style={{ marginLeft: '6px', fontSize: '11px', padding: '1px 4px', border: '1px solid #cbd5e1' }}>
+                  {/* Page Size Dropdown */}
+                  <div className="tf-pagination-pagesize">
+                    <span>Records per page:</span>
+                    <select
+                      value={pageSize}
+                      onChange={e => { setPageSize(parseInt(e.target.value)); setCurrentPage(1); }}
+                      className="tf-pagesize-select"
+                    >
                       <option value="10">10</option>
                       <option value="25">25</option>
                       <option value="50">50</option>
+                      <option value="100">100</option>
                     </select>
                   </div>
                 </div>
@@ -9226,9 +10072,9 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
           </div>
         )}
 
-        {/* ═══════════ SMARTHIRE ORANGE FOOTER ═══════════ */}
-        <footer style={{ background: '#ea580c', borderTop: '2px solid #c2410c', color: '#ffffff', textAlign: 'center', padding: '8px', marginTop: '24px', fontSize: '11px', fontWeight: 'bold' }}>
-          © SmartHire | All rights reserved | Release 1.0.0 27-Aug-2026
+        {/* ═══════════ SMARTHIRE ENTERPRISE FOOTER ═══════════ */}
+        <footer style={{ background: '#0f172a', borderTop: '1px solid #1e293b', color: '#94a3b8', textAlign: 'center', padding: '12px 16px', marginTop: '32px', fontSize: '11.5px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          © SmartHire Enterprise ATS | All rights reserved | Release 2.4.0 High-Velocity Staffing Platform
         </footer>
 
       </div>
