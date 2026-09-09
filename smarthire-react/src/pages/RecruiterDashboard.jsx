@@ -124,6 +124,31 @@ function parseResumeDetails(text, filename = '') {
 
 const legacyCandidateData = []
 
+// Candidate Avatar Initials & Gradient Generators for Reports & Directories
+const getCandidateInitials = (name) => {
+  if (!name) return 'C'
+  const clean = name.replace(/[^a-zA-Z\s]/g, '').trim().split(/\s+/)
+  if (clean.length === 0 || !clean[0]) return 'C'
+  if (clean.length === 1) return clean[0].slice(0, 2).toUpperCase()
+  return (clean[0][0] + clean[clean.length - 1][0]).toUpperCase()
+}
+
+const AVATAR_PALETTES = [
+  'linear-gradient(135deg, #2563eb, #1d4ed8)',
+  'linear-gradient(135deg, #7c3aed, #5b21b6)',
+  'linear-gradient(135deg, #0284c7, #0369a1)',
+  'linear-gradient(135deg, #059669, #047857)',
+  'linear-gradient(135deg, #d97706, #b45309)',
+  'linear-gradient(135deg, #db2777, #be185d)'
+]
+
+const getAvatarGradient = (str) => {
+  if (!str) return AVATAR_PALETTES[0]
+  let hash = 0
+  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash)
+  return AVATAR_PALETTES[Math.abs(hash) % AVATAR_PALETTES.length]
+}
+
 function RecruiterDashboard() {
   const [jobs, setJobs] = useState([])
   const knownJobIdsRef = useRef(new Set())
@@ -492,6 +517,8 @@ We are currently reviewing candidate profiles and scheduling immediate interview
   const [reportSearchQuery, setReportSearchQuery] = useState('')
   const [reportStatusFilter, setReportStatusFilter] = useState('All')
   const [reportJobFilter, setReportJobFilter] = useState('All')
+  const [reportCurrentPage, setReportCurrentPage] = useState(1)
+  const [reportPageSize, setReportPageSize] = useState(25)
 
   // ─── SEARCH REQUISITIONS FILTER STATE ───
   const [reqFilters, setReqFilters] = useState({
@@ -2644,6 +2671,14 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     })
   }, [allSubmissionsList, reportStatusFilter, reportJobFilter, reportSearchQuery])
 
+  // Paginated Submissions for Reports Tab
+  const paginatedSubmissions = useMemo(() => {
+    const start = (reportCurrentPage - 1) * reportPageSize
+    return filteredSubmissions.slice(start, start + reportPageSize)
+  }, [filteredSubmissions, reportCurrentPage, reportPageSize])
+
+  const totalReportPages = Math.max(1, Math.ceil(filteredSubmissions.length / reportPageSize))
+
   // KPI Metrics for Employee Performance Report
   const reportMetrics = useMemo(() => {
     const totalSourced = filteredCandidates.length
@@ -3584,6 +3619,228 @@ We are currently reviewing candidate profiles and scheduling immediate interview
           outline: none;
           cursor: pointer;
         }
+
+        /* ═══════════ REPORTS & SUBMISSIONS MODERN THEFRONT UI/UX ═══════════ */
+        .tf-report-kpi-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+          gap: 12px;
+          margin-bottom: 20px;
+        }
+
+        .tf-report-kpi-card {
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 10px;
+          padding: 14px 16px;
+          display: flex;
+          flex-direction: column;
+          position: relative;
+          overflow: hidden;
+          transition: transform 0.15s ease, box-shadow 0.15s ease;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+
+        .tf-report-kpi-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+        }
+
+        .tf-report-kpi-top {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 6px;
+        }
+
+        .tf-report-kpi-label {
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+        }
+
+        .tf-report-kpi-icon {
+          font-size: 17px;
+          opacity: 0.9;
+        }
+
+        .tf-report-kpi-val {
+          font-size: 26px;
+          font-weight: 800;
+          font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+          line-height: 1.1;
+          margin-bottom: 4px;
+        }
+
+        .tf-report-kpi-sub {
+          font-size: 11px;
+          font-weight: 500;
+        }
+
+        /* Filter Toolbar */
+        .tf-report-filter-bar {
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 10px;
+          padding: 12px 16px;
+          margin-bottom: 16px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 12px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+
+        .tf-report-filter-controls {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+          flex: 1;
+        }
+
+        .tf-report-search-wrap {
+          position: relative;
+          min-width: 250px;
+          flex: 1;
+          max-width: 340px;
+        }
+
+        .tf-report-search-icon {
+          position: absolute;
+          left: 10px;
+          top: 50%;
+          transform: translateY(-50%);
+          font-size: 12px;
+          color: #94a3b8;
+          pointer-events: none;
+        }
+
+        .tf-report-search-input {
+          width: 100%;
+          padding: 7px 10px 7px 30px;
+          border: 1px solid #cbd5e1;
+          border-radius: 6px;
+          font-size: 12px;
+          color: #0f172a;
+          background: #f8fafc;
+          outline: none;
+          box-sizing: border-box;
+          transition: all 0.15s ease;
+        }
+
+        .tf-report-search-input:focus {
+          background: #ffffff;
+          border-color: #2563eb;
+          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+        }
+
+        .tf-report-select {
+          padding: 7px 12px;
+          font-size: 11.5px;
+          color: #334155;
+          font-weight: 600;
+          border: 1px solid #cbd5e1;
+          border-radius: 6px;
+          background: #ffffff;
+          outline: none;
+          cursor: pointer;
+          transition: border-color 0.15s ease;
+        }
+
+        .tf-report-select:focus {
+          border-color: #2563eb;
+        }
+
+        /* Candidate Cell in Submissions Table */
+        .tf-cand-cell {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .tf-cand-avatar {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          color: #ffffff;
+          font-size: 11.5px;
+          font-weight: 800;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+        }
+
+        .tf-cand-info {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5px;
+        }
+
+        .tf-cand-name {
+          font-size: 12px;
+          font-weight: 700;
+          color: #0f172a;
+          cursor: pointer;
+          transition: color 0.12s ease;
+        }
+
+        .tf-cand-name:hover {
+          color: #2563eb;
+          text-decoration: underline;
+        }
+
+        .tf-cand-id-tag {
+          font-size: 10px;
+          color: #94a3b8;
+          font-weight: 600;
+        }
+
+        .tf-btn-action-viewreq {
+          background: #eff6ff;
+          border: 1px solid #bfdbfe;
+          color: #2563eb;
+          padding: 4px 10px;
+          font-size: 11px;
+          font-weight: 700;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          white-space: nowrap;
+        }
+
+        .tf-btn-action-viewreq:hover {
+          background: #2563eb;
+          color: #ffffff;
+          border-color: #2563eb;
+        }
+
+        .tf-btn-export-csv {
+          background: #10b981;
+          color: #ffffff;
+          border: none;
+          padding: 7px 16px;
+          border-radius: 6px;
+          font-size: 12px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: background 0.15s ease;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          box-shadow: 0 1px 3px rgba(16, 185, 129, 0.25);
+        }
+
+        .tf-btn-export-csv:hover {
+          background: #059669;
+        }
 `}</style>
 
       <div style={{ background: '#f1f5f9', minHeight: '92vh', paddingBottom: '30px', fontFamily: 'Arial, sans-serif' }}>
@@ -4146,309 +4403,536 @@ We are currently reviewing candidate profiles and scheduling immediate interview
           )}
 
           {/* ─────────────────────────────────────────────────────────────
-              TAB 4: REPORTS & ACTIVITY TRACKING PANEL
+              TAB 4: REPORTS & ACTIVITY TRACKING PANEL (THEFRONT UI/UX)
               ───────────────────────────────────────────────────────────── */}
           {activeMainTab === 'reports' && viewMode === 'portal' && (
             <div>
               {/* Breadcrumbs */}
-              <div style={{ fontSize: '11px', color: '#1e3a8a', fontWeight: 'bold', marginBottom: '8px' }}>
-                You are here: <span style={{ color: '#0066cc', cursor: 'pointer' }} onClick={() => setActiveMainTab('requisitions')}>Home</span> &gt; Reports &gt; {isEmployee ? 'My Submissions & Activity Report' : 'Recruitment & Performance Reports'}
+              <div className="tf-portal-breadcrumbs" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: '#64748b', marginBottom: '14px', fontWeight: '500' }}>
+                <span style={{ color: '#2563eb', cursor: 'pointer', fontWeight: '600' }} onClick={() => setActiveMainTab('requisitions')}>SmartWorks Hub</span>
+                <span>/</span>
+                <span style={{ color: '#0f172a', fontWeight: '700' }}>{isEmployee ? 'My Submissions & Activity Report' : 'Recruitment & Performance Reports'}</span>
               </div>
 
               {/* Header Card */}
-              <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '16px 20px', marginBottom: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #ea580c', paddingBottom: '8px', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+              <div className="tf-portal-card" style={{ marginBottom: '16px', background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', background: '#fafbfd', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
                   <div>
-                    <h2 style={{ margin: 0, fontSize: '16px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                      {isEmployee ? `📊 My Submission & Activity Report — ${userName}` : `📊 SmartWorks Recruitment & Activity Reports`}
-                    </h2>
-                    <p style={{ margin: '3px 0 0', fontSize: '11.5px', color: '#64748b' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <h2 style={{ margin: 0, fontSize: '16px', color: '#0f172a', fontWeight: '800', letterSpacing: '-0.01em', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                        {isEmployee ? `📊 My Submission & Activity Report — ${userName}` : `📊 SmartWorks Recruitment & Activity Reports`}
+                      </h2>
+                      <span className="tf-live-telemetry-badge">
+                        <span className="tf-telemetry-dot" /> LIVE SYNC ACTIVE
+                      </span>
+                    </div>
+                    <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#64748b' }}>
                       {isEmployee
                         ? 'Real-time tracking of all candidates you sourced, their submission status across assigned requisitions, interviews, and recruiter reviews.'
                         : 'Comprehensive analytics on team sourcing velocity, candidate pipeline conversions, client submissions, and offers.'}
                     </p>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const headers = ['Candidate ID', 'Candidate Name', 'Requisition ID', 'Position Title', 'Customer/Client', 'Submitted Date', 'Status', 'Rate', 'Submitted By']
-                      const rows = filteredSubmissions.map(s => [
-                        s.id,
-                        `"${s.name}"`,
-                        s.jobReqId,
-                        `"${s.jobTitle}"`,
-                        `"${s.customer}"`,
-                        `"${s.assignedOn || s.lastChangedOn || 'Recent'}"`,
-                        `"${s.status}"`,
-                        `"${s.payRate || 'N/A'}"`,
-                        `"${s.assignedBy || s.recruiter || userName}"`
-                      ])
-                      const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n')
-                      const encodedUri = encodeURI(csvContent)
-                      const link = document.createElement('a')
-                      link.setAttribute('href', encodedUri)
-                      link.setAttribute('download', `SmartHire_Report_${userName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.csv`)
-                      document.body.appendChild(link)
-                      link.click()
-                      document.body.removeChild(link)
-                    }}
-                    style={{
-                      background: '#16a34a',
-                      color: '#ffffff',
-                      border: 'none',
-                      padding: '7px 18px',
-                      fontSize: '12px',
-                      fontWeight: 'bold',
-                      borderRadius: '3px',
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      boxShadow: '0 1px 3px rgba(22, 163, 74, 0.3)'
-                    }}
-                  >
-                    📥 Export Report (CSV)
-                  </button>
-                </div>
-
-                {/* 6 Key Performance Metric Cards */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px', marginBottom: '16px' }}>
-                  <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '4px', padding: '12px 14px' }}>
-                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#1d4ed8' }}>SOURCED CANDIDATES</div>
-                    <div style={{ fontSize: '22px', fontWeight: '800', color: '#1e3a8a', marginTop: '2px' }}>
-                      {reportMetrics.totalSourced}
-                    </div>
-                    <div style={{ fontSize: '10.5px', color: '#60a5fa', marginTop: '2px' }}>In your private pool</div>
-                  </div>
-
-                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '12px 14px' }}>
-                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>TOTAL SUBMISSIONS</div>
-                    <div style={{ fontSize: '22px', fontWeight: '800', color: '#0f172a', marginTop: '2px' }}>
-                      {reportMetrics.totalSubmissions}
-                    </div>
-                    <div style={{ fontSize: '10.5px', color: '#94a3b8', marginTop: '2px' }}>Across assigned reqs</div>
-                  </div>
-
-                  <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '4px', padding: '12px 14px' }}>
-                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#b45309' }}>UNDER REVIEW</div>
-                    <div style={{ fontSize: '22px', fontWeight: '800', color: '#78350f', marginTop: '2px' }}>
-                      {reportMetrics.inReview}
-                    </div>
-                    <div style={{ fontSize: '10.5px', color: '#f59e0b', marginTop: '2px' }}>Lead/Manager screening</div>
-                  </div>
-
-                  <div style={{ background: '#e0f2fe', border: '1px solid #bae6fd', borderRadius: '4px', padding: '12px 14px' }}>
-                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#0369a1' }}>CLIENT INTERVIEWS</div>
-                    <div style={{ fontSize: '22px', fontWeight: '800', color: '#0c4a6e', marginTop: '2px' }}>
-                      {reportMetrics.interviews}
-                    </div>
-                    <div style={{ fontSize: '10.5px', color: '#38bdf8', marginTop: '2px' }}>Shortlisted for client</div>
-                  </div>
-
-                  <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '4px', padding: '12px 14px' }}>
-                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#047857' }}>SELECTED / HIRED</div>
-                    <div style={{ fontSize: '22px', fontWeight: '800', color: '#065f46', marginTop: '2px' }}>
-                      {reportMetrics.selected}
-                    </div>
-                    <div style={{ fontSize: '10.5px', color: '#34d399', marginTop: '2px' }}>Successful placements</div>
-                  </div>
-
-                  <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '4px', padding: '12px 14px' }}>
-                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#b91c1c' }}>REJECTED</div>
-                    <div style={{ fontSize: '22px', fontWeight: '800', color: '#991b1b', marginTop: '2px' }}>
-                      {reportMetrics.rejected}
-                    </div>
-                    <div style={{ fontSize: '10.5px', color: '#f87171', marginTop: '2px' }}>Not selected</div>
-                  </div>
-                </div>
-
-                {/* Filter and Search Bar */}
-                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '10px 14px', borderRadius: '4px', marginBottom: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#1e3a8a' }}>Filter Activity:</span>
-                    <input
-                      type="text"
-                      placeholder="Search Candidate, Requisition, Client..."
-                      value={reportSearchQuery}
-                      onChange={e => setReportSearchQuery(e.target.value)}
-                      style={{ padding: '4px 8px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '2px', width: '220px' }}
-                    />
-
-                    <select
-                      value={reportStatusFilter}
-                      onChange={e => setReportStatusFilter(e.target.value)}
-                      style={{ padding: '4px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '2px' }}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const headers = ['Candidate ID', 'Candidate Name', 'Requisition ID', 'Position Title', 'Customer/Client', 'Submitted Date', 'Status', 'Rate', 'Submitted By']
+                        const rows = filteredSubmissions.map(s => [
+                          s.id,
+                          `"${s.name}"`,
+                          s.jobReqId,
+                          `"${s.jobTitle}"`,
+                          `"${s.customer}"`,
+                          `"${s.assignedOn || s.lastChangedOn || 'Recent'}"`,
+                          `"${s.status}"`,
+                          `"${s.payRate || 'N/A'}"`,
+                          `"${s.assignedBy || s.recruiter || userName}"`
+                        ])
+                        const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n')
+                        const encodedUri = encodeURI(csvContent)
+                        const link = document.createElement('a')
+                        link.setAttribute('href', encodedUri)
+                        link.setAttribute('download', `SmartHire_Report_${userName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.csv`)
+                        document.body.appendChild(link)
+                        link.click()
+                        document.body.removeChild(link)
+                      }}
+                      className="tf-btn-export-csv"
+                      title="Download Full Report in CSV Format"
                     >
-                      <option value="All">All Stages / Statuses</option>
-                      <option value="Submitted">Submitted (Under Review)</option>
-                      <option value="Interview">Client Interview</option>
-                      <option value="Selected">Selected / Hired</option>
-                      <option value="Rejected">Rejected</option>
-                    </select>
-
-                    <select
-                      value={reportJobFilter}
-                      onChange={e => setReportJobFilter(e.target.value)}
-                      style={{ padding: '4px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '2px', maxWidth: '200px' }}
-                    >
-                      <option value="All">All Assigned Positions</option>
-                      {filteredJobs.map(j => {
-                        const cId = String(j.id || '').replace('J-', '')
-                        return (
-                          <option key={j.id} value={cId}>
-                            Req #{cId} - {j.title.slice(0, 25)}...
-                          </option>
-                        )
-                      })}
-                    </select>
+                      <span>📥 Export CSV</span>
+                    </button>
                   </div>
-
-                  <span style={{ fontSize: '11.5px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                    Showing <span style={{ color: '#ea580c' }}>{filteredSubmissions.length}</span> submission record(s)
-                  </span>
                 </div>
 
-                {/* Submissions Activity Table */}
-                <div style={{ overflowX: 'auto', border: '1px solid #cbd5e1', borderRadius: '3px' }}>
-                  <table className="coolworks-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', background: '#ffffff', fontFamily: 'Arial, Helvetica, sans-serif' }}>
-                    <thead>
-                      <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
-                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Candidate Name</th>
-                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Requisition # & Title</th>
-                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Customer / Client</th>
-                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Proposed Pay Rate</th>
-                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Submitted Date</th>
-                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', textAlign: 'center', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Current Submission Status</th>
-                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Feedback / Status Notes</th>
-                        <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', textAlign: 'center', fontSize: '11px' }}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredSubmissions.length === 0 ? (
-                        <tr>
-                          <td colSpan="8" style={{ padding: '36px', textAlign: 'center', color: '#64748b' }}>
-                            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#0f172a', marginBottom: '4px' }}>
-                              📝 No Submissions Found
-                            </div>
-                            <div style={{ fontSize: '11.5px', color: '#64748b', marginBottom: '12px' }}>
-                              {isEmployee
-                                ? 'You have not submitted candidates to any requisition yet. Go to "My Candidates" or "My Requisitions" to submit candidates.'
-                                : 'No submissions found matching your filter criteria.'}
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => setActiveMainTab('candidates')}
-                              style={{ background: '#ea580c', color: '#ffffff', border: 'none', padding: '6px 16px', fontSize: '12px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer' }}
-                            >
-                              + Go to My Candidates Pool
-                            </button>
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredSubmissions.map((sub, idx) => {
-                          const statusLower = (sub.status || '').toLowerCase()
-                          let badgeBg = '#eff6ff'
-                          let badgeColor = '#1d4ed8'
-                          let badgeBorder = '#bfdbfe'
+                <div style={{ padding: '20px' }}>
+                  {/* 6 Key Performance Metric Cards */}
+                  <div className="tf-report-kpi-grid">
+                    {/* 1. Sourced */}
+                    <div className="tf-report-kpi-card" style={{ borderLeft: '4px solid #2563eb', background: 'linear-gradient(180deg, #f8fafc 0%, #eff6ff 100%)' }}>
+                      <div className="tf-report-kpi-top">
+                        <span className="tf-report-kpi-label" style={{ color: '#1d4ed8' }}>SOURCED TALENT</span>
+                        <span className="tf-report-kpi-icon">🎯</span>
+                      </div>
+                      <div className="tf-report-kpi-val" style={{ color: '#1e3a8a' }}>
+                        {reportMetrics.totalSourced}
+                      </div>
+                      <div className="tf-report-kpi-sub" style={{ color: '#3b82f6' }}>In your private pool</div>
+                    </div>
 
-                          if (statusLower.includes('select') || statusLower.includes('offer') || statusLower.includes('placed')) {
-                            badgeBg = '#ecfdf5'
-                            badgeColor = '#065f46'
-                            badgeBorder = '#a7f3d0'
-                          } else if (statusLower.includes('interview')) {
-                            badgeBg = '#e0f2fe'
-                            badgeColor = '#0369a1'
-                            badgeBorder = '#bae6fd'
-                          } else if (statusLower.includes('reject')) {
-                            badgeBg = '#fef2f2'
-                            badgeColor = '#991b1b'
-                            badgeBorder = '#fecaca'
-                          } else if (statusLower.includes('submit') || statusLower.includes('manager')) {
-                            badgeBg = '#fef3c7'
-                            badgeColor = '#92400e'
-                            badgeBorder = '#fde68a'
-                          }
+                    {/* 2. Submissions */}
+                    <div className="tf-report-kpi-card" style={{ borderLeft: '4px solid #475569', background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)' }}>
+                      <div className="tf-report-kpi-top">
+                        <span className="tf-report-kpi-label" style={{ color: '#475569' }}>TOTAL SUBMISSIONS</span>
+                        <span className="tf-report-kpi-icon">📑</span>
+                      </div>
+                      <div className="tf-report-kpi-val" style={{ color: '#0f172a' }}>
+                        {reportMetrics.totalSubmissions}
+                      </div>
+                      <div className="tf-report-kpi-sub" style={{ color: '#64748b' }}>Across assigned reqs</div>
+                    </div>
 
+                    {/* 3. Under Review */}
+                    <div className="tf-report-kpi-card" style={{ borderLeft: '4px solid #d97706', background: 'linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%)' }}>
+                      <div className="tf-report-kpi-top">
+                        <span className="tf-report-kpi-label" style={{ color: '#b45309' }}>UNDER REVIEW</span>
+                        <span className="tf-report-kpi-icon">⏳</span>
+                      </div>
+                      <div className="tf-report-kpi-val" style={{ color: '#78350f' }}>
+                        {reportMetrics.inReview}
+                      </div>
+                      <div className="tf-report-kpi-sub" style={{ color: '#d97706' }}>Lead / Manager screening</div>
+                    </div>
+
+                    {/* 4. Interviews */}
+                    <div className="tf-report-kpi-card" style={{ borderLeft: '4px solid #0284c7', background: 'linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 100%)' }}>
+                      <div className="tf-report-kpi-top">
+                        <span className="tf-report-kpi-label" style={{ color: '#0369a1' }}>CLIENT INTERVIEWS</span>
+                        <span className="tf-report-kpi-icon">🎙️</span>
+                      </div>
+                      <div className="tf-report-kpi-val" style={{ color: '#0c4a6e' }}>
+                        {reportMetrics.interviews}
+                      </div>
+                      <div className="tf-report-kpi-sub" style={{ color: '#0284c7' }}>Shortlisted for client</div>
+                    </div>
+
+                    {/* 5. Selected / Hired */}
+                    <div className="tf-report-kpi-card" style={{ borderLeft: '4px solid #059669', background: 'linear-gradient(180deg, #f0fdf4 0%, #ecfdf5 100%)' }}>
+                      <div className="tf-report-kpi-top">
+                        <span className="tf-report-kpi-label" style={{ color: '#047857' }}>SELECTED / HIRED</span>
+                        <span className="tf-report-kpi-icon">🏆</span>
+                      </div>
+                      <div className="tf-report-kpi-val" style={{ color: '#065f46' }}>
+                        {reportMetrics.selected}
+                      </div>
+                      <div className="tf-report-kpi-sub" style={{ color: '#059669' }}>Successful placements</div>
+                    </div>
+
+                    {/* 6. Rejected */}
+                    <div className="tf-report-kpi-card" style={{ borderLeft: '4px solid #dc2626', background: 'linear-gradient(180deg, #fef2f2 0%, #fee2e2 100%)' }}>
+                      <div className="tf-report-kpi-top">
+                        <span className="tf-report-kpi-label" style={{ color: '#b91c1c' }}>REJECTED</span>
+                        <span className="tf-report-kpi-icon">🚫</span>
+                      </div>
+                      <div className="tf-report-kpi-val" style={{ color: '#991b1b' }}>
+                        {reportMetrics.rejected}
+                      </div>
+                      <div className="tf-report-kpi-sub" style={{ color: '#dc2626' }}>Not selected / closed</div>
+                    </div>
+                  </div>
+
+                  {/* Filter and Search Bar */}
+                  <div className="tf-report-filter-bar">
+                    <div className="tf-report-filter-controls">
+                      {/* Search */}
+                      <div className="tf-report-search-wrap">
+                        <span className="tf-report-search-icon">🔍</span>
+                        <input
+                          type="text"
+                          placeholder="Search candidate, req ID, client, job..."
+                          value={reportSearchQuery}
+                          onChange={e => {
+                            setReportSearchQuery(e.target.value)
+                            setReportCurrentPage(1)
+                          }}
+                          className="tf-report-search-input"
+                        />
+                      </div>
+
+                      {/* Status Filter */}
+                      <select
+                        value={reportStatusFilter}
+                        onChange={e => {
+                          setReportStatusFilter(e.target.value)
+                          setReportCurrentPage(1)
+                        }}
+                        className="tf-report-select"
+                      >
+                        <option value="All">All Stages / Statuses</option>
+                        <option value="Submitted">Submitted (Under Review)</option>
+                        <option value="Interview">Client Interview</option>
+                        <option value="Selected">Selected / Hired</option>
+                        <option value="Rejected">Rejected</option>
+                      </select>
+
+                      {/* Position Filter */}
+                      <select
+                        value={reportJobFilter}
+                        onChange={e => {
+                          setReportJobFilter(e.target.value)
+                          setReportCurrentPage(1)
+                        }}
+                        className="tf-report-select"
+                        style={{ maxWidth: '240px' }}
+                      >
+                        <option value="All">All Assigned Positions</option>
+                        {filteredJobs.map(j => {
+                          const cId = String(j.id || '').replace('J-', '')
                           return (
-                            <tr key={sub.key || idx} style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
-                              <td style={{ padding: '5px 8px' }}>
-                                <span style={{ color: '#0033cc', cursor: 'pointer', textDecoration: 'none' }}
-                                  onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
-                                  onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
-                                  onClick={() => {
-                                    const c = candidates.find(item => item.id === sub.id || item.name === sub.name) || sub
-                                    handleSelectExistingCandidate(c)
-                                  }}
-                                >
-                                  {sub.name}
-                                </span>
-                              </td>
-                              <td style={{ padding: '5px 8px' }}>
-                                <div>
-                                  <span style={{ color: '#0033cc', cursor: 'pointer', textDecoration: 'none' }}
-                                    onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
-                                    onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
-                                    onClick={() => {
-                                      const matchingJob = jobs.find(j => String(j.id).includes(sub.jobReqId))
-                                      if (matchingJob) handleSelectJob(matchingJob)
-                                    }}
-                                  >
-                                    #{sub.jobReqId}
-                                  </span>
-                                  <span style={{ marginLeft: '6px', color: '#000000' }}>{sub.jobTitle}</span>
-                                </div>
-                              </td>
-                              <td style={{ padding: '5px 8px', color: '#000000' }}>
-                                {sub.customer}
-                              </td>
-                              <td style={{ padding: '5px 8px', color: '#000000' }}>
-                                {sub.payRate || '$75/hr'} ({sub.payRateType || sub.rateType || 'C2C'})
-                              </td>
-                              <td style={{ padding: '5px 8px', color: '#000000' }}>
-                                {sub.assignedOn || sub.lastChangedOn || 'Today'}
-                              </td>
-                              <td style={{ padding: '5px 8px', textAlign: 'center' }}>
-                                <span style={{
-                                  display: 'inline-block',
-                                  padding: '2px 8px',
-                                  borderRadius: '2px',
-                                  fontSize: '10.5px',
-                                  fontWeight: 'bold',
-                                  background: badgeBg,
-                                  color: badgeColor,
-                                  border: `1px solid ${badgeBorder}`
-                                }}>
-                                  {sub.status || 'Int-SubmittedToManager'}
-                                </span>
-                              </td>
-                              <td style={{ padding: '5px 8px', color: '#000000', fontSize: '10.5px', maxWidth: '220px' }}>
-                                {sub.statusComments || 'Direct employee submission'}
-                              </td>
-                              <td style={{ padding: '5px 8px', textAlign: 'center' }}>
+                            <option key={j.id} value={cId}>
+                              Req #{cId} - {j.title.slice(0, 24)}...
+                            </option>
+                          )
+                        })}
+                      </select>
+
+                      {/* Reset Filters */}
+                      {(reportSearchQuery || reportStatusFilter !== 'All' || reportJobFilter !== 'All') && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setReportSearchQuery('')
+                            setReportStatusFilter('All')
+                            setReportJobFilter('All')
+                            setReportCurrentPage(1)
+                          }}
+                          style={{
+                            background: '#f1f5f9',
+                            border: '1px solid #cbd5e1',
+                            color: '#475569',
+                            fontSize: '11px',
+                            fontWeight: '700',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          ✕ Reset
+                        </button>
+                      )}
+                    </div>
+
+                    <span className="tf-records-counter-pill">
+                      Showing {filteredSubmissions.length === 0 ? 0 : (reportCurrentPage - 1) * reportPageSize + 1} - {Math.min(reportCurrentPage * reportPageSize, filteredSubmissions.length)} of {filteredSubmissions.length} record(s)
+                    </span>
+                  </div>
+
+                  {/* Submissions Activity Table */}
+                  <div className="tf-table-scroll-wrap" style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
+                    <table className="tf-portal-table">
+                      <thead>
+                        <tr>
+                          <th style={{ minWidth: '190px' }}>Candidate Name</th>
+                          <th style={{ minWidth: '240px' }}>Requisition # & Title</th>
+                          <th style={{ minWidth: '140px' }}>Customer / Client</th>
+                          <th style={{ minWidth: '130px' }}>Proposed Pay Rate</th>
+                          <th style={{ minWidth: '120px' }}>Submitted Date</th>
+                          <th style={{ minWidth: '160px' }} className="text-center">Current Status</th>
+                          <th style={{ minWidth: '200px' }}>Feedback & Notes</th>
+                          <th style={{ minWidth: '130px' }}>Submitted By</th>
+                          <th style={{ minWidth: '110px' }} className="text-center">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paginatedSubmissions.length === 0 ? (
+                          <tr>
+                            <td colSpan="9" className="tf-empty-table-cell">
+                              <div className="tf-empty-box">
+                                <span className="tf-empty-icon">📝</span>
+                                <strong>No Submissions Found</strong>
+                                <p>
+                                  {isEmployee
+                                    ? 'You have not submitted candidates to any requisition yet. Go to "My Candidates" or "My Requisitions" to submit candidates.'
+                                    : 'No submissions found matching your active filter criteria.'}
+                                </p>
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    const matchingJob = jobs.find(j => String(j.id).includes(sub.jobReqId))
-                                    if (matchingJob) {
-                                      handleSelectJob(matchingJob)
-                                    } else {
-                                      setActiveMainTab('requisitions')
-                                    }
+                                  onClick={() => setActiveMainTab('candidates')}
+                                  style={{
+                                    marginTop: '10px',
+                                    background: '#2563eb',
+                                    color: '#ffffff',
+                                    border: 'none',
+                                    padding: '7px 18px',
+                                    fontSize: '12px',
+                                    fontWeight: 'bold',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer'
                                   }}
-                                  style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '2px 8px', fontSize: '10.5px', fontWeight: 'bold', color: '#0033cc', cursor: 'pointer', borderRadius: '2px' }}
                                 >
-                                  View Req &gt;&gt;
+                                  + Go to My Candidates Pool
                                 </button>
-                              </td>
-                            </tr>
-                          )
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        ) : (
+                          paginatedSubmissions.map((sub, idx) => {
+                            const statusLower = (sub.status || '').toLowerCase()
+                            let statusDotColor = '#2563eb'
+                            let statusBg = '#eff6ff'
+                            let statusColor = '#1d4ed8'
+                            let statusBorder = '#bfdbfe'
 
+                            if (statusLower.includes('select') || statusLower.includes('offer') || statusLower.includes('placed')) {
+                              statusDotColor = '#059669'
+                              statusBg = '#ecfdf5'
+                              statusColor = '#065f46'
+                              statusBorder = '#a7f3d0'
+                            } else if (statusLower.includes('interview')) {
+                              statusDotColor = '#0284c7'
+                              statusBg = '#e0f2fe'
+                              statusColor = '#0369a1'
+                              statusBorder = '#bae6fd'
+                            } else if (statusLower.includes('reject')) {
+                              statusDotColor = '#dc2626'
+                              statusBg = '#fee2e2'
+                              statusColor = '#991b1b'
+                              statusBorder = '#fecaca'
+                            } else if (statusLower.includes('submit') || statusLower.includes('manager')) {
+                              statusDotColor = '#d97706'
+                              statusBg = '#fef3c7'
+                              statusColor = '#92400e'
+                              statusBorder = '#fde68a'
+                            }
+
+                            const candidateObj = candidates.find(item => item.id === sub.id || item.name === sub.name) || sub
+                            const matchingJob = jobs.find(j => String(j.id || j.reqId || '').replace(/^J-/, '') === String(sub.jobReqId || '').replace(/^J-/, ''))
+
+                            return (
+                              <tr key={sub.key || sub.id || idx} className="tf-portal-trow">
+                                {/* 1. Candidate Name with Avatar */}
+                                <td className="td-cell">
+                                  <div className="tf-cand-cell">
+                                    <div className="tf-cand-avatar" style={{ background: getAvatarGradient(sub.name) }}>
+                                      {getCandidateInitials(sub.name)}
+                                    </div>
+                                    <div className="tf-cand-info">
+                                      <span
+                                        className="tf-cand-name"
+                                        title={`Click to view candidate: ${sub.name}`}
+                                        onClick={() => handleSelectExistingCandidate(candidateObj)}
+                                      >
+                                        {sub.name}
+                                      </span>
+                                      <span className="tf-cand-id-tag">
+                                        {sub.id ? `#${String(sub.id).slice(-6)}` : 'Sourced'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </td>
+
+                                {/* 2. Requisition # & Position Title */}
+                                <td className="td-cell">
+                                  <div className="tf-pos-wrap">
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                      <span
+                                        className="tf-req-pill"
+                                        onClick={() => {
+                                          if (matchingJob) handleSelectJob(matchingJob)
+                                          else setActiveMainTab('requisitions')
+                                        }}
+                                        title="Click to view requisition details"
+                                      >
+                                        #{String(sub.jobReqId || '').replace(/^J-/, '')}
+                                      </span>
+                                    </div>
+                                    <span
+                                      className="tf-pos-title"
+                                      style={{ marginTop: '2px' }}
+                                      onClick={() => {
+                                        if (matchingJob) handleSelectJob(matchingJob)
+                                        else setActiveMainTab('requisitions')
+                                      }}
+                                      title={sub.jobTitle}
+                                    >
+                                      {sub.jobTitle || 'Position Details'}
+                                    </span>
+                                  </div>
+                                </td>
+
+                                {/* 3. Customer / Client */}
+                                <td className="td-cell">
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                    <span style={{ fontSize: '12px' }}>🏢</span>
+                                    <span className="tf-customer-name">{sub.customer || 'Enterprise Client'}</span>
+                                  </div>
+                                </td>
+
+                                {/* 4. Pay Rate */}
+                                <td className="td-cell">
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                    <span className="tf-rate-bold">{sub.payRate || '$75/hr'}</span>
+                                    <span className="tf-badge-type" style={{ fontSize: '9.5px', padding: '1px 5px' }}>
+                                      {sub.payRateType || sub.rateType || 'C2C'}
+                                    </span>
+                                  </div>
+                                </td>
+
+                                {/* 5. Submission Date */}
+                                <td className="td-cell">
+                                  <span className="tf-date-sub" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                    <span>📅</span> {sub.assignedOn || sub.lastChangedOn || 'Today'}
+                                  </span>
+                                </td>
+
+                                {/* 6. Current Submission Status */}
+                                <td className="td-cell text-center">
+                                  <span
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '5px',
+                                      padding: '3px 9px',
+                                      borderRadius: '9999px',
+                                      fontSize: '11px',
+                                      fontWeight: '700',
+                                      background: statusBg,
+                                      color: statusColor,
+                                      border: `1px solid ${statusBorder}`
+                                    }}
+                                  >
+                                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: statusDotColor }} />
+                                    {sub.status || 'Int-SubmittedToManager'}
+                                  </span>
+                                </td>
+
+                                {/* 7. Feedback & Status Notes */}
+                                <td className="td-cell">
+                                  <span
+                                    style={{
+                                      fontSize: '11.5px',
+                                      color: '#475569',
+                                      maxWidth: '220px',
+                                      display: 'inline-block',
+                                      whiteSpace: 'nowrap',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis'
+                                    }}
+                                    title={sub.statusComments || 'Direct employee submission'}
+                                  >
+                                    {sub.statusComments || 'Direct employee submission'}
+                                  </span>
+                                </td>
+
+                                {/* 8. Submitted By */}
+                                <td className="td-cell">
+                                  <span className="tf-recruiter-tag">
+                                    👤 {sub.assignedBy || sub.recruiter || userName}
+                                  </span>
+                                </td>
+
+                                {/* 9. Actions */}
+                                <td className="td-cell text-center">
+                                  <button
+                                    type="button"
+                                    className="tf-btn-action-viewreq"
+                                    onClick={() => {
+                                      if (matchingJob) {
+                                        handleSelectJob(matchingJob)
+                                      } else {
+                                        setActiveMainTab('requisitions')
+                                      }
+                                    }}
+                                    title="View Requisition Details"
+                                  >
+                                    View Req →
+                                  </button>
+                                </td>
+                              </tr>
+                            )
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Modern theFront Pagination Bar */}
+                  <div className="tf-portal-pagination-footer" style={{ marginTop: '14px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <div className="tf-pagination-summary">
+                      Showing <strong>{filteredSubmissions.length === 0 ? 0 : (reportCurrentPage - 1) * reportPageSize + 1}</strong> to <strong>{Math.min(reportCurrentPage * reportPageSize, filteredSubmissions.length)}</strong> of <strong>{filteredSubmissions.length}</strong> Submissions
+                    </div>
+
+                    <div className="tf-pagination-buttons-wrap">
+                      {/* Previous Button */}
+                      <button
+                        type="button"
+                        disabled={reportCurrentPage === 1}
+                        onClick={() => setReportCurrentPage(prev => Math.max(1, prev - 1))}
+                        className="tf-page-pill-btn"
+                      >
+                        ← Prev
+                      </button>
+
+                      {/* Page Numbers */}
+                      {Array.from({ length: Math.min(5, totalReportPages) }).map((_, i) => {
+                        const p = i + 1
+                        return (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() => setReportCurrentPage(p)}
+                            className={`tf-page-num-btn ${reportCurrentPage === p ? 'active' : ''}`}
+                          >
+                            {p}
+                          </button>
+                        )
+                      })}
+
+                      {totalReportPages > 5 && (
+                        <>
+                          <span className="tf-page-dots">...</span>
+                          <button
+                            type="button"
+                            onClick={() => setReportCurrentPage(totalReportPages)}
+                            className={`tf-page-num-btn ${reportCurrentPage === totalReportPages ? 'active' : ''}`}
+                          >
+                            {totalReportPages}
+                          </button>
+                        </>
+                      )}
+
+                      {/* Next Button */}
+                      <button
+                        type="button"
+                        disabled={reportCurrentPage >= totalReportPages}
+                        onClick={() => setReportCurrentPage(prev => Math.min(totalReportPages, prev + 1))}
+                        className="tf-page-pill-btn"
+                      >
+                        Next →
+                      </button>
+                    </div>
+
+                    {/* Page Size Dropdown */}
+                    <div className="tf-pagination-pagesize">
+                      <span>Records per page:</span>
+                      <select
+                        value={reportPageSize}
+                        onChange={e => {
+                          setReportPageSize(parseInt(e.target.value))
+                          setReportCurrentPage(1)
+                        }}
+                        className="tf-pagesize-select"
+                      >
+                        <option value={10}>10</option>
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                      </select>
+                    </div>
+                  </div>
+
+                </div>
               </div>
             </div>
           )}

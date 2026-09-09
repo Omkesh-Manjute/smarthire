@@ -218,8 +218,61 @@ export function triggerNativePushNotification(notif) {
   }
 }
 
+// Helper function to calculate relative time ago dynamically
+export const getTimeAgo = (timestamp) => {
+  if (!timestamp) return 'Just now'
+  const diff = Date.now() - new Date(timestamp).getTime()
+  if (isNaN(diff) || diff < 0) return 'Just now'
+  const seconds = Math.floor(diff / 1000)
+  if (seconds < 60) return 'Just now'
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  return `${days}d ago`
+}
+
+// Persistent Known Job Keys helper
+const loadSavedKnownJobKeys = () => {
+  try {
+    const raw = localStorage.getItem('smarthire_known_job_keys')
+    if (raw) {
+      const arr = JSON.parse(raw)
+      if (Array.isArray(arr)) return new Set(arr)
+    }
+  } catch (_) {}
+  return new Set()
+}
+
+const persistKnownJobKeys = (set) => {
+  try {
+    const arr = Array.from(set).slice(-3000)
+    localStorage.setItem('smarthire_known_job_keys', JSON.stringify(arr))
+  } catch (_) {}
+}
+
+// Clean old bulk spam and deduplicate notifications
+const sanitizeNotifications = (rawList) => {
+  if (!Array.isArray(rawList)) return []
+  const seen = new Set()
+  return rawList.filter(n => {
+    if (!n || !n.title) return false
+    // Purge old repeated bulk sync messages
+    if (n.title.includes('276 New Requisitions') || (n.message && n.message.includes('275 more jobs'))) {
+      return false
+    }
+    // Purge duplicate entries
+    const key = `${n.title}|${n.reqId || ''}|${n.message || ''}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
 // Helper function to push real-time notifications anywhere in the app
 export const pushActivityNotification = (notif) => {
+  if (!notif || !notif.title) return
   const reqClean = notif.reqId ? String(notif.reqId).replace(/^J-/, '').trim() : null
 
   let currentList = []
@@ -231,15 +284,26 @@ export const pushActivityNotification = (notif) => {
     }
   } catch (e) {}
 
-  // Debounce recent duplicate notifications for the same requisition within 12 seconds
+  // 1. Strict duplicate suppression: if an identical notification with same reqId exists, ignore
   if (reqClean) {
-    const isRecentDup = currentList.some(n => {
+    const isDupReq = currentList.some(n => {
       const nReqClean = n.reqId ? String(n.reqId).replace(/^J-/, '').trim() : null
-      const timeDiff = Date.now() - new Date(n.timestamp || Date.now()).getTime()
-      return nReqClean === reqClean && timeDiff < 12000
+      return nReqClean === reqClean && n.title === notif.title
     })
-    if (isRecentDup) return
+    if (isDupReq) return
   }
+
+  // 2. Strict content duplicate check: identical title + message
+  const isDupContent = currentList.some(n => n.title === notif.title && n.message === notif.message)
+  if (isDupContent) return
+
+  // 3. Debounce identical title within 60 seconds
+  const isRecentSameTitle = currentList.some(n => {
+    if (n.title !== notif.title) return false
+    const timeDiff = Date.now() - new Date(n.timestamp || Date.now()).getTime()
+    return timeDiff < 60000
+  })
+  if (isRecentSameTitle) return
 
   const newEntry = {
     id: `notif-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -252,7 +316,7 @@ export const pushActivityNotification = (notif) => {
     isRead: false,
     actor: notif.actor || 'System',
     actorRole: notif.actorRole || 'Recruiter',
-    reqId: notif.reqId || null,
+    reqId: reqClean || notif.reqId || null,
     candidateName: notif.candidateName || null,
     candidateId: notif.candidateId || null,
     statusText: notif.statusText || null,
@@ -289,7 +353,9 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
       if (raw) {
         const parsed = JSON.parse(raw)
         if (Array.isArray(parsed)) {
-          return parsed
+          const cleaned = sanitizeNotifications(parsed)
+          localStorage.setItem('smarthire_activity_notifications', JSON.stringify(cleaned))
+          return cleaned
         }
       }
     } catch (e) {}
@@ -356,8 +422,9 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
   const unreadCount = notifications.filter(n => !n.isRead).length
 
   // ─── GLOBAL REAL-TIME NEW REQUISITIONS LISTENER (FIRESTORE & BACKGROUND ENGINE) ───
-  const knownJobKeysRef = useRef(new Set())
-  const initialBaselineDoneRef = useRef(false)
+  const knownJobKeysRef = useRef(loadSavedKnownJobKeys())
+  const firestoreBaselinedRef = useRef(false)
+  const backendJobsBaselinedRef = useRef(false)
 
   useEffect(() => {
     let isMounted = true
@@ -369,8 +436,8 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
         if (!isMounted) return
 
         // On first snapshot, baseline existing jobs so previous database records don't false-alarm
-        if (!initialBaselineDoneRef.current) {
-          initialBaselineDoneRef.current = true
+        if (!firestoreBaselinedRef.current) {
+          firestoreBaselinedRef.current = true
           fsJobs.forEach(j => {
             const k1 = String(j.id || '').trim()
             const k2 = String(j.reqId || '').trim()
@@ -379,6 +446,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
             if (k2) knownJobKeysRef.current.add(k2)
             if (k3) knownJobKeysRef.current.add(k3)
           })
+          persistKnownJobKeys(knownJobKeysRef.current)
           return
         }
 
@@ -396,15 +464,21 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
             if (k1) knownJobKeysRef.current.add(k1)
             if (k2) knownJobKeysRef.current.add(k2)
             if (k3) knownJobKeysRef.current.add(k3)
+            persistKnownJobKeys(knownJobKeysRef.current)
+
+            const cleanId = k2 || k3 || k1
+            const clientName = j.client || j.customer || 'Enterprise Client'
+            const locStr = j.location || 'Remote'
+            const rateStr = j.budget || j.payRate ? `· ${j.budget || j.payRate}` : ''
 
             pushActivityNotification({
-              title: `💼 New Requisition Live!`,
-              message: `${j.title || 'New Position'} (${j.client || 'Enterprise'} · ${j.location || 'Remote'}) is now live in ATS.`,
+              title: `💼 New Requisition: ${j.title || 'New Position'}`,
+              message: `Req #${cleanId} · ${clientName} (${locStr}) ${rateStr} is now open for candidate submissions.`,
               type: 'requisition',
               category: 'team',
               actor: j.postedByName || 'SmartHire ATS',
               actorRole: 'Recruiter',
-              reqId: j.reqId || j.id
+              reqId: cleanId
             })
           }
         })
@@ -424,7 +498,9 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
         const list = Array.isArray(data) ? data : data.jobs || data.data || []
         if (!Array.isArray(list) || list.length === 0) return
 
-        if (!initialBaselineDoneRef.current) {
+        // On first run, baseline all existing backend database records silently
+        if (!backendJobsBaselinedRef.current) {
+          backendJobsBaselinedRef.current = true
           list.forEach(j => {
             const k1 = String(j.id || '').trim()
             const k2 = String(j.reqId || '').trim()
@@ -433,7 +509,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
             if (k2) knownJobKeysRef.current.add(k2)
             if (k3) knownJobKeysRef.current.add(k3)
           })
-          initialBaselineDoneRef.current = true
+          persistKnownJobKeys(knownJobKeysRef.current)
           return
         }
 
@@ -454,17 +530,38 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
         })
 
         if (newlyIngested.length > 0) {
-          pushActivityNotification({
-            title: `💼 ${newlyIngested.length} New Requisition${newlyIngested.length > 1 ? 's' : ''} Synced!`,
-            message: newlyIngested.length === 1
-              ? `${newlyIngested[0].title} (Req #${newlyIngested[0].reqId || newlyIngested[0].id}) is now live.`
-              : `${newlyIngested[0].title} and ${newlyIngested.length - 1} more jobs ingested into portal.`,
-            type: 'requisition',
-            category: 'team',
-            actor: 'Ingestion Engine',
-            actorRole: 'Automation Scraper',
-            reqId: newlyIngested[0].reqId || newlyIngested[0].id
-          })
+          persistKnownJobKeys(knownJobKeysRef.current)
+
+          if (newlyIngested.length <= 3) {
+            newlyIngested.forEach(nj => {
+              const cleanId = String(nj.reqId || nj.id || '').replace(/^J-/, '')
+              const clientName = nj.client || nj.customer || 'Enterprise Client'
+              const locStr = nj.location || 'Remote'
+              const rateStr = nj.budget || nj.payRate ? `· ${nj.budget || nj.payRate}` : ''
+
+              pushActivityNotification({
+                title: `💼 New Requisition: ${nj.title || 'New Position'}`,
+                message: `Req #${cleanId} · ${clientName} (${locStr}) ${rateStr} is now live in portal.`,
+                type: 'requisition',
+                category: 'team',
+                actor: nj.postedByName || 'SmartHire Ingestion',
+                actorRole: 'Automation Scraper',
+                reqId: cleanId
+              })
+            })
+          } else {
+            const sampleTitles = newlyIngested.slice(0, 2).map(j => j.title).join(', ')
+            const firstId = String(newlyIngested[0].reqId || newlyIngested[0].id || '').replace(/^J-/, '')
+            pushActivityNotification({
+              title: `💼 ${newlyIngested.length} New Requisitions Ingested!`,
+              message: `${sampleTitles} and ${newlyIngested.length - 2} more positions now open for candidate submissions.`,
+              type: 'requisition',
+              category: 'team',
+              actor: 'Ingestion Engine',
+              actorRole: 'Automation Scraper',
+              reqId: firstId
+            })
+          }
         }
       } catch (_) {}
     }
@@ -970,7 +1067,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
                           {item.title}
                         </span>
                         <span style={{ fontSize: '9.5px', color: '#94a3b8', marginLeft: '6px' }}>
-                          {item.timeAgo}
+                          {getTimeAgo(item.timestamp) || item.timeAgo}
                         </span>
                       </div>
 
@@ -1006,7 +1103,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
                             borderRadius: '3px',
                             fontWeight: 'bold'
                           }}>
-                            Req #{item.reqId}
+                            Req #{String(item.reqId).replace(/^J-/, '')}
                           </span>
                         )}
                         {!item.isRead && (
