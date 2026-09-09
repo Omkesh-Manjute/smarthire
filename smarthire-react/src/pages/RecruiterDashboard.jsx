@@ -482,21 +482,42 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       const token = localStorage.getItem('smarthire_token') || ''
       const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
       const res = await fetch('/api/jobs/scrape', { method: 'POST', headers })
+      const scrapeData = await res.json().catch(() => ({}))
       const jobsRes = await fetch('/api/jobs', { headers })
-      const data = await jobsRes.json()
+      const data = await jobsRes.json().catch(() => ({}))
       const list = Array.isArray(data) ? data : data.jobs || data.data || []
       if (list.length > 0) {
         setJobs(list)
-        setSaveToastMessage(`🎉 Successfully synced ${list.length} live job requisitions into your portal!`)
+        const importedCount = scrapeData.imported ?? scrapeData.jobs?.length ?? 0
+        if (importedCount > 0) {
+          setSaveToastMessage(`🎉 Successfully synced ${importedCount} new live requisitions into your portal!`)
+        } else {
+          setSaveToastMessage(`🎉 Requisitions up to date! (${list.length} total active)`)
+        }
         setTimeout(() => setSaveToastMessage(null), 4000)
-        pushActivityNotification({
-          title: `💼 ${list.length} Requisitions Synced!`,
-          message: `Live job requisitions refreshed from JobsInHand.`,
-          type: 'requisition',
-          category: 'team',
-          actor: 'Ingestion Engine',
-          actorRole: 'Automation Scraper'
-        })
+
+        // Announce each newly imported position ("jo aya vo batao")
+        if (Array.isArray(scrapeData.jobs) && scrapeData.jobs.length > 0) {
+          scrapeData.jobs.slice(0, 5).forEach(job => {
+            pushActivityNotification({
+              title: `💼 New Requisition: ${job.title}`,
+              message: `Req #${job.reqId || job.id} · ${job.client || 'Client'} (${job.location || 'Location'}) · ${job.budget || '$75/hr'} is now open for candidate submissions.`,
+              type: 'requisition',
+              category: 'team',
+              actor: 'JobsInHand Scraper',
+              actorRole: 'Live Ingestion'
+            })
+          })
+        } else if (importedCount > 0) {
+          pushActivityNotification({
+            title: `💼 ${importedCount} New Requisitions Synced!`,
+            message: `Latest live job requisitions imported from JobsInHand.`,
+            type: 'requisition',
+            category: 'team',
+            actor: 'JobsInHand Scraper',
+            actorRole: 'Live Ingestion'
+          })
+        }
       }
     } catch (e) {
       console.error(e)

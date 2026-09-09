@@ -67,16 +67,26 @@ function isToday(dateStr) {
   for (const fmt of formats) {
     if (s.includes(fmt.toLowerCase())) return true;
   }
+  const months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  const m1 = s.match(/(\d{1,2})-([a-z]{3})-(\d{4})/);
+  if (m1) {
+    const day = parseInt(m1[1], 10);
+    const monthIdx = months.indexOf(m1[2]);
+    const year = parseInt(m1[3], 10);
+    if (monthIdx !== -1) {
+      const now = new Date();
+      const jobDate = new Date(Date.UTC(year, monthIdx, day, 12, 0, 0));
+      const diffHours = Math.abs(now.getTime() - jobDate.getTime()) / (1000 * 60 * 60);
+      return diffHours <= 60;
+    }
+  }
   // Try parsing as a real date
   try {
     const parsed = new Date(dateStr);
     if (!isNaN(parsed.getTime())) {
-      const today = new Date();
-      return (
-        parsed.getDate() === today.getDate() &&
-        parsed.getMonth() === today.getMonth() &&
-        parsed.getFullYear() === today.getFullYear()
-      );
+      const now = new Date();
+      const diffHours = Math.abs(now.getTime() - parsed.getTime()) / (1000 * 60 * 60);
+      return diffHours <= 60;
     }
   } catch (_) {}
   return false;
@@ -407,16 +417,18 @@ function parseJobDetailPage(html) {
  */
 function isBlockedResponse(html, statusCode) {
   if (statusCode === 403 || statusCode === 429 || statusCode === 503) return true;
-  if (!html) return true;
+  if (!html || html.length < 500) return true;
+  // If HTML contains the actual ASP.NET form or table from JobsInHand, it is 100% valid
+  if (html.includes('ctl00_Contentpage1') || html.includes('search_jobs') || html.includes('gv_jobs') || html.includes('lbl_descr')) {
+    return false;
+  }
   const lower = html.toLowerCase();
   return (
-    lower.includes('captcha') ||
-    lower.includes('access denied') ||
-    lower.includes('cloudflare') ||
-    lower.includes('rate limit') ||
-    lower.includes('robot') ||
-    lower.includes('are you human') ||
-    lower.length < 500  // suspiciously short response
+    lower.includes('cf-browser-verification') ||
+    lower.includes('cloudflare ray id') ||
+    lower.includes('please verify you are a human') ||
+    lower.includes('g-recaptcha') ||
+    lower.includes('security check to continue')
   );
 }
 
@@ -563,14 +575,25 @@ export async function scrapeViaHttp(logger = console.log) {
  */
 export async function scrapeJobsInHand(logger = console.log) {
   try {
-    logger(`[scraper] 🤖 Initiating Playwright multi-page engine for complete requisition extraction...`);
+    logger(`[scraper] 🌐 Initiating HTTP scraper for fast, reliable requisition extraction...`);
+    const httpResult = await scrapeViaHttp(logger);
+    if (httpResult && httpResult.jobs && httpResult.jobs.length > 0) {
+      return httpResult;
+    }
+    logger(`[scraper] HTTP scraper returned 0 jobs. Trying Playwright fallback...`);
     const { scrapeViaPlaywright } = await import('./playwright-scraper.js');
     const playwrightResult = await scrapeViaPlaywright(logger);
     return { ...playwrightResult, mode: 'playwright' };
   } catch (err) {
-    logger(`[scraper] ⚠️ Playwright attempt failed (${err.message}). Trying HTTP scraper fallback...`);
-    const httpResult = await scrapeViaHttp(logger);
-    return httpResult;
+    logger(`[scraper] ⚠️ HTTP attempt notice (${err.message}). Trying Playwright fallback...`);
+    try {
+      const { scrapeViaPlaywright } = await import('./playwright-scraper.js');
+      const playwrightResult = await scrapeViaPlaywright(logger);
+      return { ...playwrightResult, mode: 'playwright' };
+    } catch (pwErr) {
+      logger(`[scraper] ❌ Playwright fallback also failed: ${pwErr.message}`);
+      throw err;
+    }
   }
 }
 
