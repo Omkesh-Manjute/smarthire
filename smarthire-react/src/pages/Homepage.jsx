@@ -44,7 +44,6 @@ function Homepage() {
     setErrorMessage('')
     
     try {
-      // 1. Try real backend login endpoint
       try {
         const res = await fetch('/api/auth/login', {
           method: 'POST',
@@ -79,7 +78,7 @@ function Homepage() {
         console.warn('Backend login connection failed, falling back to local database:', backendErr.message)
       }
 
-      // 2. Fallback to localStorage (ensures offline robustness)
+      // Fallback to localStorage
       const savedRecruitersRaw = localStorage.getItem('smarthire_recruiters')
       
       const defaultRecs = [
@@ -87,7 +86,6 @@ function Homepage() {
         { id: 'rec-2', name: 'Sarah Jenkins', email: 'recruiter@smarthire.com', role: 'recruiter', refCode: 'sarah-j', company: 'SmartHire', isActive: true, password: 'recruiter123' },
         { id: 'rec-3', name: 'David Chen', email: 'david@smarthire.com', role: 'manager', refCode: 'david-c', company: 'SmartHire', isActive: true, password: 'recruiter123' },
         { id: 'rec-4', name: 'Marcus Vance', email: 'sourcing@smarthire.com', role: 'employee', refCode: 'marcus-v', company: 'SmartHire', isActive: true, password: 'recruiter123', parentRecruiterName: 'Alex Morgan' },
-        // Preserving original recruiter emails for backwards compatibility
         { id: 'rec-orig-1', name: 'Admin', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', company: 'SmartHire', isActive: true, password: 'admin' },
         { id: 'rec-orig-2', name: 'Recruiter', email: 'kamal@coolsofttech.com', role: 'recruiter', refCode: 'sukamal-chatterjee', company: 'SmartHire', isActive: true, password: 'recruiter123' },
         { id: 'rec-orig-3', name: 'Sourcing Specialist', email: 'gourav@coolsofttech.com', role: 'employee', refCode: 'gourav', company: 'SmartHire', isActive: true, password: 'recruiter123', parentRecruiterName: 'Admin' }
@@ -226,7 +224,7 @@ function Homepage() {
                           <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
                         </svg>
                       </div>
-                      <span className="tf-dash-brand-name">Dashboard Kit</span>
+                      <span className="tf-dash-brand-name">SmartHire ATS</span>
                     </div>
 
                     <ul className="tf-dash-nav">
@@ -462,7 +460,7 @@ function Homepage() {
         </section>
 
         {/* =========================================================================
-            SECTION 2: CORE ATS FEATURES GRID (Updated to User Specifications)
+            SECTION 2: CORE ATS FEATURES GRID (8 High-Impact Feature Cards)
             ========================================================================= */}
         <section className="tf-features-section" id="features">
           <div className="tf-container">
@@ -607,133 +605,234 @@ function Homepage() {
         </section>
 
         {/* =========================================================================
-            SECTION 3: TABLE SHOWCASE + 3 BIG NUMBERS (Screenshot 3)
+            SECTION 3: CANDIDATE PIPELINE DASHBOARD MOCKUP + 3 BIG NUMBERS
+            (Updated with full dark sidebar and recruitment headline per user feedback)
             ========================================================================= */}
         <section className="tf-showcase-section">
           <div className="tf-container">
             <div className="tf-showcase-grid">
               
-              {/* Left: Floating Tickets/Candidates Table Mockup */}
+              {/* Left: Complete Candidates Table Dashboard Mockup with Dark Sidebar */}
               <div className="tf-table-mockup-outer">
-                <div className="tf-table-mockup-card">
-                  <div className="tf-table-head-bar">
-                    <h4>Active Candidate Pipeline</h4>
-                    <div className="tf-table-head-actions">
-                      <span className="tf-mini-btn">↕ Sort</span>
-                      <span className="tf-mini-btn">⚡ Filter</span>
+                <div className="tf-table-dashboard-mockup">
+                  
+                  {/* Dark Left Sidebar */}
+                  <div className="tf-dash-sidebar">
+                    <div className="tf-dash-brand">
+                      <div className="tf-dash-logo-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                        </svg>
+                      </div>
+                      <span className="tf-dash-brand-name">SmartHire ATS</span>
                     </div>
+
+                    <ul className="tf-dash-nav">
+                      <li className="tf-dash-nav-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="3" y="3" width="7" height="7"/>
+                          <rect x="14" y="3" width="7" height="7"/>
+                          <rect x="14" y="14" width="7" height="7"/>
+                          <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                        <span>Overview</span>
+                      </li>
+                      <li className="tf-dash-nav-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                          <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                        <span>Requisitions</span>
+                      </li>
+                      <li className="tf-dash-nav-item active">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                          <circle cx="9" cy="7" r="4"/>
+                          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                        <span>Candidates</span>
+                      </li>
+                      <li className="tf-dash-nav-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="12" cy="12" r="10"/>
+                          <polygon points="10 8 16 12 10 16 10 8"/>
+                        </svg>
+                        <span>AI Screening</span>
+                      </li>
+                      <li className="tf-dash-nav-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <line x1="18" y1="20" x2="18" y2="10"/>
+                          <line x1="12" y1="20" x2="12" y2="4"/>
+                          <line x1="6" y1="20" x2="6" y2="14"/>
+                        </svg>
+                        <span>Reports</span>
+                      </li>
+                      <li className="tf-dash-nav-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="12" cy="12" r="3"/>
+                          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                        <span>Settings</span>
+                      </li>
+                    </ul>
                   </div>
 
-                  <div className="tf-table-responsive">
-                    <table className="tf-mock-table">
-                      <thead>
-                        <tr>
-                          <th>Candidate details</th>
-                          <th>Assigned Req / Role</th>
-                          <th>Date</th>
-                          <th>Status / Priority</th>
-                          <th></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td>
-                            <div className="tf-table-user">
-                              <span className="tf-user-dot blue" />
-                              <div>
-                                <strong>Jordan Lee</strong>
-                                <span>jordan.lee@devmail.com</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td>NC DHHS AWS Dev (808496)</td>
-                          <td>May 26, 2026</td>
-                          <td><span className="tf-priority-pill high">HIGH 98%</span></td>
-                          <td><span className="tf-kebab">⋮</span></td>
-                        </tr>
+                  {/* Main Table Content */}
+                  <div className="tf-dash-main tf-table-content-wrap">
+                    
+                    {/* Header */}
+                    <div className="tf-table-top-header">
+                      <div className="tf-dash-title-wrap">
+                        <h3>Candidates</h3>
+                      </div>
+                      <div className="tf-dash-user">
+                        <span className="tf-dash-search-icon">🔍</span>
+                        <div className="tf-dash-user-info">
+                          <span className="tf-dash-user-name">Alex Morgan</span>
+                        </div>
+                      </div>
+                    </div>
 
-                        <tr>
-                          <td>
-                            <div className="tf-table-user">
-                              <span className="tf-user-dot green" />
-                              <div>
-                                <strong>Sarah Jenkins</strong>
-                                <span>sarah.j@outlook.com</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td>React Tech Lead (158997)</td>
-                          <td>May 26, 2026</td>
-                          <td><span className="tf-priority-pill low">LOW 85%</span></td>
-                          <td><span className="tf-kebab">⋮</span></td>
-                        </tr>
+                    {/* Sub Actions Bar */}
+                    <div className="tf-table-actions-bar">
+                      <span className="tf-table-count">All candidates (1,240)</span>
+                      <div className="tf-table-head-actions">
+                        <span className="tf-mini-btn">↕ Sort</span>
+                        <span className="tf-mini-btn">⚡ Filter</span>
+                      </div>
+                    </div>
 
-                        <tr>
-                          <td>
-                            <div className="tf-table-user">
-                              <span className="tf-user-dot purple" />
-                              <div>
-                                <strong>Robert Davis</strong>
-                                <span>robert.d@techmail.com</span>
+                    {/* Table Area */}
+                    <div className="tf-table-responsive">
+                      <table className="tf-mock-table">
+                        <thead>
+                          <tr>
+                            <th>Candidate details</th>
+                            <th>Assigned Req / Role</th>
+                            <th>Date</th>
+                            <th>Priority / Match</th>
+                            <th></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>
+                              <div className="tf-table-user">
+                                <span className="tf-user-dot blue" />
+                                <div>
+                                  <strong>Jordan Lee</strong>
+                                  <span>jordan.lee@devmail.com</span>
+                                </div>
                               </div>
-                            </div>
-                          </td>
-                          <td>DevOps Architect</td>
-                          <td>May 25, 2026</td>
-                          <td><span className="tf-priority-pill high">HIGH 96%</span></td>
-                          <td><span className="tf-kebab">⋮</span></td>
-                        </tr>
+                            </td>
+                            <td>NC DHHS AWS Dev (808496)</td>
+                            <td>May 26, 2026</td>
+                            <td><span className="tf-priority-pill high">HIGH 98%</span></td>
+                            <td><span className="tf-kebab">⋮</span></td>
+                          </tr>
 
-                        <tr>
-                          <td>
-                            <div className="tf-table-user">
-                              <span className="tf-user-dot amber" />
-                              <div>
-                                <strong>Christian Hall</strong>
-                                <span>hall.c@devcorp.com</span>
+                          <tr>
+                            <td>
+                              <div className="tf-table-user">
+                                <span className="tf-user-dot green" />
+                                <div>
+                                  <strong>Sarah Jenkins</strong>
+                                  <span>sarah.j@outlook.com</span>
+                                </div>
                               </div>
-                            </div>
-                          </td>
-                          <td>Senior Data Engineer</td>
-                          <td>May 25, 2026</td>
-                          <td><span className="tf-priority-pill normal">NORMAL</span></td>
-                          <td><span className="tf-kebab">⋮</span></td>
-                        </tr>
+                            </td>
+                            <td>React Tech Lead (158997)</td>
+                            <td>May 26, 2026</td>
+                            <td><span className="tf-priority-pill low">LOW 85%</span></td>
+                            <td><span className="tf-kebab">⋮</span></td>
+                          </tr>
 
-                        <tr>
-                          <td>
-                            <div className="tf-table-user">
-                              <span className="tf-user-dot cyan" />
-                              <div>
-                                <strong>Maya Lin</strong>
-                                <span>maya.lin@cloudsec.io</span>
+                          <tr>
+                            <td>
+                              <div className="tf-table-user">
+                                <span className="tf-user-dot purple" />
+                                <div>
+                                  <strong>Robert Davis</strong>
+                                  <span>robert.d@techmail.com</span>
+                                </div>
                               </div>
-                            </div>
-                          </td>
-                          <td>Cloud Security Specialist</td>
-                          <td>May 25, 2026</td>
-                          <td><span className="tf-priority-pill high">HIGH 99%</span></td>
-                          <td><span className="tf-kebab">⋮</span></td>
-                        </tr>
-                      </tbody>
-                    </table>
+                            </td>
+                            <td>DevOps Architect</td>
+                            <td>May 25, 2026</td>
+                            <td><span className="tf-priority-pill high">HIGH 96%</span></td>
+                            <td><span className="tf-kebab">⋮</span></td>
+                          </tr>
+
+                          <tr>
+                            <td>
+                              <div className="tf-table-user">
+                                <span className="tf-user-dot amber" />
+                                <div>
+                                  <strong>Christian Hall</strong>
+                                  <span>hall.c@devcorp.com</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td>Senior Data Engineer</td>
+                            <td>May 25, 2026</td>
+                            <td><span className="tf-priority-pill normal">NORMAL</span></td>
+                            <td><span className="tf-kebab">⋮</span></td>
+                          </tr>
+
+                          <tr>
+                            <td>
+                              <div className="tf-table-user">
+                                <span className="tf-user-dot cyan" />
+                                <div>
+                                  <strong>Maya Lin</strong>
+                                  <span>maya.lin@cloudsec.io</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td>Cloud Security Specialist</td>
+                            <td>May 25, 2026</td>
+                            <td><span className="tf-priority-pill high">HIGH 99%</span></td>
+                            <td><span className="tf-kebab">⋮</span></td>
+                          </tr>
+
+                          <tr>
+                            <td>
+                              <div className="tf-table-user">
+                                <span className="tf-user-dot blue" />
+                                <div>
+                                  <strong>David Patel</strong>
+                                  <span>david.p@cloudtech.com</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td>Full Stack Engineer</td>
+                            <td>May 24, 2026</td>
+                            <td><span className="tf-priority-pill high">HIGH 94%</span></td>
+                            <td><span className="tf-kebab">⋮</span></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="tf-table-footer-bar">
+                      <span>Rows per page: 8 ▼</span>
+                      <span>1-8 of 1,240 &nbsp; &lt; &gt;</span>
+                    </div>
+
                   </div>
 
-                  <div className="tf-table-footer-bar">
-                    <span>Rows per page: 8 ▼</span>
-                    <span>1-8 of 1,240 &nbsp; &lt; &gt;</span>
-                  </div>
                 </div>
               </div>
 
               {/* Right: Headline with highlight + 3 Big Numbers */}
               <div className="tf-showcase-content">
                 <h2 className="tf-showcase-headline">
-                  Use flexible components{' '}
-                  <span className="tf-highlight-box">to place talent quickly</span>
+                  Streamline candidate placement{' '}
+                  <span className="tf-highlight-box">from sourcing to offer</span>
                 </h2>
                 <p className="tf-showcase-p">
-                  SmartHire styles and extends enterprise ATS workflows with private recruiter vaults, autonomous AI screening, and zero-duplicate candidate safeguards.
+                  SmartHire centralizes your entire talent pipeline into one intuitive command hub. Track candidate stages, review AI match scores, enforce private vault security, and move top technical talent seamlessly from intake to client interview.
                 </p>
 
                 <div className="tf-big-stats-row">
@@ -1443,13 +1542,13 @@ function Homepage() {
         }
 
         /* =========================================================================
-           DASHBOARD MOCKUP
+           DASHBOARD MOCKUPS (Both Hero & Showcase Table)
            ========================================================================= */
         .tf-hero-mockup-wrap {
           perspective: 1200px;
         }
 
-        .tf-dashboard-mockup {
+        .tf-dashboard-mockup, .tf-table-dashboard-mockup {
           background: #ffffff;
           border: 1px solid #e2e8f0;
           border-radius: 16px;
@@ -1463,7 +1562,7 @@ function Homepage() {
         }
 
         @media (max-width: 640px) {
-          .tf-dashboard-mockup {
+          .tf-dashboard-mockup, .tf-table-dashboard-mockup {
             grid-template-columns: 1fr;
           }
           .tf-dash-sidebar {
@@ -1930,7 +2029,7 @@ function Homepage() {
         }
 
         /* =========================================================================
-           SECTION 3: TABLE SHOWCASE + 3 BIG NUMBERS (Screenshot 3)
+           SECTION 3: TABLE SHOWCASE + 3 BIG NUMBERS (Screenshot 3 Match)
            ========================================================================= */
         .tf-showcase-section {
           padding: 90px 0;
@@ -1939,7 +2038,7 @@ function Homepage() {
 
         .tf-showcase-grid {
           display: grid;
-          grid-template-columns: 1.15fr 1fr;
+          grid-template-columns: 1.18fr 1fr;
           gap: 50px;
           align-items: center;
         }
@@ -1951,27 +2050,30 @@ function Homepage() {
           }
         }
 
-        .tf-table-mockup-card {
-          background: #ffffff;
-          border: 1px solid #e2e8f0;
-          border-radius: 14px;
-          box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
-          overflow: hidden;
+        .tf-table-content-wrap {
+          padding: 16px 20px;
         }
 
-        .tf-table-head-bar {
-          padding: 16px 20px;
-          border-bottom: 1px solid #f1f5f9;
+        .tf-table-top-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
+          margin-bottom: 8px;
         }
 
-        .tf-table-head-bar h4 {
-          margin: 0;
-          font-size: 14px;
-          font-weight: 800;
-          color: #0f172a;
+        .tf-table-actions-bar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 12px;
+          padding-bottom: 8px;
+          border-bottom: 1px solid #f1f5f9;
+        }
+
+        .tf-table-count {
+          font-size: 12px;
+          font-weight: 600;
+          color: #64748b;
         }
 
         .tf-table-head-actions {
@@ -1983,11 +2085,16 @@ function Homepage() {
           font-size: 11px;
           font-weight: 600;
           color: #64748b;
-          background: #f8fafc;
+          background: #ffffff;
           border: 1px solid #e2e8f0;
-          padding: 4px 8px;
+          padding: 4px 10px;
           border-radius: 4px;
           cursor: pointer;
+        }
+
+        .tf-mini-btn:hover {
+          background: #f1f5f9;
+          color: #0f172a;
         }
 
         .tf-table-responsive {
@@ -2002,19 +2109,19 @@ function Homepage() {
         }
 
         .tf-mock-table thead th {
-          background: #fafbfd;
+          background: #f8fafc;
           color: #64748b;
-          font-size: 10px;
+          font-size: 9.5px;
           font-weight: 700;
           text-transform: uppercase;
           letter-spacing: 0.04em;
-          padding: 10px 16px;
+          padding: 10px 14px;
           border-bottom: 1px solid #f1f5f9;
         }
 
         .tf-mock-table tbody td {
-          padding: 12px 16px;
-          border-bottom: 1px solid #f8fafc;
+          padding: 12px 14px;
+          border-bottom: 1px solid #f1f5f9;
           color: #334155;
           vertical-align: middle;
         }
@@ -2069,11 +2176,11 @@ function Homepage() {
         }
 
         .tf-table-footer-bar {
-          padding: 10px 16px;
+          padding: 12px 14px;
           display: flex;
           justify-content: flex-end;
           gap: 20px;
-          font-size: 10px;
+          font-size: 10.5px;
           color: #94a3b8;
           border-top: 1px solid #f1f5f9;
         }
