@@ -83,18 +83,23 @@ function Homepage() {
       const savedRecruitersRaw = localStorage.getItem('smarthire_recruiters')
       
       const defaultRecs = [
-        { id: 'rec-1', name: 'Omkesh Manjute', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', company: 'SmartHire', isActive: true, password: 'admin' },
-        { id: 'rec-2', name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com', role: 'recruiter', refCode: 'sukamal-chatterjee', company: 'SmartHire', isActive: true, password: 'recruiter123' },
-        { id: 'rec-3', name: 'Raj', email: 'raj@coolsofttech.com', role: 'recruiter', refCode: 'raj', company: 'SmartHire', isActive: true, password: 'recruiter123' },
-        { id: 'rec-4', name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com', role: 'recruiter', refCode: 'vaibhav-bisen', company: 'SmartHire', isActive: true, password: 'recruiter123' },
-        { id: 'rec-5', name: 'Pankaj', email: 'pankajm@coolsofttech.com', role: 'recruiter', refCode: 'pankaj', company: 'SmartHire', isActive: true, password: 'recruiter123' },
-        { id: 'rec-6', name: 'Gourav', email: 'gourav@coolsofttech.com', role: 'employee', refCode: 'gourav', company: 'SmartHire', isActive: true, password: 'recruiter123', parentRecruiterName: 'Omkesh' }
+        { id: 'rec-1', name: 'Alex Morgan', email: 'admin@smarthire.com', role: 'superadmin', refCode: 'admin', company: 'SmartHire', isActive: true, password: 'admin' },
+        { id: 'rec-2', name: 'Sarah Jenkins', email: 'recruiter@smarthire.com', role: 'recruiter', refCode: 'sarah-j', company: 'SmartHire', isActive: true, password: 'recruiter123' },
+        { id: 'rec-3', name: 'David Chen', email: 'david@smarthire.com', role: 'manager', refCode: 'david-c', company: 'SmartHire', isActive: true, password: 'recruiter123' },
+        { id: 'rec-4', name: 'Marcus Vance', email: 'sourcing@smarthire.com', role: 'employee', refCode: 'marcus-v', company: 'SmartHire', isActive: true, password: 'recruiter123', parentRecruiterName: 'Alex Morgan' },
+        // Preserving original recruiter emails for backwards compatibility
+        { id: 'rec-orig-1', name: 'Admin', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', company: 'SmartHire', isActive: true, password: 'admin' },
+        { id: 'rec-orig-2', name: 'Recruiter', email: 'kamal@coolsofttech.com', role: 'recruiter', refCode: 'sukamal-chatterjee', company: 'SmartHire', isActive: true, password: 'recruiter123' },
+        { id: 'rec-orig-3', name: 'Sourcing Specialist', email: 'gourav@coolsofttech.com', role: 'employee', refCode: 'gourav', company: 'SmartHire', isActive: true, password: 'recruiter123', parentRecruiterName: 'Admin' }
       ]
 
       let recruitersList = defaultRecs
       if (savedRecruitersRaw) {
         try {
-          recruitersList = JSON.parse(savedRecruitersRaw)
+          const parsed = JSON.parse(savedRecruitersRaw)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            recruitersList = [...defaultRecs, ...parsed.filter(p => !defaultRecs.some(d => d.email.toLowerCase() === p.email?.toLowerCase()))]
+          }
         } catch (e) {}
       }
 
@@ -115,9 +120,6 @@ function Homepage() {
       }
 
       matchedUser.lastLogin = new Date().toISOString()
-      const updatedRecruiters = recruitersList.map(r => r.id === matchedUser.id ? matchedUser : r)
-      localStorage.setItem('smarthire_recruiters', JSON.stringify(updatedRecruiters))
-
       localStorage.setItem('smarthire_authenticated', 'true')
       localStorage.setItem('smarthire_user', JSON.stringify({
         uid: matchedUser.id,
@@ -168,7 +170,7 @@ function Homepage() {
                 </h1>
 
                 <p className="tf-hero-subtitle">
-                  Recruiters and staffing agencies use the SmartHire command center to source talent, verify credentials against proxy fraud, and dispatch directly to JobsInHand and Coolworks VMS in seconds.
+                  Autonomous AI screening, private recruiter talent vaults, instant JD-to-candidate matching, and anti-proxy vetting in one high-velocity recruitment command center.
                 </p>
 
                 <div className="tf-hero-actions">
@@ -191,7 +193,7 @@ function Homepage() {
                         Start now
                       </button>
                       <a href="#features" className="tf-btn tf-btn-outline">
-                        Learn more
+                        Explore Features
                       </a>
                     </>
                   )}
@@ -200,19 +202,19 @@ function Homepage() {
                 {/* Social Proof / Trust Footnote */}
                 <div className="tf-hero-trust">
                   <div className="tf-avatar-stack">
-                    <span className="tf-avatar tf-av-1">OM</span>
-                    <span className="tf-avatar tf-av-2">SC</span>
-                    <span className="tf-avatar tf-av-3">VB</span>
-                    <span className="tf-avatar tf-av-4">GS</span>
+                    <span className="tf-avatar tf-av-1">AM</span>
+                    <span className="tf-avatar tf-av-2">SJ</span>
+                    <span className="tf-avatar tf-av-3">DC</span>
+                    <span className="tf-avatar tf-av-4">MV</span>
                   </div>
                   <div className="tf-trust-text">
-                    <strong>1,280+ Candidates Placed</strong>
-                    <span>Verified across NC DHHS, State & Fortune 500 Clients</span>
+                    <strong>1,280+ High-Stakes Placements</strong>
+                    <span>Private Recruiter Vaults & 99.4% Semantic Match Accuracy</span>
                   </div>
                 </div>
               </div>
 
-              {/* Right Column: Floating Dashboard UI Mockup (Matching Screenshot 2) */}
+              {/* Right Column: Floating Dashboard UI Mockup */}
               <div className="tf-hero-mockup-wrap">
                 <div className="tf-dashboard-mockup">
                   
@@ -251,14 +253,14 @@ function Homepage() {
                           <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
                           <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                         </svg>
-                        <span>Candidates</span>
+                        <span>Private Vaults</span>
                       </li>
                       <li className="tf-dash-nav-item">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <circle cx="12" cy="12" r="10"/>
                           <polygon points="10 8 16 12 10 16 10 8"/>
                         </svg>
-                        <span>Auto-Apply Bot</span>
+                        <span>AI Screening</span>
                       </li>
                       <li className="tf-dash-nav-item">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -266,14 +268,14 @@ function Homepage() {
                           <line x1="12" y1="20" x2="12" y2="4"/>
                           <line x1="6" y1="20" x2="6" y2="14"/>
                         </svg>
-                        <span>Reports</span>
+                        <span>Manager Reports</span>
                       </li>
                       <li className="tf-dash-nav-item">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <circle cx="12" cy="12" r="3"/>
                           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                         </svg>
-                        <span>Settings</span>
+                        <span>RBAC Security</span>
                       </li>
                     </ul>
                   </div>
@@ -290,8 +292,8 @@ function Homepage() {
                         <span className="tf-dash-search-icon">🔍</span>
                         <span className="tf-dash-bell">🔔</span>
                         <div className="tf-dash-user-info">
-                          <span className="tf-dash-user-name">Omkesh Manjute</span>
-                          <span className="tf-dash-user-role">Super Admin</span>
+                          <span className="tf-dash-user-name">Alex Morgan</span>
+                          <span className="tf-dash-user-role">Super Admin (RBAC Active)</span>
                         </div>
                       </div>
                     </div>
@@ -311,7 +313,7 @@ function Homepage() {
                         <span className="tf-kpi-num">43</span>
                       </div>
                       <div className="tf-kpi-card">
-                        <span className="tf-kpi-label">Auto-Applied</span>
+                        <span className="tf-kpi-label">AI Screened</span>
                         <span className="tf-kpi-num">142</span>
                       </div>
                     </div>
@@ -320,7 +322,7 @@ function Homepage() {
                     <div className="tf-dash-chart-card">
                       <div className="tf-chart-left">
                         <div className="tf-chart-head">
-                          <h4>Today's trends</h4>
+                          <h4>Today's sourcing trends</h4>
                           <span className="tf-chart-timestamp">as of 25 May 2026, 09:41 PM</span>
                           <div className="tf-chart-legend">
                             <span className="tf-legend-dot blue"></span> Today
@@ -384,14 +386,14 @@ function Homepage() {
                         </div>
                         <div className="tf-stat-item">
                           <span className="tf-stat-label">Avg first response</span>
-                          <span className="tf-stat-val">33m</span>
+                          <span className="tf-stat-val">18m</span>
                         </div>
                         <div className="tf-stat-item">
-                          <span className="tf-stat-label">JobsInHand sync speed</span>
-                          <span className="tf-stat-val">1.2s</span>
+                          <span className="tf-stat-label">AI Match Latency</span>
+                          <span className="tf-stat-val">0.8s</span>
                         </div>
                         <div className="tf-stat-item">
-                          <span className="tf-stat-label">Resolution within SLA</span>
+                          <span className="tf-stat-label">SLA Deadline Compliance</span>
                           <span className="tf-stat-val">99%</span>
                         </div>
                       </div>
@@ -401,23 +403,23 @@ function Homepage() {
                     <div className="tf-dash-bottom-grid">
                       <div className="tf-dash-subcard">
                         <div className="tf-subcard-head">
-                          <h5>Recent Candidate Submissions</h5>
+                          <h5>Recent Verified Submissions</h5>
                           <span className="tf-view-all">View details</span>
                         </div>
                         <ul className="tf-mini-list">
                           <li>
                             <div className="tf-cand-mini-info">
-                              <span className="tf-cand-name">Kranthi Kumar</span>
+                              <span className="tf-cand-name">Jordan Lee</span>
                               <span className="tf-cand-role">Sr AWS Developer (Req #158997)</span>
                             </div>
-                            <span className="tf-pill-badge blue">⚡ AUTO-APPLIED</span>
+                            <span className="tf-pill-badge blue">⚡ AI SCREENED</span>
                           </li>
                           <li>
                             <div className="tf-cand-mini-info">
                               <span className="tf-cand-name">Sarah Jenkins</span>
                               <span className="tf-cand-role">Cloud Architect (Pos #808496)</span>
                             </div>
-                            <span className="tf-pill-badge green">✓ CLIENT SUBMITTED</span>
+                            <span className="tf-pill-badge green">✓ RTR CONFIRMED</span>
                           </li>
                           <li>
                             <div className="tf-cand-mini-info">
@@ -431,21 +433,21 @@ function Homepage() {
 
                       <div className="tf-dash-subcard">
                         <div className="tf-subcard-head">
-                          <h5>Compliance & Verification</h5>
+                          <h5>Compliance & Vault Security</h5>
                           <span className="tf-view-all">View all</span>
                         </div>
                         <ul className="tf-mini-tasks">
                           <li>
-                            <span>Anti-Proxy Liveness Video Check</span>
-                            <span className="tf-task-badge urgent">PASSED 99.1%</span>
+                            <span>Private Vault Data Isolation</span>
+                            <span className="tf-task-badge urgent">ENFORCED</span>
                           </li>
                           <li>
-                            <span>EEO Step-2 Form Automation</span>
+                            <span>Digital RTR Document Signed</span>
                             <span className="tf-task-badge new">COMPLETED</span>
                           </li>
                           <li>
-                            <span>Work Authorization (C2C / W2)</span>
-                            <span className="tf-task-badge default">VERIFIED</span>
+                            <span>Anti-Proxy Face Liveness Verification</span>
+                            <span className="tf-task-badge default">PASSED 99.1%</span>
                           </li>
                         </ul>
                       </div>
@@ -460,65 +462,85 @@ function Homepage() {
         </section>
 
         {/* =========================================================================
-            SECTION 2: CORE ATS FEATURES GRID ("How SmartHire Automates Recruiter Workflows")
+            SECTION 2: CORE ATS FEATURES GRID (Updated to User Specifications)
             ========================================================================= */}
         <section className="tf-features-section" id="features">
           <div className="tf-container">
             <div className="tf-section-header text-center">
-              <span className="tf-eyebrow-amber">INTELLIGENT AUTOMATION</span>
-              <h2 className="tf-section-title">How SmartHire Automates Recruiter Workflows</h2>
+              <span className="tf-eyebrow-amber">INTELLIGENT RECRUITMENT AUTOMATION</span>
+              <h2 className="tf-section-title">Engineered for High-Velocity Recruiter Workflows</h2>
               <p className="tf-section-subtitle">
-                Cut down candidate sourcing and validation overhead by 80%. Our full-stack ATS handles resume intake, anti-proxy biometric vetting, and direct VMS application delivery.
+                Zero data leakage, fully trained AI screening, instant JD-to-talent matching alerts, and digital RTR compliance designed for enterprise staffing teams.
               </p>
             </div>
 
             <div className="tf-features-cards-grid">
               
-              {/* Feature 1 */}
+              {/* Feature 1: Isolated Recruiter Vaults */}
               <div className="tf-feature-box">
                 <div className="tf-feature-icon-wrap blue-bg">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                   </svg>
                 </div>
-                <h3 className="tf-feature-title">1-Click JobsInHand & Coolworks Auto-Apply</h3>
+                <h3 className="tf-feature-title">Isolated Recruiter Vaults & Role Privacy</h3>
                 <p className="tf-feature-desc">
-                  Our embedded Playwright bot automates both Step 1 candidate submission and Step 2 EEO/compliance questionnaires, pushing applicants directly into Coolworks VMS "New Candidates" tab in seconds.
+                  Strict individual database role-based access. No recruiter can see, edit, or poach another recruiter's candidates or notes. Complete privacy for every team member with supervisor audit visibility.
                 </p>
-                <div className="tf-feature-tag">2-Step Playwright Engine</div>
+                <div className="tf-feature-tag">Zero-Leakage RBAC Vaults</div>
               </div>
 
-              {/* Feature 2 */}
+              {/* Feature 2: Smart JD-Candidate Instant Match Alerts */}
+              <div className="tf-feature-box">
+                <div className="tf-feature-icon-wrap amber-bg">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                  </svg>
+                </div>
+                <h3 className="tf-feature-title">Smart JD-Match Proactive Alerts</h3>
+                <p className="tf-feature-desc">
+                  Our background intelligence engine automatically scans your candidate vault the instant a new Requisition or JD arrives. If your candidate is a strong match, you receive an immediate alert.
+                </p>
+                <div className="tf-feature-tag">Instant Talent Match Chimes</div>
+              </div>
+
+              {/* Feature 3: Autonomous AI Candidate Screening Agent */}
               <div className="tf-feature-box">
                 <div className="tf-feature-icon-wrap emerald-bg">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    <circle cx="9" cy="10" r="1"/>
+                    <circle cx="15" cy="10" r="1"/>
                   </svg>
                 </div>
-                <h3 className="tf-feature-title">Anti-Proxy & Biometric Identity Flow</h3>
+                <h3 className="tf-feature-title">Autonomous AI Screening & Confirmation</h3>
                 <p className="tf-feature-desc">
-                  Eliminate proxy interview fraud before client submission. Candidate liveness face matching, official passport/visa OCR document analysis, and IP telemetry ensure 100% verified identities.
+                  An advanced conversational AI agent interacts with candidates 24/7. It screens mandatory technical proficiencies, verifies compensation expectations, and secures availability before recruiter review.
                 </p>
-                <div className="tf-feature-tag">99.1% Liveness Precision</div>
+                <div className="tf-feature-tag">Trained Pre-Screening AI</div>
               </div>
 
-              {/* Feature 3 */}
+              {/* Feature 4: 1-Click Digital RTR & Compliance Document Intake */}
               <div className="tf-feature-box">
                 <div className="tf-feature-icon-wrap indigo-bg">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M12 16v-4"/>
-                    <path d="M12 8h.01"/>
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10 9 9 9 8 9"/>
                   </svg>
                 </div>
-                <h3 className="tf-feature-title">AI Resume Parser & Skills Match</h3>
+                <h3 className="tf-feature-title">Instant Digital RTR & Document Intake</h3>
                 <p className="tf-feature-desc">
-                  Instantly extract technical stacks, years of experience, work authorizations (C2C, W2, 1099), and generate explainable candidate-job suitability scores across all open requisitions.
+                  Collect digital Right-to-Represent (RTR) agreements, passports, visas, work authorizations (C2C/W2/1099), and rate lock confirmations in one instant step before client presentation.
                 </p>
-                <div className="tf-feature-tag">Semantic Match Engine</div>
+                <div className="tf-feature-tag">1-Click RTR Sign & Lock</div>
               </div>
 
-              {/* Feature 4 */}
+              {/* Feature 5: Real-Time Candidate Chat & Close System */}
               <div className="tf-feature-box">
                 <div className="tf-feature-icon-wrap purple-bg">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -528,41 +550,56 @@ function Homepage() {
                     <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                   </svg>
                 </div>
-                <h3 className="tf-feature-title">Multi-Role Recruiter Hierarchy</h3>
+                <h3 className="tf-feature-title">Integrated Candidate Chat & Fast Close</h3>
                 <p className="tf-feature-desc">
-                  Granular permission scoping for Superadmin, Admin, Manager, Recruiter, and Sourcing Specialists with supervisor assignment trees (Gourav → Omkesh, Naveen → Sukamal, Rahul → Vaibhav).
+                  Direct recruiter-to-candidate messaging portal. Negotiate bill/pay spreads, send live job briefs, and lock in submission confirmations without telephone tag delays.
                 </p>
-                <div className="tf-feature-tag">Role-Based Access Control</div>
+                <div className="tf-feature-tag">Live Recruiter-Talent Chat</div>
               </div>
 
-              {/* Feature 5 */}
-              <div className="tf-feature-box">
-                <div className="tf-feature-icon-wrap amber-bg">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                  </svg>
-                </div>
-                <h3 className="tf-feature-title">Real-Time Chime & Instant JD Sync</h3>
-                <p className="tf-feature-desc">
-                  Sub-second Cloud Firestore synchronization. When a new job requisition is posted or scraped, all logged-in recruiters receive an uplifting ascending 4-tone audio chime and instant visual alert.
-                </p>
-                <div className="tf-feature-tag">Sub-Second Audio Chime</div>
-              </div>
-
-              {/* Feature 6 */}
+              {/* Feature 6: Smart SLA Deadline & Priority Tracking */}
               <div className="tf-feature-box">
                 <div className="tf-feature-icon-wrap cyan-bg">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
                   </svg>
                 </div>
-                <h3 className="tf-feature-title">Public Careers Portal & Auto-Ingestion</h3>
+                <h3 className="tf-feature-title">Smart SLA Deadline & Priority Tracking</h3>
                 <p className="tf-feature-desc">
-                  High-converting public career portal (`/careers` and `/jobs`) featuring Classic ATS and Zone Modern layouts. Direct applicant submissions sync into matching requisitions with zero manual entry.
+                  Proactive notification engine flags expiring requisitions, client submission cut-offs, and interview schedules so your team never misses a lucrative placement window.
                 </p>
-                <div className="tf-feature-tag">Dual Layout Switcher</div>
+                <div className="tf-feature-tag">Requisition Cut-off Timers</div>
+              </div>
+
+              {/* Feature 7: Manager Command Hub & Audit Reports */}
+              <div className="tf-feature-box">
+                <div className="tf-feature-icon-wrap blue-bg">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="20" x2="18" y2="10"/>
+                    <line x1="12" y1="20" x2="12" y2="4"/>
+                    <line x1="6" y1="20" x2="6" y2="14"/>
+                  </svg>
+                </div>
+                <h3 className="tf-feature-title">Manager Command Hub & Audit Reports</h3>
+                <p className="tf-feature-desc">
+                  Dedicated leadership views to oversee sourcing specialist throughput, track sub-recruiter pipeline metrics, review margin spreads, and export comprehensive compliance audit logs.
+                </p>
+                <div className="tf-feature-tag">Executive Pipeline Analytics</div>
+              </div>
+
+              {/* Feature 8: Anti-Proxy Biometric & Identity Flow */}
+              <div className="tf-feature-box">
+                <div className="tf-feature-icon-wrap emerald-bg">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  </svg>
+                </div>
+                <h3 className="tf-feature-title">Anti-Proxy & Biometric Identity Flow</h3>
+                <p className="tf-feature-desc">
+                  Prevent candidate substitution and proxy fraud. Candidate facial liveness verification, official ID document OCR matching, and IP geolocation telemetry guarantee authentic talent submissions.
+                </p>
+                <div className="tf-feature-tag">99.1% Biometric Precision</div>
               </div>
 
             </div>
@@ -570,7 +607,7 @@ function Homepage() {
         </section>
 
         {/* =========================================================================
-            SECTION 3: TABLE SHOWCASE + 3 BIG NUMBERS (Matching Screenshot 3)
+            SECTION 3: TABLE SHOWCASE + 3 BIG NUMBERS (Screenshot 3)
             ========================================================================= */}
         <section className="tf-showcase-section">
           <div className="tf-container">
@@ -604,8 +641,8 @@ function Homepage() {
                             <div className="tf-table-user">
                               <span className="tf-user-dot blue" />
                               <div>
-                                <strong>Kranthi Kumar</strong>
-                                <span>kranthi@gmail.com</span>
+                                <strong>Jordan Lee</strong>
+                                <span>jordan.lee@devmail.com</span>
                               </div>
                             </div>
                           </td>
@@ -636,7 +673,7 @@ function Homepage() {
                             <div className="tf-table-user">
                               <span className="tf-user-dot purple" />
                               <div>
-                                <strong>Robert Downey</strong>
+                                <strong>Robert Davis</strong>
                                 <span>robert.d@techmail.com</span>
                               </div>
                             </div>
@@ -652,8 +689,8 @@ function Homepage() {
                             <div className="tf-table-user">
                               <span className="tf-user-dot amber" />
                               <div>
-                                <strong>Christian Bale</strong>
-                                <span>bale.c@devcorp.com</span>
+                                <strong>Christian Hall</strong>
+                                <span>hall.c@devcorp.com</span>
                               </div>
                             </div>
                           </td>
@@ -668,8 +705,8 @@ function Homepage() {
                             <div className="tf-table-user">
                               <span className="tf-user-dot cyan" />
                               <div>
-                                <strong>Meely Cool</strong>
-                                <span>meely@coolsoft-tech.com</span>
+                                <strong>Maya Lin</strong>
+                                <span>maya.lin@cloudsec.io</span>
                               </div>
                             </div>
                           </td>
@@ -696,28 +733,28 @@ function Homepage() {
                   <span className="tf-highlight-box">to place talent quickly</span>
                 </h2>
                 <p className="tf-showcase-p">
-                  SmartHire styles and extends enterprise ATS workflows with instant VMS delivery, multi-role recruiter visibility, and zero-duplicate candidate safeguards.
+                  SmartHire styles and extends enterprise ATS workflows with private recruiter vaults, autonomous AI screening, and zero-duplicate candidate safeguards.
                 </p>
 
                 <div className="tf-big-stats-row">
                   <div className="tf-big-stat-col">
                     <span className="tf-stat-large">10x</span>
                     <p className="tf-stat-subtext">
-                      Faster candidate screening with AI resume parsing & dynamic skill matching.
+                      Faster candidate screening with autonomous AI pre-interview agents.
                     </p>
                   </div>
 
                   <div className="tf-big-stat-col">
                     <span className="tf-stat-large">100%</span>
                     <p className="tf-stat-subtext">
-                      Anti-proxy identity checks & biometric liveness before manager submission.
+                      Anti-proxy identity checks & digital RTR verification before manager submission.
                     </p>
                   </div>
 
                   <div className="tf-big-stat-col">
                     <span className="tf-stat-large">99.4%</span>
                     <p className="tf-stat-subtext">
-                      Clean ATS delivery to JobsInHand & Coolworks VMS in under 3 seconds.
+                      Candidate-to-requisition semantic match accuracy across all open roles.
                     </p>
                   </div>
                 </div>
@@ -728,15 +765,15 @@ function Homepage() {
         </section>
 
         {/* =========================================================================
-            SECTION 4: SUPPORT TEAM & RECRUITER SUCCESS (Matching Screenshot 4)
+            SECTION 4: SUPPORT TEAM & RECRUITER SUCCESS (Screenshot 4)
             ========================================================================= */}
         <section className="tf-support-section">
           <div className="tf-container">
             <div className="tf-support-header text-center">
-              <span className="tf-eyebrow-amber">SUPPORT TEAM</span>
+              <span className="tf-eyebrow-amber">ENTERPRISE ATS SUPPORT</span>
               <h2 className="tf-section-title">Our friendly support team will help you with anything</h2>
               <p className="tf-section-subtitle">
-                We aim to take care of you. Need help with portal integration, auto-apply bot execution, or candidate compliance? We'll be there to lend a helping hand.
+                We aim to take care of you. Need help configuring private recruiter vaults, setting up custom AI screening questions, or setting SLA alert deadlines? We'll be there to lend a helping hand.
               </p>
 
               <div className="tf-support-cta-wrap">
@@ -751,7 +788,7 @@ function Homepage() {
                   <span className="tf-check-badge">✔</span> All ATS features
                 </span>
                 <span className="tf-check-item">
-                  <span className="tf-check-badge">✔</span> JobsInHand Bot
+                  <span className="tf-check-badge">✔</span> Private Vaults
                 </span>
                 <span className="tf-check-item">
                   <span className="tf-check-badge">✔</span> Multi-Role Hierarchy
@@ -760,47 +797,47 @@ function Homepage() {
                   <span className="tf-check-badge">✔</span> Anti-Proxy Checks
                 </span>
                 <span className="tf-check-item">
-                  <span className="tf-check-badge">✔</span> Audio Chimes
+                  <span className="tf-check-badge">✔</span> Smart JD Chimes
                 </span>
                 <span className="tf-check-item">
-                  <span className="tf-check-badge">✔</span> Coolworks VMS
+                  <span className="tf-check-badge">✔</span> Manager Audit Reports
                 </span>
               </div>
             </div>
 
-            {/* Team Members Row */}
+            {/* Team Members Row: Professional Global Representatives */}
             <div className="tf-team-members-grid">
               
               <div className="tf-team-card">
                 <div className="tf-team-avatar-circle" style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)' }}>
-                  OM
+                  AM
                 </div>
-                <h4 className="tf-team-name">Omkesh Manjute</h4>
-                <span className="tf-team-title">Super Admin & Operations</span>
+                <h4 className="tf-team-name">Alex Morgan</h4>
+                <span className="tf-team-title">VP of Talent Solutions & Enterprise</span>
               </div>
 
               <div className="tf-team-card">
                 <div className="tf-team-avatar-circle" style={{ background: 'linear-gradient(135deg, #10b981, #047857)' }}>
-                  SC
+                  ER
                 </div>
-                <h4 className="tf-team-name">Sukamal Chatterjee</h4>
-                <span className="tf-team-title">Recruiter Supervisor</span>
+                <h4 className="tf-team-name">Elena Rostova</h4>
+                <span className="tf-team-title">Head of AI Screening & Client Success</span>
               </div>
 
               <div className="tf-team-card">
                 <div className="tf-team-avatar-circle" style={{ background: 'linear-gradient(135deg, #f59e0b, #b45309)' }}>
-                  VB
+                  DC
                 </div>
-                <h4 className="tf-team-name">Vaibhav Bisen</h4>
-                <span className="tf-team-title">Delivery Manager</span>
+                <h4 className="tf-team-name">David Chen</h4>
+                <span className="tf-team-title">Compliance & Identity Systems Lead</span>
               </div>
 
               <div className="tf-team-card">
                 <div className="tf-team-avatar-circle" style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)' }}>
-                  GS
+                  MV
                 </div>
-                <h4 className="tf-team-name">Gourav</h4>
-                <span className="tf-team-title">Sourcing Specialist</span>
+                <h4 className="tf-team-name">Marcus Vance</h4>
+                <span className="tf-team-title">Senior Recruitment Workflow Architect</span>
               </div>
 
             </div>
@@ -808,15 +845,15 @@ function Homepage() {
         </section>
 
         {/* =========================================================================
-            SECTION 5: CUSTOMIZATION & OVERLAPPING PERSPECTIVE MOCKUP (Matching Screenshot 5)
+            SECTION 5: CUSTOMIZATION & OVERLAPPING PERSPECTIVE MOCKUP (Screenshot 5)
             ========================================================================= */}
         <section className="tf-customization-section">
           <div className="tf-container">
             <div className="tf-customization-header text-center">
-              <span className="tf-eyebrow-amber">CUSTOMIZATION</span>
+              <span className="tf-eyebrow-amber">CUSTOMIZATION & WORKFLOWS</span>
               <h2 className="tf-section-title">Customize your product</h2>
               <p className="tf-section-subtitle">
-                We aim to take care of you. Need customized candidate questionnaires, specialized pay rates, or custom scraper rules for your client requisitions? We'll be there to lend a helping hand.
+                We aim to take care of you. Need customized candidate screening questionnaires, specialized pay rates, or custom scraper rules for your client requisitions? We'll be there to lend a helping hand.
               </p>
 
               <div className="tf-customization-actions">
@@ -875,7 +912,7 @@ function Homepage() {
                 <div className="tf-persp-content">
                   <div className="tf-persp-row">
                     <span className="tf-persp-tag red">HIGH</span>
-                    <span>Kranthi Kumar — NC DHHS AWS Dev</span>
+                    <span>Jordan Lee — NC DHHS AWS Dev</span>
                     <strong>$75/hr</strong>
                   </div>
                   <div className="tf-persp-row">
@@ -885,7 +922,7 @@ function Homepage() {
                   </div>
                   <div className="tf-persp-row">
                     <span className="tf-persp-tag green">NORMAL</span>
-                    <span>Robert Downey — DevOps</span>
+                    <span>Robert Davis — DevOps</span>
                     <strong>$70/hr</strong>
                   </div>
                 </div>
@@ -944,9 +981,9 @@ function Homepage() {
 
                 <ul className="tf-plan-perks">
                   <li><span className="check">✓</span> 50 AI Pre-Screening Chats / mo</li>
+                  <li><span className="check">✓</span> Private Recruiter Talent Vault</li>
                   <li><span className="check">✓</span> Basic Resume Skill Matching</li>
-                  <li><span className="check">✓</span> 1 Active Job Scraper Pipeline</li>
-                  <li><span className="check">✓</span> 1-Click JobsInHand Bot Pushes</li>
+                  <li><span className="check">✓</span> Digital RTR Document Collection</li>
                   <li><span className="check">✓</span> Standard Email Support</li>
                 </ul>
 
@@ -976,11 +1013,11 @@ function Homepage() {
                 <div className="tf-plan-divider" />
 
                 <ul className="tf-plan-perks">
-                  <li><span className="check">✓</span> <strong>Unlimited</strong> JobsInHand Bot Submissions</li>
-                  <li><span className="check">✓</span> Multi-Role Recruiter Hierarchy (10 seats)</li>
+                  <li><span className="check">✓</span> <strong>Unlimited</strong> AI Candidate Pre-Screening</li>
+                  <li><span className="check">✓</span> Smart JD-Match Instant Alert Engine</li>
+                  <li><span className="check">✓</span> Multi-Role Hierarchy (10 seats) & Vault Privacy</li>
                   <li><span className="check">✓</span> Biometric Liveness & Anti-Proxy Checks</li>
-                  <li><span className="check">✓</span> Real-Time Audio Chimes & Cross-Client Sync</li>
-                  <li><span className="check">✓</span> Direct Coolworks VMS Pipeline Sync</li>
+                  <li><span className="check">✓</span> Candidate Direct Chat & Close Portal</li>
                   <li><span className="check">✓</span> Priority 24/7 SLA Recruiter Support</li>
                 </ul>
 
@@ -1009,9 +1046,9 @@ function Homepage() {
                 <div className="tf-plan-divider" />
 
                 <ul className="tf-plan-perks">
-                  <li><span className="check">✓</span> Unlimited Recruiters, Managers & Specialists</li>
-                  <li><span className="check">✓</span> Custom EEO & Questionnaire Automation</li>
-                  <li><span className="check">✓</span> Custom Scraper Pipelines & State Portals</li>
+                  <li><span className="check">✓</span> Unlimited Recruiters, Managers & Private Vaults</li>
+                  <li><span className="check">✓</span> Custom Autonomous AI Interview Agents</li>
+                  <li><span className="check">✓</span> Executive Manager Audit & Commission Analytics</li>
                   <li><span className="check">✓</span> Dedicated Success Manager & Onboarding</li>
                   <li><span className="check">✓</span> Full Webhook & REST API Integration</li>
                   <li><span className="check">✓</span> 99.9% Production Uptime Guarantee</li>
@@ -1144,7 +1181,7 @@ function Homepage() {
               </div>
 
               <p className="tf-modal-subtitle">
-                Enter your recruiter or admin credentials to access your live ATS workspace.
+                Enter your recruiter or admin credentials to access your private talent vault.
               </p>
 
               {errorMessage && (
@@ -1159,7 +1196,7 @@ function Homepage() {
                   <input 
                     type="email" 
                     required 
-                    placeholder="name@coolsofttech.com"
+                    placeholder="name@smarthire.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
@@ -1187,24 +1224,24 @@ function Homepage() {
                 <div className="tf-demo-chips">
                   <button 
                     type="button" 
-                    onClick={() => fillDemoCreds('omkesh@coolsofttech.com', 'admin')}
+                    onClick={() => fillDemoCreds('admin@smarthire.com', 'admin')}
                     className="tf-chip"
                   >
-                    👑 Omkesh (Super Admin)
+                    👑 Admin Workspace
                   </button>
                   <button 
                     type="button" 
-                    onClick={() => fillDemoCreds('kamal@coolsofttech.com', 'recruiter123')}
+                    onClick={() => fillDemoCreds('recruiter@smarthire.com', 'recruiter123')}
                     className="tf-chip"
                   >
-                    💼 Sukamal (Recruiter)
+                    💼 Senior Recruiter
                   </button>
                   <button 
                     type="button" 
-                    onClick={() => fillDemoCreds('gourav@coolsofttech.com', 'recruiter123')}
+                    onClick={() => fillDemoCreds('sourcing@smarthire.com', 'recruiter123')}
                     className="tf-chip"
                   >
-                    🔍 Gourav (Sourcing)
+                    🔍 Sourcing Specialist
                   </button>
                 </div>
               </div>
@@ -1406,7 +1443,7 @@ function Homepage() {
         }
 
         /* =========================================================================
-           DASHBOARD MOCKUP (Screenshot 2: theFront Floating Dashboard Kit)
+           DASHBOARD MOCKUP
            ========================================================================= */
         .tf-hero-mockup-wrap {
           perspective: 1200px;
@@ -1783,7 +1820,7 @@ function Homepage() {
         .tf-task-badge.default { background: #f1f5f9; color: #475569; }
 
         /* =========================================================================
-           SECTION 2: FEATURES GRID
+           SECTION 2: FEATURES GRID (8 Cards)
            ========================================================================= */
         .tf-features-section {
           padding: 90px 0;
@@ -1792,7 +1829,7 @@ function Homepage() {
         }
 
         .tf-section-header {
-          max-width: 680px;
+          max-width: 720px;
           margin: 0 auto 50px;
         }
 
@@ -1827,7 +1864,7 @@ function Homepage() {
 
         .tf-features-cards-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
           gap: 24px;
         }
 
@@ -1835,7 +1872,7 @@ function Homepage() {
           background: #ffffff;
           border: 1px solid #e2e8f0;
           border-radius: 14px;
-          padding: 30px 26px;
+          padding: 30px 24px;
           box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);
           transition: all 0.25s ease;
           display: flex;
@@ -1867,10 +1904,11 @@ function Homepage() {
 
         .tf-feature-title {
           font-family: 'Plus Jakarta Sans', sans-serif;
-          font-size: 18px;
+          font-size: 17.5px;
           font-weight: 700;
           color: #0f172a;
           margin: 0 0 10px 0;
+          line-height: 1.3;
         }
 
         .tf-feature-desc {
@@ -2092,7 +2130,7 @@ function Homepage() {
         }
 
         /* =========================================================================
-           SECTION 4: SUPPORT TEAM & RECRUITER SUCCESS (Screenshot 4)
+           SECTION 4: SUPPORT TEAM (Professional Global Names)
            ========================================================================= */
         .tf-support-section {
           padding: 90px 0;
@@ -2132,7 +2170,7 @@ function Homepage() {
 
         .tf-team-members-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
           gap: 20px;
           margin-top: 44px;
         }
@@ -2142,7 +2180,7 @@ function Homepage() {
           flex-direction: column;
           align-items: center;
           text-align: center;
-          padding: 24px 16px;
+          padding: 26px 18px;
           background: #ffffff;
           border: 1px solid #e2e8f0;
           border-radius: 12px;
@@ -2179,10 +2217,11 @@ function Homepage() {
         .tf-team-title {
           font-size: 12px;
           color: #64748b;
+          line-height: 1.3;
         }
 
         /* =========================================================================
-           SECTION 5: CUSTOMIZATION (Screenshot 5)
+           SECTION 5: CUSTOMIZATION
            ========================================================================= */
         .tf-customization-section {
           padding: 90px 0;
