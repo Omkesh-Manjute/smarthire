@@ -452,7 +452,15 @@ function Navigation() {
                 {/* Live Activity Notification Bell */}
                 <div className="nav-bell-wrap">
                   <ActivityNotificationBell theme="default" onSelectNotification={(n) => {
-                    navigate('/dashboard')
+                    if (n.reqId) {
+                      const cleanId = String(n.reqId).replace(/^J-/, '').trim()
+                      navigate(`/dashboard?tab=requisitions&reqId=${cleanId}`)
+                      window.dispatchEvent(new CustomEvent('smarthire_open_req_detail', { detail: { reqId: cleanId } }))
+                    } else if (n.candidateId) {
+                      navigate(`/ats?tab=candidates&candidateId=${n.candidateId}`)
+                    } else {
+                      navigate('/dashboard')
+                    }
                   }} />
                 </div>
 

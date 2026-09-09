@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { subscribeAtsJobs } from '../lib/atsFirestore'
 
 // ─── Web Audio API Notification Engine (Singleton with Autoplay Unlock) ──────────
 let sharedAudioCtx = null
@@ -219,12 +220,33 @@ export function triggerNativePushNotification(notif) {
 
 // Helper function to push real-time notifications anywhere in the app
 export const pushActivityNotification = (notif) => {
+  const reqClean = notif.reqId ? String(notif.reqId).replace(/^J-/, '').trim() : null
+
+  let currentList = []
+  try {
+    const raw = localStorage.getItem('smarthire_activity_notifications')
+    if (raw) {
+      currentList = JSON.parse(raw)
+      if (!Array.isArray(currentList)) currentList = []
+    }
+  } catch (e) {}
+
+  // Debounce recent duplicate notifications for the same requisition within 12 seconds
+  if (reqClean) {
+    const isRecentDup = currentList.some(n => {
+      const nReqClean = n.reqId ? String(n.reqId).replace(/^J-/, '').trim() : null
+      const timeDiff = Date.now() - new Date(n.timestamp || Date.now()).getTime()
+      return nReqClean === reqClean && timeDiff < 12000
+    })
+    if (isRecentDup) return
+  }
+
   const newEntry = {
     id: `notif-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     title: notif.title || 'New Activity Update',
     message: notif.message || '',
     type: notif.type || 'info', // 'approval', 'assignment', 'status', 'ai', 'requisition', 'info'
-    category: notif.category || 'status', // 'status', 'team', 'ai', 'system'
+    category: notif.category || (notif.type === 'requisition' ? 'team' : 'status'),
     timestamp: notif.timestamp || new Date().toISOString(),
     timeAgo: 'Just now',
     isRead: false,
@@ -242,12 +264,6 @@ export const pushActivityNotification = (notif) => {
   }
 
   try {
-    const raw = localStorage.getItem('smarthire_activity_notifications')
-    let currentList = []
-    if (raw) {
-      currentList = JSON.parse(raw)
-      if (!Array.isArray(currentList)) currentList = []
-    }
     const updated = [newEntry, ...currentList].slice(0, 50) // Keep latest 50
     localStorage.setItem('smarthire_activity_notifications', JSON.stringify(updated))
   } catch (e) {}
@@ -273,14 +289,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
       if (raw) {
         const parsed = JSON.parse(raw)
         if (Array.isArray(parsed)) {
-          // Filter out synthetic/repeated demo sync notifications
-          const clean = parsed.filter(n => 
-            !n.title?.includes('New Requisition Synced') && 
-            !n.title?.includes('New Requisition Ingested') &&
-            !n.message?.includes('JobsInHand')
-          )
-          localStorage.setItem('smarthire_activity_notifications', JSON.stringify(clean))
-          return clean
+          return parsed
         }
       }
     } catch (e) {}
@@ -346,8 +355,132 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
   // Calculate unread count
   const unreadCount = notifications.filter(n => !n.isRead).length
 
+  // ─── GLOBAL REAL-TIME NEW REQUISITIONS LISTENER (FIRESTORE & BACKGROUND ENGINE) ───
+  const knownJobKeysRef = useRef(new Set())
+  const initialBaselineDoneRef = useRef(false)
+
+  useEffect(() => {
+    let isMounted = true
+
+    // 1. Real-time Firebase Firestore listener (sub-second notification when any job is created)
+    let unsubFirestoreJobs = () => {}
+    try {
+      unsubFirestoreJobs = subscribeAtsJobs(({ jobs: fsJobs, changes }) => {
+        if (!isMounted) return
+
+        // On first snapshot, baseline existing jobs so previous database records don't false-alarm
+        if (!initialBaselineDoneRef.current) {
+          initialBaselineDoneRef.current = true
+          fsJobs.forEach(j => {
+            const k1 = String(j.id || '').trim()
+            const k2 = String(j.reqId || '').trim()
+            const k3 = k1.replace(/^J-/, '')
+            if (k1) knownJobKeysRef.current.add(k1)
+            if (k2) knownJobKeysRef.current.add(k2)
+            if (k3) knownJobKeysRef.current.add(k3)
+          })
+          return
+        }
+
+        // Subsequent changes: detect genuine newly added requisitions
+        const addedChanges = changes.filter(c => c.type === 'added').map(c => c.doc)
+        addedChanges.forEach(j => {
+          const k1 = String(j.id || '').trim()
+          const k2 = String(j.reqId || '').trim()
+          const k3 = k1.replace(/^J-/, '')
+          const isKnown = (k1 && knownJobKeysRef.current.has(k1)) ||
+                          (k2 && knownJobKeysRef.current.has(k2)) ||
+                          (k3 && knownJobKeysRef.current.has(k3))
+
+          if (!isKnown) {
+            if (k1) knownJobKeysRef.current.add(k1)
+            if (k2) knownJobKeysRef.current.add(k2)
+            if (k3) knownJobKeysRef.current.add(k3)
+
+            pushActivityNotification({
+              title: `💼 New Requisition Live!`,
+              message: `${j.title || 'New Position'} (${j.client || 'Enterprise'} · ${j.location || 'Remote'}) is now live in ATS.`,
+              type: 'requisition',
+              category: 'team',
+              actor: j.postedByName || 'SmartHire ATS',
+              actorRole: 'Recruiter',
+              reqId: j.reqId || j.id
+            })
+          }
+        })
+      })
+    } catch (err) {
+      console.warn('Firestore global job subscription notice:', err)
+    }
+
+    // 2. Periodic background poll of /api/jobs (every 25s) to detect scraper / backend jobs
+    const pollBackendJobs = async () => {
+      try {
+        const token = localStorage.getItem('smarthire_token') || ''
+        const headers = token ? { Authorization: `Bearer ${token}` } : {}
+        const res = await fetch('/api/jobs', { headers })
+        if (!res.ok) return
+        const data = await res.json()
+        const list = Array.isArray(data) ? data : data.jobs || data.data || []
+        if (!Array.isArray(list) || list.length === 0) return
+
+        if (!initialBaselineDoneRef.current) {
+          list.forEach(j => {
+            const k1 = String(j.id || '').trim()
+            const k2 = String(j.reqId || '').trim()
+            const k3 = k1.replace(/^J-/, '')
+            if (k1) knownJobKeysRef.current.add(k1)
+            if (k2) knownJobKeysRef.current.add(k2)
+            if (k3) knownJobKeysRef.current.add(k3)
+          })
+          initialBaselineDoneRef.current = true
+          return
+        }
+
+        const newlyIngested = []
+        list.forEach(j => {
+          const k1 = String(j.id || '').trim()
+          const k2 = String(j.reqId || '').trim()
+          const k3 = k1.replace(/^J-/, '')
+          const isKnown = (k1 && knownJobKeysRef.current.has(k1)) ||
+                          (k2 && knownJobKeysRef.current.has(k2)) ||
+                          (k3 && knownJobKeysRef.current.has(k3))
+          if (!isKnown) {
+            if (k1) knownJobKeysRef.current.add(k1)
+            if (k2) knownJobKeysRef.current.add(k2)
+            if (k3) knownJobKeysRef.current.add(k3)
+            newlyIngested.push(j)
+          }
+        })
+
+        if (newlyIngested.length > 0) {
+          pushActivityNotification({
+            title: `💼 ${newlyIngested.length} New Requisition${newlyIngested.length > 1 ? 's' : ''} Synced!`,
+            message: newlyIngested.length === 1
+              ? `${newlyIngested[0].title} (Req #${newlyIngested[0].reqId || newlyIngested[0].id}) is now live.`
+              : `${newlyIngested[0].title} and ${newlyIngested.length - 1} more jobs ingested into portal.`,
+            type: 'requisition',
+            category: 'team',
+            actor: 'Ingestion Engine',
+            actorRole: 'Automation Scraper',
+            reqId: newlyIngested[0].reqId || newlyIngested[0].id
+          })
+        }
+      } catch (_) {}
+    }
+
+    const intervalId = setInterval(pollBackendJobs, 25000)
+
+    return () => {
+      isMounted = false
+      clearInterval(intervalId)
+      if (typeof unsubFirestoreJobs === 'function') unsubFirestoreJobs()
+    }
+  }, [])
+
   // Listen for live new notifications emitted across tabs or components
   useEffect(() => {
+    let toastTimeout = null
     const handleNewNotif = (e) => {
       const newNotif = e.detail
       if (!newNotif) return
@@ -365,16 +498,19 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
       // Ensure sound is triggered (debounced to avoid duplicate play)
       playNotificationSound(newNotif.type)
 
-      // Trigger live popup banner for 4.5 seconds
+      // Trigger live popup banner for 5 seconds
       setLiveToast(newNotif)
-      const t = setTimeout(() => {
+      if (toastTimeout) clearTimeout(toastTimeout)
+      toastTimeout = setTimeout(() => {
         setLiveToast(null)
-      }, 4500)
-      return () => clearTimeout(t)
+      }, 5000)
     }
 
     window.addEventListener('smarthire_new_activity_notification', handleNewNotif)
-    return () => window.removeEventListener('smarthire_new_activity_notification', handleNewNotif)
+    return () => {
+      window.removeEventListener('smarthire_new_activity_notification', handleNewNotif)
+      if (toastTimeout) clearTimeout(toastTimeout)
+    }
   }, [])
 
   // Close dropdown on click outside
@@ -427,6 +563,9 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
   // Filtered notifications
   const filteredNotifs = notifications.filter(n => {
     if (activeFilter === 'all') return true
+    if (activeFilter === 'requisitions') {
+      return n.type === 'requisition' || n.category === 'requisition' || n.title?.toLowerCase().includes('requisition') || n.title?.toLowerCase().includes('job')
+    }
     if (activeFilter === 'status') return n.category === 'status' || n.type === 'approval' || n.type === 'interview'
     if (activeFilter === 'team') return n.category === 'team' || n.type === 'assignment' || n.type === 'requisition' || n.type === 'inquiry'
     if (activeFilter === 'ai') return n.category === 'ai' || n.type === 'ai'
@@ -749,6 +888,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
           }}>
             {[
               { id: 'all', label: `All (${notifications.length})` },
+              { id: 'requisitions', label: `Jobs (${notifications.filter(n => n.type === 'requisition' || n.category === 'requisition' || n.title?.toLowerCase().includes('requisition') || n.title?.toLowerCase().includes('job')).length})` },
               { id: 'status', label: 'Approvals' },
               { id: 'team', label: 'Team Activity' },
               { id: 'ai', label: 'AI Alerts' }

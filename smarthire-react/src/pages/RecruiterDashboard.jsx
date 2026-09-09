@@ -16,6 +16,7 @@ import {
   getRequisitionCandidates,
   saveTeamUsersFirestore,
   getTeamUsersFirestore,
+  saveAtsJob,
   getAtsJobs,
   subscribeAtsJobs,
   deduplicateCandidates
@@ -1987,6 +1988,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     const newReqId = `1589${Math.floor(40 + Math.random() * 50)}`
     const newJobObj = {
       id: `J-${newReqId}`,
+      reqId: newReqId,
       title: 'New Requisition Position',
       client: 'State Of SC',
       skills: ['Required Skill 1', 'Required Skill 2'],
@@ -1999,6 +2001,11 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       deadline: 'Aug 28, 2026'
     }
     handleOpenReq(newJobObj)
+
+    // Save to Firestore so all clients and listeners sync immediately
+    try {
+      saveAtsJob(newReqId, newJobObj).catch(e => console.warn('Firestore save notice:', e))
+    } catch (_) {}
 
     // Trigger instant in-app activity notification and requisition sound chime
     pushActivityNotification({
