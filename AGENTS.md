@@ -31,7 +31,22 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
-### 2026-09-10 — 24x7 Autonomous Recruitment Workflow Timeline & Continuous Laser Beam Animation
+### 2026-09-10 — Sequential Opening Recruitment Workflow Stepper, Calm Pace & CoolWorks Removal
+- **Sequential Card Opening Experience (`Homepage.jsx`)**:
+  - Replaced indiscriminate continuous laser loop with an intelligent, sequential 6-stage recruitment workflow stepper (`activeWorkflowIndex` from 0 to 5).
+  - Paced comfortably at **3.2s per stage** (19.2s total cycle) so each stage is clearly legible and understandable.
+  - As the laser beam arrives at each milestone on the rail, that card **opens**:
+    - Expands with subtle scale (`scale(1.06)`), elevated shadow, glowing electric blue border, and bright `● ACTIVE` badge.
+    - Rail node pulses with an active radar halo, and vertical connector stem lights up solid blue (`#2563eb`).
+    - Completed stages remain illuminated with completed indicator (`.is-passed`), while future stages wait calmly (`.is-waiting`).
+  - Added interactive controls: `⏸ Pause` / `▶ Resume Flow` button, hover-to-pause on card stage, and direct click-to-view on any card or rail dot.
+- **Removed "CoolWorks" References Completely**:
+  - Removed all occurrences of "CoolWorks" from stage 6 and mobile views; updated to `Enterprise VMS upload & audit trail • 10:05 PM`.
+- **Text Truncation Elimination**:
+  - Replaced restrictive ellipsis truncation with multiline text wrapping (`white-space: normal; line-height: 1.35;`) so all requisition titles, candidate details, and timestamps are 100% visible without getting cut off.
+- **Production Build Verified**:
+  - `npm run build` in `smarthire-react` verified: 0 errors, 0 warnings (built in 2.21s).
+
 - **Continuous Animated Recruitment Workflow Timeline (`Homepage.jsx`)**:
   - Implemented continuous animated timeline section inspired by Tasklet.ai workflow architecture, adapted specifically to real ATS operations.
   - Features a continuous 60fps glowing neon laser beam (`@keyframes workflowBeam`) sweeping horizontally across the 24-hour time axis (`12 AM` -> `6 AM` -> `12 PM` -> `6 PM` -> `12 AM 🌙`) with a luminous gradient tail, leading laser head, and pulsating milestone rail nodes.
