@@ -320,7 +320,12 @@ function Homepage() {
                     <div className="tf-dash-chart-card">
                       <div className="tf-chart-left">
                         <div className="tf-chart-head">
-                          <h4>Today's sourcing trends</h4>
+                          <div className="tf-chart-head-top">
+                            <h4>Today's sourcing trends</h4>
+                            <span className="tf-live-stream-badge">
+                              <span className="tf-pulse-dot" /> LIVE TELEMETRY
+                            </span>
+                          </div>
                           <span className="tf-chart-timestamp">as of 25 May 2026, 09:41 PM</span>
                           <div className="tf-chart-legend">
                             <span className="tf-legend-dot blue"></span> Today
@@ -328,12 +333,12 @@ function Homepage() {
                           </div>
                         </div>
 
-                        {/* Interactive SVG Bezier Chart */}
+                        {/* Interactive SVG Bezier Chart with Animated Wave & Radar Pulse */}
                         <div className="tf-svg-chart-container">
                           <svg viewBox="0 0 420 180" className="tf-bezier-svg">
                             <defs>
                               <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="#2563eb" stopOpacity="0.25"/>
+                                <stop offset="0%" stopColor="#2563eb" stopOpacity="0.28"/>
                                 <stop offset="100%" stopColor="#2563eb" stopOpacity="0.0"/>
                               </linearGradient>
                             </defs>
@@ -342,7 +347,9 @@ function Homepage() {
                             <line x1="0" y1="120" x2="420" y2="120" stroke="#f1f5f9" strokeDasharray="3 3" />
                             <line x1="0" y1="160" x2="420" y2="160" stroke="#f1f5f9" strokeDasharray="3 3" />
 
+                            {/* Yesterday Reference Curve */}
                             <path 
+                              className="tf-chart-yesterday-curve"
                               d="M 10,140 Q 60,110 110,130 T 210,100 T 310,120 T 410,70" 
                               fill="none" 
                               stroke="#cbd5e1" 
@@ -350,21 +357,34 @@ function Homepage() {
                               strokeDasharray="4 4" 
                             />
 
+                            {/* Animated Sourcing Gradient Fill Area (Up/Down Wave Motion) */}
                             <path 
+                              className="tf-chart-area-fill"
                               d="M 10,150 Q 70,80 130,135 T 250,55 T 340,115 T 410,40 L 410,180 L 10,180 Z" 
                               fill="url(#chartGrad)" 
                             />
 
+                            {/* Animated Sourcing Main Line (Smooth Draw-in & Wave Breathing) */}
                             <path 
+                              className="tf-chart-main-curve"
                               d="M 10,150 Q 70,80 130,135 T 250,55 T 340,115 T 410,40" 
                               fill="none" 
                               stroke="#2563eb" 
                               strokeWidth="2.5" 
+                              strokeLinecap="round"
                             />
 
-                            <circle cx="250" cy="55" r="4.5" fill="#2563eb" stroke="#ffffff" strokeWidth="2" />
-                            <rect x="235" y="24" width="30" height="20" rx="4" fill="#ffffff" stroke="#e2e8f0" />
-                            <text x="250" y="38" textAnchor="middle" fontSize="10" fontWeight="700" fill="#0f172a">38</text>
+                            {/* Peak Point Radar Ping Circles */}
+                            <circle cx="250" cy="55" r="14" className="tf-chart-ping" />
+                            <circle cx="250" cy="55" r="8" className="tf-chart-ping-inner" />
+                            <circle cx="250" cy="55" r="4.5" fill="#2563eb" stroke="#ffffff" strokeWidth="2" className="tf-chart-peak-dot" />
+
+                            {/* Floating Peak Tooltip (Badge '38') */}
+                            <g className="tf-chart-tooltip-group">
+                              <rect x="235" y="22" width="30" height="21" rx="5" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1" className="tf-tooltip-rect" />
+                              <polygon points="247,43 253,43 250,46" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1" />
+                              <text x="250" y="37" textAnchor="middle" fontSize="10.5" fontWeight="800" fill="#0f172a">38</text>
+                            </g>
                           </svg>
                           <div className="tf-chart-x-labels">
                             <span>0</span><span>2</span><span>4</span><span>6</span><span>8</span><span>10</span><span>12</span><span>14</span><span>16</span><span>18</span><span>20</span><span>22</span>
@@ -1879,7 +1899,25 @@ function Homepage() {
           display: grid;
           grid-template-columns: 140px 1fr;
           overflow: hidden;
-          transition: transform 0.3s ease;
+          transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+          animation: heroFloat 6s ease-in-out infinite;
+          will-change: transform;
+        }
+
+        .tf-dashboard-mockup:hover {
+          animation-play-state: paused;
+          box-shadow: 
+            0 32px 70px -15px rgba(15, 23, 42, 0.22),
+            0 12px 30px -5px rgba(15, 23, 42, 0.1);
+        }
+
+        @keyframes heroFloat {
+          0%, 100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-8px);
+          }
         }
 
         @media (max-width: 640px) {
@@ -2108,6 +2146,201 @@ function Homepage() {
           width: 100%;
           height: auto;
           overflow: visible;
+        }
+
+        /* ─── Wave & Radar Animations for Sourcing Trends ─── */
+        .tf-chart-head-top {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .tf-live-stream-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          background: #ecfdf5;
+          border: 1px solid #a7f3d0;
+          color: #059669;
+          font-size: 8px;
+          font-weight: 800;
+          padding: 2px 7px;
+          border-radius: 9999px;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+        }
+
+        .tf-pulse-dot {
+          width: 5px;
+          height: 5px;
+          background: #10b981;
+          border-radius: 50%;
+          animation: dotPulse 1.8s infinite;
+        }
+
+        @keyframes dotPulse {
+          0% {
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+          }
+          70% {
+            box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+          }
+          100% {
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+          }
+        }
+
+        /* Animated Main Curve (Draw-in + Wave Breathe) */
+        .tf-chart-main-curve {
+          stroke-dasharray: 600;
+          stroke-dashoffset: 0;
+          animation: curveDraw 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards, curveBreathe 4s ease-in-out infinite 1.4s;
+          transform-origin: 210px 100px;
+          will-change: transform;
+        }
+
+        /* Animated Area Gradient Fill (Breathe with curve) */
+        .tf-chart-area-fill {
+          animation: areaFade 1.4s ease forwards, areaBreathe 4s ease-in-out infinite 1.4s;
+          transform-origin: 210px 100px;
+          will-change: transform;
+        }
+
+        @keyframes curveDraw {
+          0% {
+            stroke-dashoffset: 600;
+            opacity: 0.3;
+          }
+          100% {
+            stroke-dashoffset: 0;
+            opacity: 1;
+          }
+        }
+
+        @keyframes areaFade {
+          0% {
+            opacity: 0;
+          }
+          100% {
+            opacity: 1;
+          }
+        }
+
+        @keyframes curveBreathe {
+          0%, 100% {
+            transform: translateY(0px) scaleY(1);
+          }
+          50% {
+            transform: translateY(-4.5px) scaleY(1.05);
+          }
+        }
+
+        @keyframes areaBreathe {
+          0%, 100% {
+            transform: translateY(0px) scaleY(1);
+            opacity: 0.85;
+          }
+          50% {
+            transform: translateY(-4.5px) scaleY(1.05);
+            opacity: 1;
+          }
+        }
+
+        /* Radar Ripple on Peak Dot */
+        .tf-chart-ping {
+          fill: rgba(37, 99, 235, 0.2);
+          transform-origin: 250px 55px;
+          animation: radarPing 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+
+        .tf-chart-ping-inner {
+          fill: rgba(37, 99, 235, 0.35);
+          transform-origin: 250px 55px;
+          animation: radarPingInner 2.4s cubic-bezier(0, 0, 0.2, 1) infinite 0.4s;
+        }
+
+        @keyframes radarPing {
+          0% {
+            r: 4;
+            opacity: 0.8;
+          }
+          70% {
+            r: 18;
+            opacity: 0.15;
+          }
+          100% {
+            r: 26;
+            opacity: 0;
+          }
+        }
+
+        @keyframes radarPingInner {
+          0% {
+            r: 4;
+            opacity: 0.9;
+          }
+          70% {
+            r: 12;
+            opacity: 0.25;
+          }
+          100% {
+            r: 17;
+            opacity: 0;
+          }
+        }
+
+        /* Floating Bob for Tooltip Badge ('38') */
+        .tf-chart-tooltip-group {
+          animation: floatTooltip 3s ease-in-out infinite;
+          transform-origin: 250px 32px;
+          will-change: transform;
+        }
+
+        @keyframes floatTooltip {
+          0%, 100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-4px);
+          }
+        }
+
+        .tf-tooltip-rect {
+          filter: drop-shadow(0 2px 5px rgba(15, 23, 42, 0.12));
+        }
+
+        /* Highlighted KPI Breathing Glow */
+        .tf-kpi-highlighted {
+          border-color: #93c5fd;
+          background: #eff6ff;
+          animation: kpiGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes kpiGlow {
+          0%, 100% {
+            box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.1);
+          }
+          50% {
+            box-shadow: 0 0 14px 2px rgba(37, 99, 235, 0.22);
+          }
+        }
+
+        /* Mini Badges Pulse */
+        .tf-pill-badge.blue {
+          animation: badgeBreathe 3s ease-in-out infinite;
+        }
+
+        .tf-pill-badge.green {
+          animation: badgeBreathe 3s ease-in-out infinite 1s;
+        }
+
+        @keyframes badgeBreathe {
+          0%, 100% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.05);
+          }
         }
 
         .tf-chart-x-labels {
