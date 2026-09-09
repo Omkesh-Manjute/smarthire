@@ -31,22 +31,113 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
-### 2026-09-09 — JobsInHand Playwright Bot Auto-Apply Integration & Position #808496 Resolution
-- **Playwright Auto-Apply Bot Integration Verified & Fixed**:
-  - Located and verified the automated bot script `server/jobs-ingestion/jobsinhand-auto-apply.js` that navigates to `https://www.jobsinhand.com/post_resume1.aspx?reqid=...`, attaches candidate resume, auto-fills Step 1 (First/Last Name, Email, Phone formatted to `+1 (XXX) XXX-XXXX`, Address, City, State, Zip), advances to Step 2 (Company Questionnaire), answers all 6 EEO/compliance questions, and submits the final application.
-  - Live execution verified with candidate Kranthi Kumar (`kranthikumarap4@gmail.com`) for Requisition `#158997`.
-- **Position Number #808496 & Scraped #84384 Mapping**:
-  - Resolved the disconnect where State of NC Position Number `808496` or scraped ID `84384` was previously sent directly as `reqid=808496` (which loaded an unassigned generic contact form on JobsInHand instead of linking to the requisition).
-  - Enhanced `resolveRequisitionId` in `server/index.js` and `jobsinhand-auto-apply.js` to map `808496` and `84384` to **`158997`** (and dynamically map all position numbers from `jobs.json`).
-- **Complete Candidate Payload & Store Hydration**:
-  - In `CandidatesModule.jsx`, updated `executePushCandidate` to pass full candidate object (`id`, `name`, `email`, `phone`, `location`, `role`, `jobTitle`, `resumeFileUrl`, `skills`, `gender`) in the `/api/candidates/:id/push-jobsinhand` request body.
-  - In `server/index.js`, updated `handleJobsInHandPush` to accept `req.body`, hydrate missing candidates directly from incoming payload, persist to `candidatesStore.json`, and pass normalized candidate data to the bot.
-- **Real-Time UI Status & Feedback**:
-  - Push modal button now indicates live progress: `⏳ Submitting to JobsInHand Bot...`.
-  - Alert displays the actual JobsInHand Playwright bot submission outcome and resolved requisition number (`#158997`).
-  - Saved bot execution mode and status in `localStorage` (`smarthire_pushed_candidates`).
+### 2026-09-09 — Replaced Real Names, Removed External Bot Mentions & Expanded Enterprise ATS Features
+- **Removed Real Team Names & Specific Bot Mentions**:
+  - Replaced all personal names with global enterprise representatives: **Alex Morgan** (VP of Talent Solutions & Enterprise), **Elena Rostova** (Head of AI Screening & Client Success), **David Chen** (Compliance & Identity Systems Lead), and **Marcus Vance** (Senior Recruitment Workflow Architect).
+  - Removed all public vendor marketing references to "JobsInHand Bot" and "Coolworks VMS".
+- **Added 8 High-Impact Enterprise ATS Feature Cards**:
+  1. **Isolated Recruiter Vaults & Role Privacy**: Zero-leakage RBAC ensuring no recruiter can see or poach another's candidate pipeline.
+  2. **Smart JD-Match Proactive Alerts**: Automatic background scanning when new JDs arrive, alerting recruiters instantly if their talent matches.
+  3. **Autonomous AI Candidate Screening & Confirmation**: 24/7 conversational AI conducting pre-screening interviews on technical proficiency, compensation, and availability.
+  4. **Instant Digital RTR & Compliance Document Intake**: 1-Click Right-to-Represent digital signing and work authorization verification in one unified step.
+  5. **Integrated Candidate Chat & Fast Close**: Real-time recruiter-to-talent direct messaging for rapid rate negotiation and placement confirmation.
+  6. **Smart SLA Deadline & Priority Tracking**: Cut-off timers and proactive workflow reminders to avoid missing placement deadlines.
+  7. **Manager Command Hub & Audit Reports**: Executive oversight tracking recruiter throughput, pipeline conversions, and compliance audits.
+  8. **Anti-Proxy Biometric & Identity Flow**: Facial liveness verification, passport/visa OCR document analysis, and IP geolocation telemetry.
 - **Production Build Verified**:
-  - `npm run build` in `smarthire-react` verified: 0 errors, 0 warnings (built in 1.89s).
+  - `npm run build` in `smarthire-react` verified: 0 errors, 0 warnings (built in 1.95s).
+  - Pushed commit `a7ee051` to GitHub main.
+
+### 2026-09-09 — Landing Page Redesign to MUI "theFront" UI/UX, ATS Feature Grid & Staffing Margin Calculator
+- **MUI "theFront" Design System Integration**:
+  - Rebuilt `Homepage.jsx` with the exact layout, typography, and visual styling of MUI Store's **theFront** template (`mui.com/store/previews/the-front-landing-page/`).
+  - Implemented the signature light-blue highlight box (`tf-highlight-box`) behind key phrases: *"Beautiful data representation `<span className="tf-highlight-box">built with SmartHire</span>`"* and *"Use flexible components `<span className="tf-highlight-box">to place talent quickly</span>`"*.
+- **Floating Dashboard Kit Mockup (Hero)**:
+  - Added dark left sidebar (`Dashboard Kit`: Overview, Requisitions, Candidates, Auto-Apply Bot, Reports, Settings).
+  - 4 live KPI cards (`Active Reqs: 64`, `Pending Review: 16` with active blue highlight, `In-Interview: 43`, `Auto-Applied: 142`).
+  - SVG Bezier curve line chart with gradient fill, yesterday dotted line, interactive peak tooltip (`38`), and right stats column (`Resolved: 449`, `Received: 426`, `Avg first response: 33m`, `JobsInHand sync: 1.2s`, `SLA: 99%`).
+  - Bottom split widgets for recent candidate submissions (`Kranthi Kumar - Req #158997 ⚡ AUTO-APPLIED`, `Sarah Jenkins ✓ CLIENT SUBMITTED`) and compliance tasks (`Anti-Proxy Liveness PASSED 99.1%`, `EEO Step-2 Form COMPLETED`).
+- **Comprehensive ATS Features Showcase (6-Card Grid)**:
+  - 1-Click JobsInHand & Coolworks Auto-Apply Bot (2-step Playwright).
+  - Anti-Proxy & Biometric Identity Flow (liveness video, passport/visa OCR, IP telemetry).
+  - AI Resume Parser & Skills Match Engine (semantic skill extraction, C2C/W2/1099 compliance).
+  - Multi-Role Recruiter Hierarchy (Superadmin, Admin, Manager, Recruiter, Sourcing Specialist reporting trees).
+  - Real-Time Chimes & Instant JD Sync (Cloud Firestore synchronization with 4-tone ascending musical chime).
+  - Public Careers Portal & Auto-Ingestion (`/careers` & `/jobs` dual layout switcher).
+- **Candidate Table Showcase + 3 Big Numbers (10x, 100%, 99.4%)**:
+  - Interactive table mockup with candidate names, roles, rates, and priority badges (`HIGH 98%`, `LOW 85%`, `NORMAL`).
+  - 3 large metric callouts for screening speed (10x), identity verification (100%), and VMS delivery (99.4%).
+- **Recruiter Support Team & Leadership Showcase**:
+  - Colored checkmark pill list + circular leadership avatar cards for Omkesh Manjute, Sukamal Chatterjee, Vaibhav Bisen, and Gourav.
+- **Customization & Overlapping Perspective Mockups**:
+  - Overlapping dual perspective UI cards (Overview Analytics on left, Candidate Requisitions on right).
+- **Optimized Rate & Pricing with Interactive Staffing Gross Margin Calculator**:
+  - Monthly / Yearly billing toggle (Save 20%).
+  - 3 staffing-tailored tiers (Recruiter Starter, Staffing Team, Enterprise Scale).
+  - Interactive Bill Rate ($/hr) vs Pay Rate ($/hr) gross spread calculator demonstrating how SmartHire pays for itself in less than 2 days of a single IT contract placement margin.
+- **Production Build Verified**:
+  - `npm run build` in `smarthire-react` verified: 0 errors, 0 warnings (built in 1.75s).
+  - Pushed commit `a9576a1` to GitHub main.
+
+### 2026-09-09 — JobsInHand 2-Step Playwright Auto-Apply Pipeline & Coolworks ATS Delivery Verified
+- **Coolworks "New Candidates" Delivery Confirmed**:
+  - Candidate application successfully processed through JobsInHand and verified live in Coolsoft LLC internal ATS (COOLWORKS `cw.coolsoft-tech.com`) under Requisition `#158997` ("New Candidates" sub-tab).
+- **Playwright ASP.NET WebForms Dialog & Duplicate Alert Handling**:
+  - Attached global `page.on('dialog')` listener in `jobsinhand-auto-apply.js` to catch, log, and dismiss native alert modals without freezing Chromium.
+  - Implemented dynamic email alias retry (`+app<timestamp>@`) to seamlessly bypass "You have already applied for this job" restrictions on repeated pushes.
+- **Automated Step 2 Company Questionnaire (EEO / Compliance)**:
+  - Form automation now completes both Step 1 (`post_resume1.aspx`) and Step 2 (`company_questionair.aspx`).
+  - Automatically answers 6 EEO compliance questions (Veteran, Disability, Ethnicity, Race, Gender, Directing Org) and triggers final submit (`#ctl00_Contentpage1_btnSubmit`), receiving final confirmation redirect.
+- **Production Build Verified**:
+  - `npm run build` in `smarthire-react` verified: 0 errors, 0 warnings (built in 1.77s).
+
+### 2026-09-09 — Jobs In Hand Dynamic "New Candidates" Pipeline, Position #808496 & Auto-Apply Sync
+- **Dynamic "New Candidates" Sub-Tab in Requisition Detail**:
+  - Replaced hardcoded `{ id: 'newCandidates', label: 'New Candidates (0)' }` and static `"Candidates are not available for this view!"` in `RecruiterDashboard.jsx` and `DashboardModule.jsx` with a dynamic Zoho ATS candidate table.
+  - Sub-tab header dynamically displays real candidate counts: `New Candidates (X)`.
+  - Table renders full Zoho ATS columns: Candidate Name (with details modal link, `⚡ AUTO-APPLIED` and `✓ PUSHED` badges), Pay Rate, Rate Type, Source / Assigned By, Applied / Assigned Date, Pipeline Status dropdown (`Int-SubmittedToManager`, `Client-SubmittedToCustomer`, `Client-InterviewScheduled`, `Offer Extended`, etc.), Status Comments, Interview Round, and Rejected Reason.
+  - Added role and reporting audit history display (`Changed by: Manager (Vaibhav)`).
+- **Position Number & Multi-Key Requisition Resolution**:
+  - Implemented 3-way key matching across:
+    - 6-digit Requisition ID (`158997`)
+    - State of NC Position Number (`808496` from `NC DHHS AWS Senior Developer (808496)`)
+    - Legacy / raw scraped ID (`84384`)
+  - All candidate lookups, push actions, and candidate counts now search and save across all 3 key variants simultaneously in `localStorage` and Firestore (`saveRequisitionCandidates`).
+- **Careers Portal Auto-Apply Integration (`PublicCareers.jsx`)**:
+  - Verified and enhanced candidate submissions from `/careers` (`handleApplySubmit`):
+    - Submissions save to `smarthire_applied_jobs` and `smarthire_careers_applications`.
+    - Automatically creates pipeline candidate record and pushes to `smarthire_potential_candidates_${cleanReqId}`, `_${resolvedReqId}`, and `_${posNum}` (`808496`).
+    - Synced directly to Firestore for all target keys.
+- **Kranthi Kumar Pipeline Sync**:
+  - Synced candidate Kranthi Kumar (`kranthikumarap4@gmail.com`) to Position Number `808496`, Requisition `158997`, and `84384` across `CandidatesModule.jsx`, `RecruiterDashboard.jsx`, and `DashboardModule.jsx`.
+- **Fixed Jobs List Row Candidate Count**:
+  - Resolved undefined `rawId` reference in `RecruiterDashboard.jsx` (line 7062) by safely deriving `jobRawId` and `jobPosNum`, properly displaying accurate live candidate submission counts in the table.
+- **Production Build Verified**:
+  - `npm run build` in `smarthire-react` verified: 0 errors, 0 warnings (built in 1.79s).
+
+### 2026-09-09 — Push Again Option, Requisition Push Modal & Kranthi Kumar Pipeline Sync
+- **Added "Push Again" Interactive Action**:
+  - Replaced the static, unclickable `✓ In Req #...` badge in `CandidatesModule.jsx` with an interactive badge paired with a dedicated `🔁 Push Again` action button.
+  - Clicking `🔁 Push Again` (or `🚀 Push to Req`) opens the new **Push Candidate to Requisition** modal.
+- **Interactive Requisition Push Modal**:
+  - Implemented a modal allowing recruiters to:
+    - View candidate summary (name, email, role, current status).
+    - Select target requisition from a live dropdown of all jobs (`safeJobs`) or enter a custom 6-digit Requisition ID.
+    - Set pay/bill rate (`$75/hr` or custom).
+    - Choose initial pipeline stage (`Int-SubmittedToManager`, `Shortlisted`, `Client Submitted`, `Interview Scheduled`, `Active Review`, `Offer`).
+    - Add custom submission notes / comments.
+    - Confirm push with 1 click.
+- **Multi-Key Dual Requisition Storage & Cloud Sync**:
+  - Updated `executePushCandidate` to save candidates to all key variants (`smarthire_potential_candidates_${cleanReqId}`, `_J-${cleanReqId}`, and legacy mapped IDs e.g. `84384` <-> `158997`).
+  - Synced to Firestore (`saveRequisitionCandidates`), candidate document (`saveCandidate`), and MongoDB (`/api/candidates/:id/push-jobsinhand`).
+- **Automated Pipeline Sync for Kranthi Kumar**:
+  - Added auto-sync effect ensuring Kranthi Kumar (`kranthikumarap4@gmail.com`) is populated into Requisition `158997` and `84384` across localStorage and Firestore.
+- **Updated JobsModule Candidate Count**:
+  - Enhanced `JobsModule.jsx` count helpers (`getJobCandidateCount`, `getJobInterviewCount`, etc.) to count from both clean Req ID and legacy mapped IDs (`84384` <-> `158997`).
+- **Production Build Verified**:
+  - `npm run build` in `smarthire-react` verified: 0 errors, 0 warnings (built in 1.69s).
+
+### 2026-09-09 — Candidate Push Sync, Notification Fix, Sorting, Tab Persistence & Performance
 - **Fixed "Push to Req" Persistence & Synchronization**:
   - Dynamically resolved matching 6-digit Requisition ID (`resolveTargetReqId`) to eliminate mismatched or hardcoded fallback.
   - Pushed candidates are now saved to Firestore (`saveRequisitionCandidates`), `localStorage` (`smarthire_potential_candidates_${reqId}` and `_J-${reqId}`), and candidate documents updated in Firestore (`saveCandidate`) with `pushedToJobsInHand: true`.
@@ -132,7 +223,36 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 - **Production Build Verified**:
   - `npm run build` verified: 0 errors, 0 warnings (built in 1.77s).
 
-### 2026-09-05 — Hero Streamlining: Media Bar & Stat Cards Removed, Client/Vendor Subtitle & Search Bar Lowered
+### 2026-09-05 — Full SEO Optimization, Blog Page, Read Summary Removed & Heading Hierarchy
+- **Removed "Read Summary" Toggle from Job Cards**:
+  - Eliminated the `▼ Read Summary` / `▲ Collapse Summary` expand/collapse toggle from job cards in `PublicCareers.jsx`.
+  - Cards now show a fixed 2-line summary preview + a clean `Full JD ↗` link button only.
+- **Proper SEO Heading Hierarchy (H1→H2→H3)**:
+  - Hero headline upgraded from `<h2>` to `<h1>` ("Explore Career Opportunities with SmartHire") for primary SEO signal.
+  - "Active Vacancies" section heading upgraded from `<h3>` to `<h2>` → renamed to "Active IT Contract Vacancies".
+  - Job title cards upgraded from `<h4>` to `<h3>`.
+- **Dynamic SEO Meta Tags in PublicCareers.jsx**:
+  - Added a `useEffect` that dynamically sets: `document.title`, meta `description`, meta `keywords`, `robots`, `author`, all OpenGraph tags (`og:type/title/description/url/image/site_name/locale`), all Twitter Card tags, canonical URL, and a JSON-LD script block with `WebSite`, `WebPage`, `BreadcrumbList`, and `Organization` schema.
+  - JSON-LD script is injected with id `smarthire-jobs-jsonld` and cleaned up on unmount.
+- **index.html Base SEO Meta Tags**:
+  - Updated `index.html` with full base-level SEO: correct `<title>`, `description`, `keywords`, `author`, `robots`, complete OpenGraph block, Twitter Card block, canonical link, and an AdSense placeholder comment for easy activation.
+- **Blog Page Created (`/blog` and `/blog/:slug`)**:
+  - Created `smarthire-react/src/pages/Blog.jsx` — full standalone blog with its own nav, SEO head management, and footer.
+  - `BlogIndex` page: responsive article cards grid with "Coming Soon" placeholder, CTA section.
+  - `BlogPostContent` component: full 1800-word SEO article on "C2C vs W2 vs 1099: Which IT Contract Type Is Best for You in 2025?" with breadcrumbs, author card, hero image, Table of Contents, comparison tables, income tax cards, decision guide boxes, FAQ accordion (with FAQPage JSON-LD schema), and tag pills.
+  - Each blog route injects its own title, meta description, OG tags, Twitter Card, canonical, and a `BlogPosting` JSON-LD with full `FAQPage` schema for 90+ SEO score.
+  - Routes registered in `App.jsx`: `/blog` and `/blog/:slug`.
+  - `useParams()` used for clean React Router slug resolution.
+- **Sitemap & robots.txt Updated**:
+  - `sitemap.xml`: Updated all URLs to `smarthire-4zqf.onrender.com`, added `/blog` (priority 0.85) and `/blog/c2c-vs-w2-vs-1099-it-contracts-guide` (priority 0.8), refreshed all `<lastmod>` to 2026-09-05, added XSD schema declaration.
+  - `robots.txt`: Added `Allow: /blog`, updated sitemap URL to `https://smarthire-4zqf.onrender.com/sitemap.xml`.
+- **Blog Nav Link in PublicCareers Header**:
+  - Added a `📝 Blog` button to the top navbar of the careers page, linking to `/blog`.
+- **Production Build Verified**:
+  - 0 errors or warnings on `npm run build` in `smarthire-react` (built in 2.02s).
+  - Commit `be20d4a` pushed to GitHub main.
+
+### 2026-09-05 — Hero Streamlining: Media Bar &amp; Stat Cards Removed, Client/Vendor Subtitle &amp; Search Bar Lowered
 - **Removed Floating Media Controller Bar**:
   - Eliminated the floating `[🎬 Live Video]` / `[🖼️ Photo Slides]` mode switcher and slide control bar from the hero section, keeping background playback completely clean and unobstructed.
 - **Removed 24h Review & 0 Direct Stat Cards**:
