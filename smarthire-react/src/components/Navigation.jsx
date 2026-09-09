@@ -446,10 +446,10 @@ function Navigation() {
                   Enterprise Pricing
                 </a>
                 <Link to="/about" className="nav-tab-item">
-                  About Platform
+                  About & AI
                 </Link>
-                <Link to="/contact" className="nav-tab-item">
-                  Support
+                <Link to="/about#support" className="nav-tab-item">
+                  Support & Inquiries
                 </Link>
               </>
             )}
@@ -811,10 +811,10 @@ function Navigation() {
                   Enterprise Pricing
                 </a>
                 <Link to="/about" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
-                  About Us
+                  About & AI
                 </Link>
-                <Link to="/contact" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
-                  Support
+                <Link to="/about#support" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
+                  Support & Inquiries
                 </Link>
                 <div style={{ marginTop: '16px' }}>
                   <a href="/#login" className="btn btn-login-portal w-100" onClick={() => setMobileMenuOpen(false)}>

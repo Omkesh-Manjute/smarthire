@@ -38,6 +38,7 @@ export const APPLICATIONS_COLLECTION = 'atsApplications'
 export const REQUISITIONS_COLLECTION = 'atsRequisitions'
 export const USERS_COLLECTION = 'atsUsers'
 export const MESSAGES_COLLECTION = 'atsMessages'
+export const INQUIRIES_COLLECTION = 'atsInquiries'
 
 // ─────────────────────────────────────────
 // 1. CANDIDATE & LEGAL DOCS (A to Z Structured)
@@ -620,5 +621,52 @@ export async function getAllThreadsFirestore() {
     return []
   }
 }
+
+/**
+ * ─────────────────────────────────────────
+ * 7. CLIENT & ENTERPRISE INQUIRIES
+ * ─────────────────────────────────────────
+ */
+
+/**
+ * Save new enterprise inquiry to Firestore
+ */
+export async function saveInquiryFirestore(inquiryData) {
+  try {
+    if (!inquiryData) return null
+    const id = inquiryData.id || `INQ-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`
+    const inquiryDocRef = doc(db, INQUIRIES_COLLECTION, id)
+    const payload = {
+      ...inquiryData,
+      id,
+      status: inquiryData.status || 'new',
+      createdAt: inquiryData.createdAt || new Date().toISOString(),
+      updatedAt: serverTimestamp()
+    }
+    await setDoc(inquiryDocRef, payload, { merge: true })
+    return payload
+  } catch (err) {
+    console.warn('saveInquiryFirestore warning:', err)
+    return null
+  }
+}
+
+/**
+ * Fetch all enterprise inquiries from Firestore
+ */
+export async function getInquiriesFirestore() {
+  try {
+    const snap = await getDocs(collection(db, INQUIRIES_COLLECTION))
+    const inquiries = []
+    snap.forEach(d => {
+      inquiries.push({ id: d.id, ...d.data() })
+    })
+    return inquiries
+  } catch (err) {
+    console.warn('getInquiriesFirestore warning:', err)
+    return []
+  }
+}
+
 
 

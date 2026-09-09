@@ -13,6 +13,7 @@ import {
   ScreeningModule,
   UsersModule,
   AuditActivityLogModule,
+  InquiriesModule,
 } from '../ats'
 import { formatJobDescription, cleanJobTitleWithPositionNumber } from '../utils/formatJobDescription'
 import { getAllCandidates, deduplicateCandidates, subscribeAtsJobs } from '../lib/atsFirestore'
@@ -42,6 +43,7 @@ const ALL_MODULES = [
   { id: 'submissions', label: 'Submissions',     icon: '📤', category: 'talent', adminOnly: true },
   { id: 'reports',     label: 'Reports',         icon: '📑', category: 'main', adminOnly: true },
   { id: 'analytics',   label: 'Analytics',       icon: '📊', category: 'main' },
+  { id: 'inquiries',   label: 'Client Inquiries',icon: '📩', category: 'admin', adminOnly: true },
   { id: 'audit',       label: 'Audit Logs',      icon: '📜', category: 'admin' },
   { id: 'automation',  label: 'Automation',      icon: '⚙️', category: 'admin', adminOnly: true },
   { id: 'inbox',       label: 'Recruiter Inbox', icon: '💬', category: 'admin', isLink: '/inbox' },
@@ -155,6 +157,39 @@ export default function AtsPlatform() {
       setActiveTab(urlTab)
     }
   }, [location?.search])
+
+  // Inquiries count state
+  const [inquiriesCount, setInquiriesCount] = useState(() => {
+    try {
+      const raw = localStorage.getItem('smarthire_inquiries')
+      if (raw) {
+        const list = JSON.parse(raw)
+        if (Array.isArray(list)) return list.filter(i => !i.status || i.status.toLowerCase() === 'new').length
+      }
+    } catch(e) {}
+    return 0
+  })
+
+  useEffect(() => {
+    const handleInquiryUpdate = () => {
+      try {
+        const raw = localStorage.getItem('smarthire_inquiries')
+        if (raw) {
+          const list = JSON.parse(raw)
+          if (Array.isArray(list)) {
+            setInquiriesCount(list.filter(i => !i.status || i.status.toLowerCase() === 'new').length)
+          }
+        }
+      } catch(e) {}
+    }
+
+    window.addEventListener('smarthire_new_activity_notification', handleInquiryUpdate)
+    window.addEventListener('storage', handleInquiryUpdate)
+    return () => {
+      window.removeEventListener('smarthire_new_activity_notification', handleInquiryUpdate)
+      window.removeEventListener('storage', handleInquiryUpdate)
+    }
+  }, [])
 
   // Zoho CRM Sidebar state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -793,6 +828,7 @@ export default function AtsPlatform() {
           )}
 
           {[
+            { id: 'inquiries', label: 'Client Inquiries', icon: '📩', count: inquiriesCount || undefined },
             { id: 'audit', label: 'Audit Logs', icon: '📜' },
             { id: 'automation', label: 'Automation', icon: '⚙️' },
             { id: 'inbox', label: 'Recruiter Inbox', icon: '💬', isLink: '/inbox' },
@@ -810,6 +846,7 @@ export default function AtsPlatform() {
                   style={{
                     display: 'flex',
                     alignItems: 'center',
+                    justifyContent: 'space-between',
                     padding: sidebarCollapsed ? '10px 0' : '7px 12px',
                     borderRadius: '6px',
                     background: isActive ? '#24324f' : 'transparent',
@@ -818,7 +855,6 @@ export default function AtsPlatform() {
                     fontWeight: isActive ? '700' : '500',
                     cursor: 'pointer',
                     marginBottom: '2px',
-                    justifyContent: sidebarCollapsed ? 'center' : 'flex-start'
                   }}
                   onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#ffffff' } }}
                   onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94a3b8' } }}
@@ -827,6 +863,18 @@ export default function AtsPlatform() {
                     <span style={{ fontSize: '14px' }}>{m.icon}</span>
                     {!sidebarCollapsed && <span>{m.label}</span>}
                   </div>
+                  {!sidebarCollapsed && m.count != null && m.count > 0 && (
+                    <span style={{
+                      fontSize: '10px',
+                      background: '#2563eb',
+                      color: '#ffffff',
+                      padding: '1px 6px',
+                      borderRadius: '10px',
+                      fontWeight: '800'
+                    }}>
+                      {m.count}
+                    </span>
+                  )}
                 </div>
               )
             })}
@@ -1527,6 +1575,12 @@ export default function AtsPlatform() {
                 jobsList={safeJobs}
                 submissions={submissions}
               />
+            </div>
+          )}
+
+          {activeTab === 'inquiries' && (
+            <div style={{ padding: '20px' }}>
+              <InquiriesModule />
             </div>
           )}
 

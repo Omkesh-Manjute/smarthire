@@ -31,6 +31,31 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-09 — Unified About & Support Hub, "Train AI with 100s of Placed Resumes" Showcase & Admin Inquiry Alerts
+- **Unified About & Support Center (`About.jsx`) with MUI theFront Design System**:
+  - Replaced outdated 27-line "About VerifyHire" placeholder with a comprehensive, unified **About & Support Hub** designed with the exact MUI **theFront** visual design system.
+  - Electric blue (`#2563eb`), dark slate (`#0f172a`), soft sky pill highlight (`tf-highlight-box`), and Plus Jakarta Sans / Inter typography.
+  - Headline:
+    > *"Trained on 100s of Placed IT Resumes `<span className="tf-highlight-box">for Precision Staffing</span>`"*
+  - 4 Live Trust Metric Badges: **500+** Placed Resume Benchmarks, **99.4%** Match Accuracy, **3.2x** Faster Time-to-Submit, and **0%** Data Leakage.
+- **"Train AI with 100s of Placed Candidate Resumes" Deep Dive & Benchmark**:
+  - Educational deep dive on why generic keyword counters fail in IT recruitment and how SmartHire was fine-tuned on verified candidate CVs that received client offers (NC DHHS, AWS Cloud, Java Microservices, React, DevOps).
+  - 4 intelligence pillars: Contextual depth vs keyword stuffing, C2C/W2 rate corridor calibration, client interview conversion probability scoring (0-100%), and automated semantic gap analysis.
+  - Empirical Benchmark Comparison widget contrasting generic ATS (14.2% conversion, 68% false positives) against SmartHire placement-trained AI (78.4% conversion, <2% false positives, 45s review time).
+- **Integrated 24/7 Enterprise Support & Searchable FAQ Accordion**:
+  - 4 quick support cards (System Setup & Access, Requisitions & Sourcing, AI Match & Scoring, Compliance & RTR).
+  - Searchable interactive FAQ accordion covering candidate matching, manager approvals, candidate pool ownership, Excel export, and biometric security.
+- **Live "Send an Inquiry" Dispatch to Admin with Audio Chime & Inquiries ATS Module**:
+  - Form captures Full Name, Corporate Email, Company, Category, Priority, and Detailed Message.
+  - Submissions persist to Firestore (`atsInquiries`), save in `smarthire_inquiries`, and dispatch real-time `pushActivityNotification` with dedicated audio chime and desktop push alerts to all active Admin sessions.
+  - Built **Inquiry Details Modal** in `ActivityNotificationBell.jsx` allowing Admins to inspect prospect info, copy contact data, mark as contacted, and reply directly via email (`mailto:`).
+  - Added new **Client Inquiries Module** (`InquiriesModule.jsx`) in `AtsPlatform.jsx` under Operations & Admin with live unread badge counters, KPI cards, status filters, search, and table actions.
+- **Route Forwarding & Backward Compatibility**:
+  - `/about`, `/support`, and `/contact` seamlessly route to this unified experience with smooth auto-scroll to `#support` or `#inquiry`.
+  - Updated desktop and mobile navigation links in `Navigation.jsx` to "About & AI" and "Support & Inquiries".
+- **Production Build Verified**:
+  - `npm run build` in `smarthire-react` verified: 0 errors, 0 warnings (built in 1.87s).
+
 ### 2026-09-09 — Candidate Table Dashboard Mockup Polish, SmartHire ATS Branding & Workflow Headline
 - **Added Full Dark Sidebar to Candidate Table Mockup (Screenshot 3 Match)**:
   - Replaced the standalone white table with a full desktop application dashboard kit mockup featuring the signature `#181F2C` dark sidebar on the left and crisp Zoho ATS candidate table on the right (`tf-table-dashboard-mockup`).

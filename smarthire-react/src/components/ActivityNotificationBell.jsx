@@ -233,7 +233,12 @@ export const pushActivityNotification = (notif) => {
     reqId: notif.reqId || null,
     candidateName: notif.candidateName || null,
     candidateId: notif.candidateId || null,
-    statusText: notif.statusText || null
+    statusText: notif.statusText || null,
+    inquiryData: notif.inquiryData || null,
+    inquiryId: notif.inquiryId || null,
+    email: notif.email || null,
+    company: notif.company || null,
+    subject: notif.subject || null
   }
 
   try {
@@ -284,6 +289,8 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
 
   const [activeFilter, setActiveFilter] = useState('all') // 'all', 'status', 'team', 'ai'
   const [liveToast, setLiveToast] = useState(null)
+  const [selectedInquiry, setSelectedInquiry] = useState(null)
+  const [copiedEmail, setCopiedEmail] = useState(false)
   const [isSoundEnabled, setIsSoundEnabled] = useState(() => {
     try {
       return localStorage.getItem('smarthire_notification_sound_enabled') !== 'false'
@@ -399,6 +406,19 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
     const updated = notifications.map(n => n.id === notif.id ? { ...n, isRead: true } : n)
     saveNotifications(updated)
     setIsOpen(false)
+    if (notif.type === 'inquiry' || notif.inquiryData || notif.title?.toLowerCase().includes('inquiry')) {
+      setSelectedInquiry(notif.inquiryData || {
+        id: notif.inquiryId || notif.id,
+        name: notif.actor || 'Prospect',
+        email: notif.email || '',
+        company: notif.company || '',
+        subject: notif.subject || notif.title,
+        message: notif.message,
+        timestamp: notif.timestamp,
+        priority: notif.inquiryData?.priority || 'Normal'
+      })
+      return
+    }
     if (onSelectNotification) {
       onSelectNotification(notif)
     }
@@ -408,7 +428,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
   const filteredNotifs = notifications.filter(n => {
     if (activeFilter === 'all') return true
     if (activeFilter === 'status') return n.category === 'status' || n.type === 'approval' || n.type === 'interview'
-    if (activeFilter === 'team') return n.category === 'team' || n.type === 'assignment' || n.type === 'requisition'
+    if (activeFilter === 'team') return n.category === 'team' || n.type === 'assignment' || n.type === 'requisition' || n.type === 'inquiry'
     if (activeFilter === 'ai') return n.category === 'ai' || n.type === 'ai'
     return true
   })
@@ -427,6 +447,8 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
         return { icon: '🎯', label: 'AI Match', bg: '#ede9fe', color: '#6d28d9', border: '#ddd6fe' }
       case 'requisition':
         return { icon: '💼', label: 'Requisition', bg: '#ffedd5', color: '#9a3412', border: '#fed7aa' }
+      case 'inquiry':
+        return { icon: '📩', label: 'Inquiry', bg: '#eff6ff', color: '#1e40af', border: '#bfdbfe' }
       default:
         return { icon: '🔔', label: 'Update', bg: '#f1f5f9', color: '#334155', border: '#e2e8f0' }
     }
@@ -886,6 +908,315 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
             </div>
           </div>
 
+        </div>
+      )}
+
+      {/* ─── ENTERPRISE INQUIRY DETAILS MODAL ─── */}
+      {selectedInquiry && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 100000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }} onClick={() => setSelectedInquiry(null)}>
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#ffffff',
+              borderRadius: '12px',
+              maxWidth: '560px',
+              width: '100%',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              border: '1px solid #cbd5e1',
+              overflow: 'hidden',
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              animation: 'slideIn 0.2s ease-out'
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{
+              background: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%)',
+              color: '#ffffff',
+              padding: '16px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '20px' }}>📩</span>
+                <div>
+                  <div style={{ fontSize: '15px', fontWeight: '800', letterSpacing: '-0.01em' }}>
+                    Enterprise Client Inquiry
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#93c5fd', marginTop: '1px' }}>
+                    Ticket: {selectedInquiry.id || 'INQ-ACTIVE'} • {selectedInquiry.timestamp ? new Date(selectedInquiry.timestamp).toLocaleString() : 'Recent'}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedInquiry(null)}
+                style={{
+                  background: 'rgba(255,255,255,0.15)',
+                  border: 'none',
+                  color: '#ffffff',
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '20px', maxHeight: '75vh', overflowY: 'auto' }}>
+              
+              {/* Top Meta Badges */}
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                <span style={{
+                  background: '#eff6ff',
+                  color: '#1d4ed8',
+                  border: '1px solid #bfdbfe',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  padding: '3px 9px',
+                  borderRadius: '12px'
+                }}>
+                  🏷️ {selectedInquiry.category || selectedInquiry.inquiryType || 'General Inquiry'}
+                </span>
+
+                <span style={{
+                  background: (selectedInquiry.priority?.toLowerCase() === 'urgent') ? '#fee2e2' : (selectedInquiry.priority?.toLowerCase() === 'high') ? '#fef3c7' : '#f1f5f9',
+                  color: (selectedInquiry.priority?.toLowerCase() === 'urgent') ? '#b91c1c' : (selectedInquiry.priority?.toLowerCase() === 'high') ? '#b45309' : '#334155',
+                  border: '1px solid rgba(0,0,0,0.08)',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  padding: '3px 9px',
+                  borderRadius: '12px'
+                }}>
+                  ⚡ Priority: {selectedInquiry.priority || 'Normal'}
+                </span>
+
+                <span style={{
+                  background: '#dcfce7',
+                  color: '#15803d',
+                  border: '1px solid #bbf7d0',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  padding: '3px 9px',
+                  borderRadius: '12px'
+                }}>
+                  ● Status: {selectedInquiry.status || 'New'}
+                </span>
+              </div>
+
+              {/* Prospect Information Card */}
+              <div style={{
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
+                padding: '14px',
+                marginBottom: '16px',
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '12px',
+                fontSize: '12px'
+              }}>
+                <div>
+                  <div style={{ color: '#64748b', fontSize: '10.5px', textTransform: 'uppercase', fontWeight: '700', marginBottom: '2px' }}>
+                    Prospect Name
+                  </div>
+                  <div style={{ fontWeight: '700', color: '#0f172a', fontSize: '13.5px' }}>
+                    {selectedInquiry.name || 'Not specified'}
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ color: '#64748b', fontSize: '10.5px', textTransform: 'uppercase', fontWeight: '700', marginBottom: '2px' }}>
+                    Company / Organization
+                  </div>
+                  <div style={{ fontWeight: '700', color: '#0f172a', fontSize: '13.5px' }}>
+                    🏢 {selectedInquiry.company || 'Enterprise Partner'}
+                  </div>
+                </div>
+
+                <div style={{ gridColumn: 'span 2' }}>
+                  <div style={{ color: '#64748b', fontSize: '10.5px', textTransform: 'uppercase', fontWeight: '700', marginBottom: '2px' }}>
+                    Corporate Email Address
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <a
+                      href={`mailto:${selectedInquiry.email}`}
+                      style={{ color: '#2563eb', fontWeight: '600', textDecoration: 'none' }}
+                    >
+                      ✉️ {selectedInquiry.email || 'No email provided'}
+                    </a>
+                    {selectedInquiry.email && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(selectedInquiry.email)
+                          setCopiedEmail(true)
+                          setTimeout(() => setCopiedEmail(false), 2000)
+                        }}
+                        style={{
+                          background: copiedEmail ? '#dcfce7' : '#ffffff',
+                          border: '1px solid #cbd5e1',
+                          borderRadius: '4px',
+                          padding: '2px 7px',
+                          fontSize: '10.5px',
+                          fontWeight: '600',
+                          color: copiedEmail ? '#15803d' : '#475569',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {copiedEmail ? '✓ Copied' : 'Copy'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {selectedInquiry.phone && (
+                  <div>
+                    <div style={{ color: '#64748b', fontSize: '10.5px', textTransform: 'uppercase', fontWeight: '700', marginBottom: '2px' }}>
+                      Phone
+                    </div>
+                    <div style={{ fontWeight: '600', color: '#0f172a' }}>
+                      📞 {selectedInquiry.phone}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Subject */}
+              {selectedInquiry.subject && (
+                <div style={{ marginBottom: '14px' }}>
+                  <div style={{ color: '#64748b', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>
+                    Subject
+                  </div>
+                  <div style={{ fontWeight: '700', fontSize: '14px', color: '#0f172a' }}>
+                    {selectedInquiry.subject}
+                  </div>
+                </div>
+              )}
+
+              {/* Message Content */}
+              <div>
+                <div style={{ color: '#64748b', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '6px' }}>
+                  Inquiry Message
+                </div>
+                <div style={{
+                  background: '#f8fafc',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '8px',
+                  padding: '14px',
+                  fontSize: '13px',
+                  lineHeight: '1.6',
+                  color: '#1e293b',
+                  whiteSpace: 'pre-wrap',
+                  maxHeight: '220px',
+                  overflowY: 'auto'
+                }}>
+                  {selectedInquiry.message || 'No additional message text provided.'}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{
+              background: '#f8fafc',
+              borderTop: '1px solid #e2e8f0',
+              padding: '12px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '10px'
+            }}>
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    const raw = localStorage.getItem('smarthire_inquiries')
+                    if (raw) {
+                      const list = JSON.parse(raw)
+                      const updated = list.map(inq => inq.id === selectedInquiry.id ? { ...inq, status: 'contacted' } : inq)
+                      localStorage.setItem('smarthire_inquiries', JSON.stringify(updated))
+                    }
+                  } catch (e) {}
+                  setSelectedInquiry(prev => ({ ...prev, status: 'Contacted' }))
+                }}
+                style={{
+                  background: '#ffffff',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '6px',
+                  padding: '8px 14px',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  color: '#475569',
+                  cursor: 'pointer'
+                }}
+              >
+                ✓ Mark as Contacted
+              </button>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedInquiry(null)}
+                  style={{
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    padding: '8px 14px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    color: '#475569',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Close
+                </button>
+
+                <a
+                  href={`mailto:${selectedInquiry.email}?subject=${encodeURIComponent(`Re: [SmartHire ATS] ${selectedInquiry.subject || selectedInquiry.category || 'Enterprise Inquiry'}`)}&body=${encodeURIComponent(`Hi ${selectedInquiry.name || 'there'},\n\nThank you for reaching out to SmartHire ATS regarding ${selectedInquiry.company || 'your team'}.\n\n`)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    background: '#2563eb',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '8px 16px',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <span>✉️</span>
+                  <span>Reply via Email</span>
+                </a>
+              </div>
+            </div>
+
+          </div>
         </div>
       )}
     </div>
