@@ -286,15 +286,22 @@ function Navigation() {
 
             {/* Brand Logo & Name */}
             <Link to={isEmployee ? "/dashboard" : "/"} className="brand-logo-link" onClick={() => setMobileMenuOpen(false)}>
-              <span className="brand-shield-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                  <path d="m9 11 2 2 4-4" />
+              <span className="brand-shield-icon tf-brand-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="2" y="2" width="20" height="20" rx="6" fill="url(#navBrandGrad)" />
+                  <path d="M8 12.5L10.5 15L16 9" stroke="#ffffff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="16" cy="9" r="1.5" fill="#93c5fa" />
+                  <defs>
+                    <linearGradient id="navBrandGrad" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="#2563eb" />
+                      <stop offset="1" stopColor="#1d4ed8" />
+                    </linearGradient>
+                  </defs>
                 </svg>
               </span>
               <div className="brand-title-wrap">
-                <span className="brand-name">SmartHire</span>
-                <span className="brand-edition-tag" style={{ background: isEmployee ? '#16a34a' : undefined }}>
+                <span className="brand-name">Smart<span style={{ color: '#2563eb' }}>Hire</span></span>
+                <span className="brand-edition-tag tf-nav-edition" style={{ background: isEmployee ? 'rgba(22, 163, 74, 0.1)' : undefined, color: isEmployee ? '#16a34a' : undefined, borderColor: isEmployee ? 'rgba(22, 163, 74, 0.25)' : undefined }}>
                   {isEmployee ? 'EMPLOYEE' : isManager ? 'MANAGER' : isSuperAdmin ? 'ENTERPRISE' : 'PRO'}
                 </span>
               </div>
@@ -394,26 +401,6 @@ function Navigation() {
                   </Link>
                 )}
 
-                {isSuperAdmin && isPageAllowed('linkedin') && (
-                  <Link
-                    to="/linkedin-posts"
-                    className={`nav-tab-item ${location.pathname === '/linkedin-posts' ? 'active' : ''}`}
-                  >
-                    <span className="nav-tab-icon">🌐</span>
-                    <span>LinkedIn Auto</span>
-                  </Link>
-                )}
-
-                {isSuperAdmin && isPageAllowed('branding') && (
-                  <Link
-                    to="/branding"
-                    className={`nav-tab-item ${location.pathname === '/branding' ? 'active' : ''}`}
-                  >
-                    <span className="nav-tab-icon">🎨</span>
-                    <span>Branding</span>
-                  </Link>
-                )}
-
                 {!isEmployee && isPageAllowed('jobs') && (
                   <Link
                     to="/jobs"
@@ -421,16 +408,6 @@ function Navigation() {
                   >
                     <span className="nav-tab-icon">🚀</span>
                     <span>Careers</span>
-                  </Link>
-                )}
-
-                {isSuperAdmin && (
-                  <Link
-                    to="/pricing"
-                    className={`nav-tab-item ${location.pathname === '/pricing' ? 'active' : ''}`}
-                  >
-                    <span className="nav-tab-icon">💳</span>
-                    <span>Pricing</span>
                   </Link>
                 )}
               </>
@@ -455,138 +432,16 @@ function Navigation() {
             )}
           </nav>
 
-          {/* ─── RIGHT: UTILITIES, SEARCH, ACTIONS & PROFILE ─── */}
+          {/* ─── RIGHT: ROLE SWITCHER, NOTIFICATIONS & PROFILE HUB ─── */}
           <div className="nav-right-cluster">
             {isAuthenticated ? (
               <>
-                {/* Global Search Trigger (Ctrl+K) - Strictly Super Admin only */}
-                {isSuperAdmin && (
-                  <button
-                    className="nav-search-trigger"
-                    onClick={() => setSearchModalOpen(true)}
-                    title="Spotlight Search (Ctrl+K)"
-                    aria-label="Quick Search"
-                  >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="11" cy="11" r="8" />
-                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                    </svg>
-                    <span className="search-placeholder-text">Search candidates, jobs...</span>
-                    <kbd className="search-kbd-badge">⌘K</kbd>
-                  </button>
-                )}
-
-                {/* Quick Add Button (+) - Strictly Super Admin */}
-                {isSuperAdmin && (
-                  <div className="nav-dropdown-wrapper" ref={quickAddRef}>
-                    <button
-                      className={`nav-quick-add-btn ${quickAddOpen ? 'active' : ''}`}
-                      onClick={() => setQuickAddOpen(!quickAddOpen)}
-                      title="Quick Action / Create New"
-                      aria-label="Quick Add"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19" />
-                        <line x1="5" y1="12" x2="19" y2="12" />
-                      </svg>
-                    </button>
-
-                    {quickAddOpen && (
-                      <div className="quick-add-popover shadow-enterprise">
-                        <div className="quick-add-header">Quick Creation Actions</div>
-                        {(isSuperAdmin || isManager) && (
-                          <button
-                            className="quick-add-item"
-                            onClick={() => {
-                              setQuickAddOpen(false)
-                              navigateToAtsTab('jobs')
-                            }}
-                          >
-                            <span className="quick-add-icon">💼</span>
-                            <div>
-                              <div className="quick-add-label">Post New Vacancy</div>
-                              <div className="quick-add-desc">Add requisition or scrape JD</div>
-                            </div>
-                          </button>
-                        )}
-
-                        <button
-                          className="quick-add-item"
-                          onClick={() => {
-                            setQuickAddOpen(false)
-                            navigateToAtsTab('candidates')
-                          }}
-                        >
-                          <span className="quick-add-icon">👤</span>
-                          <div>
-                            <div className="quick-add-label">Add / Parse Candidate</div>
-                            <div className="quick-add-desc">Upload resume docx/pdf</div>
-                          </div>
-                        </button>
-
-                        <button
-                          className="quick-add-item"
-                          onClick={() => {
-                            setQuickAddOpen(false)
-                            navigateToAtsTab('screening')
-                          }}
-                        >
-                          <span className="quick-add-icon">🔍</span>
-                          <div>
-                            <div className="quick-add-label">Launch AI Screening</div>
-                            <div className="quick-add-desc">Anti-proxy interview chat</div>
-                          </div>
-                        </button>
-
-                        {isSuperAdmin && (
-                          <button
-                            className="quick-add-item"
-                            onClick={() => {
-                              setQuickAddOpen(false)
-                              navigate('/linkedin-posts')
-                            }}
-                          >
-                            <span className="quick-add-icon">🌐</span>
-                            <div>
-                              <div className="quick-add-label">Create LinkedIn Post</div>
-                              <div className="quick-add-desc">Automated social job outreach</div>
-                            </div>
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* API Status Pill - Hidden for Employee */}
-                {!isEmployee && (
-                  <div
-                    className={`nav-status-pill ${apiOnline ? 'online' : 'offline'}`}
-                    title={apiOnline ? 'All SmartHire microservices operational' : 'Backend connection interrupted'}
-                  >
-                    <span className="status-pulse-dot" />
-                    <span className="status-text">{apiOnline ? 'Live' : 'Offline'}</span>
-                  </div>
-                )}
-
-                {/* Inbox / Messages Icon */}
-                <Link
-                  to="/inbox"
-                  className="nav-icon-action-btn"
-                  title={isReportee ? `Message Lead Recruiter (${effectiveParentRecruiterName})` : 'Recruiter Messages & Inbox'}
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                  </svg>
-                  <span className="nav-notification-badge">●</span>
-                </Link>
-
                 {/* Role Switcher Pill */}
                 {canSwitchRoles && !isEmployee && (
                   <button
                     className={`nav-role-switcher-pill ${isSuperAdmin ? 'admin-theme' : 'recruiter-theme'}`}
                     onClick={toggleRoleMode}
-                    title="Click to toggle workspace view mode"
+                    title="Click to toggle workspace view mode (Admin ⇄ Recruiter)"
                   >
                     <span className="role-icon">{isSuperAdmin ? '👑' : '💼'}</span>
                     <span className="role-label">{isSuperAdmin ? 'Admin' : 'Recruiter'}</span>
@@ -594,22 +449,25 @@ function Navigation() {
                   </button>
                 )}
 
-                {/* Single Live Activity Notification Bell (Right next to User Profile) */}
-                <div style={{ display: 'inline-flex', alignItems: 'center', margin: '0 2px' }}>
+                {/* Live Activity Notification Bell */}
+                <div className="nav-bell-wrap">
                   <ActivityNotificationBell theme="default" onSelectNotification={(n) => {
                     navigate('/dashboard')
                   }} />
                 </div>
 
-                {/* User Profile Avatar & Dropdown */}
+                {/* User Profile Pill Button & Executive Command Hub */}
                 <div className="nav-dropdown-wrapper" ref={profileMenuRef}>
                   <button
-                    className={`nav-profile-avatar-btn ${profileMenuOpen ? 'active' : ''}`}
+                    className={`nav-profile-pill-btn ${profileMenuOpen ? 'active' : ''}`}
                     onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                    aria-label="User profile menu"
+                    aria-label="User profile & command menu"
+                    title="Open Command & Profile Menu"
                   >
                     <div className="avatar-circle" style={{ background: isEmployee ? '#16a34a' : undefined }}>{getUserInitials()}</div>
-                    <svg className="avatar-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <span className="profile-pill-name">{user?.name ? user.name.split(' ')[0] : (isSuperAdmin ? 'Admin' : 'Recruiter')}</span>
+                    <span className="nav-live-dot-beacon" title={apiOnline ? 'SmartHire Live Telemetry Active' : 'Backend Interrupted'} style={{ background: apiOnline ? '#10b981' : '#ef4444' }} />
+                    <svg className="avatar-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <polyline points="6 9 12 15 18 9" />
                     </svg>
                   </button>
@@ -617,7 +475,7 @@ function Navigation() {
                   {profileMenuOpen && (
                     <div className="nav-profile-dropdown shadow-enterprise">
                       <div className="profile-dropdown-header">
-                        <div className="profile-header-avatar">{getUserInitials()}</div>
+                        <div className="profile-header-avatar" style={{ background: isEmployee ? '#16a34a' : undefined }}>{getUserInitials()}</div>
                         <div className="profile-header-info">
                           <div className="profile-user-name">
                             {user?.name || (isSuperAdmin ? 'Administrator' : 'Recruiter')}
@@ -632,6 +490,109 @@ function Navigation() {
                       </div>
 
                       <div className="profile-menu-body">
+                        {/* Section 1: Quick Actions & Creation Tools */}
+                        <div className="profile-menu-section-label">Quick Actions & Tools</div>
+
+                        {/* LinkedIn Automation Studio - MOVED FROM TOP BAR */}
+                        {isSuperAdmin && (
+                          <button
+                            className="profile-menu-link highlight-action"
+                            onClick={() => {
+                              setProfileMenuOpen(false)
+                              navigate('/linkedin-posts')
+                            }}
+                          >
+                            <span className="menu-link-icon">🌐</span>
+                            <div className="menu-link-text-wrap">
+                              <span className="menu-link-title">LinkedIn Automation Studio</span>
+                              <span className="menu-link-desc">Auto-post openings & outreach</span>
+                            </div>
+                          </button>
+                        )}
+
+                        {/* Spotlight Search Trigger */}
+                        {isSuperAdmin && (
+                          <button
+                            className="profile-menu-link"
+                            onClick={() => {
+                              setProfileMenuOpen(false)
+                              setSearchModalOpen(true)
+                            }}
+                          >
+                            <span className="menu-link-icon">🔍</span>
+                            <div className="menu-link-text-wrap">
+                              <span className="menu-link-title">Spotlight Search</span>
+                              <span className="menu-link-desc">Search candidates & requisitions</span>
+                            </div>
+                            <kbd className="menu-kbd-badge">⌘K</kbd>
+                          </button>
+                        )}
+
+                        {/* Post New Vacancy */}
+                        {(isSuperAdmin || isManager) && (
+                          <button
+                            className="profile-menu-link"
+                            onClick={() => {
+                              setProfileMenuOpen(false)
+                              navigateToAtsTab('jobs')
+                            }}
+                          >
+                            <span className="menu-link-icon">💼</span>
+                            <div className="menu-link-text-wrap">
+                              <span className="menu-link-title">Post New Vacancy</span>
+                              <span className="menu-link-desc">Add requisition or scrape JD</span>
+                            </div>
+                          </button>
+                        )}
+
+                        {/* Add / Parse Candidate */}
+                        <button
+                          className="profile-menu-link"
+                          onClick={() => {
+                            setProfileMenuOpen(false)
+                            navigateToAtsTab('candidates')
+                          }}
+                        >
+                          <span className="menu-link-icon">👤</span>
+                          <div className="menu-link-text-wrap">
+                            <span className="menu-link-title">Add / Parse Candidate</span>
+                            <span className="menu-link-desc">Upload resume docx/pdf</span>
+                          </div>
+                        </button>
+
+                        {/* Launch AI Screening */}
+                        <button
+                          className="profile-menu-link"
+                          onClick={() => {
+                            setProfileMenuOpen(false)
+                            navigateToAtsTab('screening')
+                          }}
+                        >
+                          <span className="menu-link-icon">⚡</span>
+                          <div className="menu-link-text-wrap">
+                            <span className="menu-link-title">Launch AI Screening</span>
+                            <span className="menu-link-desc">Anti-proxy interview chat & confirm</span>
+                          </div>
+                        </button>
+
+                        {/* Candidate Inbox / Messages */}
+                        <button
+                          className="profile-menu-link"
+                          onClick={() => {
+                            setProfileMenuOpen(false)
+                            navigate('/inbox')
+                          }}
+                        >
+                          <span className="menu-link-icon">💬</span>
+                          <div className="menu-link-text-wrap">
+                            <span className="menu-link-title">Candidate Inbox & Messages</span>
+                            <span className="menu-link-desc">{isReportee ? `Direct chat with ${effectiveParentRecruiterName}` : '1-on-1 recruiter messaging'}</span>
+                          </div>
+                        </button>
+
+                        {/* Section 2: Workspace Management */}
+                        <div className="profile-menu-section-label" style={{ marginTop: '8px' }}>Workspace Management</div>
+
                         {canSwitchRoles && (
                           <button
                             className="profile-menu-link"
@@ -641,7 +602,10 @@ function Navigation() {
                             }}
                           >
                             <span className="menu-link-icon">⇄</span>
-                            <span>Switch to {isSuperAdmin ? 'Recruiter Mode' : 'Super Admin Mode'}</span>
+                            <div className="menu-link-text-wrap">
+                              <span className="menu-link-title">Switch View Mode</span>
+                              <span className="menu-link-desc">Active: {isSuperAdmin ? 'Super Admin Mode' : 'Recruiter Mode'}</span>
+                            </div>
                           </button>
                         )}
 
@@ -654,7 +618,10 @@ function Navigation() {
                             }}
                           >
                             <span className="menu-link-icon">⚙️</span>
-                            <span>Workspace Settings</span>
+                            <div className="menu-link-text-wrap">
+                              <span className="menu-link-title">Workspace Settings</span>
+                              <span className="menu-link-desc">API keys, compliance & preferences</span>
+                            </div>
                           </button>
                         )}
 
@@ -667,44 +634,54 @@ function Navigation() {
                             }}
                           >
                             <span className="menu-link-icon">👥</span>
-                            <span>Manage Team & Employees</span>
+                            <div className="menu-link-text-wrap">
+                              <span className="menu-link-title">Manage Team & Hierarchy</span>
+                              <span className="menu-link-desc">Recruiter assignments & access</span>
+                            </div>
                           </button>
                         )}
 
-                        {isReportee ? (
+                        {isSuperAdmin && (
                           <button
                             className="profile-menu-link"
                             onClick={() => {
                               setProfileMenuOpen(false)
-                              navigate('/inbox')
+                              navigate('/branding')
                             }}
                           >
-                            <span className="menu-link-icon">💬</span>
-                            <span>Message Lead Recruiter ({effectiveParentRecruiterName})</span>
+                            <span className="menu-link-icon">🎨</span>
+                            <div className="menu-link-text-wrap">
+                              <span className="menu-link-title">AI Branding Studio</span>
+                              <span className="menu-link-desc">Social flyers & banners generator</span>
+                            </div>
                           </button>
-                        ) : (
+                        )}
+
+                        {isSuperAdmin && (
                           <button
                             className="profile-menu-link"
                             onClick={() => {
                               setProfileMenuOpen(false)
-                              navigate('/inbox')
+                              navigate('/pricing')
                             }}
                           >
-                            <span className="menu-link-icon">💬</span>
-                            <span>Candidate Inbox</span>
+                            <span className="menu-link-icon">💳</span>
+                            <div className="menu-link-text-wrap">
+                              <span className="menu-link-title">Enterprise Plans & Billing</span>
+                              <span className="menu-link-desc">Subscription & placement quotas</span>
+                            </div>
                           </button>
                         )}
                       </div>
 
                       <div className="profile-dropdown-footer">
                         <button className="profile-signout-btn" onClick={handleSignOut}>
-                          <span>Sign Out</span>
+                          <span>Sign Out of SmartHire</span>
                           <span style={{ fontSize: '14px' }}>⎋</span>
                         </button>
                       </div>
                     </div>
-                  )}
-                </div>
+                  )}                </div>
               </>
             ) : (
               <div className="public-auth-cluster">
