@@ -31,7 +31,27 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
-### 2026-09-10 — Sequential Opening Recruitment Workflow Stepper, Calm Pace & CoolWorks Removal
+### 2026-09-10 — Clean Tasklet.ai Match: Continuous Infinite Loop & Zero Personal Names
+- **Continuous 13-Second Loop & Sequential Card Opening (`Homepage.jsx`)**:
+  - Rebuilt the workflow timeline to run on continuous 60fps GPU-accelerated CSS keyframes (`wfLineTravel`, `wfLaserTravel`, `wfCard1-6`, `wfNode1-6`, `wfStem1-6`).
+  - As the green progress line and glowing laser head travel continuously across the 24h timeline rail (`12 AM` to `12 AM 🌙`), each milestone card pops open in sequence as the laser arrives (Card 1 at 10% -> Card 2 at 28% -> Card 3 at 44% -> Card 4 at 62% -> Card 5 at 78% -> Card 6 at 94%).
+  - When the laser reaches the end of the line, the cycle resets seamlessly and restarts from the beginning ("ek end se khatam fir shuru").
+- **Zero Personal or User Names**:
+  - Completely stripped all candidate names, recruiter names, and external bot names.
+  - Replaced with clean, generic 2-line cards matching Tasklet.ai:
+    1. `Ingested new requisition` • `2:14 AM`
+    2. `Ranked top matched candidate` • `7:00 AM`
+    3. `Sent AI pre-screen intake` • `8:00 AM`
+    4. `Verified signed digital RTR` • `11:30 AM`
+    5. `Posted talent alert to #recruiting` • `3:45 PM`
+    6. `Submitted candidate to client portal` • `10:05 PM`
+- **Exact Clean Tasklet Design Match**:
+  - Card Header: `YESTERDAY` on left, `6 runs completed` on right.
+  - Removed all badge pills that caused crowding; each card is cleanly formatted with rounded icon box, bold title, and timestamp.
+  - Subcards updated to `Delegate real work` and `Keep your humans in the loop`.
+- **Production Build Verified**:
+  - `npm run build` in `smarthire-react` verified: 0 errors, 0 warnings (built in 1.93s).
+
 - **Sequential Card Opening Experience (`Homepage.jsx`)**:
   - Replaced indiscriminate continuous laser loop with an intelligent, sequential 6-stage recruitment workflow stepper (`activeWorkflowIndex` from 0 to 5).
   - Paced comfortably at **3.2s per stage** (19.2s total cycle) so each stage is clearly legible and understandable.

@@ -3,151 +3,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import SiteLayout from '../components/SiteLayout'
 
 function Homepage() {
-  // 24x7 Autonomous Recruitment Workflow Timeline Stepper State
-  const [activeWorkflowIndex, setActiveWorkflowIndex] = useState(0);
-  const [isWorkflowPaused, setIsWorkflowPaused] = useState(false);
-
-  const workflowSteps = [
-    {
-      id: 1,
-      time: '2:14 AM',
-      title: 'Ingested new requisition',
-      sub: 'Req #158997: NC DHHS Cloud Dev',
-      badge: 'VMS Sync',
-      pillClass: 'blue-pill',
-      position: 9,
-      placement: 'above',
-      iconType: 'vms',
-      accentColor: '#2563eb'
-    },
-    {
-      id: 2,
-      time: '7:00 AM',
-      title: 'Top candidate matched & scored',
-      sub: 'Kranthi Kumar (96% Match • $88/hr)',
-      badge: 'Placement AI',
-      pillClass: 'emerald-pill',
-      position: 26,
-      placement: 'below',
-      iconType: 'aimatch',
-      accentColor: '#059669'
-    },
-    {
-      id: 3,
-      time: '8:00 AM',
-      title: 'AI Agent sent pre-screen & intake',
-      sub: 'Confirmed C2C, $88/hr & availability',
-      badge: 'Pre-Screen',
-      pillClass: 'amber-pill',
-      position: 44,
-      placement: 'above',
-      iconType: 'email',
-      accentColor: '#ea580c'
-    },
-    {
-      id: 4,
-      time: '11:30 AM',
-      title: '1-Click Digital RTR signed & received',
-      sub: 'Verified photo ID & Right-to-Represent',
-      badge: 'RTR Signed',
-      pillClass: 'purple-pill',
-      position: 62,
-      placement: 'below',
-      iconType: 'rtr',
-      accentColor: '#7c3aed'
-    },
-    {
-      id: 5,
-      time: '3:45 PM',
-      title: 'Posted candidate alert to #recruiter-desk',
-      sub: 'Recruiter Omkesh alerted on Slack',
-      badge: 'Slack Alert',
-      pillClass: 'slack-pill',
-      position: 79,
-      placement: 'above',
-      iconType: 'slack',
-      accentColor: '#4a154b'
-    },
-    {
-      id: 6,
-      time: '10:05 PM',
-      title: 'Client portal submission logged',
-      sub: 'Enterprise VMS upload & audit trail',
-      badge: 'VMS Upload',
-      pillClass: 'teal-pill',
-      position: 93,
-      placement: 'below',
-      iconType: 'portal',
-      accentColor: '#0d9488'
-    }
-  ];
-
-  // Calm, relaxed progression: 3.2s per step (Total 19.2s full cycle)
-  useEffect(() => {
-    if (isWorkflowPaused) return;
-    const timer = setInterval(() => {
-      setActiveWorkflowIndex((prev) => (prev + 1) % workflowSteps.length);
-    }, 3200);
-    return () => clearInterval(timer);
-  }, [isWorkflowPaused, workflowSteps.length]);
-
-  const renderWorkflowIcon = (type) => {
-    switch (type) {
-      case 'vms':
-        return (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-            <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-            <line x1="12" y1="22.08" x2="12" y2="12" />
-          </svg>
-        );
-      case 'aimatch':
-        return (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10" />
-            <circle cx="12" cy="12" r="6" />
-            <circle cx="12" cy="12" r="2" />
-          </svg>
-        );
-      case 'email':
-        return (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-            <polyline points="22,6 12,13 2,6" />
-          </svg>
-        );
-      case 'rtr':
-        return (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-            <line x1="16" y1="13" x2="8" y2="13" />
-            <line x1="16" y1="17" x2="8" y2="17" />
-            <polyline points="10 9 9 9 8 9" />
-          </svg>
-        );
-      case 'slack':
-        return (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M6 15a2 2 0 1 1-2-2h2v2zm1 0a2 2 0 0 1 2-2 2 2 0 0 1 2 2v5a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-5z" fill="#E01E5A"/>
-            <path d="M9 6a2 2 0 1 1-2-2v2h2zm0 1a2 2 0 0 1 2 2 2 2 0 0 1-2 2H4a2 2 0 0 1-2-2 2 2 0 0 1 2-2h5z" fill="#36C5F0"/>
-            <path d="M18 9a2 2 0 1 1 2 2h-2V9zm-1 0a2 2 0 0 1-2 2 2 2 0 0 1-2-2V4a2 2 0 0 1 2-2 2 2 0 0 1 2 2v5z" fill="#2EB67D"/>
-            <path d="M15 18a2 2 0 1 1 2 2v-2h-2zm0-1a2 2 0 0 1-2-2 2 2 0 0 1 2-2h5a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-5z" fill="#ECB22E"/>
-          </svg>
-        );
-      case 'portal':
-      default:
-        return (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-          </svg>
-        );
-    }
-  };
-
-
-  const navigate = useNavigate()
-  
   // Auth state
   const userStr = localStorage.getItem('smarthire_user') || localStorage.getItem('verifyhire_user')
   let user = null
@@ -776,210 +631,284 @@ function Homepage() {
           <div className="tf-container">
             {/* Section Header */}
             <div className="tf-section-header text-center">
-              <span className="tf-section-tag">AUTONOMOUS RECRUITMENT WORKFLOWS</span>
+              <span className="tf-section-tag">AUTONOMATIONS</span>
               <h2 className="tf-section-title">
                 Automate staffing 24x7 with <span className="tf-highlight-box">always-on workflows</span>
               </h2>
               <p className="tf-section-subtitle">
-                SmartHire autonomous agents take ongoing responsibility for full-cycle recruitment operations: ingesting live requisitions, ranking matched talent, conducting pre-screening, taking digital RTRs, and dispatching real-time alerts.
+                SmartHire agents do more than search resumes — they take ongoing responsibility for full-cycle recruitment processes: ingesting live requisitions, ranking candidates, conducting intake screening, taking digital RTRs, and posting alerts.
               </p>
             </div>
 
             {/* Main Interactive Workflow Timeline Card */}
-            <div 
-              className="tf-workflow-card"
-              onMouseEnter={() => setIsWorkflowPaused(true)}
-              onMouseLeave={() => setIsWorkflowPaused(false)}
-            >
-              {/* Card Top Header */}
+            <div className="tf-workflow-card">
+              {/* Card Top Header - Exact Tasklet.ai match */}
               <div className="tf-wf-card-header">
-                <div className="tf-wf-header-left">
-                  <span className="tf-wf-status-beacon">
-                    <span className="tf-wf-pulse-ring"></span>
-                    <span className="tf-wf-pulse-dot"></span>
-                  </span>
-                  <span className="tf-wf-period-label">24-HOUR AUTONOMOUS RECRUITMENT CYCLE</span>
-                </div>
-                <div className="tf-wf-header-right">
-                  <button 
-                    type="button"
-                    className="tf-wf-pause-btn"
-                    onClick={() => setIsWorkflowPaused(!isWorkflowPaused)}
-                    title={isWorkflowPaused ? "Click to resume sequential workflow" : "Click to pause on current step"}
-                  >
-                    {isWorkflowPaused ? '▶ Resume Flow' : '⏸ Pause'}
-                  </button>
-                  <span className="tf-wf-stats-pill">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                    Stage {activeWorkflowIndex + 1} of 6 • {workflowSteps[activeWorkflowIndex].time}
-                  </span>
-                </div>
+                <span className="tf-wf-period-label">YESTERDAY</span>
+                <span className="tf-wf-runs-count"><strong>6</strong> runs completed</span>
               </div>
 
-              {/* Desktop Interactive 24-Hour Timeline Stage */}
+              {/* Desktop 24-Hour Continuous Timeline Stage */}
               <div className="tf-timeline-stage">
                 {/* Horizontal Timeline Rail */}
                 <div className="tf-timeline-rail">
-                  {/* Illuminated Blue/Cyan Progress Fill Line */}
-                  <div 
-                    className="tf-timeline-progress-fill"
-                    style={{ width: `${workflowSteps[activeWorkflowIndex].position}%` }}
-                  />
+                  {/* Continuous Progress Fill Line */}
+                  <div className="tf-timeline-progress-fill" />
 
-                  {/* Smooth Gliding Glowing Laser Runner Head */}
-                  <div 
-                    className="tf-timeline-laser-head"
-                    style={{ left: `${workflowSteps[activeWorkflowIndex].position}%` }}
-                  >
+                  {/* Continuous Laser Runner Head */}
+                  <div className="tf-timeline-laser-head">
                     <div className="tf-laser-pulse-ring" />
                     <div className="tf-laser-core-dot" />
                   </div>
 
-                  {/* Milestone Rail Nodes (6 points matching events) */}
-                  {workflowSteps.map((step, idx) => {
-                    const isActive = activeWorkflowIndex === idx;
-                    const isPassed = activeWorkflowIndex > idx;
-                    return (
-                      <div 
-                        key={`rail-node-${step.id}`}
-                        className={`tf-rail-node ${isActive ? 'is-active' : ''} ${isPassed ? 'is-passed' : ''}`}
-                        style={{ left: `${step.position}%` }}
-                        onClick={() => setActiveWorkflowIndex(idx)}
-                        title={`Click to view: ${step.time} • ${step.title}`}
-                      >
-                        {isActive && <span className="tf-node-ping"></span>}
-                        <span className="tf-node-dot"></span>
-                      </div>
-                    );
-                  })}
+                  {/* Rail Milestone Nodes */}
+                  <div className="tf-rail-node node-step-1" style={{ left: '10%' }}>
+                    <span className="tf-node-dot" />
+                  </div>
+                  <div className="tf-rail-node node-step-2" style={{ left: '28%' }}>
+                    <span className="tf-node-dot" />
+                  </div>
+                  <div className="tf-rail-node node-step-3" style={{ left: '44%' }}>
+                    <span className="tf-node-dot" />
+                  </div>
+                  <div className="tf-rail-node node-step-4" style={{ left: '62%' }}>
+                    <span className="tf-node-dot" />
+                  </div>
+                  <div className="tf-rail-node node-step-5" style={{ left: '78%' }}>
+                    <span className="tf-node-dot" />
+                  </div>
+                  <div className="tf-rail-node node-step-6" style={{ left: '94%' }}>
+                    <span className="tf-node-dot" />
+                  </div>
                 </div>
 
                 {/* Vertical Connector Stems */}
-                {workflowSteps.map((step, idx) => {
-                  const isActive = activeWorkflowIndex === idx;
-                  const isPassed = activeWorkflowIndex > idx;
-                  return (
-                    <div 
-                      key={`stem-${step.id}`}
-                      className={`tf-connector-stem stem-${step.placement} ${isActive ? 'is-active' : ''} ${isPassed ? 'is-passed' : ''}`}
-                      style={{ left: `${step.position}%` }}
-                    />
-                  );
-                })}
+                <div className="tf-connector-stem stem-above stem-step-1" style={{ left: '10%' }} />
+                <div className="tf-connector-stem stem-below stem-step-2" style={{ left: '28%' }} />
+                <div className="tf-connector-stem stem-above stem-step-3" style={{ left: '44%' }} />
+                <div className="tf-connector-stem stem-below stem-step-4" style={{ left: '62%' }} />
+                <div className="tf-connector-stem stem-above stem-step-5" style={{ left: '78%' }} />
+                <div className="tf-connector-stem stem-below stem-step-6" style={{ left: '94%' }} />
 
-                {/* 6 Milestone Event Cards Alternating Above & Below with Sequential Opening */}
-                {workflowSteps.map((step, idx) => {
-                  const isActive = activeWorkflowIndex === idx;
-                  const isPassed = activeWorkflowIndex > idx;
-                  const isWaiting = activeWorkflowIndex < idx;
+                {/* 6 Milestone Event Cards - Clean, Simple, No Personal Names */}
+                {/* Card 1: Above (10%, 2:14 AM) */}
+                <div className="tf-wf-card-item card-above card-step-1" style={{ left: '10%' }}>
+                  <div className="tf-wf-icon-box blue-box">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="4" width="18" height="16" rx="3" />
+                      <line x1="8" y1="2" x2="8" y2="6" />
+                      <line x1="16" y1="2" x2="16" y2="6" />
+                      <line x1="8" y1="11" x2="16" y2="11" />
+                    </svg>
+                  </div>
+                  <div className="tf-wf-content">
+                    <div className="tf-wf-title">Ingested new requisition</div>
+                    <div className="tf-wf-time">2:14 AM</div>
+                  </div>
+                </div>
 
-                  return (
-                    <div 
-                      key={`card-${step.id}`}
-                      className={`tf-wf-card-item card-${step.placement} ${isActive ? 'is-active' : ''} ${isPassed ? 'is-passed' : ''} ${isWaiting ? 'is-waiting' : ''}`}
-                      style={{ left: `${step.position}%` }}
-                      onClick={() => setActiveWorkflowIndex(idx)}
-                    >
-                      <div className={`tf-wf-icon-box ${step.iconType}-icon`}>
-                        {renderWorkflowIcon(step.iconType)}
-                      </div>
-                      <div className="tf-wf-content">
-                        <div className="tf-wf-title">{step.title}</div>
-                        <div className="tf-wf-sub">{step.sub} • <strong>{step.time}</strong></div>
-                      </div>
-                      <span className={`tf-wf-mini-badge ${step.pillClass}`}>
-                        {isActive ? '● ACTIVE' : step.badge}
-                      </span>
-                    </div>
-                  );
-                })}
+                {/* Card 2: Below (28%, 7:00 AM) */}
+                <div className="tf-wf-card-item card-below card-step-2" style={{ left: '28%' }}>
+                  <div className="tf-wf-icon-box green-box">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                  </div>
+                  <div className="tf-wf-content">
+                    <div className="tf-wf-title">Ranked top matched candidate</div>
+                    <div className="tf-wf-time">7:00 AM</div>
+                  </div>
+                </div>
+
+                {/* Card 3: Above (44%, 8:00 AM) */}
+                <div className="tf-wf-card-item card-above card-step-3" style={{ left: '44%' }}>
+                  <div className="tf-wf-icon-box red-box">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                      <polyline points="22,6 12,13 2,6" />
+                    </svg>
+                  </div>
+                  <div className="tf-wf-content">
+                    <div className="tf-wf-title">Sent AI pre-screen intake</div>
+                    <div className="tf-wf-time">8:00 AM</div>
+                  </div>
+                </div>
+
+                {/* Card 4: Below (62%, 11:30 AM) */}
+                <div className="tf-wf-card-item card-below card-step-4" style={{ left: '62%' }}>
+                  <div className="tf-wf-icon-box orange-box">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                      <polyline points="10 9 9 9 8 9" />
+                    </svg>
+                  </div>
+                  <div className="tf-wf-content">
+                    <div className="tf-wf-title">Verified signed digital RTR</div>
+                    <div className="tf-wf-time">11:30 AM</div>
+                  </div>
+                </div>
+
+                {/* Card 5: Above (78%, 3:45 PM) */}
+                <div className="tf-wf-card-item card-above card-step-5" style={{ left: '78%' }}>
+                  <div className="tf-wf-icon-box slack-box">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                      <path d="M6 15a2 2 0 1 1-2-2h2v2zm1 0a2 2 0 0 1 2-2 2 2 0 0 1 2 2v5a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-5z" fill="#E01E5A"/>
+                      <path d="M9 6a2 2 0 1 1-2-2v2h2zm0 1a2 2 0 0 1 2 2 2 2 0 0 1-2 2H4a2 2 0 0 1-2-2 2 2 0 0 1 2-2h5z" fill="#36C5F0"/>
+                      <path d="M18 9a2 2 0 1 1 2 2h-2V9zm-1 0a2 2 0 0 1-2 2 2 2 0 0 1-2-2V4a2 2 0 0 1 2-2 2 2 0 0 1 2 2v5z" fill="#2EB67D"/>
+                      <path d="M15 18a2 2 0 1 1 2 2v-2h-2zm0-1a2 2 0 0 1-2-2 2 2 0 0 1 2-2h5a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-5z" fill="#ECB22E"/>
+                    </svg>
+                  </div>
+                  <div className="tf-wf-content">
+                    <div className="tf-wf-title">Posted talent alert to #recruiting</div>
+                    <div className="tf-wf-time">3:45 PM</div>
+                  </div>
+                </div>
+
+                {/* Card 6: Below (94%, 10:05 PM) */}
+                <div className="tf-wf-card-item card-below card-step-6" style={{ left: '94%' }}>
+                  <div className="tf-wf-icon-box teal-box">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    </svg>
+                  </div>
+                  <div className="tf-wf-content">
+                    <div className="tf-wf-title">Submitted candidate to client portal</div>
+                    <div className="tf-wf-time">10:05 PM</div>
+                  </div>
+                </div>
 
                 {/* Horizontal Time Axis Labels */}
                 <div className="tf-time-axis-labels">
                   <span className="tf-axis-time" style={{ left: '1%' }}>12 AM</span>
-                  <span className="tf-axis-time" style={{ left: '25%' }}>6 AM</span>
+                  <span className="tf-axis-time" style={{ left: '26%' }}>6 AM</span>
                   <span className="tf-axis-time" style={{ left: '50%' }}>12 PM</span>
-                  <span className="tf-axis-time" style={{ left: '75%' }}>6 PM</span>
+                  <span className="tf-axis-time" style={{ left: '74%' }}>6 PM</span>
                   <span className="tf-axis-time tf-axis-moon" style={{ left: '97%' }}>
                     12 AM
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
                       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
                     </svg>
                   </span>
                 </div>
               </div>
 
-              {/* Mobile Sequential Timeline Flow (Shown on Screen Width <= 900px) */}
+              {/* Mobile Timeline Flow */}
               <div className="tf-mobile-timeline-stage">
-                {workflowSteps.map((step, idx) => {
-                  const isActive = activeWorkflowIndex === idx;
-                  const isPassed = activeWorkflowIndex > idx;
-                  const isWaiting = activeWorkflowIndex < idx;
-
-                  return (
-                    <div 
-                      key={`m-step-${step.id}`}
-                      className={`tf-m-event-item ${isActive ? 'is-active' : ''} ${isPassed ? 'is-passed' : ''} ${isWaiting ? 'is-waiting' : ''}`}
-                      onClick={() => setActiveWorkflowIndex(idx)}
-                    >
-                      <div className="tf-m-event-left">
-                        <div className={`tf-wf-icon-box ${step.iconType}-icon`}>
-                          {renderWorkflowIcon(step.iconType)}
-                        </div>
-                        {idx < workflowSteps.length - 1 && <div className="tf-m-stem"></div>}
-                      </div>
-                      <div className="tf-m-event-card">
-                        <div className="tf-wf-title">{step.title}</div>
-                        <div className="tf-wf-sub">{step.sub} • <strong>{step.time}</strong></div>
-                        <span className={`tf-wf-mini-badge ${step.pillClass}`}>
-                          {isActive ? '● ACTIVE STAGE' : step.badge}
-                        </span>
-                      </div>
+                <div className="tf-m-event-item">
+                  <div className="tf-m-event-left">
+                    <div className="tf-wf-icon-box blue-box">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="4" width="18" height="16" rx="3" />
+                      </svg>
                     </div>
-                  );
-                })}
+                    <div className="tf-m-stem"></div>
+                  </div>
+                  <div className="tf-m-event-card">
+                    <div className="tf-wf-title">Ingested new requisition</div>
+                    <div className="tf-wf-time">2:14 AM</div>
+                  </div>
+                </div>
+
+                <div className="tf-m-event-item">
+                  <div className="tf-m-event-left">
+                    <div className="tf-wf-icon-box green-box">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="9" cy="7" r="4" />
+                      </svg>
+                    </div>
+                    <div className="tf-m-stem"></div>
+                  </div>
+                  <div className="tf-m-event-card">
+                    <div className="tf-wf-title">Ranked top matched candidate</div>
+                    <div className="tf-wf-time">7:00 AM</div>
+                  </div>
+                </div>
+
+                <div className="tf-m-event-item">
+                  <div className="tf-m-event-left">
+                    <div className="tf-wf-icon-box red-box">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="22,6 12,13 2,6" />
+                      </svg>
+                    </div>
+                    <div className="tf-m-stem"></div>
+                  </div>
+                  <div className="tf-m-event-card">
+                    <div className="tf-wf-title">Sent AI pre-screen intake</div>
+                    <div className="tf-wf-time">8:00 AM</div>
+                  </div>
+                </div>
+
+                <div className="tf-m-event-item">
+                  <div className="tf-m-event-left">
+                    <div className="tf-wf-icon-box orange-box">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      </svg>
+                    </div>
+                    <div className="tf-m-stem"></div>
+                  </div>
+                  <div className="tf-m-event-card">
+                    <div className="tf-wf-title">Verified signed digital RTR</div>
+                    <div className="tf-wf-time">11:30 AM</div>
+                  </div>
+                </div>
+
+                <div className="tf-m-event-item">
+                  <div className="tf-m-event-left">
+                    <div className="tf-wf-icon-box slack-box">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M6 15a2 2 0 1 1-2-2h2v2z" fill="#E01E5A"/>
+                        <path d="M9 6a2 2 0 1 1-2-2v2h2z" fill="#36C5F0"/>
+                      </svg>
+                    </div>
+                    <div className="tf-m-stem"></div>
+                  </div>
+                  <div className="tf-m-event-card">
+                    <div className="tf-wf-title">Posted talent alert to #recruiting</div>
+                    <div className="tf-wf-time">3:45 PM</div>
+                  </div>
+                </div>
+
+                <div className="tf-m-event-item">
+                  <div className="tf-m-event-left">
+                    <div className="tf-wf-icon-box teal-box">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="tf-m-event-card">
+                    <div className="tf-wf-title">Submitted candidate to client portal</div>
+                    <div className="tf-wf-time">10:05 PM</div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Bottom Split Feature Cards */}
+            {/* Bottom Split Feature Cards - Exact Tasklet.ai match */}
             <div className="tf-workflow-subgrid">
-              {/* Card 1: Delegate Real Work */}
+              {/* Card 1: Delegate real work */}
               <div className="tf-subcard">
-                <div className="tf-subcard-icon-wrap">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2">
-                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                  </svg>
-                </div>
-                <h3 className="tf-subcard-title">Delegate real staffing work</h3>
+                <h3 className="tf-subcard-title">Delegate real work</h3>
                 <p className="tf-subcard-desc">
-                  Give real operational responsibilities to autonomous agents that run automatically based on live staffing events: a newly ingested VMS requisition, an incoming talent profile in your vault, or an expiring RTR document.
+                  Give real responsibilities to agents that run automatically based on business events: a newly posted requisition, a candidate profile in your vault, or a signed right-to-represent document.
                 </p>
-                <div className="tf-subcard-badges">
-                  <span className="tf-subcard-pill">⚡ Event-Driven Triggers</span>
-                  <span className="tf-subcard-pill">🎯 Autonomous Sourcing</span>
-                </div>
               </div>
 
-              {/* Card 2: Keep Humans in the Loop */}
+              {/* Card 2: Keep your humans in the loop */}
               <div className="tf-subcard">
-                <div className="tf-subcard-icon-wrap">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                  </svg>
-                </div>
-                <h3 className="tf-subcard-title">Keep recruiters in full control</h3>
+                <h3 className="tf-subcard-title">Keep your humans in the loop</h3>
                 <p className="tf-subcard-desc">
-                  Decide what your AI agents can do autonomously and where they pause for approval. AI agents draft candidate shortlists, verify rates, and format resumes — recruiters retain 100% final authorization on every client submission.
+                  Decide what your agents can do on their own, and what they need permission for. They'll reach out via Slack, email, or your dashboard when they need your approval.
                 </p>
-                <div className="tf-subcard-badges">
-                  <span className="tf-subcard-pill">🛡️ Human Authorization</span>
-                  <span className="tf-subcard-pill">📋 Full Audit History</span>
-                </div>
               </div>
             </div>
           </div>
@@ -4511,7 +4440,7 @@ function Homepage() {
       
 
         /* =========================================================================
-           AUTONOMOUS WORKFLOW TIMELINE STYLES (Tasklet.ai Theme Match - Sequential Open)
+           AUTONOMOUS WORKFLOW TIMELINE STYLES (Clean Tasklet.ai Match)
            ========================================================================= */
         .tf-workflow-section {
           padding: 80px 0 95px;
@@ -4522,117 +4451,45 @@ function Homepage() {
         .tf-workflow-card {
           background: #f8fafc;
           border: 1px solid #e2e8f0;
-          border-radius: 20px;
-          padding: 32px 36px 44px;
-          box-shadow: 0 4px 24px -2px rgba(15, 23, 42, 0.05);
+          border-radius: 16px;
+          padding: 28px 36px 44px;
+          box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04);
           position: relative;
-          overflow: visible;
-          margin-bottom: 32px;
+          margin-bottom: 28px;
         }
 
         .tf-wf-card-header {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding-bottom: 24px;
+          padding-bottom: 20px;
           border-bottom: 1px solid #e2e8f0;
-          margin-bottom: 20px;
-        }
-
-        .tf-wf-header-left {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .tf-wf-status-beacon {
-          position: relative;
-          width: 10px;
-          height: 10px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .tf-wf-pulse-dot {
-          width: 8px;
-          height: 8px;
-          background: #10b981;
-          border-radius: 50%;
-          position: relative;
-          z-index: 2;
-        }
-
-        .tf-wf-pulse-ring {
-          position: absolute;
-          width: 18px;
-          height: 18px;
-          background: rgba(16, 185, 129, 0.35);
-          border-radius: 50%;
-          animation: wfPulseBeacon 2s cubic-bezier(0, 0, 0.2, 1) infinite;
-        }
-
-        @keyframes wfPulseBeacon {
-          0% { transform: scale(0.6); opacity: 1; }
-          100% { transform: scale(1.6); opacity: 0; }
+          margin-bottom: 15px;
         }
 
         .tf-wf-period-label {
           font-size: 11px;
           font-weight: 800;
-          letter-spacing: 0.1em;
-          color: #475569;
+          letter-spacing: 0.08em;
+          color: #64748b;
           text-transform: uppercase;
         }
 
-        .tf-wf-header-right {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .tf-wf-pause-btn {
-          background: #ffffff;
-          border: 1px solid #cbd5e1;
-          color: #475569;
-          font-size: 11.5px;
-          font-weight: 700;
-          padding: 5px 12px;
-          border-radius: 9999px;
-          cursor: pointer;
-          transition: all 0.15s ease;
-        }
-
-        .tf-wf-pause-btn:hover {
-          background: #eff6ff;
-          color: #1d4ed8;
-          border-color: #93c5fd;
-        }
-
-        .tf-wf-stats-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          background: #ffffff;
-          border: 1px solid #cbd5e1;
-          color: #0f172a;
+        .tf-wf-runs-count {
           font-size: 12px;
-          font-weight: 700;
-          padding: 5px 14px;
-          border-radius: 9999px;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+          color: #0f172a;
         }
 
-        .tf-wf-stats-pill svg {
-          color: #10b981;
+        .tf-wf-runs-count strong {
+          font-weight: 800;
         }
 
         /* Desktop Interactive Timeline Stage */
         .tf-timeline-stage {
           position: relative;
           width: 100%;
-          height: 420px;
-          margin-top: 20px;
+          height: 380px;
+          margin-top: 15px;
         }
 
         @media (max-width: 900px) {
@@ -4647,36 +4504,48 @@ function Homepage() {
           top: 50%;
           left: 1%;
           right: 1%;
-          height: 4px;
-          background: #cbd5e1;
+          height: 3px;
+          background: #d1d5db;
           border-radius: 9999px;
           transform: translateY(-50%);
           z-index: 5;
         }
 
-        /* Progress Fill Line */
+        /* Continuous Progress Fill Line */
         .tf-timeline-progress-fill {
           position: absolute;
           top: 0;
           left: 0;
           height: 100%;
-          background: linear-gradient(90deg, #2563eb 0%, #38bdf8 100%);
+          background: #10b981;
           border-radius: 9999px;
-          box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
-          transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+          animation: wfLineTravel 13s linear infinite;
           z-index: 6;
         }
 
-        /* Gliding Glowing Laser Runner Head */
+        @keyframes wfLineTravel {
+          0% { width: 0%; opacity: 1; }
+          9% { width: 10%; }
+          27% { width: 28%; }
+          43% { width: 44%; }
+          61% { width: 62%; }
+          77% { width: 78%; }
+          93% { width: 94%; }
+          97% { width: 100%; opacity: 1; }
+          99% { width: 100%; opacity: 0; }
+          100% { width: 0%; opacity: 0; }
+        }
+
+        /* Continuous Laser Head */
         .tf-timeline-laser-head {
           position: absolute;
           top: 50%;
           transform: translate(-50%, -50%);
-          width: 24px;
-          height: 24px;
+          width: 18px;
+          height: 18px;
           pointer-events: none;
           z-index: 8;
-          transition: left 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+          animation: wfLaserTravel 13s linear infinite;
         }
 
         .tf-laser-core-dot {
@@ -4684,29 +4553,43 @@ function Homepage() {
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
-          width: 12px;
-          height: 12px;
+          width: 9px;
+          height: 9px;
           border-radius: 50%;
           background: #ffffff;
-          border: 3px solid #2563eb;
-          box-shadow: 0 0 12px #38bdf8, 0 0 20px #2563eb;
+          border: 2px solid #10b981;
+          box-shadow: 0 0 10px #10b981;
         }
 
         .tf-laser-pulse-ring {
           position: absolute;
-          width: 28px;
-          height: 28px;
+          width: 22px;
+          height: 22px;
           border-radius: 50%;
-          background: rgba(56, 189, 248, 0.35);
+          background: rgba(16, 185, 129, 0.35);
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
-          animation: laserPulseAnim 1.8s infinite;
+          animation: laserPing 1.6s infinite;
         }
 
-        @keyframes laserPulseAnim {
+        @keyframes laserPing {
           0% { transform: translate(-50%, -50%) scale(0.6); opacity: 1; }
           100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+        }
+
+        @keyframes wfLaserTravel {
+          0% { left: 0%; opacity: 0; }
+          2% { opacity: 1; }
+          9% { left: 10%; }
+          27% { left: 28%; }
+          43% { left: 44%; }
+          61% { left: 62%; }
+          77% { left: 78%; }
+          93% { left: 94%; }
+          97% { left: 100%; opacity: 1; }
+          99% { left: 100%; opacity: 0; }
+          100% { left: 0%; opacity: 0; }
         }
 
         /* Rail Milestone Nodes */
@@ -4714,222 +4597,238 @@ function Homepage() {
           position: absolute;
           top: 50%;
           transform: translate(-50%, -50%);
-          width: 14px;
-          height: 14px;
+          width: 10px;
+          height: 10px;
           display: flex;
           align-items: center;
           justify-content: center;
           z-index: 7;
-          cursor: pointer;
         }
 
         .tf-node-dot {
-          width: 8px;
-          height: 8px;
+          width: 6px;
+          height: 6px;
           border-radius: 50%;
-          background: #0f172a;
-          border: 2px solid #ffffff;
-          box-shadow: 0 0 0 1px #94a3b8;
+          background: #94a3b8;
           transition: all 0.3s ease;
         }
 
-        .tf-rail-node.is-passed .tf-node-dot {
-          background: #10b981;
-          box-shadow: 0 0 0 2px #ffffff, 0 0 8px rgba(16, 185, 129, 0.4);
+        .node-step-1 .tf-node-dot { animation: wfNode1 13s linear infinite; }
+        .node-step-2 .tf-node-dot { animation: wfNode2 13s linear infinite; }
+        .node-step-3 .tf-node-dot { animation: wfNode3 13s linear infinite; }
+        .node-step-4 .tf-node-dot { animation: wfNode4 13s linear infinite; }
+        .node-step-5 .tf-node-dot { animation: wfNode5 13s linear infinite; }
+        .node-step-6 .tf-node-dot { animation: wfNode6 13s linear infinite; }
+
+        @keyframes wfNode1 {
+          0%, 7% { background: #94a3b8; transform: scale(1); }
+          9%, 13% { background: #10b981; transform: scale(1.4); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.4); }
+          14%, 97% { background: #10b981; transform: scale(1); }
+          100% { background: #94a3b8; }
         }
 
-        .tf-rail-node.is-active .tf-node-dot {
-          background: #2563eb;
-          width: 12px;
-          height: 12px;
-          box-shadow: 0 0 0 3px #ffffff, 0 0 14px #2563eb;
+        @keyframes wfNode2 {
+          0%, 25% { background: #94a3b8; transform: scale(1); }
+          27%, 31% { background: #10b981; transform: scale(1.4); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.4); }
+          32%, 97% { background: #10b981; transform: scale(1); }
+          100% { background: #94a3b8; }
         }
 
-        .tf-node-ping {
-          position: absolute;
-          width: 22px;
-          height: 22px;
-          border-radius: 50%;
-          background: rgba(37, 99, 235, 0.3);
-          animation: nodePingAnim 2s infinite;
+        @keyframes wfNode3 {
+          0%, 41% { background: #94a3b8; transform: scale(1); }
+          43%, 47% { background: #10b981; transform: scale(1.4); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.4); }
+          48%, 97% { background: #10b981; transform: scale(1); }
+          100% { background: #94a3b8; }
         }
 
-        @keyframes nodePingAnim {
-          0% { transform: scale(0.6); opacity: 0.8; }
-          50% { transform: scale(1.4); opacity: 0; }
-          100% { transform: scale(0.6); opacity: 0; }
+        @keyframes wfNode4 {
+          0%, 59% { background: #94a3b8; transform: scale(1); }
+          61%, 65% { background: #10b981; transform: scale(1.4); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.4); }
+          66%, 97% { background: #10b981; transform: scale(1); }
+          100% { background: #94a3b8; }
+        }
+
+        @keyframes wfNode5 {
+          0%, 75% { background: #94a3b8; transform: scale(1); }
+          77%, 81% { background: #10b981; transform: scale(1.4); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.4); }
+          82%, 97% { background: #10b981; transform: scale(1); }
+          100% { background: #94a3b8; }
+        }
+
+        @keyframes wfNode6 {
+          0%, 91% { background: #94a3b8; transform: scale(1); }
+          93%, 96% { background: #10b981; transform: scale(1.4); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.4); }
+          97% { background: #10b981; transform: scale(1); }
+          100% { background: #94a3b8; }
         }
 
         /* Vertical Connector Stems */
         .tf-connector-stem {
           position: absolute;
-          width: 2px;
+          width: 1.5px;
           z-index: 4;
           transform: translateX(-50%);
-          transition: all 0.4s ease;
         }
 
         .tf-connector-stem.stem-above {
           bottom: 50%;
-          height: 52px;
-          background: linear-gradient(to top, #cbd5e1 60%, transparent 100%);
-          border-left: 2px dashed #cbd5e1;
+          height: 48px;
+          border-left: 1.5px dashed #cbd5e1;
         }
 
         .tf-connector-stem.stem-below {
           top: 50%;
-          height: 52px;
-          background: linear-gradient(to bottom, #cbd5e1 60%, transparent 100%);
-          border-left: 2px dashed #cbd5e1;
+          height: 48px;
+          border-left: 1.5px dashed #cbd5e1;
         }
 
-        .tf-connector-stem.is-passed {
-          border-left: 2px solid #94a3b8 !important;
-          opacity: 0.85;
+        .stem-step-1 { animation: wfStem1 13s linear infinite; }
+        .stem-step-2 { animation: wfStem2 13s linear infinite; }
+        .stem-step-3 { animation: wfStem3 13s linear infinite; }
+        .stem-step-4 { animation: wfStem4 13s linear infinite; }
+        .stem-step-5 { animation: wfStem5 13s linear infinite; }
+        .stem-step-6 { animation: wfStem6 13s linear infinite; }
+
+        @keyframes wfStem1 {
+          0%, 7% { opacity: 0.3; border-left-color: #cbd5e1; }
+          9%, 97% { opacity: 1; border-left: 1.5px solid #10b981; }
+          100% { opacity: 0.3; }
         }
 
-        .tf-connector-stem.is-active {
-          border-left: 2.5px solid #2563eb !important;
-          filter: drop-shadow(0 0 6px rgba(37, 99, 235, 0.7));
-          z-index: 10;
+        @keyframes wfStem2 {
+          0%, 25% { opacity: 0.3; border-left-color: #cbd5e1; }
+          27%, 97% { opacity: 1; border-left: 1.5px solid #10b981; }
+          100% { opacity: 0.3; }
         }
 
-        /* Event Milestone Card Items (Sequential Opening & No Truncation) */
+        @keyframes wfStem3 {
+          0%, 41% { opacity: 0.3; border-left-color: #cbd5e1; }
+          43%, 97% { opacity: 1; border-left: 1.5px solid #10b981; }
+          100% { opacity: 0.3; }
+        }
+
+        @keyframes wfStem4 {
+          0%, 59% { opacity: 0.3; border-left-color: #cbd5e1; }
+          61%, 97% { opacity: 1; border-left: 1.5px solid #10b981; }
+          100% { opacity: 0.3; }
+        }
+
+        @keyframes wfStem5 {
+          0%, 75% { opacity: 0.3; border-left-color: #cbd5e1; }
+          77%, 97% { opacity: 1; border-left: 1.5px solid #10b981; }
+          100% { opacity: 0.3; }
+        }
+
+        @keyframes wfStem6 {
+          0%, 91% { opacity: 0.3; border-left-color: #cbd5e1; }
+          93%, 97% { opacity: 1; border-left: 1.5px solid #10b981; }
+          100% { opacity: 0.3; }
+        }
+
+        /* Clean Event Milestone Cards (Exact Tasklet format: Icon + Title + Time) */
         .tf-wf-card-item {
           position: absolute;
           transform: translateX(-50%);
           background: #ffffff;
           border: 1px solid #e2e8f0;
-          border-radius: 14px;
-          padding: 12px 16px;
+          border-radius: 10px;
+          padding: 10px 14px;
           display: flex;
           align-items: center;
           gap: 12px;
-          width: 250px;
-          box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
-          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          width: 220px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
           z-index: 10;
-          cursor: pointer;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         .tf-wf-card-item.card-above {
-          bottom: calc(50% + 52px);
+          bottom: calc(50% + 48px);
         }
 
         .tf-wf-card-item.card-below {
-          top: calc(50% + 52px);
+          top: calc(50% + 48px);
         }
 
-        /* Waiting (Future) State */
-        .tf-wf-card-item.is-waiting {
-          opacity: 0.55;
-          transform: translateX(-50%) scale(0.96);
-          border-color: #e2e8f0;
-          box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+        /* Individual Card Keyframe Animations (Opens in sequence as laser arrives) */
+        .card-step-1 { animation: wfCard1 13s linear infinite; }
+        .card-step-2 { animation: wfCard2 13s linear infinite; }
+        .card-step-3 { animation: wfCard3 13s linear infinite; }
+        .card-step-4 { animation: wfCard4 13s linear infinite; }
+        .card-step-5 { animation: wfCard5 13s linear infinite; }
+        .card-step-6 { animation: wfCard6 13s linear infinite; }
+
+        @keyframes wfCard1 {
+          0%, 7% { opacity: 0.35; transform: translateX(-50%) scale(0.96); border-color: #e2e8f0; }
+          9%, 97% { opacity: 1; transform: translateX(-50%) translateY(-3px) scale(1.02); border-color: #cbd5e1; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08); }
+          100% { opacity: 0.35; transform: translateX(-50%) scale(0.96); }
         }
 
-        /* Completed (Passed) State */
-        .tf-wf-card-item.is-passed {
-          opacity: 0.92;
-          border-color: #cbd5e1;
-          background: #ffffff;
-          box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+        @keyframes wfCard2 {
+          0%, 25% { opacity: 0.35; transform: translateX(-50%) scale(0.96); border-color: #e2e8f0; }
+          27%, 97% { opacity: 1; transform: translateX(-50%) translateY(3px) scale(1.02); border-color: #cbd5e1; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08); }
+          100% { opacity: 0.35; transform: translateX(-50%) scale(0.96); }
         }
 
-        /* ACTIVE "OPEN" STATE */
-        .tf-wf-card-item.is-active {
-          opacity: 1;
-          background: #ffffff;
-          border-color: #2563eb;
-          box-shadow: 0 16px 36px -4px rgba(37, 99, 235, 0.22), 0 0 0 2px rgba(37, 99, 235, 0.2);
-          z-index: 25;
+        @keyframes wfCard3 {
+          0%, 41% { opacity: 0.35; transform: translateX(-50%) scale(0.96); border-color: #e2e8f0; }
+          43%, 97% { opacity: 1; transform: translateX(-50%) translateY(-3px) scale(1.02); border-color: #cbd5e1; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08); }
+          100% { opacity: 0.35; transform: translateX(-50%) scale(0.96); }
         }
 
-        .tf-wf-card-item.card-above.is-active {
-          transform: translateX(-50%) translateY(-6px) scale(1.06);
+        @keyframes wfCard4 {
+          0%, 59% { opacity: 0.35; transform: translateX(-50%) scale(0.96); border-color: #e2e8f0; }
+          61%, 97% { opacity: 1; transform: translateX(-50%) translateY(3px) scale(1.02); border-color: #cbd5e1; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08); }
+          100% { opacity: 0.35; transform: translateX(-50%) scale(0.96); }
         }
 
-        .tf-wf-card-item.card-below.is-active {
-          transform: translateX(-50%) translateY(6px) scale(1.06);
+        @keyframes wfCard5 {
+          0%, 75% { opacity: 0.35; transform: translateX(-50%) scale(0.96); border-color: #e2e8f0; }
+          77%, 97% { opacity: 1; transform: translateX(-50%) translateY(-3px) scale(1.02); border-color: #cbd5e1; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08); }
+          100% { opacity: 0.35; transform: translateX(-50%) scale(0.96); }
+        }
+
+        @keyframes wfCard6 {
+          0%, 91% { opacity: 0.35; transform: translateX(-50%) scale(0.96); border-color: #e2e8f0; }
+          93%, 97% { opacity: 1; transform: translateX(-50%) translateY(3px) scale(1.02); border-color: #cbd5e1; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08); }
+          100% { opacity: 0.35; transform: translateX(-50%) scale(0.96); }
         }
 
         .tf-wf-icon-box {
-          width: 38px;
-          height: 38px;
-          border-radius: 10px;
+          width: 32px;
+          height: 32px;
+          border-radius: 7px;
           display: flex;
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
-          transition: transform 0.3s ease;
         }
 
-        .tf-wf-card-item.is-active .tf-wf-icon-box {
-          transform: scale(1.08);
-        }
-
-        .tf-wf-icon-box.vms-icon { background: #eff6ff; color: #2563eb; }
-        .tf-wf-icon-box.aimatch-icon { background: #ecfdf5; color: #059669; }
-        .tf-wf-icon-box.email-icon { background: #fff7ed; color: #ea580c; }
-        .tf-wf-icon-box.rtr-icon { background: #faf5ff; color: #7c3aed; }
-        .tf-wf-icon-box.slack-icon { background: #f8fafc; border: 1px solid #e2e8f0; }
-        .tf-wf-icon-box.portal-icon { background: #f0fdfa; color: #0d9488; }
+        .tf-wf-icon-box.blue-box { background: #4f46e5; color: #ffffff; }
+        .tf-wf-icon-box.green-box { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+        .tf-wf-icon-box.red-box { background: #ffffff; border: 1px solid #e2e8f0; color: #ea4335; }
+        .tf-wf-icon-box.orange-box { background: #fff7ed; border: 1px solid #fed7aa; color: #ea580c; }
+        .tf-wf-icon-box.slack-box { background: #ffffff; border: 1px solid #e2e8f0; }
+        .tf-wf-icon-box.teal-box { background: #f8fafc; border: 1px solid #e2e8f0; color: #334155; }
 
         .tf-wf-content {
-          flex: 1;
+          display: flex;
+          flex-direction: column;
           min-width: 0;
         }
 
-        /* No truncation: Full legible multiline text */
         .tf-wf-title {
           font-size: 12.5px;
           font-weight: 700;
           color: #0f172a;
-          line-height: 1.35;
+          line-height: 1.25;
           white-space: normal;
-          overflow: visible;
         }
 
-        .tf-wf-card-item.is-active .tf-wf-title {
-          color: #1d4ed8;
-          font-weight: 800;
-        }
-
-        .tf-wf-sub {
+        .tf-wf-time {
           font-size: 11px;
           color: #64748b;
           margin-top: 3px;
-          line-height: 1.3;
-          white-space: normal;
-          overflow: visible;
-        }
-
-        .tf-wf-sub strong {
-          color: #334155;
-        }
-
-        .tf-wf-mini-badge {
-          font-size: 9.5px;
-          font-weight: 800;
-          letter-spacing: 0.04em;
-          padding: 3px 7px;
-          border-radius: 9999px;
-          flex-shrink: 0;
-          text-transform: uppercase;
-          transition: all 0.3s ease;
-        }
-
-        .blue-pill { background: #dbeafe; color: #1e40af; }
-        .emerald-pill { background: #d1fae5; color: #065f46; }
-        .amber-pill { background: #fef3c7; color: #92400e; }
-        .purple-pill { background: #ede9fe; color: #5b21b6; }
-        .slack-pill { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
-        .teal-pill { background: #ccfbf1; color: #115e59; }
-
-        .tf-wf-card-item.is-active .tf-wf-mini-badge {
-          background: #2563eb;
-          color: #ffffff;
-          box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
         }
 
         /* Time Axis Labels */
@@ -4947,8 +4846,7 @@ function Homepage() {
           transform: translateX(-50%);
           font-size: 11px;
           font-weight: 700;
-          color: #64748b;
-          letter-spacing: 0.02em;
+          color: #94a3b8;
         }
 
         .tf-axis-moon {
@@ -4956,7 +4854,7 @@ function Homepage() {
           align-items: center;
         }
 
-        /* Mobile Timeline (<= 900px) */
+        /* Mobile Timeline */
         .tf-mobile-timeline-stage {
           display: none;
         }
@@ -4965,7 +4863,7 @@ function Homepage() {
           .tf-mobile-timeline-stage {
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
             margin-top: 10px;
           }
 
@@ -4973,19 +4871,6 @@ function Homepage() {
             display: flex;
             gap: 14px;
             align-items: flex-start;
-            position: relative;
-            cursor: pointer;
-            transition: all 0.3s ease;
-          }
-
-          .tf-m-event-item.is-waiting {
-            opacity: 0.55;
-          }
-
-          .tf-m-event-item.is-active .tf-m-event-card {
-            border-color: #2563eb;
-            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.15);
-            background: #ffffff;
           }
 
           .tf-m-event-left {
@@ -4996,24 +4881,23 @@ function Homepage() {
           }
 
           .tf-m-stem {
-            width: 2px;
-            height: 32px;
+            width: 1.5px;
+            height: 24px;
             background: #cbd5e1;
-            margin-top: 6px;
+            margin-top: 4px;
           }
 
           .tf-m-event-card {
             flex: 1;
             background: #ffffff;
             border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 12px 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-            transition: all 0.3s ease;
+            border-radius: 10px;
+            padding: 10px 14px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
           }
         }
 
-        /* Two Lower Sub-Cards */
+        /* Bottom Split Feature Cards (Tasklet.ai match) */
         .tf-workflow-subgrid {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -5027,36 +4911,17 @@ function Homepage() {
         }
 
         .tf-subcard {
-          background: #ffffff;
-          border: 1px solid #e2e8f0;
-          border-radius: 16px;
-          padding: 32px 28px;
-          box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .tf-subcard:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-        }
-
-        .tf-subcard-icon-wrap {
-          width: 44px;
-          height: 44px;
-          border-radius: 12px;
           background: #f8fafc;
           border: 1px solid #e2e8f0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-bottom: 18px;
+          border-radius: 16px;
+          padding: 32px 30px;
         }
 
         .tf-subcard-title {
           font-size: 20px;
           font-weight: 800;
           color: #0f172a;
-          margin-bottom: 10px;
+          margin-bottom: 12px;
           letter-spacing: -0.02em;
         }
 
@@ -5064,23 +4929,7 @@ function Homepage() {
           font-size: 14px;
           line-height: 1.6;
           color: #475569;
-          margin-bottom: 18px;
-        }
-
-        .tf-subcard-badges {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-        }
-
-        .tf-subcard-pill {
-          font-size: 11px;
-          font-weight: 700;
-          background: #f1f5f9;
-          color: #334155;
-          padding: 4px 10px;
-          border-radius: 6px;
-          border: 1px solid #e2e8f0;
+          margin: 0;
         }
 `}</style>
     </SiteLayout>
