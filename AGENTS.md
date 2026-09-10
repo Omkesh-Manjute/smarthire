@@ -31,6 +31,44 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-11 — Messages Page Enterprise SaaS Redesign (Linear/Slack/Notion UX matching media_1789074147680.png)
+- **Complete Messages Workspace Overhaul (`smarthire-react/src/pages/RecruiterInbox.jsx`, `App.jsx`)**:
+  - Re-architected `/messages` and `/inbox?tab=messages` from the ground up, eliminating clunky floating cards and excessive whitespace in favor of a clean, high-density Linear/Slack/Notion inspired communication center.
+  - **Left Navigation Sidebar**:
+    - `M.` SmartHire ATS branding (`Find · Evaluate · Hire`).
+    - Unified navigation links: `Dashboard`, `Candidates`, `Jobs`, `Messages` (active soft blue pill `#EBF3FE` / `#2065D1` with unread badge `2`), `Database` (badge `77`), `Scan Ingest`, `Analytics`, `Reports`, `Settings`.
+    - Compact bottom `👑 Upgrade to Pro` card ($69/mo).
+  - **Top Application Bar**:
+    - Rounded `🔍 Search candidates, jobs, messages...` global search bar.
+    - Blue `+ Add Candidate` button (`#2065D1`), notification bell with unread badge `2`, light/dark theme toggle, and recruiter profile chip (`OM`, `Omkesh`, `Recruiter`, `▾`).
+  - **Messages Toolbar & Categories**:
+    - Title: **Messages**; Subtitle: *Stay connected with candidates, clients and your team*.
+    - Right controls: `Filter`, `Newest ▾` sort dropdown (Newest / Oldest / Unread), and real-time thread search input.
+    - Sub-tabs: `All` (badge `2`), `Candidates`, `Clients`, `Team`.
+  - **Conversation List (~25% width, ~320px)**:
+    - High-density flat rows with subtle dividers (no separate floating boxes).
+    - Active row state with soft blue highlight (`#EBF3FE`) and left accent indicator (`3px solid #2065D1`).
+    - 44px circular avatars with live presence indicators (green online dot).
+    - Seeded all 8 canonical conversations matching screenshot: `Gourav (Sourcing Specialist)` (unread `1`), `Abhishek Jha` (unread `1`), `Shweta Patel`, `Rahul Kumar`, `Priya Sharma` (photo avatar), `Dev Team` (group), `Manish Kumar`, `Sneha Nair`.
+  - **Dominant Center Chat Area**:
+    - Header with avatar, status (`Direct Reportee • SmartHire LLC` + `● Active now`), and quick actions (`📞 Call`, `📹 Video`, `⋮ More`).
+    - Clean message stream with centered date divider (`Today, 10 Sept 2026`), soft gray incoming bubbles (`#F3F4F6`), and brand blue outgoing bubbles (`#2065D1`, white text, double checkmarks `✓✓`).
+    - Rich message composer with `📎` attachments, `😊` emoji picker, `@` mentions, and blue `✈️` send button.
+    - Bottom quick ATS action bar: `✨ Write with AI`, `👤 Share Candidate`, `📅 Schedule Meeting`, `📎 Attach File`.
+  - **Right Contextual Details Panel (~310px)**:
+    - Collapsible header with `⛶` toggle.
+    - 64px avatar, name, subtitle, active presence, and local time (`🕒 Local 02:25 PM (EST)`).
+    - 4-Button row: `📞 Call`, `📹 Video`, `✉️ Email` (`mailto:`), `⋯ More`.
+    - `About` section: Role, Company, Email, Phone, Location.
+    - `Recent Files` (with `View All`): Excel `Candidate_List.xlsx`, PDF `Req_159078_Notes.pdf`, Word `Interview_Schedule.docx`.
+    - `Quick Actions`: `➔ View Full Profile`, `🕒 Suggest Interview Time`, `📝 Add Note`.
+  - **Interactive Modals**:
+    - `✨ Write with AI` assistant popover with 4 recruiter prompt presets.
+    - `👤 Share Candidate` picker modal to attach candidate profiles directly into active conversations.
+- **Production Build Verification**:
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings (built in 4.26s).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 4.78s).
+
 ### 2026-09-11 — Minimal Dashboard Candidate Dossier UI Overhaul (media_1789073118530.png) & material-kit-react
 - **Minimals Candidate Dossier Master Layout (`media_1789073118530.png`)**:
   - Re-architected `/inbox` (`RecruiterInbox.jsx`) candidate view to precisely match the Minimals Dashboard Candidate Dossier from the screenshot:

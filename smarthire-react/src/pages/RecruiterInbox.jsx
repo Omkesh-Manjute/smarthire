@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { saveMessageFirestore, getMessagesFirestore, saveRequisitionCandidates, saveCandidate } from '../lib/atsFirestore'
 
 const POLL_INTERVAL = 3000
@@ -147,6 +147,54 @@ const IconLightbulb = ({ color = '#2065D1' }) => (
 const IconPdfBadge = () => (
   <span style={{ background: '#FF4D4F', color: '#FFF', fontWeight: 900, fontSize: 10, borderRadius: 5, padding: '3px 6px', display: 'inline-flex', alignItems: 'center', letterSpacing: '0.5px' }}>
     PDF
+  </span>
+)
+const IconFilter = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+)
+const IconPhoneCall = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+)
+const IconVideo = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+)
+const IconPaperclip = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+)
+const IconSmile = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
+)
+const IconAtSign = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"></path></svg>
+)
+const IconPaperAirplane = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+)
+const IconExpand = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+)
+const IconCheckCheck = ({ color = '#2065D1' }) => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L7 17l-5-5"></path><path d="M22 10l-7.5 7.5-1.5-1.5"></path></svg>
+)
+const IconFileReports = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+)
+const IconChevronDown = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+)
+const IconFileExcel = () => (
+  <span style={{ width: 28, height: 28, borderRadius: 6, background: '#ECFDF5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 13, flexShrink: 0 }}>
+    📊
+  </span>
+)
+const IconFilePdf = () => (
+  <span style={{ width: 28, height: 28, borderRadius: 6, background: '#FEF2F2', color: '#DC2626', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 13, flexShrink: 0 }}>
+    📄
+  </span>
+)
+const IconFileWord = () => (
+  <span style={{ width: 28, height: 28, borderRadius: 6, background: '#EFF6FF', color: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 13, flexShrink: 0 }}>
+    📝
   </span>
 )
 
@@ -509,8 +557,9 @@ const highlightResumeText = (text, matchingSkills = [], searchQuery = '') => {
   )
 }
 
-export default function RecruiterInbox() {
+export default function RecruiterInbox({ defaultViewMode }) {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [themeMode, setThemeMode] = useState(() => localStorage.getItem('smarthire_theme') || 'light')
   const isLight = themeMode === 'light'
 
@@ -544,12 +593,221 @@ export default function RecruiterInbox() {
     cardRadius: 16
   }
 
-  const [threads, setThreads] = useState([])
-  const [activeThread, setActiveThread] = useState(null)
-  const [messages, setMessages] = useState([])
+  const DEFAULT_MESSAGES_THREADS = [
+    {
+      candidateId: 'team-gourav',
+      candidateName: 'Gourav (Sourcing Specialist)',
+      name: 'Gourav',
+      role: 'Sourcing Specialist',
+      company: 'SmartHire LLC',
+      jobTitle: 'Direct Reportee • SmartHire LLC',
+      subtitle: '🏛️ Direct Reportee • SmartHire LLC',
+      category: 'team',
+      email: 'gourav@smarthire.com',
+      phone: '+1 (555) 123-4567',
+      location: 'New York, USA',
+      status: 'active',
+      avatarColor: '#2065D1',
+      unreadCount: 1,
+      lastMessage: "Sure, I'll share the shortlisted profiles...",
+      lastMessageTime: '02:25 PM',
+      recentFiles: [
+        { name: 'Candidate_List.xlsx', size: '12 KB', date: '5 Sept', type: 'excel' },
+        { name: 'Req_159078_Notes.pdf', size: '245 KB', date: '4 Sept', type: 'pdf' },
+        { name: 'Interview_Schedule.docx', size: '18 KB', date: '2 Sept', type: 'word' }
+      ],
+      initialMessages: [
+        { id: 'g1', text: 'Hi Omkesh,', sender: 'other', senderName: 'Gourav', timestamp: '2026-09-10T14:20:00Z', timeStr: '02:20 PM' },
+        { id: 'g2', text: 'Can you share the latest candidate updates for Req #159078?', sender: 'other', senderName: 'Gourav', timestamp: '2026-09-10T14:21:00Z', timeStr: '02:21 PM' },
+        { id: 'g3', text: "Sure Gourav, give me 5 minutes.\nI'll share the shortlisted profiles shortly.", sender: 'recruiter', senderName: 'Omkesh', timestamp: '2026-09-10T14:22:00Z', timeStr: '02:22 PM', isDelivered: true },
+        { id: 'g4', text: 'Thanks! Also, let me know if we can schedule a quick sync tomorrow.', sender: 'other', senderName: 'Gourav', timestamp: '2026-09-10T14:23:00Z', timeStr: '02:23 PM' },
+        { id: 'g5', text: "Yes, tomorrow 11 AM works. I'll send a calendar invite.", sender: 'recruiter', senderName: 'Omkesh', timestamp: '2026-09-10T14:24:00Z', timeStr: '02:24 PM', isDelivered: true },
+        { id: 'g6', text: 'Great! 👍', sender: 'other', senderName: 'Gourav', timestamp: '2026-09-10T14:25:00Z', timeStr: '02:25 PM' }
+      ]
+    },
+    {
+      candidateId: 'cand-abhishek-jha',
+      candidateName: 'Abhishek Jha',
+      name: 'Abhishek Jha',
+      role: 'Product Manager',
+      company: 'Applied via Careers Portal',
+      jobTitle: 'Product Manager',
+      subtitle: 'Product Manager • Applied via Careers Portal',
+      category: 'candidates',
+      email: 'abhishek.jha@gmail.com',
+      phone: '+1 (408) 782-9012',
+      location: 'San Jose, CA',
+      status: 'away',
+      avatarColor: '#EA580C',
+      unreadCount: 1,
+      lastMessage: 'Can you share the JD?',
+      lastMessageTime: '11:40 AM',
+      recentFiles: [
+        { name: 'Abhishek_Jha_PM_Resume.pdf', size: '310 KB', date: '10 Sept', type: 'pdf' },
+        { name: 'Product_Portfolio_CaseStudy.pdf', size: '1.2 MB', date: '10 Sept', type: 'pdf' }
+      ],
+      initialMessages: [
+        { id: 'aj1', text: 'Hello Omkesh, I saw the Senior Product Manager position posted on SmartHire Careers.', sender: 'other', senderName: 'Abhishek Jha', timestamp: '2026-09-10T11:35:00Z', timeStr: '11:35 AM' },
+        { id: 'aj2', text: 'Hi Abhishek, thank you for reaching out! Your profile looks great.', sender: 'recruiter', senderName: 'Omkesh', timestamp: '2026-09-10T11:38:00Z', timeStr: '11:38 AM', isDelivered: true },
+        { id: 'aj3', text: 'Can you share the JD?', sender: 'other', senderName: 'Abhishek Jha', timestamp: '2026-09-10T11:40:00Z', timeStr: '11:40 AM' }
+      ]
+    },
+    {
+      candidateId: 'client-shweta-patel',
+      candidateName: 'Shweta Patel',
+      name: 'Shweta Patel',
+      role: 'HR Manager',
+      company: 'TechCorp',
+      jobTitle: 'HR Manager • TechCorp',
+      subtitle: 'HR Manager • TechCorp',
+      category: 'clients',
+      email: 'shweta.patel@techcorp.io',
+      phone: '+1 (650) 441-2980',
+      location: 'Austin, TX',
+      status: 'active',
+      avatarColor: '#9333EA',
+      unreadCount: 0,
+      lastMessage: 'Thanks for the update!',
+      lastMessageTime: '24 Aug',
+      recentFiles: [
+        { name: 'TechCorp_Q3_Hiring_Reqs.pdf', size: '420 KB', date: '24 Aug', type: 'pdf' }
+      ],
+      initialMessages: [
+        { id: 'sp1', text: 'Hi Shweta, we submitted 3 candidates for the Frontend Lead role.', sender: 'recruiter', senderName: 'Omkesh', timestamp: '2026-08-24T10:15:00Z', timeStr: '10:15 AM', isDelivered: true },
+        { id: 'sp2', text: 'Thanks for the update!', sender: 'other', senderName: 'Shweta Patel', timestamp: '2026-08-24T10:30:00Z', timeStr: '10:30 AM' }
+      ]
+    },
+    {
+      candidateId: 'cand-rahul-kumar',
+      candidateName: 'Rahul Kumar',
+      name: 'Rahul Kumar',
+      role: 'Senior Java Developer',
+      company: 'Enterprise Software Solutions',
+      jobTitle: 'Senior Java Developer',
+      subtitle: 'Senior Java Developer',
+      category: 'candidates',
+      email: 'rahul.kumar@gmail.com',
+      phone: '+1 (312) 998-1245',
+      location: 'Chicago, IL',
+      status: 'active',
+      avatarColor: '#16A34A',
+      unreadCount: 0,
+      lastMessage: 'Will be available tomorrow',
+      lastMessageTime: '23 Aug',
+      recentFiles: [
+        { name: 'Rahul_Kumar_Java_Lead.docx', size: '145 KB', date: '23 Aug', type: 'word' }
+      ],
+      initialMessages: [
+        { id: 'rk1', text: 'Hi Rahul, are you open for the client screening call tomorrow?', sender: 'recruiter', senderName: 'Omkesh', timestamp: '2026-08-23T14:00:00Z', timeStr: '02:00 PM', isDelivered: true },
+        { id: 'rk2', text: 'Will be available tomorrow', sender: 'other', senderName: 'Rahul Kumar', timestamp: '2026-08-23T14:15:00Z', timeStr: '02:15 PM' }
+      ]
+    },
+    {
+      candidateId: 'client-priya-sharma',
+      candidateName: 'Priya Sharma',
+      name: 'Priya Sharma',
+      role: 'Client Account Lead',
+      company: 'ABC Solutions',
+      jobTitle: 'Client • ABC Solutions',
+      subtitle: 'Client • ABC Solutions',
+      category: 'clients',
+      email: 'priya.sharma@abcsolutions.com',
+      phone: '+1 (212) 890-4433',
+      location: 'New York, NY',
+      status: 'active',
+      avatarColor: '#D946EF',
+      avatarImg: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80',
+      unreadCount: 0,
+      lastMessage: 'Interview feedback shared.',
+      lastMessageTime: '22 Aug',
+      recentFiles: [
+        { name: 'Client_Interview_Evaluation_Matrix.xlsx', size: '55 KB', date: '22 Aug', type: 'excel' }
+      ],
+      initialMessages: [
+        { id: 'ps1', text: 'Hi Omkesh, the hiring panel completed the second round interview for the Cloud Architect position.', sender: 'other', senderName: 'Priya Sharma', timestamp: '2026-08-22T16:10:00Z', timeStr: '04:10 PM' },
+        { id: 'ps2', text: 'Interview feedback shared.', sender: 'other', senderName: 'Priya Sharma', timestamp: '2026-08-22T16:15:00Z', timeStr: '04:15 PM' }
+      ]
+    },
+    {
+      candidateId: 'team-dev',
+      candidateName: 'Dev Team',
+      name: 'Dev Team',
+      role: 'Engineering Squad',
+      company: '3 members',
+      jobTitle: 'Sprint planning at 4 PM',
+      subtitle: '3 members',
+      category: 'team',
+      email: 'dev-team@smarthire.com',
+      phone: '+1 (555) 880-9911',
+      location: 'Remote, US',
+      status: 'active',
+      avatarColor: '#DB2777',
+      unreadCount: 0,
+      lastMessage: 'Sprint planning at 4 PM',
+      lastMessageTime: '21 Aug',
+      recentFiles: [
+        { name: 'Sprint_34_Release_Plan.pdf', size: '890 KB', date: '21 Aug', type: 'pdf' }
+      ],
+      initialMessages: [
+        { id: 'dt1', text: 'Sprint planning at 4 PM', sender: 'other', senderName: 'Dev Team', timestamp: '2026-08-21T09:30:00Z', timeStr: '09:30 AM' }
+      ]
+    },
+    {
+      candidateId: 'cand-manish-kumar',
+      candidateName: 'Manish Kumar',
+      name: 'Manish Kumar',
+      role: 'Data Engineer',
+      company: 'Tech Solutions',
+      jobTitle: 'Data Engineer',
+      subtitle: 'Data Engineer',
+      category: 'candidates',
+      email: 'manish.k@gmail.com',
+      phone: '+1 (206) 555-8123',
+      location: 'Seattle, WA',
+      status: 'offline',
+      avatarColor: '#D97706',
+      unreadCount: 0,
+      lastMessage: 'Salary expectation?',
+      lastMessageTime: '20 Aug',
+      recentFiles: [
+        { name: 'Manish_Kumar_DataEngineer.pdf', size: '210 KB', date: '20 Aug', type: 'pdf' }
+      ],
+      initialMessages: [
+        { id: 'mk1', text: 'Salary expectation?', sender: 'other', senderName: 'Manish Kumar', timestamp: '2026-08-20T11:20:00Z', timeStr: '11:20 AM' }
+      ]
+    },
+    {
+      candidateId: 'cand-sneha-nair',
+      candidateName: 'Sneha Nair',
+      name: 'Sneha Nair',
+      role: 'QA Engineer',
+      company: 'Enterprise Quality Lab',
+      jobTitle: 'QA Engineer',
+      subtitle: 'QA Engineer',
+      category: 'candidates',
+      email: 'sneha.nair@gmail.com',
+      phone: '+1 (470) 555-4421',
+      location: 'Atlanta, GA',
+      status: 'active',
+      avatarColor: '#0284C7',
+      unreadCount: 0,
+      lastMessage: 'Shared updated resume.',
+      lastMessageTime: '19 Aug',
+      recentFiles: [
+        { name: 'Sneha_Nair_SDET_Resume.pdf', size: '195 KB', date: '19 Aug', type: 'pdf' }
+      ],
+      initialMessages: [
+        { id: 'sn1', text: 'Shared updated resume.', sender: 'other', senderName: 'Sneha Nair', timestamp: '2026-08-19T15:45:00Z', timeStr: '03:45 PM' }
+      ]
+    }
+  ]
+
+  const [threads, setThreads] = useState(DEFAULT_MESSAGES_THREADS)
+  const [activeThread, setActiveThread] = useState(DEFAULT_MESSAGES_THREADS[0])
+  const [messages, setMessages] = useState(DEFAULT_MESSAGES_THREADS[0].initialMessages)
   const [inputText, setInputText] = useState('')
   const [sending, setSending] = useState(false)
-  const [loadingThreads, setLoadingThreads] = useState(true)
+  const [loadingThreads, setLoadingThreads] = useState(false)
   const [loadingMessages, setLoadingMessages] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [showTemplates, setShowTemplates] = useState(false)
@@ -557,6 +815,18 @@ export default function RecruiterInbox() {
   const [showFullProfileModal, setShowFullProfileModal] = useState(false)
   const [syncingEmailResumes, setSyncingEmailResumes] = useState(false)
   const [emailSyncToast, setEmailSyncToast] = useState('')
+
+  // Linear / Slack Messages Workspace state
+  const [messageCategoryTab, setMessageCategoryTab] = useState('all') // 'all', 'candidates', 'clients', 'team'
+  const [messageSortOrder, setMessageSortOrder] = useState('newest') // 'newest', 'oldest', 'unread'
+  const [messagesSearchQuery, setMessagesSearchQuery] = useState('')
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false)
+  const [showAiWriteModal, setShowAiWriteModal] = useState(false)
+  const [showShareCandidateModal, setShowShareCandidateModal] = useState(false)
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false)
+  const [activeCallModal, setActiveCallModal] = useState(null)
+  const [messageToast, setMessageToast] = useState('')
+  const [attachedFiles, setAttachedFiles] = useState([])
 
   const DEFAULT_STREAM_CANDIDATES = [
     {
@@ -701,8 +971,9 @@ export default function RecruiterInbox() {
     }
   ]
 
-  // View switcher: 'dashboard' (Minimals Hi Welcome back + 4 KPI Cards + Charts), 'stream' (Candidate Card / Table), or 'chat' (Live Messages)
-  const [inboxViewMode, setInboxViewMode] = useState('stream')
+  // View switcher: 'chat' (Live Messages), 'dashboard' (KPI Overview), or 'stream' (Candidate Dossier / Table)
+  const initialInboxMode = defaultViewMode || searchParams.get('view') || searchParams.get('tab') || 'chat'
+  const [inboxViewMode, setInboxViewMode] = useState(initialInboxMode)
   const [minimalsSidebarOpen, setMinimalsSidebarOpen] = useState(true)
   const [streamFilter, setStreamFilter] = useState('all') // 'all', 'email_inbox', 'email_spam', 'careers_portal', 'vendor_bench'
   const [streamCandidates, setStreamCandidates] = useState(DEFAULT_STREAM_CANDIDATES)
@@ -921,14 +1192,33 @@ export default function RecruiterInbox() {
       }
     }
 
-    const combined = isReportee ? teamChannels : [...teamChannels, ...candidateThreads]
+    const threadMap = new Map()
+    DEFAULT_MESSAGES_THREADS.forEach(t => threadMap.set(t.candidateId, { ...t }))
+    teamChannels.forEach(t => {
+      if (threadMap.has(t.candidateId)) {
+        threadMap.set(t.candidateId, { ...threadMap.get(t.candidateId), ...t })
+      } else {
+        threadMap.set(t.candidateId, t)
+      }
+    })
+    candidateThreads.forEach(t => {
+      if (threadMap.has(t.candidateId)) {
+        threadMap.set(t.candidateId, { ...threadMap.get(t.candidateId), ...t })
+      } else {
+        threadMap.set(t.candidateId, { ...t, category: 'candidates' })
+      }
+    })
+    const combined = Array.from(threadMap.values())
     setThreads(combined)
 
     if (!activeThread && combined.length > 0) {
       setActiveThread(combined[0])
+      if (combined[0].initialMessages && (!messages || messages.length === 0)) {
+        setMessages(combined[0].initialMessages)
+      }
     }
     setLoadingThreads(false)
-  }, [recruiterFilter, isReportee, parentRecruiterName, parentRecruiterEmail, currentUser?.email, currentUser?.name, isAdmin, isSuperAdmin, teamUsersList, activeThread])
+  }, [recruiterFilter, isReportee, parentRecruiterName, parentRecruiterEmail, currentUser?.email, currentUser?.name, isAdmin, isSuperAdmin, teamUsersList, activeThread, messages])
 
   const fetchCandidateDetails = useCallback(async (candidateId, threadObj = null) => {
     const thread = threadObj || threads.find(t => t.candidateId === candidateId)
@@ -1024,20 +1314,32 @@ export default function RecruiterInbox() {
         merged = initial
       }
 
+      if (merged.length === 0) {
+        const found = threads.find(t => t.candidateId === candidateId) || DEFAULT_MESSAGES_THREADS.find(t => t.candidateId === candidateId)
+        if (found?.initialMessages && found.initialMessages.length > 0) {
+          merged = found.initialMessages
+        }
+      }
+
       setMessages(merged)
     } catch (e) {
       console.warn('Message fetch error:', e)
     } finally {
       if (!silent) setLoadingMessages(false)
     }
-  }, [parentRecruiterName, parentRecruiterEmail])
+  }, [parentRecruiterName, parentRecruiterEmail, threads, DEFAULT_MESSAGES_THREADS])
 
   const selectThread = useCallback(async (thread) => {
     setActiveThread(thread)
     setInputText('')
     setShowTemplates(false)
+    setEmojiPickerOpen(false)
+    if (thread.initialMessages) {
+      setMessages(thread.initialMessages)
+    }
     await fetchMessages(thread.candidateId)
     fetchCandidateDetails(thread.candidateId, thread)
+    setThreads(prev => prev.map(t => t.candidateId === thread.candidateId ? { ...t, unreadCount: 0 } : t))
     if (!thread.isLeadChannel && !thread.isTeamMember) {
       try {
         await fetch('/api/messages/' + thread.candidateId + '/read', { 
@@ -1046,7 +1348,6 @@ export default function RecruiterInbox() {
             'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
           }
         })
-        setThreads(prev => prev.map(t => t.candidateId === thread.candidateId ? { ...t, unreadCount: 0 } : t))
       } catch (e) {}
     }
   }, [fetchMessages, fetchCandidateDetails])
@@ -1405,11 +1706,31 @@ export default function RecruiterInbox() {
   })
 
   const filteredThreads = visibleThreads.filter(t => {
-    if (!searchQuery) return true
-    const q = searchQuery.toLowerCase()
-    return (t.candidateName || '').toLowerCase().includes(q) ||
-      (t.jobTitle || '').toLowerCase().includes(q) ||
-      (t.lastMessage || '').toLowerCase().includes(q)
+    // 1. Category Tab Filter ('all', 'candidates', 'clients', 'team')
+    if (messageCategoryTab === 'candidates') {
+      if (t.category !== 'candidates' && (t.isTeamMember || t.isLeadChannel || t.category === 'clients')) return false
+    } else if (messageCategoryTab === 'clients') {
+      if (t.category !== 'clients') return false
+    } else if (messageCategoryTab === 'team') {
+      if (t.category !== 'team' && !t.isTeamMember && !t.isLeadChannel) return false
+    }
+
+    // 2. Search Filter
+    const q = (messagesSearchQuery || searchQuery).toLowerCase().trim()
+    if (q) {
+      const nameMatch = (t.candidateName || '').toLowerCase().includes(q)
+      const jobMatch = (t.jobTitle || '').toLowerCase().includes(q)
+      const roleMatch = (t.role || '').toLowerCase().includes(q)
+      const compMatch = (t.company || '').toLowerCase().includes(q)
+      const lastMatch = (t.lastMessage || '').toLowerCase().includes(q)
+      if (!nameMatch && !jobMatch && !roleMatch && !compMatch && !lastMatch) return false
+    }
+    return true
+  }).sort((a, b) => {
+    if (messageSortOrder === 'unread') {
+      return (b.unreadCount || 0) - (a.unreadCount || 0)
+    }
+    return 0
   })
 
   const totalUnread = threads.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
@@ -1722,7 +2043,7 @@ export default function RecruiterInbox() {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 12,
+                justifyContent: 'space-between',
                 padding: '10px 14px',
                 borderRadius: 8,
                 border: 'none',
@@ -1734,7 +2055,33 @@ export default function RecruiterInbox() {
                 textAlign: 'left'
               }}
             >
-              <IconDatabase /> <span>Database</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <IconDatabase /> <span>Database</span>
+              </span>
+              <span style={{ fontSize: 10.5, background: '#FFAB00', color: '#1C252E', padding: '1px 6px', borderRadius: 10, fontWeight: 800 }}>
+                77
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setInboxViewMode('stream'); setSyncingEmailResumes(true); setTimeout(() => setSyncingEmailResumes(false), 800); }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '10px 14px',
+                borderRadius: 8,
+                border: 'none',
+                background: 'transparent',
+                color: C.textSecondary,
+                fontWeight: 500,
+                fontSize: 13.5,
+                cursor: 'pointer',
+                textAlign: 'left'
+              }}
+            >
+              <IconZap /> <span>Scan Ingest</span>
             </button>
 
             <button
@@ -1756,6 +2103,27 @@ export default function RecruiterInbox() {
               }}
             >
               <IconAnalytics /> <span>Analytics</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate('/reports')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '10px 14px',
+                borderRadius: 8,
+                border: 'none',
+                background: 'transparent',
+                color: C.textSecondary,
+                fontWeight: 500,
+                fontSize: 13.5,
+                cursor: 'pointer',
+                textAlign: 'left'
+              }}
+            >
+              <IconFileReports /> <span>Reports</span>
             </button>
 
             <button
@@ -1783,33 +2151,33 @@ export default function RecruiterInbox() {
           {/* Bottom Upgrade Promo Card Matching Screenshot */}
           <div style={{
             marginTop: 'auto',
-            backgroundColor: isLight ? '#F4F6F8' : 'rgba(255,255,255,0.04)',
-            borderRadius: 14,
-            padding: '16px 14px',
+            backgroundColor: isLight ? '#F9FAFB' : 'rgba(255,255,255,0.04)',
+            borderRadius: 12,
+            padding: '14px 12px',
             textAlign: 'center',
             border: `1px solid ${C.border}`
           }}>
-            <div style={{ marginBottom: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 4 }}>
               <IconCrown />
+              <span style={{ fontSize: 13, fontWeight: 800, color: C.textPrimary }}>Upgrade to Pro</span>
             </div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: C.textPrimary }}>Upgrade to Pro</div>
-            <div style={{ fontSize: 11, color: C.textSecondary, margin: '4px 0 12px', lineHeight: 1.4 }}>
-              Get more hires, more features from only $69/month
+            <div style={{ fontSize: 11, color: C.textSecondary, marginBottom: 10, lineHeight: 1.35 }}>
+              More features. More hires.<br />From only $69/month
             </div>
             <button
               type="button"
-              onClick={() => navigate('/ats')}
+              onClick={() => navigate('/pricing')}
               style={{
                 width: '100%',
                 background: '#2065D1',
                 color: '#FFF',
                 border: 'none',
                 borderRadius: 8,
-                padding: '8px 12px',
+                padding: '7px 0',
                 fontSize: 12,
                 fontWeight: 700,
                 cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(32,101,209,0.3)'
+                boxShadow: '0 2px 6px rgba(32,101,209,0.25)'
               }}
             >
               Upgrade Now
@@ -1863,7 +2231,7 @@ export default function RecruiterInbox() {
                 <IconSearch />
               </span>
               <input
-                placeholder="Search candidates, jobs, skills..."
+                placeholder="Search candidates, jobs, messages..."
                 value={streamSearch}
                 onChange={e => setStreamSearch(e.target.value)}
                 style={{
@@ -3794,291 +4162,1449 @@ export default function RecruiterInbox() {
         </div>
       )}
 
-      {/* 3-Panel Chat Layout (Live 1-on-1 Messages) */}
+      {/* ========================================================================= */}
+      {/* REDESIGNED MESSAGES PAGE (Linear / Slack / Notion Premium SaaS UX)        */}
+      {/* Matching User Screenshot media_1789074147680.png                          */}
+      {/* ========================================================================= */}
       {inboxViewMode === 'chat' && (
-      <div style={{ display:'flex', flex:1, overflow:'hidden' }}>
-        {/* LEFT SIDEBAR */}
-        <div style={{ width:330, flexShrink:0, backgroundColor:C.sidebar, borderRight:`1px solid ${C.border}`, display:'flex', flexDirection:'column', overflow:'hidden' }}>
-          <div style={{ padding:'14px 14px 10px', borderBottom:`1px solid ${C.border}`, flexShrink:0 }}>
-            {/* Recruiter Filter Dropdown - Only for Admins / Recruiters without reporting lead */}
-            {!isReportee && (
-              <div style={{ marginBottom: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <label style={{ fontSize: 11, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    👤 Recruiter Filter
-                  </label>
-                  {recruiterFilter !== 'all' && (
-                    <button onClick={() => setRecruiterFilter('all')} style={{ fontSize: 11, background: 'none', border: 'none', color: '#2563EB', cursor: 'pointer', fontWeight: 700 }}>
-                      Show All
-                    </button>
-                  )}
-                </div>
-                <select
-                  value={recruiterFilter}
-                  onChange={e => setRecruiterFilter(e.target.value)}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: isLight ? '#F8F9FA' : '#141A21' }}>
+          
+          {/* 1. Page Header (Full Width) */}
+          <div style={{
+            padding: '16px 28px 0 28px',
+            backgroundColor: C.surface,
+            borderBottom: `1px solid ${C.border}`,
+            flexShrink: 0
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 12 }}>
+              <div>
+                <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: C.textPrimary, letterSpacing: '-0.02em' }}>
+                  Messages
+                </h1>
+                <p style={{ margin: '3px 0 0', fontSize: 13, color: C.textSecondary }}>
+                  Stay connected with candidates, clients and your team
+                </p>
+              </div>
+
+              {/* Header Right Actions: Filter, Sort: Newest, Search messages */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                {/* Filter button */}
+                <button
+                  type="button"
+                  onClick={() => setRecruiterFilter(f => f === 'all' ? (currentUser?.refCode || 'omkesh') : 'all')}
                   style={{
-                    width: '100%',
-                    background: isLight ? '#F1F5F9' : '#1E293B',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    background: C.surface,
                     border: `1px solid ${C.border}`,
                     borderRadius: 8,
-                    padding: '7px 10px',
+                    padding: '7px 12px',
                     fontSize: 12.5,
-                    fontWeight: 700,
+                    fontWeight: 600,
                     color: C.textPrimary,
-                    outline: 'none',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
                   }}
                 >
-                  <option value="all">🌐 All Recruiters ({threads.length})</option>
-                  {ALL_SMARTHIRE_RECRUITERS.map(r => (
-                    <option key={r.refCode} value={r.refCode}>
-                      👤 {r.name}
-                    </option>
-                  ))}
-                </select>
+                  <IconFilter /> <span>Filter</span>
+                </button>
+
+                {/* Sort dropdown */}
+                <div style={{ position: 'relative' }}>
+                  <select
+                    value={messageSortOrder}
+                    onChange={e => setMessageSortOrder(e.target.value)}
+                    style={{
+                      background: C.surface,
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 8,
+                      padding: '7px 26px 7px 12px',
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      color: C.textPrimary,
+                      cursor: 'pointer',
+                      outline: 'none',
+                      appearance: 'none',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+                    }}
+                  >
+                    <option value="newest">Newest ▾</option>
+                    <option value="oldest">Oldest ▾</option>
+                    <option value="unread">Unread First ▾</option>
+                  </select>
+                  <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: C.textSecondary, display: 'flex' }}>
+                    <IconChevronDown />
+                  </span>
+                </div>
+
+                {/* Search messages input */}
+                <div style={{ position: 'relative', width: 220 }}>
+                  <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: C.textSecondary, display: 'flex', pointerEvents: 'none' }}>
+                    <IconSearch />
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Search messages..."
+                    value={messagesSearchQuery}
+                    onChange={e => setMessagesSearchQuery(e.target.value)}
+                    style={{
+                      width: '100%',
+                      background: C.surface,
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 8,
+                      padding: '7px 10px 7px 32px',
+                      fontSize: 12.5,
+                      color: C.textPrimary,
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Sub-Tabs: All (2), Candidates, Clients, Team */}
+            <div style={{ display: 'flex', gap: 24, borderTop: `1px solid ${isLight ? '#F3F4F6' : 'rgba(255,255,255,0.06)'}`, paddingTop: 4 }}>
+              {[
+                { id: 'all', label: 'All', badge: 2 },
+                { id: 'candidates', label: 'Candidates' },
+                { id: 'clients', label: 'Clients' },
+                { id: 'team', label: 'Team' }
+              ].map(tab => {
+                const isActive = messageCategoryTab === tab.id
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setMessageCategoryTab(tab.id)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      borderBottom: isActive ? `2px solid #2065D1` : '2px solid transparent',
+                      padding: '10px 4px 12px 4px',
+                      fontSize: 13.5,
+                      fontWeight: isActive ? 700 : 500,
+                      color: isActive ? '#2065D1' : C.textSecondary,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      transition: 'all 0.15s',
+                      marginBottom: -1
+                    }}
+                  >
+                    <span>{tab.label}</span>
+                    {tab.badge && (
+                      <span style={{
+                        background: isActive ? '#2065D1' : (isLight ? '#E5E7EB' : '#374151'),
+                        color: isActive ? '#FFFFFF' : C.textSecondary,
+                        borderRadius: 10,
+                        padding: '1px 6px',
+                        fontSize: 11,
+                        fontWeight: 800
+                      }}>
+                        {tab.badge}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* 2. 3-Column Messaging Canvas */}
+          <div style={{
+            flex: 1,
+            display: 'flex',
+            gap: 16,
+            padding: '16px 24px 20px 24px',
+            overflow: 'hidden'
+          }}>
+            
+            {/* COLUMN 1: Conversation List (~25% width, minWidth 310px, maxWidth 340px) */}
+            <div style={{
+              width: 320,
+              minWidth: 290,
+              maxWidth: 340,
+              backgroundColor: C.surface,
+              borderRadius: 14,
+              border: `1px solid ${C.border}`,
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              flexShrink: 0,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+            }}>
+              {/* Recruiter Filter Dropdown for Admins / Leads */}
+              {!isReportee && (
+                <div style={{ padding: '10px 12px', borderBottom: `1px solid ${C.border}`, backgroundColor: isLight ? '#FAFBFC' : '#1A222C' }}>
+                  <select
+                    value={recruiterFilter}
+                    onChange={e => setRecruiterFilter(e.target.value)}
+                    style={{
+                      width: '100%',
+                      background: C.surface,
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 6,
+                      padding: '5px 8px',
+                      fontSize: 11.5,
+                      fontWeight: 700,
+                      color: C.textPrimary,
+                      outline: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="all">🌐 All Recruiters & Channels ({threads.length})</option>
+                    {ALL_SMARTHIRE_RECRUITERS.map(r => (
+                      <option key={r.refCode} value={r.refCode}>👤 {r.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Conversations Rows (Subtle Dividers, No Boxed Cards) */}
+              <div style={{ flex: 1, overflowY: 'auto' }}>
+                {filteredThreads.length === 0 ? (
+                  <div style={{ padding: '60px 20px', textAlign: 'center', color: C.textSecondary }}>
+                    <div style={{ marginBottom: 10, display: 'flex', justifyContent: 'center' }}><IconChat /></div>
+                    <p style={{ fontSize: 13, margin: 0, fontWeight: 600 }}>No conversations found</p>
+                    <p style={{ fontSize: 11.5, margin: '4px 0 0' }}>Try switching tabs or adjusting search query.</p>
+                  </div>
+                ) : (
+                  filteredThreads.map(thread => {
+                    const isSelected = activeThread?.candidateId === thread.candidateId
+                    const initials = thread.initials || getInitials(thread.candidateName)
+                    const isActiveNow = thread.status === 'active' || thread.candidateId === 'team-gourav' || thread.candidateId === 'client-shweta-patel' || thread.candidateId === 'cand-rahul-kumar'
+                    return (
+                      <div
+                        key={thread.candidateId}
+                        onClick={() => selectThread(thread)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: 12,
+                          padding: '12px 14px',
+                          cursor: 'pointer',
+                          backgroundColor: isSelected ? (isLight ? '#EBF3FE' : 'rgba(32,101,209,0.16)') : 'transparent',
+                          borderLeft: isSelected ? '3px solid #2065D1' : '3px solid transparent',
+                          borderBottom: `1px solid ${isLight ? '#F3F4F6' : 'rgba(255,255,255,0.05)'}`,
+                          transition: 'background 0.15s'
+                        }}
+                      >
+                        {/* Circular Avatar */}
+                        <div style={{ position: 'relative', flexShrink: 0 }}>
+                          {thread.avatarImg ? (
+                            <img
+                              src={thread.avatarImg}
+                              alt={thread.candidateName}
+                              style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }}
+                            />
+                          ) : (
+                            <div style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: '50%',
+                              backgroundColor: thread.avatarColor || '#2065D1',
+                              color: '#FFFFFF',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontWeight: 700,
+                              fontSize: 13
+                            }}>
+                              {initials}
+                            </div>
+                          )}
+                          {isActiveNow && (
+                            <span style={{
+                              position: 'absolute',
+                              bottom: 0,
+                              right: 0,
+                              width: 10,
+                              height: 10,
+                              borderRadius: '50%',
+                              backgroundColor: '#10B981',
+                              border: `2px solid ${C.surface}`
+                            }} />
+                          )}
+                        </div>
+
+                        {/* Content */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          {/* Row 1: Name + Time */}
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+                            <span style={{
+                              fontSize: 13.5,
+                              fontWeight: (thread.unreadCount > 0 || isSelected) ? 700 : 600,
+                              color: C.textPrimary,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              maxWidth: 160
+                            }}>
+                              {thread.candidateName}
+                            </span>
+                            <span style={{ fontSize: 11, color: C.textSecondary, flexShrink: 0, marginLeft: 6 }}>
+                              {thread.lastMessageTime || formatTime(thread.timestamp)}
+                            </span>
+                          </div>
+
+                          {/* Row 2: Subtitle / Role / Company */}
+                          <div style={{
+                            fontSize: 11.5,
+                            color: isLight ? '#4B5563' : '#9CA3AF',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            marginBottom: 3
+                          }}>
+                            {thread.subtitle || thread.jobTitle || 'Team Member • SmartHire ATS'}
+                          </div>
+
+                          {/* Row 3: Last message preview + Unread badge */}
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span style={{
+                              fontSize: 12,
+                              color: thread.unreadCount > 0 ? C.textPrimary : C.textSecondary,
+                              fontWeight: thread.unreadCount > 0 ? 600 : 400,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              maxWidth: 180
+                            }}>
+                              {thread.lastMessage}
+                            </span>
+                            {thread.unreadCount > 0 && (
+                              <span style={{
+                                backgroundColor: '#2065D1',
+                                color: '#FFFFFF',
+                                borderRadius: 10,
+                                padding: '1px 6px',
+                                fontSize: 10.5,
+                                fontWeight: 800,
+                                flexShrink: 0
+                              }}>
+                                {thread.unreadCount}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* COLUMN 2: Chat Area (Dominant Center Section, flex 1) */}
+            <div style={{
+              flex: 1,
+              minWidth: 0,
+              backgroundColor: C.surface,
+              borderRadius: 14,
+              border: `1px solid ${C.border}`,
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+            }}>
+              {activeThread ? (
+                <>
+                  {/* Chat Header */}
+                  <div style={{
+                    height: 64,
+                    padding: '0 20px',
+                    borderBottom: `1px solid ${C.border}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexShrink: 0,
+                    backgroundColor: C.surface
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      {/* Avatar */}
+                      <div style={{ position: 'relative', flexShrink: 0 }}>
+                        {activeThread.avatarImg ? (
+                          <img
+                            src={activeThread.avatarImg}
+                            alt={activeThread.candidateName}
+                            style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }}
+                          />
+                        ) : (
+                          <div style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: '50%',
+                            backgroundColor: activeThread.avatarColor || '#2065D1',
+                            color: '#FFFFFF',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 700,
+                            fontSize: 14
+                          }}>
+                            {activeThread.initials || getInitials(activeThread.candidateName)}
+                          </div>
+                        )}
+                        <span style={{
+                          position: 'absolute',
+                          bottom: 0,
+                          right: 0,
+                          width: 10,
+                          height: 10,
+                          borderRadius: '50%',
+                          backgroundColor: '#10B981',
+                          border: `2px solid ${C.surface}`
+                        }} />
+                      </div>
+
+                      {/* Header Info */}
+                      <div>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: C.textPrimary, lineHeight: 1.2 }}>
+                          {activeThread.candidateName}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
+                          <span style={{ fontSize: 12, color: C.textSecondary }}>
+                            {activeThread.subtitle || activeThread.jobTitle || 'Direct Reportee • SmartHire LLC'}
+                          </span>
+                          <span style={{
+                            fontSize: 11,
+                            background: '#ECFDF5',
+                            color: '#059669',
+                            border: '1px solid #A7F3D0',
+                            padding: '1px 7px',
+                            borderRadius: 10,
+                            fontWeight: 700,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4
+                          }}>
+                            <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#10B981' }} />
+                            Active now
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Header Actions: Call, Video, More */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveCallModal('audio')
+                          setMessageToast(`📞 Calling ${activeThread.candidateName}...`)
+                          setTimeout(() => setMessageToast(''), 4000)
+                        }}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          padding: 8,
+                          borderRadius: 8,
+                          color: C.textSecondary,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center'
+                        }}
+                        title="Voice Call"
+                      >
+                        <IconPhoneCall />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveCallModal('video')
+                          setMessageToast(`📹 Starting video meeting with ${activeThread.candidateName}...`)
+                          setTimeout(() => setMessageToast(''), 4000)
+                        }}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          padding: 8,
+                          borderRadius: 8,
+                          color: C.textSecondary,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center'
+                        }}
+                        title="Video Meeting"
+                      >
+                        <IconVideo />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setRightPanelCollapsed(c => !c)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          padding: 8,
+                          borderRadius: 8,
+                          color: C.textSecondary,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center'
+                        }}
+                        title={rightPanelCollapsed ? 'Show Details Panel' : 'Hide Details Panel'}
+                      >
+                        <IconDots />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Message Stream */}
+                  <div style={{
+                    flex: 1,
+                    overflowY: 'auto',
+                    padding: '18px 24px',
+                    backgroundColor: isLight ? '#FAFBFC' : '#161D26',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 12
+                  }}>
+                    {/* Centered Date Divider */}
+                    <div style={{ textAlign: 'center', margin: '4px 0 8px' }}>
+                      <span style={{
+                        backgroundColor: C.surface,
+                        border: `1px solid ${C.border}`,
+                        color: C.textSecondary,
+                        fontSize: 11.5,
+                        fontWeight: 600,
+                        padding: '4px 14px',
+                        borderRadius: 14,
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+                      }}>
+                        Today, 10 Sept 2026
+                      </span>
+                    </div>
+
+                    {/* Messages Loop */}
+                    {messages.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '60px 20px', color: C.textSecondary }}>
+                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><IconChat /></div>
+                        <p style={{ fontWeight: 700, fontSize: 14, color: C.textPrimary, margin: '0 0 4px' }}>Start a new conversation</p>
+                        <p style={{ fontSize: 12.5, margin: 0 }}>Send candidate updates, schedule interviews, or discuss open requisitions.</p>
+                      </div>
+                    ) : (
+                      messages.map((msg, idx) => {
+                        const myEmail = (currentUser?.email || '').toLowerCase().trim()
+                        const isMe = msg.sender === 'recruiter' ||
+                                     msg.sender === 'me' ||
+                                     (msg.senderEmail && myEmail && msg.senderEmail.toLowerCase() === myEmail) ||
+                                     (!isReportee && msg.sender !== 'other' && msg.sender !== 'candidate')
+
+                        const timeDisplay = msg.timeStr || (msg.timestamp ? formatTime(msg.timestamp) : '02:22 PM')
+
+                        return (
+                          <div
+                            key={msg.id || idx}
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: isMe ? 'flex-end' : 'flex-start',
+                              alignSelf: isMe ? 'flex-end' : 'flex-start',
+                              maxWidth: '68%'
+                            }}
+                          >
+                            {/* Message Bubble */}
+                            <div style={{
+                              backgroundColor: isMe ? '#2065D1' : (isLight ? '#F3F4F6' : '#28323D'),
+                              color: isMe ? '#FFFFFF' : C.textPrimary,
+                              borderRadius: isMe ? '14px 14px 3px 14px' : '14px 14px 14px 3px',
+                              padding: '10px 15px',
+                              fontSize: 13.5,
+                              lineHeight: 1.55,
+                              whiteSpace: 'pre-line',
+                              wordBreak: 'break-word',
+                              boxShadow: isMe ? '0 2px 8px rgba(32,101,209,0.22)' : '0 1px 2px rgba(0,0,0,0.04)'
+                            }}>
+                              {msg.text}
+                            </div>
+
+                            {/* Timestamp & Delivery Indicators */}
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              fontSize: 11,
+                              color: '#9CA3AF',
+                              marginTop: 4,
+                              marginRight: isMe ? 2 : 0,
+                              marginLeft: isMe ? 0 : 2
+                            }}>
+                              <span>{timeDisplay}</span>
+                              {isMe && <IconCheckCheck color="#2065D1" />}
+                            </div>
+                          </div>
+                        )
+                      })
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+
+                  {/* Message Composer (Linear / Slack UX) */}
+                  <div style={{
+                    borderTop: `1px solid ${C.border}`,
+                    padding: '12px 18px',
+                    backgroundColor: C.surface,
+                    flexShrink: 0
+                  }}>
+                    {/* Emoji Bar Picker (Quick Toggle) */}
+                    {emojiPickerOpen && (
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        padding: '6px 12px',
+                        marginBottom: 8,
+                        backgroundColor: isLight ? '#F9FAFB' : '#1C252E',
+                        borderRadius: 8,
+                        border: `1px solid ${C.border}`
+                      }}>
+                        {['👍', '👋', '🚀', '📄', '✅', '🎉', '💡', '👏', '😊', '🔥'].map(emoji => (
+                          <button
+                            key={emoji}
+                            type="button"
+                            onClick={() => { setInputText(t => t + ' ' + emoji); setEmojiPickerOpen(false); inputRef.current?.focus(); }}
+                            style={{ background: 'transparent', border: 'none', fontSize: 16, cursor: 'pointer', padding: '2px 4px' }}
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Attached File Chips */}
+                    {attachedFiles.length > 0 && (
+                      <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+                        {attachedFiles.map((file, i) => (
+                          <span
+                            key={i}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              fontSize: 11.5,
+                              background: '#EFF6FF',
+                              color: '#1D4ED8',
+                              border: '1px solid #BFDBFE',
+                              padding: '3px 8px',
+                              borderRadius: 6
+                            }}
+                          >
+                            📎 {file.name}
+                            <button
+                              type="button"
+                              onClick={() => setAttachedFiles(fs => fs.filter((_, idx) => idx !== i))}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1D4ED8', fontWeight: 800 }}
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Input Container Box */}
+                    <div style={{
+                      border: `1px solid ${C.inputBorder || C.border}`,
+                      borderRadius: 12,
+                      padding: '6px 10px',
+                      backgroundColor: C.surface,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+                    }}>
+                      {/* Attachment Clip Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAttachedFiles(prev => [...prev, { name: 'Candidate_Resume_Update.pdf', size: '210 KB' }])
+                          setMessageToast('📎 File attached: Candidate_Resume_Update.pdf')
+                          setTimeout(() => setMessageToast(''), 3000)
+                        }}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: C.textSecondary,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: 4
+                        }}
+                        title="Attach file"
+                      >
+                        <IconPaperclip />
+                      </button>
+
+                      {/* Text Input */}
+                      <textarea
+                        rows={1}
+                        placeholder="Type a message..."
+                        value={inputText}
+                        onChange={e => setInputText(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        ref={inputRef}
+                        style={{
+                          flex: 1,
+                          border: 'none',
+                          outline: 'none',
+                          fontSize: 13.5,
+                          color: C.textPrimary,
+                          backgroundColor: 'transparent',
+                          resize: 'none',
+                          fontFamily: 'inherit',
+                          padding: '6px 4px',
+                          boxSizing: 'border-box',
+                          lineHeight: 1.4
+                        }}
+                      />
+
+                      {/* Emoji Icon Button */}
+                      <button
+                        type="button"
+                        onClick={() => setEmojiPickerOpen(o => !o)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: emojiPickerOpen ? '#2065D1' : C.textSecondary,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: 4
+                        }}
+                        title="Add emoji"
+                      >
+                        <IconSmile />
+                      </button>
+
+                      {/* Mention Icon Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const mentionName = (activeThread.name || activeThread.candidateName || 'team').split(' ')[0]
+                          setInputText(t => (t ? t + ' ' : '') + `@${mentionName} `)
+                          inputRef.current?.focus()
+                        }}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: C.textSecondary,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: 4
+                        }}
+                        title="Mention user"
+                      >
+                        <IconAtSign />
+                      </button>
+
+                      {/* Send Button: Solid Primary Blue with Airplane */}
+                      <button
+                        type="button"
+                        onClick={() => handleSend()}
+                        disabled={!inputText.trim() && attachedFiles.length === 0}
+                        style={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: 10,
+                          backgroundColor: '#2065D1',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: (!inputText.trim() && attachedFiles.length === 0) ? 'not-allowed' : 'pointer',
+                          opacity: (!inputText.trim() && attachedFiles.length === 0) ? 0.5 : 1,
+                          boxShadow: '0 2px 6px rgba(32,101,209,0.3)',
+                          flexShrink: 0
+                        }}
+                        title="Send Message (Enter)"
+                      >
+                        <IconPaperAirplane />
+                      </button>
+                    </div>
+
+                    {/* Lightweight Action Toolbar below composer */}
+                    <div style={{
+                      marginTop: 10,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      flexWrap: 'wrap'
+                    }}>
+                      {/* Write with AI */}
+                      <button
+                        type="button"
+                        onClick={() => setShowAiWriteModal(true)}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          backgroundColor: isLight ? '#F5F3FF' : 'rgba(121,40,202,0.15)',
+                          color: '#7C3AED',
+                          border: `1px solid ${isLight ? '#DDD6FE' : 'rgba(121,40,202,0.3)'}`,
+                          borderRadius: 8,
+                          padding: '5px 11px',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <IconSparkles /> <span>Write with AI</span>
+                      </button>
+
+                      {/* Share Candidate */}
+                      <button
+                        type="button"
+                        onClick={() => setShowShareCandidateModal(true)}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          backgroundColor: C.surface,
+                          color: C.textPrimary,
+                          border: `1px solid ${C.border}`,
+                          borderRadius: 8,
+                          padding: '5px 11px',
+                          fontSize: 12,
+                          fontWeight: 600,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <IconUsers /> <span>Share Candidate</span>
+                      </button>
+
+                      {/* Schedule Meeting */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const candFirst = (activeThread.name || activeThread.candidateName || 'there').split(' ')[0]
+                          setInputText(`Hi ${candFirst}, let's schedule a quick sync tomorrow at 11:00 AM EST to review candidate submissions.`)
+                          inputRef.current?.focus()
+                        }}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          backgroundColor: C.surface,
+                          color: C.textPrimary,
+                          border: `1px solid ${C.border}`,
+                          borderRadius: 8,
+                          padding: '5px 11px',
+                          fontSize: 12,
+                          fontWeight: 600,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <IconCalendar /> <span>Schedule Meeting</span>
+                      </button>
+
+                      {/* Attach File */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAttachedFiles(prev => [...prev, { name: 'Req_159078_Profile_Shortlist.xlsx', size: '34 KB' }])
+                          setMessageToast('📎 File attached: Req_159078_Profile_Shortlist.xlsx')
+                          setTimeout(() => setMessageToast(''), 3000)
+                        }}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          backgroundColor: C.surface,
+                          color: C.textPrimary,
+                          border: `1px solid ${C.border}`,
+                          borderRadius: 8,
+                          padding: '5px 11px',
+                          fontSize: 12,
+                          fontWeight: 600,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <IconPaperclip /> <span>Attach File</span>
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: C.textSecondary, padding: 40 }}>
+                  <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#EFF6FF', color: '#2065D1', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                    <IconChat />
+                  </div>
+                  <h3 style={{ fontSize: 18, fontWeight: 800, color: C.textPrimary, margin: '0 0 6px' }}>No Conversation Selected</h3>
+                  <p style={{ fontSize: 13, margin: 0 }}>Select a thread on the left to start collaborating.</p>
+                </div>
+              )}
+            </div>
+
+            {/* COLUMN 3: Right Context Panel (~310px, Information-Rich) */}
+            {!rightPanelCollapsed && activeThread && (
+              <div style={{
+                width: 310,
+                minWidth: 290,
+                maxWidth: 330,
+                backgroundColor: C.surface,
+                borderRadius: 14,
+                border: `1px solid ${C.border}`,
+                display: 'flex',
+                flexDirection: 'column',
+                padding: '20px 18px',
+                overflowY: 'auto',
+                flexShrink: 0,
+                gap: 18,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+              }}>
+                {/* Profile Header */}
+                <div style={{ position: 'relative', textAlign: 'center' }}>
+                  <button
+                    type="button"
+                    onClick={() => setRightPanelCollapsed(true)}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      right: 0,
+                      background: 'transparent',
+                      border: 'none',
+                      color: C.textSecondary,
+                      cursor: 'pointer',
+                      padding: 4
+                    }}
+                    title="Collapse Context Drawer"
+                  >
+                    <IconExpand />
+                  </button>
+
+                  {/* Avatar (64px) */}
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+                    {activeThread.avatarImg ? (
+                      <img
+                        src={activeThread.avatarImg}
+                        alt={activeThread.candidateName}
+                        style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: 64,
+                        height: 64,
+                        borderRadius: '50%',
+                        backgroundColor: activeThread.avatarColor || '#2065D1',
+                        color: '#FFFFFF',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 800,
+                        fontSize: 22
+                      }}>
+                        {activeThread.initials || getInitials(activeThread.candidateName)}
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ fontSize: 16, fontWeight: 800, color: C.textPrimary, lineHeight: 1.25 }}>
+                    {activeThread.candidateName}
+                  </div>
+                  <div style={{ fontSize: 12, color: C.textSecondary, marginTop: 4 }}>
+                    {activeThread.subtitle || activeThread.jobTitle || 'Direct Reportee • SmartHire LLC'}
+                  </div>
+
+                  {/* Status & Local Time Row */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                    <span style={{
+                      fontSize: 11,
+                      backgroundColor: '#ECFDF5',
+                      color: '#059669',
+                      border: '1px solid #A7F3D0',
+                      padding: '2px 8px',
+                      borderRadius: 12,
+                      fontWeight: 700,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4
+                    }}>
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#10B981' }} />
+                      Active now
+                    </span>
+                    <span style={{
+                      fontSize: 11,
+                      backgroundColor: isLight ? '#F3F4F6' : '#28323D',
+                      color: C.textSecondary,
+                      padding: '2px 8px',
+                      borderRadius: 12,
+                      fontWeight: 600
+                    }}>
+                      🕒 Local 02:25 PM (EST)
+                    </span>
+                  </div>
+                </div>
+
+                {/* 4-Button Quick Action Row: Call, Video, Email, More */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMessageToast(`📞 Calling ${activeThread.candidateName}...`)
+                      setTimeout(() => setMessageToast(''), 3000)
+                    }}
+                    style={{
+                      background: isLight ? '#F9FAFB' : '#1C252E',
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 8,
+                      padding: '8px 4px',
+                      textAlign: 'center',
+                      fontSize: 11.5,
+                      fontWeight: 600,
+                      color: C.textPrimary,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 4
+                    }}
+                  >
+                    <IconPhone />
+                    <span>Call</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMessageToast(`📹 Starting video meeting with ${activeThread.candidateName}...`)
+                      setTimeout(() => setMessageToast(''), 3000)
+                    }}
+                    style={{
+                      background: isLight ? '#F9FAFB' : '#1C252E',
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 8,
+                      padding: '8px 4px',
+                      textAlign: 'center',
+                      fontSize: 11.5,
+                      fontWeight: 600,
+                      color: C.textPrimary,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 4
+                    }}
+                  >
+                    <IconVideo />
+                    <span>Video</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmailModalCandidate({
+                        name: activeThread.candidateName,
+                        email: activeThread.email || 'gourav@smarthire.com',
+                        targetReqId: '159078',
+                        matchedJobTitle: 'Public Health Program Director 1',
+                        matchedJobClient: 'Tennessee Department of Health'
+                      })
+                      setEmailTo(activeThread.email || 'gourav@smarthire.com')
+                      setEmailSubject(`SmartHire ATS: Quick sync regarding Req #159078`)
+                      setEmailBody(`Hi ${(activeThread.name || activeThread.candidateName).split(' ')[0]},\n\nSharing the latest updates for your review.\n\nWith Regards,\nOmkesh Manjute\nCOOLSOFT LLC`)
+                    }}
+                    style={{
+                      background: isLight ? '#F9FAFB' : '#1C252E',
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 8,
+                      padding: '8px 4px',
+                      textAlign: 'center',
+                      fontSize: 11.5,
+                      fontWeight: 600,
+                      color: C.textPrimary,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 4
+                    }}
+                  >
+                    <IconMail />
+                    <span>Email</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowFullProfileModal(true)}
+                    style={{
+                      background: isLight ? '#F9FAFB' : '#1C252E',
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 8,
+                      padding: '8px 4px',
+                      textAlign: 'center',
+                      fontSize: 11.5,
+                      fontWeight: 600,
+                      color: C.textPrimary,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 4
+                    }}
+                  >
+                    <IconDots />
+                    <span>More</span>
+                  </button>
+                </div>
+
+                {/* About Section */}
+                <div>
+                  <div style={{ fontSize: 12.5, fontWeight: 800, color: C.textPrimary, marginBottom: 8, letterSpacing: '0.02em' }}>
+                    About
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+                      <span style={{ color: C.textSecondary, flexShrink: 0 }}><IconUser /></span>
+                      <span style={{ color: C.textPrimary, fontWeight: 500 }}>{activeThread.role || 'Sourcing Specialist'}</span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+                      <span style={{ color: C.textSecondary, flexShrink: 0 }}><IconBriefcase /></span>
+                      <span style={{ color: C.textPrimary, fontWeight: 500 }}>{activeThread.company || 'SmartHire LLC'}</span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+                      <span style={{ color: C.textSecondary, flexShrink: 0 }}><IconMail /></span>
+                      <a
+                        href={`mailto:${activeThread.email || 'gourav@smarthire.com'}`}
+                        style={{ color: '#2065D1', textDecoration: 'none', fontWeight: 600, wordBreak: 'break-all' }}
+                      >
+                        {activeThread.email || 'gourav@smarthire.com'}
+                      </a>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+                      <span style={{ color: C.textSecondary, flexShrink: 0 }}><IconPhone /></span>
+                      <a
+                        href={`tel:${activeThread.phone || '+15551234567'}`}
+                        style={{ color: C.textPrimary, textDecoration: 'none', fontWeight: 500 }}
+                      >
+                        {activeThread.phone || '+1 (555) 123-4567'}
+                      </a>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+                      <span style={{ color: C.textSecondary, flexShrink: 0 }}><IconLocation /></span>
+                      <span style={{ color: C.textPrimary, fontWeight: 500 }}>{activeThread.location || 'New York, USA'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Recent Files Section */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 800, color: C.textPrimary, letterSpacing: '0.02em' }}>
+                      Recent Files
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMessageToast('Displaying all shared requisition attachments.')
+                        setTimeout(() => setMessageToast(''), 3000)
+                      }}
+                      style={{ background: 'none', border: 'none', color: '#2065D1', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                    >
+                      View All
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {(activeThread.recentFiles || [
+                      { name: 'Candidate_List.xlsx', size: '12 KB', date: '5 Sept', type: 'excel' },
+                      { name: 'Req_159078_Notes.pdf', size: '245 KB', date: '4 Sept', type: 'pdf' },
+                      { name: 'Interview_Schedule.docx', size: '18 KB', date: '2 Sept', type: 'word' }
+                    ]).map((file, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10,
+                          padding: '6px 8px',
+                          borderRadius: 8,
+                          backgroundColor: isLight ? '#F9FAFB' : '#1C252E',
+                          border: `1px solid ${C.border}`,
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => {
+                          setMessageToast(`Downloading ${file.name}...`)
+                          setTimeout(() => setMessageToast(''), 3000)
+                        }}
+                      >
+                        {file.type === 'excel' ? <IconFileExcel /> : file.type === 'word' ? <IconFileWord /> : <IconFilePdf />}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: C.textPrimary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {file.name}
+                          </div>
+                          <div style={{ fontSize: 10.5, color: C.textSecondary }}>
+                            {file.size} • {file.date}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Quick Actions Section */}
+                <div>
+                  <div style={{ fontSize: 12.5, fontWeight: 800, color: C.textPrimary, marginBottom: 8, letterSpacing: '0.02em' }}>
+                    Quick Actions
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowFullProfileModal(true)}
+                      style={{
+                        width: '100%',
+                        backgroundColor: isLight ? '#F9FAFB' : '#1C252E',
+                        border: `1px solid ${C.border}`,
+                        borderRadius: 8,
+                        padding: '8px 12px',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: C.textPrimary,
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        transition: 'background 0.15s'
+                      }}
+                    >
+                      <span>➔</span> <span>View Full Profile</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const first = (activeThread.name || activeThread.candidateName || 'there').split(' ')[0]
+                        setInputText(`Hi ${first}, could you share your availability for a 30-minute interview sync this week?`)
+                        inputRef.current?.focus()
+                      }}
+                      style={{
+                        width: '100%',
+                        backgroundColor: isLight ? '#F9FAFB' : '#1C252E',
+                        border: `1px solid ${C.border}`,
+                        borderRadius: 8,
+                        padding: '8px 12px',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: C.textPrimary,
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        transition: 'background 0.15s'
+                      }}
+                    >
+                      <IconClock /> <span>Suggest Interview Time</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const note = prompt(`Add internal recruiter note for ${activeThread.candidateName}:`)
+                        if (note) {
+                          setMessageToast(`✓ Internal note added for ${activeThread.candidateName}`)
+                          setTimeout(() => setMessageToast(''), 3000)
+                        }
+                      }}
+                      style={{
+                        width: '100%',
+                        backgroundColor: isLight ? '#F9FAFB' : '#1C252E',
+                        border: `1px solid ${C.border}`,
+                        borderRadius: 8,
+                        padding: '8px 12px',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: C.textPrimary,
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        transition: 'background 0.15s'
+                      }}
+                    >
+                      <IconPencil /> <span>Add Note</span>
+                    </button>
+                  </div>
+                </div>
+
               </div>
             )}
 
-            <div style={{ position:'relative' }}>
-              <span style={{ position:'absolute', left:11, top:'50%', transform:'translateY(-50%)', color:C.textSecondary, display:'flex', alignItems:'center', pointerEvents:'none' }}>
-                <IconSearch />
-              </span>
-              <input style={{ width:'100%', background:isLight?'#F1F5F9':'#1E293B', border:`1px solid ${C.border}`, borderRadius:8, padding:'9px 12px 9px 36px', fontSize:13, color:C.textPrimary, outline:'none', fontFamily:'inherit', boxSizing:'border-box' }} placeholder="Search candidate or job..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
-            </div>
           </div>
-          <div style={{ flex:1, overflowY:'auto' }}>
-            {loadingThreads ? (
-              <div style={{ padding:'50px 20px', textAlign:'center', color:C.textSecondary }}>
-                <p style={{ fontSize:13 }}>Loading conversations...</p>
-              </div>
-            ) : filteredThreads.length === 0 ? (
-              <div style={{ padding:'50px 20px', textAlign:'center', color:C.textSecondary }}>
-                <div style={{ color:C.textSecondary, marginBottom:10, display:'flex', justifyContent:'center' }}><IconChat /></div>
-                <p style={{ fontSize:13, lineHeight:1.6 }}>{searchQuery ? 'No conversations match your search.' : 'No candidate messages for this recruiter yet.\nIncoming messages will appear here.'}</p>
-              </div>
-            ) : filteredThreads.map(thread => (
-              <div key={thread.candidateId} style={{ cursor:'pointer', padding:'14px 16px', transition:'background 0.15s', borderLeft: activeThread?.candidateId===thread.candidateId ? '3px solid #2563EB' : '3px solid transparent', background: activeThread?.candidateId===thread.candidateId ? C.activeConv : 'transparent', borderBottom:`1px solid ${C.border}` }} onClick={() => selectThread(thread)}>
-                <div style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
-                  <Avatar name={thread.candidateName} size={42} />
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:3 }}>
-                      <span style={{ fontWeight:thread.unreadCount>0?800:600, fontSize:13.5, color:C.textPrimary, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', maxWidth:140 }}>{thread.candidateName}</span>
-                      <span style={{ fontSize:11, color:C.textSecondary, flexShrink:0, marginLeft:4 }}>{formatTime(thread.lastMessageTime)}</span>
-                    </div>
-                    <div style={{ fontSize:11.5, color:'#2563EB', fontWeight:600, marginBottom:3, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', display:'flex', alignItems:'center', gap:4 }}>
-                      <IconBriefcase /> {thread.jobTitle || 'General Applicant'}
-                    </div>
-                    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                      <span style={{ fontSize:12, color:thread.unreadCount>0?C.textPrimary:C.textSecondary, fontWeight:thread.unreadCount>0?600:400, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', maxWidth:140 }}>{thread.lastMessage}</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        {thread.recruiterName && (
-                          <span style={{ fontSize: 10, background: isLight ? '#EFF6FF' : '#1E3A8A', color: isLight ? '#1D4ED8' : '#93C5FD', padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>
-                            {thread.recruiterName.split(' ')[0]}
-                          </span>
-                        )}
-                        {thread.unreadCount>0 && <span style={{ background:'#2563EB', color:'#FFF', fontSize:10, fontWeight:800, borderRadius:10, padding:'2px 7px', flexShrink:0 }}>{thread.unreadCount}</span>}
-                      </div>
+
+          {/* AI Write Helper Modal */}
+          {showAiWriteModal && (
+            <div
+              style={{
+                position: 'fixed',
+                inset: 0,
+                backgroundColor: 'rgba(0,0,0,0.45)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 7000
+              }}
+              onClick={() => setShowAiWriteModal(false)}
+            >
+              <div
+                style={{
+                  backgroundColor: C.surface,
+                  borderRadius: 14,
+                  padding: 24,
+                  width: 480,
+                  maxWidth: '90vw',
+                  border: `1px solid ${C.border}`,
+                  boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+                }}
+                onClick={e => e.stopPropagation()}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ background: '#F5F3FF', color: '#7C3AED', padding: 6, borderRadius: 8 }}><IconSparkles /></div>
+                    <div>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: C.textPrimary }}>AI Message Assistant</div>
+                      <div style={{ fontSize: 12, color: C.textSecondary }}>Choose a prompt or let AI generate a response</div>
                     </div>
                   </div>
+                  <button onClick={() => setShowAiWriteModal(false)} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: C.textSecondary }}>✕</button>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
 
-        {/* CENTER CHAT */}
-        <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden', minWidth:0 }}>
-          {activeThread ? <>
-            {/* Thread header */}
-            <div style={{ padding:'14px 22px', borderBottom:`1px solid ${C.border}`, backgroundColor:C.surface, display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0, boxShadow:C.shadow }}>
-              <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-                <Avatar name={candidateName} size={42} />
-                <div>
-                  <div style={{ fontWeight:800, fontSize:16, color:C.textPrimary }}>{candidateName}</div>
-                  <div style={{ fontSize:12.5, color:'#2563EB', fontWeight:600, display:'flex', alignItems:'center', gap:5 }}>
-                    <IconBriefcase /> {candidateJob}
-                  </div>
-                </div>
-              </div>
-              <span style={{ fontSize:11, background:'#DCFCE7', color:'#15803D', border:'1px solid rgba(22,163,74,0.2)', padding:'4px 12px', borderRadius:20, fontWeight:700, display:'inline-flex', alignItems:'center', gap:5 }}>
-                <span style={{ width:6, height:6, borderRadius:'50%', background:'#22C55E', display:'inline-block' }} /> Active Session
-              </span>
-            </div>
-
-            {/* Messages */}
-            <div style={{ flex:1, overflowY:'auto', padding:'22px 26px', display:'flex', flexDirection:'column', gap:16, backgroundColor:C.bg }}>
-              {loadingMessages ? (
-                <div style={{ textAlign:'center', color:C.textSecondary, paddingTop:60 }}><p>Loading message thread...</p></div>
-              ) : messages.length===0 ? (
-                <div style={{ textAlign:'center', color:C.textSecondary, paddingTop:80 }}>
-                  <div style={{ display:'flex', justifyContent:'center', color:C.textSecondary, marginBottom:12 }}><IconChat /></div>
-                  <p style={{ fontSize:14, fontWeight:700, color:C.textPrimary, margin:'0 0 6px' }}>Start the conversation!</p>
-                  <p style={{ fontSize:12.5 }}>Send your message to {candidateName}.</p>
-                </div>
-              ) : messages.map((msg, idx) => {
-                const myEmail = (currentUser?.email || '').toLowerCase().trim()
-                const myName = (currentUser?.name || '').toLowerCase().trim()
-                const isMe = (msg.senderEmail && myEmail && msg.senderEmail.toLowerCase() === myEmail) ||
-                             (msg.senderName && myName && msg.senderName.toLowerCase() === myName) ||
-                             (isReportee && msg.sender === 'employee') ||
-                             (!isReportee && msg.sender === 'recruiter')
-                const showDate = idx===0 || new Date(msg.timestamp).toDateString()!==new Date(messages[idx-1]?.timestamp).toDateString()
-                return (
-                  <div key={msg.id||idx}>
-                    {showDate && (
-                      <div style={{ textAlign:'center', marginBottom:12 }}>
-                        <span style={{ fontSize:11, color:C.textSecondary, background:C.surface, border:`1px solid ${C.border}`, padding:'4px 14px', borderRadius:12, fontWeight:600 }}>
-                          {new Date(msg.timestamp).toLocaleDateString([],{weekday:'long',month:'long',day:'numeric'})}
-                        </span>
-                      </div>
-                    )}
-                    <div style={{ display:'flex', flexDirection:isMe?'row-reverse':'row', alignItems:'flex-end', gap:8 }}>
-                      {!isMe && <Avatar name={msg.senderName || candidateName} size={32} />}
-                      <div style={{ maxWidth:'64%' }}>
-                        <div style={{
-                          backgroundColor: isMe ? '#2563EB' : C.msgOther,
-                          color: isMe ? '#FFF' : C.msgOtherText,
-                          borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                          padding:'12px 16px', fontSize:13.5, lineHeight:1.56,
-                          boxShadow: isMe ? '0 4px 14px rgba(37,99,235,0.22)' : '0 2px 6px rgba(0,0,0,0.06)',
-                          wordBreak:'break-word'
-                        }}>
-                          {!isMe && msg.senderName && (
-                            <div style={{ fontSize: 11, fontWeight: 800, color: '#2563EB', marginBottom: 4 }}>
-                              {msg.senderName}
-                            </div>
-                          )}
-                          {msg.text}
-                        </div>
-                        <div style={{ fontSize:11, color:C.textSecondary, marginTop:4, textAlign:isMe?'right':'left', paddingLeft:isMe?0:4, paddingRight:isMe?4:0 }}>
-                          {formatTime(msg.timestamp)}{isMe && ' • Delivered'}
-                        </div>
-                      </div>
-                      {isMe && (
-                        <div style={{ width:32, height:32, borderRadius:'50%', background:'linear-gradient(135deg,#2563EB,#7C3AED)', display:'flex', alignItems:'center', justifyContent:'center', color:'#FFF', fontSize:12, fontWeight:800, flexShrink:0 }}>
-                          {getInitials(currentUser?.name || 'Me')}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-              <div ref={messagesEndRef} />
-            </div>
-
-            {/* Input */}
-            <div style={{ padding:'14px 20px', borderTop:`1px solid ${C.border}`, backgroundColor:C.surface, flexShrink:0 }}>
-              {showTemplates && (
-                <div style={{ marginBottom:12, maxHeight:220, overflowY:'auto', padding:'2px 0' }}>
-                  {quickTemplates.map((t,i) => (
-                    <button key={i} style={{ width:'100%', textAlign:'left', background:C.inputBg, border:`1px solid ${C.border}`, borderRadius:8, padding:'10px 13px', fontSize:12.5, color:C.textPrimary, cursor:'pointer', marginBottom:6, transition:'all 0.15s', lineHeight:1.5, fontFamily:'inherit', display:'flex', alignItems:'flex-start', gap:8 }} onClick={() => handleSend(t)}>
-                      <IconZap /> <span>{t}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {[
+                    "Draft candidate status update for Req #159078",
+                    "Request updated resume and work authorization document",
+                    "Confirm interview schedule for tomorrow 11 AM EST",
+                    "Propose 15-minute introductory technical screening"
+                  ].map((p, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        setInputText(p)
+                        setShowAiWriteModal(false)
+                        inputRef.current?.focus()
+                      }}
+                      style={{
+                        padding: '10px 14px',
+                        borderRadius: 8,
+                        border: `1px solid ${C.border}`,
+                        backgroundColor: isLight ? '#F9FAFB' : '#1C252E',
+                        textAlign: 'left',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: C.textPrimary,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      ✨ {p}
                     </button>
                   ))}
                 </div>
-              )}
-              <div style={{ display:'flex', gap:10, alignItems:'flex-end' }}>
-                <button title="Quick reply templates" onClick={() => setShowTemplates(p=>!p)} style={{ background:showTemplates?'#EFF6FF':C.inputBg, border:`1px solid ${showTemplates?'#2563EB':C.inputBorder}`, borderRadius:10, padding:'11px 13px', cursor:'pointer', color:showTemplates?'#2563EB':C.textSecondary, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, transition:'all 0.15s' }}>
-                  <IconZap />
-                </button>
-                <textarea style={{ width:'100%', background:C.inputBg, border:`1px solid ${C.inputBorder}`, borderRadius:10, padding:'12px 14px', fontSize:14, color:C.textPrimary, outline:'none', resize:'none', fontFamily:'inherit', transition:'border-color 0.2s', boxSizing:'border-box' }} rows={2} placeholder={`Message ${candidateName}... (Press Enter to send)`} value={inputText} onChange={e=>setInputText(e.target.value)} onKeyDown={handleKeyDown} ref={inputRef} />
-                <button style={{ background:'linear-gradient(135deg,#2563EB,#3B82F6)', color:'#fff', border:'none', borderRadius:10, padding:'10px 22px', fontSize:14, fontWeight:700, cursor:'pointer', transition:'all 0.2s', fontFamily:'inherit', display:'inline-flex', alignItems:'center', gap:6, opacity: !inputText.trim()||sending ? 0.55 : 1 }} onClick={() => handleSend()} disabled={!inputText.trim()||sending}>
-                  <IconSend /> {sending ? 'Sending…' : 'Send'}
-                </button>
               </div>
-              <p style={{ fontSize:11, color:C.textSecondary, margin:'6px 0 0', textAlign:'center' }}>
-                Press Enter to send · Shift+Enter for line break
-              </p>
-            </div>
-          </> : (
-            <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:18, color:C.textSecondary, textAlign:'center', padding:40 }}>
-              <div style={{ width:84, height:84, borderRadius:'50%', background:isLight?'#EFF6FF':'rgba(37,99,235,0.12)', color:'#2563EB', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:C.shadow }}>
-                <IconChat />
-              </div>
-              <div>
-                <h3 style={{ fontSize:22, fontWeight:800, color:C.textPrimary, margin:'0 0 8px' }}>Recruiter Messaging Inbox</h3>
-                <p style={{ fontSize:14, maxWidth:380, lineHeight:1.7 }}>Select a candidate conversation from the left to read messages and reply in real-time.</p>
-              </div>
-              {threads.length===0 && !loadingThreads && (
-                <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:'18px 28px', fontSize:13, lineHeight:1.7, maxWidth:420 }}>
-                  <strong style={{ color:C.textPrimary, fontSize:14 }}>No candidate messages yet</strong><br />
-                  Candidate messages sent via the careers portal will appear here automatically.
-                </div>
-              )}
             </div>
           )}
-        </div>
 
-        {/* RIGHT PANEL: Candidate Profile */}
-        {activeThread && (
-          <div style={{ width:300, flexShrink:0, backgroundColor:C.surface, borderLeft:`1px solid ${C.border}`, display:'flex', flexDirection:'column', overflowY:'auto', padding:'24px 20px' }}>
-            <div style={{ textAlign:'center', marginBottom:22 }}>
-              <Avatar name={candidateName} size={74} style={{ margin:'0 auto 14px' }} />
-              <div style={{ fontWeight:800, fontSize:17, color:C.textPrimary }}>{candidateName}</div>
-              <div style={{ fontSize:12.5, color:'#2563EB', fontWeight:700, marginTop:4, display:'inline-flex', alignItems:'center', gap:5 }}>
-                <IconBriefcase /> {candidateJob}
-              </div>
-              {profile?.location && (
-                <div style={{ fontSize:12, color:C.textSecondary, marginTop:6, display:'flex', alignItems:'center', justifyContent:'center', gap:4 }}>
-                  <IconLocation /> {profile.location}
-                </div>
-              )}
-            </div>
-
-            {profile && <>
-              <div style={{ marginBottom:20 }}>
-                <div style={{ fontSize:11, fontWeight:800, color:C.textSecondary, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:12 }}>Candidate Details</div>
-                {profile.email && (
-                  <div style={{ fontSize:12.5, color:C.textPrimary, marginBottom:8, display:'flex', gap:8, alignItems:'center' }}>
-                    <span style={{ color:C.textSecondary, flexShrink:0 }}><IconMail /></span>
-                    <span style={{ wordBreak:'break-all' }}>{profile.email}</span>
-                  </div>
-                )}
-                {profile.phone && (
-                  <div style={{ fontSize:12.5, color:C.textPrimary, marginBottom:8, display:'flex', gap:8, alignItems:'center' }}>
-                    <span style={{ color:C.textSecondary, flexShrink:0 }}><IconPhone /></span>
-                    <span>{profile.phone}</span>
-                  </div>
-                )}
-                {profile.visa_status && (
-                  <div style={{ fontSize:12.5, color:C.textPrimary, marginBottom:8, display:'flex', gap:8, alignItems:'center' }}>
-                    <span style={{ color:C.textSecondary, flexShrink:0 }}><IconShield /></span>
-                    <span>{profile.visa_status}</span>
-                  </div>
-                )}
-                {profile.experience_years && (
-                  <div style={{ fontSize:12.5, color:C.textPrimary, marginBottom:8, display:'flex', gap:8, alignItems:'center' }}>
-                    <span style={{ color:C.textSecondary, flexShrink:0 }}><IconClock /></span>
-                    <span>{profile.experience_years} yrs experience</span>
-                  </div>
-                )}
-              </div>
-
-              {Array.isArray(profile.skills) && profile.skills.length>0 && (
-                <div style={{ marginBottom:20 }}>
-                  <div style={{ fontSize:11, fontWeight:800, color:C.textSecondary, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:10 }}>Technical Skills</div>
-                  <div style={{ display:'flex', flexWrap:'wrap' }}>
-                    {profile.skills.slice(0,10).map((s,i) => <span key={i} style={{ display:'inline-flex', alignItems:'center', fontSize:11, fontWeight:600, background:isLight?'#EFF6FF':'rgba(37,99,235,0.15)', color:isLight?'#1D4ED8':'#93C5FD', border:`1px solid ${isLight?'rgba(37,99,235,0.2)':'rgba(147,197,253,0.2)'}`, padding:'3px 9px', borderRadius:6, margin:'3px 4px 3px 0' }}>{s}</span>)}
-                  </div>
-                </div>
-              )}
-            </>}
-
-            <div style={{ marginTop:'auto', paddingTop:16, borderTop:`1px solid ${C.border}` }}>
-              <div style={{ fontSize:11, fontWeight:800, color:C.textSecondary, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:10 }}>Actions</div>
-              <button style={{ width:'100%', background:C.inputBg, border:`1px solid ${C.border}`, borderRadius:8, padding:'9px 12px', fontSize:12.5, fontWeight:700, color:C.textPrimary, cursor:'pointer', marginBottom:8, textAlign:'left', transition:'all 0.15s', fontFamily:'inherit', display:'flex', alignItems:'center', gap:8 }} onClick={() => setShowFullProfileModal(true)}>
-                <IconUser /> View Full Profile 📄
-              </button>
-              <button
-                style={{ width:'100%', background:'linear-gradient(135deg,#2563EB,#3B82F6)', border:'none', borderRadius:8, padding:'10px 12px', fontSize:12.5, fontWeight:700, color:'#FFF', cursor:'pointer', textAlign:'left', fontFamily:'inherit', transition:'all 0.2s', display:'flex', alignItems:'center', gap:8 }}
-                onClick={() => { setInputText(`Hi ${candidateName}, let's schedule a technical call for the ${candidateJob} position. What's your availability this week?`); inputRef.current?.focus() }}
+          {/* Share Candidate Modal */}
+          {showShareCandidateModal && (
+            <div
+              style={{
+                position: 'fixed',
+                inset: 0,
+                backgroundColor: 'rgba(0,0,0,0.45)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 7000
+              }}
+              onClick={() => setShowShareCandidateModal(false)}
+            >
+              <div
+                style={{
+                  backgroundColor: C.surface,
+                  borderRadius: 14,
+                  padding: 24,
+                  width: 520,
+                  maxWidth: '90vw',
+                  border: `1px solid ${C.border}`,
+                  boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+                }}
+                onClick={e => e.stopPropagation()}
               >
-                <IconCalendar /> Suggest Interview Time
-              </button>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: C.textPrimary }}>
+                    Select Candidate to Share in Chat
+                  </div>
+                  <button onClick={() => setShowShareCandidateModal(false)} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: C.textSecondary }}>✕</button>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 320, overflowY: 'auto' }}>
+                  {streamCandidates.slice(0, 6).map(cand => (
+                    <div
+                      key={cand.id || cand.email}
+                      onClick={() => {
+                        const snippet = `Candidate Shared: ${cand.name} — ${cand.role} (${cand.matchScore || 95}% Match, Req #${cand.targetReqId || '159078'})`
+                        setInputText(snippet)
+                        setShowShareCandidateModal(false)
+                        inputRef.current?.focus()
+                      }}
+                      style={{
+                        padding: '10px 14px',
+                        borderRadius: 8,
+                        border: `1px solid ${C.border}`,
+                        backgroundColor: isLight ? '#F9FAFB' : '#1C252E',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: C.textPrimary }}>{cand.name}</div>
+                        <div style={{ fontSize: 11.5, color: C.textSecondary }}>{cand.role} • {cand.location}</div>
+                      </div>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: '#2065D1', background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '2px 8px', borderRadius: 10 }}>
+                        {cand.matchScore || 95}% Match
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+
+          {/* Toast Notification */}
+          {messageToast && (
+            <div style={{
+              position: 'fixed',
+              bottom: 24,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              backgroundColor: '#1C252E',
+              color: '#FFFFFF',
+              borderRadius: 8,
+              padding: '10px 20px',
+              fontSize: 13,
+              fontWeight: 700,
+              boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
+              zIndex: 8000
+            }}>
+              {messageToast}
+            </div>
+          )}
+
+        </div>
       )}
 
         </div> {/* closes main content canvas (line 1939) */}

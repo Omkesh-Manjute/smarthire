@@ -72,6 +72,7 @@ function App() {
         <Route path="/pricing" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
         <Route path="/branding" element={<ProtectedRoute><BrandingCenter /></ProtectedRoute>} />
         <Route path="/inbox" element={<ProtectedRoute><RecruiterInbox /></ProtectedRoute>} />
+        <Route path="/messages" element={<ProtectedRoute><RecruiterInbox defaultViewMode="chat" /></ProtectedRoute>} />
         <Route path="/linkedin-posts" element={<SuperAdminRoute><LinkedInPosts /></SuperAdminRoute>} />
         <Route path="/candidate-chat/:sessionId" element={<CandidateChat />} />
         <Route path="/candidate-chat/job/:jobId" element={<CandidateChat />} />
