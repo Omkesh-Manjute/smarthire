@@ -31,6 +31,26 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-11 — Tobu.ai Candidate Card Detail View, Database Table Mode, Resume Skill Frequencies & Domain-Aware Resumes
+- **Tobu.ai Candidate Card Detail View (`media_1789068769296.png`, `media_1789068785299.png`)**:
+  - Implemented Tobu-style sticky action bar with `< Prev Candidate` and `Next Candidate >` navigation, candidate counter badge (`Candidate X of Y`), `📋 View Database Table` toggle, `💼 Transfer to Job`, `✉️ Email Candidate`, `⤴️ Share Candidate`, and `📥 Download Full Resume`.
+  - **Left Candidate Dossier (~300px)**: Action buttons (Quick Edit pencil, Re-assign users, Chat), candidate avatar, name, verified contact info (email, phone), `🔍 Search on LinkedIn ↗` direct lookup, gender, total work experience, location, visa authorization, target job match fit score, and origin source badge.
+  - **Skill Frequency Pills & Keyword Analytics**: Dynamically parses candidate resume text to display keyword occurrence counts matching Tobu (e.g. `sql server (4 times)`, `github (8 times)`, `net (3 times)`).
+  - **Tobu 4-Column Metadata Box**: Ingest audit trail showing `Resume Uploader`, `Method of Upload`, `Source / Pipeline`, and `Received On` timestamp.
+  - **Right Full Paper Resume**: Clean authentic paper view with yellow matching skill `<mark>` highlights and cyan search query highlights.
+- **Tobu.ai Database Table View (`media_1789068954400.png`)**:
+  - Integrated 2-column database explorer:
+    - **Left Mailbox Sidebar**: Filter candidates across `Entire Database`, `Resume Emails`, `Spam / Recovered`, `Careers Portal`, `Vendor Bench`, and `Starred Favorites` with dynamic counts.
+    - **Right Table Canvas**: Bulk candidate selection (`Transfer Selected to Req #XXXXX`), Requisition filter dropdown, keyword search input, and high-density table with columns: Checkbox, Name & Role, Mailbox/Source, Target Job & Fit %, Key Skills, Location & Visa, Received Date, and 1-Click Action buttons (`👁️ Card`, `✉️`, `➕`).
+    - **Pagination Footer**: Results per page and `Prev`/`Next` page controls.
+- **Domain-Aware Multi-Domain Resume Generator & Sanitization**:
+  - Eliminated identical fallback text and `undefined, Enterprise Partner` across candidate profiles.
+  - Implemented domain-aware 50-80 line professional resumes tailored specifically for QA/SDET, TPM/Agile, Generative AI/LLM, Data Analytics/Power BI, Network Security, and Java Full Stack.
+  - Added new authentic candidates: **Damodhar Kammara** (QA Automation / SDET 16+ yrs), **Sanjay Javangula** (14+ yrs Senior TPM), and **Pranitha Bantu** (8+ yrs Lead GenAI Engineer).
+- **Production Verification**:
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings (built in 1.92s).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 1.81s).
+
 ### 2026-09-11 — Monster+ Split-Screen Candidate Stream, Full Multi-Section Resumes & Docked Floating Email Composer
 - **Monster+ Style Master-Detail Split Screen (`/inbox` -> `RecruiterInbox.jsx`)**:
   - Implemented the exact 2-column layout matching user's Monster+ screenshots (`media_1789066714188.png`):

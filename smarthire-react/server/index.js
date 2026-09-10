@@ -7423,6 +7423,202 @@ EDUCATION & CERTIFICATIONS
 - SAFe® 5 Agilist Certification`,
         createdAt: new Date(Date.now() - 3600000 * 5).toISOString()
       },
+      {
+        id: 'cand-tobu-damodhar',
+        candidate_id: 'cand-tobu-damodhar',
+        name: 'Damodhar Kammara',
+        email: 'kammaradamodhar@gmail.com',
+        phone: '+1 (346) 400-9355',
+        role: 'Lead QA Automation Engineer / SDET (SAP & XML Validation)',
+        location: 'Houston, TX',
+        currentCompany: 'Lead QA Automation Engineer, Enterprise Quality Systems',
+        previousCompany: 'Senior Test Specialist, Tech Mahindra',
+        updatedAtRelative: '2 days ago',
+        skills: ['Software Quality Assurance', 'SAP Application Testing', 'XML', 'NIEM', 'Selenium', 'Playwright', 'SQL Server', 'TestNG', 'SoapUI', 'Postman', 'Java', 'Jenkins', 'UAT', 'Regression Testing'],
+        experience: '16+ Years',
+        visaStatus: 'Green Card (GC)',
+        gender: 'Male (mostly)',
+        status: 'New',
+        source: 'Web Upload (Database)',
+        sourceCategory: 'email_inbox',
+        isSpamRecovery: false,
+        folder: 'INBOX',
+        targetReqId: '159079',
+        matchedJobTitle: 'Java Developer III - 165504',
+        matchedJobClient: 'State of Wisconsin (ETF)',
+        matchedJobRate: '$75/hr',
+        matchScore: 94,
+        recruiterEmail: 'omkesh@coolsofttech.com',
+        recruiterName: 'Omkesh',
+        assignedBy: 'Omkesh',
+        recruiter: 'Omkesh',
+        resumeText: `DAMODHAR KAMMARA
+Location: Houston, TX | Contact: +1 (346) 400-9355 | E-mail: kammaradamodhar@gmail.com | Green Card (GC)
+
+To join a team of competent, progressive and task-oriented professionals and to be a part of organizational growth and excellence by working in a challenging environment that welcomes creativity and enhancements of my about 16 plus years of extensive experience in developing test plans, test cases, and test scripts for manual and automation testing. I am also a focused and deadline-oriented person, conforming to specific requirements and adhering to established plans.
+
+PROFESSIONAL SUMMARY:
+• 16+ years of experience in Software Quality Assurance, System Testing, UAT, Functional, Integration, Regression, and Automation Testing for complex enterprise applications. Experience in SAP application testing, including functional, integration, regression, system, end-to-end, and user acceptance testing across enterprise business processes.
+• Experience working with complex XML-based data structures, including XML schemas, WSDLs, namespaces, validation rules, and XML request/response payloads for enterprise integrations.
+• Performed XML validation for web services and system-to-system integrations by validating data elements, schema compliance, mandatory fields, data types, and business rules.
+• Familiar with the concepts of NIEM (National Information Exchange Model) and its use for standardized information exchange between government and public-sector systems.
+• Validated complex XML messages across integrated applications and ensured accurate data mapping and transformation between source and target systems.
+• Strong experience in requirements analysis, test planning, test scenario/test case development, test execution, defect management, test reporting, and Requirement Traceability Matrix (RTM).
+• Extensive experience testing integrated applications across UI, REST/SOAP Web Services, APIs, databases, and downstream/upstream systems using Java, Selenium, Playwright, Postman, SoapUI, and REST Assured.
+• Strong backend testing experience using Microsoft SQL Server and complex SQL queries for data validation, reconciliation, and defect investigation.
+
+CORE TECHNICAL SKILLS
+- Automation & Testing: Selenium WebDriver, Playwright, TestNG, Cucumber BDD, SoapUI, Postman, REST Assured, JUnit
+- Enterprise Systems: SAP Application Testing (ECC / S/4HANA), NIEM (National Information Exchange Model), XML Schemas, WSDL
+- Languages & Frameworks: Java, Python, SQL, JavaScript, HTML, CSS, JSON
+- Databases: Microsoft SQL Server, Oracle 11g/12c, PostgreSQL, MySQL
+- CI/CD & Test Management: Jenkins, Git, GitHub, JIRA, HP ALM / Quality Center, Azure DevOps
+
+PROFESSIONAL EXPERIENCE
+
+Lead QA Automation Engineer / SDET | Enterprise Quality Systems — Houston, TX (2019 – Present)
+- Architected and implemented end-to-end test automation frameworks using Selenium Java and Playwright, increasing automated test execution to 85% across regression cycles.
+- Performed rigorous SAP application testing and XML payload validation ensuring zero defect escape into production environments.
+- Conducted automated API test suites for enterprise web services using Postman and SoapUI, reducing API verification time from 4 days to 4 hours.
+- Collaborated daily in Agile ceremonies with product managers, developers, and DevOps engineers to ensure timely sprint quality deliverables.
+
+Senior QA Automation Specialist | Tech Mahindra — Dallas, TX (2014 – 2019)
+- Developed automated regression test suites and functional test cases for complex health and government data exchange systems.
+- Validated intricate XML messages against NIEM schemas and business rules, ensuring compliance with federal data standards.
+- Executed complex SQL verification queries on Microsoft SQL Server to audit data integrity across multi-tiered databases.
+
+EDUCATION & CERTIFICATIONS
+- Bachelor of Technology in Computer Science & Engineering
+- ISTQB Certified Software Tester (CTFL / CTAL)
+- Certified ScrumMaster (CSM)`,
+        createdAt: new Date(Date.now() - 3600000 * 24 * 5).toISOString()
+      },
+      {
+        id: 'cand-sanjay-javangula',
+        candidate_id: 'cand-sanjay-javangula',
+        name: 'Sanjay Javangula Tpm',
+        email: 'javangula.sanjay@gmail.com',
+        phone: '+1 (925) 579-4932',
+        role: 'Senior Technical Program Manager (Cloud & Enterprise Delivery)',
+        location: 'Garner, NC',
+        currentCompany: 'Lead Technical Program Manager, CloudScale Enterprise Solutions',
+        previousCompany: 'Senior Project Manager, Apex Systems',
+        updatedAtRelative: '1 day ago',
+        skills: ['Agile', 'Scrum', 'JIRA', 'Roadmap Planning', 'Risk Management', 'OKR Tracking', 'Stakeholder Management', 'Cloud Transformation', 'SDLC', 'AWS', 'Budgeting', 'Confluence'],
+        experience: '14+ Years',
+        visaStatus: 'US Citizen',
+        gender: 'Male (mostly)',
+        status: 'New',
+        source: 'Careers Job Site (/jobs)',
+        sourceCategory: 'careers_portal',
+        isSpamRecovery: false,
+        folder: 'INBOX',
+        targetReqId: '159078',
+        matchedJobTitle: 'Public Health Program Director 1 (66312)',
+        matchedJobClient: 'Tennessee Department of Health (TN DOH)',
+        matchedJobRate: '$75/hr',
+        matchScore: 95,
+        recruiterEmail: 'omkesh@coolsofttech.com',
+        recruiterName: 'Omkesh',
+        assignedBy: 'Omkesh',
+        recruiter: 'Omkesh',
+        resumeText: `SANJAY JAVANGULA, PMP, CSM
+Garner, NC | javangula.sanjay@gmail.com | +1 (925) 579-4932 | US Citizen | LinkedIn: /in/sanjay-javangula
+
+EXECUTIVE SUMMARY
+Senior Technical Program Manager (TPM) with over 14+ years of distinguished experience orchestrating large-scale enterprise cloud transformations, product engineering roadmaps, and cross-functional Agile initiatives. Adept at bridging executive business strategy with deep engineering execution across AWS cloud ecosystems, microservices, and distributed data systems. Proven record managing multi-million dollar program portfolios, resolving critical path delivery bottlenecks, and driving 98% on-schedule milestone delivery.
+
+CORE COMPETENCIES & LEADERSHIP SKILLS
+- Technical Program Management: Cloud Infrastructure Migration, Microservices Modernization, SDLC Execution, Cross-Functional Team Leadership
+- Methodologies: Agile, Scrum, Kanban, Scaled Agile (SAFe), Sprint Planning, OKR Alignment, Continuous Delivery (CI/CD)
+- Program Governance: Critical Path Analysis, Risk & Issue Mitigation, Scope Baseline Management, Executive Steering Committee Briefings
+- Collaboration & Tools: JIRA, Confluence, Microsoft Project, Smartsheet, AWS CloudWatch, GitHub, Slack, Miro
+- Vendor & Resource Management: SOW Negotiation, SLA Compliance, Resource Capacity Forecasting, Budget Allocation ($12M+)
+
+PROFESSIONAL EXPERIENCE
+
+Lead Technical Program Manager | CloudScale Enterprise Solutions — Garner, NC / Remote (2020 – Present)
+- Directed the end-to-end execution of an enterprise multi-cloud migration portfolio comprising 6 distributed engineering squads and 40+ software engineers.
+- Accelerated sprint velocity by 34% by instituting automated JIRA burndown analytics, continuous backlog grooming, and transparent impediment clearing sessions.
+- Partnered closely with VP of Engineering and Lead Cloud Architects to establish phased rollout roadmaps, minimizing system downtime to under 0.01% during cutover.
+- Led weekly executive progress reviews and quarterly OKR retrospectives, maintaining high alignment across engineering, product management, and compliance teams.
+
+Senior IT Project / Program Manager | Apex Systems — Raleigh, NC (2015 – 2020)
+- Managed complex public sector and enterprise IT modernization projects from project charter through operational handover.
+- Authored comprehensive project charters, technical risk registers, communications plans, and executive status dashboards.
+- Facilitated daily standups, sprint reviews, and retrospective meetings as certified Scrum Master for two high-performing Agile squads.
+- Enforced strict budget tracking and burn-rate modeling across a $9M annual technical project portfolio.
+
+EDUCATION & CERTIFICATIONS
+- Master of Science in Engineering Management, NC State University
+- Bachelor of Science in Computer Science & Information Systems
+- Project Management Professional (PMP)® — PMI
+- Certified ScrumMaster (CSM)® — Scrum Alliance
+- AWS Certified Cloud Practitioner`,
+        createdAt: new Date(Date.now() - 3600000 * 24 * 1).toISOString()
+      },
+      {
+        id: 'cand-pranitha-bantu',
+        candidate_id: 'cand-pranitha-bantu',
+        name: 'Pranitha Bantu',
+        email: 'pranitha.bantu@gmail.com',
+        phone: '+1 (919) 555-0143',
+        role: 'Lead Generative AI & Machine Learning Engineer',
+        location: 'Raleigh, NC',
+        currentCompany: 'Lead Generative AI Engineer, Cognitive AI Labs',
+        previousCompany: 'Machine Learning Engineer, DataVision Tech',
+        updatedAtRelative: '1 day ago',
+        skills: ['Generative AI', 'Large Language Models (LLMs)', 'PyTorch', 'LangChain', 'HuggingFace', 'Vector Databases', 'Python', 'RAG Pipelines', 'Pinecone', 'FAISS', 'Docker', 'Kubernetes', 'AWS'],
+        experience: '8+ Years',
+        visaStatus: 'US Citizen',
+        gender: 'Female',
+        status: 'New',
+        source: 'Careers Job Site (/jobs)',
+        sourceCategory: 'careers_portal',
+        isSpamRecovery: false,
+        folder: 'INBOX',
+        targetReqId: '158997',
+        matchedJobTitle: 'NC DHHS - AWS Senior Developer (808496)',
+        matchedJobClient: 'NC DHHS',
+        matchedJobRate: '$85/hr',
+        matchScore: 96,
+        recruiterEmail: 'omkesh@coolsofttech.com',
+        recruiterName: 'Omkesh',
+        assignedBy: 'Omkesh',
+        recruiter: 'Omkesh',
+        resumeText: `PRANITHA BANTU
+Raleigh, NC | pranitha.bantu@gmail.com | +1 (919) 555-0143 | US Citizen | LinkedIn: /in/pranitha-bantu-ai
+
+PROFESSIONAL SUMMARY
+Lead Generative AI and Machine Learning Engineer with 8+ years of hands-on expertise building production-grade Generative AI applications, Retrieval-Augmented Generation (RAG) architectures, and fine-tuning Large Language Models (LLMs). Extensive experience utilizing PyTorch, LangChain, HuggingFace, Vector Databases (Pinecone, FAISS, Weaviate), and deploying scalable microservices on AWS GPU infrastructure. Demonstrated success reducing hallucination rates, optimizing inference latency, and building intelligent agents for enterprise workflows.
+
+CORE TECHNICAL EXPERTISE
+- Generative AI & LLMs: RAG Architectures, Fine-Tuning (LoRA, QLoRA), Prompt Engineering, Semantic Search, Agentic Workflows
+- Frameworks & Libraries: LangChain, LlamaIndex, PyTorch, HuggingFace Transformers, vLLM, DeepSpeed, Ollama, TensorFlow
+- Vector DBs & Search: Pinecone, FAISS, Milvus, Weaviate, Qdrant, ChromaDB, Elasticsearch
+- Languages & Tools: Python 3.10+, SQL, Docker, Kubernetes, Git, Linux, FastAPIs, Celery, Redis
+- Cloud & MLOps: AWS (SageMaker, Bedrock, EC2 GPU instances, S3, ECS), MLflow, Weights & Biases, Triton Inference Server
+
+PROFESSIONAL EXPERIENCE
+
+Lead Generative AI Engineer | Cognitive AI Labs — San Jose, CA / Remote (2021 – Present)
+- Architected enterprise-grade RAG knowledge retrieval systems indexing over 15M multi-modal documents with sub-200ms query latency.
+- Fine-tuned open-source LLMs (Llama 3 70B, Mistral, Gemma) using LoRA on multi-GPU AWS clusters, reducing task-specific hallucination by 46%.
+- Built agentic tool-use pipelines using LangChain and FastAPI, allowing models to dynamically query SQL databases and external REST endpoints.
+- Containerized model inference containers with Docker and orchestrated GPU autoscaling nodes on Kubernetes (EKS).
+
+Machine Learning Engineer | DataVision Technologies — Austin, TX (2017 – 2021)
+- Developed NLP classification and entity extraction models using PyTorch, HuggingFace, and spaCy, achieving 94% F1-score on customer support datasets.
+- Created automated feature engineering and data preprocessing pipelines in Python, processing 5TB+ of text data.
+- Collaborated with software engineering teams to deploy RESTful model inference endpoints with 99.9% service uptime.
+
+EDUCATION & CERTIFICATIONS
+- Master of Science in Computer Science (Artificial Intelligence Focus), University of Texas at Austin
+- Bachelor of Science in Information Technology
+- AWS Certified Machine Learning – Specialty
+- DeepLearning.AI Generative AI with Large Language Models Certification`,
+        createdAt: new Date(Date.now() - 3600000 * 24 * 1).toISOString()
+      }
     ];
 
     initialHarvested.forEach(item => {
@@ -7464,8 +7660,19 @@ EDUCATION & CERTIFICATIONS
     const targetJob = jobsStore.find(j => String(j.id) === String(c.targetReqId || c.reqId)) || jobsStore[0];
     const matchAnalysis = calculateCandidateMatch(c.skills, targetJob);
 
+    const cleanRole = c.role && !String(c.role).includes('undefined') ? c.role : 'Senior Specialist';
+    const cleanCurrentCo = c.currentCompany && !String(c.currentCompany).includes('undefined')
+      ? c.currentCompany
+      : `${cleanRole}, Enterprise Technology Partner`;
+    const cleanPrevCo = c.previousCompany && !String(c.previousCompany).includes('undefined')
+      ? c.previousCompany
+      : 'Senior Consultant, Tech Solutions';
+
     return {
       ...c,
+      role: cleanRole,
+      currentCompany: cleanCurrentCo,
+      previousCompany: cleanPrevCo,
       sourceCategory,
       isSpamRecovery: sourceCategory === 'email_spam' || !!c.isSpamRecovery,
       matchScore: c.matchScore || matchAnalysis.matchScore,
