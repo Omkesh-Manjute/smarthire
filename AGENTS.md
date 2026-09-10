@@ -31,6 +31,35 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-11 — Minimal Dashboard Free (material-kit-react) UI Overhaul, Pastel KPI Cards & Analytics Charts
+- **MUI Minimals Dashboard Design System (`media_1789070880356.png`)**:
+  - Transformed `/inbox` (`RecruiterInbox.jsx`) and global styling (`index.css`) into the crisp, modern **Minimals Dashboard Free (material-kit-react / Modernize)** design system.
+  - **Typography & Theme**: Global font set to `'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`. Minimals theme tokens configured: canvas `#F9FAFB`, cards `#FFFFFF` with `borderRadius: 16` and subtle shadow `rgba(145, 158, 171, 0.16) 0px 4px 20px 0px`, text primary `#1C252E`, text secondary `#637381`, brand primary `#2065D1`, teal `#00A76F`, warning `#FFAB00`, error `#FF5630`.
+  - **Collapsible Minimals Navigation Sidebar**:
+    - `Team 1 [Free]` workspace dropdown card with icon.
+    - Active navigation links (`Overview`, `Candidate Cards`, `Candidate Database Table`, `Messages / Chat`, `Scan Ingest`, `Back to ATS`) styled with soft active pill (`#EBF3FE` / `#2065D1`).
+    - Bottom `🚀 Upgrade to Pro` promo card ($69/mo) matching the screenshot.
+  - **Minimals Top Navigation Bar**:
+    - Sidebar hamburger toggle, `M.` gradient logo badge, "SmartHire ATS · Minimal Talent Dashboard & Ingestion" title.
+    - Centered pill view selector (`📊 Overview`, `👤 Candidate Card`, `📋 Database Table`, `💬 Messages`).
+    - Scoping telemetry pill (`🔒 Omkesh Manjute`), `⚡ Scan Ingest` button, notification bell with red badge count `2`, light/dark theme toggle, and user avatar `OM`.
+  - **4 Iconic Pastel Gradient KPI Cards (Exact replica of `media_1789070880356.png`)**:
+    1. **Weekly sales (714k)**: Soft cyan-blue gradient card with shopping bag icon, `+2.6%` green trend pill, and blue SVG wave sparkline.
+    2. **New users (1.35m)**: Soft lavender-purple gradient card with user icon, `-0.1%` red trend pill, and purple SVG wave sparkline.
+    3. **Purchase orders (1.72m)**: Soft warm amber gradient card with cart icon, `+2.8%` green trend pill, and amber SVG wave sparkline.
+    4. **Messages (234)**: Soft coral gradient card with mail icon, `+3.6%` green trend pill, and coral SVG wave sparkline.
+  - **2 Visual Analytics Cards**:
+    1. **Current visits (Donut Chart)**: Visual SVG ring breakdown (America 43.8% blue, Asia 31.3% amber, Europe 18.8% cyan, Africa 6.3% red) with center text and legend dots.
+    2. **Website visits (Dual Bar Chart)**: 9-month columns (Jan–Sep) with Team A blue and Team B amber bars, vertical gridlines, and "(+43%) than last year" header.
+  - **Recent Talent Stream Preview Table**: High-density preview table under charts with candidate avatars, fit score badges, origin badges, skill chips, and 1-click `👁️ View Card & Resume` buttons.
+- **Seamless Multi-Mode Integration**:
+  - Preserved full Tobu.ai candidate card detail view (`inboxSubMode === 'card'`) with 5 tabs, paper resume, and skill frequency analytics.
+  - Preserved Tobu.ai database table view (`inboxSubMode === 'table'`) with mailbox explorer and bulk requisition assignment.
+  - Preserved 3-panel chat view (`inboxViewMode === 'chat'`) and bottom-right docked floating email composer.
+- **Production Build Verification**:
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings (built in 1.84s).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 1.91s).
+
 ### 2026-09-11 — Tobu.ai Candidate Card Detail View, Database Table Mode, Resume Skill Frequencies & Domain-Aware Resumes
 - **Tobu.ai Candidate Card Detail View (`media_1789068769296.png`, `media_1789068785299.png`)**:
   - Implemented Tobu-style sticky action bar with `< Prev Candidate` and `Next Candidate >` navigation, candidate counter badge (`Candidate X of Y`), `📋 View Database Table` toggle, `💼 Transfer to Job`, `✉️ Email Candidate`, `⤴️ Share Candidate`, and `📥 Download Full Resume`.

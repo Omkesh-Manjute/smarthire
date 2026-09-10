@@ -89,6 +89,31 @@ const IconPencil = () => (
 const IconUsers = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
 )
+const IconDashboard = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"></rect><rect x="14" y="3" width="7" height="5" rx="1"></rect><rect x="14" y="12" width="7" height="9" rx="1"></rect><rect x="3" y="16" width="7" height="5" rx="1"></rect></svg>
+)
+const IconShoppingBag = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+)
+const IconTrendingUp = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+)
+const IconTrendingDown = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+)
+const IconCart = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+)
+const IconSparkline = ({ color = '#006C9C' }) => (
+  <svg width="110" height="34" viewBox="0 0 110 34" fill="none">
+    <path d="M 0,22 C 18,25 30,6 50,18 C 70,30 85,8 110,14" stroke={color} strokeWidth="2.5" strokeLinecap="round" fill="none"></path>
+  </svg>
+)
+const IconSparklineDown = ({ color = '#5119B7' }) => (
+  <svg width="110" height="34" viewBox="0 0 110 34" fill="none">
+    <path d="M 0,10 C 20,6 35,26 55,14 C 75,4 85,28 110,22" stroke={color} strokeWidth="2.5" strokeLinecap="round" fill="none"></path>
+  </svg>
+)
 
 function getSkillFrequencies(resumeText = '', candidateSkills = []) {
   if (!resumeText) return []
@@ -455,19 +480,33 @@ export default function RecruiterInbox() {
   const isLight = themeMode === 'light'
 
   const C = {
-    bg: isLight ? '#F8FAFC' : '#0B0F17',
-    surface: isLight ? '#FFFFFF' : '#1E293B',
-    sidebar: isLight ? '#FFFFFF' : '#0F172A',
-    border: isLight ? '#E2E8F0' : 'rgba(255,255,255,0.08)',
-    textPrimary: isLight ? '#0F172A' : '#F1F5F9',
-    textSecondary: isLight ? '#64748B' : '#94A3B8',
-    activeConv: isLight ? '#EFF6FF' : 'rgba(37,99,235,0.14)',
-    inputBg: isLight ? '#F1F5F9' : '#0F172A',
-    inputBorder: isLight ? '#CBD5E1' : 'rgba(255,255,255,0.12)',
-    msgOther: isLight ? '#F1F5F9' : '#334155',
-    msgOtherText: isLight ? '#1E293B' : '#F1F5F9',
-    shadow: isLight ? '0 4px 24px rgba(0,0,0,0.06)' : '0 4px 24px rgba(0,0,0,0.3)',
-    headerBg: isLight ? 'rgba(255,255,255,0.95)' : 'rgba(15,23,42,0.95)',
+    bg: isLight ? '#F9FAFB' : '#141A21',
+    surface: isLight ? '#FFFFFF' : '#1C252E',
+    surface2: isLight ? '#F4F6F8' : '#28323D',
+    sidebar: isLight ? '#FFFFFF' : '#1C252E',
+    border: isLight ? 'rgba(145, 158, 171, 0.16)' : 'rgba(255, 255, 255, 0.08)',
+    textPrimary: isLight ? '#1C252E' : '#F9FAFB',
+    textSecondary: isLight ? '#637381' : '#919EAB',
+    activeConv: isLight ? '#EBF3FE' : 'rgba(32, 101, 209, 0.16)',
+    inputBg: isLight ? '#FFFFFF' : '#212B36',
+    inputBorder: isLight ? 'rgba(145, 158, 171, 0.24)' : 'rgba(255, 255, 255, 0.12)',
+    msgOther: isLight ? '#F4F6F8' : '#28323D',
+    msgOtherText: isLight ? '#1C252E' : '#F9FAFB',
+    shadow: isLight ? 'rgba(145, 158, 171, 0.16) 0px 4px 20px 0px, rgba(145, 158, 171, 0.08) 0px 0px 2px 0px' : '0 4px 24px rgba(0,0,0,0.4)',
+    headerBg: isLight ? 'rgba(255, 255, 255, 0.94)' : 'rgba(28, 37, 46, 0.94)',
+    brand: '#2065D1',
+    brandHover: '#115293',
+    brandLight: isLight ? '#EBF3FE' : 'rgba(32, 101, 209, 0.16)',
+    brandBorder: isLight ? '#BAE6FD' : 'rgba(32, 101, 209, 0.3)',
+    teal: '#00A76F',
+    tealLight: isLight ? '#C8FACD' : 'rgba(0, 167, 111, 0.16)',
+    amber: '#FFAB00',
+    amberLight: isLight ? '#FFF7CD' : 'rgba(255, 171, 0, 0.16)',
+    coral: '#FF5630',
+    coralLight: isLight ? '#FFE7D9' : 'rgba(255, 86, 48, 0.16)',
+    purple: '#7928CA',
+    purpleLight: isLight ? '#EFD8F9' : 'rgba(121, 40, 202, 0.16)',
+    cardRadius: 16
   }
 
   const [threads, setThreads] = useState([])
@@ -484,8 +523,9 @@ export default function RecruiterInbox() {
   const [syncingEmailResumes, setSyncingEmailResumes] = useState(false)
   const [emailSyncToast, setEmailSyncToast] = useState('')
 
-  // View switcher: 'stream' (Indeed-style candidate talent stream) or 'chat' (live direct messages)
-  const [inboxViewMode, setInboxViewMode] = useState('stream')
+  // View switcher: 'dashboard' (Minimals Hi Welcome back + 4 KPI Cards + Charts), 'stream' (Candidate Card / Table), or 'chat' (Live Messages)
+  const [inboxViewMode, setInboxViewMode] = useState('dashboard')
+  const [minimalsSidebarOpen, setMinimalsSidebarOpen] = useState(true)
   const [streamFilter, setStreamFilter] = useState('all') // 'all', 'email_inbox', 'email_spam', 'careers_portal', 'vendor_bench'
   const [streamCandidates, setStreamCandidates] = useState([])
   const [streamCounts, setStreamCounts] = useState({
@@ -1352,42 +1392,118 @@ export default function RecruiterInbox() {
 
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100vh', backgroundColor:C.bg, fontFamily:"'Plus Jakarta Sans','Inter',sans-serif", color:C.textPrimary, overflow:'hidden' }}>
-      {/* Top Navbar */}
-      <header style={{ backgroundColor:C.headerBg, backdropFilter:'blur(12px)', borderBottom:`1px solid ${C.border}`, padding:'0 24px', display:'flex', alignItems:'center', justifyContent:'space-between', height:64, flexShrink:0, boxShadow:C.shadow, zIndex:10 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-          <button onClick={() => navigate('/ats')} style={{ background:C.inputBg, border:`1px solid ${C.border}`, borderRadius:8, padding:'6px 12px', cursor:'pointer', color:C.textSecondary, fontSize:13, fontWeight:700, display:'flex', alignItems:'center', gap:6 }} title="Back to ATS">
-            <IconArrowLeft /> Back to ATS
+      {/* 1. Minimals Top Navbar (Matching media_1789070880356.png) */}
+      <header style={{
+        backgroundColor: C.headerBg,
+        backdropFilter: 'blur(8px)',
+        borderBottom: `1px solid ${C.border}`,
+        padding: '0 24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        height: 64,
+        flexShrink: 0,
+        zIndex: 10
+      }}>
+        {/* Left: Sidebar Toggle + Brand */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button
+            type="button"
+            onClick={() => setMinimalsSidebarOpen(o => !o)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: C.textSecondary,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 6,
+              borderRadius: 8
+            }}
+            title="Toggle Sidebar"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
           </button>
-          <div style={{ width:34, height:34, borderRadius:9, background:'linear-gradient(135deg,#2563EB,#3B82F6)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff' }}>
-            <IconChat />
-          </div>
-          <div>
-            <div style={{ fontWeight:800, fontSize:16, color:C.textPrimary, lineHeight:1.2 }}>
-              Talent Stream & Recruiter Inbox
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              background: 'linear-gradient(135deg, #2065D1 0%, #00A76F 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#FFF',
+              fontWeight: 900,
+              fontSize: 16
+            }}>
+              M.
             </div>
-            <div style={{ fontSize:11, color:C.textSecondary }}>
-              Auto-matched resumes & candidate communications
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 16, color: C.textPrimary, lineHeight: 1.2 }}>
+                SmartHire ATS
+              </div>
+              <div style={{ fontSize: 11, color: C.textSecondary }}>
+                Minimal Talent Dashboard &amp; Ingestion
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Center Mode Switcher Tabs */}
-        <div style={{ display: 'flex', alignItems: 'center', background: C.inputBg, border: `1px solid ${C.border}`, borderRadius: 24, padding: 3, gap: 4 }}>
+        {/* Center: Mode Switcher Tabs */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          background: isLight ? '#F4F6F8' : 'rgba(255,255,255,0.06)',
+          border: `1px solid ${C.border}`,
+          borderRadius: 10,
+          padding: 3,
+          gap: 4
+        }}>
           <button
-            onClick={() => { setInboxViewMode('stream'); setInboxSubMode('card'); }}
+            type="button"
+            onClick={() => setInboxViewMode('dashboard')}
             style={{
-              background: (inboxViewMode === 'stream' && inboxSubMode === 'card') ? '#2563EB' : 'transparent',
-              color: (inboxViewMode === 'stream' && inboxSubMode === 'card') ? '#FFF' : C.textSecondary,
+              background: inboxViewMode === 'dashboard' ? C.surface : 'transparent',
+              color: inboxViewMode === 'dashboard' ? '#2065D1' : C.textSecondary,
               border: 'none',
-              borderRadius: 20,
+              borderRadius: 8,
               padding: '6px 14px',
               fontSize: 12.5,
-              fontWeight: 800,
+              fontWeight: inboxViewMode === 'dashboard' ? 700 : 500,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: 6,
-              boxShadow: (inboxViewMode === 'stream' && inboxSubMode === 'card') ? '0 2px 8px rgba(37,99,235,0.3)' : 'none',
+              boxShadow: inboxViewMode === 'dashboard' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+              transition: 'all 0.15s'
+            }}
+          >
+            <IconDashboard /> <span>Dashboard</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setInboxViewMode('stream'); setInboxSubMode('card'); }}
+            style={{
+              background: (inboxViewMode === 'stream' && inboxSubMode === 'card') ? C.surface : 'transparent',
+              color: (inboxViewMode === 'stream' && inboxSubMode === 'card') ? '#2065D1' : C.textSecondary,
+              border: 'none',
+              borderRadius: 8,
+              padding: '6px 14px',
+              fontSize: 12.5,
+              fontWeight: (inboxViewMode === 'stream' && inboxSubMode === 'card') ? 700 : 500,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              boxShadow: (inboxViewMode === 'stream' && inboxSubMode === 'card') ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
               transition: 'all 0.15s'
             }}
           >
@@ -1395,67 +1511,69 @@ export default function RecruiterInbox() {
           </button>
 
           <button
+            type="button"
             onClick={() => { setInboxViewMode('stream'); setInboxSubMode('table'); }}
             style={{
-              background: (inboxViewMode === 'stream' && inboxSubMode === 'table') ? '#2563EB' : 'transparent',
-              color: (inboxViewMode === 'stream' && inboxSubMode === 'table') ? '#FFF' : C.textSecondary,
+              background: (inboxViewMode === 'stream' && inboxSubMode === 'table') ? C.surface : 'transparent',
+              color: (inboxViewMode === 'stream' && inboxSubMode === 'table') ? '#2065D1' : C.textSecondary,
               border: 'none',
-              borderRadius: 20,
+              borderRadius: 8,
               padding: '6px 14px',
               fontSize: 12.5,
-              fontWeight: 800,
+              fontWeight: (inboxViewMode === 'stream' && inboxSubMode === 'table') ? 700 : 500,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: 6,
-              boxShadow: (inboxViewMode === 'stream' && inboxSubMode === 'table') ? '0 2px 8px rgba(37,99,235,0.3)' : 'none',
+              boxShadow: (inboxViewMode === 'stream' && inboxSubMode === 'table') ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
               transition: 'all 0.15s'
             }}
           >
             <IconTable /> <span>Database Table</span>
             <span style={{
-              fontSize: 11,
-              background: (inboxViewMode === 'stream' && inboxSubMode === 'table') ? 'rgba(255,255,255,0.25)' : isLight ? '#E2E8F0' : '#334155',
-              color: (inboxViewMode === 'stream' && inboxSubMode === 'table') ? '#FFF' : C.textPrimary,
-              padding: '1px 7px',
+              fontSize: 10.5,
+              background: '#FFAB00',
+              color: '#FFF',
+              padding: '1px 6px',
               borderRadius: 10,
-              fontWeight: 800
+              fontWeight: 700
             }}>
               {streamCandidates.length}
             </span>
           </button>
 
           <button
+            type="button"
             onClick={() => setInboxViewMode('chat')}
             style={{
-              background: inboxViewMode === 'chat' ? '#2563EB' : 'transparent',
-              color: inboxViewMode === 'chat' ? '#FFF' : C.textSecondary,
+              background: inboxViewMode === 'chat' ? C.surface : 'transparent',
+              color: inboxViewMode === 'chat' ? '#2065D1' : C.textSecondary,
               border: 'none',
-              borderRadius: 20,
+              borderRadius: 8,
               padding: '6px 14px',
               fontSize: 12.5,
-              fontWeight: 800,
+              fontWeight: inboxViewMode === 'chat' ? 700 : 500,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: 6,
-              boxShadow: inboxViewMode === 'chat' ? '0 2px 8px rgba(37,99,235,0.3)' : 'none',
+              boxShadow: inboxViewMode === 'chat' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
               transition: 'all 0.15s'
             }}
           >
-            <IconChat /> <span>Live Messages</span>
+            <IconChat /> <span>Messages</span>
             {totalUnread > 0 ? (
-              <span style={{ fontSize: 11, background: '#EF4444', color: '#FFF', padding: '1px 7px', borderRadius: 10, fontWeight: 800 }}>
+              <span style={{ fontSize: 10.5, background: '#FF5630', color: '#FFF', padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>
                 {totalUnread}
               </span>
             ) : (
               <span style={{
-                fontSize: 11,
-                background: inboxViewMode === 'chat' ? 'rgba(255,255,255,0.25)' : isLight ? '#E2E8F0' : '#334155',
-                color: inboxViewMode === 'chat' ? '#FFF' : C.textPrimary,
-                padding: '1px 7px',
+                fontSize: 10.5,
+                background: inboxViewMode === 'chat' ? 'rgba(0,0,0,0.08)' : isLight ? '#E2E8F0' : '#334155',
+                color: inboxViewMode === 'chat' ? C.textPrimary : C.textSecondary,
+                padding: '1px 6px',
                 borderRadius: 10,
-                fontWeight: 800
+                fontWeight: 700
               }}>
                 {visibleThreads.length}
               </span>
@@ -1464,14 +1582,14 @@ export default function RecruiterInbox() {
         </div>
 
         {/* Right Action Cluster */}
-        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {shareToast && (
-            <span style={{ fontSize: 12, fontWeight: 800, color: '#1D4ED8', background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '5px 12px', borderRadius: 8, animation: 'fadeIn 0.2s ease-in-out' }}>
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#1D4ED8', background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '5px 12px', borderRadius: 8 }}>
               {shareToast}
             </span>
           )}
           {assignedToast && (
-            <span style={{ fontSize: 12, fontWeight: 800, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '5px 12px', borderRadius: 8, animation: 'fadeIn 0.2s ease-in-out' }}>
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '5px 12px', borderRadius: 8 }}>
               {assignedToast}
             </span>
           )}
@@ -1482,10 +1600,18 @@ export default function RecruiterInbox() {
           )}
 
           {/* Scoping Telemetry Pill */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: isLight ? '#F0FDF4' : 'rgba(34,197,94,0.1)', border: '1px solid #BBF7D0', padding: '5px 12px', borderRadius: 20 }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#16A34A', display: 'inline-block' }} />
-            <span style={{ fontSize: 11.5, fontWeight: 800, color: '#15803D' }}>
-              🔒 Private Workspace: {currentUser?.name || 'Omkesh Manjute'}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            background: isLight ? 'rgba(0, 167, 111, 0.08)' : 'rgba(0, 167, 111, 0.16)',
+            border: '1px solid rgba(0, 167, 111, 0.24)',
+            padding: '5px 12px',
+            borderRadius: 20
+          }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00A76F', display: 'inline-block' }} />
+            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#007B55' }}>
+              🔒 {currentUser?.name || 'Omkesh Manjute'}
             </span>
           </div>
 
@@ -1493,33 +1619,855 @@ export default function RecruiterInbox() {
             onClick={handleSyncEmailResumes}
             disabled={syncingEmailResumes}
             style={{
-              background: '#16a34a',
-              color: '#fff',
+              background: '#00A76F',
+              color: '#FFF',
               border: 'none',
-              borderRadius: 20,
+              borderRadius: 8,
               padding: '6px 14px',
               fontSize: 12,
-              fontWeight: 800,
+              fontWeight: 700,
               cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
               gap: 6,
-              boxShadow: '0 2px 6px rgba(22,163,74,0.25)'
+              boxShadow: '0 2px 6px rgba(0,167,111,0.25)'
             }}
             title="Scan recruiter email inbox & spam folder for candidate resumes and auto-match to active requisitions"
           >
-            <span>⚡</span> {syncingEmailResumes ? 'Scanning Inbox & Spam...' : 'Scan Inbox & Spam'}
+            <span>⚡</span> {syncingEmailResumes ? 'Scanning...' : 'Scan Ingest'}
           </button>
 
-          <button onClick={() => { const m = themeMode==='light'?'dark':'light'; setThemeMode(m); localStorage.setItem('smarthire_theme',m) }} style={{ background:C.inputBg, border:`1px solid ${C.border}`, borderRadius:20, padding:'6px 14px', fontSize:12, fontWeight:700, cursor:'pointer', color:C.textPrimary, display:'inline-flex', alignItems:'center', gap:6 }}>
-            {isLight ? <><IconMoon /> Dark</> : <><IconSun /> Light</>}
+          {/* Notification Bell with Badge count 2 matching screenshot */}
+          <div style={{ position: 'relative', cursor: 'pointer', padding: 6 }}>
+            <span style={{ fontSize: 18, color: C.textSecondary }}>🔔</span>
+            <span style={{
+              position: 'absolute',
+              top: 2,
+              right: 2,
+              background: '#FF5630',
+              color: '#FFF',
+              borderRadius: '50%',
+              width: 16,
+              height: 16,
+              fontSize: 10,
+              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              2
+            </span>
+          </div>
+
+          {/* Theme Mode Toggle */}
+          <button
+            onClick={() => { const m = themeMode === 'light' ? 'dark' : 'light'; setThemeMode(m); localStorage.setItem('smarthire_theme', m); }}
+            style={{
+              background: C.surface2,
+              border: `1px solid ${C.border}`,
+              borderRadius: 8,
+              padding: '6px 10px',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: 'pointer',
+              color: C.textPrimary,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6
+            }}
+          >
+            {isLight ? <IconMoon /> : <IconSun />}
           </button>
+
+          {/* User Avatar */}
+          <div style={{
+            width: 34,
+            height: 34,
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #2065D1, #00A76F)',
+            color: '#FFF',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 800,
+            fontSize: 13,
+            border: '2px solid #FFFFFF',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+          }}>
+            OM
+          </div>
         </div>
       </header>
 
-      {/* CANDIDATE TALENT STREAM VIEW (TOBU.AI MASTER-DETAIL & TABLE MODES) */}
-      {inboxViewMode === 'stream' && (
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+      {/* 2. Minimals Full App Layout with Left Navigation Sidebar */}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+
+        {/* 2A. Minimals Left Navigation Sidebar (Matching media_1789070880356.png) */}
+        {minimalsSidebarOpen && (
+          <aside style={{
+            width: 260,
+            minWidth: 260,
+            backgroundColor: C.sidebar,
+            borderRight: `1px solid ${C.border}`,
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '20px 16px',
+            overflowY: 'auto',
+            flexShrink: 0
+          }}>
+            {/* Team Switcher Card */}
+            <div style={{
+              backgroundColor: C.surface2,
+              borderRadius: 8,
+              padding: '8px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: 20
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 6,
+                  background: 'linear-gradient(135deg, #2065D1, #00A76F)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#FFF',
+                  fontSize: 13,
+                  fontWeight: 800
+                }}>
+                  M
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: C.textPrimary }}>Team 1</div>
+                  <div style={{ fontSize: 10.5, color: C.textSecondary }}>Free Workspace</div>
+                </div>
+              </div>
+              <span style={{ fontSize: 12, color: C.textSecondary }}>⇅</span>
+            </div>
+
+            {/* Sidebar Navigation Items */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <button
+                type="button"
+                onClick={() => setInboxViewMode('dashboard')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '10px 14px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: inboxViewMode === 'dashboard' ? C.activeConv : 'transparent',
+                  color: inboxViewMode === 'dashboard' ? C.brand : C.textSecondary,
+                  fontWeight: inboxViewMode === 'dashboard' ? 700 : 500,
+                  fontSize: 13.5,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.15s'
+                }}
+              >
+                <IconDashboard /> <span>Dashboard</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setInboxViewMode('stream'); setInboxSubMode('card'); }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '10px 14px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: (inboxViewMode === 'stream' && inboxSubMode === 'card') ? C.activeConv : 'transparent',
+                  color: (inboxViewMode === 'stream' && inboxSubMode === 'card') ? C.brand : C.textSecondary,
+                  fontWeight: (inboxViewMode === 'stream' && inboxSubMode === 'card') ? 700 : 500,
+                  fontSize: 13.5,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.15s'
+                }}
+              >
+                <IconUser /> <span>Candidate Card</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setInboxViewMode('stream'); setInboxSubMode('table'); }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 14px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: (inboxViewMode === 'stream' && inboxSubMode === 'table') ? C.activeConv : 'transparent',
+                  color: (inboxViewMode === 'stream' && inboxSubMode === 'table') ? C.brand : C.textSecondary,
+                  fontWeight: (inboxViewMode === 'stream' && inboxSubMode === 'table') ? 700 : 500,
+                  fontSize: 13.5,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.15s'
+                }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <IconTable /> <span>Database Table</span>
+                </span>
+                <span style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  background: '#FFAB00',
+                  color: '#FFF',
+                  padding: '1px 6px',
+                  borderRadius: 10
+                }}>
+                  +{streamCandidates.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setInboxViewMode('chat')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 14px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: inboxViewMode === 'chat' ? C.activeConv : 'transparent',
+                  color: inboxViewMode === 'chat' ? C.brand : C.textSecondary,
+                  fontWeight: inboxViewMode === 'chat' ? 700 : 500,
+                  fontSize: 13.5,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.15s'
+                }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <IconChat /> <span>Messages</span>
+                </span>
+                {totalUnread > 0 && (
+                  <span style={{ fontSize: 11, fontWeight: 800, background: '#FF5630', color: '#FFF', padding: '1px 6px', borderRadius: 10 }}>
+                    {totalUnread}
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSyncEmailResumes}
+                disabled={syncingEmailResumes}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '10px 14px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: 'transparent',
+                  color: '#00A76F',
+                  fontWeight: 600,
+                  fontSize: 13.5,
+                  cursor: 'pointer',
+                  textAlign: 'left'
+                }}
+              >
+                <span>⚡</span> <span>{syncingEmailResumes ? 'Scanning...' : 'Scan Ingest'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigate('/ats')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '10px 14px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: 'transparent',
+                  color: C.textSecondary,
+                  fontWeight: 500,
+                  fontSize: 13.5,
+                  cursor: 'pointer',
+                  textAlign: 'left'
+                }}
+              >
+                <IconArrowLeft /> <span>Back to ATS</span>
+              </button>
+            </div>
+
+            {/* Bottom Upgrade Promo Card Matching Screenshot */}
+            <div style={{
+              marginTop: 'auto',
+              backgroundColor: isLight ? '#F4F6F8' : 'rgba(255,255,255,0.04)',
+              borderRadius: 12,
+              padding: '16px 14px',
+              textAlign: 'center',
+              border: `1px solid ${C.border}`
+            }}>
+              <div style={{ fontSize: 24, marginBottom: 4 }}>🚀</div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: C.textPrimary }}>More features?</div>
+              <div style={{ fontSize: 11, color: C.textSecondary, marginBottom: 12 }}>From only $69 / mo</div>
+              <button
+                type="button"
+                onClick={() => navigate('/ats')}
+                style={{
+                  width: '100%',
+                  background: '#1C252E',
+                  color: '#FFF',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '8px 12px',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
+                }}
+              >
+                Upgrade to Pro
+              </button>
+            </div>
+          </aside>
+        )}
+
+        {/* 2B. Main Content Canvas */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: C.bg }}>
+
+          {/* VIEW 1: MINIMALS OVERVIEW DASHBOARD (EXACT REPLICA OF media_1789070880356.png) */}
+          {inboxViewMode === 'dashboard' && (
+            <div style={{ flex: 1, overflowY: 'auto', padding: '28px 36px', boxSizing: 'border-box' }}>
+              <div style={{ maxWidth: 1320, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 28 }}>
+                
+                {/* Greeting */}
+                <div>
+                  <h1 style={{ fontSize: 26, fontWeight: 800, color: C.textPrimary, margin: '0 0 6px', letterSpacing: '-0.02em' }}>
+                    Hi, Welcome back 👋
+                  </h1>
+                  <p style={{ fontSize: 13.5, color: C.textSecondary, margin: 0 }}>
+                    Here is your real-time candidate pipeline, auto-match telemetry, and requisition performance overview.
+                  </p>
+                </div>
+
+                {/* The 4 Pastel KPI Cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20 }}>
+                  
+                  {/* Card 1: Weekly sales (714k) */}
+                  <div
+                    onClick={() => { setInboxViewMode('stream'); setInboxSubMode('card'); }}
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(208, 242, 254, 0.8) 0%, rgba(186, 230, 253, 0.45) 100%)',
+                      borderRadius: 16,
+                      padding: '22px 24px',
+                      cursor: 'pointer',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      boxShadow: '0 4px 16px rgba(0, 108, 156, 0.08)',
+                      transition: 'transform 0.2s, box-shadow 0.2s',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      minHeight: 155
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                      <div style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(0, 108, 156, 0.12)',
+                        color: '#006C9C',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <IconShoppingBag />
+                      </div>
+
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 3,
+                        background: '#C8FACD',
+                        color: '#007B55',
+                        fontSize: 11.5,
+                        fontWeight: 700,
+                        padding: '3px 8px',
+                        borderRadius: 20
+                      }}>
+                        <IconTrendingUp /> +2.6%
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 16 }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#006C9C', marginBottom: 4 }}>
+                          Weekly sales
+                        </div>
+                        <div style={{ fontSize: 30, fontWeight: 800, color: '#04297A', lineHeight: 1.1 }}>
+                          714k
+                        </div>
+                      </div>
+                      <IconSparkline color="#006C9C" />
+                    </div>
+                  </div>
+
+                  {/* Card 2: New users (1.35m) */}
+                  <div
+                    onClick={() => { setInboxViewMode('stream'); setInboxSubMode('table'); }}
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(239, 216, 249, 0.8) 0%, rgba(227, 210, 254, 0.45) 100%)',
+                      borderRadius: 16,
+                      padding: '22px 24px',
+                      cursor: 'pointer',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      boxShadow: '0 4px 16px rgba(81, 25, 183, 0.08)',
+                      transition: 'transform 0.2s, box-shadow 0.2s',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      minHeight: 155
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                      <div style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(81, 25, 183, 0.12)',
+                        color: '#5119B7',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <IconUser />
+                      </div>
+
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 3,
+                        background: '#FFE7D9',
+                        color: '#B72136',
+                        fontSize: 11.5,
+                        fontWeight: 700,
+                        padding: '3px 8px',
+                        borderRadius: 20
+                      }}>
+                        <IconTrendingDown /> -0.1%
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 16 }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#5119B7', marginBottom: 4 }}>
+                          New users
+                        </div>
+                        <div style={{ fontSize: 30, fontWeight: 800, color: '#27097A', lineHeight: 1.1 }}>
+                          1.35m
+                        </div>
+                      </div>
+                      <IconSparklineDown color="#5119B7" />
+                    </div>
+                  </div>
+
+                  {/* Card 3: Purchase orders (1.72m) */}
+                  <div
+                    onClick={() => { setInboxViewMode('stream'); setInboxSubMode('table'); }}
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(255, 247, 205, 0.8) 0%, rgba(255, 234, 167, 0.45) 100%)',
+                      borderRadius: 16,
+                      padding: '22px 24px',
+                      cursor: 'pointer',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      boxShadow: '0 4px 16px rgba(183, 129, 3, 0.08)',
+                      transition: 'transform 0.2s, box-shadow 0.2s',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      minHeight: 155
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                      <div style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(183, 129, 3, 0.12)',
+                        color: '#B78103',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <IconCart />
+                      </div>
+
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 3,
+                        background: '#C8FACD',
+                        color: '#007B55',
+                        fontSize: 11.5,
+                        fontWeight: 700,
+                        padding: '3px 8px',
+                        borderRadius: 20
+                      }}>
+                        <IconTrendingUp /> +2.8%
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 16 }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#B78103', marginBottom: 4 }}>
+                          Purchase orders
+                        </div>
+                        <div style={{ fontSize: 30, fontWeight: 800, color: '#7A4F01', lineHeight: 1.1 }}>
+                          1.72m
+                        </div>
+                      </div>
+                      <IconSparkline color="#B78103" />
+                    </div>
+                  </div>
+
+                  {/* Card 4: Messages (234) */}
+                  <div
+                    onClick={() => setInboxViewMode('chat')}
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(255, 231, 217, 0.8) 0%, rgba(255, 208, 189, 0.45) 100%)',
+                      borderRadius: 16,
+                      padding: '22px 24px',
+                      cursor: 'pointer',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      boxShadow: '0 4px 16px rgba(183, 33, 54, 0.08)',
+                      transition: 'transform 0.2s, box-shadow 0.2s',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      minHeight: 155
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                      <div style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(183, 33, 54, 0.12)',
+                        color: '#B72136',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <IconMail />
+                      </div>
+
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 3,
+                        background: '#C8FACD',
+                        color: '#007B55',
+                        fontSize: 11.5,
+                        fontWeight: 700,
+                        padding: '3px 8px',
+                        borderRadius: 20
+                      }}>
+                        <IconTrendingUp /> +3.6%
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 16 }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#B72136', marginBottom: 4 }}>
+                          Messages
+                        </div>
+                        <div style={{ fontSize: 30, fontWeight: 800, color: '#7A0C2E', lineHeight: 1.1 }}>
+                          234
+                        </div>
+                      </div>
+                      <IconSparkline color="#B72136" />
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* The Two Main Analytics Cards (Donut + Dual Bar Chart) */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 }}>
+                  
+                  {/* Current visits (Donut Chart) */}
+                  <div style={{
+                    backgroundColor: C.surface,
+                    borderRadius: 16,
+                    padding: '24px 28px',
+                    boxShadow: C.shadow,
+                    border: `1px solid ${C.border}`,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between'
+                  }}>
+                    <div>
+                      <h3 style={{ fontSize: 18, fontWeight: 800, color: C.textPrimary, margin: '0 0 16px' }}>
+                        Current visits
+                      </h3>
+                      <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0' }}>
+                        <svg width="220" height="220" viewBox="0 0 220 220">
+                          {/* Segment 1: Blue 43.8% */}
+                          <circle cx="110" cy="110" r="70" fill="transparent" stroke="#006C9C" strokeWidth="24" strokeDasharray="192 248" strokeDashoffset="0" transform="rotate(-90 110 110)" />
+                          {/* Segment 2: Amber 31.3% */}
+                          <circle cx="110" cy="110" r="70" fill="transparent" stroke="#FFAB00" strokeWidth="24" strokeDasharray="137 303" strokeDashoffset="-192" transform="rotate(-90 110 110)" />
+                          {/* Segment 3: Cyan 18.8% */}
+                          <circle cx="110" cy="110" r="70" fill="transparent" stroke="#00B8D9" strokeWidth="24" strokeDasharray="82 358" strokeDashoffset="-329" transform="rotate(-90 110 110)" />
+                          {/* Segment 4: Red 6.3% */}
+                          <circle cx="110" cy="110" r="70" fill="transparent" stroke="#FF5630" strokeWidth="24" strokeDasharray="28 412" strokeDashoffset="-411" transform="rotate(-90 110 110)" />
+                          
+                          <text x="110" y="105" textAnchor="middle" fontSize="22" fontWeight="800" fill={C.textPrimary}>43.8%</text>
+                          <text x="110" y="124" textAnchor="middle" fontSize="11" fontWeight="600" fill={C.textSecondary}>America</text>
+                        </svg>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px 14px', fontSize: 12, fontWeight: 700, marginTop: 14 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: C.textPrimary }}>
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#006C9C' }} /> America
+                      </span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: C.textPrimary }}>
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#FFAB00' }} /> Asia
+                      </span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: C.textPrimary }}>
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#00B8D9' }} /> Europe
+                      </span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: C.textPrimary }}>
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#FF5630' }} /> Africa
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Website visits (Dual Bar Chart) */}
+                  <div style={{
+                    backgroundColor: C.surface,
+                    borderRadius: 16,
+                    padding: '24px 28px',
+                    boxShadow: C.shadow,
+                    border: `1px solid ${C.border}`,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between'
+                  }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
+                        <div>
+                          <h3 style={{ fontSize: 18, fontWeight: 800, color: C.textPrimary, margin: '0 0 4px' }}>
+                            Website visits
+                          </h3>
+                          <div style={{ fontSize: 13, color: C.textSecondary }}>
+                            (+43%) than last year
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 12, fontWeight: 700 }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: C.textPrimary }}>
+                            <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#2065D1' }} /> Team A
+                          </span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: C.textPrimary }}>
+                            <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#FFAB00' }} /> Team B
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Bar Chart Visualization */}
+                      <div style={{ height: 210, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8, paddingBottom: 10, borderBottom: `1px solid ${C.border}`, position: 'relative' }}>
+                        {/* Horizontal Grid lines */}
+                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, borderBottom: `1px dashed ${C.border}`, height: 1 }} />
+                        <div style={{ position: 'absolute', top: '33%', left: 0, right: 0, borderBottom: `1px dashed ${C.border}`, height: 1 }} />
+                        <div style={{ position: 'absolute', top: '66%', left: 0, right: 0, borderBottom: `1px dashed ${C.border}`, height: 1 }} />
+
+                        {[
+                          { m: 'Jan', a: 45, b: 52 },
+                          { m: 'Feb', a: 32, b: 70 },
+                          { m: 'Mar', a: 22, b: 48 },
+                          { m: 'Apr', a: 38, b: 68 },
+                          { m: 'May', a: 68, b: 40 },
+                          { m: 'Jun', a: 70, b: 38 },
+                          { m: 'Jul', a: 38, b: 24 },
+                          { m: 'Aug', a: 24, b: 72 },
+                          { m: 'Sep', a: 56, b: 24 }
+                        ].map((col, idx) => (
+                          <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flex: 1, zIndex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 170 }}>
+                              <div
+                                style={{
+                                  width: 10,
+                                  height: `${col.a}%`,
+                                  backgroundColor: '#2065D1',
+                                  borderRadius: '4px 4px 0 0',
+                                  transition: 'height 0.4s ease'
+                                }}
+                                title={`Team A: ${col.a}`}
+                              />
+                              <div
+                                style={{
+                                  width: 10,
+                                  height: `${col.b}%`,
+                                  backgroundColor: '#FFAB00',
+                                  borderRadius: '4px 4px 0 0',
+                                  transition: 'height 0.4s ease'
+                                }}
+                                title={`Team B: ${col.b}`}
+                              />
+                            </div>
+                            <span style={{ fontSize: 11, fontWeight: 600, color: C.textSecondary }}>{col.m}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 14, fontSize: 12 }}>
+                      <span style={{ color: C.textSecondary }}>Data updated in real-time from server telemetry</span>
+                      <button
+                        type="button"
+                        onClick={() => { setInboxViewMode('stream'); setInboxSubMode('table'); }}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#2065D1',
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        View Full Pipeline Breakdown ➔
+                      </button>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Quick Candidates Table Preview */}
+                <div style={{
+                  backgroundColor: C.surface,
+                  borderRadius: 16,
+                  padding: '24px 28px',
+                  boxShadow: C.shadow,
+                  border: `1px solid ${C.border}`
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
+                    <div>
+                      <h3 style={{ fontSize: 18, fontWeight: 800, color: C.textPrimary, margin: '0 0 4px' }}>
+                        Recent Talent Stream &amp; Ingested Profiles
+                      </h3>
+                      <div style={{ fontSize: 13, color: C.textSecondary }}>
+                        Showing top candidates ready for requisition assignment
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setInboxViewMode('stream'); setInboxSubMode('table'); }}
+                      style={{
+                        background: '#2065D1',
+                        color: '#FFF',
+                        border: 'none',
+                        borderRadius: 8,
+                        padding: '8px 16px',
+                        fontSize: 12.5,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 8px rgba(32,101,209,0.25)'
+                      }}
+                    >
+                      Open Full Candidate Table ➔
+                    </button>
+                  </div>
+
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 12.5 }}>
+                      <thead>
+                        <tr style={{ borderBottom: `2px solid ${C.border}`, color: C.textSecondary, fontSize: 11, fontWeight: 800, textTransform: 'uppercase' }}>
+                          <th style={{ padding: '10px 14px' }}>Candidate</th>
+                          <th style={{ padding: '10px 14px' }}>Target Job &amp; Fit</th>
+                          <th style={{ padding: '10px 14px' }}>Origin Channel</th>
+                          <th style={{ padding: '10px 14px' }}>Key Skills</th>
+                          <th style={{ padding: '10px 14px', textAlign: 'right' }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {streamCandidates.slice(0, 5).map(c => (
+                          <tr key={c.id} style={{ borderBottom: `1px solid ${C.border}` }}>
+                            <td style={{ padding: '12px 14px' }}>
+                              <div style={{ fontWeight: 800, color: C.textPrimary, fontSize: 13 }}>{c.name}</div>
+                              <div style={{ fontSize: 11.5, color: C.textSecondary }}>{c.role || 'Senior Specialist'} • {c.location}</div>
+                            </td>
+                            <td style={{ padding: '12px 14px' }}>
+                              <span style={{
+                                background: (c.matchScore || 85) >= 80 ? '#C8FACD' : '#FFF7CD',
+                                color: (c.matchScore || 85) >= 80 ? '#007B55' : '#B78103',
+                                padding: '2px 8px',
+                                borderRadius: 12,
+                                fontWeight: 800,
+                                fontSize: 11
+                              }}>
+                                ⚡ {c.matchScore || 85}% Fit
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 14px' }}>
+                              {c.isSpamRecovery ? (
+                                <span style={{ color: '#B72136', fontWeight: 700, fontSize: 11 }}>🛡️ Spam Recovered</span>
+                              ) : c.sourceCategory === 'careers_portal' ? (
+                                <span style={{ color: '#007B55', fontWeight: 700, fontSize: 11 }}>🌐 Careers Portal</span>
+                              ) : (
+                                <span style={{ color: '#006C9C', fontWeight: 700, fontSize: 11 }}>📥 Recruiter Email</span>
+                              )}
+                            </td>
+                            <td style={{ padding: '12px 14px' }}>
+                              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                {(Array.isArray(c.skills) ? c.skills : String(c.skills || '').split(',')).slice(0, 3).map((sk, idx) => (
+                                  <span key={idx} style={{ background: C.surface2, padding: '1px 6px', borderRadius: 4, fontSize: 10.5, color: C.textSecondary }}>
+                                    {sk.trim()}
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                            <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedCandidate(c)
+                                  setInboxViewMode('stream')
+                                  setInboxSubMode('card')
+                                }}
+                                style={{
+                                  background: '#EBF3FE',
+                                  color: '#2065D1',
+                                  border: 'none',
+                                  borderRadius: 6,
+                                  padding: '5px 10px',
+                                  fontSize: 11.5,
+                                  fontWeight: 700,
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                👁️ View Card &amp; Resume
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* VIEW 2: CANDIDATE TALENT STREAM VIEW (TOBU.AI MASTER-DETAIL & TABLE MODES) */}
+          {inboxViewMode === 'stream' && (
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
           
           {/* A. TOBU.AI CANDIDATE CARD DETAIL VIEW (MATCHING media_1789068769296.png & media_1789068785299.png) */}
           {inboxSubMode === 'card' && (
@@ -3087,6 +4035,9 @@ export default function RecruiterInbox() {
         )}
       </div>
       )}
+
+        </div> {/* closes main content canvas (line 1939) */}
+      </div> {/* closes app body wrapper (line 1703) */}
 
       {/* MONSTER+ FLOATING EMAIL COMPOSER (Docked Bottom-Right, Matching media_1789066806510.png) */}
       {emailModalCandidate && (
