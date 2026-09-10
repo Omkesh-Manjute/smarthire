@@ -114,6 +114,41 @@ const IconSparklineDown = ({ color = '#5119B7' }) => (
     <path d="M 0,10 C 20,6 35,26 55,14 C 75,4 85,28 110,22" stroke={color} strokeWidth="2.5" strokeLinecap="round" fill="none"></path>
   </svg>
 )
+const IconHome = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+)
+const IconDatabase = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+)
+const IconAnalytics = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+)
+const IconSettings = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+)
+const IconCrown = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="#FFAB00" stroke="#FFAB00" strokeWidth="1.5"><polygon points="2 4 7 14 12 4 17 14 22 4 20 20 4 20 2 4"></polygon></svg>
+)
+const IconSparkles = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v3m0 12v3M3 12h3m12 0h3m-2.9-6.1l-2.1 2.1m-8 8l-2.1 2.1m12.2 0l-2.1-2.1m-8-8l-2.1-2.1"></path></svg>
+)
+const IconCheckCircle = ({ color = '#00A76F' }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+)
+const IconXCircle = ({ color = '#FF5630' }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+)
+const IconMinusCircle = ({ color = '#919EAB' }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+)
+const IconLightbulb = ({ color = '#2065D1' }) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="9" y1="18" x2="15" y2="18"></line><line x1="10" y1="22" x2="14" y2="22"></line><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5.76.76 1.23 1.52 1.41 2.5h6.18z"></path></svg>
+)
+const IconPdfBadge = () => (
+  <span style={{ background: '#FF4D4F', color: '#FFF', fontWeight: 900, fontSize: 10, borderRadius: 5, padding: '3px 6px', display: 'inline-flex', alignItems: 'center', letterSpacing: '0.5px' }}>
+    PDF
+  </span>
+)
 
 function getSkillFrequencies(resumeText = '', candidateSkills = []) {
   if (!resumeText) return []
@@ -523,26 +558,169 @@ export default function RecruiterInbox() {
   const [syncingEmailResumes, setSyncingEmailResumes] = useState(false)
   const [emailSyncToast, setEmailSyncToast] = useState('')
 
+  const DEFAULT_STREAM_CANDIDATES = [
+    {
+      id: 'cand-pranitha-bantu',
+      candidate_id: 'cand-pranitha-bantu',
+      name: 'Pranitha Bantu',
+      email: 'pranitha.bantu@gmail.com',
+      phone: '+1 (919) 555-0143',
+      role: 'Lead Generative AI & Machine Learning Engineer',
+      location: 'Raleigh, NC',
+      currentCompany: 'Lead Generative AI Engineer, Cognitive AI Labs',
+      previousCompany: 'Machine Learning Engineer, DataVision Tech',
+      experience: '8+ Years',
+      education: 'No degree info',
+      visaStatus: 'US Citizen',
+      gender: 'Female',
+      status: 'Active',
+      matchScore: 96,
+      targetReqId: '159078',
+      matchedJobTitle: 'Public Health Program Director 1 (66312)',
+      matchedJobClient: 'Tennessee Department of Health (TN DOH)',
+      matchedJobRate: '$75/hr',
+      summary: 'Results-driven Lead Generative AI & Machine Learning Engineer with 8+ years of experience building scalable AI/ML solutions. Expertise in LLMs, Python, cloud platforms and enterprise applications. Passionate about solving real-world problems using AI.',
+      skills: ['Generative AI', 'Large Language Models (LLMs)', 'Python', 'PyTorch', 'LangChain', 'Hugging Face', 'AWS', 'RAG', 'Pinecone', 'FAISS', 'Docker'],
+      resumeFile: 'Pranitha_Bantu_Resume.pdf',
+      resumeUploadDate: '10 Sept 2026, 02:00 AM',
+      source: 'Careers Job Site (/jobs)',
+      sourceCategory: 'careers_portal',
+      isSpamRecovery: false
+    },
+    {
+      id: 'cand-damodhar-kammara',
+      candidate_id: 'cand-damodhar-kammara',
+      name: 'Damodhar Kammara',
+      email: 'damodhar.k@coolsofttech.com',
+      phone: '+1 (414) 293-8472',
+      role: 'Lead QA Automation / SDET / SAP Testing',
+      location: 'Madison, WI',
+      currentCompany: 'Lead SDET & SAP Validation, Enterprise Cloud',
+      previousCompany: 'Senior Automation Engineer, State Systems',
+      experience: '16+ Years',
+      education: 'B.S. in Computer Science',
+      visaStatus: 'US Citizen',
+      gender: 'Male',
+      status: 'Active',
+      matchScore: 94,
+      targetReqId: '159079',
+      matchedJobTitle: 'Java Developer III - 165504',
+      matchedJobClient: 'State of Wisconsin (ETF)',
+      matchedJobRate: '$75/hr',
+      summary: 'Distinguished Lead SDET and QA Automation Specialist with 16+ years of rigorous experience leading enterprise testing across SAP, distributed services, and microservices.',
+      skills: ['Selenium', 'SAP Testing', 'SQL Server', 'NIEM', 'XML Validation', 'Java', 'GitHub', 'CI/CD', 'TestNG'],
+      resumeFile: 'Damodhar_Kammara_Resume.pdf',
+      resumeUploadDate: '10 Sept 2026, 01:15 AM',
+      source: 'Recruiter Email Inbox',
+      sourceCategory: 'email_inbox',
+      isSpamRecovery: false
+    },
+    {
+      id: 'cand-sanjay-javangula',
+      candidate_id: 'cand-sanjay-javangula',
+      name: 'Sanjay Javangula',
+      email: 'sanjay.javangula@coolsofttech.com',
+      phone: '+1 (615) 398-1029',
+      role: 'Senior Technical Program Manager / Scrum Master',
+      location: 'Nashville, TN',
+      currentCompany: 'Senior TPM & Agile Transformation, HealthTech Solutions',
+      previousCompany: 'Technical Project Manager, Enterprise Systems',
+      experience: '14+ Years',
+      education: 'M.S. in Information Systems, PMP, CSM',
+      visaStatus: 'US Citizen',
+      gender: 'Male',
+      status: 'Active',
+      matchScore: 92,
+      targetReqId: '159078',
+      matchedJobTitle: 'Public Health Program Director 1 (66312)',
+      matchedJobClient: 'Tennessee Department of Health (TN DOH)',
+      matchedJobRate: '$75/hr',
+      summary: 'Strategic Senior Technical Program Manager and Certified Scrum Master with 14+ years spearheading healthcare IT programs, public sector delivery, and federal compliance audits.',
+      skills: ['Program Management', 'Strategic Planning', 'Agile / Scrum', 'Technical Writing', 'JIRA', 'Confluence', 'Risk Mitigation'],
+      resumeFile: 'Sanjay_Javangula_Resume.pdf',
+      resumeUploadDate: '09 Sept 2026, 11:30 PM',
+      source: 'Recruiter Email Inbox',
+      sourceCategory: 'email_inbox',
+      isSpamRecovery: false
+    },
+    {
+      id: 'cand-monster-jacob',
+      candidate_id: 'cand-monster-jacob',
+      name: 'Jacob Holbrook',
+      email: 'jacob.holbrook@coolsofttech.com',
+      phone: '+1 (608) 492-1830',
+      role: 'Senior Full Stack Java Developer',
+      location: 'Madison, WI',
+      currentCompany: 'Senior Java Consultant, Enterprise Cloud Solutions',
+      previousCompany: 'Senior Java Engineer, State Technology Services',
+      experience: '12+ Years',
+      education: 'B.S. in Computer Science',
+      visaStatus: 'US Citizen',
+      gender: 'Male',
+      status: 'Active',
+      matchScore: 95,
+      targetReqId: '159079',
+      matchedJobTitle: 'Java Developer III - 165504',
+      matchedJobClient: 'State of Wisconsin (ETF)',
+      matchedJobRate: '$75/hr',
+      summary: 'Distinguished Lead Java Full Stack Developer with 12+ years building enterprise architectures using Spring Boot, React, Kafka, and cloud containerization.',
+      skills: ['Java', 'Spring Boot', 'React', 'Vue', 'SQL', 'Git', 'Kafka', 'Docker', 'PostgreSQL', 'Microservices'],
+      resumeFile: 'Jacob_Holbrook_Resume.pdf',
+      resumeUploadDate: '09 Sept 2026, 08:45 PM',
+      source: 'Recruiter Email Inbox',
+      sourceCategory: 'email_inbox',
+      isSpamRecovery: false
+    },
+    {
+      id: 'cand-harvest-spam-1',
+      candidate_id: 'cand-harvest-spam-1',
+      name: 'Sharath S.',
+      email: 'sharath.netsec@coolsofttech.com',
+      phone: '+1 (919) 441-2893',
+      role: 'Network Security Engineer',
+      location: 'Raleigh, NC',
+      currentCompany: 'Senior Network Security Specialist, CyberSecure Systems',
+      previousCompany: 'Security Infrastructure Engineer, Enterprise Telecom',
+      experience: '11+ Years',
+      education: 'B.Tech in Information Technology',
+      visaStatus: 'Green Card (GC)',
+      gender: 'Male',
+      status: 'Active',
+      matchScore: 91,
+      targetReqId: '158997',
+      matchedJobTitle: 'NC DHHS - AWS Senior Developer (808496)',
+      matchedJobClient: 'NC DHHS',
+      matchedJobRate: '$85/hr',
+      summary: 'Accomplished Network Security Specialist with 11+ years protecting hybrid cloud perimeter defense, Palo Alto firewalls, Cisco routing, and AWS security groups.',
+      skills: ['Network Security', 'Firewalls', 'AWS VPC', 'Cisco', 'Palo Alto', 'VPN', 'Cybersecurity', 'Python'],
+      resumeFile: 'Sharath_S_Resume.pdf',
+      resumeUploadDate: '09 Sept 2026, 04:20 PM',
+      source: 'Recovered from Spam Folder',
+      sourceCategory: 'email_spam',
+      isSpamRecovery: true
+    }
+  ]
+
   // View switcher: 'dashboard' (Minimals Hi Welcome back + 4 KPI Cards + Charts), 'stream' (Candidate Card / Table), or 'chat' (Live Messages)
-  const [inboxViewMode, setInboxViewMode] = useState('dashboard')
+  const [inboxViewMode, setInboxViewMode] = useState('stream')
   const [minimalsSidebarOpen, setMinimalsSidebarOpen] = useState(true)
   const [streamFilter, setStreamFilter] = useState('all') // 'all', 'email_inbox', 'email_spam', 'careers_portal', 'vendor_bench'
-  const [streamCandidates, setStreamCandidates] = useState([])
+  const [streamCandidates, setStreamCandidates] = useState(DEFAULT_STREAM_CANDIDATES)
   const [streamCounts, setStreamCounts] = useState({
-    candidatesTotal: 0,
-    inboxResumes: 0,
-    spamResumes: 0,
-    careersResumes: 0,
+    candidatesTotal: 5,
+    inboxResumes: 3,
+    spamResumes: 1,
+    careersResumes: 1,
     vendorResumes: 0
   })
-  const [loadingStream, setLoadingStream] = useState(true)
+  const [loadingStream, setLoadingStream] = useState(false)
   const [streamSearch, setStreamSearch] = useState('')
   const [streamReqFilter, setStreamReqFilter] = useState('all')
   const [streamEntityFilter, setStreamEntityFilter] = useState('all') // 'all', 'candidates', 'recruiters'
-  const [selectedCandidate, setSelectedCandidate] = useState(null)
+  const [selectedCandidate, setSelectedCandidate] = useState(DEFAULT_STREAM_CANDIDATES[0])
   const [candidateSubTab, setCandidateSubTab] = useState('matches') // 'matches', 'favorites', 'spam'
   const [activeRightTab, setActiveRightTab] = useState('resume') // 'resume' or 'profile'
-  const [viewedCandidateIds, setViewedCandidateIds] = useState(() => new Set(['cand-monster-jacob', 'cand-harvest-spam-6']))
+  const [viewedCandidateIds, setViewedCandidateIds] = useState(() => new Set(['cand-pranitha-bantu', 'cand-monster-jacob']))
   const [favoriteCandidateIds, setFavoriteCandidateIds] = useState(() => new Set())
   const [selectedCardIds, setSelectedCardIds] = useState(() => new Set())
 
@@ -556,7 +734,7 @@ export default function RecruiterInbox() {
     { id: '158997', title: 'NC DHHS - AWS Senior Developer (808496)', client: 'NC DHHS', rate: '$85/hr', location: 'Raleigh, NC (Hybrid)', skills: ['AWS', 'Cloud Architecture', 'Python', 'Lambda', 'Docker', 'Kubernetes'] }
   ]
   const [openJobsList, setOpenJobsList] = useState(DEFAULT_OPEN_JOBS)
-  const [drawerReqId, setDrawerReqId] = useState('159079')
+  const [drawerReqId, setDrawerReqId] = useState('159078')
   const [resumeKeywordSearch, setResumeKeywordSearch] = useState('')
 
   // Direct Outbound Email Modal State (Strictly sent from personal recruiter email)
@@ -571,10 +749,13 @@ export default function RecruiterInbox() {
   // Candidate Assignment Notification Toast
   const [assignedToast, setAssignedToast] = useState('')
   const [shareToast, setShareToast] = useState('')
+  const [showReqChangeDropdown, setShowReqChangeDropdown] = useState(false)
+  const [aiGeneratingSummary, setAiGeneratingSummary] = useState(false)
+  const [aiInsightToast, setAiInsightToast] = useState('')
 
   // Tobu.ai Mode & Tabs: 'card' (Candidate Card / Split View) or 'table' (Database Table View)
   const [inboxSubMode, setInboxSubMode] = useState('card')
-  const [activeTobuTab, setActiveTobuTab] = useState('resume')
+  const [activeTobuTab, setActiveTobuTab] = useState('overview')
   const [tableCategory, setTableCategory] = useState('all')
   const [tablePage, setTablePage] = useState(1)
   const [tablePageSize, setTablePageSize] = useState(25)
@@ -1344,6 +1525,15 @@ export default function RecruiterInbox() {
 
   const candidateFrequencies = activeCandidate ? getSkillFrequencies(candResumeText, candSkillsList) : []
 
+  const handleGenerateAiSummary = () => {
+    setAiGeneratingSummary(true)
+    setTimeout(() => {
+      setAiGeneratingSummary(false)
+      setAssignedToast('✨ AI Summary generated & synced with candidate profile!')
+      setTimeout(() => setAssignedToast(''), 4000)
+    }, 900)
+  }
+
   const handleApplyEmailTemplate = (key) => {
     if (!emailModalCandidate) return
     const candFirstName = (emailModalCandidate.name || emailModalCandidate.candidateName || 'Candidate').split(' ')[0]
@@ -1391,49 +1581,26 @@ export default function RecruiterInbox() {
   }
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', height:'100vh', backgroundColor:C.bg, fontFamily:"'Plus Jakarta Sans','Inter',sans-serif", color:C.textPrimary, overflow:'hidden' }}>
-      {/* 1. Minimals Top Navbar (Matching media_1789070880356.png) */}
-      <header style={{
-        backgroundColor: C.headerBg,
-        backdropFilter: 'blur(8px)',
-        borderBottom: `1px solid ${C.border}`,
-        padding: '0 24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        height: 64,
-        flexShrink: 0,
-        zIndex: 10
-      }}>
-        {/* Left: Sidebar Toggle + Brand */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button
-            type="button"
-            onClick={() => setMinimalsSidebarOpen(o => !o)}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              color: C.textSecondary,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 6,
-              borderRadius: 8
-            }}
-            title="Toggle Sidebar"
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="3" y1="12" x2="21" y2="12"></line>
-              <line x1="3" y1="6" x2="21" y2="6"></line>
-              <line x1="3" y1="18" x2="21" y2="18"></line>
-            </svg>
-          </button>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+    <div style={{ display: 'flex', height: '100vh', width: '100vw', backgroundColor: C.bg, fontFamily: "'Plus Jakarta Sans','Inter',sans-serif", color: C.textPrimary, overflow: 'hidden' }}>
+      
+      {/* 1. Left Navigation Sidebar (Full Height, Matching media_1789073118530.png) */}
+      {minimalsSidebarOpen && (
+        <aside style={{
+          width: 240,
+          minWidth: 240,
+          backgroundColor: C.sidebar,
+          borderRight: `1px solid ${C.border}`,
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '20px 16px',
+          overflowY: 'auto',
+          flexShrink: 0
+        }}>
+          {/* Top Brand Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24, padding: '0 6px' }}>
             <div style={{
-              width: 32,
-              height: 32,
+              width: 34,
+              height: 34,
               borderRadius: 8,
               background: 'linear-gradient(135deg, #2065D1 0%, #00A76F 100%)',
               display: 'flex',
@@ -1446,496 +1613,374 @@ export default function RecruiterInbox() {
               M.
             </div>
             <div>
-              <div style={{ fontWeight: 800, fontSize: 16, color: C.textPrimary, lineHeight: 1.2 }}>
+              <div style={{ fontWeight: 800, fontSize: 15, color: C.textPrimary, lineHeight: 1.2 }}>
                 SmartHire ATS
               </div>
               <div style={{ fontSize: 11, color: C.textSecondary }}>
-                Minimal Talent Dashboard &amp; Ingestion
+                Find · Evaluate · Hire
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Center: Mode Switcher Tabs */}
-        <div style={{
+          {/* Navigation Links */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <button
+              type="button"
+              onClick={() => setInboxViewMode('dashboard')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '10px 14px',
+                borderRadius: 8,
+                border: 'none',
+                background: inboxViewMode === 'dashboard' ? C.activeConv : 'transparent',
+                color: inboxViewMode === 'dashboard' ? C.brand : C.textSecondary,
+                fontWeight: inboxViewMode === 'dashboard' ? 700 : 500,
+                fontSize: 13.5,
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'all 0.15s'
+              }}
+            >
+              <IconHome /> <span>Dashboard</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setInboxViewMode('stream'); setInboxSubMode('card'); }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '10px 14px',
+                borderRadius: 8,
+                border: 'none',
+                background: (inboxViewMode === 'stream' && inboxSubMode === 'card') ? C.activeConv : 'transparent',
+                color: (inboxViewMode === 'stream' && inboxSubMode === 'card') ? C.brand : C.textSecondary,
+                fontWeight: (inboxViewMode === 'stream' && inboxSubMode === 'card') ? 700 : 500,
+                fontSize: 13.5,
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'all 0.15s'
+              }}
+            >
+              <IconUsers /> <span>Candidates</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate('/ats?tab=jobs')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '10px 14px',
+                borderRadius: 8,
+                border: 'none',
+                background: 'transparent',
+                color: C.textSecondary,
+                fontWeight: 500,
+                fontSize: 13.5,
+                cursor: 'pointer',
+                textAlign: 'left'
+              }}
+            >
+              <IconBriefcase /> <span>Jobs</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setInboxViewMode('chat')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px 14px',
+                borderRadius: 8,
+                border: 'none',
+                background: inboxViewMode === 'chat' ? C.activeConv : 'transparent',
+                color: inboxViewMode === 'chat' ? C.brand : C.textSecondary,
+                fontWeight: inboxViewMode === 'chat' ? 700 : 500,
+                fontSize: 13.5,
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'all 0.15s'
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <IconChat /> <span>Messages</span>
+              </span>
+              <span style={{ fontSize: 10.5, background: '#FF5630', color: '#FFF', padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>
+                2
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setInboxViewMode('stream'); setInboxSubMode('table'); }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '10px 14px',
+                borderRadius: 8,
+                border: 'none',
+                background: (inboxViewMode === 'stream' && inboxSubMode === 'table') ? C.activeConv : 'transparent',
+                color: (inboxViewMode === 'stream' && inboxSubMode === 'table') ? C.brand : C.textSecondary,
+                fontWeight: (inboxViewMode === 'stream' && inboxSubMode === 'table') ? 700 : 500,
+                fontSize: 13.5,
+                cursor: 'pointer',
+                textAlign: 'left'
+              }}
+            >
+              <IconDatabase /> <span>Database</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setInboxViewMode('dashboard')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '10px 14px',
+                borderRadius: 8,
+                border: 'none',
+                background: 'transparent',
+                color: C.textSecondary,
+                fontWeight: 500,
+                fontSize: 13.5,
+                cursor: 'pointer',
+                textAlign: 'left'
+              }}
+            >
+              <IconAnalytics /> <span>Analytics</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate('/ats')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '10px 14px',
+                borderRadius: 8,
+                border: 'none',
+                background: 'transparent',
+                color: C.textSecondary,
+                fontWeight: 500,
+                fontSize: 13.5,
+                cursor: 'pointer',
+                textAlign: 'left'
+              }}
+            >
+              <IconSettings /> <span>Settings</span>
+            </button>
+          </div>
+
+          {/* Bottom Upgrade Promo Card Matching Screenshot */}
+          <div style={{
+            marginTop: 'auto',
+            backgroundColor: isLight ? '#F4F6F8' : 'rgba(255,255,255,0.04)',
+            borderRadius: 14,
+            padding: '16px 14px',
+            textAlign: 'center',
+            border: `1px solid ${C.border}`
+          }}>
+            <div style={{ marginBottom: 6 }}>
+              <IconCrown />
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: C.textPrimary }}>Upgrade to Pro</div>
+            <div style={{ fontSize: 11, color: C.textSecondary, margin: '4px 0 12px', lineHeight: 1.4 }}>
+              Get more hires, more features from only $69/month
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/ats')}
+              style={{
+                width: '100%',
+                background: '#2065D1',
+                color: '#FFF',
+                border: 'none',
+                borderRadius: 8,
+                padding: '8px 12px',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(32,101,209,0.3)'
+              }}
+            >
+              Upgrade Now
+            </button>
+          </div>
+        </aside>
+      )}
+
+      {/* 2. Main Right Container */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        
+        {/* Top Navbar Matching Screenshot */}
+        <header style={{
+          backgroundColor: C.headerBg,
+          backdropFilter: 'blur(8px)',
+          borderBottom: `1px solid ${C.border}`,
+          padding: '0 28px',
           display: 'flex',
           alignItems: 'center',
-          background: isLight ? '#F4F6F8' : 'rgba(255,255,255,0.06)',
-          border: `1px solid ${C.border}`,
-          borderRadius: 10,
-          padding: 3,
-          gap: 4
+          justifyContent: 'space-between',
+          height: 64,
+          flexShrink: 0,
+          zIndex: 10
         }}>
-          <button
-            type="button"
-            onClick={() => setInboxViewMode('dashboard')}
-            style={{
-              background: inboxViewMode === 'dashboard' ? C.surface : 'transparent',
-              color: inboxViewMode === 'dashboard' ? '#2065D1' : C.textSecondary,
-              border: 'none',
-              borderRadius: 8,
-              padding: '6px 14px',
-              fontSize: 12.5,
-              fontWeight: inboxViewMode === 'dashboard' ? 700 : 500,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              boxShadow: inboxViewMode === 'dashboard' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-              transition: 'all 0.15s'
-            }}
-          >
-            <IconDashboard /> <span>Dashboard</span>
-          </button>
+          {/* Left: Search input */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <button
+              type="button"
+              onClick={() => setMinimalsSidebarOpen(o => !o)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: C.textSecondary,
+                display: 'flex',
+                alignItems: 'center',
+                padding: 6,
+                borderRadius: 8
+              }}
+              title="Toggle Sidebar"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+              </svg>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => { setInboxViewMode('stream'); setInboxSubMode('card'); }}
-            style={{
-              background: (inboxViewMode === 'stream' && inboxSubMode === 'card') ? C.surface : 'transparent',
-              color: (inboxViewMode === 'stream' && inboxSubMode === 'card') ? '#2065D1' : C.textSecondary,
-              border: 'none',
-              borderRadius: 8,
-              padding: '6px 14px',
-              fontSize: 12.5,
-              fontWeight: (inboxViewMode === 'stream' && inboxSubMode === 'card') ? 700 : 500,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              boxShadow: (inboxViewMode === 'stream' && inboxSubMode === 'card') ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-              transition: 'all 0.15s'
-            }}
-          >
-            <IconIdCard /> <span>Candidate Card</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => { setInboxViewMode('stream'); setInboxSubMode('table'); }}
-            style={{
-              background: (inboxViewMode === 'stream' && inboxSubMode === 'table') ? C.surface : 'transparent',
-              color: (inboxViewMode === 'stream' && inboxSubMode === 'table') ? '#2065D1' : C.textSecondary,
-              border: 'none',
-              borderRadius: 8,
-              padding: '6px 14px',
-              fontSize: 12.5,
-              fontWeight: (inboxViewMode === 'stream' && inboxSubMode === 'table') ? 700 : 500,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              boxShadow: (inboxViewMode === 'stream' && inboxSubMode === 'table') ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-              transition: 'all 0.15s'
-            }}
-          >
-            <IconTable /> <span>Database Table</span>
-            <span style={{
-              fontSize: 10.5,
-              background: '#FFAB00',
-              color: '#FFF',
-              padding: '1px 6px',
-              borderRadius: 10,
-              fontWeight: 700
-            }}>
-              {streamCandidates.length}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setInboxViewMode('chat')}
-            style={{
-              background: inboxViewMode === 'chat' ? C.surface : 'transparent',
-              color: inboxViewMode === 'chat' ? '#2065D1' : C.textSecondary,
-              border: 'none',
-              borderRadius: 8,
-              padding: '6px 14px',
-              fontSize: 12.5,
-              fontWeight: inboxViewMode === 'chat' ? 700 : 500,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              boxShadow: inboxViewMode === 'chat' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-              transition: 'all 0.15s'
-            }}
-          >
-            <IconChat /> <span>Messages</span>
-            {totalUnread > 0 ? (
-              <span style={{ fontSize: 10.5, background: '#FF5630', color: '#FFF', padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>
-                {totalUnread}
+            <div style={{ position: 'relative', width: 340 }}>
+              <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: C.textSecondary, display: 'flex', pointerEvents: 'none' }}>
+                <IconSearch />
               </span>
-            ) : (
-              <span style={{
-                fontSize: 10.5,
-                background: inboxViewMode === 'chat' ? 'rgba(0,0,0,0.08)' : isLight ? '#E2E8F0' : '#334155',
-                color: inboxViewMode === 'chat' ? C.textPrimary : C.textSecondary,
-                padding: '1px 6px',
-                borderRadius: 10,
-                fontWeight: 700
-              }}>
-                {visibleThreads.length}
-              </span>
-            )}
-          </button>
-        </div>
-
-        {/* Right Action Cluster */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {shareToast && (
-            <span style={{ fontSize: 12, fontWeight: 800, color: '#1D4ED8', background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '5px 12px', borderRadius: 8 }}>
-              {shareToast}
-            </span>
-          )}
-          {assignedToast && (
-            <span style={{ fontSize: 12, fontWeight: 800, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '5px 12px', borderRadius: 8 }}>
-              {assignedToast}
-            </span>
-          )}
-          {emailSyncToast && (
-            <span style={{ fontSize: 12, fontWeight: 700, color: emailSyncToast.includes('Failed') ? '#dc2626' : '#16a34a', background: emailSyncToast.includes('Failed') ? '#fef2f2' : '#f0fdf4', border: `1px solid ${emailSyncToast.includes('Failed') ? '#fca5a5' : '#bbf7d0'}`, padding: '5px 12px', borderRadius: 8 }}>
-              {emailSyncToast}
-            </span>
-          )}
-
-          {/* Scoping Telemetry Pill */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            background: isLight ? 'rgba(0, 167, 111, 0.08)' : 'rgba(0, 167, 111, 0.16)',
-            border: '1px solid rgba(0, 167, 111, 0.24)',
-            padding: '5px 12px',
-            borderRadius: 20
-          }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00A76F', display: 'inline-block' }} />
-            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#007B55' }}>
-              🔒 {currentUser?.name || 'Omkesh Manjute'}
-            </span>
-          </div>
-
-          <button
-            onClick={handleSyncEmailResumes}
-            disabled={syncingEmailResumes}
-            style={{
-              background: '#00A76F',
-              color: '#FFF',
-              border: 'none',
-              borderRadius: 8,
-              padding: '6px 14px',
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              boxShadow: '0 2px 6px rgba(0,167,111,0.25)'
-            }}
-            title="Scan recruiter email inbox & spam folder for candidate resumes and auto-match to active requisitions"
-          >
-            <span>⚡</span> {syncingEmailResumes ? 'Scanning...' : 'Scan Ingest'}
-          </button>
-
-          {/* Notification Bell with Badge count 2 matching screenshot */}
-          <div style={{ position: 'relative', cursor: 'pointer', padding: 6 }}>
-            <span style={{ fontSize: 18, color: C.textSecondary }}>🔔</span>
-            <span style={{
-              position: 'absolute',
-              top: 2,
-              right: 2,
-              background: '#FF5630',
-              color: '#FFF',
-              borderRadius: '50%',
-              width: 16,
-              height: 16,
-              fontSize: 10,
-              fontWeight: 800,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              2
-            </span>
-          </div>
-
-          {/* Theme Mode Toggle */}
-          <button
-            onClick={() => { const m = themeMode === 'light' ? 'dark' : 'light'; setThemeMode(m); localStorage.setItem('smarthire_theme', m); }}
-            style={{
-              background: C.surface2,
-              border: `1px solid ${C.border}`,
-              borderRadius: 8,
-              padding: '6px 10px',
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: 'pointer',
-              color: C.textPrimary,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6
-            }}
-          >
-            {isLight ? <IconMoon /> : <IconSun />}
-          </button>
-
-          {/* User Avatar */}
-          <div style={{
-            width: 34,
-            height: 34,
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #2065D1, #00A76F)',
-            color: '#FFF',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: 800,
-            fontSize: 13,
-            border: '2px solid #FFFFFF',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
-          }}>
-            OM
-          </div>
-        </div>
-      </header>
-
-      {/* 2. Minimals Full App Layout with Left Navigation Sidebar */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-
-        {/* 2A. Minimals Left Navigation Sidebar (Matching media_1789070880356.png) */}
-        {minimalsSidebarOpen && (
-          <aside style={{
-            width: 260,
-            minWidth: 260,
-            backgroundColor: C.sidebar,
-            borderRight: `1px solid ${C.border}`,
-            display: 'flex',
-            flexDirection: 'column',
-            padding: '20px 16px',
-            overflowY: 'auto',
-            flexShrink: 0
-          }}>
-            {/* Team Switcher Card */}
-            <div style={{
-              backgroundColor: C.surface2,
-              borderRadius: 8,
-              padding: '8px 12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 20
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 6,
-                  background: 'linear-gradient(135deg, #2065D1, #00A76F)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#FFF',
-                  fontSize: 13,
-                  fontWeight: 800
-                }}>
-                  M
-                </div>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: C.textPrimary }}>Team 1</div>
-                  <div style={{ fontSize: 10.5, color: C.textSecondary }}>Free Workspace</div>
-                </div>
-              </div>
-              <span style={{ fontSize: 12, color: C.textSecondary }}>⇅</span>
-            </div>
-
-            {/* Sidebar Navigation Items */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <button
-                type="button"
-                onClick={() => setInboxViewMode('dashboard')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  padding: '10px 14px',
-                  borderRadius: 8,
-                  border: 'none',
-                  background: inboxViewMode === 'dashboard' ? C.activeConv : 'transparent',
-                  color: inboxViewMode === 'dashboard' ? C.brand : C.textSecondary,
-                  fontWeight: inboxViewMode === 'dashboard' ? 700 : 500,
-                  fontSize: 13.5,
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  transition: 'all 0.15s'
-                }}
-              >
-                <IconDashboard /> <span>Dashboard</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => { setInboxViewMode('stream'); setInboxSubMode('card'); }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  padding: '10px 14px',
-                  borderRadius: 8,
-                  border: 'none',
-                  background: (inboxViewMode === 'stream' && inboxSubMode === 'card') ? C.activeConv : 'transparent',
-                  color: (inboxViewMode === 'stream' && inboxSubMode === 'card') ? C.brand : C.textSecondary,
-                  fontWeight: (inboxViewMode === 'stream' && inboxSubMode === 'card') ? 700 : 500,
-                  fontSize: 13.5,
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  transition: 'all 0.15s'
-                }}
-              >
-                <IconUser /> <span>Candidate Card</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => { setInboxViewMode('stream'); setInboxSubMode('table'); }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '10px 14px',
-                  borderRadius: 8,
-                  border: 'none',
-                  background: (inboxViewMode === 'stream' && inboxSubMode === 'table') ? C.activeConv : 'transparent',
-                  color: (inboxViewMode === 'stream' && inboxSubMode === 'table') ? C.brand : C.textSecondary,
-                  fontWeight: (inboxViewMode === 'stream' && inboxSubMode === 'table') ? 700 : 500,
-                  fontSize: 13.5,
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  transition: 'all 0.15s'
-                }}
-              >
-                <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <IconTable /> <span>Database Table</span>
-                </span>
-                <span style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  background: '#FFAB00',
-                  color: '#FFF',
-                  padding: '1px 6px',
-                  borderRadius: 10
-                }}>
-                  +{streamCandidates.length}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setInboxViewMode('chat')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '10px 14px',
-                  borderRadius: 8,
-                  border: 'none',
-                  background: inboxViewMode === 'chat' ? C.activeConv : 'transparent',
-                  color: inboxViewMode === 'chat' ? C.brand : C.textSecondary,
-                  fontWeight: inboxViewMode === 'chat' ? 700 : 500,
-                  fontSize: 13.5,
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  transition: 'all 0.15s'
-                }}
-              >
-                <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <IconChat /> <span>Messages</span>
-                </span>
-                {totalUnread > 0 && (
-                  <span style={{ fontSize: 11, fontWeight: 800, background: '#FF5630', color: '#FFF', padding: '1px 6px', borderRadius: 10 }}>
-                    {totalUnread}
-                  </span>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSyncEmailResumes}
-                disabled={syncingEmailResumes}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  padding: '10px 14px',
-                  borderRadius: 8,
-                  border: 'none',
-                  background: 'transparent',
-                  color: '#00A76F',
-                  fontWeight: 600,
-                  fontSize: 13.5,
-                  cursor: 'pointer',
-                  textAlign: 'left'
-                }}
-              >
-                <span>⚡</span> <span>{syncingEmailResumes ? 'Scanning...' : 'Scan Ingest'}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => navigate('/ats')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  padding: '10px 14px',
-                  borderRadius: 8,
-                  border: 'none',
-                  background: 'transparent',
-                  color: C.textSecondary,
-                  fontWeight: 500,
-                  fontSize: 13.5,
-                  cursor: 'pointer',
-                  textAlign: 'left'
-                }}
-              >
-                <IconArrowLeft /> <span>Back to ATS</span>
-              </button>
-            </div>
-
-            {/* Bottom Upgrade Promo Card Matching Screenshot */}
-            <div style={{
-              marginTop: 'auto',
-              backgroundColor: isLight ? '#F4F6F8' : 'rgba(255,255,255,0.04)',
-              borderRadius: 12,
-              padding: '16px 14px',
-              textAlign: 'center',
-              border: `1px solid ${C.border}`
-            }}>
-              <div style={{ fontSize: 24, marginBottom: 4 }}>🚀</div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: C.textPrimary }}>More features?</div>
-              <div style={{ fontSize: 11, color: C.textSecondary, marginBottom: 12 }}>From only $69 / mo</div>
-              <button
-                type="button"
-                onClick={() => navigate('/ats')}
+              <input
+                placeholder="Search candidates, jobs, skills..."
+                value={streamSearch}
+                onChange={e => setStreamSearch(e.target.value)}
                 style={{
                   width: '100%',
-                  background: '#1C252E',
-                  color: '#FFF',
-                  border: 'none',
+                  backgroundColor: isLight ? '#F4F6F8' : '#1C252E',
+                  border: `1px solid ${C.border}`,
                   borderRadius: 8,
-                  padding: '8px 12px',
-                  fontSize: 12,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
+                  padding: '7px 12px 7px 36px',
+                  fontSize: 12.5,
+                  color: C.textPrimary,
+                  outline: 'none',
+                  boxSizing: 'border-box'
                 }}
-              >
-                Upgrade to Pro
-              </button>
+              />
             </div>
-          </aside>
-        )}
+          </div>
 
-        {/* 2B. Main Content Canvas */}
+          {/* Right Action Cluster: + Add Candidate, Bell with 2, Theme Moon, OM Omkesh Recruiter */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            {shareToast && (
+              <span style={{ fontSize: 12, fontWeight: 800, color: '#1D4ED8', background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '5px 12px', borderRadius: 8 }}>
+                {shareToast}
+              </span>
+            )}
+            {assignedToast && (
+              <span style={{ fontSize: 12, fontWeight: 800, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '5px 12px', borderRadius: 8 }}>
+                {assignedToast}
+              </span>
+            )}
+
+            <button
+              type="button"
+              onClick={() => { setInboxViewMode('stream'); setInboxSubMode('table'); }}
+              style={{
+                background: '#2065D1',
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: 8,
+                padding: '7px 14px',
+                fontSize: 12.5,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                boxShadow: '0 2px 6px rgba(32,101,209,0.25)'
+              }}
+            >
+              <span>+</span> <span>Add Candidate</span>
+            </button>
+
+            {/* Notification Bell with Badge count 2 */}
+            <div style={{ position: 'relative', cursor: 'pointer', padding: 6 }}>
+              <span style={{ fontSize: 17, color: C.textSecondary }}>🔔</span>
+              <span style={{
+                position: 'absolute',
+                top: 2,
+                right: 2,
+                background: '#FF5630',
+                color: '#FFF',
+                borderRadius: '50%',
+                width: 15,
+                height: 15,
+                fontSize: 9.5,
+                fontWeight: 800,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                2
+              </span>
+            </div>
+
+            {/* Theme Mode Toggle */}
+            <button
+              onClick={() => { const m = themeMode === 'light' ? 'dark' : 'light'; setThemeMode(m); localStorage.setItem('smarthire_theme', m); }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                padding: 6,
+                fontSize: 16,
+                cursor: 'pointer',
+                color: C.textSecondary,
+                display: 'flex',
+                alignItems: 'center'
+              }}
+              title="Toggle theme"
+            >
+              {isLight ? <IconMoon /> : <IconSun />}
+            </button>
+
+            {/* User Avatar + Name + Dropdown */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+              <div style={{
+                width: 34,
+                height: 34,
+                borderRadius: '50%',
+                background: '#2065D1',
+                color: '#FFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 800,
+                fontSize: 13
+              }}>
+                OM
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: 13, fontWeight: 800, color: C.textPrimary, lineHeight: 1.2 }}>Omkesh</span>
+                <span style={{ fontSize: 11, color: C.textSecondary }}>Recruiter</span>
+              </div>
+              <span style={{ fontSize: 11, color: C.textSecondary, marginLeft: 2 }}>▾</span>
+            </div>
+          </div>
+        </header>
+
+        {/* Content Body */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: C.bg }}>
 
           {/* VIEW 1: MINIMALS OVERVIEW DASHBOARD (EXACT REPLICA OF media_1789070880356.png) */}

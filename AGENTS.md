@@ -31,6 +31,21 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-11 — Minimal Dashboard Candidate Dossier UI Overhaul (media_1789073118530.png) & material-kit-react
+- **Minimals Candidate Dossier Master Layout (`media_1789073118530.png`)**:
+  - Re-architected `/inbox` (`RecruiterInbox.jsx`) candidate view to precisely match the Minimals Dashboard Candidate Dossier from the screenshot:
+    - **Full-Height Sidebar**: `M.` SmartHire ATS branding (`Find · Evaluate · Hire`), unified navigation links (`Dashboard`, `Candidates` [active pill], `Jobs`, `Messages` [badge 2], `Database`, `Analytics`, `Settings`), and bottom `👑 Upgrade to Pro` card ($69/mo).
+    - **Top Application Bar**: Rounded `🔍 Search candidates, jobs, skills...` bar, `+ Add Candidate` action button, notification bell with unread badge `2`, dark/light mode toggle, and recruiter profile chip (`OM`, `Omkesh`, `Recruiter`, `▾`).
+    - **Candidate Navigation Sub-Header**: `← Back to Candidates` navigation, `< Previous` / `Next >` switcher, emerald green `💼 Transfer to Job` (`#00A76F`), `✉ Email`, `⤴ Share`, `📥 Download`, and `⋮` actions menu.
+    - **Candidate Hero Card**: 72px circular avatar with online status indicator (`PB`, `#D0E2FF`), candidate full name (`Pranitha Bantu`), title (`Lead Generative AI & Machine Learning Engineer`), metadata ribbon (`📍 Raleigh, NC` · `💼 8+ Years` · `🎓 No degree info` · `🛡️ US Citizen`), contact pills (`✉ pranitha.bantu@gmail.com`, `📞 +1 (919) 555-0143`, `🔗 LinkedIn Profile ↗`), and circular 96% SVG match gauge with `Excellent Match` badge and `View Match Details ➔`.
+    - **Horizontal Dossier Tabs**: `Overview` (active), `Resume`, `Skills`, `Experience`, `Education`, `Activity`, `Notes`, `Emails`, `Comments`.
+    - **Two-Column Dossier Overview**:
+      - Left column (~68%): Professional Summary card + `✨ Generate with AI`, Key Skills card + `View All Skills ➔` (dynamic green/blue skill pills), Resume preview card with red PDF badge + `👁 Preview` + `📥 Download`, and AI Insights card + `View AI Insights ➔`.
+      - Right column (~32%, 380px): Target Requisition card (`Req #159078` · `🔥 65% Match`, `Public Health Program Director 1`, yellow highlight badge, requisition switcher dropdown), AI Skill Analysis card (`✔ Matching (5)`, `✖ Missing (5)`, `➖ Additional (8)`), Quick Actions 4-button grid (`💼 Move to Job`, `✉ Email`, `📝 Add Note`, `📅 Schedule`), and Recent Activity audit timeline.
+- **Production Build Verification**:
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings (built in 7.76s).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 6.54s).
+
 ### 2026-09-11 — Minimal Dashboard Free (material-kit-react) UI Overhaul, Pastel KPI Cards & Analytics Charts
 - **MUI Minimals Dashboard Design System (`media_1789070880356.png`)**:
   - Transformed `/inbox` (`RecruiterInbox.jsx`) and global styling (`index.css`) into the crisp, modern **Minimals Dashboard Free (material-kit-react / Modernize)** design system.
