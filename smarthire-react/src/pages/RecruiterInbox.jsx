@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { saveMessageFirestore, getMessagesFirestore } from '../lib/atsFirestore'
+import { saveMessageFirestore, getMessagesFirestore, saveRequisitionCandidates, saveCandidate } from '../lib/atsFirestore'
 
 const POLL_INTERVAL = 3000
 
@@ -180,6 +180,34 @@ export default function RecruiterInbox() {
   const [showFullProfileModal, setShowFullProfileModal] = useState(false)
   const [syncingEmailResumes, setSyncingEmailResumes] = useState(false)
   const [emailSyncToast, setEmailSyncToast] = useState('')
+
+  // View switcher: 'stream' (Indeed-style candidate talent stream) or 'chat' (live direct messages)
+  const [inboxViewMode, setInboxViewMode] = useState('stream')
+  const [streamFilter, setStreamFilter] = useState('all') // 'all', 'email_inbox', 'email_spam', 'careers_portal', 'vendor_bench'
+  const [streamCandidates, setStreamCandidates] = useState([])
+  const [streamCounts, setStreamCounts] = useState({
+    candidatesTotal: 0,
+    inboxResumes: 0,
+    spamResumes: 0,
+    careersResumes: 0,
+    vendorResumes: 0
+  })
+  const [loadingStream, setLoadingStream] = useState(true)
+  const [streamSearch, setStreamSearch] = useState('')
+  const [streamReqFilter, setStreamReqFilter] = useState('all')
+
+  // Direct Outbound Email Modal State (Strictly sent from personal recruiter email)
+  const [emailModalCandidate, setEmailModalCandidate] = useState(null)
+  const [emailTo, setEmailTo] = useState('')
+  const [emailSubject, setEmailSubject] = useState('')
+  const [emailBody, setEmailBody] = useState('')
+  const [emailSending, setEmailSending] = useState(false)
+  const [emailSuccessToast, setEmailSuccessToast] = useState('')
+  const [directMailtoUrl, setDirectMailtoUrl] = useState('')
+
+  // Candidate Assignment Notification Toast
+  const [assignedToast, setAssignedToast] = useState('')
+
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
   const pollingRef = useRef(null)
@@ -532,6 +560,39 @@ export default function RecruiterInbox() {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
   }
 
+  const fetchStreamCandidates = useCallback(async () => {
+    setLoadingStream(true)
+    try {
+      const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
+      const recEmail = u.email || currentUser?.email || 'omkesh@coolsofttech.com'
+      const recName = u.name || currentUser?.name || 'Omkesh Manjute'
+      const recRole = u.role || activeRole || 'superadmin'
+
+      const params = new URLSearchParams({
+        recruiterEmail: recEmail,
+        userName: recName,
+        role: recRole
+      })
+
+      const res = await fetch(`/api/recruiter/email-streams?${params.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+        }
+      })
+      const data = await res.json()
+      if (data.success) {
+        setStreamCandidates(data.candidates || [])
+        if (data.counts) {
+          setStreamCounts(data.counts)
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch recruiter talent stream:', err)
+    } finally {
+      setLoadingStream(false)
+    }
+  }, [currentUser?.email, currentUser?.name, activeRole])
+
   const handleSyncEmailResumes = async () => {
     setSyncingEmailResumes(true)
     setEmailSyncToast('')
@@ -541,19 +602,199 @@ export default function RecruiterInbox() {
       const res = await fetch('/api/recruiter/sync-email-resumes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recruiterEmail: recEmail })
+        body: JSON.stringify({
+          recruiterEmail: recEmail,
+          scanFolders: ['INBOX', 'SPAM']
+        })
       })
       const data = await res.json()
-      setEmailSyncToast(data.message || 'Email resumes synced!')
-      fetchThreads()
-    } catch(e) {
+      setEmailSyncToast(data.message || 'Scanned INBOX & SPAM: Resumes synced!')
+      await fetchStreamCandidates()
+      await fetchThreads()
+    } catch (e) {
       setEmailSyncToast('Failed to sync resumes: ' + e.message)
     } finally {
       setSyncingEmailResumes(false)
-      setTimeout(() => setEmailSyncToast(''), 7000)
+      setTimeout(() => setEmailSyncToast(''), 8000)
     }
   }
 
+  const handleOpenEmailModal = (cand) => {
+    setEmailModalCandidate(cand)
+    setEmailTo(cand.email || '')
+    const targetReq = cand.targetReqId || '159079'
+    const jobTitle = cand.matchedJobTitle || 'Open Position'
+    const jobRate = cand.matchedJobRate || '$75/hr'
+    const jobClient = cand.matchedJobClient || 'State Agency'
+
+    const defaultSubject = `Opportunity: ${jobTitle} (Req #${targetReq}) | COOLSOFT LLC`
+    setEmailSubject(defaultSubject)
+
+    const candFirstName = (cand.name || 'Candidate').split(' ')[0]
+    const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
+    const myName = u.name || currentUser?.name || 'Omkesh Manjute'
+    const myEmail = u.email || currentUser?.email || 'omkesh@coolsofttech.com'
+
+    const defaultBody = `Hi ${candFirstName},\n\nI reviewed your resume for the ${jobTitle} position (Req #${targetReq}) with our client ${jobClient} (${jobRate}). Your technical background and experience are a strong fit for this project.\n\nCould you please review and confirm:\n1. Your current work authorization status?\n2. Your updated hourly rate expectation for this position?\n3. Your immediate availability for a brief technical screening call?\n\nPlease reply directly to this email or feel free to attach your latest updated resume.\n\nWith Regards,\n${myName}\nLead Recruiter\nCOOLSOFT LLC | ${myEmail}\nhttp://www.coolsofttech.com`
+
+    setEmailBody(defaultBody)
+    setEmailSuccessToast('')
+    setDirectMailtoUrl('')
+  }
+
+  const handleSendDirectEmail = async () => {
+    if (!emailTo || !emailSubject || !emailBody) {
+      alert('Please fill out Recipient, Subject, and Body.')
+      return
+    }
+    setEmailSending(true)
+    setEmailSuccessToast('')
+    try {
+      const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
+      const recEmail = u.email || currentUser?.email || 'omkesh@coolsofttech.com'
+      const candId = emailModalCandidate?.id || emailModalCandidate?.candidate_id || ''
+
+      const res = await fetch('/api/recruiter/send-direct-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recruiterEmail: recEmail,
+          to: emailTo,
+          subject: emailSubject,
+          body: emailBody,
+          candidateName: emailModalCandidate?.name || '',
+          candidateId: candId
+        })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setDirectMailtoUrl(data.mailtoUrl || '')
+        if (data.serverDispatched) {
+          setEmailSuccessToast(`✅ Email successfully sent to ${emailTo} directly from ${data.senderEmail}!`)
+        } else {
+          setEmailSuccessToast(`✅ Email prepared from ${data.senderEmail}. Dispatching via your default mail client...`)
+          if (data.mailtoUrl) {
+            window.location.href = data.mailtoUrl
+          }
+        }
+        setTimeout(() => {
+          setEmailModalCandidate(null)
+          setEmailSuccessToast('')
+        }, 3500)
+      } else {
+        alert('Failed to send email: ' + (data.message || 'Unknown error'))
+      }
+    } catch (err) {
+      alert('Error sending email: ' + err.message)
+    } finally {
+      setEmailSending(false)
+    }
+  }
+
+  const handleAssignCandidateToReq = async (cand, specificReqId = null) => {
+    const targetReqId = specificReqId || cand.targetReqId || '159079'
+    const cleanId = String(targetReqId).replace('J-', '').replace('REQ-', '').trim()
+    const candName = cand.name || 'Candidate'
+    const candId = cand.id || `875${Date.now().toString().slice(-4)}`
+    const dateStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
+    const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
+    const myName = u.name || currentUser?.name || 'Omkesh'
+    const myEmail = u.email || currentUser?.email || 'omkesh@coolsofttech.com'
+    const myRef = u.refCode || 'omkesh'
+
+    const newSubObj = {
+      id: candId,
+      name: candName,
+      email: cand.email,
+      phone: cand.phone,
+      payRate: cand.matchedJobRate || cand.payRate || '$75/hr',
+      payRateType: cand.payRateType || 'C2C',
+      assignedBy: myName,
+      assignedOn: dateStr,
+      status: 'Int-SubmittedToManager',
+      statusComments: cand.isSpamRecovery
+        ? 'Recovered from Email Spam folder & assigned to position'
+        : `Assigned from ${cand.sourceCategory === 'careers_portal' ? 'Careers Job Site' : cand.sourceCategory === 'vendor_bench' ? 'Vendor Bench' : 'Email Inbox'}`,
+      interview: 'Select',
+      rejectedReason: '',
+      recruiter: myName,
+      recruiterEmail: myEmail,
+      recruiterRefCode: myRef,
+      addedByName: myName,
+      addedByEmail: myEmail,
+      addedByRole: 'recruiter',
+      lastChangedBy: myName,
+      lastChangedRole: 'Recruiter',
+      lastChangedOn: dateStr,
+      targetReqId: cleanId,
+      matchScore: cand.matchScore || 95
+    }
+
+    try {
+      const existingKey = `smarthire_potential_candidates_${cleanId}`
+      const raw = localStorage.getItem(existingKey)
+      let list = []
+      if (raw) list = JSON.parse(raw) || []
+      const updated = [newSubObj, ...list.filter(p => p.id !== candId && p.name !== candName)]
+      localStorage.setItem(existingKey, JSON.stringify(updated))
+      localStorage.setItem(`smarthire_potential_candidates_J-${cleanId}`, JSON.stringify(updated))
+
+      saveRequisitionCandidates(cleanId, updated).catch(e => console.warn('Firestore req cand save error:', e))
+      saveCandidate(candId, { ...cand, reqId: cleanId, name: candName, email: cand.email, status: 'Int-SubmittedToManager' }).catch(() => {})
+
+      window.dispatchEvent(new CustomEvent('candidate-pushed-to-req', { detail: { reqId: cleanId, candidate: newSubObj } }))
+    } catch (e) {}
+
+    setAssignedToast(`✓ ${candName} successfully added to Requisition #${cleanId}!`)
+    setTimeout(() => setAssignedToast(''), 5000)
+  }
+
+  const handleOpenCandidateChat = (cand) => {
+    const threadId = cand.id || `cand-${cand.email}`
+    const existing = threads.find(t => t.candidateId === threadId || (t.email && t.email.toLowerCase() === cand.email.toLowerCase()))
+    if (existing) {
+      setInboxViewMode('chat')
+      selectThread(existing)
+    } else {
+      const newThread = {
+        candidateId: threadId,
+        candidateName: cand.name,
+        jobTitle: cand.matchedJobTitle || cand.role || 'Requisition Candidate',
+        lastMessage: cand.isSpamRecovery ? 'Recovered candidate from email spam folder' : 'Candidate received via email inbox',
+        lastMessageTime: new Date().toISOString(),
+        unreadCount: 0,
+        email: cand.email,
+        phone: cand.phone,
+        role: cand.role
+      }
+      setThreads(prev => [newThread, ...prev])
+      setInboxViewMode('chat')
+      selectThread(newThread)
+    }
+  }
+
+  const handleViewCandidateProfile = (cand) => {
+    setCandidateDetails({
+      ...cand,
+      candidateName: cand.name,
+      email: cand.email,
+      phone: cand.phone,
+      location: cand.location,
+      visaStatus: cand.visaStatus || cand.visa_status || 'US Citizen',
+      resumeText: cand.resumeText || `RESUME: ${cand.name}\n${cand.role}\nLocation: ${cand.location}\nSkills: ${(cand.skills || []).join(', ')}\nExperience: ${cand.experience || '8+ Years'}\nContact: ${cand.email} | ${cand.phone}`,
+      skills: cand.skills || [],
+      jdMatch: {
+        match_score: cand.matchScore || 95,
+        matched_skills: cand.matchingSkills || cand.skills || [],
+        missing_skills: cand.missingSkills || [],
+        candidate_summary: `Candidate sourced via ${cand.source}. Matches ${cand.matchedJobTitle || 'open position'} with a fit score of ${cand.matchScore || 95}%.`
+      }
+    })
+    setShowFullProfileModal(true)
+  }
+
+  useEffect(() => { fetchStreamCandidates() }, [fetchStreamCandidates])
   useEffect(() => { fetchThreads() }, [fetchThreads])
 
   useEffect(() => {
@@ -592,10 +833,37 @@ export default function RecruiterInbox() {
   const candidateJob = activeThread?.jobTitle || 'Vacancy'
   const profile = candidateDetails?.extracted_profile || candidateDetails
 
+  const filteredCandidates = streamCandidates.filter(c => {
+    if (!c) return false
+    // 1. Source filter
+    if (streamFilter === 'email_inbox' && c.sourceCategory !== 'email_inbox') return false
+    if (streamFilter === 'email_spam' && c.sourceCategory !== 'email_spam' && !c.isSpamRecovery) return false
+    if (streamFilter === 'careers_portal' && c.sourceCategory !== 'careers_portal') return false
+    if (streamFilter === 'vendor_bench' && c.sourceCategory !== 'vendor_bench') return false
+
+    // 2. Requisition filter
+    if (streamReqFilter !== 'all' && String(c.targetReqId) !== String(streamReqFilter)) return false
+
+    // 3. Search query
+    if (streamSearch.trim()) {
+      const q = streamSearch.toLowerCase()
+      const n = (c.name || '').toLowerCase()
+      const e = (c.email || '').toLowerCase()
+      const r = (c.role || '').toLowerCase()
+      const loc = (c.location || '').toLowerCase()
+      const req = String(c.targetReqId || '').toLowerCase()
+      const jTitle = (c.matchedJobTitle || '').toLowerCase()
+      const sMatch = Array.isArray(c.skills) ? c.skills.some(s => String(s).toLowerCase().includes(q)) : String(c.skills || '').toLowerCase().includes(q)
+      return n.includes(q) || e.includes(q) || r.includes(q) || loc.includes(q) || req.includes(q) || jTitle.includes(q) || sMatch
+    }
+
+    return true
+  })
+
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100vh', backgroundColor:C.bg, fontFamily:"'Plus Jakarta Sans','Inter',sans-serif", color:C.textPrimary, overflow:'hidden' }}>
       {/* Top Navbar */}
-      <header style={{ backgroundColor:C.headerBg, backdropFilter:'blur(12px)', borderBottom:`1px solid ${C.border}`, padding:'0 24px', display:'flex', alignItems:'center', justifyContent:'space-between', height:62, flexShrink:0, boxShadow:C.shadow, zIndex:10 }}>
+      <header style={{ backgroundColor:C.headerBg, backdropFilter:'blur(12px)', borderBottom:`1px solid ${C.border}`, padding:'0 24px', display:'flex', alignItems:'center', justifyContent:'space-between', height:64, flexShrink:0, boxShadow:C.shadow, zIndex:10 }}>
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
           <button onClick={() => navigate('/ats')} style={{ background:C.inputBg, border:`1px solid ${C.border}`, borderRadius:8, padding:'6px 12px', cursor:'pointer', color:C.textSecondary, fontSize:13, fontWeight:700, display:'flex', alignItems:'center', gap:6 }} title="Back to ATS">
             <IconArrowLeft /> Back to ATS
@@ -605,20 +873,106 @@ export default function RecruiterInbox() {
           </div>
           <div>
             <div style={{ fontWeight:800, fontSize:16, color:C.textPrimary, lineHeight:1.2 }}>
-              {isReportee ? 'Lead Recruiter Messaging' : 'Recruiter Inbox'}
+              Talent Stream & Recruiter Inbox
             </div>
             <div style={{ fontSize:11, color:C.textSecondary }}>
-              {isReportee ? `Reporting Channel with ${parentRecruiterName} (Lead Recruiter)` : 'Live Candidate Conversations'}
+              Auto-matched resumes & candidate communications
             </div>
           </div>
-          {totalUnread > 0 && <span style={{ background:'#EF4444', color:'#FFF', fontSize:11, fontWeight:800, borderRadius:12, padding:'2px 8px', marginLeft:4 }}>{totalUnread} unread</span>}
         </div>
-        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+
+        {/* Center Mode Switcher Tabs */}
+        <div style={{ display: 'flex', alignItems: 'center', background: C.inputBg, border: `1px solid ${C.border}`, borderRadius: 24, padding: 3 }}>
+          <button
+            onClick={() => setInboxViewMode('stream')}
+            style={{
+              background: inboxViewMode === 'stream' ? '#2563EB' : 'transparent',
+              color: inboxViewMode === 'stream' ? '#FFF' : C.textSecondary,
+              border: 'none',
+              borderRadius: 20,
+              padding: '6px 16px',
+              fontSize: 12.5,
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 7,
+              boxShadow: inboxViewMode === 'stream' ? '0 2px 8px rgba(37,99,235,0.3)' : 'none',
+              transition: 'all 0.15s'
+            }}
+          >
+            <span>📥 Candidates & Resumes</span>
+            <span style={{
+              fontSize: 11,
+              background: inboxViewMode === 'stream' ? 'rgba(255,255,255,0.25)' : isLight ? '#E2E8F0' : '#334155',
+              color: inboxViewMode === 'stream' ? '#FFF' : C.textPrimary,
+              padding: '1px 7px',
+              borderRadius: 10,
+              fontWeight: 800
+            }}>
+              {streamCandidates.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setInboxViewMode('chat')}
+            style={{
+              background: inboxViewMode === 'chat' ? '#2563EB' : 'transparent',
+              color: inboxViewMode === 'chat' ? '#FFF' : C.textSecondary,
+              border: 'none',
+              borderRadius: 20,
+              padding: '6px 16px',
+              fontSize: 12.5,
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 7,
+              boxShadow: inboxViewMode === 'chat' ? '0 2px 8px rgba(37,99,235,0.3)' : 'none',
+              transition: 'all 0.15s'
+            }}
+          >
+            <span>💬 Live Messages</span>
+            {totalUnread > 0 ? (
+              <span style={{ fontSize: 11, background: '#EF4444', color: '#FFF', padding: '1px 7px', borderRadius: 10, fontWeight: 800 }}>
+                {totalUnread}
+              </span>
+            ) : (
+              <span style={{
+                fontSize: 11,
+                background: inboxViewMode === 'chat' ? 'rgba(255,255,255,0.25)' : isLight ? '#E2E8F0' : '#334155',
+                color: inboxViewMode === 'chat' ? '#FFF' : C.textPrimary,
+                padding: '1px 7px',
+                borderRadius: 10,
+                fontWeight: 800
+              }}>
+                {visibleThreads.length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Right Action Cluster */}
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          {assignedToast && (
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '5px 12px', borderRadius: 8, animation: 'fadeIn 0.2s ease-in-out' }}>
+              {assignedToast}
+            </span>
+          )}
           {emailSyncToast && (
             <span style={{ fontSize: 12, fontWeight: 700, color: emailSyncToast.includes('Failed') ? '#dc2626' : '#16a34a', background: emailSyncToast.includes('Failed') ? '#fef2f2' : '#f0fdf4', border: `1px solid ${emailSyncToast.includes('Failed') ? '#fca5a5' : '#bbf7d0'}`, padding: '5px 12px', borderRadius: 8 }}>
               {emailSyncToast}
             </span>
           )}
+
+          {/* Scoping Telemetry Pill */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: isLight ? '#F0FDF4' : 'rgba(34,197,94,0.1)', border: '1px solid #BBF7D0', padding: '5px 12px', borderRadius: 20 }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#16A34A', display: 'inline-block' }} />
+            <span style={{ fontSize: 11.5, fontWeight: 800, color: '#15803D' }}>
+              🔒 Private Workspace: {currentUser?.name || 'Omkesh Manjute'}
+            </span>
+          </div>
+
           <button
             onClick={handleSyncEmailResumes}
             disabled={syncingEmailResumes}
@@ -636,20 +990,437 @@ export default function RecruiterInbox() {
               gap: 6,
               boxShadow: '0 2px 6px rgba(22,163,74,0.25)'
             }}
-            title="Scan recruiter email inbox for candidate resumes and match to active requisitions"
+            title="Scan recruiter email inbox & spam folder for candidate resumes and auto-match to active requisitions"
           >
-            <span>📥</span> {syncingEmailResumes ? 'Syncing Resumes...' : 'Sync Email Resumes'}
+            <span>⚡</span> {syncingEmailResumes ? 'Scanning Inbox & Spam...' : 'Scan Inbox & Spam'}
           </button>
-          <span style={{ fontSize:12, color:C.textSecondary, background:C.inputBg, border:`1px solid ${C.border}`, padding:'5px 14px', borderRadius:20, fontWeight:600, display:'inline-flex', alignItems:'center', gap:6 }}>
-            <span style={{ width:7, height:7, borderRadius:'50%', background:'#22C55E', display:'inline-block' }} /> {isReportee ? '1 Supervisor Channel' : `${visibleThreads.length} Conversations`}
-          </span>
+
           <button onClick={() => { const m = themeMode==='light'?'dark':'light'; setThemeMode(m); localStorage.setItem('smarthire_theme',m) }} style={{ background:C.inputBg, border:`1px solid ${C.border}`, borderRadius:20, padding:'6px 14px', fontSize:12, fontWeight:700, cursor:'pointer', color:C.textPrimary, display:'inline-flex', alignItems:'center', gap:6 }}>
             {isLight ? <><IconMoon /> Dark</> : <><IconSun /> Light</>}
           </button>
         </div>
       </header>
 
-      {/* 3-Panel Layout */}
+      {/* CANDIDATE TALENT STREAM VIEW (INDEED-STYLE HUB) */}
+      {inboxViewMode === 'stream' && (
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+          {/* Stream Filter & Search Toolbar */}
+          <div style={{ backgroundColor: C.surface, borderBottom: `1px solid ${C.border}`, padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexShrink: 0 }}>
+            {/* Source Filter Pills */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <button
+                onClick={() => setStreamFilter('all')}
+                style={{
+                  background: streamFilter === 'all' ? '#2563EB' : C.inputBg,
+                  color: streamFilter === 'all' ? '#FFF' : C.textSecondary,
+                  border: `1px solid ${streamFilter === 'all' ? '#2563EB' : C.border}`,
+                  padding: '6px 14px',
+                  borderRadius: 20,
+                  fontSize: 12,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s'
+                }}
+              >
+                All Candidates ({streamCandidates.length})
+              </button>
+
+              <button
+                onClick={() => setStreamFilter('email_inbox')}
+                style={{
+                  background: streamFilter === 'email_inbox' ? '#1D4ED8' : isLight ? '#EFF6FF' : 'rgba(29,78,216,0.15)',
+                  color: streamFilter === 'email_inbox' ? '#FFF' : '#1D4ED8',
+                  border: `1px solid ${streamFilter === 'email_inbox' ? '#1D4ED8' : '#BFDBFE'}`,
+                  padding: '6px 14px',
+                  borderRadius: 20,
+                  fontSize: 12,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5
+                }}
+              >
+                <span>📧</span> Email Inbox ({streamCounts.inboxResumes || streamCandidates.filter(c => c.sourceCategory === 'email_inbox').length})
+              </button>
+
+              <button
+                onClick={() => setStreamFilter('email_spam')}
+                style={{
+                  background: streamFilter === 'email_spam' ? '#DC2626' : isLight ? '#FEF2F2' : 'rgba(220,38,38,0.15)',
+                  color: streamFilter === 'email_spam' ? '#FFF' : '#DC2626',
+                  border: `1px solid ${streamFilter === 'email_spam' ? '#DC2626' : '#FECACA'}`,
+                  padding: '6px 14px',
+                  borderRadius: 20,
+                  fontSize: 12,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5
+                }}
+              >
+                <span>🛡️</span> Recovered from Spam ({streamCounts.spamResumes || streamCandidates.filter(c => c.sourceCategory === 'email_spam' || c.isSpamRecovery).length})
+              </button>
+
+              <button
+                onClick={() => setStreamFilter('careers_portal')}
+                style={{
+                  background: streamFilter === 'careers_portal' ? '#059669' : isLight ? '#ECFDF5' : 'rgba(5,150,105,0.15)',
+                  color: streamFilter === 'careers_portal' ? '#FFF' : '#059669',
+                  border: `1px solid ${streamFilter === 'careers_portal' ? '#059669' : '#A7F3D0'}`,
+                  padding: '6px 14px',
+                  borderRadius: 20,
+                  fontSize: 12,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5
+                }}
+              >
+                <span>🌐</span> Careers Job Site ({streamCounts.careersResumes || streamCandidates.filter(c => c.sourceCategory === 'careers_portal').length})
+              </button>
+
+              <button
+                onClick={() => setStreamFilter('vendor_bench')}
+                style={{
+                  background: streamFilter === 'vendor_bench' ? '#7C3AED' : isLight ? '#FAF5FF' : 'rgba(124,58,237,0.15)',
+                  color: streamFilter === 'vendor_bench' ? '#FFF' : '#7C3AED',
+                  border: `1px solid ${streamFilter === 'vendor_bench' ? '#7C3AED' : '#E9D5FF'}`,
+                  padding: '6px 14px',
+                  borderRadius: 20,
+                  fontSize: 12,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5
+                }}
+              >
+                <span>🏢</span> Vendor Bench ({streamCounts.vendorResumes || streamCandidates.filter(c => c.sourceCategory === 'vendor_bench').length})
+              </button>
+            </div>
+
+            {/* Right: Requisition Filter & Search */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <select
+                value={streamReqFilter}
+                onChange={e => setStreamReqFilter(e.target.value)}
+                style={{
+                  background: C.inputBg,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 8,
+                  padding: '7px 12px',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: C.textPrimary,
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="all">🎯 All Open Requisitions</option>
+                <option value="159079">Req #159079 · Java Dev III (ETF)</option>
+                <option value="159078">Req #159078 · Public Health Director (TN DOH)</option>
+                <option value="159077">Req #159077 · Java Dev III (ETF)</option>
+                <option value="159074">Req #159074 · Attorney (TN DOH)</option>
+                <option value="159073">Req #159073 · Data Governance (DBHDS)</option>
+              </select>
+
+              <div style={{ position: 'relative', width: 260 }}>
+                <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: C.textSecondary, display: 'flex', pointerEvents: 'none' }}>
+                  <IconSearch />
+                </span>
+                <input
+                  value={streamSearch}
+                  onChange={e => setStreamSearch(e.target.value)}
+                  placeholder="Search candidate, skill, req..."
+                  style={{
+                    width: '100%',
+                    background: C.inputBg,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 8,
+                    padding: '7px 10px 7px 32px',
+                    fontSize: 12.5,
+                    color: C.textPrimary,
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Candidate Stream Content List */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px', backgroundColor: C.bg }}>
+            {loadingStream ? (
+              <div style={{ textAlign: 'center', padding: '80px 20px', color: C.textSecondary }}>
+                <p style={{ fontSize: 15, fontWeight: 700 }}>Scanning & loading candidate talent stream...</p>
+              </div>
+            ) : filteredCandidates.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '80px 20px', color: C.textSecondary }}>
+                <div style={{ fontSize: 40, marginBottom: 10 }}>🔍</div>
+                <h4 style={{ fontSize: 16, fontWeight: 800, color: C.textPrimary, margin: '0 0 6px' }}>No candidates found</h4>
+                <p style={{ fontSize: 13, margin: '0 0 16px' }}>No candidates matched the current filter or search criteria.</p>
+                <button
+                  onClick={() => { setStreamFilter('all'); setStreamReqFilter('all'); setStreamSearch(''); }}
+                  style={{ background: '#2563EB', color: '#FFF', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  Clear Filters & Show All
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1200, margin: '0 auto' }}>
+                {filteredCandidates.map(cand => {
+                  const isSpam = cand.sourceCategory === 'email_spam' || cand.isSpamRecovery
+                  const isCareers = cand.sourceCategory === 'careers_portal'
+                  const isVendor = cand.sourceCategory === 'vendor_bench'
+                  const targetReqId = cand.targetReqId || '159079'
+                  const matchedJobTitle = cand.matchedJobTitle || 'Java Developer III - 165504'
+                  const matchedJobRate = cand.matchedJobRate || '$75/hr'
+                  const matchedJobClient = cand.matchedJobClient || 'State Agency'
+                  const score = cand.matchScore || 95
+                  const scoreColor = score >= 85 ? '#16A34A' : score >= 70 ? '#D97706' : '#DC2626'
+                  const skillsList = Array.isArray(cand.skills) ? cand.skills : (cand.skills ? String(cand.skills).split(',') : [])
+
+                  return (
+                    <div
+                      key={cand.id || cand.email}
+                      style={{
+                        backgroundColor: C.surface,
+                        border: `1px solid ${isSpam ? '#FCA5A5' : C.border}`,
+                        borderRadius: 14,
+                        padding: '20px 24px',
+                        boxShadow: isSpam ? '0 4px 16px rgba(220,38,38,0.06)' : C.shadow,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 14,
+                        transition: 'all 0.2s',
+                        position: 'relative'
+                      }}
+                    >
+                      {/* Top Row: Avatar, Identity, Source Badge */}
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                          <Avatar name={cand.name} size={48} />
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                              <span
+                                onClick={() => handleViewCandidateProfile(cand)}
+                                style={{ fontSize: 16, fontWeight: 800, color: '#2563EB', cursor: 'pointer', textDecoration: 'underline' }}
+                                title="Click to view candidate resume & details"
+                              >
+                                {cand.name}
+                              </span>
+                              {cand.experience && (
+                                <span style={{ fontSize: 11, fontWeight: 700, background: isLight ? '#F1F5F9' : '#1E293B', color: C.textSecondary, padding: '2px 8px', borderRadius: 6 }}>
+                                  {cand.experience}
+                                </span>
+                              )}
+                              <span style={{ fontSize: 11, fontWeight: 700, background: isLight ? '#EFF6FF' : 'rgba(37,99,235,0.15)', color: '#2563EB', padding: '2px 8px', borderRadius: 6 }}>
+                                {cand.visaStatus || cand.visa_status || 'US Citizen'}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: C.textPrimary, marginTop: 3 }}>
+                              {cand.role || 'Senior Specialist'}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Source Badge */}
+                        <div>
+                          {isSpam ? (
+                            <span style={{ background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA', padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#DC2626' }} />
+                              🛡️ Recovered from Spam Folder
+                            </span>
+                          ) : isCareers ? (
+                            <span style={{ background: '#ECFDF5', color: '#047857', border: '1px solid #A7F3D0', padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                              🌐 Applied on Careers Portal (/jobs)
+                            </span>
+                          ) : isVendor ? (
+                            <span style={{ background: '#FAF5FF', color: '#7E22CE', border: '1px solid #E9D5FF', padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                              🏢 Vendor Bench Submittal
+                            </span>
+                          ) : (
+                            <span style={{ background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE', padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                              📧 Recruiter Email Inbox
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Contact metadata row */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 20, fontSize: 12.5, color: C.textSecondary, flexWrap: 'wrap' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: C.textPrimary }}>
+                          <IconMail /> {cand.email}
+                        </span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <IconPhone /> {cand.phone || '+1 (555) 019-2831'}
+                        </span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <IconLocation /> {cand.location || 'Madison, WI'}
+                        </span>
+                        <span style={{ fontSize: 11.5, color: C.textSecondary }}>
+                          Source: {cand.source || 'Recruiter Ingestion'}
+                        </span>
+                      </div>
+
+                      {/* AI Requisition Match Box */}
+                      <div style={{ backgroundColor: isLight ? '#F8FAFC' : '#0F172A', border: `1px solid ${isLight ? '#E2E8F0' : '#334155'}`, borderRadius: 10, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 13, fontWeight: 800, color: C.textPrimary }}>
+                              🎯 Auto-Matched Position:
+                            </span>
+                            <span style={{ fontSize: 12.5, fontWeight: 800, color: '#2563EB' }}>
+                              Req #{targetReqId} · {matchedJobTitle}
+                            </span>
+                            <span style={{ fontSize: 12, color: C.textSecondary }}>
+                              ({matchedJobClient} · {matchedJobRate})
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: isLight ? '#FFF' : C.surface, border: `1px solid ${scoreColor}`, padding: '3px 10px', borderRadius: 20 }}>
+                            <span style={{ fontSize: 12, fontWeight: 900, color: scoreColor }}>
+                              🔥 {score}% Match Fit
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Skills chips */}
+                        {skillsList.length > 0 && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: C.textSecondary }}>Matching Skills:</span>
+                            {skillsList.slice(0, 8).map((skill, sIdx) => (
+                              <span
+                                key={sIdx}
+                                style={{
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  background: isLight ? '#EFF6FF' : 'rgba(37,99,235,0.15)',
+                                  color: isLight ? '#1D4ED8' : '#93C5FD',
+                                  padding: '2px 8px',
+                                  borderRadius: 4,
+                                  border: `1px solid ${isLight ? '#DBEAFE' : 'rgba(37,99,235,0.3)'}`
+                                }}
+                              >
+                                {String(skill).trim()}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* If Spam recovery, display notice */}
+                        {isSpam && (
+                          <div style={{ fontSize: 11.5, color: '#B91C1C', background: '#FEF2F2', border: '1px solid #FECACA', padding: '6px 10px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span>⚠️</span>
+                            <span><strong>Spam Rescued:</strong> This application landed in your spam/junk folder. SmartHire harvester salvaged it and auto-matched it to open requisition Req #{targetReqId}.</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Bottom Action Row */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 6, borderTop: `1px solid ${C.border}` }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <button
+                            onClick={() => handleOpenEmailModal(cand)}
+                            style={{
+                              background: 'linear-gradient(135deg,#2563EB,#1D4ED8)',
+                              color: '#FFF',
+                              border: 'none',
+                              borderRadius: 8,
+                              padding: '8px 16px',
+                              fontSize: 12.5,
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              boxShadow: '0 2px 6px rgba(37,99,235,0.25)'
+                            }}
+                            title={`Send direct email to candidate strictly from ${currentUser?.email || 'omkesh@coolsofttech.com'}`}
+                          >
+                            <IconMail /> ✉️ Email Candidate ({currentUser?.email ? currentUser.email.split('@')[0] : 'omkesh'})
+                          </button>
+
+                          <button
+                            onClick={() => handleAssignCandidateToReq(cand, targetReqId)}
+                            style={{
+                              background: '#16A34A',
+                              color: '#FFF',
+                              border: 'none',
+                              borderRadius: 8,
+                              padding: '8px 16px',
+                              fontSize: 12.5,
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              boxShadow: '0 2px 6px rgba(22,163,74,0.25)'
+                            }}
+                            title={`Add candidate directly to Requisition #${targetReqId}`}
+                          >
+                            <span>➕</span> Add to Req #{targetReqId}
+                          </button>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <button
+                            onClick={() => handleOpenCandidateChat(cand)}
+                            style={{
+                              background: C.inputBg,
+                              border: `1px solid ${C.border}`,
+                              borderRadius: 8,
+                              padding: '8px 14px',
+                              fontSize: 12,
+                              fontWeight: 700,
+                              color: C.textPrimary,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 6
+                            }}
+                          >
+                            <IconChat /> 💬 Message
+                          </button>
+
+                          <button
+                            onClick={() => handleViewCandidateProfile(cand)}
+                            style={{
+                              background: C.inputBg,
+                              border: `1px solid ${C.border}`,
+                              borderRadius: 8,
+                              padding: '8px 14px',
+                              fontSize: 12,
+                              fontWeight: 700,
+                              color: C.textPrimary,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 6
+                            }}
+                          >
+                            <IconUser /> 📄 View Resume
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 3-Panel Chat Layout (Live 1-on-1 Messages) */}
+      {inboxViewMode === 'chat' && (
       <div style={{ display:'flex', flex:1, overflow:'hidden' }}>
         {/* LEFT SIDEBAR */}
         <div style={{ width:330, flexShrink:0, backgroundColor:C.sidebar, borderRight:`1px solid ${C.border}`, display:'flex', flexDirection:'column', overflow:'hidden' }}>
@@ -933,10 +1704,318 @@ export default function RecruiterInbox() {
           </div>
         )}
       </div>
+      )}
+
+      {/* DIRECT RECRUITER OUTBOUND EMAIL COMPOSER MODAL */}
+      {emailModalCandidate && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(5px)',
+            zIndex: 5000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20
+          }}
+          onClick={() => setEmailModalCandidate(null)}
+        >
+          <div
+            style={{
+              backgroundColor: C.surface,
+              border: `1px solid ${C.border}`,
+              borderRadius: 14,
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              width: '100%',
+              maxWidth: 720,
+              maxHeight: '90vh',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{ padding: '18px 24px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: C.textPrimary }}>
+                  ✉️ Direct Recruiter Email Gateway
+                </h3>
+                <p style={{ margin: '3px 0 0', fontSize: 11.5, color: '#16A34A', fontWeight: 700 }}>
+                  🔒 STRICT SENDER POLICY: Email will be sent strictly from your personal address ({currentUser?.email || 'omkesh@coolsofttech.com'}).
+                </p>
+              </div>
+              <button
+                onClick={() => setEmailModalCandidate(null)}
+                style={{ background: 'none', border: 'none', color: C.textSecondary, fontSize: 20, cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: 24, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* From & To fields */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase' }}>
+                    From (Your Personal Recruiter Email):
+                  </label>
+                  <input
+                    readOnly
+                    value={`${currentUser?.name || 'Omkesh Manjute'} <${currentUser?.email || 'omkesh@coolsofttech.com'}>`}
+                    style={{
+                      width: '100%',
+                      background: isLight ? '#F1F5F9' : '#0F172A',
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 8,
+                      padding: '8px 12px',
+                      fontSize: 12.5,
+                      fontWeight: 700,
+                      color: C.textPrimary,
+                      outline: 'none',
+                      marginTop: 4,
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase' }}>
+                    To (Candidate Recipient):
+                  </label>
+                  <input
+                    value={emailTo}
+                    onChange={e => setEmailTo(e.target.value)}
+                    style={{
+                      width: '100%',
+                      background: C.inputBg,
+                      border: `1px solid ${C.inputBorder}`,
+                      borderRadius: 8,
+                      padding: '8px 12px',
+                      fontSize: 12.5,
+                      fontWeight: 700,
+                      color: C.textPrimary,
+                      outline: 'none',
+                      marginTop: 4,
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Subject */}
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase' }}>
+                  Email Subject Line:
+                </label>
+                <input
+                  value={emailSubject}
+                  onChange={e => setEmailSubject(e.target.value)}
+                  style={{
+                    width: '100%',
+                    background: C.inputBg,
+                    border: `1px solid ${C.inputBorder}`,
+                    borderRadius: 8,
+                    padding: '9px 12px',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: C.textPrimary,
+                    outline: 'none',
+                    marginTop: 4,
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {/* Quick 1-Click Templates */}
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase', marginBottom: 6 }}>
+                  ⚡ Quick Email Templates (1-Click Fill):
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const candFirstName = (emailModalCandidate?.name || 'Candidate').split(' ')[0]
+                      const targetReq = emailModalCandidate?.targetReqId || '159079'
+                      const jobTitle = emailModalCandidate?.matchedJobTitle || 'Java Developer III'
+                      setEmailSubject(`Right to Represent (RTR) Authorization: ${jobTitle} (Req #${targetReq}) | COOLSOFT`)
+                      setEmailBody(`Hi ${candFirstName},\n\nPlease review and sign the Right to Represent (RTR) authorization for the ${jobTitle} position (Req #${targetReq}).\n\nI hereby give COOLSOFT LLC the exclusive right to represent me for this requisition with the client. I confirm that no other agency has submitted my profile for this position.\n\nPlease reply with 'Confirmed' along with your legal full name.\n\nWith Regards,\n${currentUser?.name || 'Omkesh Manjute'}\nLead Recruiter\nCOOLSOFT LLC | ${currentUser?.email || 'omkesh@coolsofttech.com'}\nhttp://www.coolsofttech.com`)
+                    }}
+                    style={{ background: C.inputBg, border: `1px solid ${C.border}`, borderRadius: 6, padding: '5px 10px', fontSize: 11.5, fontWeight: 700, color: C.textPrimary, cursor: 'pointer' }}
+                  >
+                    📋 Right to Represent (RTR)
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const candFirstName = (emailModalCandidate?.name || 'Candidate').split(' ')[0]
+                      const targetReq = emailModalCandidate?.targetReqId || '159079'
+                      const jobTitle = emailModalCandidate?.matchedJobTitle || 'Java Developer III'
+                      setEmailSubject(`Technical Screen Invitation: ${jobTitle} (Req #${targetReq}) | COOLSOFT`)
+                      setEmailBody(`Hi ${candFirstName},\n\nWe have reviewed your resume for the ${jobTitle} position (Req #${targetReq}) and would like to schedule a 20-minute technical screening call.\n\nPlease let us know your availability for today or tomorrow between 10:00 AM and 4:00 PM EST.\n\nLooking forward to speaking with you.\n\nWith Regards,\n${currentUser?.name || 'Omkesh Manjute'}\nLead Recruiter\nCOOLSOFT LLC | ${currentUser?.email || 'omkesh@coolsofttech.com'}\nhttp://www.coolsofttech.com`)
+                    }}
+                    style={{ background: C.inputBg, border: `1px solid ${C.border}`, borderRadius: 6, padding: '5px 10px', fontSize: 11.5, fontWeight: 700, color: C.textPrimary, cursor: 'pointer' }}
+                  >
+                    📞 Technical Screening Call
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const candFirstName = (emailModalCandidate?.name || 'Candidate').split(' ')[0]
+                      const targetReq = emailModalCandidate?.targetReqId || '159079'
+                      const jobTitle = emailModalCandidate?.matchedJobTitle || 'Java Developer III'
+                      setEmailSubject(`Rate & Availability Clearance: ${jobTitle} (Req #${targetReq}) | COOLSOFT`)
+                      setEmailBody(`Hi ${candFirstName},\n\nCould you please confirm your rate and availability for the ${jobTitle} position (Req #${targetReq})?\n- Expected Hourly Pay Rate ($/hr C2C or W2):\n- Earliest start date / notice period:\n- Current US work authorization status:\n\nThank you.\n\nWith Regards,\n${currentUser?.name || 'Omkesh Manjute'}\nLead Recruiter\nCOOLSOFT LLC | ${currentUser?.email || 'omkesh@coolsofttech.com'}\nhttp://www.coolsofttech.com`)
+                    }}
+                    style={{ background: C.inputBg, border: `1px solid ${C.border}`, borderRadius: 6, padding: '5px 10px', fontSize: 11.5, fontWeight: 700, color: C.textPrimary, cursor: 'pointer' }}
+                  >
+                    💵 Rate & Work Auth Clearance
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const candFirstName = (emailModalCandidate?.name || 'Candidate').split(' ')[0]
+                      const targetReq = emailModalCandidate?.targetReqId || '159079'
+                      const jobTitle = emailModalCandidate?.matchedJobTitle || 'Java Developer III'
+                      setEmailSubject(`Client Interview Shortlist: ${jobTitle} (Req #${targetReq}) | COOLSOFT`)
+                      setEmailBody(`Hi ${candFirstName},\n\nGreat news! The client has shortlisted your profile for an interview for the ${jobTitle} role (Req #${targetReq}).\n\nPlease confirm your availability for an interview round this week and share your contact phone number.\n\nWith Regards,\n${currentUser?.name || 'Omkesh Manjute'}\nLead Recruiter\nCOOLSOFT LLC | ${currentUser?.email || 'omkesh@coolsofttech.com'}\nhttp://www.coolsofttech.com`)
+                    }}
+                    style={{ background: C.inputBg, border: `1px solid ${C.border}`, borderRadius: 6, padding: '5px 10px', fontSize: 11.5, fontWeight: 700, color: C.textPrimary, cursor: 'pointer' }}
+                  >
+                    📅 Client Interview Shortlist
+                  </button>
+                </div>
+              </div>
+
+              {/* Email Body */}
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase' }}>
+                  Email Message Body &amp; Recruiter Signature:
+                </label>
+                <textarea
+                  rows={9}
+                  value={emailBody}
+                  onChange={e => setEmailBody(e.target.value)}
+                  style={{
+                    width: '100%',
+                    background: C.inputBg,
+                    border: `1px solid ${C.inputBorder}`,
+                    borderRadius: 8,
+                    padding: '12px 14px',
+                    fontSize: 13,
+                    lineHeight: 1.6,
+                    color: C.textPrimary,
+                    outline: 'none',
+                    resize: 'vertical',
+                    fontFamily: 'inherit',
+                    marginTop: 4,
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {emailSuccessToast && (
+                <div style={{ background: '#F0FDF4', color: '#15803D', border: '1px solid #BBF7D0', padding: '10px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 700 }}>
+                  {emailSuccessToast}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{ padding: '16px 24px', borderTop: `1px solid ${C.border}`, backgroundColor: C.surface, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <button
+                type="button"
+                onClick={() => setEmailModalCandidate(null)}
+                style={{ background: 'none', border: `1px solid ${C.border}`, borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 700, color: C.textSecondary, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                {directMailtoUrl ? (
+                  <a
+                    href={directMailtoUrl}
+                    style={{
+                      background: '#F1F5F9',
+                      color: '#0F172A',
+                      border: '1px solid #CBD5E1',
+                      borderRadius: 8,
+                      padding: '8px 16px',
+                      fontSize: 13,
+                      fontWeight: 800,
+                      textDecoration: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6
+                    }}
+                  >
+                    📨 Open in Outlook / Mail App
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const fullSig = `\n\nWith Regards,\n${currentUser?.name || 'Omkesh Manjute'}\nLead Recruiter\nCOOLSOFT LLC | ${currentUser?.email || 'omkesh@coolsofttech.com'}\nhttp://www.coolsofttech.com`
+                      const fullText = emailBody.includes('Regards') ? emailBody : `${emailBody}${fullSig}`
+                      const url = `mailto:${encodeURIComponent(emailTo)}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(fullText)}`
+                      window.location.href = url
+                    }}
+                    style={{
+                      background: C.inputBg,
+                      color: C.textPrimary,
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 8,
+                      padding: '8px 14px',
+                      fontSize: 12.5,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6
+                    }}
+                  >
+                    📨 Open Mail App (Instant)
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleSendDirectEmail}
+                  disabled={emailSending}
+                  style={{
+                    background: 'linear-gradient(135deg,#2563EB,#1D4ED8)',
+                    color: '#FFF',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '8px 20px',
+                    fontSize: 13,
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    boxShadow: '0 2px 8px rgba(37,99,235,0.3)',
+                    opacity: emailSending ? 0.6 : 1
+                  }}
+                >
+                  <IconSend /> {emailSending ? 'Sending via Gateway...' : '🚀 Send Email Now'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Candidate Full Profile Drawer (Recruiter Side - Monster Style) */}
-      {showFullProfileModal && activeThread && candidateDetails && (() => {
-        const candidateName = candidateDetails.candidateName || candidateDetails.name || activeThread.candidateName
+      {showFullProfileModal && candidateDetails && (() => {
+        const candidateName = candidateDetails.candidateName || candidateDetails.name || activeThread?.candidateName || 'Candidate'
         const email = candidateDetails.candidateEmail || candidateDetails.email || profile?.email || '—'
         const phone = candidateDetails.candidatePhone || candidateDetails.phone || profile?.phone || '—'
         const locationVal = typeof candidateDetails.location === 'string' 
@@ -945,9 +2024,9 @@ export default function RecruiterInbox() {
         const visaStatusVal = candidateDetails.visaStatus || candidateDetails.visa_status || profile?.visa_status || '—'
         const resumeText = candidateDetails.resumeText || candidateDetails.resume_text || ''
         const matchScore = candidateDetails.jdMatch?.match_score || candidateDetails.jd_match?.match_score || candidateDetails.matchScore || candidateDetails.ai_match?.score || null
-        const matchingSkills = candidateDetails.jdMatch?.matched_skills || candidateDetails.jd_match?.matching_skills || candidateDetails.jd_match?.matched_skills || []
+        const matchingSkills = candidateDetails.jdMatch?.matched_skills || candidateDetails.jd_match?.matching_skills || candidateDetails.jd_match?.matched_skills || candidateDetails.skills || []
         const missingSkills = candidateDetails.jdMatch?.missing_skills || candidateDetails.jd_match?.missing_skills || candidateDetails.jd_match?.missing_skills || []
-        const summary = candidateDetails.jdMatch?.candidate_summary || candidateDetails.jd_match?.candidate_summary || candidateDetails.jd_match?.summary || ''
+        const summary = candidateDetails.jdMatch?.candidate_summary || candidateDetails.jd_match?.candidate_summary || candidateDetails.jd_match?.summary || candidateDetails.summary || ''
 
         const hasDl = candidateDetails.uploadedDocuments?.dl || candidateDetails.documents?.some(d => d.type === 'driving_license' || d.type === 'driving_licence');
         const hasSelfie = candidateDetails.uploadedDocuments?.selfie || candidateDetails.selfieUrl;
@@ -987,7 +2066,7 @@ export default function RecruiterInbox() {
                 <div>
                   <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: C.textPrimary }}>Complete Candidate Profile &amp; Resume Analysis</h3>
                   <p style={{ margin: '4px 0 0', fontSize: 12, color: '#2563EB', fontWeight: 700 }}>
-                    📝 Applied for {activeThread.jobTitle || 'Job Position'}
+                    📝 Applied for {candidateDetails.matchedJobTitle || candidateDetails.jobTitle || activeThread?.jobTitle || 'Job Position'}
                   </p>
                 </div>
                 <button
@@ -1025,7 +2104,7 @@ export default function RecruiterInbox() {
                         display: 'inline-block',
                         marginTop: 6
                       }}>
-                        ID: {candidateDetails.id || activeThread.candidateId}
+                        ID: {candidateDetails.id || candidateDetails.candidate_id || activeThread?.candidateId || 'CAND'}
                       </span>
                     </div>
                   </div>

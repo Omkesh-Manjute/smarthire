@@ -31,6 +31,121 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-10 — Indeed-Style Recruiter Talent Stream, Multi-Folder Spam Recovery & Personal Email Gateway (`/inbox`)
+- **Simplified Indeed-Style Recruiter Talent Stream & Private Scoping**:
+  - Re-architected `/inbox` (`RecruiterInbox.jsx`) with a clean top toggle:
+    - `📥 Candidates & Resumes` (Indeed-style candidate stream with source filters & 1-click actions).
+    - `💬 Live Messages` (Direct candidate conversations & team reporting channels).
+  - Enforced strict Indeed-style recruiter privacy scoping ("dusro ko mere candidate nahi dikhne cahiye"): each recruiter strictly sees only their own candidates and private talent stream. Admins retain toggle capability.
+- **Clear Multi-Source Indicators (Inbox, Spam, Careers, Vendor)**:
+  - Every candidate card prominently indicates origin:
+    - `📧 Recruiter Email Inbox`: Candidates received directly into the recruiter's email inbox.
+    - `🛡️ Recovered from Spam Folder`: Prominent red/amber badge alerting that candidate applied via email but landed in the Spam/Junk folder. Harvester salvaged it and auto-matched with open requisitions.
+    - `🌐 Applied on Careers Portal (/jobs)`: Applicants from public careers portal.
+    - `🏢 Vendor Bench Submittal`: Direct submittals from staffing/vendor partners.
+- **Multi-Folder Email Scanning & Auto-Requisition Matching**:
+  - Added `POST /api/recruiter/sync-email-resumes` with multi-folder scanning (`INBOX`, `SPAM`), auto-calculating AI match scores against open JobsInHand positions (Req #159079, #159078, #159077, #159074, #159073) and extracting skills.
+- **Strict Personal Outbound Email Gateway**:
+  - Outbound emails (RTR, Pre-Screening, Rate Confirmation, Interview) strictly sent from the recruiter's personal email (`omkesh@coolsofttech.com`) with official COOLSOFT LLC signature.
+  - Zero-firewall dual dispatch: Attempts server SMTP and provides instant 1-click desktop `mailto:` launcher prefilled with recipient, subject, and signature.
+- **1-Click Candidate Assignment & Monster-Style Resume Viewer**:
+  - Added `➕ Add to Req #XXXXX`: Instantly assigns candidate to requisition, syncs to `localStorage`, Firestore (`saveRequisitionCandidates`), and backend `/api/candidates`, and dispatches `candidate-pushed-to-req`.
+  - Added `📄 View Resume`: Displays complete profile with keyword highlights in Monster-style drawer.
+- **Production Build Verified**:
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings (built in 1.93s).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 1.90s).
+
+### 2026-09-10 — Production Deployment to Render & Candidate Push to Requisition/JobsInHand Sync Fix
+- **Candidate Push to Requisition & Scoping Visibility Repaired**:
+  - Diagnosed why a candidate pushed from `CandidatesModule` (`/ats?tab=candidates`) showed `✓ In Req #XXXXX` in the candidates list but didn't show up in the requisition's "Potential Candidates" tab:
+    1. `newSubObj` was missing recruiter metadata (`recruiter`, `recruiterEmail`, `recruiterRefCode`, `addedByName`, `addedByEmail`, `lastChangedBy`), causing `getScopedPotentialCandidates` to filter the candidate out.
+    2. `newSubObj.assignedBy` fell back to `candidate.recruiter` (often "SmartHire Careers" or legacy source string) instead of the logged-in user's identity (`currentUserName`).
+    3. Added `candidate-pushed-to-req` and `storage` event listeners in `RecruiterDashboard.jsx` so candidate assignments immediately reflect in `potentialCandidates` without page refresh.
+    4. Enhanced `matchingGlobal` in `handleJobCardClick` to match `c.pushedReqId` in addition to `reqId` and `job_id`.
+    5. Added automatic `potentialCandidates` refresh from `localStorage` whenever the "potential" subtab is activated.
+- **Production Build & Render Git Push**:
+  - Staged, verified (`npm run build` in 2.02s, root `node build.js` in 2.30s), committed, and pushed all pending email gateway fixes (timeout, presets, auto-save), 1-click candidate assignments, DL front/back compliance, and real-time syncing to GitHub `origin/main` to trigger live deployment on Render.
+
+### 2026-09-10 — Candidate Search Fix, 1-Click Position Assignment, "Select from Pool" Removal & Dual-Sided DL Compliance
+- **Candidate Search Engine in `resumeSearch` Restored**:
+  - Diagnosed root cause where searching candidates only executed `alert()` without updating state or filtering the visible candidate pool, and `c.skills.some` crashed when candidate skills were stored as comma-separated strings instead of arrays.
+  - Built `resumeSearchMatchedCandidates` memo: real-time safe fuzzy matching across `name`, `candidateId`, `email`, `skills` (safe string/array handler), `city`, `state`, `workAuth`, and `experience`.
+  - Added "↺ Clear / Show All" reset button and dynamic match count pill (`🔍 Search (X Matches)`).
+- **1-Click Candidate Assignment from Pool Below**:
+  - Implemented `handleDirectAssignCandidateToCurrentReq(c)`: added a prominent orange `➕ Add to this Position` button in every candidate row in `resumeSearch`.
+  - Immediately assigns the selected candidate to the target requisition (`selectedReq`), updates `potentialCandidates`, persists to `localStorage` across all key formats (`cleanId`, `resolvedId`, `rawId`, `fullId`), syncs to Firestore (`saveRequisitionCandidates`) and backend `/api/candidates`, and navigates directly to the requisition's Potential Candidates tab.
+  - Added `Edit & Submit >>` to customize pay rate/notes before submitting and `👁️ Profile` to view the comprehensive dossier.
+- **Candidate Submission "Save" Button Repaired**:
+  - Replaced dummy `alert()` on the "Save" button in `resumeSubmission` (lines 5735–5750) with `handleAssignCandidateToReq`, renaming to `💾 Save & Add to Position`.
+  - Both "Save & Add to Position" and "Assign" now reliably persist candidate assignments to database and requisition tab.
+- **"Select from Pool" Completely Removed**:
+  - Removed all legacy "Select from Pool" buttons and divider links from requisition toolbar and empty state tables per user instruction.
+- **Dual-Sided Driver's License (DL Front & Back) Compliance**:
+  - **`CandidateDetailViewModal.jsx`**: Added distinct `dlFront` ("Driver's License - Front Page") and `dlBack` ("Driver's License - Back Page") upload and preview slots with barcode / Real ID compliance verification, preserving backwards compatibility with legacy `dl` keys.
+  - **`RecruiterDashboard.jsx`**: Added `Driver's License (Front Page)` and `Driver's License (Back Page)` to `resumeSubmission` Legal subtab and viewer selector dropdown with state-specific front/back inspection canvases.
+  - **Server API (`POST /api/verify/manual-document`)**: Supported `dl_back_file` upload, PDF-to-image extraction, and multi-modal prompt verification for 2D barcode (PDF417) and reverse-side endorsement auditing.
+- **Production Build Verified**:
+  - `npm run build` in `smarthire-react` verified: 0 errors, 0 warnings (built in 1.83s).
+  - Root `node build.js` verified: 0 errors, 0 warnings (built in 1.95s).
+- **Diagnosed Root Causes of Failed Ingestion**:
+  1. **Timezone Date Drop in `isTodayDate`**:
+     - Jobs on JobsInHand are posted with US Eastern timestamps (e.g. `09-Sep-2026`).
+     - Server running in Indian Standard Time (IST, UTC+5:30) evaluated `now.getDate() === 10` against `day === 9`, rejecting all 15 active jobs on page 1 (`Found 0 today's new jobs`).
+  2. **`isBlockedResponse` False Positive on Word "robot"**:
+     - `isBlockedResponse` in `jobsinhand-scraper.js` checked `lower.includes('robot')`, which matched standard meta tags (`<meta name="robots"...>`) and "Robotics" skills inside valid 1MB HTML responses.
+     - This caused every single successful HTTP 200 response to be misidentified as "blocked", triggering an infinite/hanging Playwright Chromium fallback.
+  3. **Playwright Execution Latency**:
+     - Cloud headless environments (and Render 512MB tier) frequently timed out or hung on multi-page Chromium navigation.
+- **Implemented Fixes across Backend & Frontend**:
+  - **Timezone-Tolerant Date Matching (`isTodayDate` & `isToday`)**:
+    - Replaced rigid single-day checks with UTC-normalized 60-hour window tolerance to seamlessly bridge US Eastern/Pacific vs IST/UTC timezones.
+    - Added automatic fallback to top active jobs on page 1 if no jobs match today's date, guaranteeing jobs are never dropped due to weekend/holiday post dates.
+  - **Accurate Anti-Bot Detection (`isBlockedResponse`)**:
+    - Validated actual ASP.NET form indicators (`ctl00_Contentpage1`, `search_jobs`, `gv_jobs`, `lbl_descr`) so valid pages are never falsely flagged.
+    - Narrowed block detection to genuine Cloudflare/CAPTCHA tokens (`cf-browser-verification`, `g-recaptcha`, `cloudflare ray id`).
+  - **Fast Native HTTP Scraper Priority**:
+    - Prioritized native `fetch()` / `httpGet` in `scrapeJobsInHand` and `POST /api/jobs/scrape` (< 2s execution vs 2+ minute Playwright timeouts).
+  - **Announce Discrete New Positions ("Jo Aya Vo Batao")**:
+    - Updated `handleScrapeLiveJobs` in `RecruiterDashboard.jsx` to parse newly returned jobs and dispatch discrete activity notifications with title, Req ID, client, and location.
+- **Ingested 5 Latest Active JDs from JobsInHand**:
+  1. **Req #159079**: `Java Developer III - 165504` · ETF (Madison, WI) · $75/hr (Remote) · Java, React, Vue, SQL, Git
+  2. **Req #159078**: `Public Health Program Director 1 (66312)` · TN DOH (Nashville, TN) · $75/hr (Hybrid) · Strategic Planning, Technical Writing
+  3. **Req #159077**: `Java Developer III - 165503` · ETF (Madison, WI) · $75/hr (Remote) · Java, Angular, Vue, SQL, Git
+  4. **Req #159074**: `Attorney - 66316` · TN DOH (Nashville, TN) · $75/hr (Hybrid) · Legal Writing, Communications
+  5. **Req #159073**: `DBHDS - Data Governance Analyst (CDC Funded) (807900)` · DBHDS (Richmond, VA) · $75/hr (Hybrid) · Data Analysis, SQL, Data Warehouse
+- **Production Build Verified**:
+  - `npm run build` in `smarthire-react` verified: 0 errors, 0 warnings (built in 1.95s).
+
+### 2026-09-10 — Notification Engine De-Duplication & "Jo Aya Vo Batao" Fix + Reports Portal theFront UI/UX Modernization
+- **Notification Engine De-Duplication & Persistent Baselining (`ActivityNotificationBell.jsx`)**:
+  - **Fixed Repeated Mass Sync Spam**: Resolved root cause where a single shared baseline flag caused all 276 existing backend MongoDB jobs to be repeatedly treated as "new" every 25 seconds, generating multiple `"💼 276 New Requisitions Synced!"` notifications.
+  - **Independent Baselining & Persistence**: Separated `firestoreBaselinedRef` and `backendJobsBaselinedRef`. All existing database jobs are now silently baselined on first load into persistent `localStorage` (`smarthire_known_job_keys`), preventing false alerts on reload or navigation.
+  - **"Jo Aya Vo Batao" (Individual Position Announcements)**: For genuine newly ingested jobs ($\le$ 3), pushed discrete notifications with the actual job title, client name, location, pay rate, and Req ID (e.g. `💼 New Requisition: Senior Cloud Architect · Req #159078 · NC DHHS (Raleigh, NC) · $85/hr is now open for candidate submissions`).
+  - **Automatic LocalStorage Spam Cleanup**: Added `sanitizeNotifications` on initial state load to purge old repeated `276 New Requisitions Synced` spam and deduplicate entries.
+  - **Strict Permanent De-duplication**: Updated `pushActivityNotification` to prevent duplicates by matching `title + reqId` and `title + message`, plus a 60s same-title debounce.
+  - **Dynamic Relative Timestamp**: Replaced static `'Just now'` text with dynamic `getTimeAgo(timestamp)` (e.g. `Just now`, `5m ago`, `2h ago`).
+
+- **Reports Portal View Modernized to MUI theFront Design System (`RecruiterDashboard.jsx`)**:
+  - **Target View**: `activeMainTab === 'reports' && viewMode === 'portal'` (Team Submissions & Reports).
+  - **Modern Breadcrumbs & Header Card**: Clean slate breadcrumbs (`SmartWorks Hub / Recruitment & Performance Reports`), live telemetry badge (`● LIVE SYNC ACTIVE`), and stylized CSV export button (`📥 Export CSV`).
+  - **6 High-Impact KPI Metric Cards**: Replaced old square boxes with `.tf-report-kpi-card` grid featuring colored accent borders, soft gradient backgrounds, icons, and 26px Plus Jakarta Sans bold numbers:
+    1. `SOURCED TALENT` (Target: private pool, `#2563eb`)
+    2. `TOTAL SUBMISSIONS` (Across assigned reqs, `#475569`)
+    3. `UNDER REVIEW` (Lead/Manager screening, `#d97706`)
+    4. `CLIENT INTERVIEWS` (Shortlisted for client, `#0284c7`)
+    5. `SELECTED / HIRED` (Successful placements, `#059669`)
+    6. `REJECTED` (Not selected / closed, `#dc2626`)
+  - **Modern Filter & Search Bar**: Integrated search input (`.tf-report-search-input`) with icon `🔍`, styled status select, assigned position select, reset button, and records counter pill.
+  - **Enhanced Submissions Table (`.tf-portal-table`)**:
+    - Circular candidate avatars with dynamic initials and vibrant gradient palettes (`getAvatarGradient`).
+    - Clickable candidate names linked to candidate profile modal.
+    - Clickable electric blue requisition pill badges (`.tf-req-pill`).
+    - Formatted pay rates with `C2C`/`W2` type chips, formatted submission dates, and status pills with colored indicator dots.
+    - Action button: `View Req →`.
+  - **theFront Pagination Bar**: Added full pagination (`reportCurrentPage`, `reportPageSize` with 10, 25, 50, 100 selector, and page pill navigation).
+- **Production Build Verified**:
+  - `npm run build` in `smarthire-react` verified: 0 errors, 0 warnings (built in 2.07s).
+
 ### 2026-09-10 — Clean Tasklet.ai Match: Continuous Infinite Loop & Zero Personal Names
 - **Continuous 13-Second Loop & Sequential Card Opening (`Homepage.jsx`)**:
   - Rebuilt the workflow timeline to run on continuous 60fps GPU-accelerated CSS keyframes (`wfLineTravel`, `wfLaserTravel`, `wfCard1-6`, `wfNode1-6`, `wfStem1-6`).
