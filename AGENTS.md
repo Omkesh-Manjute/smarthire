@@ -31,7 +31,45 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
-### 2026-09-10 — Indeed-Style Recruiter Talent Stream, Multi-Folder Spam Recovery & Personal Email Gateway (`/inbox`)
+### 2026-09-11 — Monster+ Split-Screen Candidate Stream, Full Multi-Section Resumes & Docked Floating Email Composer
+- **Monster+ Style Master-Detail Split Screen (`/inbox` -> `RecruiterInbox.jsx`)**:
+  - Implemented the exact 2-column layout matching user's Monster+ screenshots (`media_1789066714188.png`):
+    - **Left Stream (~440px)**: Compact Monster+ candidate cards with Checkbox selector, Viewed badge, Star favorite toggle, Candidate Name with popout `↗`, current and previous companies/roles, top skills with underlined tags and count badges, and an active orange border (`2px solid #D97706`).
+    - **Interactive Sub-Tabs**: `Matches (${count})`, `⭐ Favorites (${count})`, and `🛡️ Spam (${count})` allowing 1-click filtering across candidate states.
+    - **Right Canvas (flex: 1)**: Sticky header with comprehensive actions (Star `★`, Share `⤴`, Download resume `⬇️`, Email `✉️`, `➕ Add to Req #XXXXX`), Tabs (`📄 Resume`, `👤 Profile & Documents`), Quick metadata strip (Phone, Email, Visa Auth, Rate, Print `🖨️`), AI Requisition Match bar (job dropdown, live match fit gauge, green/red skill chips, in-resume search box), and scrollable paper resume with top Monster+ profile summary card and dynamic yellow `<mark>` highlights.
+- **Docked Floating Email Composer (`media_1789066806510.png`)**:
+  - Replaced screen-blocking modal with a non-intrusive floating composer window docked at bottom right (`bottom: 24px, right: 28px, width: 520px, zIndex: 6000`).
+  - Features candidate name & subtitle header, close `✕`, strict sender policy notice (`From: Omkesh Manjute <omkesh@coolsofttech.com>`), 1-click template pills (`📋 RTR Auth`, `📞 Screening Call`, `💵 Rate & Auth`, `📅 Interview Shortlist`), subject input, auto-expanding message body, formatting bar (`↩`, `↪`, `B`, `I`, `🔗`, `📨 Mail App`), and Monster+ purple "Send" button (`#8B5CF6`).
+  - Allows recruiter to review candidate resume and cards freely without blocking view.
+- **Enriched Candidate Pool & Full Multi-Section Resumes**:
+  - Added `Jacob Holbrook` (Sr. Java Developer) and updated existing candidates (`Sai Sree`, `Satya N.`, `Sharath S.`, `A. Naveen`, `Monica Monica`, `ArunRaju Battu`, `Suresh Reddy`) with complete 50-80 line professional resumes (Summary, Core Technical Skills, Detailed Work Experience with client projects & bullets, Education, Certifications).
+  - Store merge logic and fallback generators ensure complete resumes always display without truncation.
+- **Production Verification**:
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings (built in 1.87s).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 1.78s).
+
+### 2026-09-11 — Yahoo Small Business Spam Harvest, Recruiter/Candidate Inbox Filters & Dynamic AI Skill Highlight Drawer
+- **Yahoo Small Business Spam Ingestion (`omkesh@coolsofttech.com`)**:
+  - Ingested real candidates from recruiter's Yahoo Spam screenshot into backend `candidatesStore` (`smarthire-react/server/index.js`):
+    - `Sharath S.` (Network Security Engineer, GC, C2C)
+    - `A. Naveen` (Senior Power BI Data Analyst / Salesforce Developer)
+    - `Monica Monica` (Senior Project Manager, 18+ yrs, H1B)
+    - `ArunRaju Battu` (Senior QA Automation / SDET / Kubernetes / AWS)
+    - `Satya N.` (Java Fullstack Developer)
+    - `Sai Sree` (Java Full Stack Developer)
+  - Tagged with `🛡️ Recovered from Spam Folder` badge, matching open reqs, skills, and contact metadata.
+- **Enhanced `/inbox` Filter Toolbar (`RecruiterInbox.jsx`)**:
+  - Entity filters: `All`, `👤 Candidates / Applicants`, and `👔 Internal Recruiters`.
+  - Origin filters: `All Sources`, `📧 All Email`, `📥 Email Inbox`, `🛡️ Recovered from Spam`, `🌐 Careers Job Site`, and `🏢 Vendor Bench`.
+  - Position filter dropdown populated directly from active open positions (`openJobsList`).
+- **Interactive AI Multi-Position Drawer & Yellow Skill Highlighter**:
+  - Left Pane: 2x2 contact cards + **AI Multi-Position Match Analyzer** dropdown. Recruiter can select any open requisition to instantly recalculate fit score, title alignment, matching skills (green chips), and missing skills (red chips).
+  - Dynamic Yellow Highlight Synchronization: Selecting a position in the dropdown automatically updates matching skills across the full resume canvas in yellow `<mark>` tags.
+  - In-Resume Keyword Search: Sticky search input in viewer header highlights searched keywords in soft sky blue (`#BAE6FD`).
+  - 1-Click Action Buttons: `➕ Assign to Req #XXXXX` and `✉️ Draft Email / RTR` available both in header and below the match analysis.
+- **Production Verification**:
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings (built in 1.92s).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 1.84s).
 - **Simplified Indeed-Style Recruiter Talent Stream & Private Scoping**:
   - Re-architected `/inbox` (`RecruiterInbox.jsx`) with a clean top toggle:
     - `📥 Candidates & Resumes` (Indeed-style candidate stream with source filters & 1-click actions).

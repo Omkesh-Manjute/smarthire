@@ -7020,329 +7020,24 @@ app.get('/api/recruiter/email-streams', (req, res) => {
   // Ensure default candidate pool has all harvested email & spam candidates for recruiter
   const initialHarvested = [
       {
-        id: 'cand-harvest-1',
-        candidate_id: 'cand-harvest-1',
-        name: 'Suresh Kumar Reddy',
-        email: 'suresh.reddy@techconsulting.io',
-        phone: '+1 (408) 555-0182',
-        role: 'Senior Java / Spring Boot Developer',
-        location: 'Madison, WI',
-        skills: ['Java', 'Spring Boot', 'Microservices', 'React', 'SQL', 'AWS'],
-        experience: '9+ Years',
-        visaStatus: 'US Citizen',
-        status: 'New',
-        source: 'Email Inbox (omkesh@coolsofttech.com)',
-        sourceCategory: 'email_inbox',
-        isSpamRecovery: false,
-        folder: 'INBOX',
-        targetReqId: '159079',
-        matchedJobTitle: 'Java Developer III - 165504',
-        matchedJobClient: 'State of Wisconsin (ETF)',
-        matchedJobRate: '$75/hr',
-        matchScore: 95,
-        recruiterEmail: 'omkesh@coolsofttech.com',
-        recruiterName: 'Omkesh',
-        assignedBy: 'Omkesh',
-        recruiter: 'Omkesh',
-        resumeText: 'SURESH KUMAR REDDY\nMadison, WI | suresh.reddy@techconsulting.io | +1 (408) 555-0182\n\nPROFESSIONAL SUMMARY\nOver 9 years of experience in Enterprise Java application development, Spring Boot microservices, REST APIs, and modern frontend frameworks including React and Vue. Solid expertise in AWS cloud services, PostgreSQL, and CI/CD pipelines.\n\nTECHNICAL SKILLS\n- Core Java, J2EE, Spring Boot, Spring MVC, Spring Data JPA, Hibernate\n- Microservices, RESTful Web Services, GraphQL, Kafka\n- Cloud: AWS (EC2, S3, RDS, Lambda), Docker, Kubernetes\n- Databases: PostgreSQL, MySQL, Oracle, MongoDB\n- Frontend: React, JavaScript, HTML5, CSS3, Tailwind\n- Tools: Git, Jenkins, Maven, JIRA, Agile/Scrum\n\nWORK EXPERIENCE\nSenior Java Developer | Tech Consulting Group (2020 - Present)\n- Designed and implemented microservices using Spring Boot and Kafka messaging.\n- Deployed cloud-native applications on AWS ECS with Docker containers.\n- Developed responsive client dashboard in React with state management.\n\nJava Software Engineer | Cloud Solutions LLC (2016 - 2020)\n- Built robust backend services with Spring MVC and Hibernate.\n- Automated testing using JUnit and Mockito, achieving 90% test coverage.',
-        createdAt: new Date(Date.now() - 3600000 * 2).toISOString()
-      },
-      {
-        id: 'cand-harvest-2',
-        candidate_id: 'cand-harvest-2',
-        name: 'Gautam Siddharth',
-        email: 'gautam.siddharth.dev@protonmail.com',
-        phone: '+1 (608) 555-0133',
-        role: 'Full Stack Java & Angular Developer',
-        location: 'Madison, WI',
-        skills: ['Java', 'Angular', 'Vue', 'SQL', 'Git', 'Docker'],
-        experience: '8+ Years',
-        visaStatus: 'Green Card',
-        status: 'New',
-        source: 'Email Spam Folder (omkesh@coolsofttech.com)',
-        sourceCategory: 'email_spam',
-        isSpamRecovery: true,
-        folder: 'SPAM',
-        targetReqId: '159077',
-        matchedJobTitle: 'Java Developer III - 165503',
-        matchedJobClient: 'State of Wisconsin (ETF)',
-        matchedJobRate: '$75/hr',
-        matchScore: 96,
-        recruiterEmail: 'omkesh@coolsofttech.com',
-        recruiterName: 'Omkesh',
-        assignedBy: 'Omkesh',
-        recruiter: 'Omkesh',
-        resumeText: 'GAUTAM SIDDHARTH\nMadison, WI | gautam.siddharth.dev@protonmail.com | +1 (608) 555-0133\n\nSUMMARY\nFull Stack Java Developer with 8+ years developing scalable multi-tier web applications using Java 11/17, Angular, Vue, and SQL. Highly proficient in Git, containerization with Docker, and agile sprint delivery.\n\nSKILLS\n- Languages: Java, TypeScript, SQL\n- Frameworks: Angular 14+, Vue.js, Spring Boot\n- Version Control: Git, GitHub, GitLab\n- Devops: Docker, Kubernetes, Linux\n\nEXPERIENCE\nFull Stack Engineer | Midwest Dev Partners (2021 - Present)\n- Developed Angular front-ends integrated with Java Spring Boot REST endpoints.\n- Optimized SQL queries reducing report generation time by 40%.',
-        createdAt: new Date(Date.now() - 3600000 * 3).toISOString()
-      },
-      {
-        id: 'cand-harvest-3',
-        candidate_id: 'cand-harvest-3',
-        name: 'Ananya Sharma',
-        email: 'ananya.sharma.data@cloudmail.com',
-        phone: '+1 (804) 555-0199',
-        role: 'Data Governance & SQL Analyst',
-        location: 'Richmond, VA',
-        skills: ['Data Governance', 'SQL', 'Data Warehouse', 'Python', 'Tableau', 'CDC'],
-        experience: '7+ Years',
-        visaStatus: 'US Citizen',
-        status: 'New',
-        source: 'Email Inbox (omkesh@coolsofttech.com)',
-        sourceCategory: 'email_inbox',
-        isSpamRecovery: false,
-        folder: 'INBOX',
-        targetReqId: '159073',
-        matchedJobTitle: 'DBHDS - Data Governance Analyst (CDC Funded) (807900)',
-        matchedJobClient: 'Virginia DBHDS',
-        matchedJobRate: '$75/hr',
-        matchScore: 92,
-        recruiterEmail: 'omkesh@coolsofttech.com',
-        recruiterName: 'Omkesh',
-        assignedBy: 'Omkesh',
-        recruiter: 'Omkesh',
-        resumeText: 'ANANYA SHARMA\nRichmond, VA | ananya.sharma.data@cloudmail.com | +1 (804) 555-0199\n\nEXECUTIVE SUMMARY\nSenior Data Governance and Analytics Professional with 7+ years of experience in data lineage, metadata cataloging, master data management, and complex SQL database warehousing for state healthcare programs.\n\nSKILLS: Data Governance, Collibra, SQL, Snowflake, Python, Data Warehouse, Tableau, HIPAA compliance',
-        createdAt: new Date(Date.now() - 3600000 * 4).toISOString()
-      },
-      {
-        id: 'cand-harvest-4',
-        candidate_id: 'cand-harvest-4',
-        name: 'Meenakshi Iyer',
-        email: 'meenakshi.legal@gmail.com',
-        phone: '+1 (615) 555-0198',
-        role: 'Senior Legal & Regulatory Counsel',
-        location: 'Nashville, TN',
-        skills: ['Legal Writing', 'Regulatory Compliance', 'Health Policy', 'Communications'],
-        experience: '11+ Years',
-        visaStatus: 'US Citizen',
-        status: 'New',
-        source: 'Email Spam Folder (omkesh@coolsofttech.com)',
-        sourceCategory: 'email_spam',
-        isSpamRecovery: true,
-        folder: 'SPAM',
-        targetReqId: '159074',
-        matchedJobTitle: 'Attorney - 66316',
-        matchedJobClient: 'Tennessee Department of Health (TN DOH)',
-        matchedJobRate: '$75/hr',
-        matchScore: 94,
-        recruiterEmail: 'omkesh@coolsofttech.com',
-        recruiterName: 'Omkesh',
-        assignedBy: 'Omkesh',
-        recruiter: 'Omkesh',
-        resumeText: 'MEENAKSHI IYER, ESQ.\nNashville, TN | meenakshi.legal@gmail.com | +1 (615) 555-0198\n\nPROFESSIONAL PROFILE\nLicensed Attorney with 11+ years of experience in state administrative law, public health regulatory compliance, contract drafting, and executive communications. Strong track record in state agency advisory and legal policy analysis.',
-        createdAt: new Date(Date.now() - 3600000 * 5).toISOString()
-      },
-      {
-        id: 'cand-harvest-5',
-        candidate_id: 'cand-harvest-5',
-        name: 'David Miller',
-        email: 'david.miller.cloud@apexstaffing.com',
-        phone: '+1 (615) 555-0144',
-        role: 'Public Health Program Analyst',
-        location: 'Nashville, TN',
-        skills: ['Strategic Planning', 'Technical Writing', 'Program Management', 'Healthcare'],
-        experience: '8+ Years',
-        visaStatus: 'US Citizen',
-        status: 'New',
-        source: 'Email Inbox (omkesh@coolsofttech.com)',
-        sourceCategory: 'email_inbox',
-        isSpamRecovery: false,
-        folder: 'INBOX',
-        targetReqId: '159078',
-        matchedJobTitle: 'Public Health Program Director 1 (66312)',
-        matchedJobClient: 'Tennessee Department of Health (TN DOH)',
-        matchedJobRate: '$75/hr',
-        matchScore: 89,
-        recruiterEmail: 'omkesh@coolsofttech.com',
-        recruiterName: 'Omkesh',
-        assignedBy: 'Omkesh',
-        recruiter: 'Omkesh',
-        resumeText: 'DAVID MILLER, MPH\nNashville, TN | david.miller.cloud@apexstaffing.com | +1 (615) 555-0144\n\nSUMMARY\nHealth Program Analyst with 8+ years specializing in public health grant operations, strategic planning, cross-functional technical writing, and epidemiological data workflows for state health departments.',
-        createdAt: new Date(Date.now() - 3600000 * 6).toISOString()
-      },
-      {
-        id: 'cand-harvest-6',
-        candidate_id: 'cand-harvest-6',
-        name: 'Kranthi Kumar',
-        email: 'kranthi.kumar@techwork.net',
-        phone: '+1 (608) 555-0119',
-        role: 'Java Developer III / Cloud Specialist',
-        location: 'Madison, WI',
-        skills: ['Java', 'React', 'Vue', 'SQL', 'Git', 'Spring Boot'],
-        experience: '9+ Years',
-        visaStatus: 'H1B (Valid till 2027)',
-        status: 'New',
-        source: 'SmartHire Careers Portal (/jobs)',
-        sourceCategory: 'careers_portal',
-        isSpamRecovery: false,
-        folder: 'CAREERS',
-        targetReqId: '159079',
-        matchedJobTitle: 'Java Developer III - 165504',
-        matchedJobClient: 'State of Wisconsin (ETF)',
-        matchedJobRate: '$75/hr',
-        matchScore: 96,
-        recruiterEmail: 'omkesh@coolsofttech.com',
-        recruiterName: 'Omkesh',
-        assignedBy: 'Omkesh',
-        recruiter: 'Omkesh',
-        resumeText: 'KRANTHI KUMAR\nMadison, WI | kranthi.kumar@techwork.net | +1 (608) 555-0119\n\nSUMMARY: 9+ years enterprise experience with Java, Spring Boot, React, Vue, SQL, and Git.',
-        createdAt: new Date(Date.now() - 3600000 * 8).toISOString()
-      },
-      {
-        id: 'cand-harvest-7',
-        candidate_id: 'cand-harvest-7',
-        name: 'Vikramaditya Rao',
-        email: 'vikram.rao.java@apexgt.com',
-        phone: '+1 (469) 555-0178',
-        role: 'Lead Java Fullstack Engineer',
-        location: 'Dallas, TX',
-        skills: ['Java', 'Spring Boot', 'Microservices', 'Kafka', 'React', 'AWS'],
+        id: 'cand-monster-jacob',
+        candidate_id: 'cand-monster-jacob',
+        name: 'Jacob Holbrook',
+        email: 'jacob.holbrook.0mkeq@contact.monster.com',
+        phone: '+1 (262) 555-0194',
+        role: 'Sr. Java Developer',
+        location: 'Brookfield, Wisconsin',
+        currentCompany: 'Sr. Java Developer, Walmart',
+        previousCompany: 'Sr. Java Developer, Ford Motor',
+        updatedAtRelative: '1 month ago',
+        skills: ['Java', 'Java Platform Enterprise Edition (Java EE/J2EE)', 'Hibernate', 'Spring Boot', 'Microservices', 'SQL', 'Git', 'AWS', 'JUnit'],
         experience: '10+ Years',
-        visaStatus: 'H1B (Valid till 2028)',
-        status: 'New',
-        source: 'Apex Global Technologies LLC (Vendor Bench)',
-        sourceCategory: 'vendor_bench',
-        isSpamRecovery: false,
-        folder: 'VENDOR',
-        targetReqId: '159079',
-        matchedJobTitle: 'Java Developer III - 165504 (ETF)',
-        matchedJobClient: 'State of Wisconsin (ETF)',
-        matchedJobRate: '$75/hr',
-        matchScore: 94,
-        recruiterEmail: 'omkesh@coolsofttech.com',
-        recruiterName: 'Omkesh',
-        assignedBy: 'Omkesh',
-        recruiter: 'Omkesh',
-        resumeText: 'VIKRAMADITYA RAO\nDallas, TX | vikram.rao.java@apexgt.com | +1 (469) 555-0178\n\nSUMMARY: Lead Java Fullstack Engineer with 10+ years experience in Java, Spring Boot, Microservices, and Kafka.',
-        createdAt: new Date(Date.now() - 3600000 * 10).toISOString()
-      },
-      {
-        id: 'cand-harvest-spam-1',
-        candidate_id: 'cand-harvest-spam-1',
-        name: 'Sharath S.',
-        email: 'sharath.s.sec@infotech.io',
-        phone: '+1 (408) 555-0149',
-        role: 'Network Security Engineer || GC || C2C',
-        location: 'Open to Relocate (US Wide)',
-        skills: ['Network Security', 'Cisco', 'Palo Alto', 'Firewalls', 'VPN', 'Routing', 'AWS'],
-        experience: '9+ Years',
-        visaStatus: 'Green Card (GC)',
-        status: 'New',
-        source: 'Email Spam Folder (sharath s)',
-        sourceCategory: 'email_spam',
-        isSpamRecovery: true,
-        folder: 'SPAM',
-        targetReqId: '159079',
-        matchedJobTitle: 'Java Developer III - 165504',
-        matchedJobClient: 'State of Wisconsin (ETF)',
-        matchedJobRate: '$75/hr',
-        matchScore: 91,
-        recruiterEmail: 'omkesh@coolsofttech.com',
-        recruiterName: 'Omkesh',
-        assignedBy: 'Omkesh',
-        recruiter: 'Omkesh',
-        resumeText: 'SHARATH S.\nOpen to Relocate | sharath.s.sec@infotech.io | +1 (408) 555-0149\n\nPROFESSIONAL SUMMARY\nSenior Network Security Engineer with 9+ years of experience in enterprise firewall design, Cisco routing & switching, Palo Alto Panorama, VPN tunnels, and AWS cloud network security architectures.\n\nSKILLS: Network Security, Cisco ASA, Palo Alto, Firewalls, VPN, Routing, Switching, AWS, TCP/IP, Linux, Python Automation\n\nWORK EXPERIENCE\nSenior Security Engineer | Global InfoTech Solutions (2020 - Present)\n- Managed multi-site Palo Alto and Cisco firewall clusters for healthcare and financial clients.\n- Architected AWS VPC routing and transit gateways.',
-        createdAt: new Date(Date.now() - 3600000 * 1).toISOString()
-      },
-      {
-        id: 'cand-harvest-spam-2',
-        candidate_id: 'cand-harvest-spam-2',
-        name: 'A. Naveen',
-        email: 'anaveen@realsoftech.com',
-        phone: '+1 (214) 555-0188',
-        role: 'Senior Power BI Data Analyst / Salesforce Developer',
-        location: 'Dallas, TX',
-        skills: ['Data Governance', 'SQL', 'Data Warehouse', 'Power BI', 'Salesforce', 'DAX', 'ETL'],
-        experience: '8+ Years',
-        visaStatus: 'H1B',
-        status: 'New',
-        source: 'Email Spam Folder (anaveen@realsoftech.com)',
-        sourceCategory: 'email_spam',
-        isSpamRecovery: true,
-        folder: 'SPAM',
-        targetReqId: '159073',
-        matchedJobTitle: 'DBHDS - Data Governance Analyst (CDC Funded) (807900)',
-        matchedJobClient: 'Virginia DBHDS',
-        matchedJobRate: '$75/hr',
-        matchScore: 95,
-        recruiterEmail: 'omkesh@coolsofttech.com',
-        recruiterName: 'Omkesh',
-        assignedBy: 'Omkesh',
-        recruiter: 'Omkesh',
-        resumeText: 'A. NAVEEN\nDallas, TX | anaveen@realsoftech.com | +1 (214) 555-0188\n\nSUMMARY\nCertified Power BI Data Analyst and Salesforce Developer with 8+ years experience in enterprise data warehouse reporting, advanced SQL, data governance workflows, DAX modeling, and ETL data pipelines.\n\nSKILLS: Power BI, Salesforce, SQL, Data Warehouse, DAX, ETL, Tableau, Data Governance, Snowflake, Python\n\nEXPERIENCE\nLead Data Analyst | Real Softech Corp (2021 - Present)\n- Built enterprise executive dashboards using Power BI and Snowflake SQL.\n- Enforced data governance models and metadata dictionaries across state reporting pipelines.',
-        createdAt: new Date(Date.now() - 3600000 * 2).toISOString()
-      },
-      {
-        id: 'cand-harvest-spam-3',
-        candidate_id: 'cand-harvest-spam-3',
-        name: 'Monica Monica',
-        email: 'monica.pmo@techrecruit.us',
-        phone: '+1 (404) 555-0137',
-        role: 'Senior Project Manager [ 18+ Years ] [ H1B ]',
-        location: 'Atlanta, GA',
-        skills: ['Strategic Planning', 'Technical Writing', 'Program Management', 'Project Management', 'Agile', 'Scrum', 'PMP'],
-        experience: '18+ Years',
-        visaStatus: 'H1B (Valid till 2028)',
-        status: 'New',
-        source: 'Email Spam Folder (Monica Monica)',
-        sourceCategory: 'email_spam',
-        isSpamRecovery: true,
-        folder: 'SPAM',
-        targetReqId: '159078',
-        matchedJobTitle: 'Public Health Program Director 1 (66312)',
-        matchedJobClient: 'Tennessee Department of Health (TN DOH)',
-        matchedJobRate: '$75/hr',
-        matchScore: 94,
-        recruiterEmail: 'omkesh@coolsofttech.com',
-        recruiterName: 'Omkesh',
-        assignedBy: 'Omkesh',
-        recruiter: 'Omkesh',
-        resumeText: 'MONICA MONICA, PMP\nAtlanta, GA | monica.pmo@techrecruit.us | +1 (404) 555-0137\n\nEXECUTIVE SUMMARY\nPMP-Certified Senior IT Program and Project Manager with 18+ years leading large-scale multi-million dollar technology and public sector health initiatives. Proven expertise in strategic planning, stakeholder alignment, executive technical writing, and Agile delivery governance.\n\nSKILLS: Strategic Planning, Program Management, Technical Writing, PMP, Agile, Scrum, Risk Management, JIRA, Budget Oversight, Healthcare PMO',
-        createdAt: new Date(Date.now() - 3600000 * 3).toISOString()
-      },
-      {
-        id: 'cand-harvest-spam-4',
-        candidate_id: 'cand-harvest-spam-4',
-        name: 'ArunRaju Battu',
-        email: 'arun.battu@hptech.com',
-        phone: '+1 (312) 555-0162',
-        role: 'Senior QA Automation / SDET | AWS Kubernetes | Microservices',
-        location: 'Chicago, IL',
-        skills: ['QA Automation', 'SDET', 'Selenium', 'Java', 'AWS', 'Kubernetes', 'Microservices', 'SQL', 'Git'],
-        experience: '9+ Years',
-        visaStatus: 'H1B',
-        status: 'New',
-        source: 'Email Spam Folder (ArunRaju Battu @ HPTec...)',
-        sourceCategory: 'email_spam',
-        isSpamRecovery: true,
-        folder: 'SPAM',
-        targetReqId: '159079',
-        matchedJobTitle: 'Java Developer III - 165504',
-        matchedJobClient: 'State of Wisconsin (ETF)',
-        matchedJobRate: '$75/hr',
-        matchScore: 93,
-        recruiterEmail: 'omkesh@coolsofttech.com',
-        recruiterName: 'Omkesh',
-        assignedBy: 'Omkesh',
-        recruiter: 'Omkesh',
-        resumeText: 'ARUNRAJU BATTU\nChicago, IL | arun.battu@hptech.com | +1 (312) 555-0162\n\nSUMMARY\nSenior SDET & QA Automation Lead with 9+ years experience in Java test automation frameworks, Selenium WebDriver, REST Assured microservices testing, AWS cloud, Kubernetes, and CI/CD pipelines.\n\nSKILLS: Java, Selenium, QA Automation, AWS, Kubernetes, Microservices, SQL, Git, Jenkins, TestNG, Cucumber',
-        createdAt: new Date(Date.now() - 3600000 * 4).toISOString()
-      },
-      {
-        id: 'cand-harvest-spam-5',
-        candidate_id: 'cand-harvest-spam-5',
-        name: 'Satya N.',
-        email: 'satya.dev@bluediamondtech.com',
-        phone: '+1 (608) 555-0171',
-        role: 'Java Fullstack Developer (Spring Boot, React, AWS)',
-        location: 'Madison, WI',
-        skills: ['Java', 'Spring Boot', 'React', 'Vue', 'SQL', 'Git', 'AWS', 'Microservices'],
-        experience: '8+ Years',
         visaStatus: 'US Citizen',
         status: 'New',
-        source: 'Email Spam Folder (Satya - Blue Diamond Te...)',
-        sourceCategory: 'email_spam',
-        isSpamRecovery: true,
-        folder: 'SPAM',
+        source: 'Monster+ Candidate Search (Wisconsin)',
+        sourceCategory: 'email_inbox',
+        isSpamRecovery: false,
+        folder: 'INBOX',
         targetReqId: '159079',
         matchedJobTitle: 'Java Developer III - 165504',
         matchedJobClient: 'State of Wisconsin (ETF)',
@@ -7352,8 +7047,49 @@ app.get('/api/recruiter/email-streams', (req, res) => {
         recruiterName: 'Omkesh',
         assignedBy: 'Omkesh',
         recruiter: 'Omkesh',
-        resumeText: 'SATYA N.\nMadison, WI | satya.dev@bluediamondtech.com | +1 (608) 555-0171\n\nPROFESSIONAL SUMMARY\nSenior Java Full Stack Developer with 8+ years developing robust cloud applications with Java 17, Spring Boot, React, Vue, and SQL databases. Extensive experience with Git version control and AWS cloud deployments for state agency clients.\n\nSKILLS: Java, Spring Boot, React, Vue, SQL, Git, AWS, Microservices, REST APIs, Docker, PostgreSQL, JUnit',
-        createdAt: new Date(Date.now() - 3600000 * 5).toISOString()
+        resumeText: `JACOB HOLBROOK
+Brookfield, Wisconsin, United States
+jacob.holbrook.0mkeq@contact.monster.com | +1 (262) 555-0194 | US Citizen
+
+SUMMARY
+Sr. Java Developer with over 10+ years of experience in design, development, and implementation of high-throughput enterprise web applications, microservices, and distributed cloud solutions. Strong proficiency in Core Java, Spring Boot, Spring Cloud, Hibernate ORM, SQL, Git, and RESTful API architecture. Proven success delivering mission-critical applications at Fortune 500 companies including Walmart and Ford Motor Company.
+
+CORE TECHNICAL SKILLS
+- Languages: Java (8/11/17), J2EE, SQL, JavaScript, HTML5/CSS3
+- Frameworks & ORM: Spring Boot, Spring MVC, Spring Data JPA, Hibernate, Microservices, Apache Kafka
+- Web & Frontend: React, Angular, Vue, RESTful Web Services, JSON, XML
+- Cloud & DevOps: AWS (EC2, S3, RDS, CloudWatch), Docker, Kubernetes, Git, Jenkins CI/CD, Maven
+- Databases: PostgreSQL, Oracle 12c, MySQL, MongoDB
+- Testing & Quality: JUnit 5, Mockito, TestNG, SonarQube, Postman
+- Methodologies: Agile / Scrum, TDD, Domain Driven Design (DDD)
+
+PROFESSIONAL EXPERIENCE
+
+Sr. Java Developer | Walmart Labs — Bentonville, AR / Remote (2021 – Present)
+- Architected and delivered 14+ resilient microservices using Java 17, Spring Boot, and Apache Kafka for Walmart eCommerce order fulfillment processing over 2M transactions daily.
+- Integrated Hibernate and Spring Data JPA with PostgreSQL, optimizing complex database queries and indexing strategies, reducing API p99 latency by 35%.
+- Implemented Git version control branching workflows, automated peer code reviews, and containerized microservice deployments via Docker and Kubernetes on AWS ECS.
+- Designed secure OAuth2/JWT authentication filters and Spring Cloud API Gateway routing for multi-tenant state agency and vendor integrations.
+
+Sr. Java Developer | Ford Motor Company — Dearborn, MI (2018 – 2021)
+- Designed vehicle telematics and dealer inventory management services using Java 11, Spring MVC, REST APIs, and Oracle 12c.
+- Migrated monolithic enterprise applications into cloud-ready Spring Boot microservices, improving deployment frequency from bi-monthly to weekly.
+- Implemented unit and integration test suites using JUnit 5 and Mockito, raising code coverage from 68% to 92%.
+- Collaborated across distributed Scrum teams, participating in sprint grooming, retrospective, and stakeholder demo sessions.
+
+Java Software Engineer | Midwest Tech Solutions — Madison, WI (2014 – 2018)
+- Developed and maintained backend services for healthcare insurance claims processing using Java, Spring, Hibernate, and SQL Server.
+- Built reusable REST APIs consumed by Angular frontends and external client portals.
+- Managed Git repositories, created release branches, and assisted in Jenkins automated build pipeline setup.
+
+EDUCATION
+Bachelor of Science in Computer Science
+University of Wisconsin – Madison (Graduated with Honors)
+
+CERTIFICATIONS
+- Oracle Certified Professional: Java SE 11 Developer
+- AWS Certified Solutions Architect – Associate`,
+        createdAt: new Date(Date.now() - 3600000 * 24 * 30).toISOString()
       },
       {
         id: 'cand-harvest-spam-6',
@@ -7363,7 +7099,10 @@ app.get('/api/recruiter/email-streams', (req, res) => {
         phone: '+1 (608) 555-0193',
         role: 'Java Full Stack Developer (Angular, Vue, SQL)',
         location: 'Madison, WI',
-        skills: ['Java', 'Angular', 'Vue', 'SQL', 'Git', 'Spring Boot', 'REST APIs'],
+        currentCompany: 'Sr. Java Developer, Anthem Blue Cross',
+        previousCompany: 'Full Stack Engineer, Kohl\'s Corporation',
+        updatedAtRelative: '1 day ago',
+        skills: ['Java', 'Angular', 'Vue', 'SQL', 'Git', 'Spring Boot', 'REST APIs', 'TypeScript', 'Hibernate', 'PostgreSQL', 'Docker'],
         experience: '7+ Years',
         visaStatus: 'Green Card',
         status: 'New',
@@ -7380,13 +7119,317 @@ app.get('/api/recruiter/email-streams', (req, res) => {
         recruiterName: 'Omkesh',
         assignedBy: 'Omkesh',
         recruiter: 'Omkesh',
-        resumeText: 'SAI SREE\nMadison, WI | saisree.java@gmail.com | +1 (608) 555-0193\n\nSUMMARY\nFull Stack Java Engineer with 7+ years building enterprise web portals using Java 11/17, Angular, Vue, and relational SQL. Strong proficiency in Git workflows and agile sprint collaboration.\n\nSKILLS: Java, Angular, Vue, SQL, Git, Spring Boot, REST APIs, TypeScript, Hibernate, PostgreSQL',
-        createdAt: new Date(Date.now() - 3600000 * 6).toISOString()
-      }
+        resumeText: `SAI SREE
+Madison, WI | saisree.java@gmail.com | +1 (608) 555-0193 | Green Card
+
+PROFESSIONAL SUMMARY
+Dynamic and results-driven Java Full Stack Developer with 7+ years of experience building modern enterprise web applications and scalable RESTful APIs. Expertise in Java 11/17, Spring Boot, Angular 14, Vue.js, SQL databases, and Git version control. Demonstrated track record working in fast-paced Agile environments delivering public-sector and enterprise state applications.
+
+TECHNICAL SKILLS
+- Programming Languages: Java 8/11/17, TypeScript, JavaScript, SQL, HTML5, CSS3
+- Frameworks & Libraries: Spring Boot, Spring MVC, Hibernate, Angular (12/14/16), Vue.js, React
+- Web Services & Messaging: RESTful APIs, Microservices, GraphQL, Kafka, ActiveMQ
+- Databases: PostgreSQL, Oracle, MySQL, MongoDB, SQL Server
+- Cloud & CI/CD: AWS (S3, EC2, RDS), Docker, Git, GitLab CI, Maven, Jenkins
+- Methodologies: Agile / Scrum, Sprint Planning, Code Reviews, JIRA
+
+WORK EXPERIENCE
+
+Lead Full Stack Java Developer | Anthem / Elevance Health — Milwaukee, WI (2021 – Present)
+- Developed and maintained high-volume healthcare provider enrollment portals using Java 17, Spring Boot microservices, and Angular 14 with Vue components.
+- Engineered performant SQL queries, stored procedures, and schema migrations on PostgreSQL, ensuring HIPAA compliance and data integrity.
+- Maintained strict Git version control and feature-branch workflows, managing code merges and automated test runs via GitLab CI/CD.
+- Implemented comprehensive JUnit and Mockito test suites, guaranteeing 90%+ code coverage before production releases.
+
+Full Stack Software Engineer | Kohl's Corporation — Menomonee Falls, WI (2018 – 2021)
+- Built interactive customer dashboard interfaces using Vue.js and TypeScript, connecting to Java Spring Boot REST endpoints.
+- Developed backend service layers with Spring Data JPA and Hibernate for inventory catalog queries, decreasing checkout response times by 28%.
+- Integrated Docker containers for local development and CI/CD automated staging deployments on AWS ECS.
+- Participated actively in two-week Agile sprints, daily standups, and bi-weekly sprint reviews with product owners.
+
+Java Application Developer | SmartTech Systems — Madison, WI (2016 – 2018)
+- Designed Core Java enterprise modules, batch processing jobs, and SQL database reporting scripts.
+- Resolved production defect tickets, performed root cause analysis, and provided 24/7 on-call rotation support.
+
+EDUCATION
+Bachelor of Science in Information Technology
+University of Wisconsin – Milwaukee
+
+CERTIFICATIONS
+- Oracle Certified Associate, Java SE 8 Programmer
+- Certified Scrum Developer (CSD)`,
+        createdAt: new Date(Date.now() - 3600000 * 1).toISOString()
+      },
+      {
+        id: 'cand-harvest-spam-5',
+        candidate_id: 'cand-harvest-spam-5',
+        name: 'Satya N.',
+        email: 'satya.dev@bluediamondtech.com',
+        phone: '+1 (608) 555-0171',
+        role: 'Java Fullstack Developer (Spring Boot, React, AWS)',
+        location: 'Madison, WI',
+        currentCompany: 'Sr. Java Full Stack Developer, Blue Diamond Tech (Client: State of Wisconsin)',
+        previousCompany: 'Java Cloud Developer, Cognizant',
+        updatedAtRelative: '2 hours ago',
+        skills: ['Java', 'Spring Boot', 'React', 'Vue', 'SQL', 'Git', 'AWS', 'Microservices', 'REST APIs', 'Docker', 'PostgreSQL'],
+        experience: '8+ Years',
+        visaStatus: 'US Citizen',
+        status: 'New',
+        source: 'Email Spam Folder (Satya - Blue Diamond Te...)',
+        sourceCategory: 'email_spam',
+        isSpamRecovery: true,
+        folder: 'SPAM',
+        targetReqId: '159079',
+        matchedJobTitle: 'Java Developer III - 165504',
+        matchedJobClient: 'State of Wisconsin (ETF)',
+        matchedJobRate: '$75/hr',
+        matchScore: 98,
+        recruiterEmail: 'omkesh@coolsofttech.com',
+        recruiterName: 'Omkesh',
+        assignedBy: 'Omkesh',
+        recruiter: 'Omkesh',
+        resumeText: `SATYA N.
+Madison, WI | satya.dev@bluediamondtech.com | +1 (608) 555-0171 | US Citizen
+
+PROFESSIONAL SUMMARY
+Senior Java Full Stack Developer with 8+ years of hands-on experience designing, developing, and deploying robust cloud applications utilizing Java 17, Spring Boot, React, Vue, and SQL relational databases. Proven expertise supporting state agency projects, public sector digital portals, and mission-critical cloud migrations on AWS.
+
+TECHNICAL SKILLS
+- Languages: Java 8/11/17, TypeScript, JavaScript (ES6+), SQL, Python
+- Backend & Microservices: Spring Boot, Spring Cloud, Spring Data, Hibernate, REST APIs, Kafka
+- Frontend: React 18, Vue.js, Redux, HTML5, CSS3, Tailwind CSS
+- Databases: PostgreSQL, Oracle, MySQL, MongoDB, DynamoDB
+- Cloud & Tools: AWS (ECS, Lambda, S3, RDS, CloudFormation), Docker, Kubernetes, Git, Jenkins, Maven
+- Practices: Agile / Scrum, Test-Driven Development (TDD), CI/CD Automation
+
+EXPERIENCE
+
+Senior Full Stack Java Engineer | Blue Diamond Tech (Client: State of Wisconsin ETF) — Madison, WI (2020 – Present)
+- Engineered enterprise pension and benefits eligibility microservices using Java 17, Spring Boot, and RESTful APIs, serving 250,000+ state employees.
+- Built responsive user portals in React and Vue.js with state management, modular component architecture, and accessibility standards.
+- Designed relational database schemas in PostgreSQL, writing optimized SQL joins and triggers for high-volume compliance auditing.
+- Automated code deployment pipelines using Git, Docker, and AWS ECS, reducing deployment cycle times by 45%.
+
+Java Developer | Cognizant Technology Solutions — Chicago, IL (2017 – 2020)
+- Designed and maintained Spring Boot microservices integrated with Apache Kafka for asynchronous order event distribution.
+- Developed dynamic front-end components using React and Redux, communicating with backend REST endpoints.
+- Created unit tests with JUnit, Mockito, and Jest, maintaining strict code coverage thresholds over 85%.
+
+Software Developer | TechWave Corp — Minneapolis, MN (2015 – 2017)
+- Contributed to Core Java and J2EE development, building SOAP and RESTful services with Spring MVC and Hibernate.
+- Authored complex SQL scripts and data validation routines on Oracle databases.
+
+EDUCATION
+Bachelor of Science in Computer Science
+Illinois Institute of Technology, Chicago, IL
+
+CERTIFICATIONS
+- AWS Certified Developer – Associate
+- Oracle Certified Professional: Java SE 11`,
+        createdAt: new Date(Date.now() - 3600000 * 2).toISOString()
+      },
+      {
+        id: 'cand-harvest-spam-1',
+        candidate_id: 'cand-harvest-spam-1',
+        name: 'Sharath S.',
+        email: 'sharath.s.sec@infotech.io',
+        phone: '+1 (408) 555-0149',
+        role: 'Network Security Engineer || GC || C2C',
+        location: 'Open to Relocate (US Wide)',
+        currentCompany: 'Sr. Network Security Engineer, Global InfoTech Solutions',
+        previousCompany: 'Network Security Specialist, Enterprise Defense Corp',
+        updatedAtRelative: '3 hours ago',
+        skills: ['Network Security', 'Cisco ASA', 'Palo Alto', 'Firewalls', 'VPN', 'Routing', 'AWS', 'BGP', 'OSPF', 'Zscaler'],
+        experience: '9+ Years',
+        visaStatus: 'Green Card (GC)',
+        status: 'New',
+        source: 'Email Spam Folder (sharath s)',
+        sourceCategory: 'email_spam',
+        isSpamRecovery: true,
+        folder: 'SPAM',
+        targetReqId: '159079',
+        matchedJobTitle: 'Java Developer III - 165504',
+        matchedJobClient: 'State of Wisconsin (ETF)',
+        matchedJobRate: '$75/hr',
+        matchScore: 91,
+        recruiterEmail: 'omkesh@coolsofttech.com',
+        recruiterName: 'Omkesh',
+        assignedBy: 'Omkesh',
+        recruiter: 'Omkesh',
+        resumeText: `SHARATH S.
+Open to Relocate (US Wide) | Dallas, TX | sharath.s.sec@infotech.io | +1 (408) 555-0149 | Green Card (GC)
+
+PROFESSIONAL SUMMARY
+Accomplished Senior Network Security Engineer with 9+ years of extensive experience in enterprise firewall engineering, perimeter defense, Cisco routing & switching, Palo Alto Panorama, site-to-site VPN tunnels, and AWS cloud security architectures. Deep expertise in incident response, IDS/IPS tuning, and regulatory compliance (PCI-DSS, HIPAA, NIST).
+
+CORE COMPETENCIES & SKILLS
+- Firewalls & Security: Palo Alto (PA-3200, PA-5200, Panorama), Cisco ASA, Check Point, Fortinet FortiGate, Zscaler ZIA/ZPA
+- Routing & Switching: BGP, OSPF, EIGRP, Cisco Catalyst 9000, Nexus 7K/9K, VLANs, VXLAN, MPLS
+- VPN & Remote Access: IPsec VPN, SSL VPN, Cisco AnyConnect, GlobalProtect
+- Cloud Networking: AWS VPC, Transit Gateway, Direct Connect, Security Groups, Network ACLs, Route 53
+- Monitoring & Tools: Wireshark, SolarWinds, Splunk, Cisco Prime, Python Network Automation (Netmiko, Paramiko)
+
+PROFESSIONAL EXPERIENCE
+
+Senior Network Security Engineer | Global InfoTech Solutions — Dallas, TX (2020 – Present)
+- Led design and migration of multi-vendor firewall environments, replacing legacy Cisco ASA with next-gen Palo Alto clusters managed via Panorama.
+- Designed and provisioned secure AWS VPC infrastructure, Direct Connect circuits, and Transit Gateway routing for 40+ corporate offices.
+- Configured and audited BGP and OSPF routing protocols across redundant data centers with 99.999% network uptime.
+- Deployed Zscaler Internet Access (ZIA) and GlobalProtect VPN for 5,000+ remote employees during enterprise zero-trust transition.
+
+Network Security Specialist | Enterprise Defense Corp — San Jose, CA (2016 – 2020)
+- Administered Check Point and Cisco ASA firewalls, maintaining access control lists (ACLs) and NAT translation policies.
+- Conducted regular vulnerability assessments, IDS/IPS rule tuning, and firewall firmware upgrades without service disruption.
+- Automated routine firewall rule validation and configuration backups using Python scripts and Git versioning.
+
+Network Engineer | TeleCom Networks Inc — Plano, TX (2014 – 2016)
+- Implemented Cisco Catalyst switching, configured VLANs, STP, and inter-VLAN routing for corporate campus networks.
+- Troubleshot complex L2/L3 network connectivity issues using Wireshark packet captures and SNMP monitoring.
+
+EDUCATION & CERTIFICATIONS
+- Bachelor of Science in Electrical & Computer Engineering, University of Texas at Dallas
+- Palo Alto Networks Certified Network Security Engineer (PCNSE)
+- Cisco Certified Network Professional (CCNP Security)
+- AWS Certified Advanced Networking – Specialty`,
+        createdAt: new Date(Date.now() - 3600000 * 3).toISOString()
+      },
+      {
+        id: 'cand-harvest-spam-2',
+        candidate_id: 'cand-harvest-spam-2',
+        name: 'A. Naveen',
+        email: 'anaveen@realsoftech.com',
+        phone: '+1 (214) 555-0188',
+        role: 'Senior Power BI Data Analyst / Salesforce Developer',
+        location: 'Dallas, TX',
+        currentCompany: 'Lead Data Analyst, Real Softech Corp',
+        previousCompany: 'Senior BI & SQL Developer, Infosys',
+        updatedAtRelative: '4 hours ago',
+        skills: ['Data Governance', 'SQL', 'Data Warehouse', 'Power BI', 'Salesforce', 'DAX', 'ETL', 'Tableau', 'Snowflake', 'Python'],
+        experience: '8+ Years',
+        visaStatus: 'H1B',
+        status: 'New',
+        source: 'Email Spam Folder (anaveen@realsoftech.com)',
+        sourceCategory: 'email_spam',
+        isSpamRecovery: true,
+        folder: 'SPAM',
+        targetReqId: '159073',
+        matchedJobTitle: 'DBHDS - Data Governance Analyst (CDC Funded) (807900)',
+        matchedJobClient: 'Virginia DBHDS',
+        matchedJobRate: '$75/hr',
+        matchScore: 95,
+        recruiterEmail: 'omkesh@coolsofttech.com',
+        recruiterName: 'Omkesh',
+        assignedBy: 'Omkesh',
+        recruiter: 'Omkesh',
+        resumeText: `A. NAVEEN
+Dallas, TX | anaveen@realsoftech.com | +1 (214) 555-0188 | H1B
+
+EXECUTIVE SUMMARY
+Certified Senior Power BI Data Analyst and Salesforce Developer with 8+ years of expertise in enterprise data warehouse design, advanced SQL analytics, data governance frameworks, DAX calculations, and automated ETL data pipelines. Proven record translating complex healthcare and public-sector data into actionable executive dashboards and compliant state reporting systems.
+
+CORE TECHNICAL SKILLS
+- BI & Analytics: Power BI Desktop & Service, DAX, Power Query (M), Tableau, Excel (VBA, Power Pivot)
+- Database & Warehousing: SQL, Snowflake, SQL Server, Oracle, Data Modeling (Star/Snowflake Schema), Data Governance, Collibra
+- CRM & Development: Salesforce (Admin & Dev), Apex, SOQL, Lightning Web Components (LWC), Python (Pandas, NumPy)
+- ETL & Pipelines: SSIS, Azure Data Factory, Alteryx, CDC (Change Data Capture)
+- Compliance & Methodologies: Data Governance, HIPAA, Data Lineage, Agile / Scrum
+
+EXPERIENCE
+
+Lead Data Analyst & BI Developer | Real Softech Corp — Dallas, TX (2021 – Present)
+- Architected enterprise executive dashboards in Power BI connected to Snowflake data warehouse, automating weekly reporting for 500+ stakeholders.
+- Enforced data governance standards, data dictionary definitions, and row-level security (RLS) policies for state agency health reporting.
+- Developed complex DAX measures, time-intelligence calculations, and optimized Power Query transformations, improving report refresh times by 55%.
+- Integrated Salesforce CRM data with corporate data warehouse using Salesforce REST APIs and Azure Data Factory pipelines.
+
+Senior BI & SQL Developer | Infosys — Atlanta, GA (2018 – 2021)
+- Designed and maintained dimensional star-schema data models and stored procedures on SQL Server and Oracle databases.
+- Built automated ETL data ingestion pipelines using SSIS and Python, handling 10M+ daily healthcare transaction records.
+- Facilitated user training workshops and created comprehensive dashboard documentation and data governance operating procedures.
+
+Data Analyst | Tech Solutions Inc — Houston, TX (2015 – 2018)
+- Generated ad-hoc SQL reports, performed data cleansing, and developed operational Tableau reports for regional sales operations.
+- Collaborated with business teams to gather reporting requirements and define key performance indicators (KPIs).
+
+EDUCATION & CREDENTIALS
+- Master of Science in Data Analytics, University of North Texas
+- Microsoft Certified: Power BI Data Analyst Associate (PL-300)
+- Salesforce Certified Platform Developer I`,
+        createdAt: new Date(Date.now() - 3600000 * 4).toISOString()
+      },
+      {
+        id: 'cand-harvest-spam-3',
+        candidate_id: 'cand-harvest-spam-3',
+        name: 'Monica Monica',
+        email: 'monica.pmo@techrecruit.us',
+        phone: '+1 (404) 555-0137',
+        role: 'Senior Project Manager [ 18+ Years ] [ H1B ]',
+        location: 'Atlanta, GA',
+        currentCompany: 'Senior IT Program Manager, TechRecruit US (Client: State Public Health PMO)',
+        previousCompany: 'Project Management Lead, Deloitte Consulting',
+        updatedAtRelative: '5 hours ago',
+        skills: ['Strategic Planning', 'Technical Writing', 'Program Management', 'Project Management', 'Agile', 'Scrum', 'PMP', 'Risk Management', 'JIRA'],
+        experience: '18+ Years',
+        visaStatus: 'H1B (Valid till 2028)',
+        status: 'New',
+        source: 'Email Spam Folder (Monica Monica)',
+        sourceCategory: 'email_spam',
+        isSpamRecovery: true,
+        folder: 'SPAM',
+        targetReqId: '159078',
+        matchedJobTitle: 'Public Health Program Director 1 (66312)',
+        matchedJobClient: 'Tennessee Department of Health (TN DOH)',
+        matchedJobRate: '$75/hr',
+        matchScore: 94,
+        recruiterEmail: 'omkesh@coolsofttech.com',
+        recruiterName: 'Omkesh',
+        assignedBy: 'Omkesh',
+        recruiter: 'Omkesh',
+        resumeText: `MONICA MONICA, PMP, CSM
+Atlanta, GA | monica.pmo@techrecruit.us | +1 (404) 555-0137 | H1B (Valid till 2028)
+
+EXECUTIVE PROFILE
+Distinguished PMP-Certified Senior IT Program and Project Manager with 18+ years of leadership directing multi-million dollar technology transformations, public health initiatives, and enterprise cloud programs. Expert in strategic planning, stakeholder alignment, executive technical writing, Agile/Scrum delivery governance, risk management, and vendor contract negotiations.
+
+AREAS OF EXPERTISE
+- Program & Project Management: Strategic Planning, Project Lifecycle (SDLC), PMO Governance, Scope Management, Risk Mitigation
+- Methodologies: Agile, Scrum, Kanban, SAFe (Scaled Agile), Waterfall, Hybrid
+- Technical Writing & Comms: Executive Briefings, Health Policy Reports, Grant Proposals, RFP Responses, SOP Documentation
+- Tools & Software: JIRA, Confluence, Microsoft Project, Smartsheet, Clarity PPM, ServiceNow, Power BI
+- Budget & Vendor Management: Multi-Million Dollar Budgeting, Vendor Management (VMS), Contract Negotiation, SLA Compliance
+
+PROFESSIONAL EXPERIENCE
+
+Senior IT Program Manager | TechRecruit US (Client: State Public Health PMO) — Atlanta, GA (2019 – Present)
+- Directed $15M multi-agency public health modernization portfolio, managing cross-functional teams of 45+ engineers, analysts, and contractors.
+- Authored high-level strategic planning roadmaps, CDC grant performance documents, and executive technical writing reports presented to state commissioners.
+- Transitioned state health division from Waterfall to Agile Scrum delivery, reducing feature delivery cycle times by 35%.
+- Maintained comprehensive risk and issue registers in JIRA, preventing scope creep and ensuring 100% on-time milestone delivery.
+
+Project Management Lead | Deloitte Consulting — Washington, DC (2014 – 2019)
+- Managed complex enterprise IT implementations for federal and state government clients, adhering to strict compliance and budget limits.
+- Spearheaded executive communication cadences, steering committee briefings, and formal technical documentation.
+- Managed vendor deliverables, statement of work (SOW) drafting, and team resource capacity planning.
+
+Senior IT Project Manager | Wipro Technologies — New York, NY (2007 – 2014)
+- Managed end-to-end software development projects for financial and telecom clients from inception to post-go-live warranty.
+- Facilitated daily standups, sprint reviews, and retrospective meetings as certified Scrum Master.
+
+EDUCATION & CERTIFICATIONS
+- Master of Business Administration (MBA), Project Management & Systems
+- Bachelor of Engineering in Computer Science
+- Project Management Professional (PMP)® — Project Management Institute (PMI)
+- Certified ScrumMaster (CSM)® — Scrum Alliance
+- SAFe® 5 Agilist Certification`,
+        createdAt: new Date(Date.now() - 3600000 * 5).toISOString()
+      },
     ];
+
     initialHarvested.forEach(item => {
-      const exists = (candidatesStore || []).some(c => c && (c.id === item.id || (c.email && c.email.toLowerCase() === item.email.toLowerCase())));
-      if (!exists) {
+      const existingIdx = (candidatesStore || []).findIndex(c => c && (c.id === item.id || (c.email && c.email.toLowerCase() === item.email.toLowerCase())));
+      if (existingIdx !== -1) {
+        candidatesStore[existingIdx] = { ...candidatesStore[existingIdx], ...item };
+      } else {
         candidatesStore.unshift(item);
       }
     });
