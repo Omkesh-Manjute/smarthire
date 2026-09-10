@@ -243,8 +243,24 @@ export default function CandidateDetailViewModal({
         validity: '',
         fileData: null
       },
-      dl: parsedDocs.dl || {
-        title: "Driver's License (State DL)",
+      dl: parsedDocs.dl || parsedDocs.dlFront || {
+        title: "Driver's License (Front Page)",
+        fileName: 'Not Uploaded',
+        uploadedOn: '-',
+        status: 'Pending',
+        size: '-',
+        fileData: null
+      },
+      dlFront: parsedDocs.dlFront || parsedDocs.dl || {
+        title: "Driver's License (Front Page)",
+        fileName: 'Not Uploaded',
+        uploadedOn: '-',
+        status: 'Pending',
+        size: '-',
+        fileData: null
+      },
+      dlBack: parsedDocs.dlBack || {
+        title: "Driver's License (Back Page)",
         fileName: 'Not Uploaded',
         uploadedOn: '-',
         status: 'Pending',
@@ -1821,7 +1837,8 @@ export default function CandidateDetailViewModal({
                     {[
                       { key: 'resume', icon: '📄', label: 'Latest Formatted Resume', desc: 'Current candidate original resume file' },
                       { key: 'visa', icon: '🛂', label: 'Visa Copy / Work Auth (H1B/I-797/EAD/GC)', desc: 'Valid H1B Approval Notice, Green Card, or EAD Document' },
-                      { key: 'dl', icon: '🪪', label: "Driver's License (State DL Front/Back)", desc: 'Government Photo ID / State Identification' },
+                      { key: 'dlFront', icon: '🪪', label: "Driver's License (Front Page)", desc: 'State Government Photo ID / Driver License - Front Side' },
+                      { key: 'dlBack', icon: '🔄', label: "Driver's License (Back Page)", desc: 'State Government Photo ID / Driver License - Back Side & Barcode' },
                       { key: 'rtr', icon: '📑', label: 'Right to Represent (RTR Form)', desc: 'Signed exclusive right to represent for target requisition' },
                       { key: 'ssn', icon: '🛡️', label: 'SSN Verification Document', desc: 'Social Security Number card copy / background auth' },
                       { key: 'coversheet', icon: '📋', label: 'Candidate Submission Cover Sheet', desc: 'Submission cover sheet' }
@@ -2148,7 +2165,8 @@ export default function CandidateDetailViewModal({
                 >
                   <option value="resume">📄 Original Resume</option>
                   <option value="visa">🛂 Visa Copy / Work Auth</option>
-                  <option value="dl">🪪 Driver's License (DL)</option>
+                  <option value="dlFront">🪪 Driver's License (Front Page)</option>
+                  <option value="dlBack">🔄 Driver's License (Back Page)</option>
                   <option value="rtr">📑 Right To Represent (RTR)</option>
                   <option value="ssn">🛡️ SSN Verification</option>
                   <option value="coversheet">📋 Candidate Cover Sheet</option>

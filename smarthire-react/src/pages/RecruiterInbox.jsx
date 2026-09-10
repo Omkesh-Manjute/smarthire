@@ -178,6 +178,8 @@ export default function RecruiterInbox() {
   const [showTemplates, setShowTemplates] = useState(false)
   const [candidateDetails, setCandidateDetails] = useState(null)
   const [showFullProfileModal, setShowFullProfileModal] = useState(false)
+  const [syncingEmailResumes, setSyncingEmailResumes] = useState(false)
+  const [emailSyncToast, setEmailSyncToast] = useState('')
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
   const pollingRef = useRef(null)
@@ -530,6 +532,28 @@ export default function RecruiterInbox() {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
   }
 
+  const handleSyncEmailResumes = async () => {
+    setSyncingEmailResumes(true)
+    setEmailSyncToast('')
+    try {
+      const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
+      const recEmail = u.email || currentUser?.email || 'omkesh@coolsofttech.com'
+      const res = await fetch('/api/recruiter/sync-email-resumes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recruiterEmail: recEmail })
+      })
+      const data = await res.json()
+      setEmailSyncToast(data.message || 'Email resumes synced!')
+      fetchThreads()
+    } catch(e) {
+      setEmailSyncToast('Failed to sync resumes: ' + e.message)
+    } finally {
+      setSyncingEmailResumes(false)
+      setTimeout(() => setEmailSyncToast(''), 7000)
+    }
+  }
+
   useEffect(() => { fetchThreads() }, [fetchThreads])
 
   useEffect(() => {
@@ -590,6 +614,32 @@ export default function RecruiterInbox() {
           {totalUnread > 0 && <span style={{ background:'#EF4444', color:'#FFF', fontSize:11, fontWeight:800, borderRadius:12, padding:'2px 8px', marginLeft:4 }}>{totalUnread} unread</span>}
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          {emailSyncToast && (
+            <span style={{ fontSize: 12, fontWeight: 700, color: emailSyncToast.includes('Failed') ? '#dc2626' : '#16a34a', background: emailSyncToast.includes('Failed') ? '#fef2f2' : '#f0fdf4', border: `1px solid ${emailSyncToast.includes('Failed') ? '#fca5a5' : '#bbf7d0'}`, padding: '5px 12px', borderRadius: 8 }}>
+              {emailSyncToast}
+            </span>
+          )}
+          <button
+            onClick={handleSyncEmailResumes}
+            disabled={syncingEmailResumes}
+            style={{
+              background: '#16a34a',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 20,
+              padding: '6px 14px',
+              fontSize: 12,
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              boxShadow: '0 2px 6px rgba(22,163,74,0.25)'
+            }}
+            title="Scan recruiter email inbox for candidate resumes and match to active requisitions"
+          >
+            <span>📥</span> {syncingEmailResumes ? 'Syncing Resumes...' : 'Sync Email Resumes'}
+          </button>
           <span style={{ fontSize:12, color:C.textSecondary, background:C.inputBg, border:`1px solid ${C.border}`, padding:'5px 14px', borderRadius:20, fontWeight:600, display:'inline-flex', alignItems:'center', gap:6 }}>
             <span style={{ width:7, height:7, borderRadius:'50%', background:'#22C55E', display:'inline-block' }} /> {isReportee ? '1 Supervisor Channel' : `${visibleThreads.length} Conversations`}
           </span>

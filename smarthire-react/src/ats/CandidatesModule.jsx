@@ -448,10 +448,19 @@ function CandidatesModule({
       String(j.id || '').replace(/^J-/, '').trim() === altReqId ||
       String(j.reqId || '').replace(/^J-/, '').trim() === altReqId
     )
+    const resolvedReqClean = resolveReqId(cleanReqId, matchedJob)
     const posNum = matchedJob?.positionNumber || (matchedJob?.title ? (matchedJob.title.match(/\((\d{5,8})\)/) || [])[1] : '') || (cleanReqId === '158997' || cleanReqId === '84384' ? '808496' : '')
+    
+    // Comprehensive key collection for requisition matching
     const allTargetKeys = [cleanReqId]
-    if (altReqId && altReqId !== cleanReqId) allTargetKeys.push(altReqId)
+    if (resolvedReqClean && !allTargetKeys.includes(resolvedReqClean)) allTargetKeys.push(resolvedReqClean)
+    if (altReqId && !allTargetKeys.includes(altReqId)) allTargetKeys.push(altReqId)
     if (posNum && !allTargetKeys.includes(posNum)) allTargetKeys.push(posNum)
+
+    const effectiveParentRecruiterName = currentUser?.parentRecruiterName || ''
+    const effectiveParentRecruiterEmail = currentUser?.parentRecruiterEmail || ''
+    const effectiveParentRecruiterId = currentUser?.parentRecruiterId || ''
+    const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
 
     const newSubObj = {
       id: candidateId || `SUB-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
@@ -459,23 +468,35 @@ function CandidatesModule({
       name: candName,
       payRate: rate,
       payRateType: rate.includes('C2C') ? 'C2C' : 'W2',
-      assignedBy: candidate.recruiter || currentUserName || 'Omkesh',
-      assignedOn: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      assignedBy: currentUserName || 'Omkesh',
+      assignedOn: dateStr,
       status: status,
       statusComments: comments,
       interview: 'Select',
       email: candidate.email || candidate.extracted_profile?.email || '',
       phone: candidate.phone || candidate.extracted_profile?.phone || '',
       source: candidate.recruiter ? `Referred by ${candidate.recruiter}` : 'SmartHire Careers',
-      role: candidate.role || candidate.jobTitle || matchedJob?.title || 'NC DHHS AWS Senior Developer (808496)',
-      jobTitle: matchedJob?.title || candidate.jobTitle || 'NC DHHS AWS Senior Developer (808496)',
+      role: candidate.role || candidate.jobTitle || matchedJob?.title || 'Applicant',
+      jobTitle: matchedJob?.title || candidate.jobTitle || candidate.role || 'Applicant',
       skills: candidate.skills || candidate.extracted_profile?.skills || [],
       reqId: cleanReqId,
       positionNumber: posNum,
       job_id: `J-${cleanReqId}`,
       pushedToJobsInHand: true,
       timestamp: Date.now(),
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      recruiter: currentUserName || 'Omkesh',
+      recruiterEmail: currentUser?.email || '',
+      recruiterRefCode: currentUser?.refCode || '',
+      parentRecruiterName: effectiveParentRecruiterName,
+      parentRecruiterEmail: effectiveParentRecruiterEmail,
+      parentRecruiterId: effectiveParentRecruiterId,
+      addedByName: currentUserName || 'Omkesh',
+      addedByEmail: currentUser?.email || '',
+      addedByRole: currentUser?.role || 'recruiter',
+      lastChangedBy: currentUserName || 'Recruiter',
+      lastChangedRole: currentUser?.role || 'Recruiter',
+      lastChangedOn: dateStr
     }
 
     // 1. Save to local storage for all keys and their J- prefixes
@@ -493,7 +514,7 @@ function CandidatesModule({
       } catch (e) {}
     })
 
-    // 2. Save to Firestore Requisition Candidates for both target keys
+    // 2. Save to Firestore Requisition Candidates for all target keys
     for (const tKey of allTargetKeys) {
       try {
         const existingRaw = localStorage.getItem(`smarthire_potential_candidates_${tKey}`)
@@ -510,8 +531,12 @@ function CandidatesModule({
       pushedToJobsInHand: true,
       reqId: cleanReqId,
       job_id: `J-${cleanReqId}`,
+      pushedReqId: cleanReqId,
       finalRate: rate,
-      status: status
+      status: status,
+      assignedBy: currentUserName || 'Omkesh',
+      recruiter: currentUserName || 'Omkesh',
+      recruiterEmail: currentUser?.email || ''
     }
 
     try {

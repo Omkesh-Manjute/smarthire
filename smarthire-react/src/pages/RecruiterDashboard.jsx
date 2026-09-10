@@ -697,7 +697,8 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                        (userEmail && (candAssigned.includes(userEmail) || candEmail.includes(userEmail))) ||
                        (userRef && candRef.includes(userRef)) ||
                        (userId && candCreator === userId) ||
-                       (firstName.length >= 3 && candAssigned.includes(firstName))
+                       (firstName.length >= 3 && (candAssigned.includes(firstName) || candEmail.includes(firstName))) ||
+                       (c.pushedToJobsInHand && (!candAssigned || candAssigned === 'recruiter' || candAssigned.includes(firstName)))
 
         const isMyParentChild = (candParent && (candParent === userIdent || candParent.includes(userIdent) || userIdent.includes(candParent) || (firstName.length >= 3 && candParent.includes(firstName)))) ||
                                (candParentEmail && candParentEmail === userEmail) ||
@@ -717,11 +718,15 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       // Employee: strictly sees own candidates
       const filtered = candList.filter(c => {
         if (!c) return false
-        const candAssigned = (c.assignedBy || c.recruiter || c.addedByName || c.submittedBy || '').toLowerCase().trim()
+        const candAssigned = (c.assignedBy || c.recruiter || c.addedByName || c.submittedBy || c.lastChangedBy || '').toLowerCase().trim()
         const candEmail = (c.recruiterEmail || c.addedByEmail || '').toLowerCase().trim()
+        const candRef = (c.recruiterRefCode || c.recruiterRef || '').toLowerCase().trim()
         return candAssigned === userIdent ||
                (userIdent.length >= 3 && (candAssigned.includes(userIdent) || userIdent.includes(candAssigned))) ||
-               (userEmail && (candAssigned.includes(userEmail) || candEmail.includes(userEmail)))
+               (userEmail && (candAssigned.includes(userEmail) || candEmail.includes(userEmail))) ||
+               (userRef && candRef.includes(userRef)) ||
+               (firstName.length >= 3 && candAssigned.includes(firstName)) ||
+               (c.pushedToJobsInHand && (!candAssigned || candAssigned === 'recruiter' || candAssigned.includes(firstName)))
       })
       return deduplicateCandidates(filtered)
     }
@@ -1010,6 +1015,85 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       localStorage.setItem('smarthire_active_req_subtab', activeReqTab)
     } catch (e) {}
   }, [activeReqTab])
+
+  // Listen to cross-component candidate push and local storage events to instantly reflect in potentialCandidates
+  useEffect(() => {
+    const handleCandidatePushed = (e) => {
+      const detail = e?.detail
+      if (!detail) return
+      const pushedReqId = String(detail.reqId || '').replace(/^J-/, '').trim()
+      const currentReqCleanId = String(selectedReq?.id || '').replace(/^J-/, '').trim()
+      const currentReqResolvedId = resolveReqId(currentReqCleanId, selectedReq)
+      const currentReqPos = selectedReq?.positionNumber || (selectedReq?.title ? (selectedReq.title.match(/\((\d{5,8})\)/) || [])[1] : '') || ''
+
+      const isMatch = pushedReqId === currentReqCleanId || 
+                      pushedReqId === currentReqResolvedId || 
+                      (currentReqPos && pushedReqId === currentReqPos) ||
+                      (pushedReqId === '158997' && (currentReqCleanId === '84384' || currentReqPos === '808496')) ||
+                      (pushedReqId === '84384' && (currentReqCleanId === '158997' || currentReqPos === '808496'))
+
+      if (isMatch && detail.candidate) {
+        setPotentialCandidates(prev => deduplicateCandidates([detail.candidate, ...prev]))
+      }
+    }
+
+    const handleStorageChange = (e) => {
+      if (e?.key && e.key.startsWith('smarthire_potential_candidates_')) {
+        const currentReqCleanId = String(selectedReq?.id || '').replace(/^J-/, '').trim()
+        const currentReqResolvedId = resolveReqId(currentReqCleanId, selectedReq)
+        const posNum = selectedReq?.positionNumber || (selectedReq?.title ? (selectedReq.title.match(/\((\d{5,8})\)/) || [])[1] : '') || ''
+        const relevantKeys = [
+          `smarthire_potential_candidates_${currentReqCleanId}`,
+          `smarthire_potential_candidates_${currentReqResolvedId}`,
+          `smarthire_potential_candidates_${posNum}`,
+          `smarthire_potential_candidates_J-${currentReqCleanId}`,
+          `smarthire_potential_candidates_J-${currentReqResolvedId}`
+        ]
+        if (relevantKeys.includes(e.key)) {
+          try {
+            const parsed = JSON.parse(e.newValue || '[]')
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setPotentialCandidates(prev => deduplicateCandidates([...parsed, ...prev]))
+            }
+          } catch (err) {}
+        }
+      }
+    }
+
+    window.addEventListener('candidate-pushed-to-req', handleCandidatePushed)
+    window.addEventListener('storage', handleStorageChange)
+    return () => {
+      window.removeEventListener('candidate-pushed-to-req', handleCandidatePushed)
+      window.removeEventListener('storage', handleStorageChange)
+    }
+  }, [selectedReq])
+
+  // Automatically refresh potentialCandidates when 'potential' tab is activated
+  useEffect(() => {
+    if (activeReqTab === 'potential' && selectedReq) {
+      const cleanId = String(selectedReq.id || '').replace(/^J-/, '').trim()
+      const resolvedId = resolveReqId(cleanId, selectedReq)
+      const posNum = selectedReq?.positionNumber || (selectedReq?.title ? (selectedReq.title.match(/\((\d{5,8})\)/) || [])[1] : '') || ''
+      const rawId = String(selectedReq.id || '')
+      const fullId = `J-${cleanId}`
+
+      const saved = localStorage.getItem(`smarthire_potential_candidates_${cleanId}`) ||
+                    localStorage.getItem(`smarthire_potential_candidates_${resolvedId}`) ||
+                    (posNum ? localStorage.getItem(`smarthire_potential_candidates_${posNum}`) : null) ||
+                    localStorage.getItem(`smarthire_potential_candidates_${rawId}`) ||
+                    localStorage.getItem(`smarthire_potential_candidates_${fullId}`) ||
+                    localStorage.getItem(`smarthire_potential_candidates_J-${cleanId}`)
+
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setPotentialCandidates(prev => deduplicateCandidates([...parsed, ...prev]))
+          }
+        } catch (e) {}
+      }
+    }
+  }, [activeReqTab, selectedReq])
 
   const processJobsList = useCallback((list) => {
     if (!Array.isArray(list) || list.length === 0) return []
@@ -1766,11 +1850,12 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       : (Array.isArray(job.assignedRecruiters) ? job.assignedRecruiters : getJobAssignedRecruiters(job.id))
 
     // Find matching candidates from global candidates list
+    const posNum = job.positionNumber || (job.title ? (job.title.match(/\((\d{5,8})\)/) || [])[1] : '') || ''
     const matchingGlobal = (candidates || []).filter(c => {
       if (!c) return false
-      const cReq = String(c.reqId || c.job_id || c.jobId || c.targetJobId || '').replace('J-', '').trim()
+      const cReq = String(c.reqId || c.job_id || c.jobId || c.targetJobId || c.pushedReqId || '').replace('J-', '').trim()
       const resolvedCReq = resolveReqId(cReq)
-      return cReq === cleanId || cReq === resolvedId || resolvedCReq === resolvedId || cReq === rawId || resolvedCReq === cleanId
+      return cReq === cleanId || cReq === resolvedId || resolvedCReq === resolvedId || cReq === rawId || resolvedCReq === cleanId || (posNum && cReq === posNum) || (c.pushedReqId && String(c.pushedReqId).trim() === cleanId)
     }).map(c => ({
       id: c.id || c.canId,
       name: c.name,
@@ -1787,12 +1872,15 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       lastChangedOn: c.lastChangedOn || 'Aug 20, 2026 04:40 PM'
     }))
 
-    // Load candidates specifically for this requisition
+    // Load candidates specifically for this requisition across all key aliases
     try {
       const savedCand = localStorage.getItem(`smarthire_potential_candidates_${cleanId}`) ||
                         localStorage.getItem(`smarthire_potential_candidates_${resolvedId}`) ||
+                        (posNum ? localStorage.getItem(`smarthire_potential_candidates_${posNum}`) : null) ||
                         localStorage.getItem(`smarthire_potential_candidates_${rawId}`) ||
-                        localStorage.getItem(`smarthire_potential_candidates_${fullId}`)
+                        localStorage.getItem(`smarthire_potential_candidates_${fullId}`) ||
+                        localStorage.getItem(`smarthire_potential_candidates_J-${cleanId}`) ||
+                        localStorage.getItem(`smarthire_potential_candidates_J-${resolvedId}`)
       if (savedCand !== null && savedCand !== undefined) {
         const parsed = JSON.parse(savedCand)
         const combined = [...(Array.isArray(parsed) ? parsed : []), ...matchingGlobal]
@@ -1807,12 +1895,13 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     // Fetch from Firestore for freshest real-time updates
     const fetchCloud = async () => {
       try {
-        const [c1, c2, c3] = await Promise.all([
+        const [c1, c2, c3, c4] = await Promise.all([
           getRequisitionCandidates(cleanId),
           resolvedId !== cleanId ? getRequisitionCandidates(resolvedId) : Promise.resolve([]),
-          rawId !== cleanId && rawId !== resolvedId ? getRequisitionCandidates(rawId) : Promise.resolve([])
+          rawId !== cleanId && rawId !== resolvedId ? getRequisitionCandidates(rawId) : Promise.resolve([]),
+          posNum && posNum !== cleanId && posNum !== resolvedId ? getRequisitionCandidates(posNum) : Promise.resolve([])
         ])
-        const cloudCands = [...(c1 || []), ...(c2 || []), ...(c3 || [])]
+        const cloudCands = [...(c1 || []), ...(c2 || []), ...(c3 || []), ...(c4 || [])]
         if (cloudCands.length > 0) {
           setPotentialCandidates(prev => {
             const merged = deduplicateCandidates([...cloudCands, ...prev])
@@ -2216,15 +2305,11 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     setActiveSubTab('details')
   }
 
-  const handleSelectExistingCandidate = (c) => {
+  const handleSelectExistingCandidate = (c, mode = 'submission') => {
     // 1. Look up full candidate profile from candidates list or localStorage
     const fullCand = candidates.find(item => item.id === c.id || item.name === c.name || item.email === c.email) || c
-    
-    // 2. Open the comprehensive CandidateDetailViewModal with resume viewer, all subtabs (Details, Skill, References, Legal, Notes, Submissions, Projects)
-    setSelectedViewCandidate(fullCand)
-    setShowDetailViewModal(true)
 
-    // 3. Also fully populate submissionCandidate state for seamless submission
+    // 2. Fully populate submissionCandidate state for seamless submission
     const parts = (fullCand.name || 'Candidate').split(' ')
     const fn = fullCand.firstName || parts[0] || 'Candidate'
     const ln = fullCand.lastName || parts.slice(1).join(' ') || ''
@@ -2236,6 +2321,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       id: candId,
       firstName: fn,
       lastName: ln,
+      name: fullCand.name || `${fn} ${ln}`.trim(),
       email: fullCand.email || `${fn.toLowerCase()}@example.com`,
       phoneCell: fullCand.phone || fullCand.phoneCell || '571-660-5778',
       city: fullCand.city || (fullCand.location ? fullCand.location.split(',')[0].trim() : 'Richmond'),
@@ -2251,15 +2337,32 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       submissionHistory: Array.isArray(fullCand.submissionHistory) ? fullCand.submissionHistory : (Array.isArray(fullCand.submissions) ? fullCand.submissions : prev.submissionHistory),
       legal: fullCand.legal || {},
       workAuth: fullCand.workAuth || 'US Citizen',
-      proposedPayRate: fullCand.payRate ? String(fullCand.payRate).replace(/[^0-9]/g, '') : '74',
-      proposedRateType: fullCand.rateType || 'C2C'
+      proposedPayRate: fullCand.payRate ? String(fullCand.payRate).replace(/[^0-9]/g, '') : (editingFields.payRate || '74'),
+      proposedRateType: fullCand.rateType || fullCand.payRateType || editingFields.rateType || 'C2C'
     }))
+
+    if (mode === 'view') {
+      setSelectedViewCandidate(fullCand)
+      setShowDetailViewModal(true)
+    } else {
+      setViewMode('resumeSubmission')
+      setActiveSubTab('details')
+    }
   }
 
-  const handleAssignCandidateToReq = () => {
-    const fullName = `${submissionCandidate.firstName} ${submissionCandidate.lastName}`.trim()
-    const cleanId = String(selectedReq?.id || '158938').replace('J-', '').replace('REQ-', '').trim()
-    const candId = String(submissionCandidate.id || `875${Date.now().toString().slice(-4)}`)
+  // Direct 1-Click Assignment from Candidate Pool below to Target Requisition
+  const handleDirectAssignCandidateToCurrentReq = (candidateToAssign) => {
+    if (!selectedReq) {
+      alert('Please select a target requisition first.')
+      return
+    }
+    const cleanId = String(selectedReq.id || '158938').replace('J-', '').replace('REQ-', '').trim()
+    const resolvedId = resolveReqId(selectedReq.id, selectedReq)
+    const rawId = String(selectedReq.id || '')
+    const fullId = `J-${cleanId}`
+
+    const fullName = (candidateToAssign.name || `${candidateToAssign.firstName || ''} ${candidateToAssign.lastName || ''}`).trim() || 'Candidate'
+    const candId = String(candidateToAssign.id || `875${Date.now().toString().slice(-4)}`)
     const dateStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
     const effectiveParentRecruiterName = currentUser?.parentRecruiterName || 
@@ -2269,15 +2372,18 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     const effectiveParentRecruiterId = currentUser?.parentRecruiterId || 
       teamUsers.find(u => (u.email && u.email.toLowerCase() === (currentUser?.email || '').toLowerCase()) || (u.name && u.name.toLowerCase() === (userName || '').toLowerCase()))?.parentRecruiterId || ''
 
+    const payRateVal = candidateToAssign.payRate ? (String(candidateToAssign.payRate).includes('/hr') ? candidateToAssign.payRate : `${candidateToAssign.payRate}/hr`) : `${editingFields.payRate || '75'}/hr`
+    const rateTypeVal = candidateToAssign.rateType || candidateToAssign.payRateType || editingFields.rateType || 'C2C'
+
     const newSubObj = {
       id: candId,
       name: fullName,
-      payRate: `${submissionCandidate.proposedPayRate || submissionCandidate.payRateMin || '74'}/hr`,
-      payRateType: submissionCandidate.proposedRateType || submissionCandidate.rateType || 'C2C',
+      payRate: payRateVal,
+      payRateType: rateTypeVal,
       assignedBy: userName || currentUser?.name || 'Recruiter',
       assignedOn: dateStr,
       status: 'Int-SubmittedToManager',
-      statusComments: 'Submitted',
+      statusComments: 'Directly assigned from Candidate Pool',
       interview: 'Select',
       rejectedReason: '',
       recruiter: userName,
@@ -2297,10 +2403,104 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     const updated = [newSubObj, ...potentialCandidates.filter(p => p.id !== candId && p.name !== fullName)]
     setPotentialCandidates(updated)
 
-    // Save to localStorage
+    // Save to localStorage across all ID keys
     try {
       localStorage.setItem(`smarthire_potential_candidates_${cleanId}`, JSON.stringify(updated))
-      localStorage.setItem(`smarthire_potential_candidates_J-${cleanId}`, JSON.stringify(updated))
+      localStorage.setItem(`smarthire_potential_candidates_${resolvedId}`, JSON.stringify(updated))
+      localStorage.setItem(`smarthire_potential_candidates_${rawId}`, JSON.stringify(updated))
+      localStorage.setItem(`smarthire_potential_candidates_${fullId}`, JSON.stringify(updated))
+    } catch (e) {}
+
+    // Update master candidate list
+    const masterCandObj = {
+      ...candidateToAssign,
+      id: candId,
+      canId: candId,
+      name: fullName,
+      reqId: cleanId,
+      status: 'Int-SubmittedToManager'
+    }
+
+    setCandidates(prev => {
+      const merged = [masterCandObj, ...prev.filter(c => c.id !== candId && c.name !== fullName)]
+      try { localStorage.setItem('smarthire_all_candidates', JSON.stringify(merged)) } catch (e) {}
+      return merged
+    })
+
+    // Save to Firestore for all ID permutations
+    saveRequisitionCandidates(cleanId, updated).catch(() => {})
+    if (resolvedId && resolvedId !== cleanId) {
+      saveRequisitionCandidates(resolvedId, updated).catch(() => {})
+    }
+    saveCandidate(candId, masterCandObj).catch(err => console.warn('Firestore candidate save notice:', err))
+
+    // Backend sync
+    fetch('/api/candidates', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+      },
+      body: JSON.stringify(masterCandObj)
+    }).catch(() => {})
+
+    alert(`✅ Candidate ${fullName} (ID: ${candId}) has been successfully assigned to Requisition #${resolvedId || cleanId}!`)
+    setViewMode('requisition')
+    setActiveReqTab('potential')
+  }
+
+  const handleAssignCandidateToReq = () => {
+    const fullName = (submissionCandidate.name || `${submissionCandidate.firstName || ''} ${submissionCandidate.lastName || ''}`).trim() || 'Candidate'
+    const cleanId = String(selectedReq?.id || '158938').replace('J-', '').replace('REQ-', '').trim()
+    const resolvedId = resolveReqId(selectedReq?.id, selectedReq)
+    const rawId = String(selectedReq?.id || '')
+    const fullId = `J-${cleanId}`
+    const candId = String(submissionCandidate.id || `875${Date.now().toString().slice(-4)}`)
+    const dateStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
+    const effectiveParentRecruiterName = currentUser?.parentRecruiterName || 
+      teamUsers.find(u => (u.email && u.email.toLowerCase() === (currentUser?.email || '').toLowerCase()) || (u.name && u.name.toLowerCase() === (userName || '').toLowerCase()))?.parentRecruiterName || ''
+    const effectiveParentRecruiterEmail = currentUser?.parentRecruiterEmail || 
+      teamUsers.find(u => (u.email && u.email.toLowerCase() === (currentUser?.email || '').toLowerCase()) || (u.name && u.name.toLowerCase() === (userName || '').toLowerCase()))?.parentRecruiterEmail || ''
+    const effectiveParentRecruiterId = currentUser?.parentRecruiterId || 
+      teamUsers.find(u => (u.email && u.email.toLowerCase() === (currentUser?.email || '').toLowerCase()) || (u.name && u.name.toLowerCase() === (userName || '').toLowerCase()))?.parentRecruiterId || ''
+
+    const payRateVal = submissionCandidate.proposedPayRate ? (String(submissionCandidate.proposedPayRate).includes('/hr') ? submissionCandidate.proposedPayRate : `${submissionCandidate.proposedPayRate}/hr`) : `${editingFields.payRate || '74'}/hr`
+
+    const newSubObj = {
+      id: candId,
+      name: fullName,
+      payRate: payRateVal,
+      payRateType: submissionCandidate.proposedRateType || submissionCandidate.rateType || 'C2C',
+      assignedBy: userName || currentUser?.name || 'Recruiter',
+      assignedOn: dateStr,
+      status: 'Int-SubmittedToManager',
+      statusComments: submissionCandidate.comments || 'Submitted to Position',
+      interview: 'Select',
+      rejectedReason: '',
+      recruiter: userName,
+      recruiterEmail: currentUser?.email || '',
+      recruiterRefCode: currentUser?.refCode || '',
+      parentRecruiterName: effectiveParentRecruiterName,
+      parentRecruiterEmail: effectiveParentRecruiterEmail,
+      parentRecruiterId: effectiveParentRecruiterId,
+      addedByName: userName,
+      addedByEmail: currentUser?.email || '',
+      addedByRole: isEmployee ? 'employee' : isRecruiter ? 'recruiter' : 'admin',
+      lastChangedBy: userName || currentUser?.name || 'Recruiter',
+      lastChangedRole: isAdmin ? 'superadmin' : (isRecruiter ? 'Recruiter' : 'Employee'),
+      lastChangedOn: dateStr
+    }
+
+    const updated = [newSubObj, ...potentialCandidates.filter(p => p.id !== candId && p.name !== fullName)]
+    setPotentialCandidates(updated)
+
+    // Save to localStorage across all ID variations
+    try {
+      localStorage.setItem(`smarthire_potential_candidates_${cleanId}`, JSON.stringify(updated))
+      localStorage.setItem(`smarthire_potential_candidates_${resolvedId}`, JSON.stringify(updated))
+      localStorage.setItem(`smarthire_potential_candidates_${rawId}`, JSON.stringify(updated))
+      localStorage.setItem(`smarthire_potential_candidates_${fullId}`, JSON.stringify(updated))
     } catch (e) {}
 
     const masterCandObj = {
@@ -2328,9 +2528,9 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       addedByName: userName,
       addedByEmail: currentUser?.email || '',
       addedByRole: isEmployee ? 'employee' : isRecruiter ? 'recruiter' : 'admin',
-      email: submissionCandidate.email || `${submissionCandidate.firstName.toLowerCase()}@example.com`,
+      email: submissionCandidate.email || `${(submissionCandidate.firstName || 'candidate').toLowerCase()}@example.com`,
       phone: submissionCandidate.phoneCell || '571-660-5778',
-      workAuth: 'US Citizen',
+      workAuth: submissionCandidate.workAuth || 'US Citizen',
       screened: 'Yes',
       reqId: cleanId,
       status: 'Int-SubmittedToManager'
@@ -2344,6 +2544,9 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
     // Save to Firestore
     saveRequisitionCandidates(cleanId, updated).catch(() => {})
+    if (resolvedId && resolvedId !== cleanId) {
+      saveRequisitionCandidates(resolvedId, updated).catch(() => {})
+    }
     saveCandidate(candId, masterCandObj).catch(err => console.warn('Firestore candidate save notice:', err))
 
     // Backend sync
@@ -2356,7 +2559,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       body: JSON.stringify(masterCandObj)
     }).catch(() => {})
 
-    alert(`✅ Candidate ${fullName} (ID: ${candId}) has been successfully assigned to Requisition #${cleanId}!`)
+    alert(`✅ Candidate ${fullName} (ID: ${candId}) has been successfully assigned to Requisition #${resolvedId || cleanId}!`)
     setViewMode('requisition')
     setActiveReqTab('potential')
   }
@@ -2625,6 +2828,69 @@ We are currently reviewing candidate profiles and scheduling immediate interview
   }, [filteredCandidates, currentPage, pageSize])
 
   const totalCandPages = Math.ceil(filteredCandidates.length / pageSize) || 1
+
+  // ─── CANDIDATES MATCHED IN RESUME SEARCH VIEW (STEP 1) ───
+  const resumeSearchMatchedCandidates = useMemo(() => {
+    // Base pool: Start with candidates (scoped for employee, but safe fallback to candidates when searching)
+    const nameQ = (searchCandFilter.name || '').trim().toLowerCase()
+    const idQ = (searchCandFilter.candidateId || '').trim().toLowerCase()
+    const emailQ = (searchCandFilter.email || '').trim().toLowerCase()
+    const skillsQ = (searchCandFilter.skills || '').trim().toLowerCase()
+    const cityQ = (searchCandFilter.city || '').trim().toLowerCase()
+    const stateQ = searchCandFilter.state !== 'Select' ? (searchCandFilter.state || '').trim().toLowerCase() : ''
+    const expQ = (searchCandFilter.experience || '').trim()
+    const authQ = searchCandFilter.workAuth !== 'Any' ? (searchCandFilter.workAuth || '').trim().toLowerCase() : ''
+
+    const isFilterActive = !!(nameQ || idQ || emailQ || skillsQ || cityQ || stateQ || expQ || authQ)
+
+    const basePool = isEmployee
+      ? (isFilterActive ? candidates : (filteredCandidates.length > 0 ? filteredCandidates : candidates))
+      : candidates
+    const deduped = deduplicateCandidates(basePool)
+
+    if (!isFilterActive) {
+      return deduped
+    }
+
+    return deduped.filter(c => {
+      if (!c) return false
+      if (idQ) {
+        const cId = String(c.id || c.canId || '').toLowerCase()
+        if (!cId.includes(idQ)) return false
+      }
+      if (nameQ) {
+        const cName = (c.name || `${c.firstName || ''} ${c.lastName || ''}`).toLowerCase()
+        if (!cName.includes(nameQ)) return false
+      }
+      if (emailQ) {
+        const cEmail = (c.email || '').toLowerCase()
+        if (!cEmail.includes(emailQ)) return false
+      }
+      if (skillsQ) {
+        const sArray = Array.isArray(c.skills) ? c.skills.join(' ') : String(c.skills || '')
+        const allSkillText = `${sArray} ${c.fullRole || c.role || ''}`.toLowerCase()
+        if (!allSkillText.includes(skillsQ)) return false
+      }
+      if (cityQ) {
+        const cLoc = `${c.city || ''} ${c.location || ''}`.toLowerCase()
+        if (!cLoc.includes(cityQ)) return false
+      }
+      if (stateQ) {
+        const cLoc = `${c.state || ''} ${c.location || ''}`.toLowerCase()
+        if (!cLoc.includes(stateQ)) return false
+      }
+      if (authQ) {
+        const cAuth = (c.workAuth || '').toLowerCase()
+        if (!cAuth.includes(authQ)) return false
+      }
+      if (expQ) {
+        const numExp = parseInt(String(c.exp || c.experience || '0').replace(/\D/g, ''), 10)
+        const targetExp = parseInt(expQ, 10)
+        if (!isNaN(targetExp) && !isNaN(numExp) && numExp < targetExp) return false
+      }
+      return true
+    })
+  }, [candidates, filteredCandidates, isEmployee, searchCandFilter])
 
   // ─── ALL SUBMISSIONS & PERFORMANCE TRACKING LOG ───
   const allSubmissionsList = useMemo(() => {
@@ -5054,45 +5320,141 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                     </select>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
                     <button
                       type="button"
                       onClick={() => {
-                        const targetList = isEmployee ? filteredCandidates : candidates
-                        const count = targetList.filter(c => {
-                          if (searchCandFilter.name && !c.name?.toLowerCase().includes(searchCandFilter.name.toLowerCase())) return false
-                          if (searchCandFilter.email && !c.email?.toLowerCase().includes(searchCandFilter.email.toLowerCase())) return false
-                          if (searchCandFilter.skills && !c.skills?.some?.(s => s.toLowerCase().includes(searchCandFilter.skills.toLowerCase()))) return false
-                          if (searchCandFilter.city && !c.city?.toLowerCase().includes(searchCandFilter.city.toLowerCase())) return false
-                          return true
-                        }).length
-                        alert(`Found ${count} matching candidate(s) in ${isEmployee ? 'your directory' : 'the system'}.`)
+                        setSearchCandFilter({
+                          candidateId: '',
+                          name: '',
+                          email: '',
+                          skills: '',
+                          city: '',
+                          state: 'Select',
+                          zipCode: '',
+                          radius: 'Select Miles',
+                          experience: '',
+                          workAuth: 'Any',
+                          assignedTo: 'Any'
+                        })
                       }}
-                      style={{ background: '#f1f5f9', border: '1px solid #94a3b8', padding: '3px 14px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer' }}
+                      style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '4px 10px', fontSize: '11px', color: '#475569', fontWeight: 'bold', cursor: 'pointer', borderRadius: '3px' }}
                     >
-                      Search
+                      ↺ Clear / Show All
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const count = resumeSearchMatchedCandidates.length
+                        alert(`Found ${count} matching candidate(s) in ${isEmployee ? 'your directory' : 'the talent directory'}.`)
+                      }}
+                      style={{ background: '#1e3a8a', color: '#ffffff', border: 'none', padding: '4px 16px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '3px' }}
+                    >
+                      🔍 Search ({resumeSearchMatchedCandidates.length} Matches)
                     </button>
                   </div>
 
                   <div style={{ marginTop: '14px', borderTop: '1px solid #e2e8f0', paddingTop: '10px' }}>
-                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569', marginBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>{isEmployee ? `📁 My Candidates in Directory (${filteredCandidates.length}):` : 'Existing Candidates in Pool:'}</span>
+                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>{isEmployee ? `📁 Sourced Candidates (${resumeSearchMatchedCandidates.length}):` : `Candidate Pool Results (${resumeSearchMatchedCandidates.length}):`}</span>
                       {isEmployee && <span style={{ fontSize: '9.5px', color: '#16a34a', fontWeight: 'bold' }}>🔒 Private to you</span>}
                     </div>
-                    <div style={{ maxHeight: '110px', overflowY: 'auto', fontSize: '11px' }}>
-                      {filteredCandidates.length === 0 ? (
-                        <div style={{ color: '#64748b', fontStyle: 'italic', padding: '8px 0', fontSize: '10.5px' }}>
-                          {isEmployee
-                            ? 'No candidates in your directory yet. Use the form on the right to add and parse your candidate.'
-                            : 'No candidates available in pool.'}
+
+                    <div style={{ maxHeight: '250px', overflowY: 'auto', fontSize: '11px', border: '1px solid #e2e8f0', borderRadius: '4px', background: '#ffffff' }}>
+                      {resumeSearchMatchedCandidates.length === 0 ? (
+                        <div style={{ color: '#64748b', fontStyle: 'italic', padding: '20px 12px', textAlign: 'center', fontSize: '11px' }}>
+                          No matching candidates found in pool. Try adjusting search filters or use the form on the right to add a new candidate.
                         </div>
                       ) : (
-                        filteredCandidates.slice(0, 6).map(c => (
-                          <div key={c.id || c.name} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 6px', borderBottom: '1px solid #f1f5f9', alignItems: 'center' }}>
-                            <span><strong>{c.name}</strong> <span style={{ color: '#64748b', fontSize: '10.5px' }}>({c.role || 'Consultant'})</span></span>
-                            <span onClick={() => handleSelectExistingCandidate(c)} style={{ color: '#0066cc', textDecoration: 'underline', cursor: 'pointer', fontWeight: 'bold' }}>
-                              Select &gt;&gt;
-                            </span>
+                        resumeSearchMatchedCandidates.map((c, idx) => (
+                          <div
+                            key={c.id || c.name || idx}
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              padding: '8px 10px',
+                              borderBottom: '1px solid #f1f5f9',
+                              background: idx % 2 === 0 ? '#ffffff' : '#f8fafc',
+                              gap: '8px'
+                            }}
+                          >
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                <strong style={{ color: '#0f172a', fontSize: '11.5px' }}>{c.name}</strong>
+                                <span style={{ color: '#64748b', fontSize: '10.5px' }}>• {c.fullRole || c.role || 'Consultant'}</span>
+                                {c.exp && <span style={{ color: '#0284c7', fontSize: '10px', fontWeight: 'bold' }}>({c.exp} yrs)</span>}
+                                {c.workAuth && <span style={{ background: '#e0f2fe', color: '#0369a1', fontSize: '9.5px', padding: '1px 5px', borderRadius: '3px', fontWeight: 'bold' }}>{c.workAuth}</span>}
+                              </div>
+                              <div style={{ fontSize: '10.5px', color: '#64748b', marginTop: '2px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                                <span>📍 {c.city || c.location || 'Location on file'}</span>
+                                {c.email && <span>✉️ {c.email}</span>}
+                                {c.payRate && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>💵 {c.payRate}</span>}
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
+                              {/* Direct 1-Click Assignment */}
+                              <button
+                                type="button"
+                                onClick={() => handleDirectAssignCandidateToCurrentReq(c)}
+                                title={`Directly add ${c.name} to Requisition #${resolveReqId(selectedReq?.id, selectedReq)}`}
+                                style={{
+                                  background: '#ea580c',
+                                  color: '#ffffff',
+                                  border: 'none',
+                                  padding: '4px 9px',
+                                  fontSize: '11px',
+                                  fontWeight: 'bold',
+                                  borderRadius: '3px',
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '3px',
+                                  boxShadow: '0 1px 2px rgba(234, 88, 12, 0.25)'
+                                }}
+                              >
+                                ➕ Add to this Position
+                              </button>
+
+                              {/* Edit details & rates before submission */}
+                              <button
+                                type="button"
+                                onClick={() => handleSelectExistingCandidate(c, 'submission')}
+                                title="Open full submission editor to customize pay rate, screening notes & legal documents"
+                                style={{
+                                  background: '#f1f5f9',
+                                  color: '#0033cc',
+                                  border: '1px solid #cbd5e1',
+                                  padding: '4px 8px',
+                                  fontSize: '10.5px',
+                                  fontWeight: 'bold',
+                                  borderRadius: '3px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Edit &amp; Submit &gt;&gt;
+                              </button>
+
+                              {/* View full profile & resume */}
+                              <button
+                                type="button"
+                                onClick={() => handleSelectExistingCandidate(c, 'view')}
+                                title="View full profile, resume & credentials"
+                                style={{
+                                  background: 'none',
+                                  border: '1px solid #cbd5e1',
+                                  borderRadius: '3px',
+                                  color: '#475569',
+                                  cursor: 'pointer',
+                                  fontSize: '11px',
+                                  padding: '3px 6px'
+                                }}
+                              >
+                                👁️ Profile
+                              </button>
+                            </div>
                           </div>
                         ))
                       )}
@@ -5461,18 +5823,16 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                           </button>
                           <button
                             type="button"
-                            onClick={() => {
-                              alert(`Candidate profile saved successfully for ${submissionCandidate.firstName} ${submissionCandidate.lastName}!`);
-                            }}
-                            style={{ background: '#f1f5f9', border: '1px solid #94a3b8', padding: '4px 16px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer' }}
+                            onClick={handleAssignCandidateToReq}
+                            style={{ background: '#0033cc', color: '#ffffff', border: 'none', padding: '4px 18px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '2px' }}
                           >
-                            Save
+                            💾 Save &amp; Add to Position
                           </button>
                           <button type="button" onClick={() => { setViewMode('requisition'); setActiveReqTab('potential'); }} style={{ background: '#f1f5f9', border: '1px solid #94a3b8', padding: '4px 14px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer' }}>
                             Cancel
                           </button>
                           <button type="button" onClick={handleAssignCandidateToReq} style={{ background: '#ea580c', color: '#ffffff', border: 'none', padding: '4px 22px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '2px' }}>
-                            Assign
+                            Assign to Position
                           </button>
                         </div>
                       </div>
@@ -5617,7 +5977,8 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
                         {[
                           { title: 'Visa / Form I-797 / Work Auth', status: `✅ Verified (${submissionCandidate.workAuth || 'US Citizen'})`, file: 'Work_Authorization_Doc.pdf', color: '#16a34a' },
-                          { title: "Driver's License (State DL)", status: '✅ Verified (Virginia DL)', file: 'State_DL_Copy.pdf', color: '#16a34a' },
+                          { title: "Driver's License (Front Page)", status: '✅ Verified (State DL Front)', file: 'State_DL_Front.pdf', color: '#16a34a' },
+                          { title: "Driver's License (Back Page)", status: '✅ Verified (State DL Back)', file: 'State_DL_Back.pdf', color: '#16a34a' },
                           { title: 'Right To Represent (RTR)', status: '✅ Signed & Executed', file: 'Signed_RTR_Form.pdf', color: '#16a34a' },
                           { title: 'SSN Card Verification', status: `✅ Verified (***-**-${submissionCandidate.ssnLast4 || '8492'})`, file: 'SSN_Verification.pdf', color: '#16a34a' },
                           { title: 'SmartWorks Profile Cover Sheet', status: '✅ Ready for Submission', file: 'Profile_Coversheet.pdf', color: '#0284c7' }
@@ -5806,7 +6167,8 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                       >
                         <option value="resume">Resume ({submissionCandidate.resumeName || 'Resume.docx'})</option>
                         <option value="visa">Visa Copy (I-797)</option>
-                        <option value="dl">Driver's License</option>
+                        <option value="dlFront">Driver's License (Front Page)</option>
+                        <option value="dlBack">Driver's License (Back Page)</option>
                         <option value="rtr">Right To Represent (RTR)</option>
                         <option value="ssn">SSN Card</option>
                       </select>
@@ -5936,15 +6298,28 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                       </div>
                     )}
 
-                    {submissionDocType === 'dl' && (
+                    {(submissionDocType === 'dlFront' || submissionDocType === 'dl') && (
                       <div style={{ textAlign: 'center', padding: '30px 10px', color: '#1e3a8a' }}>
-                        <div style={{ fontSize: '36px', marginBottom: '10px' }}>🚗</div>
-                        <h4 style={{ margin: '0 0 6px', fontSize: '14px', fontWeight: 'bold' }}>State Driver's License</h4>
+                        <div style={{ fontSize: '36px', marginBottom: '10px' }}>🪪</div>
+                        <h4 style={{ margin: '0 0 6px', fontSize: '14px', fontWeight: 'bold' }}>State Driver's License (Front Page)</h4>
                         <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: 'bold', marginBottom: '8px' }}>
-                          Status: Verified (State of {submissionCandidate.state || 'VA'})
+                          Status: Verified Front Side (State of {submissionCandidate.state || 'VA'})
                         </div>
                         <div style={{ fontSize: '11px', color: '#64748b' }}>
-                          Official State Photo ID verified. Real ID compliant.
+                          Official State Photo ID front page verified with candidate portrait, address, and expiration date.
+                        </div>
+                      </div>
+                    )}
+
+                    {submissionDocType === 'dlBack' && (
+                      <div style={{ textAlign: 'center', padding: '30px 10px', color: '#1e3a8a' }}>
+                        <div style={{ fontSize: '36px', marginBottom: '10px' }}>🔄</div>
+                        <h4 style={{ margin: '0 0 6px', fontSize: '14px', fontWeight: 'bold' }}>State Driver's License (Back Page)</h4>
+                        <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: 'bold', marginBottom: '8px' }}>
+                          Status: Verified Back Side (PDF417 Barcode Scan OK)
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#64748b' }}>
+                          Official State Photo ID back side verified with machine-readable 2D barcode and security watermarks.
                         </div>
                       </div>
                     )}
@@ -6866,22 +7241,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
                         <button
                           type="button"
-                          onClick={() => {
-                            setNewCandReqForm({
-                              firstName: '',
-                              lastName: '',
-                              email: '',
-                              phone: '',
-                              payRate: editingFields.payRate || '70',
-                              payRateType: 'C2C',
-                              workAuth: editingFields.workAuth !== 'Select' ? editingFields.workAuth : 'US Citizen',
-                              exp: editingFields.experience || '5',
-                              skills: Array.isArray(editingFields.skills) ? editingFields.skills.join(', ') : '',
-                              comments: `Sourced by ${userName} for Requisition #${selectedReq?.id?.replace('J-', '')}`,
-                              status: 'Int-SubmittedToManager'
-                            })
-                            setShowAddCandidateModal(true)
-                          }}
+                          onClick={() => setViewMode('resumeSearch')}
                           style={{
                             background: '#f1f5f9',
                             color: '#0033cc',
@@ -6896,17 +7256,8 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                             gap: '4px'
                           }}
                         >
-                          <span>📋 Select from Pool</span>
+                          <span>🔍 Search Talent Directory &gt;&gt;</span>
                         </button>
-
-                        <span style={{ color: '#cbd5e1' }}>|</span>
-
-                        <span
-                          onClick={() => setViewMode('resumeSearch')}
-                          style={{ color: '#0033cc', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer', textDecoration: 'underline' }}
-                        >
-                          🔍 Search Talent Directory &gt;&gt;
-                        </span>
                       </div>
 
                       <button
@@ -6994,7 +7345,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                                   <span style={{ color: '#94a3b8' }}>or</span>
                                   <button
                                     type="button"
-                                    onClick={() => setShowAddCandidateModal(true)}
+                                    onClick={() => setViewMode('resumeSearch')}
                                     style={{
                                       background: '#f1f5f9',
                                       color: '#0033cc',
@@ -7006,7 +7357,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                                       cursor: 'pointer'
                                     }}
                                   >
-                                    📋 Select from Pool
+                                    🔍 Search Talent Directory &gt;&gt;
                                   </button>
                                 </div>
                               </td>

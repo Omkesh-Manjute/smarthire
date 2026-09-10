@@ -693,10 +693,10 @@ function Navigation() {
               </>
             ) : (
               <div className="public-auth-cluster">
-                <a href="/#login" className="btn btn-login-portal">
+                <Link to="/login" className="btn btn-login-portal">
                   <span>Recruiter Portal</span>
                   <span>→</span>
-                </a>
+                </Link>
               </div>
             )}
 
@@ -802,9 +802,9 @@ function Navigation() {
                   Support & Inquiries
                 </Link>
                 <div style={{ marginTop: '16px' }}>
-                  <a href="/#login" className="btn btn-login-portal w-100" onClick={() => setMobileMenuOpen(false)}>
+                  <Link to="/login" className="btn btn-login-portal w-100" onClick={() => setMobileMenuOpen(false)}>
                     Sign In to Recruiter Portal →
-                  </a>
+                  </Link>
                 </div>
               </div>
             )}

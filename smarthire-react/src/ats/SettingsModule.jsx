@@ -58,6 +58,11 @@ function SettingsModule() {
   const [testingEmail, setTestingEmail] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
+  // Email Resume Ingestion States
+  const [syncingResumes, setSyncingResumes] = useState(false)
+  const [syncResumesMsg, setSyncResumesMsg] = useState('')
+  const [autoAckEnabled, setAutoAckEnabled] = useState(false)
+
   // Email Templates State
   const [emailTemplates, setEmailTemplates] = useState([])
   const [editingTemplate, setEditingTemplate] = useState(null)
@@ -83,10 +88,10 @@ function SettingsModule() {
           ...prev,
           displayName: rec ? rec.name : prev.displayName,
           fromEmail: '',
-          provider: 'gmail',
-          smtpHost: 'smtp.gmail.com',
-          smtpPort: 587,
-          security: 'TLS',
+          provider: 'yahoo',
+          smtpHost: 'smtp.mail.yahoo.com',
+          smtpPort: 465,
+          security: 'SSL',
           appPassword: '',
           signature: ''
         }))
@@ -113,19 +118,60 @@ function SettingsModule() {
       setEmailCfgMsg(data.success ? '✅ Email configuration saved!' : `❌ ${data.message}`)
     } catch(e) { setEmailCfgMsg('❌ Network error') }
     setEmailCfgSaving(false)
-    setTimeout(() => setEmailCfgMsg(''), 4000)
+    setTimeout(() => setEmailCfgMsg(''), 5000)
   }
 
   const handleTestEmail = async () => {
     setTestingEmail(true)
     setEmailCfgMsg('')
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 14000)
+
     try {
-      const res = await fetch('/api/recruiter/test-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recruiterEmail: recruiterEmailKey }) })
+      const res = await fetch('/api/recruiter/test-email', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ 
+          recruiterEmail: recruiterEmailKey,
+          config: emailCfg 
+        }),
+        signal: controller.signal
+      })
+      clearTimeout(timer)
       const data = await res.json()
       setEmailCfgMsg(data.success ? `✅ ${data.message}` : `❌ ${data.message}`)
-    } catch(e) { setEmailCfgMsg('❌ Network error') }
-    setTestingEmail(false)
-    setTimeout(() => setEmailCfgMsg(''), 6000)
+    } catch(e) {
+      clearTimeout(timer)
+      if (e.name === 'AbortError') {
+        setEmailCfgMsg('❌ Test timed out after 14s. Suggestion: For Yahoo, use Port 465 and SSL, and verify your 16-letter App Password.')
+      } else {
+        setEmailCfgMsg('❌ Network error: ' + e.message)
+      }
+    } finally {
+      setTestingEmail(false)
+      setTimeout(() => setEmailCfgMsg(''), 8000)
+    }
+  }
+
+  const handleSyncEmailResumes = async () => {
+    setSyncingResumes(true)
+    setSyncResumesMsg('')
+    try {
+      const res = await fetch('/api/recruiter/sync-email-resumes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recruiterEmail: recruiterEmailKey,
+          sendAutoAck: autoAckEnabled
+        })
+      })
+      const data = await res.json()
+      setSyncResumesMsg(data.success ? `✅ ${data.message}` : `❌ ${data.message}`)
+    } catch(e) {
+      setSyncResumesMsg('❌ Network error scanning email resumes')
+    } finally {
+      setSyncingResumes(false)
+    }
   }
 
   const handleSaveTemplate = async () => {
@@ -168,7 +214,8 @@ function SettingsModule() {
     gmail: { smtpHost: 'smtp.gmail.com', smtpPort: 587, security: 'TLS' },
     outlook: { smtpHost: 'smtp-mail.outlook.com', smtpPort: 587, security: 'TLS' },
     office365: { smtpHost: 'smtp.office365.com', smtpPort: 587, security: 'TLS' },
-    yahoo: { smtpHost: 'smtp.mail.yahoo.com', smtpPort: 587, security: 'TLS' },
+    yahoo: { smtpHost: 'smtp.mail.yahoo.com', smtpPort: 465, security: 'SSL' },
+    yahooBiz: { smtpHost: 'smtp.bizmail.yahoo.com', smtpPort: 465, security: 'SSL' },
     custom: { smtpHost: '', smtpPort: 587, security: 'TLS' }
   }
 
@@ -219,17 +266,19 @@ function SettingsModule() {
                 </p>
               </div>
               {/* Guide Tabs */}
-              <div style={{ display: 'flex', gap: 6 }}>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {[
                   { id: 'gmail', label: '🔴 Gmail', color: '#ea4335' },
-                  { id: 'yahoo', label: '🟣 Yahoo Mail', color: '#6001d2' },
+                  { id: 'yahoo', label: '🟣 Yahoo Mail (SSL 465)', color: '#6001d2' },
+                  { id: 'yahooBiz', label: '🏢 Yahoo Biz / Turbify', color: '#4f46e5' },
                   { id: 'outlook', label: '🔵 Outlook / Office 365', color: '#0078d4' }
                 ].map(g => (
                   <button
                     key={g.id}
                     onClick={() => {
-                      setGuideProvider(g.id)
-                      setEmailCfg(prev => ({ ...prev, provider: g.id === 'outlook' ? 'outlook' : g.id, ...PROVIDER_DEFAULTS[g.id === 'outlook' ? 'outlook' : g.id] }))
+                      setGuideProvider(g.id.startsWith('yahoo') ? 'yahoo' : g.id)
+                      const targetProv = g.id === 'outlook' ? 'outlook' : g.id
+                      setEmailCfg(prev => ({ ...prev, provider: targetProv, ...PROVIDER_DEFAULTS[targetProv] }))
                     }}
                     style={{
                       padding: '5px 12px',
@@ -238,9 +287,9 @@ function SettingsModule() {
                       fontSize: 12,
                       fontWeight: 700,
                       cursor: 'pointer',
-                      background: guideProvider === g.id ? g.color : '#f8fafc',
-                      color: guideProvider === g.id ? '#fff' : '#475569',
-                      borderColor: guideProvider === g.id ? g.color : '#cbd5e1'
+                      background: guideProvider === (g.id.startsWith('yahoo') ? 'yahoo' : g.id) ? g.color : '#f8fafc',
+                      color: guideProvider === (g.id.startsWith('yahoo') ? 'yahoo' : g.id) ? '#fff' : '#475569',
+                      borderColor: guideProvider === (g.id.startsWith('yahoo') ? 'yahoo' : g.id) ? g.color : '#cbd5e1'
                     }}
                   >
                     {g.label}
@@ -284,7 +333,7 @@ function SettingsModule() {
             {guideProvider === 'yahoo' && (
               <div style={{ background: '#faf5ff', border: '1px solid #e9d5ff', borderRadius: 10, padding: 14 }}>
                 <div style={{ fontWeight: 800, fontSize: 13, color: '#6b21a8', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span>🟣</span> Yahoo Mail App Password Instructions (5 Steps)
+                  <span>🟣</span> Yahoo Mail & Yahoo Small Business / Turbify App Password Instructions
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10, fontSize: 12, color: '#334155' }}>
                   <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #d8b4fe' }}>
@@ -297,15 +346,15 @@ function SettingsModule() {
                   </div>
                   <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #d8b4fe' }}>
                     <div style={{ fontWeight: 800, color: '#7e22ce', marginBottom: 4 }}>3. Enter App Name</div>
-                    Enter <strong>SmartHire</strong> in the text box and click the <strong>Generate password</strong> button.
+                    Enter <strong>SmartHire ATS</strong> in the text box and click the <strong>Generate password</strong> button.
                   </div>
                   <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #d8b4fe' }}>
                     <div style={{ fontWeight: 800, color: '#7e22ce', marginBottom: 4 }}>4. Copy 16-Letter Code</div>
                     Copy the generated one-time code provided by Yahoo (e.g. <code>xxxx xxxx xxxx xxxx</code>).
                   </div>
                   <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #d8b4fe' }}>
-                    <div style={{ fontWeight: 800, color: '#7e22ce', marginBottom: 4 }}>5. Paste & Test</div>
-                    Paste into <strong>App Password</strong> below. SMTP Host: <code>smtp.mail.yahoo.com</code>, Port: <code>587</code> (TLS).
+                    <div style={{ fontWeight: 800, color: '#7e22ce', marginBottom: 4 }}>5. Port 465 (SSL) Standard</div>
+                    Paste into <strong>App Password</strong> below. Standard Yahoo: <code>smtp.mail.yahoo.com</code> (Port 465 SSL). Business: <code>smtp.bizmail.yahoo.com</code> (Port 465 SSL).
                   </div>
                 </div>
               </div>
@@ -383,14 +432,14 @@ function SettingsModule() {
             <div style={{ marginBottom: 14 }}>
               <label style={labelStyle}>Email Provider</label>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {['gmail', 'outlook', 'office365', 'yahoo', 'custom'].map(p => (
+                {['gmail', 'outlook', 'office365', 'yahoo', 'yahooBiz', 'custom'].map(p => (
                   <button key={p} onClick={() => {
                     setEmailCfg(prev => ({ ...prev, provider: p, ...PROVIDER_DEFAULTS[p] }))
-                    if (p === 'gmail' || p === 'yahoo') setGuideProvider(p)
+                    if (p === 'gmail' || p === 'yahoo' || p === 'yahooBiz') setGuideProvider(p.startsWith('yahoo') ? 'yahoo' : p)
                     else if (p === 'outlook' || p === 'office365') setGuideProvider('outlook')
                   }}
                     style={{ padding: '6px 14px', fontSize: 12, fontWeight: 700, borderRadius: 8, cursor: 'pointer', border: '1px solid', background: emailCfg.provider === p ? '#2563eb' : '#f8fafc', color: emailCfg.provider === p ? '#fff' : '#334155', borderColor: emailCfg.provider === p ? '#2563eb' : '#cbd5e1', textTransform: 'capitalize' }}>
-                    {p === 'office365' ? 'Office 365' : p.charAt(0).toUpperCase() + p.slice(1)}
+                    {p === 'office365' ? 'Office 365' : p === 'yahooBiz' ? 'Yahoo Business / Turbify' : p === 'yahoo' ? 'Yahoo Mail (SSL 465)' : p.charAt(0).toUpperCase() + p.slice(1)}
                   </button>
                 ))}
               </div>
@@ -408,7 +457,7 @@ function SettingsModule() {
               <div>
                 <label style={labelStyle}>Security</label>
                 <select value={emailCfg.security} onChange={e => setEmailCfg(p => ({ ...p, security: e.target.value }))} style={inputStyle}>
-                  <option>TLS</option><option>SSL</option><option>STARTTLS</option><option>None</option>
+                  <option>SSL</option><option>TLS</option><option>STARTTLS</option><option>None</option>
                 </select>
               </div>
             </div>
@@ -452,6 +501,66 @@ function SettingsModule() {
                 style={{ flex: 1, padding: '11px 0', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
                 {testingEmail ? '⏳ Testing...' : '📨 Send Test Email'}
               </button>
+            </div>
+
+            {/* EMAIL RESUME HARVESTER & AUTO-MESSAGING CARD */}
+            <div style={{ marginTop: 24, padding: '20px 22px', background: 'linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%)', border: '1px solid #bbf7d0', borderRadius: 12, boxShadow: '0 2px 10px rgba(22, 163, 74, 0.06)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 10 }}>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span>📥</span> Email Resume Harvester & Auto-Ingestion Engine
+                    <span style={{ background: '#dcfce7', color: '#15803d', fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 10, border: '1px solid #86efac' }}>
+                      ● ZERO RESUMES DROPPED
+                    </span>
+                  </h4>
+                  <p style={{ margin: '4px 0 0', fontSize: 12.5, color: '#475569' }}>
+                    Automatically scans incoming emails sent to <strong>{emailCfg.fromEmail || recruiterEmailKey}</strong>, extracts attached candidate resumes (PDF/DOCX), creates ATS candidate profiles, and matches them to open requisitions.
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, background: '#fff', padding: '10px 14px', borderRadius: 8, border: '1px solid #dcfce7' }}>
+                <input 
+                  type="checkbox" 
+                  id="autoAckCheck" 
+                  checked={autoAckEnabled} 
+                  onChange={e => setAutoAckEnabled(e.target.checked)}
+                  style={{ width: 16, height: 16, cursor: 'pointer' }}
+                />
+                <label htmlFor="autoAckCheck" style={{ fontSize: 12.5, fontWeight: 600, color: '#1e293b', cursor: 'pointer' }}>
+                  ⚡ Send Instant Auto-Acknowledgement Email to Candidates upon Resume Ingestion
+                </label>
+              </div>
+
+              {syncResumesMsg && (
+                <div style={{ background: syncResumesMsg.startsWith('✅') ? '#f0fdf4' : '#fef2f2', border: `1px solid ${syncResumesMsg.startsWith('✅') ? '#bbf7d0' : '#fca5a5'}`, color: syncResumesMsg.startsWith('✅') ? '#15803d' : '#dc2626', padding: '10px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, marginBottom: 12 }}>
+                  {syncResumesMsg}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={handleSyncEmailResumes}
+                  disabled={syncingResumes}
+                  style={{
+                    padding: '10px 20px',
+                    background: '#16a34a',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    fontSize: 13.5,
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    boxShadow: '0 2px 8px rgba(22, 163, 74, 0.25)'
+                  }}
+                >
+                  {syncingResumes ? '⏳ Scanning Recruiter Email Inbox...' : '⚡ Scan & Ingest Resumes from Email Now'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

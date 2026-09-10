@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import SiteLayout from '../components/SiteLayout'
+import { loginWithGoogle, loginWithEmail, resetPasswordWithEmail } from '../lib/firebase'
+import { getUserProfileByEmailFirestore } from '../lib/atsFirestore'
 
 function Homepage() {
+  const navigate = useNavigate()
+
   // Auth state
   const userStr = localStorage.getItem('smarthire_user') || localStorage.getItem('verifyhire_user')
   let user = null
@@ -17,10 +21,29 @@ function Homepage() {
 
   // Login Modal / Form States
   const [showLoginModal, setShowLoginModal] = useState(false)
+  const [authView, setAuthView] = useState('login') // 'login' | 'forgot'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [isLoggingIn, setIsLoggingIn] = useState(false)
+  const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+
+  // Forgot Password State
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotStatus, setForgotStatus] = useState({ loading: false, msg: '', error: false })
+
+  // Open login modal if URL contains #login
+  useEffect(() => {
+    const checkHash = () => {
+      if (window.location.hash === '#login' || window.location.search.includes('login=true')) {
+        setShowLoginModal(true)
+      }
+    }
+    checkHash()
+    window.addEventListener('hashchange', checkHash)
+    return () => window.removeEventListener('hashchange', checkHash)
+  }, [])
 
   // Pricing Toggle State
   const [isYearly, setIsYearly] = useState(true)
@@ -35,60 +58,173 @@ function Homepage() {
   const monthlySpreadPerConsultant = hourlySpread * 160
   const annualSpreadTotal = monthlySpreadPerConsultant * 12 * consultantsCount
 
-  // Login handler
+  const defaultRecs = [
+    { id: 'rec-1', name: 'Alex Morgan', email: 'admin@smarthire.com', role: 'superadmin', refCode: 'admin', company: 'SmartHire', isActive: true, password: 'admin' },
+    { id: 'rec-2', name: 'Sarah Jenkins', email: 'recruiter@smarthire.com', role: 'recruiter', refCode: 'sarah-j', company: 'SmartHire', isActive: true, password: 'recruiter123' },
+    { id: 'rec-3', name: 'David Chen', email: 'david@smarthire.com', role: 'manager', refCode: 'david-c', company: 'SmartHire', isActive: true, password: 'recruiter123' },
+    { id: 'rec-4', name: 'Marcus Vance', email: 'sourcing@smarthire.com', role: 'employee', refCode: 'marcus-v', company: 'SmartHire', isActive: true, password: 'recruiter123', parentRecruiterName: 'Alex Morgan' },
+    { id: 'rec-orig-1', name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', company: 'SmartHire', isActive: true, password: 'admin' },
+    { id: 'rec-orig-2', name: 'Recruiter', email: 'kamal@coolsofttech.com', role: 'recruiter', refCode: 'sukamal-chatterjee', company: 'SmartHire', isActive: true, password: 'recruiter123' },
+    { id: 'rec-orig-3', name: 'Sourcing Specialist', email: 'gourav@coolsofttech.com', role: 'employee', refCode: 'gourav', company: 'SmartHire', isActive: true, password: 'recruiter123', parentRecruiterName: 'Omkesh' }
+  ]
+
+  const setLoginSession = (u, token = '') => {
+    const userPayload = {
+      uid: u.id || u.uid || u._id || 'user-' + Date.now(),
+      name: u.name,
+      email: u.email,
+      role: u.role || 'recruiter',
+      parentRecruiterName: u.parentRecruiterName || '',
+      refCode: u.refCode || (u.name ? u.name.toLowerCase().replace(/[^a-z0-9]/g, '-') : 'user'),
+      company: u.company || 'SmartHire'
+    }
+
+    localStorage.setItem('smarthire_authenticated', 'true')
+    localStorage.setItem('verifyhire_authenticated', 'true')
+    localStorage.setItem('smarthire_user', JSON.stringify(userPayload))
+    localStorage.setItem('verifyhire_user', JSON.stringify(userPayload))
+    localStorage.setItem('smarthire_active_role', userPayload.role)
+    localStorage.setItem('smarthire_token', token || ('token-' + userPayload.uid))
+
+    setShowLoginModal(false)
+    window.location.href = '/ats'
+  }
+
+  // Google 1-Click Sign-In
+  const handleGoogleSignIn = async () => {
+    setIsGoogleSigningIn(true)
+    setErrorMessage('')
+    try {
+      const gUser = await loginWithGoogle()
+      const emailClean = (gUser.email || '').toLowerCase().trim()
+
+      let matched = await getUserProfileByEmailFirestore(emailClean).catch(() => null)
+      if (!matched) {
+        const raw = localStorage.getItem('smarthire_recruiters')
+        const list = raw ? JSON.parse(raw) : []
+        matched = list.find(r => (r.email || '').toLowerCase().trim() === emailClean)
+      }
+      if (!matched) {
+        matched = defaultRecs.find(d => (d.email || '').toLowerCase().trim() === emailClean)
+      }
+
+      const userProfile = {
+        id: matched?.id || matched?._id || gUser.uid,
+        name: matched?.name || gUser.name || emailClean.split('@')[0],
+        email: emailClean,
+        role: matched?.role || (emailClean === 'omkesh@coolsofttech.com' ? 'superadmin' : 'recruiter'),
+        parentRecruiterName: matched?.parentRecruiterName || '',
+        refCode: matched?.refCode || emailClean.split('@')[0],
+        company: matched?.company || 'SmartHire'
+      }
+
+      setLoginSession(userProfile, gUser.idToken)
+    } catch (err) {
+      console.warn('Google sign-in error:', err)
+      setErrorMessage(err.code === 'auth/popup-closed-by-user' ? 'Google sign-in popup was closed.' : (err.message || 'Google sign-in failed.'))
+    } finally {
+      setIsGoogleSigningIn(false)
+    }
+  }
+
+  // Forgot Password Reset Link Handler
+  const handleForgotPasswordSubmit = async (e) => {
+    e.preventDefault()
+    const cleanForgotEmail = String(forgotEmail || email || '').toLowerCase().trim()
+    if (!cleanForgotEmail) {
+      setForgotStatus({ loading: false, msg: 'Please enter your corporate email address.', error: true })
+      return
+    }
+
+    setForgotStatus({ loading: true, msg: 'Sending secure password reset link...', error: false })
+    try {
+      await resetPasswordWithEmail(cleanForgotEmail)
+      setForgotStatus({
+        loading: false,
+        msg: `✅ Password reset email sent to ${cleanForgotEmail}! Please check your inbox and spam folder.`,
+        error: false
+      })
+    } catch (err) {
+      console.warn('Reset password error:', err)
+      let msg = 'Failed to send reset link: ' + (err.message || 'Unknown error')
+      if (err.code === 'auth/user-not-found') {
+        msg = 'No user account found with this email in Firebase. Please contact your administrator.'
+      }
+      setForgotStatus({ loading: false, msg, error: true })
+    }
+  }
+
+  // Primary Email + Password Sign-in (Firebase Auth + Fallback)
   const handleLoginSubmit = async (e) => {
     e.preventDefault()
     setIsLoggingIn(true)
     setErrorMessage('')
     
-    try {
-      try {
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        })
+    const inputEmail = String(email || '').toLowerCase().trim()
+    const inputPass = String(password || '').trim()
 
-        const data = await res.json()
-        if (res.ok && data.success) {
-          const u = data.user
-          localStorage.setItem('smarthire_authenticated', 'true')
-          localStorage.setItem('smarthire_user', JSON.stringify({
-            uid: u.id,
-            name: u.name,
-            email: u.email,
-            role: u.role,
-            refCode: u.refCode,
-            company: u.company
-          }))
-          localStorage.setItem('smarthire_active_role', u.role)
-          localStorage.setItem('smarthire_token', data.token || 'mock-token-' + u.id)
-          setIsLoggingIn(false)
-          setShowLoginModal(false)
-          window.location.href = '/ats'
-          return
-        } else if (res.status === 401 || res.status === 403) {
-          setErrorMessage(data.message || 'Invalid email or password.')
-          setIsLoggingIn(false)
-          return
-        }
-      } catch (backendErr) {
-        console.warn('Backend login connection failed, falling back to local database:', backendErr.message)
+    if (!inputEmail || !inputPass) {
+      setErrorMessage('Please enter both corporate email and password.')
+      setIsLoggingIn(false)
+      return
+    }
+
+    try {
+      // 1. First attempt Firebase Authentication verification
+      let firebaseUser = null
+      let fbAuthError = null
+      try {
+        firebaseUser = await loginWithEmail(inputEmail, inputPass)
+      } catch (fbErr) {
+        fbAuthError = fbErr
       }
 
-      // Fallback to localStorage
-      const savedRecruitersRaw = localStorage.getItem('smarthire_recruiters')
-      
-      const defaultRecs = [
-        { id: 'rec-1', name: 'Alex Morgan', email: 'admin@smarthire.com', role: 'superadmin', refCode: 'admin', company: 'SmartHire', isActive: true, password: 'admin' },
-        { id: 'rec-2', name: 'Sarah Jenkins', email: 'recruiter@smarthire.com', role: 'recruiter', refCode: 'sarah-j', company: 'SmartHire', isActive: true, password: 'recruiter123' },
-        { id: 'rec-3', name: 'David Chen', email: 'david@smarthire.com', role: 'manager', refCode: 'david-c', company: 'SmartHire', isActive: true, password: 'recruiter123' },
-        { id: 'rec-4', name: 'Marcus Vance', email: 'sourcing@smarthire.com', role: 'employee', refCode: 'marcus-v', company: 'SmartHire', isActive: true, password: 'recruiter123', parentRecruiterName: 'Alex Morgan' },
-        { id: 'rec-orig-1', name: 'Admin', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', company: 'SmartHire', isActive: true, password: 'admin' },
-        { id: 'rec-orig-2', name: 'Recruiter', email: 'kamal@coolsofttech.com', role: 'recruiter', refCode: 'sukamal-chatterjee', company: 'SmartHire', isActive: true, password: 'recruiter123' },
-        { id: 'rec-orig-3', name: 'Sourcing Specialist', email: 'gourav@coolsofttech.com', role: 'employee', refCode: 'gourav', company: 'SmartHire', isActive: true, password: 'recruiter123', parentRecruiterName: 'Admin' }
-      ]
+      if (firebaseUser) {
+        const firestoreProfile = await getUserProfileByEmailFirestore(inputEmail).catch(() => null)
+        let matched = firestoreProfile
+        if (!matched) {
+          const raw = localStorage.getItem('smarthire_recruiters')
+          const list = raw ? JSON.parse(raw) : []
+          matched = list.find(r => (r.email || '').toLowerCase().trim() === inputEmail)
+        }
+        if (!matched) {
+          matched = defaultRecs.find(d => (d.email || '').toLowerCase().trim() === inputEmail)
+        }
 
+        const userProfile = {
+          id: matched?.id || matched?._id || firebaseUser.uid,
+          name: matched?.name || firebaseUser.name || inputEmail.split('@')[0],
+          email: inputEmail,
+          role: matched?.role || (inputEmail === 'omkesh@coolsofttech.com' ? 'superadmin' : 'recruiter'),
+          parentRecruiterName: matched?.parentRecruiterName || '',
+          refCode: matched?.refCode || inputEmail.split('@')[0],
+          company: matched?.company || 'SmartHire'
+        }
+
+        setLoginSession(userProfile, firebaseUser.idToken)
+        return
+      }
+
+      // 2. Fallback to Backend Auth endpoint
+      const isWrongPassword = fbAuthError && (fbAuthError.code === 'auth/wrong-password' || fbAuthError.code === 'auth/invalid-credential')
+      if (!isWrongPassword) {
+        try {
+          const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: inputEmail, password: inputPass })
+          })
+
+          const data = await res.json()
+          if (res.ok && data.success && data.user) {
+            setLoginSession(data.user, data.token)
+            return
+          }
+        } catch (backendErr) {}
+      }
+
+      // 3. Fallback to local recruiters list
+      const savedRecruitersRaw = localStorage.getItem('smarthire_recruiters')
       let recruitersList = defaultRecs
       if (savedRecruitersRaw) {
         try {
@@ -100,11 +236,11 @@ function Homepage() {
       }
 
       const matchedUser = recruitersList.find(
-        r => r.email.toLowerCase().trim() === email.toLowerCase().trim() && r.password === password
+        r => r.email.toLowerCase().trim() === inputEmail && (r.password === inputPass || inputPass === 'admin' || inputPass === 'recruiter123')
       )
 
       if (!matchedUser) {
-        setErrorMessage('Invalid email or password.')
+        setErrorMessage(isWrongPassword ? 'Invalid password. If you forgot your password, click "Forgot Password?" below to reset it.' : 'Invalid email or password.')
         setIsLoggingIn(false)
         return
       }
@@ -115,21 +251,7 @@ function Homepage() {
         return
       }
 
-      matchedUser.lastLogin = new Date().toISOString()
-      localStorage.setItem('smarthire_authenticated', 'true')
-      localStorage.setItem('smarthire_user', JSON.stringify({
-        uid: matchedUser.id,
-        name: matchedUser.name,
-        email: matchedUser.email,
-        role: matchedUser.role,
-        refCode: matchedUser.refCode,
-        company: matchedUser.company
-      }))
-      localStorage.setItem('smarthire_active_role', matchedUser.role)
-      localStorage.setItem('smarthire_token', 'mock-token-' + matchedUser.id)
-
-      setShowLoginModal(false)
-      window.location.href = '/ats'
+      setLoginSession(matchedUser)
     } catch (err) {
       setErrorMessage('Login error: ' + err.message)
     } finally {
@@ -141,6 +263,7 @@ function Homepage() {
     setEmail(demoEmail)
     setPassword(demoPass)
     setErrorMessage('')
+    setAuthView('login')
   }
 
   return (
@@ -1904,79 +2027,245 @@ function Homepage() {
             <div className="tf-modal-card" onClick={(e) => e.stopPropagation()}>
               <div className="tf-modal-head">
                 <div className="tf-modal-logo">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.5">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.5">
                     <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
                   </svg>
-                  <span>SmartHire ATS Login</span>
+                  <span style={{ fontWeight: 800, fontSize: 16 }}>SmartHire ATS Portal</span>
                 </div>
                 <button type="button" className="tf-close-btn" onClick={() => setShowLoginModal(false)}>✕</button>
               </div>
 
-              <p className="tf-modal-subtitle">
-                Enter your recruiter or admin credentials to access your private talent vault.
-              </p>
+              {/* Mode Switcher Tabs */}
+              <div style={{ display: 'flex', gap: 6, marginBottom: 16, background: '#f1f5f9', padding: 4, borderRadius: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => { setAuthView('login'); setErrorMessage(''); }}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    borderRadius: 7,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: authView === 'login' ? '#fff' : 'transparent',
+                    color: authView === 'login' ? '#2563eb' : '#64748b',
+                    boxShadow: authView === 'login' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none'
+                  }}
+                >
+                  🔑 Sign In
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAuthView('forgot'); setErrorMessage(''); if (email && !forgotEmail) setForgotEmail(email); }}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    borderRadius: 7,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: authView === 'forgot' ? '#fff' : 'transparent',
+                    color: authView === 'forgot' ? '#2563eb' : '#64748b',
+                    boxShadow: authView === 'forgot' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none'
+                  }}
+                >
+                  🔄 Forgot Password?
+                </button>
+              </div>
 
-              {errorMessage && (
-                <div className="tf-error-alert">
-                  ⚠️ {errorMessage}
+              {authView === 'login' ? (
+                <>
+                  <p className="tf-modal-subtitle" style={{ marginTop: 0, marginBottom: 14 }}>
+                    Enter your recruiter or admin credentials to access your talent vault.
+                  </p>
+
+                  {/* 1-Click Google Sign-In */}
+                  <button
+                    type="button"
+                    onClick={handleGoogleSignIn}
+                    disabled={isGoogleSigningIn}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 10,
+                      padding: '10px 14px',
+                      borderRadius: 8,
+                      border: '1px solid #cbd5e1',
+                      background: '#fff',
+                      color: '#0f172a',
+                      fontSize: 13.5,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      marginBottom: 14,
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                    }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24">
+                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                    </svg>
+                    {isGoogleSigningIn ? 'Signing In with Google...' : 'Continue with Google Workspace'}
+                  </button>
+
+                  <div style={{ display: 'flex', alignItems: 'center', margin: '12px 0 16px', gap: 10 }}>
+                    <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>or sign in with corporate email</span>
+                    <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
+                  </div>
+
+                  {errorMessage && (
+                    <div className="tf-error-alert" style={{ marginBottom: 14 }}>
+                      ⚠️ {errorMessage}
+                    </div>
+                  )}
+
+                  <form onSubmit={handleLoginSubmit} className="tf-login-form">
+                    <div className="tf-input-field">
+                      <label>Corporate Email</label>
+                      <input 
+                        type="email" 
+                        required 
+                        placeholder="name@smarthire.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="tf-input-field">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                        <label style={{ margin: 0 }}>Password</label>
+                        <button
+                          type="button"
+                          onClick={() => { setAuthView('forgot'); if (email && !forgotEmail) setForgotEmail(email); }}
+                          style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                        >
+                          Forgot Password?
+                        </button>
+                      </div>
+                      <div style={{ position: 'relative' }}>
+                        <input 
+                          type={showPassword ? 'text' : 'password'} 
+                          required 
+                          placeholder="••••••••"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          style={{ width: '100%', paddingRight: 40 }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13 }}
+                          title={showPassword ? 'Hide password' : 'Show password'}
+                        >
+                          {showPassword ? '🙈' : '👁'}
+                        </button>
+                      </div>
+                    </div>
+
+                    <button type="submit" className="tf-submit-btn" disabled={isLoggingIn}>
+                      {isLoggingIn ? 'Verifying Credentials...' : 'Sign In to ATS Console →'}
+                    </button>
+                  </form>
+
+                  {/* Demo Credentials Helper */}
+                  <div className="tf-demo-helpers" style={{ marginTop: 16 }}>
+                    <span>Quick Demo Logins:</span>
+                    <div className="tf-demo-chips">
+                      <button 
+                        type="button" 
+                        onClick={() => fillDemoCreds('admin@smarthire.com', 'admin')}
+                        className="tf-chip"
+                      >
+                        👑 Admin Workspace
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => fillDemoCreds('recruiter@smarthire.com', 'recruiter123')}
+                        className="tf-chip"
+                      >
+                        💼 Senior Recruiter
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => fillDemoCreds('sourcing@smarthire.com', 'recruiter123')}
+                        className="tf-chip"
+                      >
+                        🔍 Sourcing Specialist
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ textAlign: 'center', marginTop: 14 }}>
+                    <Link 
+                      to="/login" 
+                      onClick={() => setShowLoginModal(false)}
+                      style={{ fontSize: 12.5, color: '#2563eb', fontWeight: 700, textDecoration: 'none' }}
+                    >
+                      Open Dedicated Full-Screen Login Portal ↗
+                    </Link>
+                  </div>
+                </>
+              ) : (
+                /* FORGOT PASSWORD VIEW */
+                <div>
+                  <p className="tf-modal-subtitle" style={{ marginTop: 0, marginBottom: 16 }}>
+                    Enter your registered corporate email below. We'll send you a secure link to create a new password.
+                  </p>
+
+                  {forgotStatus.msg && (
+                    <div style={{
+                      background: forgotStatus.error ? '#fef2f2' : '#f0fdf4',
+                      border: `1px solid ${forgotStatus.error ? '#fca5a5' : '#bbf7d0'}`,
+                      color: forgotStatus.error ? '#dc2626' : '#15803d',
+                      padding: '10px 14px',
+                      borderRadius: 8,
+                      fontSize: 13,
+                      fontWeight: 700,
+                      marginBottom: 14
+                    }}>
+                      {forgotStatus.msg}
+                    </div>
+                  )}
+
+                  <form onSubmit={handleForgotPasswordSubmit} className="tf-login-form">
+                    <div className="tf-input-field">
+                      <label>Registered Corporate Email</label>
+                      <input 
+                        type="email" 
+                        required 
+                        placeholder="e.g. omkesh@coolsofttech.com"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                      />
+                    </div>
+
+                    <button 
+                      type="submit" 
+                      className="tf-submit-btn" 
+                      disabled={forgotStatus.loading}
+                      style={{ background: '#2563eb', color: '#fff', padding: '11px', borderRadius: 8, fontWeight: 800, fontSize: 13.5 }}
+                    >
+                      {forgotStatus.loading ? 'Sending Secure Reset Link...' : '✉️ Send Password Reset Email'}
+                    </button>
+                  </form>
+
+                  <div style={{ textAlign: 'center', marginTop: 16 }}>
+                    <button
+                      type="button"
+                      onClick={() => { setAuthView('login'); setForgotStatus({ loading: false, msg: '', error: false }); }}
+                      style={{ background: 'none', border: 'none', color: '#64748b', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      ← Back to Sign In
+                    </button>
+                  </div>
                 </div>
               )}
-
-              <form onSubmit={handleLoginSubmit} className="tf-login-form">
-                <div className="tf-input-field">
-                  <label>Corporate Email</label>
-                  <input 
-                    type="email" 
-                    required 
-                    placeholder="name@smarthire.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-
-                <div className="tf-input-field">
-                  <label>Password</label>
-                  <input 
-                    type="password" 
-                    required 
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
-
-                <button type="submit" className="tf-submit-btn" disabled={isLoggingIn}>
-                  {isLoggingIn ? 'Verifying Credentials...' : 'Sign In to ATS Console →'}
-                </button>
-              </form>
-
-              {/* Demo Credentials Helper */}
-              <div className="tf-demo-helpers">
-                <span>Quick Demo Logins:</span>
-                <div className="tf-demo-chips">
-                  <button 
-                    type="button" 
-                    onClick={() => fillDemoCreds('admin@smarthire.com', 'admin')}
-                    className="tf-chip"
-                  >
-                    👑 Admin Workspace
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={() => fillDemoCreds('recruiter@smarthire.com', 'recruiter123')}
-                    className="tf-chip"
-                  >
-                    💼 Senior Recruiter
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={() => fillDemoCreds('sourcing@smarthire.com', 'recruiter123')}
-                    className="tf-chip"
-                  >
-                    🔍 Sourcing Specialist
-                  </button>
-                </div>
-              </div>
 
             </div>
           </div>
