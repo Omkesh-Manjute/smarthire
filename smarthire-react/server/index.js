@@ -6717,6 +6717,27 @@ function saveEmailConfigs() {
   try { fs.writeFileSync(emailConfigsPath, JSON.stringify(emailConfigsStore, null, 2)); } catch(e) {}
 }
 
+// Auto-seed from environment variables if present (e.g. Render / AWS .env)
+const envEmailUser = process.env.EMAIL_USER || process.env.SMTP_USER || 'omkesh@coolsofttech.com';
+const envEmailPass = process.env.EMAIL_PASS || process.env.SMTP_PASS || '';
+const envEmailHost = process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.bizmail.yahoo.com';
+const envEmailPort = parseInt(process.env.EMAIL_PORT || process.env.SMTP_PORT || '465');
+const envEmailFrom = process.env.EMAIL_FROM || `SmartHire Recruitment <${envEmailUser}>`;
+
+if (envEmailPass) {
+  emailConfigsStore[envEmailUser] = {
+    displayName: envEmailFrom.includes('<') ? envEmailFrom.split('<')[0].trim().replace(/^"|"$/g, '') : 'SmartHire Recruitment',
+    fromEmail: envEmailUser,
+    provider: envEmailHost.includes('yahoo') ? 'yahoo' : 'custom',
+    smtpHost: envEmailHost,
+    smtpPort: envEmailPort,
+    security: envEmailPort === 465 ? 'SSL' : 'TLS',
+    appPassword: envEmailPass,
+    signature: 'With Regards,\nOmkesh Manjute\nCOOLSOFT LLC | http://www.coolsofttech.com'
+  };
+  saveEmailConfigs();
+}
+
 // GET recruiter email config
 app.get('/api/recruiter/email-config', (req, res) => {
   const recruiterEmail = req.query.email || req.headers['x-recruiter-email'] || '';
