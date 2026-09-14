@@ -2172,44 +2172,6 @@ function Homepage() {
                       {isLoggingIn ? 'Verifying Credentials...' : 'Sign In to ATS Console →'}
                     </button>
                   </form>
-
-                  {/* Demo Credentials Helper */}
-                  <div className="tf-demo-helpers" style={{ marginTop: 16 }}>
-                    <span>Quick Demo Logins:</span>
-                    <div className="tf-demo-chips">
-                      <button 
-                        type="button" 
-                        onClick={() => fillDemoCreds('admin@smarthire.com', 'admin')}
-                        className="tf-chip"
-                      >
-                        👑 Admin Workspace
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={() => fillDemoCreds('recruiter@smarthire.com', 'recruiter123')}
-                        className="tf-chip"
-                      >
-                        💼 Senior Recruiter
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={() => fillDemoCreds('sourcing@smarthire.com', 'recruiter123')}
-                        className="tf-chip"
-                      >
-                        🔍 Sourcing Specialist
-                      </button>
-                    </div>
-                  </div>
-
-                  <div style={{ textAlign: 'center', marginTop: 14 }}>
-                    <Link 
-                      to="/login" 
-                      onClick={() => setShowLoginModal(false)}
-                      style={{ fontSize: 12.5, color: '#2563eb', fontWeight: 700, textDecoration: 'none' }}
-                    >
-                      Open Dedicated Full-Screen Login Portal ↗
-                    </Link>
-                  </div>
                 </>
               ) : (
                 /* FORGOT PASSWORD VIEW */

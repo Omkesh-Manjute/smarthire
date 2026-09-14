@@ -31,6 +31,16 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-15 — Remove Demo Login Buttons & Dedicated Portal Link for Production Cleanliness
+- **Authentication Cleanliness (`Login.jsx`, `Homepage.jsx`)**:
+  - Removed `1-Click Demo Login Selection` box and demo role buttons (`Super Admin (Omkesh)`, `Manager`, `Recruiter`, `Employee`) from `/login` page.
+  - Removed `Quick Demo Logins` and chip buttons (`Admin Workspace`, `Senior Recruiter`, `Sourcing Specialist`) from Homepage ATS login modal.
+  - Removed `Open Dedicated Full-Screen Login Portal ↗` link from Homepage modal.
+  - Ensured authentic corporate login only without test/demo artifacts.
+- **Production Verification**:
+  - `npm run build`: 0 errors, 0 warnings (built in 2.23s).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 2.59s).
+
 ### 2026-09-11 — Messages Page Enterprise SaaS Redesign (Linear/Slack/Notion UX matching media_1789074147680.png)
 - **Complete Messages Workspace Overhaul (`smarthire-react/src/pages/RecruiterInbox.jsx`, `App.jsx`)**:
   - Re-architected `/messages` and `/inbox?tab=messages` from the ground up, eliminating clunky floating cards and excessive whitespace in favor of a clean, high-density Linear/Slack/Notion inspired communication center.
