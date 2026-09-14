@@ -1,0 +1,29 @@
+name: Auto Deploy to AWS Lightsail
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    name: SSH Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy to AWS Lightsail via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.LIGHTSAIL_HOST }}
+          username: ${{ secrets.LIGHTSAIL_USER || 'ubuntu' }}
+          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          port: 22
+          script: |
+            echo "🚀 Starting automated deployment on AWS Lightsail..."
+            cd ~/smarthire
+            git pull origin main
+            export NODE_OPTIONS="--max-old-space-size=2048"
+            node build.js
+            pm2 restart smarthire-ats --update-env
+            echo "✅ SmartHire ATS auto-deployed successfully!"
