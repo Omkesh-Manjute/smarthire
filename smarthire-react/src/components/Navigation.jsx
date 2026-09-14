@@ -197,7 +197,7 @@ function Navigation() {
     { id: 'jobs', label: 'Jobs Hub', desc: 'Manage vacancies & scrape JDs', icon: '💼' },
     { id: 'candidates', label: 'Candidates Directory', desc: 'Profiles, resumes & filters', icon: '👤' },
     { id: 'pipeline', label: 'Visual Pipeline', desc: 'Kanban board & hiring stages', icon: '📈' },
-    { id: 'screening', label: 'AI Screening Bot', desc: 'Real-time anti-proxy & chats', icon: '🔍' },
+    { id: 'screening', label: 'Video & Audio Screening', desc: 'PeekHire 1-way video & voice screening', icon: '🎥' },
     { id: 'submissions', label: 'Submissions & RTR', desc: 'Client submissions & tracking', icon: '📤' },
   ]
 
@@ -576,10 +576,10 @@ function Navigation() {
                             navigateToAtsTab('screening')
                           }}
                         >
-                          <span className="menu-link-icon">⚡</span>
+                          <span className="menu-link-icon">🎥</span>
                           <div className="menu-link-text-wrap">
-                            <span className="menu-link-title">Launch AI Screening</span>
-                            <span className="menu-link-desc">Anti-proxy interview chat & confirm</span>
+                            <span className="menu-link-title">Video & Voice Screening</span>
+                            <span className="menu-link-desc">PeekHire async video & voice interviews</span>
                           </div>
                         </button>
 

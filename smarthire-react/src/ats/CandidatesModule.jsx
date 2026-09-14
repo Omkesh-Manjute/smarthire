@@ -2400,7 +2400,7 @@ function CandidatesModule({
                 {pushTargetReqId === 'custom' && (
                   <input
                     type="text"
-                    placeholder="Enter 6-digit Requisition ID (e.g. 158997)"
+                    placeholder="Enter 6-digit Requisition ID (e.g. 74921)"
                     value={pushCustomReqId}
                     onChange={e => setPushCustomReqId(e.target.value)}
                     required

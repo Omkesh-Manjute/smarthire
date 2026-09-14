@@ -6,7 +6,7 @@ const SEARCH_ITEMS = [
   { id: 'ats-jobs', title: 'Jobs Hub & Management', category: 'ATS Suite', icon: '💼', path: '/ats?tab=jobs', keywords: 'jobs vacancies openings post jd parse' },
   { id: 'ats-cand', title: 'Candidates Directory', category: 'ATS Suite', icon: '👤', path: '/ats?tab=candidates', keywords: 'candidates talent resumes applicants profiles' },
   { id: 'ats-pipe', title: 'Visual Hiring Pipeline', category: 'ATS Suite', icon: '📈', path: '/ats?tab=pipeline', keywords: 'pipeline kanban stages status workflow' },
-  { id: 'ats-screen', title: 'AI Screening & Anti-Proxy', category: 'ATS Suite', icon: '🔍', path: '/ats?tab=screening', keywords: 'screening ai bot interview liveness verification' },
+  { id: 'ats-screen', title: 'Video & Audio Screening (PeekHire)', category: 'ATS Suite', icon: '🎥', path: '/ats?tab=screening', keywords: 'screening video voice audio peekhire interview async responses' },
   { id: 'ats-sub', title: 'Client Submissions', category: 'ATS Suite', icon: '📤', path: '/ats?tab=submissions', keywords: 'submissions clients rtr client submission' },
   { id: 'ats-rep', title: 'Intelligence & Reports', category: 'Analytics', icon: '📑', path: '/reports', keywords: 'reports analytics conversion charts metrics export' },
   { id: 'ats-auto', title: 'ATS Automation & Rules', category: 'ATS Suite', icon: '⚙️', path: '/ats?tab=automation', keywords: 'automation webhooks integrations n8n rules' },

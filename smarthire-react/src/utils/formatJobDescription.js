@@ -6,72 +6,72 @@
  */
 
 export const KNOWN_TITLE_MAP = [
-  { match: /it deployment team member.*66166/i, positionNumber: '66166', reqId: '159021', title: 'IT Deployment Team Member (66166)' },
-  { match: /cbus.*809896/i, positionNumber: '809896', reqId: '159020', title: 'CBUS Program Manager 1 (809896)' },
-  { match: /cbus.*809895/i, positionNumber: '809895', reqId: '159019', title: 'CBUS Program Manager 1 (809895)' },
-  { match: /network engineer ii.*165232/i, positionNumber: '165232', reqId: '159016', title: 'Network Engineer II (165232)' },
-  { match: /systems administrator iii.*165231/i, positionNumber: '165231', reqId: '159015', title: 'Systems Administrator III (165231)' },
-  { match: /vdot.*gis governance.*810103/i, positionNumber: '810103', reqId: '159014', title: 'VDOT Program Manager - Data And GIS Governance (810103)' },
-  { match: /it data analyst.*stamford/i, positionNumber: '809113', reqId: '159013', title: 'IT Data Analyst (809113)' },
-  { match: /business analyst.*intermediate.*13415/i, positionNumber: '13415', reqId: '159012', title: 'Business Analyst - Intermediate (13415)' },
-  { match: /security analyst ii.*165213/i, positionNumber: '165213', reqId: '159010', title: 'Security Analyst II (165213)' },
-  { match: /web accessibility consultant.*66235/i, positionNumber: '66235', reqId: '159009', title: 'Web Accessibility Consultant (66235)' },
-  { match: /enterprise architect.*165118/i, positionNumber: '165118', reqId: '159008', title: 'Enterprise Architect (165118)' },
-  { match: /ncdot.*business analyst.*expert.*810569/i, positionNumber: '810569', reqId: '159007', title: 'NCDOT - Business Analyst- Expert (810569)' },
-  { match: /enterprise architect adoption literacy coordinator.*165119/i, positionNumber: '165119', reqId: '159006', title: 'Enterprise Architect Adoption Literacy Coordinator (165119)' },
-  { match: /itsm.*change.*process|change.*process.*manager.*810453/i, positionNumber: '810453', reqId: '159005', title: 'NCDIT - ITSM Change Process Manager - Junior (810453)' },
-  { match: /business analyst.*advanced.*13414/i, positionNumber: '13414', reqId: '159004', title: 'Business Analyst - Advanced (13414)' },
-  { match: /enterprise project manager.*advanced.*13421/i, positionNumber: '13421', reqId: '159003', title: 'Enterprise Project Manager - Advanced (13421)' },
-  { match: /system analyst 4.*806546|vrs.*system analyst/i, positionNumber: '806546', reqId: '159002', title: 'VRS - System Analyst 4 (806546)' },
-  { match: /ecm.*business.*analyst.*66279|digital content manager.*tn doe/i, positionNumber: '66279', reqId: '159000', title: 'Enterprise Content Management (ECM) Business Analyst (66279)' },
-  { match: /junior java|java.*developer.*test|807791/i, positionNumber: '807791', reqId: '158999', title: 'NC FAST Junior Java Developer/Test Engineer (807791)' },
-  { match: /system(?:s)? administrator ii|808800/i, positionNumber: '808800', reqId: '158998', title: 'NC DHHS System Administrator II (808800)' },
-  { match: /senior aws developer|aws senior|808496/i, positionNumber: '808496', reqId: '158997', title: 'NC DHHS AWS Senior Developer (808496)' },
-  { match: /power platform|805119/i, positionNumber: '805119', reqId: '158996', title: 'DHHS MS Power Platform Developer Architect (805119)' },
-  { match: /aws\s*\/?\s*java developer|809716/i, positionNumber: '809716', reqId: '158995', title: 'NC DHHS AWS/Java Developer (809716)' },
-  { match: /ncdot.*business analyst.*expert.*810558/i, positionNumber: '810558', reqId: '158994', title: 'NCDOT - Business Analyst- Expert (810558)' },
-  { match: /senior salesforce engineer.*809821/i, positionNumber: '809821', reqId: '158993', title: 'Senior Salesforce Engineer (809821)' },
-  { match: /ecm.*business.*analyst.*66278/i, positionNumber: '66278', reqId: '158992', title: 'Enterprise Content Management (ECM) Business Analyst (66278)' },
+  { match: /it deployment team member.*66166/i, positionNumber: '66166', reqId: '159021', title: 'IT Deployment Team Member' },
+  { match: /cbus.*809896/i, positionNumber: '809896', reqId: '159020', title: 'Program Manager 1' },
+  { match: /cbus.*809895/i, positionNumber: '809895', reqId: '159019', title: 'Program Manager 1' },
+  { match: /network engineer ii.*165232/i, positionNumber: '165232', reqId: '159016', title: 'Network Engineer II' },
+  { match: /systems administrator iii.*165231/i, positionNumber: '165231', reqId: '159015', title: 'Systems Administrator III' },
+  { match: /vdot.*gis governance.*810103/i, positionNumber: '810103', reqId: '159014', title: 'Program Manager - Data & GIS Governance' },
+  { match: /it data analyst.*stamford/i, positionNumber: '809113', reqId: '159013', title: 'IT Data Analyst' },
+  { match: /business analyst.*intermediate.*13415/i, positionNumber: '13415', reqId: '159012', title: 'Business Analyst - Intermediate' },
+  { match: /security analyst ii.*165213/i, positionNumber: '165213', reqId: '159010', title: 'Security Analyst II' },
+  { match: /web accessibility consultant.*66235/i, positionNumber: '66235', reqId: '159009', title: 'Web Accessibility Consultant' },
+  { match: /enterprise architect.*165118/i, positionNumber: '165118', reqId: '159008', title: 'Enterprise Architect' },
+  { match: /ncdot.*business analyst.*expert.*810569/i, positionNumber: '810569', reqId: '159007', title: 'Business Analyst - Expert' },
+  { match: /enterprise architect adoption literacy coordinator.*165119/i, positionNumber: '165119', reqId: '159006', title: 'Enterprise Architect Adoption Literacy Coordinator' },
+  { match: /itsm.*change.*process|change.*process.*manager.*810453/i, positionNumber: '810453', reqId: '159005', title: 'ITSM Change Process Manager - Junior' },
+  { match: /business analyst.*advanced.*13414/i, positionNumber: '13414', reqId: '159004', title: 'Business Analyst - Advanced' },
+  { match: /enterprise project manager.*advanced.*13421/i, positionNumber: '13421', reqId: '159003', title: 'Enterprise Project Manager - Advanced' },
+  { match: /system analyst 4.*806546|vrs.*system analyst/i, positionNumber: '806546', reqId: '159002', title: 'System Analyst 4' },
+  { match: /ecm.*business.*analyst.*66279|digital content manager.*tn doe/i, positionNumber: '66279', reqId: '159000', title: 'Enterprise Content Management (ECM) Business Analyst' },
+  { match: /junior java|java.*developer.*test|807791/i, positionNumber: '807791', reqId: '158999', title: 'Junior Java Developer / Test Engineer' },
+  { match: /system(?:s)? administrator ii|808800/i, positionNumber: '808800', reqId: '158998', title: 'System Administrator II' },
+  { match: /senior aws developer|aws senior|808496/i, positionNumber: '808496', reqId: '158997', title: 'AWS Senior Developer' },
+  { match: /power platform|805119/i, positionNumber: '805119', reqId: '158996', title: 'Power Platform Developer Architect' },
+  { match: /aws\s*\/?\s*java developer|809716/i, positionNumber: '809716', reqId: '158995', title: 'AWS / Java Developer' },
+  { match: /ncdot.*business analyst.*expert.*810558/i, positionNumber: '810558', reqId: '158994', title: 'Business Analyst - Expert' },
+  { match: /senior salesforce engineer.*809821/i, positionNumber: '809821', reqId: '158993', title: 'Senior Salesforce Engineer' },
+  { match: /ecm.*business.*analyst.*66278/i, positionNumber: '66278', reqId: '158992', title: 'Enterprise Content Management (ECM) Business Analyst' },
   { match: /qa tester.*manual andautomation|seleniumpostman/i, positionNumber: '809114', reqId: '158991', title: 'Quality Assurance Analyst - QA Tester (Manual & Automation)' },
-  { match: /ncdot.*specialist.*expert.*809207/i, positionNumber: '809207', reqId: '158990', title: 'NCDOT- Specialist- Expert (809207)' },
-  { match: /pr1042105.*business analyst/i, positionNumber: '212926', reqId: '158989', title: 'Business Analyst C. Advanced (212926)' },
-  { match: /data analyst\s*\/\s*business system|it data analyst/i, positionNumber: '809112', reqId: '158988', title: 'IT Data Analyst (809112)' },
-  { match: /apd writer.*809989/i, positionNumber: '809989', reqId: '158987', title: 'APD Writer (809989)' },
-  { match: /senior salesforce engineer.*809822/i, positionNumber: '809822', reqId: '158986', title: 'Senior Salesforce Engineer (809822)' },
-  { match: /ncdot.*cloud engineer.*809851/i, positionNumber: '809851', reqId: '158985', title: 'NCDOT - Cloud Engineer- Expert (809851)' },
-  { match: /ncdot.*cloud engineer.*809157/i, positionNumber: '809157', reqId: '158984', title: 'NCDOT - Cloud Engineer- Expert (809157)' },
-  { match: /ncdit.*senior it project manager.*810423/i, positionNumber: '810423', reqId: '158983', title: 'NCDIT - Senior IT Project Manager (810423)' },
-  { match: /food service worker.*cook.*66265/i, positionNumber: '66265', reqId: '158982', title: 'Food Service Worker/Cook (66265)' },
-  { match: /project manager 3.*165008/i, positionNumber: '165008', reqId: '158981', title: 'Project Manager 3 (165008)' },
-  { match: /project manager 3.*165010/i, positionNumber: '165010', reqId: '158980', title: 'Project Manager 3 (165010)' },
-  { match: /it healthcare consultant project manager.*13411/i, positionNumber: '13411', reqId: '158979', title: 'IT Healthcare Consultant Project Manager (13411)' },
-  { match: /vdh infrastructure solutions architect.*810314/i, positionNumber: '810314', reqId: '158977', title: 'VDH Infrastructure Solutions Architect (810314)' },
-  { match: /system analyst 5.*165083/i, positionNumber: '165083', reqId: '158976', title: 'System Analyst 5 (165083)' },
-  { match: /senior business systems analyst.*810449/i, positionNumber: '810449', reqId: '158975', title: 'Senior Business Systems Analyst (810449)' },
-  { match: /jfs.*product specialist 5.*810238/i, positionNumber: '810238', reqId: '158973', title: 'JFS - Product Specialist 5 / PS5 (810238)' },
-  { match: /dot.*cadd\/gis administrator 3.*810431/i, positionNumber: '810431', reqId: '158972', title: 'DOT - CADD/GIS Administrator 3/CGA3 (810431)' },
-  { match: /decal.*caps senior qa analyst.*810505/i, positionNumber: '810505', reqId: '158971', title: 'DECAL - CAPS Senior QA Analyst (810505)' },
-  { match: /software test analyst 5.*165025/i, positionNumber: '165025', reqId: '158970', title: 'Software Test Analyst 5 (165025)' },
-  { match: /nc fast integration engineer.*808977/i, positionNumber: '808977', reqId: '158969', title: 'NC FAST Integration Engineer (808977)' },
-  { match: /network architect.*13297/i, positionNumber: '13297', reqId: '158968', title: 'Network Architect (13297)' },
-  { match: /warehouse worker.*66269/i, positionNumber: '66269', reqId: '158967', title: 'Warehouse Worker (66269)' },
-  { match: /administrative services assistant.*66213/i, positionNumber: '66213', reqId: '158966', title: 'Administrative Services Assistant (66213)' },
-  { match: /vsu.*technical support analyst 2.*810091/i, positionNumber: '810091', reqId: '158965', title: 'VSU - Technical Support Analyst 2 (810091)' },
-  { match: /business analyst 3.*529601639r/i, positionNumber: '529601639R', reqId: '158964', title: 'Business Analyst 3 (529601639R)' },
-  { match: /ncdot.*product manager.*806296/i, positionNumber: '806296', reqId: '158963', title: 'NCDOT - Product Manager- Junior (806296)' },
-  { match: /business analyst 4.*164993/i, positionNumber: '164993', reqId: '158962', title: 'Business Analyst 4 (164993)' },
-  { match: /ncdot.*product manager.*810178/i, positionNumber: '810178', reqId: '158961', title: 'NCDOT - Product Manager- Junior (810178)' },
-  { match: /network engineer.*project lead.*13296/i, positionNumber: '13296', reqId: '158960', title: 'Network Engineer - Project Lead (13296)' },
-  { match: /business analyst.*27267/i, positionNumber: '27267', reqId: '158959', title: 'Business Analyst (27267)' },
-  { match: /business analyst.*27266/i, positionNumber: '27266', reqId: '158958', title: 'Business Analyst (27266)' },
-  { match: /esl teacher.*66211/i, positionNumber: '66211', reqId: '158957', title: 'ESL Teacher (66211)' },
-  { match: /ncdot product manager.*810176/i, positionNumber: '810176', reqId: '158956', title: 'NCDOT Product Manager- Junior (810176)' },
-  { match: /security analyst iii.*164703/i, positionNumber: '164703', reqId: '158954', title: 'Security Analyst III (164703)' },
-  { match: /network engineer.*project lead.*13295/i, positionNumber: '13295', reqId: '158953', title: 'Network Engineer - Project Lead (13295)' },
-  { match: /web accessibility consultant.*66233/i, positionNumber: '66233', reqId: '158952', title: 'Web Accessibility Consultant (66233)' },
-  { match: /qa analyst senior.*809973/i, positionNumber: '809973', reqId: '158951', title: 'QA Analyst Senior (809973)' },
-  { match: /desktop support ii.*164880/i, positionNumber: '164880', reqId: '158950', title: 'Desktop Support II (164880)' },
-  { match: /business analyst 5.*164891/i, positionNumber: '164891', reqId: '158949', title: 'Business Analyst 5 (164891)' },
+  { match: /ncdot.*specialist.*expert.*809207/i, positionNumber: '809207', reqId: '158990', title: 'Specialist - Expert' },
+  { match: /pr1042105.*business analyst/i, positionNumber: '212926', reqId: '158989', title: 'Business Analyst - Advanced' },
+  { match: /data analyst\s*\/\s*business system|it data analyst/i, positionNumber: '809112', reqId: '158988', title: 'IT Data Analyst' },
+  { match: /apd writer.*809989/i, positionNumber: '809989', reqId: '158987', title: 'APD Writer' },
+  { match: /senior salesforce engineer.*809822/i, positionNumber: '809822', reqId: '158986', title: 'Senior Salesforce Engineer' },
+  { match: /ncdot.*cloud engineer.*809851/i, positionNumber: '809851', reqId: '158985', title: 'Cloud Engineer - Expert' },
+  { match: /ncdot.*cloud engineer.*809157/i, positionNumber: '809157', reqId: '158984', title: 'Cloud Engineer - Expert' },
+  { match: /ncdit.*senior it project manager.*810423/i, positionNumber: '810423', reqId: '158983', title: 'Senior IT Project Manager' },
+  { match: /food service worker.*cook.*66265/i, positionNumber: '66265', reqId: '158982', title: 'Food Service Worker / Cook' },
+  { match: /project manager 3.*165008/i, positionNumber: '165008', reqId: '158981', title: 'Project Manager 3' },
+  { match: /project manager 3.*165010/i, positionNumber: '165010', reqId: '158980', title: 'Project Manager 3' },
+  { match: /it healthcare consultant project manager.*13411/i, positionNumber: '13411', reqId: '158979', title: 'IT Healthcare Consultant Project Manager' },
+  { match: /vdh infrastructure solutions architect.*810314/i, positionNumber: '810314', reqId: '158977', title: 'Infrastructure Solutions Architect' },
+  { match: /system analyst 5.*165083/i, positionNumber: '165083', reqId: '158976', title: 'System Analyst 5' },
+  { match: /senior business systems analyst.*810449/i, positionNumber: '810449', reqId: '158975', title: 'Senior Business Systems Analyst' },
+  { match: /jfs.*product specialist 5.*810238/i, positionNumber: '810238', reqId: '158973', title: 'Product Specialist 5' },
+  { match: /dot.*cadd\/gis administrator 3.*810431/i, positionNumber: '810431', reqId: '158972', title: 'CADD / GIS Administrator 3' },
+  { match: /decal.*caps senior qa analyst.*810505/i, positionNumber: '810505', reqId: '158971', title: 'CAPS Senior QA Analyst' },
+  { match: /software test analyst 5.*165025/i, positionNumber: '165025', reqId: '158970', title: 'Software Test Analyst 5' },
+  { match: /nc fast integration engineer.*808977/i, positionNumber: '808977', reqId: '158969', title: 'Integration Engineer' },
+  { match: /network architect.*13297/i, positionNumber: '13297', reqId: '158968', title: 'Network Architect' },
+  { match: /warehouse worker.*66269/i, positionNumber: '66269', reqId: '158967', title: 'Warehouse Worker' },
+  { match: /administrative services assistant.*66213/i, positionNumber: '66213', reqId: '158966', title: 'Administrative Services Assistant' },
+  { match: /vsu.*technical support analyst 2.*810091/i, positionNumber: '810091', reqId: '158965', title: 'Technical Support Analyst 2' },
+  { match: /business analyst 3.*529601639r/i, positionNumber: '529601639R', reqId: '158964', title: 'Business Analyst 3' },
+  { match: /ncdot.*product manager.*806296/i, positionNumber: '806296', reqId: '158963', title: 'Product Manager - Junior' },
+  { match: /business analyst 4.*164993/i, positionNumber: '164993', reqId: '158962', title: 'Business Analyst 4' },
+  { match: /ncdot.*product manager.*810178/i, positionNumber: '810178', reqId: '158961', title: 'Product Manager - Junior' },
+  { match: /network engineer.*project lead.*13296/i, positionNumber: '13296', reqId: '158960', title: 'Network Engineer - Project Lead' },
+  { match: /business analyst.*27267/i, positionNumber: '27267', reqId: '158959', title: 'Business Analyst' },
+  { match: /business analyst.*27266/i, positionNumber: '27266', reqId: '158958', title: 'Business Analyst' },
+  { match: /esl teacher.*66211/i, positionNumber: '66211', reqId: '158957', title: 'ESL Teacher' },
+  { match: /ncdot product manager.*810176/i, positionNumber: '810176', reqId: '158956', title: 'Product Manager - Junior' },
+  { match: /security analyst iii.*164703/i, positionNumber: '164703', reqId: '158954', title: 'Security Analyst III' },
+  { match: /network engineer.*project lead.*13295/i, positionNumber: '13295', reqId: '158953', title: 'Network Engineer - Project Lead' },
+  { match: /web accessibility consultant.*66233/i, positionNumber: '66233', reqId: '158952', title: 'Web Accessibility Consultant' },
+  { match: /qa analyst senior.*809973/i, positionNumber: '809973', reqId: '158951', title: 'QA Analyst Senior' },
+  { match: /desktop support ii.*164880/i, positionNumber: '164880', reqId: '158950', title: 'Desktop Support II' },
+  { match: /business analyst 5.*164891/i, positionNumber: '164891', reqId: '158949', title: 'Business Analyst 5' },
 ];
 
 export function resolveReqId(rawId = '', job = {}) {
@@ -241,14 +241,15 @@ export function cleanJobTitleWithPositionNumber(title = '', job = {}) {
     }
   }
   
-  // Extract position number if present in string, job object, or description
-  let posNum = extractPositionNumber(str);
-  if (!posNum && job) {
-    posNum = job.positionNumber || job.posNumber || extractPositionNumber('', job.rawDescription || job.description || job.details || '');
-  }
-  
-  // Remove staffing jargon
+  // Remove client / agency prefixes
   let cleaned = str
+    .replace(/^(VDOT|VDH|NCDOT|NCDIT|NC\s*DHHS|NC\s*FAST|DHHS|VRS|ETF|TN\s*DOH|TN\s*DOE|DOT|JFS|DECAL|VSU|CBUS|State\s*of\s*NC|State\s*of\s*VA|State\s*of\s*TN)\s*[-:–—]*\s*/i, '')
+    // Remove position numbers in parentheses: (165643), (810453), etc.
+    .replace(/\s*\(\s*\d{4,8}[a-zA-Z]?\s*\)/g, '')
+    // Remove standalone position numbers or trailing numbers: - 66278, #810453
+    .replace(/\s*[-–—#:]\s*\d{4,8}\b/g, '')
+    .replace(/\b\d{5,8}\b/g, '')
+    // Remove staffing jargon
     .replace(/\bcontractor\b/gi, '')
     .replace(/\bc2c\b/gi, '')
     .replace(/\bw2\b/gi, '')
@@ -257,22 +258,16 @@ export function cleanJobTitleWithPositionNumber(title = '', job = {}) {
     .replace(/\burgent hiring\b/gi, '')
     .replace(/\blocal candidates only\b/gi, '')
     .replace(/\bimmediate hiring\b/gi, '')
+    // Rebid formatting clean up
+    .replace(/\s*[-–—]+\s*rebid\b/gi, ' - Rebid')
+    // Remove empty parentheses like (), ( ), (/), (-)
+    .replace(/\([\s\-\|\/]*\)/g, '')
+    // Remove trailing/leading hyphens, colons, or slashes
+    .replace(/^[\s\-\|\/:]+|[\s\-\|\/:]+$/g, '')
+    .replace(/\s+/g, ' ')
     .trim();
 
-  // Remove empty parentheses like (), ( ), (/), (-)
-  cleaned = cleaned.replace(/\([\s\-\|\/]*\)/g, '').trim();
-
-  // If position number was present but lost or formatted weirdly, ensure it is at the end: "Title (123456)"
-  if (posNum && !cleaned.includes(`(${posNum})`)) {
-    // Remove standalone number from title
-    cleaned = cleaned.replace(new RegExp(`\\b${posNum}\\b`, 'g'), '').trim();
-    cleaned = cleaned.replace(/^[\s\-\|\/]+|[\s\-\|\/]+$/g, '').trim();
-    cleaned = `${cleaned} (${posNum})`;
-  }
-
-  // Remove trailing/leading hyphens or slashes
-  cleaned = cleaned.replace(/^[\s\-\|\/]+|[\s\-\|\/]+$/g, '').replace(/\s+/g, ' ').trim();
-  return cleaned;
+  return cleaned || str;
 }
 
 /**
@@ -289,7 +284,7 @@ export function formatJobDescription(rawText = '', jobMeta = {}) {
   if (!text && !jobMeta?.title) return '';
 
   // ─── Metadata Extraction ───
-  let client = jobMeta.client || jobMeta.customer || '';
+  let client = 'Direct Client';
   let title = cleanJobTitleWithPositionNumber(jobMeta.title || '', jobMeta);
   let location = resolveJobLocation(jobMeta);
   let workMode = jobMeta.workMode || jobMeta.work_mode;
@@ -302,12 +297,6 @@ export function formatJobDescription(rawText = '', jobMeta = {}) {
   let interviewType = 'Webcam / In-Person';
   let skills = Array.isArray(jobMeta.skills) ? [...jobMeta.skills] : [];
   let preferredSkills = Array.isArray(jobMeta.preferredSkills) ? [...jobMeta.preferredSkills] : [];
-
-  // Extract from text patterns
-  const clientMatch = text.match(/Client\s*Info\s*:?\s*([^\n\r<]+)/i) ||
-                      text.match(/Client\s*:?\s*([^\n\r<]+)/i) ||
-                      text.match(/Agency\s*:?\s*([^\n\r<]+)/i);
-  if (clientMatch && !client) client = clientMatch[1].split(/Work\s*Arrangement|Interview|Description/i)[0].trim();
 
   const startMatch = text.match(/Start\s*date\s*:?\s*([^\n\r<]+)/i);
   if (startMatch) startDate = startMatch[1].split(/End|Submission|Client|Interview/i)[0].trim();
@@ -350,6 +339,7 @@ export function formatJobDescription(rawText = '', jobMeta = {}) {
       .replace(/Submission\s*deadline\s*:[^\n]+/gi, '')
       .replace(/Client\s*Info\s*:[^\n]+/gi, '')
       .replace(/Client\s*:[^\n]+/gi, '')
+      .replace(/Agency\s*:[^\n]+/gi, '')
       .replace(/Work\s*Arrangement\s*:[^\n]+/gi, '')
       .replace(/Agency\s*Interview\s*Type\s*:[^\n]+/gi, '')
       .replace(/Interview\s*Type\s*:[^\n]+/gi, '')
@@ -357,6 +347,8 @@ export function formatJobDescription(rawText = '', jobMeta = {}) {
       .replace(/\(This job is for -.*?\)/gi, '')
       .replace(/Call\s*502-379-4456.*$/gi, '')
       .replace(/Please provide Requirement id.*$/gi, '')
+      .replace(/\b(?:VDOT|VDH|NCDOT|NCDIT|NC\s*DHHS|NC\s*FAST|DHHS|VRS|ETF|TN\s*DOH|TN\s*DOE)\b/gi, 'Enterprise Client')
+      .replace(/\s*\(\s*\d{4,8}[a-zA-Z]?\s*\)/g, '')
       .trim();
   }
 
@@ -415,7 +407,7 @@ export function formatJobDescription(rawText = '', jobMeta = {}) {
 📌 POSITION & CLIENT OVERVIEW
 ===============================================================
 • Position Title: ${title || jobMeta.title || 'Technical Specialist'}
-• Client / Agency: ${client || 'State Agency / Enterprise Client'}
+• Client / Agency: Direct Client
 • Work Arrangement: ${workMode || 'Onsite'}
 • Interview Type: ${interviewType || 'Webcam / In-Person'}
 ${startDate ? `• Target Start Date: ${startDate}\n` : ''}${endDate ? `• Target End Date: ${endDate}\n` : ''}${deadline ? `• Submission Deadline: ${deadline}\n` : ''}

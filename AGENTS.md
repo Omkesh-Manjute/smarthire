@@ -31,6 +31,81 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-15 — Public Careers Portal Position Number & Client Name Removal
+- **Job Title & Agency Cleaning (`formatJobDescription.js`, `server/index.js`)**:
+  - Completely removed position numbers (`(165643)`, `(810453)`, etc.) and client/agency prefixes (`VDOT`, `VDH`, `NCDOT`, `NCDIT`, `NC DHHS`, `NC FAST`, `DHHS`, `VRS`, `ETF`, `TN DOH`, `TN DOE`, `DOT`, `JFS`, `DECAL`, `VSU`, `CBUS`, etc.) from all job titles across `KNOWN_TITLE_MAP` and `cleanJobTitleWithPositionNumber`.
+  - Refactored `cleanJobTitleWithPositionNumber` to strip standalone trailing numbers, parentheses, and staffing jargon.
+- **Client Name Anonymization (`ZoneCareersView.jsx`, `PublicCareers.jsx`, `formatJobDescription.js`)**:
+  - Replaced raw client names on job cards with `'Direct Client'`.
+  - Replaced client names in full job description modal header and formatted JD overview with `'Direct Client'`.
+  - Sanitized body text in `formatJobDescription` to replace raw government agency acronyms with generic `'Enterprise Client'`.
+- **Production Build Verification**:
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings (built in 2.14s).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 1.86s).
+
+### 2026-09-15 — Homepage PeekHire Video/Audio Screening Showcase & Robust Fallback
+- **Homepage PeekHire Screening Showcase (`Homepage.jsx`)**:
+  - Added dedicated interactive showcase section `tf-screening-showcase-section` (`#screening`) with:
+    - Candidate Response Studio card with mode pills (🎥 Video, 🎙️ Voice Note, ✍️ Written Text), question prompt, live video preview frame, 12-bar audio equalizer, and stop/retake buttons.
+    - Recruiter Evaluation Card with AI Match Score (96%), verbatim Groq Whisper speech-to-text transcript, structured insights (Technical Mastery, Clarity, Rate match), and 1-click ATS action buttons.
+    - 3 Modality Feature Pillars: Asynchronous HD Video, Audio Waveform & Voice Notes, Whisper AI Transcription & Scoring.
+  - Updated hero subtitle, Feature 3 card (`PeekHire Video, Voice & Text AI Screening`), and support checklist.
+- **Routing & Resilient Demo Fallback (`App.jsx`, `CandidateChat.jsx`)**:
+  - Added route aliases `/screening`, `/screening/:sessionId`, and `/candidate/screen/:sessionId` in `App.jsx`.
+  - Added graceful demo session fallback in `CandidateChat.jsx` so `/screening` demo works immediately offline or during backend sleep.
+- **Production Build Verification**:
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings (built in 2.34s).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 2.22s).
+
+### 2026-09-15 — Homepage Candidate Name Anonymization & Requisition Number Randomization
+- **Candidate Name Anonymization (`Homepage.jsx`)**:
+  - Masked all candidate last names to single initial format across all homepage previews (`Firstname L.`):
+    - `Jordan Lee` -> `Jordan L.`
+    - `Sarah Jenkins` -> `Sarah J.`
+    - `Michael Chang` -> `Michael C.`
+    - `Robert Davis` -> `Robert D.`
+    - `Christian Hall` -> `Christian H.`
+    - `Maya Lin` -> `Maya L.`
+    - `David Patel` -> `David P.`
+    - `Vinod Jarugula` -> `Vinod J.`
+    - `Sandeep Guntupalli` -> `Sandeep G.`
+    - `Laxmi V` -> `Laxmi V.`
+    - `Hemanth Pinninti` -> `Hemanth P.`
+    - `Kranthi Kumar Asike` -> `Kranthi K.`
+  - Replaced personal candidate email addresses with privacy-safe dummy talentpool addresses (e.g. `vinod.j@talentpool.io`, `sandeep.g@talentpool.io`, `kranthi.k@talentpool.io`).
+- **Requisition Number Randomization & Client Anonymization (`Homepage.jsx`, `About.jsx`, `CandidatesModule.jsx`)**:
+  - Replaced all actual client requisition numbers (`158997`, `159070`, `158667`, `808496`) with randomized 5-digit IDs (`Req #74921`, `Req #68305`, `Req #92144`, `Req #53190`, `Req #39820`, `Req #44172`, `Req #82714`).
+  - Removed state/government agency identifiers (`NC DHHS`, `FDOT`) from candidate roles in demo cards, replacing them with generic enterprise titles (`Cloud Platform Specialist`, `Data Integration Lead`, `AWS Cloud Engineer`).
+- **Production Build Verification**:
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings (built in 1.92s).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 1.83s).
+
+### 2026-09-15 — PeekHire Asynchronous Video, Audio & Text Candidate Screening Overhaul
+- **Removed Legacy Document/Anti-Proxy Chat Flow**:
+  - Eliminated legacy Driver's License scans, Visa document uploads, Passport checks, biometrics, and blocking anti-proxy chat from candidate screening.
+- **PeekHire Candidate Experience (`CandidateChat.jsx`)**:
+  - Zero-login, mobile & desktop responsive candidate screening portal.
+  - Step 1: Candidate intro & role context with target rate and contact form.
+  - Step 2: WebRTC camera & microphone check with real-time 12-bar audio volume meter.
+  - Step 3: Question-by-question studio supporting 3 response modes:
+    - **🎥 Video**: MediaRecorder webcam capture, countdown, live timer, stop, and retakes.
+    - **🎙️ Voice Note**: Audio waveform visualizer, audio recorder, and retakes.
+    - **✍️ Written Text**: Text answer area with live word & character counters.
+  - Step 4 & 5: Review all answers side-by-side and instant submission confirmation.
+- **Backend AI Engine (`server/index.js`)**:
+  - Configured `uploadScreeningMedia` multer storage saving to `uploads/screening/`.
+  - Added `transcribeScreeningAudio` using Groq Whisper API (`whisper-large-v3-turbo`) for automated speech-to-text.
+  - Added `evaluateScreeningResponses` for AI score (0-100%) and bulleted strengths/takeaways.
+  - Endpoints: `POST /create`, `GET /:sessionId`, `POST /:sessionId/upload-media`, `POST /:sessionId/submit-response`, `POST /:sessionId/review`.
+  - Auto-registers screened candidate into `candidatesStore` with tag `🎥 Video Screened`.
+- **Recruiter Screening Center (`ScreeningModule.jsx`)**:
+  - Campaign / Sharable Link Builder with role-specific question templates, format toggles, and 1-click copy / email buttons.
+  - Submissions queue table with candidate avatar, format chips, AI score, 5-star ratings, and status badges.
+  - PeekHire Candidate Review Drawer with split layout: left candidate scorecard & AI insights, right question tabs with video speed controls (1x, 1.25x, 1.5x, 2x), audio player, and verbatim AI transcript with 1-click copy.
+- **Production Build Verification**:
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings (built in 1.93s).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 1.81s).
+
 ### 2026-09-15 — Remove Demo Login Buttons & Dedicated Portal Link for Production Cleanliness
 - **Authentication Cleanliness (`Login.jsx`, `Homepage.jsx`)**:
   - Removed `1-Click Demo Login Selection` box and demo role buttons (`Super Admin (Omkesh)`, `Manager`, `Recruiter`, `Employee`) from `/login` page.

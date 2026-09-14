@@ -76,6 +76,9 @@ function App() {
         <Route path="/linkedin-posts" element={<SuperAdminRoute><LinkedInPosts /></SuperAdminRoute>} />
         <Route path="/candidate-chat/:sessionId" element={<CandidateChat />} />
         <Route path="/candidate-chat/job/:jobId" element={<CandidateChat />} />
+        <Route path="/screening" element={<CandidateChat />} />
+        <Route path="/screening/:sessionId" element={<CandidateChat />} />
+        <Route path="/candidate/screen/:sessionId" element={<CandidateChat />} />
         <Route path="/login" element={<Login />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />

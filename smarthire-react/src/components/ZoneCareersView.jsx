@@ -950,7 +950,7 @@ export default function ZoneCareersView({
 
                     {/* Direct Client Link */}
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#00B8D9', marginBottom: 4 }}>
-                      {job.client || 'Direct End-Client'}
+                      Direct Client
                     </div>
 
                     {/* Location */}

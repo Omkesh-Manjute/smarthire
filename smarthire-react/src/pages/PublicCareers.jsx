@@ -1070,7 +1070,7 @@ export default function PublicCareers() {
                   {cleanJobTitleWithPositionNumber(fullJdModalJob.title)}
                 </h2>
                 <div style={{ fontSize: 13, color: '#00B8D9', fontWeight: 700 }}>
-                  {fullJdModalJob.client || 'Direct End-Client'} · 📍 {resolveJobLocation(fullJdModalJob) || 'Remote, US'}
+                  Direct Client · 📍 {resolveJobLocation(fullJdModalJob) || 'Remote, US'}
                 </div>
               </div>
               <button

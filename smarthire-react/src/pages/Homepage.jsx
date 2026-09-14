@@ -289,7 +289,7 @@ function Homepage() {
                 </h1>
 
                 <p className="tf-hero-subtitle">
-                  Empower your staffing agency from candidate sourcing to client placement. Featuring placement-trained AI screening, private recruiter vaults, sub-second requisition sync, and anti-proxy biometric trust.
+                  Empower your staffing agency from candidate sourcing to client placement. Featuring PeekHire async video, voice & text AI screening, private recruiter vaults, sub-second requisition sync, and digital RTR compliance.
                 </p>
 
                 <div className="tf-hero-actions">
@@ -548,21 +548,21 @@ function Homepage() {
                         <ul className="tf-mini-list">
                           <li>
                             <div className="tf-cand-mini-info">
-                              <span className="tf-cand-name">Jordan Lee</span>
-                              <span className="tf-cand-role">Sr AWS Developer (Req #158997)</span>
+                              <span className="tf-cand-name">Jordan L.</span>
+                              <span className="tf-cand-role">Sr AWS Developer (Req #74921)</span>
                             </div>
                             <span className="tf-pill-badge blue">⚡ AI SCREENED</span>
                           </li>
                           <li>
                             <div className="tf-cand-mini-info">
-                              <span className="tf-cand-name">Sarah Jenkins</span>
-                              <span className="tf-cand-role">Cloud Architect (Pos #808496)</span>
+                              <span className="tf-cand-name">Sarah J.</span>
+                              <span className="tf-cand-role">Cloud Architect (Req #68305)</span>
                             </div>
                             <span className="tf-pill-badge green">✓ RTR CONFIRMED</span>
                           </li>
                           <li>
                             <div className="tf-cand-mini-info">
-                              <span className="tf-cand-name">Michael Chang</span>
+                              <span className="tf-cand-name">Michael C.</span>
                               <span className="tf-cand-role">Full Stack Engineer</span>
                             </div>
                             <span className="tf-pill-badge orange">INTERVIEW</span>
@@ -645,20 +645,19 @@ function Homepage() {
                 <div className="tf-feature-tag">Instant Talent Match Chimes</div>
               </div>
 
-              {/* Feature 3: Autonomous AI Candidate Screening Agent */}
+              {/* Feature 3: PeekHire Asynchronous Video, Audio & Text AI Screening */}
               <div className="tf-feature-box">
                 <div className="tf-feature-icon-wrap emerald-bg">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                    <circle cx="9" cy="10" r="1"/>
-                    <circle cx="15" cy="10" r="1"/>
+                    <path d="M23 7l-7 5 7 5V7z" />
+                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
                   </svg>
                 </div>
-                <h3 className="tf-feature-title">Autonomous AI Screening & Confirmation</h3>
+                <h3 className="tf-feature-title">PeekHire Video, Voice & Text AI Screening</h3>
                 <p className="tf-feature-desc">
-                  An advanced conversational AI agent interacts with candidates 24/7. It screens mandatory technical proficiencies, verifies compensation expectations, and secures availability before recruiter review.
+                  Zero-login candidate screening portal. Candidates record 1-way video answers, voice notes, or written synthesis on their schedule. Automatic Whisper AI transcripts, speech-to-text, and objective fit scoring.
                 </p>
-                <div className="tf-feature-tag">Trained Pre-Screening AI</div>
+                <div className="tf-feature-tag">🎥 Video · 🎙️ Voice · ⚡ AI Scoring</div>
               </div>
 
               {/* Feature 4: 1-Click Digital RTR & Compliance Document Intake */}
@@ -1156,12 +1155,12 @@ function Homepage() {
                               <div className="tf-table-user">
                                 <span className="tf-user-dot blue" />
                                 <div>
-                                  <strong>Jordan Lee</strong>
-                                  <span>jordan.lee@devmail.com</span>
+                                  <strong>Jordan L.</strong>
+                                  <span>jordan.l@devmail.com</span>
                                 </div>
                               </div>
                             </td>
-                            <td>NC DHHS AWS Dev (808496)</td>
+                            <td>Cloud Platform Specialist (Req #74921)</td>
                             <td>May 26, 2026</td>
                             <td><span className="tf-priority-pill high">HIGH 98%</span></td>
                             <td><span className="tf-kebab">⋮</span></td>
@@ -1172,12 +1171,12 @@ function Homepage() {
                               <div className="tf-table-user">
                                 <span className="tf-user-dot green" />
                                 <div>
-                                  <strong>Sarah Jenkins</strong>
+                                  <strong>Sarah J.</strong>
                                   <span>sarah.j@outlook.com</span>
                                 </div>
                               </div>
                             </td>
-                            <td>React Tech Lead (158997)</td>
+                            <td>React Tech Lead (Req #68305)</td>
                             <td>May 26, 2026</td>
                             <td><span className="tf-priority-pill low">LOW 85%</span></td>
                             <td><span className="tf-kebab">⋮</span></td>
@@ -1188,12 +1187,12 @@ function Homepage() {
                               <div className="tf-table-user">
                                 <span className="tf-user-dot purple" />
                                 <div>
-                                  <strong>Robert Davis</strong>
+                                  <strong>Robert D.</strong>
                                   <span>robert.d@techmail.com</span>
                                 </div>
                               </div>
                             </td>
-                            <td>DevOps Architect</td>
+                            <td>DevOps Architect (Req #92144)</td>
                             <td>May 25, 2026</td>
                             <td><span className="tf-priority-pill high">HIGH 96%</span></td>
                             <td><span className="tf-kebab">⋮</span></td>
@@ -1204,12 +1203,12 @@ function Homepage() {
                               <div className="tf-table-user">
                                 <span className="tf-user-dot amber" />
                                 <div>
-                                  <strong>Christian Hall</strong>
+                                  <strong>Christian H.</strong>
                                   <span>hall.c@devcorp.com</span>
                                 </div>
                               </div>
                             </td>
-                            <td>Senior Data Engineer</td>
+                            <td>Senior Data Engineer (Req #53190)</td>
                             <td>May 25, 2026</td>
                             <td><span className="tf-priority-pill normal">NORMAL</span></td>
                             <td><span className="tf-kebab">⋮</span></td>
@@ -1220,12 +1219,12 @@ function Homepage() {
                               <div className="tf-table-user">
                                 <span className="tf-user-dot cyan" />
                                 <div>
-                                  <strong>Maya Lin</strong>
-                                  <span>maya.lin@cloudsec.io</span>
+                                  <strong>Maya L.</strong>
+                                  <span>maya.l@cloudsec.io</span>
                                 </div>
                               </div>
                             </td>
-                            <td>Cloud Security Specialist</td>
+                            <td>Cloud Security Specialist (Req #39820)</td>
                             <td>May 25, 2026</td>
                             <td><span className="tf-priority-pill high">HIGH 99%</span></td>
                             <td><span className="tf-kebab">⋮</span></td>
@@ -1236,12 +1235,12 @@ function Homepage() {
                               <div className="tf-table-user">
                                 <span className="tf-user-dot blue" />
                                 <div>
-                                  <strong>David Patel</strong>
+                                  <strong>David P.</strong>
                                   <span>david.p@cloudtech.com</span>
                                 </div>
                               </div>
                             </td>
-                            <td>Full Stack Engineer</td>
+                            <td>Full Stack Engineer (Req #44172)</td>
                             <td>May 24, 2026</td>
                             <td><span className="tf-priority-pill high">HIGH 94%</span></td>
                             <td><span className="tf-kebab">⋮</span></td>
@@ -1281,7 +1280,7 @@ function Homepage() {
                   <div className="tf-big-stat-col">
                     <span className="tf-stat-large">100%</span>
                     <p className="tf-stat-subtext">
-                      Anti-proxy identity checks & digital RTR verification before manager submission.
+                      PeekHire asynchronous video & voice notes with AI Whisper transcription before submission.
                     </p>
                   </div>
 
@@ -1295,6 +1294,257 @@ function Homepage() {
               </div>
 
             </div>
+          </div>
+        </section>
+
+        {/* =========================================================================
+            SECTION: PEEKHIRE ASYNCHRONOUS CANDIDATE SCREENING (VIDEO · AUDIO · TEXT)
+            ========================================================================= */}
+        <section className="tf-screening-showcase-section" id="screening">
+          <div className="tf-container">
+            {/* Section Header */}
+            <div className="tf-section-header text-center">
+              <span className="tf-eyebrow-amber">🎥 PEEKHIRE AI CANDIDATE SCREENING</span>
+              <h2 className="tf-section-title">
+                Screen 10x More Candidates with{' '}
+                <span className="tf-highlight-box">Asynchronous Video, Audio & Text AI</span>
+              </h2>
+              <p className="tf-section-subtitle">
+                Eliminate scheduling phone ping-pong. Send one shareable link — candidates record their answers on their own schedule with webcam video, audio waveforms, or technical written synthesis. Groq Whisper AI transcribes and scores responses in seconds.
+              </p>
+              <div className="tf-screening-cta-row">
+                <Link to="/screening" className="tf-btn tf-btn-primary">
+                  <span>🎥 Try Live Candidate Studio →</span>
+                </Link>
+                {isAuthenticated ? (
+                  <Link to="/ats?tab=screening" className="tf-btn tf-btn-outline">
+                    <span>Recruiter Screening Center ↗</span>
+                  </Link>
+                ) : (
+                  <button 
+                    type="button" 
+                    onClick={() => setShowLoginModal(true)} 
+                    className="tf-btn tf-btn-outline"
+                  >
+                    Recruiter Screening Center ↗
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Split Screen Interactive Studio Mockup */}
+            <div className="tf-screening-stage-grid">
+              
+              {/* Left Column: Candidate Interactive Response Studio */}
+              <div className="tf-cand-studio-card">
+                <div className="tf-studio-header">
+                  <div className="tf-studio-dots">
+                    <span className="dot-red" />
+                    <span className="dot-yellow" />
+                    <span className="dot-green" />
+                  </div>
+                  <div className="tf-studio-title-pill">
+                    <span className="tf-live-record-pulse" />
+                    <strong>PeekHire Candidate Portal</strong> · Live Studio
+                  </div>
+                  <span className="tf-studio-step-badge">Question 2 of 3</span>
+                </div>
+
+                <div className="tf-studio-inner">
+                  {/* Mode Selector Tabs */}
+                  <div className="tf-mode-selector-bar">
+                    <div className="tf-mode-pill active">
+                      <span>🎥 Video Response</span>
+                      <span className="tf-pill-dot" />
+                    </div>
+                    <div className="tf-mode-pill">
+                      <span>🎙️ Voice Note</span>
+                    </div>
+                    <div className="tf-mode-pill">
+                      <span>✍️ Written Text</span>
+                    </div>
+                  </div>
+
+                  {/* Question Box */}
+                  <div className="tf-studio-question-box">
+                    <div className="tf-q-meta">
+                      <span className="tf-q-tag">Core Technical Scenario</span>
+                      <span className="tf-q-limit">⏱ Max 02:00</span>
+                    </div>
+                    <h4 className="tf-q-title">
+                      "Explain an instance where you debugged an unexpected microservice latency spike under strict SLA deadlines. What was your root-cause analysis process?"
+                    </h4>
+                  </div>
+
+                  {/* Video Viewport Mockup */}
+                  <div className="tf-video-viewport">
+                    <div className="tf-video-stream-bg">
+                      <div className="tf-candidate-avatar-feed">
+                        <div className="tf-feed-circle">JL</div>
+                        <span className="tf-feed-name">Jordan L. · Candidate Stream</span>
+                      </div>
+
+                      {/* Top Recording Bar */}
+                      <div className="tf-video-top-overlay">
+                        <span className="tf-rec-chip">
+                          <span className="tf-rec-dot" />
+                          REC 01:14 / 02:00
+                        </span>
+                        <span className="tf-hd-chip">1080p HD · 30 FPS</span>
+                      </div>
+
+                      {/* Bottom Live Equalizer Audio Meter */}
+                      <div className="tf-audio-visualizer-overlay">
+                        <span className="tf-eq-label">Microphone Level:</span>
+                        <div className="tf-eq-bars">
+                          <span className="eq-bar h-6" />
+                          <span className="eq-bar h-10" />
+                          <span className="eq-bar h-16" />
+                          <span className="eq-bar h-22" />
+                          <span className="eq-bar h-28" />
+                          <span className="eq-bar h-20" />
+                          <span className="eq-bar h-26" />
+                          <span className="eq-bar h-18" />
+                          <span className="eq-bar h-12" />
+                          <span className="eq-bar h-8" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Candidate Action Controls */}
+                    <div className="tf-viewport-actions">
+                      <button type="button" className="tf-btn-retake">
+                        <span>🔄 Retake</span>
+                      </button>
+                      <button type="button" className="tf-btn-record-stop">
+                        <span className="tf-stop-square" />
+                        <span>Done · Save & Next</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="tf-studio-footer-note">
+                    🔒 Zero login required · Works smoothly on mobile Safari, Chrome, and desktop webcams
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Recruiter AI Evaluation Dossier & Scorecard */}
+              <div className="tf-recruiter-review-card">
+                <div className="tf-review-header">
+                  <div className="tf-cand-summary-row">
+                    <div className="tf-cand-avatar-sm">JL</div>
+                    <div>
+                      <h4 className="tf-cand-name-lg">Jordan L.</h4>
+                      <span className="tf-cand-role-sub">Cloud Platform Specialist · Req #74921</span>
+                    </div>
+                  </div>
+                  <div className="tf-score-badge-box">
+                    <span className="tf-score-num">96%</span>
+                    <span className="tf-score-lbl">AI MATCH</span>
+                  </div>
+                </div>
+
+                <div className="tf-review-body">
+                  {/* Rating Strip */}
+                  <div className="tf-rating-strip">
+                    <span className="tf-star-row">⭐⭐⭐⭐⭐</span>
+                    <span className="tf-verdict-pill green">✓ Highly Recommended</span>
+                    <span className="tf-rate-pill">$80/hr (Matches Client Budget)</span>
+                  </div>
+
+                  {/* AI Speech Transcript Box */}
+                  <div className="tf-transcript-box">
+                    <div className="tf-transcript-head">
+                      <span className="tf-engine-badge">⚡ Groq Whisper AI Verbatim Transcript</span>
+                      <span className="tf-copy-link">1-Click Copy</span>
+                    </div>
+                    <p className="tf-transcript-text">
+                      "We observed a 300ms latency spike in containerized payment services. Using OpenSearch and AWS distributed tracing, I isolated connection pool starvation from an unindexed query. We deployed a global secondary index and cache layer, which dropped P99 latency by 84%."
+                    </p>
+                  </div>
+
+                  {/* AI Key Insights */}
+                  <div className="tf-insights-list">
+                    <div className="tf-insight-row">
+                      <span className="tf-insight-icon green">✔</span>
+                      <span><strong>Technical Mastery:</strong> Advanced AWS distributed tracing, query indexing, and caching.</span>
+                    </div>
+                    <div className="tf-insight-row">
+                      <span className="tf-insight-icon green">✔</span>
+                      <span><strong>Communication Clarity:</strong> Concise, articulate, structured problem breakdown.</span>
+                    </div>
+                    <div className="tf-insight-row">
+                      <span className="tf-insight-icon blue">⚡</span>
+                      <span><strong>Availability:</strong> Immediate 2-week notice; fully authorized for W2 / C2C contract.</span>
+                    </div>
+                  </div>
+
+                  {/* Recruiter Quick Actions Bar */}
+                  <div className="tf-rec-action-bar">
+                    <button type="button" className="tf-btn-action primary">
+                      ⭐ Shortlist Candidate
+                    </button>
+                    <button type="button" className="tf-btn-action secondary">
+                      💼 Push to Req #74921
+                    </button>
+                    <button type="button" className="tf-btn-action outline">
+                      ↗ Share Dossier
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* 3 Core Screening Modality Pillars */}
+            <div className="tf-screening-pillars-grid">
+              
+              <div className="tf-pillar-card">
+                <div className="tf-pillar-icon-wrap emerald">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M23 7l-7 5 7 5V7z" />
+                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                  </svg>
+                </div>
+                <h4>🎥 Asynchronous HD Video</h4>
+                <p>
+                  Candidates record answers on camera with countdown timers and instant replay. Evaluate presence, technical depth, and communication style without scheduling conflicts.
+                </p>
+                <div className="tf-pillar-badge">Zero Software Download</div>
+              </div>
+
+              <div className="tf-pillar-card">
+                <div className="tf-pillar-icon-wrap amber">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                    <line x1="12" y1="19" x2="12" y2="23"/>
+                    <line x1="8" y1="23" x2="16" y2="23"/>
+                  </svg>
+                </div>
+                <h4>🎙️ Audio Waveform & Voice Notes</h4>
+                <p>
+                  Lightweight audio responses for fast pre-screening. Includes real-time microphone test volume meter and waveform playback with 1x, 1.25x, 1.5x, and 2x speed controls.
+                </p>
+                <div className="tf-pillar-badge">12-Bar Volume Equalizer</div>
+              </div>
+
+              <div className="tf-pillar-card">
+                <div className="tf-pillar-icon-wrap blue">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                  </svg>
+                </div>
+                <h4>⚡ AI Transcription & Scoring</h4>
+                <p>
+                  Powered by Whisper and Groq AI models. Spoken answers are instantly transcribed into searchable text with automated candidate fit scoring (0-100%) and key takeaway summaries.
+                </p>
+                <div className="tf-pillar-badge">Whisper Large v3 Turbo</div>
+              </div>
+
+            </div>
+
           </div>
         </section>
 
@@ -1328,7 +1578,7 @@ function Homepage() {
                   <span className="tf-check-badge">✔</span> Multi-Role Hierarchy
                 </span>
                 <span className="tf-check-item">
-                  <span className="tf-check-badge">✔</span> Anti-Proxy Checks
+                  <span className="tf-check-badge">✔</span> PeekHire Video & Voice Screening
                 </span>
                 <span className="tf-check-item">
                   <span className="tf-check-badge">✔</span> Smart JD Chimes
@@ -1656,15 +1906,15 @@ function Homepage() {
                     </div>
 
                     <div className="tf-persp-table-body">
-                      {/* Row 1: Vinod Jarugula */}
+                      {/* Row 1: Vinod J. */}
                       <div className="tf-persp-trow">
                         <div className="td-cell td-name">
-                          <strong>Vinod Jarugula</strong>
-                          <span className="td-sub-email">jvinod9876@gmail.com</span>
+                          <strong>Vinod J.</strong>
+                          <span className="td-sub-email">vinod.j@talentpool.io</span>
                         </div>
                         <div className="td-cell td-job">
-                          <span className="req-pill">Req #159070</span>
-                          <span className="req-sub">FDOT Job 2210</span>
+                          <span className="req-pill">Req #82714</span>
+                          <span className="req-sub">Data Integration Lead</span>
                         </div>
                         <div className="td-cell td-recruiter">
                           <span className="recruiter-tag">👤 Omkesh</span>
@@ -1679,15 +1929,15 @@ function Homepage() {
                         </div>
                       </div>
 
-                      {/* Row 2: Sandeep Guntupalli */}
+                      {/* Row 2: Sandeep G. */}
                       <div className="tf-persp-trow">
                         <div className="td-cell td-name">
-                          <strong>Sandeep Guntupalli</strong>
-                          <span className="td-sub-email">sandeep@gmail.com</span>
+                          <strong>Sandeep G.</strong>
+                          <span className="td-sub-email">sandeep.g@talentpool.io</span>
                         </div>
                         <div className="td-cell td-job">
-                          <span className="req-pill">Req #158667</span>
-                          <span className="req-sub">General Applicant</span>
+                          <span className="req-pill">Req #53190</span>
+                          <span className="req-sub">Full Stack Python Dev</span>
                         </div>
                         <div className="td-cell td-recruiter">
                           <span className="recruiter-tag">👤 Omkesh</span>
@@ -1702,15 +1952,15 @@ function Homepage() {
                         </div>
                       </div>
 
-                      {/* Row 3: Laxmi V */}
+                      {/* Row 3: Laxmi V. */}
                       <div className="tf-persp-trow">
                         <div className="td-cell td-name">
-                          <strong>Laxmi V</strong>
-                          <span className="td-sub-email">padugupadulaxmi@...</span>
+                          <strong>Laxmi V.</strong>
+                          <span className="td-sub-email">laxmi.v@talentpool.io</span>
                         </div>
                         <div className="td-cell td-job">
-                          <span className="req-pill">Req #159070</span>
-                          <span className="req-sub">FDOT Customer S...</span>
+                          <span className="req-pill">Req #82714</span>
+                          <span className="req-sub">Solutions Architect</span>
                         </div>
                         <div className="td-cell td-recruiter">
                           <span className="recruiter-tag">👤 Omkesh</span>
@@ -1725,15 +1975,15 @@ function Homepage() {
                         </div>
                       </div>
 
-                      {/* Row 4: Hemanth Pinninti */}
+                      {/* Row 4: Hemanth P. */}
                       <div className="tf-persp-trow">
                         <div className="td-cell td-name">
-                          <strong>Hemanth Pinninti</strong>
-                          <span className="td-sub-email">hemanthpinninti@...</span>
+                          <strong>Hemanth P.</strong>
+                          <span className="td-sub-email">hemanth.p@talentpool.io</span>
                         </div>
                         <div className="td-cell td-job">
-                          <span className="req-pill">Req #159070</span>
-                          <span className="req-sub">FDOT Job 2210</span>
+                          <span className="req-pill">Req #82714</span>
+                          <span className="req-sub">Data Integration Lead</span>
                         </div>
                         <div className="td-cell td-recruiter">
                           <span className="recruiter-tag">👤 Omkesh</span>
@@ -1748,15 +1998,15 @@ function Homepage() {
                         </div>
                       </div>
 
-                      {/* Row 5: Kranthi Kumar Asike */}
+                      {/* Row 5: Kranthi K. */}
                       <div className="tf-persp-trow highlight-row">
                         <div className="td-cell td-name">
-                          <strong>Kranthi Kumar Asike</strong>
-                          <span className="td-sub-email">kranthikumarap4@gmail.com</span>
+                          <strong>Kranthi K.</strong>
+                          <span className="td-sub-email">kranthi.k@talentpool.io</span>
                         </div>
                         <div className="td-cell td-job">
-                          <span className="req-pill pulse-pill">Req #158997</span>
-                          <span className="req-sub">NC DHHS AWS Dev</span>
+                          <span className="req-pill pulse-pill">Req #74921</span>
+                          <span className="req-sub">AWS Cloud Engineer</span>
                         </div>
                         <div className="td-cell td-recruiter">
                           <span className="recruiter-tag">👤 Omkesh</span>
@@ -3331,6 +3581,647 @@ function Homepage() {
           line-height: 1.5;
           color: #64748b;
           margin: 0;
+        }
+
+        /* =========================================================================
+           SECTION: PEEKHIRE ASYNCHRONOUS SCREENING STUDIO
+           ========================================================================= */
+        .tf-screening-showcase-section {
+          padding: 95px 0;
+          background: #ffffff;
+          border-top: 1px solid #f1f5f9;
+        }
+
+        .tf-screening-cta-row {
+          display: flex;
+          justify-content: center;
+          gap: 14px;
+          margin-top: 24px;
+          flex-wrap: wrap;
+        }
+
+        .tf-screening-stage-grid {
+          display: grid;
+          grid-template-columns: 1.15fr 0.85fr;
+          gap: 28px;
+          align-items: stretch;
+          margin-top: 48px;
+        }
+
+        @media (max-width: 980px) {
+          .tf-screening-stage-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        /* Left Card: Candidate Studio */
+        .tf-cand-studio-card {
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 16px;
+          box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.08);
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .tf-studio-header {
+          background: #181F2C;
+          padding: 12px 18px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .tf-studio-dots {
+          display: flex;
+          gap: 6px;
+        }
+
+        .tf-studio-title-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          color: #e2e8f0;
+          font-size: 12px;
+          font-family: monospace;
+        }
+
+        .tf-live-record-pulse {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: #ef4444;
+          box-shadow: 0 0 8px #ef4444;
+          animation: recPulse 1.4s infinite;
+        }
+
+        @keyframes recPulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.4; transform: scale(1.3); }
+        }
+
+        .tf-studio-step-badge {
+          background: rgba(37, 99, 235, 0.2);
+          color: #60a5fa;
+          font-size: 11px;
+          font-weight: 700;
+          padding: 3px 8px;
+          border-radius: 12px;
+          border: 1px solid rgba(96, 165, 250, 0.3);
+        }
+
+        .tf-studio-inner {
+          padding: 22px;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          flex: 1;
+        }
+
+        .tf-mode-selector-bar {
+          display: flex;
+          gap: 8px;
+          background: #f8fafc;
+          padding: 4px;
+          border-radius: 10px;
+          border: 1px solid #e2e8f0;
+        }
+
+        .tf-mode-pill {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          padding: 8px 12px;
+          border-radius: 8px;
+          border: none;
+          background: transparent;
+          font-size: 12px;
+          font-weight: 700;
+          color: #64748b;
+          cursor: default;
+          transition: all 0.2s;
+        }
+
+        .tf-mode-pill.active {
+          background: #ffffff;
+          color: #0f172a;
+          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+          border: 1px solid #cbd5e1;
+        }
+
+        .tf-pill-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #10b981;
+        }
+
+        .tf-studio-question-box {
+          background: #eff6ff;
+          border: 1px solid #bfdbfe;
+          border-radius: 12px;
+          padding: 14px 16px;
+        }
+
+        .tf-q-meta {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 6px;
+        }
+
+        .tf-q-tag {
+          font-size: 11px;
+          font-weight: 800;
+          color: #2563eb;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .tf-q-limit {
+          font-size: 11px;
+          color: #64748b;
+          font-weight: 600;
+        }
+
+        .tf-q-title {
+          font-size: 13.5px;
+          font-weight: 700;
+          color: #0f172a;
+          line-height: 1.45;
+          margin: 0;
+        }
+
+        /* Video Viewport */
+        .tf-video-viewport {
+          border-radius: 12px;
+          overflow: hidden;
+          background: #0f172a;
+          position: relative;
+          box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.6);
+        }
+
+        .tf-video-stream-bg {
+          height: 240px;
+          background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+        }
+
+        .tf-candidate-avatar-feed {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .tf-feed-circle {
+          width: 76px;
+          height: 76px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+          color: white;
+          font-size: 24px;
+          font-weight: 800;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
+        }
+
+        .tf-feed-name {
+          font-size: 12px;
+          color: #94a3b8;
+          font-weight: 600;
+        }
+
+        .tf-video-top-overlay {
+          position: absolute;
+          top: 12px;
+          left: 12px;
+          right: 12px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .tf-rec-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: rgba(15, 23, 42, 0.75);
+          backdrop-filter: blur(8px);
+          color: white;
+          font-size: 11px;
+          font-weight: 800;
+          font-family: monospace;
+          padding: 4px 10px;
+          border-radius: 6px;
+          border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .tf-rec-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: #ef4444;
+          animation: recPulse 1.2s infinite;
+        }
+
+        .tf-hd-chip {
+          background: rgba(15, 23, 42, 0.6);
+          color: #94a3b8;
+          font-size: 10.5px;
+          font-weight: 700;
+          padding: 3px 8px;
+          border-radius: 4px;
+        }
+
+        .tf-audio-visualizer-overlay {
+          position: absolute;
+          bottom: 12px;
+          left: 12px;
+          right: 12px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          background: rgba(15, 23, 42, 0.8);
+          backdrop-filter: blur(8px);
+          padding: 6px 12px;
+          border-radius: 8px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tf-eq-label {
+          font-size: 11px;
+          color: #94a3b8;
+          font-weight: 600;
+        }
+
+        .tf-eq-bars {
+          display: flex;
+          align-items: flex-end;
+          gap: 4px;
+          height: 22px;
+        }
+
+        .eq-bar {
+          width: 4px;
+          background: #10b981;
+          border-radius: 2px;
+          animation: eqDance 0.8s ease-in-out infinite alternate;
+        }
+
+        .eq-bar.h-6  { height: 6px;  animation-delay: 0.1s; }
+        .eq-bar.h-10 { height: 10px; animation-delay: 0.3s; }
+        .eq-bar.h-16 { height: 16px; animation-delay: 0.15s; }
+        .eq-bar.h-22 { height: 22px; animation-delay: 0.4s; }
+        .eq-bar.h-28 { height: 20px; animation-delay: 0.25s; background: #f59e0b; }
+        .eq-bar.h-20 { height: 18px; animation-delay: 0.35s; }
+        .eq-bar.h-26 { height: 22px; animation-delay: 0.2s;  background: #f59e0b; }
+        .eq-bar.h-18 { height: 16px; animation-delay: 0.45s; }
+        .eq-bar.h-12 { height: 12px; animation-delay: 0.05s; }
+        .eq-bar.h-8  { height: 8px;  animation-delay: 0.22s; }
+
+        @keyframes eqDance {
+          0%   { transform: scaleY(0.4); }
+          100% { transform: scaleY(1.1); }
+        }
+
+        .tf-viewport-actions {
+          background: #1e293b;
+          padding: 10px 14px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .tf-btn-retake {
+          background: transparent;
+          border: 1px solid #475569;
+          color: #cbd5e1;
+          font-size: 12px;
+          font-weight: 700;
+          padding: 6px 12px;
+          border-radius: 6px;
+          cursor: pointer;
+        }
+
+        .tf-btn-record-stop {
+          background: #ef4444;
+          color: white;
+          font-size: 12px;
+          font-weight: 700;
+          padding: 7px 16px;
+          border-radius: 6px;
+          border: none;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          cursor: pointer;
+        }
+
+        .tf-stop-square {
+          width: 8px;
+          height: 8px;
+          background: white;
+          border-radius: 1px;
+        }
+
+        .tf-studio-footer-note {
+          font-size: 11.5px;
+          color: #64748b;
+          text-align: center;
+          margin-top: 4px;
+        }
+
+        /* Right Card: Recruiter Review Card */
+        .tf-recruiter-review-card {
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 16px;
+          box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.08);
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .tf-review-header {
+          padding: 20px 22px;
+          background: #f8fafc;
+          border-bottom: 1px solid #e2e8f0;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .tf-cand-summary-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .tf-cand-avatar-sm {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          background: #2563eb;
+          color: white;
+          font-weight: 800;
+          font-size: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .tf-cand-name-lg {
+          font-size: 16px;
+          font-weight: 800;
+          color: #0f172a;
+          margin: 0 0 2px;
+        }
+
+        .tf-cand-role-sub {
+          font-size: 12px;
+          color: #64748b;
+        }
+
+        .tf-score-badge-box {
+          text-align: center;
+          background: #ecfdf5;
+          border: 1px solid #a7f3d0;
+          padding: 6px 14px;
+          border-radius: 10px;
+        }
+
+        .tf-score-num {
+          font-size: 22px;
+          font-weight: 900;
+          color: #059669;
+          display: block;
+          line-height: 1;
+        }
+
+        .tf-score-lbl {
+          font-size: 9.5px;
+          font-weight: 800;
+          color: #047857;
+          letter-spacing: 0.06em;
+        }
+
+        .tf-review-body {
+          padding: 22px;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          flex: 1;
+        }
+
+        .tf-rating-strip {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+
+        .tf-star-row {
+          font-size: 14px;
+          letter-spacing: 2px;
+        }
+
+        .tf-verdict-pill {
+          font-size: 11px;
+          font-weight: 700;
+          padding: 3px 8px;
+          border-radius: 6px;
+        }
+
+        .tf-verdict-pill.green {
+          background: #ecfdf5;
+          color: #059669;
+          border: 1px solid #a7f3d0;
+        }
+
+        .tf-rate-pill {
+          font-size: 11px;
+          font-weight: 700;
+          background: #f1f5f9;
+          color: #334155;
+          padding: 3px 8px;
+          border-radius: 6px;
+        }
+
+        .tf-transcript-box {
+          background: #fafbfd;
+          border: 1px solid #e2e8f0;
+          border-radius: 10px;
+          padding: 14px;
+        }
+
+        .tf-transcript-head {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 8px;
+        }
+
+        .tf-engine-badge {
+          font-size: 11px;
+          font-weight: 800;
+          color: #2563eb;
+        }
+
+        .tf-copy-link {
+          font-size: 11px;
+          color: #64748b;
+          cursor: pointer;
+          font-weight: 600;
+        }
+
+        .tf-transcript-text {
+          font-size: 12.5px;
+          color: #334155;
+          line-height: 1.55;
+          margin: 0;
+          font-style: italic;
+        }
+
+        .tf-insights-list {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .tf-insight-row {
+          display: flex;
+          align-items: flex-start;
+          gap: 8px;
+          font-size: 12px;
+          color: #475569;
+          line-height: 1.45;
+        }
+
+        .tf-insight-icon {
+          font-weight: 800;
+          font-size: 13px;
+        }
+
+        .tf-insight-icon.green { color: #10b981; }
+        .tf-insight-icon.blue { color: #2563eb; }
+
+        .tf-rec-action-bar {
+          display: flex;
+          gap: 8px;
+          margin-top: auto;
+          padding-top: 10px;
+        }
+
+        .tf-btn-action {
+          flex: 1;
+          padding: 9px 12px;
+          border-radius: 8px;
+          font-size: 12px;
+          font-weight: 700;
+          cursor: pointer;
+          border: none;
+          text-align: center;
+          transition: all 0.2s;
+        }
+
+        .tf-btn-action.primary {
+          background: #2563eb;
+          color: white;
+        }
+
+        .tf-btn-action.secondary {
+          background: #0f172a;
+          color: white;
+        }
+
+        .tf-btn-action.outline {
+          background: transparent;
+          border: 1px solid #cbd5e1;
+          color: #334155;
+        }
+
+        /* 3 Pillars Grid */
+        .tf-screening-pillars-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          gap: 22px;
+          margin-top: 48px;
+        }
+
+        .tf-pillar-card {
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 14px;
+          padding: 24px;
+          box-shadow: 0 4px 14px rgba(15, 23, 42, 0.03);
+          display: flex;
+          flex-direction: column;
+          transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .tf-pillar-card:hover {
+          transform: translateY(-3px);
+          border-color: #cbd5e1;
+        }
+
+        .tf-pillar-icon-wrap {
+          width: 44px;
+          height: 44px;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 14px;
+        }
+
+        .tf-pillar-icon-wrap.emerald {
+          background: #ecfdf5;
+          color: #059669;
+        }
+
+        .tf-pillar-icon-wrap.amber {
+          background: #fef3c7;
+          color: #d97706;
+        }
+
+        .tf-pillar-icon-wrap.blue {
+          background: #eff6ff;
+          color: #2563eb;
+        }
+
+        .tf-pillar-card h4 {
+          font-size: 15px;
+          font-weight: 800;
+          color: #0f172a;
+          margin: 0 0 8px;
+        }
+
+        .tf-pillar-card p {
+          font-size: 13px;
+          color: #64748b;
+          line-height: 1.55;
+          margin: 0 0 16px;
+          flex: 1;
+        }
+
+        .tf-pillar-badge {
+          align-self: flex-start;
+          font-size: 11px;
+          font-weight: 700;
+          color: #475569;
+          background: #f1f5f9;
+          padding: 3px 8px;
+          border-radius: 6px;
         }
 
         /* =========================================================================

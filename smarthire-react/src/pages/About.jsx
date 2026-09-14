@@ -710,7 +710,7 @@ function About() {
                 <div style={{ fontSize: '24px', marginBottom: '8px' }}>💼</div>
                 <h4 style={{ fontSize: '14.5px', fontWeight: '800', color: '#0f172a', margin: '0 0 4px' }}>Requisitions & Sourcing</h4>
                 <p style={{ fontSize: '12px', color: '#64748b', margin: 0, lineHeight: 1.5 }}>
-                  Position number matching (#808496, #158997), rate spreads, and 1-click candidate push.
+                  Position number matching (#68305, #74921), rate spreads, and 1-click candidate push.
                 </p>
               </div>
 
