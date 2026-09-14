@@ -2484,6 +2484,64 @@ Goal: "${goal}"`;
     if (!text) throw new Error('Empty response from Sarvam AI API');
     return JSON.parse(cleanJsonResponseText(text));
   }
+
+  if (provider === 'openrouter') {
+    const url = 'https://openrouter.ai/api/v1/chat/completions';
+    const model = process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.3-70b-instruct:free';
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': 'https://smarthire.ai',
+        'X-Title': 'SmartHire ATS'
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        response_format: { type: 'json_object' }
+      })
+    });
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`OpenRouter API error (Status ${response.status}): ${errText}`);
+    }
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content;
+    if (!text) throw new Error('Empty response from OpenRouter API');
+    return JSON.parse(cleanJsonResponseText(text));
+  }
+
+  if (provider === 'nvidia') {
+    const url = 'https://integrate.api.nvidia.com/v1/chat/completions';
+    const model = process.env.NVIDIA_MODEL || 'meta/llama-3.3-70b-instruct';
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        response_format: { type: 'json_object' }
+      })
+    });
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`NVIDIA API error (Status ${response.status}): ${errText}`);
+    }
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content;
+    if (!text) throw new Error('Empty response from NVIDIA API');
+    return JSON.parse(cleanJsonResponseText(text));
+  }
 }
 
 // POST generate B2B post draft
@@ -2501,6 +2559,8 @@ app.post('/api/social-posts/generate', async (req, res) => {
   if (!apiKey && provider !== 'mock') {
     if (provider === 'gemini') apiKey = process.env.GEMINI_API_KEY || '';
     if (provider === 'groq') apiKey = process.env.GROQ_API_KEY || '';
+    if (provider === 'openrouter') apiKey = process.env.OPENROUTER_API_KEY || '';
+    if (provider === 'nvidia') apiKey = process.env.NVIDIA_API_KEY || '';
     if (provider === 'sarvam') apiKey = process.env.SARVAM_API_KEY || '';
   }
 
