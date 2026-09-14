@@ -6,7 +6,13 @@ console.log('🚀 Starting project build for Vercel / Render deployment...');
 try {
   // 1. Build the react frontend
   console.log('📦 Building smarthire-react frontend...');
-  execSync('npm run build --prefix smarthire-react', { stdio: 'inherit' });
+  execSync('npm run build --prefix smarthire-react', {
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      NODE_OPTIONS: (process.env.NODE_OPTIONS || '') + ' --max-old-space-size=2048'
+    }
+  });
 
   // 2. Sync build output to root /dist folder (while keeping smarthire-react/dist intact)
   console.log('🚚 Routing static files to root "/dist"...');
