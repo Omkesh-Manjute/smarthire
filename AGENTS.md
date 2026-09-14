@@ -31,6 +31,22 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-15 — Requisition Filter Trap Resolution & AWS Lightsail Disk Recovery
+- **Requisitions Table Filter Reset UX (`RecruiterDashboard.jsx`)**:
+  - Identified why the dashboard would intermittently show "0 of 0 matches / No open requisitions found" even with 89 jobs loaded: Typing a nonexistent Req ID in the header Quick Search (e.g. `159091`) set `reqFilters.reqId` in state while keeping the filter accordion collapsed, making it appear data was lost.
+  - Added smart empty-state feedback: explicitly states which filter is currently active (`No requisitions match your active filter "Req #159091"`).
+  - Added a prominent 1-click **"🔄 Clear Filter & Show All (89) Requisitions"** button directly inside the empty table state.
+  - Added active filter badge and `✕ Clear Filters` button to the `Advanced Requisition Filters` accordion header.
+  - Auto-clears `reqFilters.reqId` when the user clears the Quick Search input box or clicks its new `✕` clear button.
+  - Auto-expands the filter panel on search so the recruiter immediately sees the active search query.
+- **AWS Lightsail Disk Cleanup & Server Recovery**:
+  - Recovered server from **99% disk full (344MB free)** down to **55% (8.4GB free)** by purging 7.6GB of accumulated `/var/lib/apport` crash core dumps.
+  - Disabled `apport.service` to permanently prevent core dump hoarding.
+  - Verified PM2 `smarthire-ats` is running stably online.
+- **Production Build Verification**:
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings (built in 1.92s).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 2.07s).
+
 ### 2026-09-15 — Public Careers Portal Position Number & Client Name Removal
 - **Job Title & Agency Cleaning (`formatJobDescription.js`, `server/index.js`)**:
   - Completely removed position numbers (`(165643)`, `(810453)`, etc.) and client/agency prefixes (`VDOT`, `VDH`, `NCDOT`, `NCDIT`, `NC DHHS`, `NC FAST`, `DHHS`, `VRS`, `ETF`, `TN DOH`, `TN DOE`, `DOT`, `JFS`, `DECAL`, `VSU`, `CBUS`, etc.) from all job titles across `KNOWN_TITLE_MAP` and `cleanJobTitleWithPositionNumber`.

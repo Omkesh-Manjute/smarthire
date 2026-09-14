@@ -567,6 +567,48 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     reqType: 'Select Req Type'
   })
 
+  const isReqFilterActive = Boolean(
+    (reqFilters.reqId && reqFilters.reqId.trim()) ||
+    (reqFilters.title && reqFilters.title.trim()) ||
+    (reqFilters.skills && reqFilters.skills.trim()) ||
+    (reqFilters.city && reqFilters.city.trim()) ||
+    (reqFilters.state && reqFilters.state !== 'Select State' && reqFilters.state !== 'Select') ||
+    (reqFilters.office && reqFilters.office !== 'All') ||
+    (reqFilters.assignedTo && reqFilters.assignedTo !== 'Any' && reqFilters.assignedTo !== 'All') ||
+    (reqFilters.status && reqFilters.status !== 'Select Status' && reqFilters.status !== 'All' && reqFilters.status !== 'Any') ||
+    (reqFilters.endClient && reqFilters.endClient !== 'Any' && reqFilters.endClient !== 'All') ||
+    (reqFilters.reqType && reqFilters.reqType !== 'Select Req Type' && reqFilters.reqType !== 'Select')
+  )
+
+  const handleResetReqFilters = () => {
+    setReqFilters({
+      reqId: '',
+      title: '',
+      skills: '',
+      city: '',
+      state: 'Select State',
+      office: 'All',
+      assignedTo: 'Any',
+      zipCode: '',
+      radius: 'Within Miles',
+      category: 'Select Req Category',
+      creationDate: '',
+      deadlineDate: '',
+      status: 'Select Status',
+      endClient: 'Any',
+      govtReqs: false,
+      directClient: false,
+      working: false,
+      keyReq: false,
+      hotReq: false,
+      incumbentVendor: false,
+      subcontractable: 'Select',
+      reqType: 'Select Req Type'
+    })
+    setQuickSearchId('')
+    setCurrentPage(1)
+  }
+
   // ─── SEARCH CANDIDATES FILTER STATE (IMAGE 1787312030395) ───
   const [candFilters, setCandFilters] = useState({
     candidateId: '',
@@ -2163,8 +2205,11 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
   // Quick Search handler
   const handleQuickSearch = (e) => {
-    e.preventDefault()
-    if (!quickSearchId.trim()) return
+    e?.preventDefault?.()
+    if (!quickSearchId.trim()) {
+      handleResetReqFilters()
+      return
+    }
     const q = quickSearchId.toLowerCase().trim()
     const match = jobs.find(j => {
       const resolved = resolveReqId(j.id, j).toLowerCase()
@@ -2178,6 +2223,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       handleOpenReq(match)
     } else {
       setReqFilters(prev => ({ ...prev, reqId: quickSearchId, status: 'Select Status' }))
+      setShowFilterPanel(true)
       setActiveMainTab('requisitions')
       setViewMode('portal')
       setCurrentPage(1)
@@ -4192,10 +4238,33 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                 <input
                   type="text"
                   value={quickSearchId}
-                  onChange={e => setQuickSearchId(e.target.value)}
+                  onChange={e => {
+                    const val = e.target.value
+                    setQuickSearchId(val)
+                    if (!val.trim() && reqFilters.reqId) {
+                      setReqFilters(prev => ({ ...prev, reqId: '' }))
+                    }
+                  }}
                   placeholder="Req ID or Title..."
                   className="tf-quick-search-input"
                 />
+                {quickSearchId && (
+                  <button
+                    type="button"
+                    onClick={handleResetReqFilters}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#94a3b8',
+                      cursor: 'pointer',
+                      padding: '0 4px',
+                      fontSize: '13px'
+                    }}
+                    title="Clear Search"
+                  >
+                    ✕
+                  </button>
+                )}
                 <button type="submit" className="tf-quick-search-btn">
                   Quick Search
                 </button>
@@ -8424,16 +8493,59 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
                 {/* Filter Accordion Header */}
                 <div
-                  onClick={() => setShowFilterPanel(prev => !prev)}
                   className={`tf-filter-toggle-bar ${showFilterPanel ? 'open' : ''}`}
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                 >
-                  <div className="toggle-left">
+                  <div
+                    onClick={() => setShowFilterPanel(prev => !prev)}
+                    className="toggle-left"
+                    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                  >
                     <span className="toggle-icon">🔍</span>
                     <span>Advanced Requisition Filters</span>
                     <span className="toggle-count-pill">{filteredJobs.length} matches</span>
+                    {isReqFilterActive && (
+                      <span style={{
+                        backgroundColor: '#FEF3C7',
+                        color: '#92400E',
+                        border: '1px solid #FCD34D',
+                        borderRadius: '12px',
+                        padding: '2px 8px',
+                        fontSize: '11px',
+                        fontWeight: '700'
+                      }}>
+                        Active Filter: {reqFilters.reqId ? `Req #${reqFilters.reqId}` : (reqFilters.title || 'Custom')}
+                      </span>
+                    )}
                   </div>
-                  <div className="toggle-right">
-                    <span>{showFilterPanel ? '▲ Hide Filters' : '▼ Expand Filters'}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {isReqFilterActive && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleResetReqFilters()
+                        }}
+                        style={{
+                          background: 'rgba(239, 68, 68, 0.1)',
+                          color: '#DC2626',
+                          border: '1px solid rgba(239, 68, 68, 0.3)',
+                          borderRadius: '6px',
+                          padding: '3px 10px',
+                          fontSize: '11px',
+                          fontWeight: '700',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        ✕ Clear Filters
+                      </button>
+                    )}
+                    <span
+                      onClick={() => setShowFilterPanel(prev => !prev)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {showFilterPanel ? '▲ Hide Filters' : '▼ Expand Filters'}
+                    </span>
                   </div>
                 </div>
 
@@ -8667,7 +8779,35 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                               <div className="tf-empty-box">
                                 <span className="tf-empty-icon">🔍</span>
                                 <strong>No open requisitions found</strong>
-                                <p>Try adjusting your search terms or clearing active filters to see all open requisitions.</p>
+                                <p style={{ margin: '6px 0 14px' }}>
+                                  {isReqFilterActive
+                                    ? `No requisitions match your active filter "${reqFilters.reqId ? `Req #${reqFilters.reqId}` : (reqFilters.title || 'custom search')}". (${jobs.length} total requisitions exist in active database).`
+                                    : 'Try adjusting your search terms or clearing active filters to see all open requisitions.'}
+                                </p>
+                                {isReqFilterActive && (
+                                  <button
+                                    type="button"
+                                    onClick={handleResetReqFilters}
+                                    style={{
+                                      background: 'linear-gradient(180deg, #2563EB 0%, #1D4ED8 100%)',
+                                      color: '#FFFFFF',
+                                      border: 'none',
+                                      borderRadius: '8px',
+                                      padding: '10px 22px',
+                                      fontSize: '13px',
+                                      fontWeight: '700',
+                                      cursor: 'pointer',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '8px',
+                                      boxShadow: '0 4px 12px rgba(37, 99, 235, 0.35)',
+                                      transition: 'all 0.15s ease'
+                                    }}
+                                  >
+                                    <span>🔄</span>
+                                    <span>Clear Filter & Show All {jobs.length} Requisitions</span>
+                                  </button>
+                                )}
                               </div>
                             )}
                           </td>
