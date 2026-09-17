@@ -80,6 +80,9 @@ const IconChevronRight = () => (
 const IconTable = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="12" y1="3" x2="12" y2="21"></line></svg>
 )
+const IconTrash = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+)
 const IconIdCard = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="18" rx="2" ry="2"></rect><line x1="8" y1="7" x2="16" y2="7"></line><line x1="8" y1="11" x2="16" y2="11"></line><circle cx="8" cy="16" r="2"></circle><line x1="12" y1="16" x2="16" y2="16"></line></svg>
 )
@@ -229,66 +232,130 @@ function getSkillFrequencies(resumeText = '', candidateSkills = []) {
 }
 
 function getFullResumeText(candidate) {
-  if (candidate?.resumeText && candidate.resumeText.length > 220) {
+  if (candidate?.resumeText && candidate.resumeText.length > 80) {
     return candidate.resumeText
   }
   const name = candidate?.name || 'CANDIDATE'
   const role = candidate?.role || 'Senior Technical Specialist'
   const email = candidate?.email || 'candidate@domain.com'
   const phone = candidate?.phone || '+1 (555) 019-2831'
-  const loc = candidate?.location || 'Madison, WI'
+  const loc = candidate?.location || 'Remote / US'
   const exp = candidate?.experience || '8+ Years'
   const visa = candidate?.visaStatus || candidate?.visa_status || 'US Citizen'
   const skills = Array.isArray(candidate?.skills) ? candidate.skills : (candidate?.skills ? String(candidate.skills).split(',').map(s => s.trim()) : ['Java', 'SQL', 'Git'])
   const currentCo = candidate?.currentCompany || (candidate?.role ? `${candidate.role}, Enterprise Solutions` : 'Enterprise Partner Consultant')
   const prevCo = candidate?.previousCompany || 'Software Consultant, Tech Solutions'
 
-  const roleLower = (role + ' ' + name + ' ' + skills.join(' ')).toLowerCase()
+  const roleText = (role + ' ' + skills.join(' ')).toLowerCase()
 
-  // 1. QA Automation / SDET / SAP / NIEM
-  if (roleLower.includes('qa') || roleLower.includes('sdet') || roleLower.includes('test') || roleLower.includes('selenium') || roleLower.includes('sap')) {
+  // 1. .NET / C# / ASP.NET Full Stack (Check FIRST so .NET developers aren't miscategorized)
+  if (roleText.includes('.net') || roleText.includes('c#') || roleText.includes('asp.net') || roleText.includes('csharp')) {
     return `${name.toUpperCase()}
 Location: ${loc} | Contact: ${phone} | E-mail: ${email} | ${visa}
 
 PROFESSIONAL SUMMARY
-Results-driven Lead QA Automation Engineer / SDET with over ${exp} of extensive experience in design, development, and execution of automated regression test suites, enterprise web service validations, and end-to-end software quality assurance. Demonstrated expertise in SAP application testing, complex XML/NIEM payload compliance, SQL Server database reconciliation, and CI/CD automated test pipelines.
+Senior Full Stack .NET Developer with over ${exp} of hands-on experience in design, development, and deployment of scalable enterprise web applications, microservices, and distributed cloud systems using C#, .NET Core, ASP.NET MVC, Web API, and Microsoft SQL Server. Strong expertise in building responsive single-page applications with Angular and React, architecting RESTful services, Entity Framework Core, Azure cloud infrastructure, and CI/CD automated deployment pipelines.
+
+CORE TECHNICAL SKILLS
+- Backend Technologies: C#, .NET Core 6/7/8, ASP.NET Core, Web API, WCF, Entity Framework (EF Core), LINQ, Microservices
+- Frontend & UI: Angular (12/14/16), TypeScript, JavaScript, React, HTML5, CSS3, Bootstrap, Tailwind CSS
+- Databases & Querying: Microsoft SQL Server, T-SQL, Stored Procedures, Triggers, Query Optimization, SSIS, PostgreSQL
+- Cloud & DevOps: Microsoft Azure (App Services, Azure SQL, Blob Storage, Key Vault), Docker, Git, Azure DevOps, CI/CD, JIRA
+- Architecture & Practices: RESTful Web APIs, Microservices, Object-Oriented Programming (OOP), SOLID Principles, Design Patterns, Agile / Scrum
+- Testing & Quality: Unit Testing (NUnit / xUnit), Moq, Postman, Integration Testing
+
+PROFESSIONAL EXPERIENCE
+
+${currentCo} (2020 – Present)
+- Spearheaded the design and implementation of mission-critical enterprise microservices using C# .NET Core and ASP.NET Web API, processing over 1.5M transactions daily.
+- Built dynamic, responsive UI client components using Angular, TypeScript, and RxJS, integrating RESTful backend endpoints with seamless authentication.
+- Designed and optimized high-performance relational database schemas, complex T-SQL queries, and stored procedures on Microsoft SQL Server.
+- Containerized .NET microservices with Docker and deployed to Microsoft Azure App Services with automated CI/CD pipelines via Azure DevOps.
+- Implemented robust unit and integration testing suites utilizing xUnit and Moq, achieving over 88% automated test coverage.
+
+${prevCo} (2016 – 2020)
+- Developed secure multi-tiered web applications using ASP.NET MVC, C#, Entity Framework, and SQL Server.
+- Built reusable RESTful API services consumed by downstream client applications and mobile platforms.
+- Collaborated in daily Agile standups, sprint planning, and code review sessions to deliver quarterly feature releases on schedule.
+- Enhanced legacy data pipelines with SSIS packages for automated data extraction, transformation, and loading.
+
+EDUCATION & CERTIFICATIONS
+- Bachelor of Science in Computer Science & Information Technology
+- Microsoft Certified: Azure Developer Associate (AZ-204)
+- Certified ScrumMaster (CSM)®`
+  }
+
+  // 2. SAP / Enterprise ERP Specialist (NOT QA!)
+  if (roleText.includes('sap') || roleText.includes('s/4hana') || roleText.includes('ecc') || roleText.includes('abap') || roleText.includes('fico')) {
+    return `${name.toUpperCase()}
+Location: ${loc} | Contact: ${phone} | E-mail: ${email} | ${visa}
+
+PROFESSIONAL SUMMARY
+Accomplished Senior SAP Functional & Technical Consultant with over ${exp} of extensive experience in enterprise SAP implementations, system migrations, business process re-engineering, and module integrations across SAP ECC 6.0 and SAP S/4HANA environments. Proven track record leading end-to-end configuration, custom enhancement developments, data migration, and supporting high-profile public-sector and enterprise clients.
+
+CORE SAP COMPETENCIES
+- SAP Core Modules: SAP ECC 6.0, SAP S/4HANA, FI/CO, MM, SD, ABAP, Integration & Custom Enhancements
+- Integration & Interfaces: SAP PI/PO, IDoc, RFC, BAPI, OData Services, REST / SOAP APIs, XML Validation
+- Data Management & Tools: SAP LSMW, LTMC, Solution Manager, SQL, SAP GUI, Fiori Launchpad
+- Project Methodologies: SAP Activate, Agile / Scrum, Waterfall, Blueprinting, Cutover Management
+- Compliance & Reporting: Financial Reconciliation, GAAP Compliance, Master Data Governance (MDG)
+
+PROFESSIONAL EXPERIENCE
+
+${currentCo} (2020 – Present)
+- Led SAP business process modernization and S/4HANA migration projects, overseeing end-to-end blueprinting, realization, and cutover phases.
+- Configured core business logic, validation rules, and integration workflows between SAP modules and external corporate databases.
+- Partnered with client executive stakeholders and department heads to gather detailed business requirements and translate them into functional specification documents (FSD).
+- Coordinated user acceptance testing (UAT), regression test scenarios, and delivered comprehensive end-user training documentation.
+
+${prevCo} (2016 – 2020)
+- Provided expert level tier-3 configuration and functional support across enterprise SAP ECC production instances.
+- Engineered automated data transformation routines and IDoc interface troubleshooting for third-party billing and procurement systems.
+- Executed periodic disaster recovery drills, system patch validation, and master data cleanup initiatives.
+
+EDUCATION & CERTIFICATIONS
+- Bachelor / Master of Science in Information Systems / Business Administration
+- SAP Certified Application Associate – SAP S/4HANA`
+  }
+
+  // 3. Dedicated QA Automation / SDET (Only when role specifically indicates testing)
+  if (roleText.includes('sdet') || roleText.includes('qa automation') || roleText.includes('quality assurance') || roleText.includes('test lead') || roleText.includes('test engineer') || (roleText.includes('qa') && !roleText.includes('sql'))) {
+    return `${name.toUpperCase()}
+Location: ${loc} | Contact: ${phone} | E-mail: ${email} | ${visa}
+
+PROFESSIONAL SUMMARY
+Results-driven Lead QA Automation Engineer / SDET with over ${exp} of extensive experience in design, development, and execution of automated regression test suites, enterprise web service validations, and end-to-end software quality assurance. Demonstrated expertise in Selenium WebDriver, Playwright, Cucumber BDD, SQL database reconciliation, and CI/CD automated test pipelines.
 
 CORE TECHNICAL SKILLS
 - Automation Tools: Selenium WebDriver, Playwright, TestNG, Cucumber BDD, SoapUI, Postman, REST Assured, JUnit
-- Enterprise & Public-Sector Standards: SAP ECC & S/4HANA Testing, XML Validation, NIEM Schemas, WSDL, JSON Payloads
-- Programming & Scripting: Java, Python, SQL, JavaScript, Groovy
-- Databases: Microsoft SQL Server, Oracle 12c, PostgreSQL, MySQL
-- DevOps & Management: Jenkins CI/CD, Git, GitHub, JIRA, HP ALM / Quality Center, Azure DevOps
+- Programming & Scripting: Java, Python, SQL, JavaScript, TypeScript
+- Databases & Verification: Microsoft SQL Server, Oracle 12c, PostgreSQL, MySQL
+- DevOps & CI/CD: Jenkins, Git, GitHub, JIRA, HP ALM / Quality Center, Azure DevOps
 - Testing Methodologies: Agile / Scrum, Functional Testing, Regression, System Integration (SIT), UAT
 
 PROFESSIONAL EXPERIENCE
 
 ${currentCo} (2020 – Present)
-- Spearheaded development and maintenance of scalable test automation frameworks using Selenium Java and TestNG, increasing automated regression test coverage to 86%.
-- Performed end-to-end functional and regression testing across SAP modules and high-volume transaction processing systems.
-- Validated complex XML payloads against NIEM compliance standards, catching 140+ schema divergence defects prior to user acceptance testing.
-- Formulated complex SQL verification scripts on Microsoft SQL Server to audit relational database states, reconciliation ledgers, and downstream API payloads.
+- Spearheaded development and maintenance of scalable test automation frameworks using Selenium Java and Playwright, increasing automated regression test coverage to 86%.
+- Performed end-to-end functional and regression testing across enterprise transaction processing systems and cloud web portals.
 - Integrated automated test runs with Jenkins CI/CD pipelines, sending instant alerts and HTML test execution reports to engineering leads.
+- Formulated complex SQL verification scripts to audit relational database states, reconciliation ledgers, and downstream API payloads.
 
 ${prevCo} (2016 – 2020)
 - Designed and executed 800+ automated test scenarios for enterprise web applications using Selenium and Cucumber BDD.
 - Conducted RESTful API verification using Postman and SoapUI, verifying HTTP response codes, headers, and payload structures.
-- Partnered closely with Scrum team members during sprint planning, backlog refinement, and three-amigos user story acceptance sessions.
 - Managed bug lifecycle in JIRA, participating in daily triage meetings with developers and product managers.
 
-EDUCATION
-Bachelor of Science in Computer Science & Engineering
-Accredited University
-
-CERTIFICATIONS
+EDUCATION & CERTIFICATIONS
+- Bachelor of Science in Computer Science & Engineering
 - ISTQB Certified Software Tester (CTFL / CTAL)
 - Certified ScrumMaster (CSM)®`
   }
 
-  // 2. Technical Program Manager / Project Manager / Scrum
-  if (roleLower.includes('tpm') || roleLower.includes('program manager') || roleLower.includes('project manager') || roleLower.includes('scrum master') || roleLower.includes('pmo')) {
+  // 4. Technical Program Manager / Project Manager / Scrum Master
+  if (roleText.includes('tpm') || roleText.includes('program manager') || roleText.includes('project manager') || roleText.includes('scrum master') || roleText.includes('pmo') || roleText.includes('pmp')) {
     return `${name.toUpperCase()}, PMP, CSM
-${loc} | ${email} | ${phone} | ${visa}
+Location: ${loc} | Contact: ${phone} | E-mail: ${email} | ${visa}
 
 EXECUTIVE PROFILE
 Distinguished Senior Technical Program Manager (TPM) with ${exp} of leadership directing multi-million dollar cloud transformations, enterprise digital roadmaps, and cross-functional engineering delivery squads. Expert in strategic roadmap planning, stakeholder alignment, executive technical communications, Agile/Scrum delivery governance, risk management, and vendor contract negotiations.
@@ -320,44 +387,10 @@ EDUCATION & CERTIFICATIONS
 - Certified ScrumMaster (CSM)® — Scrum Alliance`
   }
 
-  // 3. Generative AI / LLM / Machine Learning
-  if (roleLower.includes('generative ai') || roleLower.includes('llm') || roleLower.includes('machine learning') || roleLower.includes('rag') || roleLower.includes('pytorch')) {
+  // 5. Data Analyst / Power BI / Data Governance / Snowflake
+  if (roleText.includes('data') || roleText.includes('power bi') || roleText.includes('bi analyst') || roleText.includes('governance') || roleText.includes('warehouse') || roleText.includes('tableau')) {
     return `${name.toUpperCase()}
-${loc} | ${email} | ${phone} | ${visa}
-
-PROFESSIONAL SUMMARY
-Lead Generative AI and Machine Learning Engineer with ${exp} of hands-on expertise building production-grade Generative AI applications, Retrieval-Augmented Generation (RAG) architectures, and fine-tuning Large Language Models (LLMs). Extensive experience utilizing PyTorch, LangChain, HuggingFace, Vector Databases (Pinecone, FAISS, Weaviate), and deploying scalable microservices on AWS GPU infrastructure.
-
-CORE TECHNICAL EXPERTISE
-- Generative AI & LLMs: RAG Architectures, Fine-Tuning (LoRA, QLoRA), Prompt Engineering, Semantic Search, Agentic Workflows
-- Frameworks & Libraries: LangChain, LlamaIndex, PyTorch, HuggingFace Transformers, vLLM, DeepSpeed, Ollama, TensorFlow
-- Vector DBs & Search: Pinecone, FAISS, Milvus, Weaviate, Qdrant, ChromaDB, Elasticsearch
-- Languages & Tools: Python 3.10+, SQL, Docker, Kubernetes, Git, Linux, FastAPIs, Celery, Redis
-- Cloud & MLOps: AWS (SageMaker, Bedrock, EC2 GPU instances, S3, ECS), MLflow, Weights & Biases, Triton Inference Server
-
-PROFESSIONAL EXPERIENCE
-
-${currentCo} (2021 – Present)
-- Architected enterprise-grade RAG knowledge retrieval systems indexing over 15M multi-modal documents with sub-200ms query latency.
-- Fine-tuned open-source LLMs (Llama 3 70B, Mistral, Gemma) using LoRA on multi-GPU AWS clusters, reducing task-specific hallucination by 46%.
-- Built agentic tool-use pipelines using LangChain and FastAPI, allowing models to dynamically query SQL databases and external REST endpoints.
-- Containerized model inference containers with Docker and orchestrated GPU autoscaling nodes on Kubernetes (EKS).
-
-${prevCo} (2017 – 2021)
-- Developed NLP classification and entity extraction models using PyTorch, HuggingFace, and spaCy, achieving 94% F1-score on customer support datasets.
-- Created automated feature engineering and data preprocessing pipelines in Python, processing 5TB+ of text data.
-- Collaborated with software engineering teams to deploy RESTful model inference endpoints with 99.9% service uptime.
-
-EDUCATION & CERTIFICATIONS
-- Master of Science in Computer Science (Artificial Intelligence Focus)
-- AWS Certified Machine Learning – Specialty
-- DeepLearning.AI Generative AI with Large Language Models Certification`
-  }
-
-  // 4. Data Analyst / Power BI / Data Governance
-  if (roleLower.includes('data') || roleLower.includes('power bi') || roleLower.includes('bi') || roleLower.includes('governance') || roleLower.includes('warehouse')) {
-    return `${name.toUpperCase()}
-${loc} | ${email} | ${phone} | ${visa}
+Location: ${loc} | Contact: ${phone} | E-mail: ${email} | ${visa}
 
 EXECUTIVE SUMMARY
 Senior Power BI Data Analyst and Data Governance Specialist with ${exp} of expertise in enterprise data warehouse design, advanced SQL analytics, data governance frameworks, DAX calculations, and automated ETL data pipelines. Proven record translating complex data into actionable executive dashboards and compliant state reporting systems.
@@ -365,11 +398,11 @@ Senior Power BI Data Analyst and Data Governance Specialist with ${exp} of exper
 CORE TECHNICAL SKILLS
 - BI & Analytics: Power BI Desktop & Service, DAX, Power Query (M), Tableau, Excel (VBA, Power Pivot)
 - Database & Warehousing: SQL, Snowflake, SQL Server, Oracle, Data Modeling (Star/Snowflake Schema), Data Governance, Collibra
-- CRM & Development: Salesforce (Admin & Dev), Apex, SOQL, Python (Pandas, NumPy)
+- Languages & Scripting: SQL, Python (Pandas, NumPy), T-SQL, PL/SQL
 - ETL & Pipelines: SSIS, Azure Data Factory, Alteryx, CDC (Change Data Capture)
 - Compliance & Methodologies: Data Governance, HIPAA, Data Lineage, Agile / Scrum
 
-EXPERIENCE
+PROFESSIONAL EXPERIENCE
 
 ${currentCo} (2021 – Present)
 - Architected enterprise executive dashboards in Power BI connected to Snowflake data warehouse, automating weekly reporting for 500+ stakeholders.
@@ -387,43 +420,43 @@ EDUCATION & CREDENTIALS
 - Microsoft Certified: Power BI Data Analyst Associate (PL-300)`
   }
 
-  // 5. Network Security / Firewall / Cloud Security
-  if (roleLower.includes('security') || roleLower.includes('network') || roleLower.includes('firewall') || roleLower.includes('cisco')) {
+  // 6. Cloud / DevOps / SRE / Kubernetes
+  if (roleText.includes('devops') || roleText.includes('cloud') || roleText.includes('sre') || roleText.includes('kubernetes') || roleText.includes('aws') || roleText.includes('terraform')) {
     return `${name.toUpperCase()}
-${loc} | ${email} | ${phone} | ${visa}
+Location: ${loc} | Contact: ${phone} | E-mail: ${email} | ${visa}
 
 PROFESSIONAL SUMMARY
-Accomplished Senior Network Security Engineer with ${exp} of extensive experience in enterprise firewall engineering, perimeter defense, Cisco routing & switching, Palo Alto Panorama, site-to-site VPN tunnels, and AWS cloud security architectures. Deep expertise in incident response, IDS/IPS tuning, and regulatory compliance (PCI-DSS, HIPAA, NIST).
+Senior Cloud & DevOps Engineer with over ${exp} of experience architecting, automating, and operating mission-critical enterprise cloud infrastructure across AWS and Azure. Extensive hands-on expertise with Infrastructure as Code (Terraform), container orchestration (Kubernetes, Docker), CI/CD pipeline automation (GitLab CI, GitHub Actions, Jenkins), and site reliability engineering (SRE).
 
-CORE COMPETENCIES & SKILLS
-- Firewalls & Security: Palo Alto (PA-3200, PA-5200, Panorama), Cisco ASA, Check Point, Fortinet FortiGate, Zscaler ZIA/ZPA
-- Routing & Switching: BGP, OSPF, EIGRP, Cisco Catalyst 9000, Nexus 7K/9K, VLANs, VXLAN, MPLS
-- VPN & Remote Access: IPsec VPN, SSL VPN, Cisco AnyConnect, GlobalProtect
-- Cloud Networking: AWS VPC, Transit Gateway, Direct Connect, Security Groups, Network ACLs, Route 53
-- Monitoring & Tools: Wireshark, SolarWinds, Splunk, Cisco Prime, Python Network Automation
+CORE TECHNICAL SKILLS
+- Cloud Platforms: Amazon Web Services (AWS - EC2, EKS, S3, RDS, Lambda, VPC, IAM), Microsoft Azure
+- Infrastructure as Code: Terraform, CloudFormation, Ansible, Shell Scripting, Python
+- Containers & Orchestration: Docker, Kubernetes (EKS/AKS), Helm, Istio Service Mesh
+- CI/CD & Automation: GitHub Actions, GitLab CI/CD, Jenkins, ArgoCD
+- Monitoring & Observability: Prometheus, Grafana, AWS CloudWatch, Datadog, ELK Stack
 
 PROFESSIONAL EXPERIENCE
 
-${currentCo} (2020 – Present)
-- Led design and migration of multi-vendor firewall environments, replacing legacy Cisco ASA with next-gen Palo Alto clusters managed via Panorama.
-- Designed and provisioned secure AWS VPC infrastructure, Direct Connect circuits, and Transit Gateway routing for corporate branch offices.
-- Configured and audited BGP and OSPF routing protocols across redundant data centers with 99.999% network uptime.
-- Deployed Zscaler Internet Access (ZIA) and GlobalProtect VPN for 5,000+ remote employees during enterprise zero-trust transition.
+${currentCo} (2021 – Present)
+- Architected multi-region AWS cloud infrastructure using Terraform, provisioning automated VPCs, EKS clusters, and RDS databases with 99.99% uptime.
+- Built zero-downtime CI/CD deployment pipelines using GitHub Actions and ArgoCD, reducing release cycle duration from 4 hours to 15 minutes.
+- Containerized 20+ monolithic services into lightweight Docker containers and orchestrated microservice autoscaling on Kubernetes.
+- Configured real-time system observability and alerting using Prometheus, Grafana, and AWS CloudWatch.
 
-${prevCo} (2016 – 2020)
-- Administered Check Point and Cisco ASA firewalls, maintaining access control lists (ACLs) and NAT translation policies.
-- Conducted regular vulnerability assessments, IDS/IPS rule tuning, and firewall firmware upgrades without service disruption.
-- Automated routine firewall rule validation and configuration backups using Python scripts and Git versioning.
+${prevCo} (2017 – 2021)
+- Managed Linux production server fleet, automated OS patch management and backup configurations using Ansible.
+- Implemented automated security scanning and vulnerability checks into Jenkins build pipelines.
+- Partnered with development teams to optimize application resource usage and cloud hosting costs by 26%.
 
 EDUCATION & CERTIFICATIONS
-- Bachelor of Science in Electrical & Computer Engineering
-- Palo Alto Networks Certified Network Security Engineer (PCNSE)
-- Cisco Certified Network Professional (CCNP Security)`
+- Bachelor of Science in Computer Science / Information Technology
+- AWS Certified Solutions Architect – Professional
+- Certified Kubernetes Administrator (CKA)`
   }
 
-  // 6. Java Full Stack / Cloud / Enterprise Default
+  // 7. Java Full Stack / Microservices / Spring Boot (Standard High-Yield Default)
   return `${name.toUpperCase()}
-${loc} | ${email} | ${phone} | ${visa}
+Location: ${loc} | Contact: ${phone} | E-mail: ${email} | ${visa}
 
 EXECUTIVE SUMMARY
 Accomplished ${role} with over ${exp} of experience in design, development, and implementation of high-throughput enterprise web applications, microservices, and distributed cloud solutions. Strong proficiency in ${skills.slice(0, 5).join(', ')}, SQL, Git, and RESTful API architecture. Proven success delivering mission-critical applications and collaborating across cross-functional Agile engineering teams.
@@ -449,13 +482,10 @@ ${prevCo} (2017 – 2021)
 - Designed comprehensive automated unit and integration tests using JUnit and Mockito, raising test coverage above 90%.
 - Resolved complex production defect tickets and provided reliable escalation support for production releases.
 
-EDUCATION
-Bachelor of Science in Computer Science / Information Technology
-Accredited University (Graduated with Honors)
-
-CERTIFICATIONS
-- Industry Certified Professional in ${skills[0] || 'Software Engineering'}
-- Certified Scrum Developer (CSD) / AWS Certified Associate`
+EDUCATION & CERTIFICATIONS
+- Bachelor of Science in Computer Science
+- Oracle Certified Professional: Java Developer
+- Certified ScrumMaster (CSM)®`
 }
 
 function getInitials(name = '') {
@@ -515,31 +545,81 @@ const highlightResumeText = (text, matchingSkills = [], searchQuery = '') => {
     )
   }
 
-  let highlighted = text;
+  // Find all match intervals [start, end, type]
+  const intervals = [];
 
-  // 1. Highlight matching position skills in bright luminous yellow
-  if (matchingSkills && matchingSkills.length > 0) {
-    const sortedSkills = [...matchingSkills].sort((a, b) => b.length - a.length);
-    sortedSkills.forEach(skill => {
-      if (!skill || skill.length < 2) return;
-      const escaped = skill.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-      const startBoundary = /^[a-zA-Z0-9]/.test(skill.trim()) ? '\\b' : '';
-      const endBoundary = /[a-zA-Z0-9]$/.test(skill.trim()) ? '\\b' : '';
-      const regex = new RegExp(`${startBoundary}(${escaped})${endBoundary}`, 'gi');
-      highlighted = highlighted.replace(regex, `<mark style="background-color: #FEF08A; color: #854D0E; font-weight: 800; padding: 2px 6px; border-radius: 4px; border: 1px solid #FDE047;">$1</mark>`);
-    });
+  // 1. Search Query Intervals (Soft Blue)
+  if (searchQuery && searchQuery.trim().length >= 2) {
+    const q = searchQuery.trim();
+    const escaped = q.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    try {
+      const regex = new RegExp(escaped, 'gi');
+      let m;
+      while ((m = regex.exec(text)) !== null) {
+        intervals.push({ start: m.index, end: m.index + m[0].length, type: 'search' });
+      }
+    } catch (_) {}
   }
 
-  // 2. Highlight manual search keywords in soft sky blue
-  if (searchQuery && searchQuery.trim().length >= 2) {
-    const escapedQ = searchQuery.trim().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-    const qRegex = new RegExp(`(${escapedQ})`, 'gi');
-    highlighted = highlighted.replace(qRegex, `<mark style="background-color: #BAE6FD; color: #0369A1; font-weight: 800; padding: 2px 6px; border-radius: 4px; border: 1px solid #7DD3FC;">$1</mark>`);
+  // 2. Matching Skills Intervals (Bright Yellow)
+  if (matchingSkills && matchingSkills.length > 0) {
+    const uniqueSkills = [...new Set(matchingSkills.filter(s => s && s.trim().length >= 2))]
+      .sort((a, b) => b.length - a.length);
+
+    for (const skill of uniqueSkills) {
+      const trimmed = skill.trim();
+      const escaped = trimmed.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      const startB = /^\w/.test(trimmed) ? '\\b' : '';
+      const endB = /\w$/.test(trimmed) ? '\\b' : '';
+      try {
+        const regex = new RegExp(`${startB}${escaped}${endB}`, 'gi');
+        let m;
+        while ((m = regex.exec(text)) !== null) {
+          intervals.push({ start: m.index, end: m.index + m[0].length, type: 'skill' });
+        }
+      } catch (_) {}
+    }
+  }
+
+  let renderedContent;
+  if (intervals.length === 0) {
+    renderedContent = text;
+  } else {
+    // Sort intervals by start index, longer intervals first on ties
+    intervals.sort((a, b) => a.start - b.start || b.end - a.end);
+
+    const nonOverlapping = [];
+    let lastEnd = -1;
+    for (const item of intervals) {
+      if (item.start >= lastEnd) {
+        nonOverlapping.push(item);
+        lastEnd = item.end;
+      }
+    }
+
+    const parts = [];
+    let curr = 0;
+    for (const span of nonOverlapping) {
+      if (span.start > curr) {
+        parts.push(text.substring(curr, span.start));
+      }
+      const matchedStr = text.substring(span.start, span.end);
+      if (span.type === 'search') {
+        parts.push(`<mark style="background-color: #BAE6FD; color: #0369A1; font-weight: 800; padding: 2px 5px; border-radius: 4px; border: 1px solid #7DD3FC;">${matchedStr}</mark>`);
+      } else {
+        parts.push(`<mark style="background-color: #FEF08A; color: #854D0E; font-weight: 800; padding: 2px 5px; border-radius: 4px; border: 1px solid #FDE047;">${matchedStr}</mark>`);
+      }
+      curr = span.end;
+    }
+    if (curr < text.length) {
+      parts.push(text.substring(curr));
+    }
+    renderedContent = parts.join('');
   }
 
   return (
     <div 
-      dangerouslySetInnerHTML={{ __html: highlighted }} 
+      dangerouslySetInnerHTML={{ __html: renderedContent }} 
       style={{ 
         whiteSpace: 'pre-wrap', 
         lineHeight: '1.85', 
@@ -999,13 +1079,14 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const DEFAULT_OPEN_JOBS = [
     { id: '159079', title: 'Java Developer III - 165504', client: 'State of Wisconsin (ETF)', rate: '$75/hr', location: 'Madison, WI (Remote)', skills: ['Java', 'Spring Boot', 'React', 'Vue', 'SQL', 'Git', 'AWS'] },
     { id: '159078', title: 'Public Health Program Director 1 (66312)', client: 'Tennessee Department of Health (TN DOH)', rate: '$75/hr', location: 'Nashville, TN (Hybrid)', skills: ['Strategic Planning', 'Technical Writing', 'Program Management', 'Healthcare', 'Project Management', 'Agile'] },
+    { id: '159116', title: 'Senior .NET/SQL Full-Stack Developer', client: 'Iowa Department of Health and Human Services (HHS)', rate: '$75/hr', location: 'Remote / US', skills: ['C#', '.NET', 'ASP.NET', 'Microservices', 'SQL Server', 'Angular', 'Azure', 'Entity Framework'] },
     { id: '159077', title: 'Java Developer III - 165503', client: 'State of Wisconsin (ETF)', rate: '$75/hr', location: 'Madison, WI (Remote)', skills: ['Java', 'Angular', 'Vue', 'SQL', 'Git', 'Spring Boot'] },
     { id: '159074', title: 'Attorney - 66316', client: 'Tennessee Department of Health (TN DOH)', rate: '$75/hr', location: 'Nashville, TN (Hybrid)', skills: ['Legal Writing', 'Regulatory Compliance', 'Health Policy', 'Communications'] },
     { id: '159073', title: 'DBHDS - Data Governance Analyst (CDC Funded) (807900)', client: 'Virginia DBHDS', rate: '$75/hr', location: 'Richmond, VA (Hybrid)', skills: ['Data Governance', 'SQL', 'Data Warehouse', 'Python', 'Tableau', 'CDC', 'Power BI'] },
     { id: '158997', title: 'NC DHHS - AWS Senior Developer (808496)', client: 'NC DHHS', rate: '$85/hr', location: 'Raleigh, NC (Hybrid)', skills: ['AWS', 'Cloud Architecture', 'Python', 'Lambda', 'Docker', 'Kubernetes'] }
   ]
   const [openJobsList, setOpenJobsList] = useState(DEFAULT_OPEN_JOBS)
-  const [drawerReqId, setDrawerReqId] = useState('159078')
+  const [drawerReqId, setDrawerReqId] = useState('')
   const [resumeKeywordSearch, setResumeKeywordSearch] = useState('')
 
   // Direct Outbound Email Modal State (Strictly sent from personal recruiter email)
@@ -1650,6 +1731,117 @@ export default function RecruiterInbox({ defaultViewMode }) {
     setShowFullProfileModal(true)
   }
 
+  const handleDeleteCandidate = async (cand) => {
+    if (!cand) return
+    const candName = cand.name || cand.extracted_profile?.name || (cand.email ? cand.email.split('@')[0] : 'Candidate')
+    const candId = cand.id || cand.candidate_id || ''
+    const candEmail = cand.email || ''
+
+    if (!window.confirm(`Are you sure you want to delete "${candName}"? This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      if (candId) {
+        await fetch(`/api/candidates/${encodeURIComponent(candId)}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`,
+            'Content-Type': 'application/json'
+          }
+        })
+      }
+
+      setStreamCandidates(prev => {
+        return prev.filter(c => {
+          const cId = c.id || c.candidate_id
+          if (candId && cId && String(cId) === String(candId)) return false
+          if (candEmail && c.email && c.email.toLowerCase() === candEmail.toLowerCase()) return false
+          return true
+        })
+      })
+
+      if (selectedCandidate && ((candId && (selectedCandidate.id === candId || selectedCandidate.candidate_id === candId)) || (candEmail && selectedCandidate.email === candEmail))) {
+        setSelectedCandidate(null)
+      }
+
+      setShareToast(`✓ "${candName}" removed successfully`)
+      setTimeout(() => setShareToast(''), 4000)
+    } catch (err) {
+      alert('Error deleting candidate: ' + err.message)
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedCardIds.size === 0) return
+    const count = selectedCardIds.size
+    if (!window.confirm(`Are you sure you want to permanently delete ${count} selected candidate(s)?`)) {
+      return
+    }
+
+    const idsToDelete = Array.from(selectedCardIds)
+    try {
+      await fetch('/api/candidates/bulk-delete', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ids: idsToDelete })
+      })
+
+      const idSet = new Set(idsToDelete.map(String))
+      setStreamCandidates(prev => prev.filter(c => {
+        const cId = String(c.id || c.candidate_id || '')
+        const cEmail = String(c.email || '')
+        return !idSet.has(cId) && !idSet.has(cEmail)
+      }))
+
+      if (selectedCandidate) {
+        const selId = String(selectedCandidate.id || selectedCandidate.candidate_id || '')
+        const selEmail = String(selectedCandidate.email || '')
+        if (idSet.has(selId) || idSet.has(selEmail)) {
+          setSelectedCandidate(null)
+        }
+      }
+
+      setSelectedCardIds(new Set())
+      setShareToast(`✓ Successfully deleted ${count} candidate(s)`)
+      setTimeout(() => setShareToast(''), 4000)
+    } catch (err) {
+      alert('Error during bulk deletion: ' + err.message)
+    }
+  }
+
+  // Ensure drawerReqId synchronizes whenever active candidate changes
+  useEffect(() => {
+    if (activeCandidate?.targetReqId) {
+      const cleanTarget = String(activeCandidate.targetReqId).replace(/^J-/, '')
+      setDrawerReqId(cleanTarget)
+    }
+  }, [activeCandidate?.id, activeCandidate?.email, activeCandidate?.targetReqId])
+
+  // Ensure candidate's target job is registered in openJobsList
+  useEffect(() => {
+    if (activeCandidate?.targetReqId && activeCandidate?.matchedJobTitle) {
+      const cId = String(activeCandidate.targetReqId).replace(/^J-/, '')
+      setOpenJobsList(prev => {
+        if (prev.some(j => String(j.id) === cId)) return prev
+        return [
+          ...prev,
+          {
+            id: cId,
+            title: activeCandidate.matchedJobTitle,
+            client: activeCandidate.matchedJobClient || 'Client Agency',
+            rate: activeCandidate.matchedJobRate || '$75/hr',
+            location: 'Remote / US',
+            skills: activeCandidate.matchingSkills?.length ? activeCandidate.matchingSkills : (activeCandidate.skills || ['Core Skills'])
+          }
+        ]
+      })
+    }
+  }, [activeCandidate?.targetReqId, activeCandidate?.matchedJobTitle, activeCandidate?.matchedJobClient, activeCandidate?.matchedJobRate, activeCandidate?.matchingSkills, activeCandidate?.skills])
+
   // Load live open requisitions to power the Multi-Position AI Matcher
   useEffect(() => {
     fetch('/api/jobs')
@@ -1846,9 +2038,23 @@ export default function RecruiterInbox({ defaultViewMode }) {
   })
 
   const dynamicMissingSkills = reqSkillsList.filter(sk => !dynamicMatchingSkills.includes(sk))
-  const calculatedFitScore = activeTargetJob && reqSkillsList.length > 0
-    ? Math.min(99, Math.max(65, Math.round((dynamicMatchingSkills.length / reqSkillsList.length) * 100)))
-    : (activeCandidate?.matchScore || 92)
+  const calculatedFitScore = useMemo(() => {
+    if (!activeCandidate) return 0
+    const cleanCandTarget = String(activeCandidate.targetReqId || '').replace(/^J-/, '')
+    if (cleanCandTarget === currentReqId && activeCandidate.matchScore) {
+      return activeCandidate.matchScore
+    }
+    if (activeTargetJob && reqSkillsList.length > 0) {
+      const skillsRatio = dynamicMatchingSkills.length / reqSkillsList.length
+      const roleStr = (activeCandidate.role || '').toLowerCase()
+      const titleWords = (activeTargetJob.title || '').toLowerCase().split(/[\s\-_/]+/).filter(w => w.length > 3)
+      const hasTitleOverlap = titleWords.some(w => roleStr.includes(w))
+      const titleBonus = hasTitleOverlap ? 15 : 0
+      const calculated = Math.round((skillsRatio * 85) + titleBonus)
+      return Math.min(99, Math.max(15, calculated))
+    }
+    return activeCandidate.matchScore || 75
+  }, [activeCandidate, currentReqId, activeTargetJob, dynamicMatchingSkills.length, reqSkillsList.length])
 
   const candidateFrequencies = activeCandidate ? getSkillFrequencies(candResumeText, candSkillsList) : []
 
@@ -2071,7 +2277,11 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
             <button
               type="button"
-              onClick={() => { setInboxViewMode('stream'); setSyncingEmailResumes(true); setTimeout(() => setSyncingEmailResumes(false), 800); }}
+              onClick={() => {
+                setInboxViewMode('stream')
+                handleSyncEmailResumes()
+              }}
+              disabled={syncingEmailResumes}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -2079,15 +2289,15 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 padding: '10px 14px',
                 borderRadius: 8,
                 border: 'none',
-                background: 'transparent',
-                color: C.textSecondary,
-                fontWeight: 500,
+                background: syncingEmailResumes ? 'rgba(37,99,235,0.1)' : 'transparent',
+                color: syncingEmailResumes ? '#2563EB' : C.textSecondary,
+                fontWeight: 600,
                 fontSize: 13.5,
-                cursor: 'pointer',
+                cursor: syncingEmailResumes ? 'wait' : 'pointer',
                 textAlign: 'left'
               }}
             >
-              <IconZap /> <span>Scan Ingest</span>
+              <IconZap /> <span>{syncingEmailResumes ? 'Scanning Resumes...' : 'Scan Ingest'}</span>
             </button>
 
             <button
@@ -2151,42 +2361,6 @@ export default function RecruiterInbox({ defaultViewMode }) {
               }}
             >
               <IconSettings /> <span>Settings</span>
-            </button>
-          </div>
-
-          {/* Bottom Upgrade Promo Card Matching Screenshot */}
-          <div style={{
-            marginTop: 'auto',
-            backgroundColor: isLight ? '#F9FAFB' : 'rgba(255,255,255,0.04)',
-            borderRadius: 12,
-            padding: '14px 12px',
-            textAlign: 'center',
-            border: `1px solid ${C.border}`
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 4 }}>
-              <IconCrown />
-              <span style={{ fontSize: 13, fontWeight: 800, color: C.textPrimary }}>Upgrade to Pro</span>
-            </div>
-            <div style={{ fontSize: 11, color: C.textSecondary, marginBottom: 10, lineHeight: 1.35 }}>
-              More features. More hires.<br />From only $69/month
-            </div>
-            <button
-              type="button"
-              onClick={() => navigate('/pricing')}
-              style={{
-                width: '100%',
-                background: '#2065D1',
-                color: '#FFF',
-                border: 'none',
-                borderRadius: 8,
-                padding: '7px 0',
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(32,101,209,0.25)'
-              }}
-            >
-              Upgrade Now
             </button>
           </div>
         </aside>
@@ -3081,6 +3255,27 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   >
                     <IconDownload /> <span>Download Resume</span>
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteCandidate(activeCandidate)}
+                    style={{
+                      background: 'rgba(239, 68, 68, 0.1)',
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      borderRadius: 6,
+                      padding: '7px 12px',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: '#EF4444',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6
+                    }}
+                    title="Delete Candidate"
+                  >
+                    <IconTrash /> <span>Delete</span>
+                  </button>
                 </div>
               </div>
 
@@ -3121,91 +3316,13 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     ))}
                   </div>
 
-                  {/* Action Icons Row: Edit, Team, Chat */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>
-                    <button
-                      type="button"
-                      onClick={() => handleAssignCandidateToReq(activeCandidate, currentReqId)}
-                      style={{
-                        background: C.inputBg,
-                        border: `1px solid ${C.border}`,
-                        borderRadius: 6,
-                        padding: '6px 8px',
-                        cursor: 'pointer',
-                        color: C.textSecondary,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                      title="Quick Edit / Re-assign"
-                    >
-                      <IconPencil />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleAssignCandidateToReq(activeCandidate, currentReqId)}
-                      style={{
-                        background: C.inputBg,
-                        border: `1px solid ${C.border}`,
-                        borderRadius: 6,
-                        padding: '6px 8px',
-                        cursor: 'pointer',
-                        color: C.textSecondary,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                      title="Assign Candidate to Team / Requisition"
-                    >
-                      <IconUsers />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleOpenCandidateChat(activeCandidate)}
-                      style={{
-                        background: C.inputBg,
-                        border: `1px solid ${C.border}`,
-                        borderRadius: 6,
-                        padding: '6px 8px',
-                        cursor: 'pointer',
-                        color: '#2563EB',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                      title="Open Candidate Conversation"
-                    >
-                      <IconChat />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={(e) => toggleFavorite(activeCandidate?.id || activeCandidate?.email, e)}
-                      style={{
-                        background: C.inputBg,
-                        border: `1px solid ${C.border}`,
-                        borderRadius: 6,
-                        padding: '6px 8px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                      title="Toggle Favorite"
-                    >
-                      <IconStar filled={favoriteCandidateIds.has(activeCandidate?.id || activeCandidate?.email)} />
-                    </button>
-                  </div>
-
                   {/* Candidate Name & Contact Details */}
-                  <div>
+                  <div style={{ paddingTop: 4 }}>
                     <h2 style={{ fontSize: 20, fontWeight: 900, color: C.textPrimary, margin: '0 0 4px', letterSpacing: '-0.02em' }}>
-                      {activeCandidate?.name || 'Candidate Profile'}
+                      {activeCandidate?.name || activeCandidate?.extracted_profile?.name || (activeCandidate?.email ? activeCandidate.email.split('@')[0] : 'Candidate Profile')}
                     </h2>
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#2563EB', marginBottom: 10 }}>
-                      {activeCandidate?.role || 'Senior Specialist'}
+                      {activeCandidate?.role || (candSkillsList.length > 0 ? `${candSkillsList[0]} Specialist` : 'Software Specialist')}
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -3249,11 +3366,6 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
                   {/* Tobu Detailed Candidate Information Table */}
                   <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 10, fontSize: 12 }}>
-                    <div>
-                      <span style={{ color: C.textSecondary, display: 'block', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase' }}>Gender</span>
-                      <strong style={{ color: C.textPrimary, fontSize: 12.5 }}>{activeCandidate?.gender || 'Male (mostly)'}</strong>
-                    </div>
-
                     <div>
                       <span style={{ color: C.textSecondary, display: 'block', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase' }}>Total work experience</span>
                       <strong style={{ color: C.textPrimary, fontSize: 12.5 }}>{activeCandidate?.experience || '10+ Years'}</strong>
@@ -3812,27 +3924,50 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     </span>
 
                     {selectedCardIds.size > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          selectedCardIds.forEach(id => {
-                            const c = streamCandidates.find(item => item.id === id || item.email === id)
-                            if (c) handleAssignCandidateToReq(c, currentReqId)
-                          })
-                        }}
-                        style={{
-                          background: '#2563EB',
-                          color: '#FFF',
-                          border: 'none',
-                          borderRadius: 6,
-                          padding: '6px 12px',
-                          fontSize: 11.5,
-                          fontWeight: 800,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        💼 Transfer Selected to Req #{currentReqId}
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            selectedCardIds.forEach(id => {
+                              const c = streamCandidates.find(item => item.id === id || item.email === id)
+                              if (c) handleAssignCandidateToReq(c, currentReqId)
+                            })
+                          }}
+                          style={{
+                            background: '#2563EB',
+                            color: '#FFF',
+                            border: 'none',
+                            borderRadius: 6,
+                            padding: '6px 12px',
+                            fontSize: 11.5,
+                            fontWeight: 800,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          💼 Transfer Selected to Req #{currentReqId}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleBulkDelete}
+                          style={{
+                            background: '#EF4444',
+                            color: '#FFF',
+                            border: 'none',
+                            borderRadius: 6,
+                            padding: '6px 12px',
+                            fontSize: 11.5,
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5,
+                            boxShadow: '0 2px 6px rgba(239, 68, 68, 0.25)'
+                          }}
+                        >
+                          <IconTrash /> <span>Delete Selected ({selectedCardIds.size})</span>
+                        </button>
+                      </>
                     )}
                   </div>
 
@@ -3974,13 +4109,13 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                     style={{ fontSize: 13.5, fontWeight: 800, color: '#2563EB', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5 }}
                                     title="Open Candidate Card"
                                   >
-                                    <span>{c.name}</span> <IconExternalLink />
+                                    <span>{c.name || c.extracted_profile?.name || (c.email ? c.email.split('@')[0] : 'Applicant')}</span> <IconExternalLink />
                                   </div>
                                   <div style={{ fontSize: 12, fontWeight: 600, color: C.textPrimary, marginTop: 2 }}>
-                                    {c.role || 'Senior Specialist'}
+                                    {c.role && c.role !== 'Senior Specialist' ? c.role : (c.extracted_profile?.role || (skillsArr.length > 0 ? `${skillsArr[0]} Specialist` : 'Software Specialist'))}
                                   </div>
                                   <div style={{ fontSize: 11, color: C.textSecondary }}>
-                                    {c.email} {c.phone ? `• ${c.phone}` : ''}
+                                    {c.email || c.extracted_profile?.email || ''} {c.phone ? `• ${c.phone}` : ''}
                                   </div>
                                 </td>
 
@@ -4107,6 +4242,24 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                       title={`Add to Req #${currentReqId}`}
                                     >
                                       ➕
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteCandidate(c)}
+                                      style={{
+                                        background: 'rgba(239, 68, 68, 0.1)',
+                                        color: '#EF4444',
+                                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                                        borderRadius: 6,
+                                        padding: '4px 8px',
+                                        fontSize: 11,
+                                        fontWeight: 800,
+                                        cursor: 'pointer'
+                                      }}
+                                      title="Delete Candidate"
+                                    >
+                                      <IconTrash />
                                     </button>
                                   </div>
                                 </td>

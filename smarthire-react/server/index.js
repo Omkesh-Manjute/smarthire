@@ -387,19 +387,64 @@ const candidatesDbPath = path.resolve(__dirname, 'candidates.json')
 // ─── Candidates Store (persisted to MongoDB or disk) ──────────────────────────
 let candidatesStore = []
 
+function normalizeAndDeduplicateCandidates(list) {
+  if (!Array.isArray(list)) return [];
+  const seen = new Set();
+  const normalized = [];
+
+  for (const c of list) {
+    if (!c) continue;
+    const p = c.extracted_profile || {};
+    const rawName = (c.name && c.name.trim() !== '' && c.name !== 'Candidate') ? c.name : (p.name || '');
+    const rawEmail = (c.email && c.email.trim() !== '') ? c.email : (p.email || c.email_context?.sender_email || '');
+
+    // Skip empty ghost records without name or email
+    if (!rawName && !rawEmail) continue;
+
+    const dedupKey = (rawEmail || rawName).toLowerCase().trim();
+    if (seen.has(dedupKey)) continue;
+    seen.add(dedupKey);
+
+    const candId = c.id || c.candidate_id || `cand-${Date.now()}-${Math.floor(Math.random()*1000)}`;
+    const skills = (Array.isArray(c.skills) && c.skills.length > 0) ? c.skills : (p.skills || []);
+    const cleanRole = (c.role && c.role !== 'Senior Specialist' && c.role.trim() !== '') 
+      ? c.role 
+      : (p.role || (skills.length > 0 ? `${skills[0]} Specialist` : 'Software Specialist'));
+
+    normalized.push({
+      ...c,
+      id: candId,
+      candidate_id: candId,
+      name: rawName || 'Candidate',
+      email: rawEmail || '',
+      phone: c.phone || p.phone || '+1 (555) 010-0000',
+      role: cleanRole,
+      location: c.location || p.location || 'Remote / US',
+      skills: skills.length > 0 ? skills : ['Java', 'SQL', 'Cloud Technologies'],
+      experience: c.experience || (p.experience_years ? `${p.experience_years}+ Years` : '5+ Years'),
+      visaStatus: c.visaStatus || c.visa_status || 'US Citizen',
+      targetReqId: c.targetReqId || (c.job_id && c.job_id !== 'J-DEFAULT' ? String(c.job_id).replace(/^J-/, '') : null),
+      matchScore: c.matchScore || c.jd_match?.match_score || 70,
+      resumeText: c.resumeText || p.raw_text || c.email_context?.body || ''
+    });
+  }
+
+  return normalized;
+}
+
 async function loadCandidatesFromDisk() {
   try {
     if (isMongoConnected) {
       const doc = await CandidatesDoc.findOne();
       if (doc) {
-        candidatesStore = doc.list || [];
+        candidatesStore = normalizeAndDeduplicateCandidates(doc.list || []);
         console.log(`📂 Loaded ${candidatesStore.length} candidate(s) from MongoDB Atlas.`);
         return;
       }
     }
     if (fs.existsSync(candidatesDbPath)) {
       const raw = fs.readFileSync(candidatesDbPath, 'utf-8')
-      candidatesStore = JSON.parse(raw)
+      candidatesStore = normalizeAndDeduplicateCandidates(JSON.parse(raw))
       console.log(`📂 Loaded ${candidatesStore.length} candidate(s) from disk.`)
     } else {
       candidatesStore = []
@@ -1588,15 +1633,30 @@ app.get('/api/candidates/:id', authenticateToken, (req, res) => {
 
 // ─── DELETE /api/candidates/:id — Remove a candidate ─────────────────────────
 app.delete('/api/candidates/:id', authenticateToken, (req, res) => {
-  const index = candidatesStore.findIndex(c => c.candidate_id === req.params.id)
+  const targetId = String(req.params.id);
+  const index = candidatesStore.findIndex(c => String(c.candidate_id) === targetId || String(c.id) === targetId);
   if (index === -1) {
-    res.status(404).json({ success: false, message: 'Candidate not found' })
-    return
+    res.status(404).json({ success: false, message: 'Candidate not found' });
+    return;
   }
-  candidatesStore.splice(index, 1)
-  saveCandidatesToDisk()
-  res.json({ success: true, message: 'Candidate removed' })
-})
+  const removed = candidatesStore.splice(index, 1)[0];
+  saveCandidatesToDisk();
+  res.json({ success: true, message: `Candidate ${removed.name || targetId} removed successfully`, removedId: targetId });
+});
+
+// ─── POST /api/candidates/bulk-delete — Bulk remove candidates ─────────────
+app.post('/api/candidates/bulk-delete', authenticateToken, (req, res) => {
+  const { ids = [] } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ success: false, message: 'Array of candidate IDs is required' });
+  }
+  const idSet = new Set(ids.map(String));
+  const beforeLen = candidatesStore.length;
+  candidatesStore = candidatesStore.filter(c => !idSet.has(String(c.candidate_id)) && !idSet.has(String(c.id)));
+  const deletedCount = beforeLen - candidatesStore.length;
+  saveCandidatesToDisk();
+  res.json({ success: true, deletedCount, message: `Successfully deleted ${deletedCount} candidate(s)` });
+});
 
 // ─── POST /api/resume/email-upload — n8n sends resume here ───────────────────
 app.post('/api/resume/email-upload', upload.single('resume_file'), async (req, res) => {
@@ -8251,14 +8311,11 @@ EDUCATION & CERTIFICATIONS
       }
     ];
 
-    initialHarvested.forEach(item => {
-      const existingIdx = (candidatesStore || []).findIndex(c => c && (c.id === item.id || (c.email && c.email.toLowerCase() === item.email.toLowerCase())));
-      if (existingIdx !== -1) {
-        candidatesStore[existingIdx] = { ...candidatesStore[existingIdx], ...item };
-      } else {
-        candidatesStore.unshift(item);
-      }
-    });
+    if (candidatesStore.length === 0) {
+      initialHarvested.forEach(item => {
+        candidatesStore.push(item);
+      });
+    }
 
   // Filter candidates strictly for this recruiter
   const scopedCandidates = (candidatesStore || []).filter(c => {
@@ -8286,11 +8343,39 @@ EDUCATION & CERTIFICATIONS
       sourceCategory = 'vendor_bench';
     }
 
-    // Match with suggested or active position
-    const targetJob = jobsStore.find(j => String(j.id) === String(c.targetReqId || c.reqId)) || jobsStore[0];
-    const matchAnalysis = calculateCandidateMatch(c.skills, targetJob);
+    const cleanName = (c.name && c.name !== 'Candidate' && c.name.trim() !== '') ? c.name : (c.extracted_profile?.name || (c.email ? c.email.split('@')[0] : 'Applicant'));
+    const cleanEmail = c.email || c.extracted_profile?.email || c.email_context?.sender_email || '';
+    const cleanSkills = (Array.isArray(c.skills) && c.skills.length > 0) ? c.skills : (c.extracted_profile?.skills || ['Java', 'SQL', 'Cloud']);
+    const cleanRole = (c.role && !String(c.role).includes('undefined') && c.role !== 'Senior Specialist') 
+      ? c.role 
+      : (c.extracted_profile?.role || (cleanSkills.length > 0 ? `${cleanSkills[0]} Specialist` : 'Software Engineer'));
 
-    const cleanRole = c.role && !String(c.role).includes('undefined') ? c.role : 'Senior Specialist';
+    // Match with suggested or active position
+    let targetJob = jobsStore.find(j => String(j.id).replace(/^J-/, '') === String(c.targetReqId || c.reqId || '').replace(/^J-/, ''));
+    let matchAnalysis;
+    if (targetJob) {
+      matchAnalysis = evaluateCandidateJobMatch({ ...c, role: cleanRole, skills: cleanSkills }, targetJob);
+    } else {
+      let bestJob = null;
+      let bestAnalysis = { matchScore: 0, matchingSkills: [], missingSkills: [] };
+      for (const j of jobsStore) {
+        const analysis = evaluateCandidateJobMatch({ ...c, role: cleanRole, skills: cleanSkills }, j);
+        if (analysis.matchScore > bestAnalysis.matchScore) {
+          bestAnalysis = analysis;
+          bestJob = j;
+        }
+      }
+      if (bestJob && bestAnalysis.matchScore >= 60) {
+        targetJob = bestJob;
+        matchAnalysis = bestAnalysis;
+      } else {
+        targetJob = jobsStore[0];
+        matchAnalysis = targetJob ? evaluateCandidateJobMatch({ ...c, role: cleanRole, skills: cleanSkills }, targetJob) : { matchScore: 50, matchingSkills: [], missingSkills: [] };
+      }
+    }
+
+    const cleanReqId = c.targetReqId ? String(c.targetReqId).replace(/^J-/, '') : (targetJob?.id ? String(targetJob.id).replace(/^J-/, '') : '159079');
+
     const cleanCurrentCo = c.currentCompany && !String(c.currentCompany).includes('undefined')
       ? c.currentCompany
       : `${cleanRole}, Enterprise Technology Partner`;
@@ -8300,16 +8385,19 @@ EDUCATION & CERTIFICATIONS
 
     return {
       ...c,
+      name: cleanName,
+      email: cleanEmail,
       role: cleanRole,
+      skills: cleanSkills,
       currentCompany: cleanCurrentCo,
       previousCompany: cleanPrevCo,
       sourceCategory,
       isSpamRecovery: sourceCategory === 'email_spam' || !!c.isSpamRecovery,
       matchScore: c.matchScore || matchAnalysis.matchScore,
-      targetReqId: c.targetReqId || c.reqId || targetJob?.id || '159079',
-      matchedJobTitle: c.matchedJobTitle || targetJob?.title || 'Java Developer III - 165504',
-      matchedJobClient: targetJob?.client || targetJob?.department || 'State Agency',
-      matchedJobRate: targetJob?.rate || targetJob?.payRate || '$75/hr',
+      targetReqId: cleanReqId,
+      matchedJobTitle: c.matchedJobTitle || targetJob?.title || 'Open Requisition',
+      matchedJobClient: c.matchedJobClient || targetJob?.client || targetJob?.department || 'State Agency',
+      matchedJobRate: c.matchedJobRate || targetJob?.rate || targetJob?.payRate || '$75/hr',
       matchingSkills: matchAnalysis.matchingSkills,
       missingSkills: matchAnalysis.missingSkills
     };
@@ -8398,7 +8486,8 @@ async function syncEmailResumesInternal(recruiterEmail = 'omkesh@coolsofttech.co
             matchScore: bestMatch.matchScore || 65,
             matchedJobTitle: hasReqFit ? bestJob.title : 'Talent Pool (No active requisition match)',
             matchedJobClient: hasReqFit ? (bestJob.client || bestJob.customer || 'Direct Client') : 'General Sourcing Pool',
-            matchedJobRate: hasReqFit ? (bestJob.budget || bestJob.rate || '$75/hr') : '$70/hr'
+            matchedJobRate: hasReqFit ? (bestJob.budget || bestJob.rate || '$75/hr') : '$70/hr',
+            resumeText: item.resumeText || ''
           };
         });
       }
@@ -8449,7 +8538,8 @@ async function syncEmailResumesInternal(recruiterEmail = 'omkesh@coolsofttech.co
         matchScore: item.matchScore,
         matchedJobTitle: item.matchedJobTitle,
         matchedJobClient: item.matchedJobClient,
-        matchedJobRate: item.matchedJobRate
+        matchedJobRate: item.matchedJobRate,
+        resumeText: item.resumeText || ''
       };
 
       candidatesStore.unshift(newCand);

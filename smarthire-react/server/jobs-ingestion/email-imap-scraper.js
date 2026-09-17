@@ -392,6 +392,29 @@ export async function scrapeResumesFromIMAP({
             });
           }
 
+          // Extract and clean email body text to use as real candidate resume text
+          let cleanBody = '';
+          const headerEndMatch = msgChunk.search(/\r?\n\r?\n/);
+          if (headerEndMatch !== -1) {
+            cleanBody = msgChunk.slice(headerEndMatch).trim();
+          } else {
+            cleanBody = msgChunk;
+          }
+          // Clean HTML tags & MIME artifacts
+          cleanBody = cleanBody
+            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/&nbsp;/gi, ' ')
+            .replace(/&amp;/gi, '&')
+            .replace(/&lt;/gi, '<')
+            .replace(/&gt;/gi, '>')
+            .replace(/=\r?\n/g, '')
+            .replace(/\r\n/g, '\n')
+            .replace(/[ \t]+/g, ' ')
+            .replace(/\n{3,}/g, '\n\n')
+            .trim();
+
           results.push({
             name: senderName,
             email: senderEmail,
@@ -403,7 +426,8 @@ export async function scrapeResumesFromIMAP({
             folder: folder === 'Bulk' ? 'SPAM' : folder,
             uid,
             isSpamRecovery: folder === 'Bulk',
-            rawPreview: msgChunk.slice(0, 500)
+            rawPreview: msgChunk.slice(0, 500),
+            resumeText: cleanBody && cleanBody.length > 60 ? cleanBody : ''
           });
         }
       }
