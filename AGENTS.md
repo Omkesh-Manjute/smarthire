@@ -31,6 +31,35 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-18 — Document Auto-Rotation, Auto-Generated Interaction Notes, Refined AI Match Engine & Square Form Inputs
+- **Document Viewer Auto-Rotation & Manual Control (`CandidateDetailViewModal.jsx`)**:
+  - Added `imgRotation` per-document state with automatic reset when switching doc tabs.
+  - Implemented `onLoad` auto-detection for driver license (`dlFront`/`dlBack`) photos: checks `naturalHeight > naturalWidth * 1.15` (vertical orientation of a landscape ID card) and automatically rotates 90° upright.
+  - Added interactive `↻ Rotate (N°)` toolbar button allowing manual 90° incremental rotation with active highlight pill.
+  - Integrated dynamic `transform: rotate(Ndeg)` with smooth 0.3s CSS transition and auto-adjusting `maxWidth`/`maxHeight` for rotated view.
+- **Auto-Generated Interaction Notes on Profile Open (`CandidateDetailViewModal.jsx`)**:
+  - Automatically generates an initial screening summary note if a candidate profile has 0 notes recorded.
+  - Evaluates candidate profiled skills vs active requisition required skills, detects state/government/public sector client experience, flags skill gaps, and includes overall AI match score.
+  - Distinctly tags auto-generated notes with a clean `🤖 Auto` badge in the interaction notes log, preserving standard presentation for manual recruiter notes.
+- **100-Point Refined AI Match Scoring & "Why Match" Reason Breakdown (`CandidateDetailViewModal.jsx`, `AiMatchingCandidatesModal.jsx`)**:
+  - Replaced arbitrary/mock scoring with an end-to-end multi-criteria algorithmic evaluation (0–100 pts):
+    1. Title Match (0–20 pts): Exact, strong keyword alignment, or domain match.
+    2. Required Skills Match (0–45 pts): Proportional matching of verified candidate skills against JD requirements.
+    3. Bonus / Nice-to-Have Skills (0–15 pts): Evaluates industry stack tools (Agile, JIRA, SQL, Power BI, AWS, Azure, Python).
+    4. State & Government Experience (0–15 pts): Analyzes past projects and resume for state agencies, county, DCF, HHS, DMV, and public sector contracts.
+    5. Experience Adequacy (0–5 pts): Compares total years against JD specifications.
+  - `CandidateDetailViewModal.jsx` (AI Match Tab): Displays interactive score progress bar, 5-pill point breakdown, color-coded "Why This Match?" reason cards (✅ good, ⚠️ warning/skills gap, ℹ️ info), and verified vs missing skill pill groups.
+  - `AiMatchingCandidatesModal.jsx`: Calculates real dynamic scores for candidate recommendation cards, displays "Why match" inline tags, and highlights candidate `🏛️ Govt Exp` badges.
+- **Square Input Fields & Selects (`CandidateDetailViewModal.jsx`)**:
+  - Set explicit `borderRadius: '0'` on candidate name (first/last), email, pay rate (from/to), rate type dropdown, and available date inputs in the header bar.
+- **Pre-Deployment & Verification**:
+  - AST Scope Checker: 0 undeclared variables across all components.
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings (built in 2.62s).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 2.19s).
+  - Git committed (`3864529`).
+  - Uploaded `dist.tar.gz` to AWS Lightsail server (`34.194.119.199`), extracted to both `/home/ubuntu/smarthire/dist/` and `/home/ubuntu/smarthire/smarthire-react/dist/`, restarted PM2 `smarthire-ats`.
+  - Verified HTTP 200 OK and active bundle `index-C51pgk62.js` on `https://smarthireus.com/jobs`.
+
 ### 2026-09-17 — Wellfound Page 1 & Page 2 Separation, Technical Specs Scroll Removal, Multi-Column Footer & Full SEO Suite
 - **Page 1 vs Page 2 Separation (`WellfoundCareersView.jsx`, `PublicCareers.jsx`)**:
   - **Page 1 (Default `/jobs` Front Page, `!selectedJobId`)**:

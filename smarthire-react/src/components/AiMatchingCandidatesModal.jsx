@@ -220,23 +220,56 @@ export default function AiMatchingCandidatesModal({
                 matchingCandidates.map((cand, idx) => {
                   const isAssigned = assignedMap[cand.id]
 
-                  // ── Real AI Multi-Criteria Scoring ──
+                  // ── Real AI Multi-Criteria Scoring & Domain Check ──
+                  const DOMAIN_KW = {
+                    qa_sdet: ['qa', 'sdet', 'selenium', 'cypress', 'playwright', 'testing', 'automation', 'testng', 'cucumber', 'test lead'],
+                    java_backend: ['java', 'spring boot', 'spring', 'microservices', 'hibernate', 'j2ee', 'kafka'],
+                    dotnet_backend: ['.net', 'c#', 'asp.net', 'dotnet'],
+                    python_backend: ['python', 'django', 'fastapi', 'flask'],
+                    frontend: ['react', 'angular', 'vue', 'frontend', 'ui developer', 'javascript', 'typescript', 'next.js', 'css'],
+                    data_analytics: ['data analyst', 'data engineer', 'power bi', 'tableau', 'sql', 'etl', 'data governance', 'data warehouse', 'snowflake', 'collibra'],
+                    cloud_devops: ['devops', 'cloud', 'aws', 'azure', 'gcp', 'kubernetes', 'docker', 'terraform', 'ci/cd'],
+                    network_security: ['network security', 'network engineer', 'cisco', 'palo alto', 'firewall', 'routing', 'switching', 'cybersecurity', 'vpn'],
+                    ba_pm: ['business analyst', 'product owner', 'project manager', 'program director', 'scrum master', 'agile', 'pmp', 'brd', 'user stories'],
+                    enterprise_erp: ['salesforce', 'sap', 'workday', 'servicenow', 'crm'],
+                    legal_public: ['attorney', 'legal', 'compliance', 'regulatory', 'public health', 'counsel']
+                  }
+
+                  const classify = (title = '', skills = [], text = '') => {
+                    const combined = `${title} ${Array.isArray(skills) ? skills.join(' ') : skills} ${text}`.toLowerCase()
+                    let best = 'general'
+                    let maxScore = 0
+                    for (const [dom, kws] of Object.entries(DOMAIN_KW)) {
+                      let score = 0
+                      for (const kw of kws) {
+                        if (title.toLowerCase().includes(kw)) score += 6
+                        if (combined.includes(kw)) score += 2
+                      }
+                      if (score > maxScore) { maxScore = score; best = dom }
+                    }
+                    return best
+                  }
+
                   const candSkillNames = (Array.isArray(cand.skills) ? cand.skills : (cand.skills || '').split(',').map(s => s.trim())).map(s => s.toLowerCase())
                   const reqSkills = Array.isArray(job.skills) ? job.skills : (typeof job.skills === 'string' ? job.skills.split(',').map(s => s.trim()) : [])
                   const reqTitle = (job.title || '').toLowerCase()
                   const candTitle = (cand.fullRole || cand.role || '').toLowerCase()
+
+                  const candDomain = cand.candDomain || classify(candTitle, candSkillNames, cand.resumeText || '')
+                  const jobDomain = classify(reqTitle, reqSkills, job.description || '')
+                  const isDomainMatch = candDomain === jobDomain || candDomain === 'general' || jobDomain === 'general'
 
                   // 1. Title match (0-20)
                   let titlePts = 0
                   if (reqTitle && candTitle) {
                     if (candTitle === reqTitle) { titlePts = 20 }
                     else {
-                      const reqWords = reqTitle.split(/\s+/).filter(w => w.length > 3)
+                      const reqWords = reqTitle.split(/\s+/).filter(w => w.length > 3 && !['senior', 'lead', 'specialist', 'junior'].includes(w))
                       const matchedWords = reqWords.filter(w => candTitle.includes(w))
                       const ratio = reqWords.length > 0 ? matchedWords.length / reqWords.length : 0
                       titlePts = ratio >= 0.75 ? 16 : ratio >= 0.4 ? 10 : 4
                     }
-                  } else { titlePts = 10 }
+                  } else { titlePts = isDomainMatch ? 10 : 4 }
 
                   // 2. Skills match (0-45)
                   const matchedReqSkills = reqSkills.length > 0
@@ -244,7 +277,7 @@ export default function AiMatchingCandidatesModal({
                     : candSkillNames.slice(0, 5).map(s => s)
                   const skillPts = reqSkills.length > 0
                     ? Math.round((matchedReqSkills.length / reqSkills.length) * 45)
-                    : 35
+                    : (isDomainMatch ? 25 : 10)
 
                   // 3. Nice-to-have bonus (0-15)
                   const niceKeywords = ['agile', 'scrum', 'jira', 'sql', 'power bi', 'aws', 'azure', 'python', 'sharepoint']
@@ -263,16 +296,20 @@ export default function AiMatchingCandidatesModal({
                   const reqExp = reqExpMatch ? parseInt(reqExpMatch[1]) : 5
                   const expPts = candExp >= reqExp ? 5 : candExp >= reqExp - 2 ? 3 : 1
 
-                  const rawScore = titlePts + skillPts + bonusPts + govtPts + expPts
-                  const fitScore = Math.min(99, Math.max(55, rawScore))
+                  let rawScore = (isDomainMatch ? 20 : 0) + titlePts + skillPts + bonusPts + govtPts + expPts
+                  if (!isDomainMatch) rawScore = Math.min(42, rawScore)
+
+                  const fitScore = cand.matchScore ? cand.matchScore : Math.min(99, Math.max(30, rawScore))
 
                   // Build brief why-reasons
                   const whyReasons = []
+                  if (isDomainMatch && candDomain !== 'general') whyReasons.push({ t: 'good', r: `Domain match: ${candDomain.replace('_', ' ').toUpperCase()}` })
                   if (titlePts >= 16) whyReasons.push({ t: 'good', r: `Title match: "${cand.fullRole || cand.role}"` })
                   else if (titlePts >= 10) whyReasons.push({ t: 'info', r: `Partial title match` })
                   if (matchedReqSkills.length > 0) whyReasons.push({ t: 'good', r: `${matchedReqSkills.length}/${reqSkills.length || '?'} required skills matched` })
                   if (govtPts > 0) whyReasons.push({ t: 'good', r: 'State/government experience detected' })
                   if (bonusPts > 0) whyReasons.push({ t: 'info', r: `${bonusMatched.length} bonus skills (${bonusMatched.slice(0, 3).join(', ')})` })
+                  if (!isDomainMatch) whyReasons.push({ t: 'warn', r: `Domain divergence (${candDomain} vs ${jobDomain})` })
 
                   const scoreColor = fitScore >= 90 ? '#15803d' : fitScore >= 80 ? '#16a34a' : fitScore >= 70 ? '#0369a1' : '#92400e'
                   const scoreLabel = fitScore >= 90 ? 'Excellent' : fitScore >= 80 ? 'Strong' : fitScore >= 70 ? 'Good' : 'Moderate'

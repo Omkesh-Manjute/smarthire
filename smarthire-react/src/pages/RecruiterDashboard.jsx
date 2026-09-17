@@ -2108,12 +2108,48 @@ We are currently reviewing candidate profiles and scheduling immediate interview
   // ─── AI PROACTIVE CANDIDATE MATCHMAKER & RECRUITER ALERT ENGINE ───
   const runAiMatchForJob = (jobObj, options = { notifyRecruiter: true }) => {
     if (!jobObj) return []
-    const jSkills = Array.isArray(jobObj.skills) && jobObj.skills.length > 0
-      ? jobObj.skills.map(s => String(s).toLowerCase().trim())
-      : ['cisco', 'network', 'routing', 'security', 'cloud', 'aws', 'python', 'sql']
     const jTitle = (jobObj.title || '').toLowerCase()
     const jLocation = (jobObj.location || '').toLowerCase()
     const jCleanId = String(jobObj.id || '158938').replace('J-', '')
+
+    // Extract real job skills
+    const jSkills = (Array.isArray(jobObj.skills) && jobObj.skills.length > 0)
+      ? jobObj.skills.map(s => String(s).toLowerCase().trim())
+      : (typeof jobObj.skills === 'string' && jobObj.skills.trim())
+        ? jobObj.skills.split(',').map(s => s.toLowerCase().trim()).filter(Boolean)
+        : []
+
+    // Technical domain taxonomy
+    const DOMAIN_KW = {
+      qa_sdet: ['qa', 'sdet', 'selenium', 'cypress', 'playwright', 'testing', 'automation', 'testng', 'cucumber', 'test lead'],
+      java_backend: ['java', 'spring boot', 'spring', 'microservices', 'hibernate', 'j2ee', 'kafka'],
+      dotnet_backend: ['.net', 'c#', 'asp.net', 'dotnet'],
+      python_backend: ['python', 'django', 'fastapi', 'flask'],
+      frontend: ['react', 'angular', 'vue', 'frontend', 'ui developer', 'javascript', 'typescript', 'next.js', 'css'],
+      data_analytics: ['data analyst', 'data engineer', 'power bi', 'tableau', 'sql', 'etl', 'data governance', 'data warehouse', 'snowflake', 'collibra'],
+      cloud_devops: ['devops', 'cloud', 'aws', 'azure', 'gcp', 'kubernetes', 'docker', 'terraform', 'ci/cd'],
+      network_security: ['network security', 'network engineer', 'cisco', 'palo alto', 'firewall', 'routing', 'switching', 'cybersecurity', 'vpn'],
+      ba_pm: ['business analyst', 'product owner', 'project manager', 'program director', 'scrum master', 'agile', 'pmp', 'brd', 'user stories'],
+      enterprise_erp: ['salesforce', 'sap', 'workday', 'servicenow', 'crm'],
+      legal_public: ['attorney', 'legal', 'compliance', 'regulatory', 'public health', 'counsel']
+    }
+
+    const classify = (title = '', skills = [], text = '') => {
+      const combined = `${title} ${Array.isArray(skills) ? skills.join(' ') : skills} ${text}`.toLowerCase()
+      let best = 'general'
+      let maxScore = 0
+      for (const [dom, kws] of Object.entries(DOMAIN_KW)) {
+        let score = 0
+        for (const kw of kws) {
+          if (title.toLowerCase().includes(kw)) score += 6
+          if (combined.includes(kw)) score += 2
+        }
+        if (score > maxScore) { maxScore = score; best = dom }
+      }
+      return best
+    }
+
+    const jobDomain = classify(jTitle, jSkills, jobObj.description || '')
 
     // Score candidates from the candidate pool (scoped to current user if employee)
     const poolToScore = isEmployee ? filteredCandidates : candidates
@@ -2121,33 +2157,59 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       const cSkills = Array.isArray(cand.skills)
         ? cand.skills.map(s => String(s).toLowerCase().trim())
         : String(cand.skills || '').toLowerCase().split(',').map(s => s.trim())
-      const cRole = (cand.fullRole || cand.role || '').toLowerCase()
+      const cRole = (cand.fullRole || cand.role || cand.name || '').toLowerCase()
       const cLoc = (cand.location || cand.city || '').toLowerCase()
+      const cText = `${cRole} ${cSkills.join(' ')} ${cand.resumeText || ''}`.toLowerCase()
 
-      // Skill overlap match
-      const skillMatches = jSkills.filter(js =>
+      const candDomain = classify(cRole, cSkills, cand.resumeText || '')
+      const isDomainMatch = candDomain === jobDomain || candDomain === 'general' || jobDomain === 'general'
+
+      // 1. Domain alignment (0 or 25 pts)
+      const domainPts = isDomainMatch ? 25 : 0
+
+      // 2. Required skills match (0 to 45 pts)
+      const effectiveJobSkills = jSkills.length > 0 ? jSkills : (DOMAIN_KW[jobDomain]?.slice(0, 5) || ['it', 'software'])
+      const matchedSkills = effectiveJobSkills.filter(js =>
         cSkills.some(cs => cs.includes(js) || js.includes(cs)) ||
         cRole.includes(js) ||
-        (cand.resumeText && cand.resumeText.toLowerCase().includes(js))
+        cText.includes(js)
       )
-      const skillRatio = jSkills.length > 0 ? (skillMatches.length / jSkills.length) : 0.65
+      const skillPts = Math.min(45, Math.round((matchedSkills.length / Math.max(1, effectiveJobSkills.length)) * 45))
 
-      // Role title match
-      const roleMatch = jTitle.split(' ').some(w => w.length > 3 && cRole.includes(w)) ? 15 : 0
+      // 3. Title overlap (0 to 20 pts)
+      const titleWords = jTitle.split(/[\s,/-]+/).filter(w => w.length > 3 && !['lead', 'senior', 'junior', 'developer', 'engineer', 'analyst', 'specialist'].includes(w))
+      let titlePts = 0
+      if (titleWords.length > 0) {
+        const hits = titleWords.filter(w => cRole.includes(w))
+        titlePts = Math.round((hits.length / titleWords.length) * 20)
+      } else {
+        titlePts = isDomainMatch ? 12 : 4
+      }
 
-      // Location match
-      const locMatch = jLocation && cLoc && (jLocation.includes(cLoc) || cLoc.includes(jLocation.slice(0, 3))) ? 10 : 5
+      // 4. Bonus & Location (0 to 10 pts)
+      let bonusPts = 0
+      if (jLocation && cLoc && (jLocation.includes(cLoc) || cLoc.includes(jLocation.slice(0, 3)))) bonusPts += 5
+      if (cText.includes('state of') || cText.includes('department of') || cText.includes('government') || cText.includes('agile')) bonusPts += 5
 
-      const calculatedScore = Math.min(98, Math.max(68, Math.round(skillRatio * 70 + roleMatch + locMatch)))
+      let rawTotal = domainPts + skillPts + titlePts + bonusPts
+
+      // Cross-domain mismatch ceiling (e.g. QA applicant evaluated against Java Dev)
+      if (!isDomainMatch) {
+        rawTotal = Math.min(42, rawTotal)
+      }
+
+      const calculatedScore = Math.min(98, Math.max(25, rawTotal))
       return {
         ...cand,
         matchScore: calculatedScore,
-        matchedSkillsList: skillMatches
+        matchedSkillsList: matchedSkills,
+        candDomain,
+        isDomainMatch
       }
     })
 
-    // Filter >= 75% match
-    const matches = scored.filter(c => c.matchScore >= 75).sort((a, b) => b.matchScore - a.matchScore)
+    // Filter >= 70% match and domain-aligned
+    const matches = scored.filter(c => c.matchScore >= 70 && c.isDomainMatch).sort((a, b) => b.matchScore - a.matchScore)
 
     // Notify the recruiters who sourced each candidate
     if (options.notifyRecruiter && matches.length > 0) {

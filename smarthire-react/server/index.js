@@ -7212,7 +7212,7 @@ const envEmailPass = process.env.EMAIL_PASS || process.env.SMTP_PASS || process.
 const envEmailHost = process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.bizmail.yahoo.com';
 const envEmailPort = parseInt(process.env.EMAIL_PORT || process.env.SMTP_PORT || '465');
 const envEmailFrom = process.env.EMAIL_FROM || `Omkesh Manjute <${envEmailUser}>`;
-const envImapHost = process.env.IMAP_HOST || 'imap.bizmail.yahoo.com';
+const envImapHost = (process.env.IMAP_HOST && !process.env.IMAP_HOST.includes('bizmail')) ? process.env.IMAP_HOST : 'imap.mail.yahoo.com';
 const envImapPort = parseInt(process.env.IMAP_PORT || '993');
 
 if (envEmailPass) {
@@ -7302,6 +7302,21 @@ app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
       text: (body || '') + emailSignature,
       html: html ? html + (cfg.signature ? `<br><br>--<br>${cfg.signature}` : '') : undefined
     });
+
+    // Automatically append to Yahoo IMAP "Sent" folder in background so it appears in Yahoo webmail
+    import('./jobs-ingestion/email-imap-scraper.js').then(({ appendEmailToSentFolder }) => {
+      appendEmailToSentFolder({
+        host: cfg.imapHost || 'imap.mail.yahoo.com',
+        port: parseInt(cfg.imapPort) || 993,
+        user: fromEmail,
+        password: cleanedPass,
+        from: `"${cfg.displayName || 'SmartHire Recruiter'}" <${fromEmail}>`,
+        to,
+        subject,
+        text: (body || '') + emailSignature,
+        html: html ? html + (cfg.signature ? `<br><br>--<br>${cfg.signature}` : '') : undefined
+      }).catch(e => console.warn('Background append to Sent notice:', e.message));
+    }).catch(() => {});
 
     res.json({ success: true, message: `Email sent successfully from ${cfg.fromEmail}` });
   } catch(err) {
@@ -7491,36 +7506,135 @@ const vendorSubmittalsStore = [
   }
 ];
 
-// Helper: Calculate AI skill match score between candidate skills and job requirements
-function calculateCandidateMatch(candSkills = [], job) {
-  if (!job) return { matchScore: 75, matchingSkills: [], missingSkills: [] };
-  
-  const normCand = (Array.isArray(candSkills) ? candSkills : String(candSkills).split(','))
+// ═══════════════════════════════════════════════════════════════════════════════
+// SMART AI DOMAIN CLASSIFIER & 100-POINT REQUISITION MATCHMAKER
+// ═══════════════════════════════════════════════════════════════════════════════
+const DOMAIN_TAXONOMY = {
+  qa_sdet: ['qa', 'sdet', 'selenium', 'cypress', 'playwright', 'testing', 'test engineer', 'automation', 'testng', 'cucumber', 'manual testing', 'qa lead'],
+  java_backend: ['java', 'spring boot', 'spring', 'microservices', 'hibernate', 'j2ee', 'jvm', 'kafka'],
+  dotnet_backend: ['.net', 'c#', 'asp.net', 'dotnet', 'entity framework'],
+  python_backend: ['python', 'django', 'fastapi', 'flask', 'pandas', 'numpy'],
+  frontend: ['react', 'angular', 'vue', 'frontend', 'front-end', 'ui developer', 'javascript', 'typescript', 'next.js', 'css', 'html'],
+  data_analytics: ['data analyst', 'data engineer', 'power bi', 'tableau', 'sql', 'etl', 'data governance', 'data warehouse', 'snowflake', 'databricks', 'collibra', 'informatica', 'data stage', 'dax'],
+  cloud_devops: ['devops', 'cloud engineer', 'aws', 'azure', 'gcp', 'kubernetes', 'docker', 'terraform', 'ci/cd', 'sre', 'ansible'],
+  network_security: ['network security', 'network engineer', 'cisco', 'palo alto', 'firewall', 'routing', 'switching', 'cybersecurity', 'infosec', 'vpn', 'asa'],
+  ba_pm: ['business analyst', 'product manager', 'product owner', 'project manager', 'program director', 'program manager', 'scrum master', 'agile', 'pmp', 'brd', 'user stories', 'uat'],
+  enterprise_erp: ['salesforce', 'sap', 'workday', 'servicenow', 'peoplesoft', 'crm'],
+  legal_public: ['attorney', 'legal', 'compliance', 'regulatory', 'public health', 'counsel', 'lawyer', 'paralegal']
+};
+
+function classifyTechnicalDomain(title = '', skills = [], text = '') {
+  const combined = `${title} ${Array.isArray(skills) ? skills.join(' ') : skills} ${text}`.toLowerCase();
+  let bestDomain = 'general_it';
+  let maxScore = 0;
+
+  for (const [domain, keywords] of Object.entries(DOMAIN_TAXONOMY)) {
+    let score = 0;
+    for (const kw of keywords) {
+      if (title.toLowerCase().includes(kw)) score += 6; // Role title keyword carries heaviest weight
+      if (combined.includes(kw)) score += 2;
+    }
+    if (score > maxScore) {
+      maxScore = score;
+      bestDomain = domain;
+    }
+  }
+  return bestDomain;
+}
+
+function evaluateCandidateJobMatch(candidate, job) {
+  if (!job) return { matchScore: 40, matchingSkills: [], missingSkills: [], isDomainMatch: false };
+
+  const candTitle = (candidate.role || candidate.fullRole || candidate.name || '').toLowerCase();
+  const candSkills = (Array.isArray(candidate.skills) ? candidate.skills : String(candidate.skills || '').split(','))
     .map(s => String(s).trim().toLowerCase())
     .filter(Boolean);
+  const candText = `${candTitle} ${candSkills.join(' ')} ${candidate.resumeText || ''}`.toLowerCase();
 
+  const jobTitle = (job.title || '').toLowerCase();
   const jobSkills = (Array.isArray(job.skills) ? job.skills : (job.skills ? String(job.skills).split(',') : []))
     .map(s => String(s).trim())
     .filter(Boolean);
+  const jobText = `${jobTitle} ${jobSkills.join(' ')} ${job.description || ''}`.toLowerCase();
 
-  if (jobSkills.length === 0) {
-    return { matchScore: 85, matchingSkills: normCand.slice(0, 3), missingSkills: [] };
+  const candDomain = classifyTechnicalDomain(candTitle, candSkills, candidate.resumeText);
+  const jobDomain = classifyTechnicalDomain(jobTitle, jobSkills, job.description);
+
+  // Cross-domain mismatch check (e.g. QA candidate vs Java Dev job, or Network Engineer vs Business Analyst)
+  const isDomainMatch = candDomain === jobDomain || candDomain === 'general_it' || jobDomain === 'general_it';
+
+  // 1. Domain Match Points (0 or 25)
+  const domainPts = isDomainMatch ? 25 : 0;
+
+  // 2. Core Requisition Skills Match (0 to 45 pts)
+  const matchingSkills = [];
+  const missingSkills = [];
+
+  if (jobSkills.length > 0) {
+    jobSkills.forEach(reqSkill => {
+      const rLower = reqSkill.toLowerCase().trim();
+      const has = candSkills.some(cs => cs.includes(rLower) || rLower.includes(cs)) || candText.includes(rLower);
+      if (has) matchingSkills.push(reqSkill);
+      else missingSkills.push(reqSkill);
+    });
+  } else {
+    const domainKws = DOMAIN_TAXONOMY[jobDomain] || [];
+    domainKws.slice(0, 5).forEach(kw => {
+      if (candText.includes(kw)) matchingSkills.push(kw);
+      else missingSkills.push(kw);
+    });
   }
 
-  const matching = [];
-  const missing = [];
+  const denom = jobSkills.length > 0 ? jobSkills.length : 5;
+  const skillPts = Math.min(45, Math.round((matchingSkills.length / Math.max(1, denom)) * 45));
 
-  jobSkills.forEach(reqSkill => {
-    const rLower = reqSkill.toLowerCase();
-    const has = normCand.some(cSkill => cSkill.includes(rLower) || rLower.includes(cSkill));
-    if (has) matching.push(reqSkill);
-    else missing.push(reqSkill);
-  });
+  // 3. Title Overlap (0 to 20 pts)
+  let titlePts = 0;
+  const jobWords = jobTitle.split(/[\s,/-]+/).filter(w => w.length > 3 && !['lead', 'senior', 'junior', 'developer', 'engineer', 'analyst'].includes(w));
+  if (jobWords.length > 0) {
+    const matchedWords = jobWords.filter(w => candTitle.includes(w));
+    titlePts = Math.round((matchedWords.length / jobWords.length) * 20);
+  } else {
+    titlePts = isDomainMatch ? 12 : 4;
+  }
 
-  const ratio = matching.length / jobSkills.length;
-  const matchScore = Math.min(98, Math.max(60, Math.round(55 + (ratio * 43))));
+  // 4. Bonus & Govt Experience (0 to 10 pts)
+  let bonusPts = 0;
+  if (candText.includes('state of') || candText.includes('department of') || candText.includes('county') || candText.includes('government')) {
+    bonusPts += 5;
+  }
+  if (candText.includes('agile') || candText.includes('scrum') || candText.includes('jira') || candText.includes('sql')) {
+    bonusPts += 5;
+  }
 
-  return { matchScore, matchingSkills: matching, missingSkills: missing };
+  let totalScore = domainPts + skillPts + titlePts + bonusPts;
+
+  // Strict domain ceiling: If domains conflict (e.g. QA vs Java, or BA vs Network), ceiling at 42%
+  if (!isDomainMatch) {
+    totalScore = Math.min(42, totalScore);
+  }
+
+  const finalScore = Math.min(98, Math.max(25, totalScore));
+
+  return {
+    matchScore: finalScore,
+    matchingSkills,
+    missingSkills,
+    candDomain,
+    jobDomain,
+    isDomainMatch,
+    isHighFit: finalScore >= 70
+  };
+}
+
+// Backwards-compatible wrapper
+function calculateCandidateMatch(candSkills = [], job) {
+  const result = evaluateCandidateJobMatch({ skills: candSkills }, job);
+  return {
+    matchScore: result.matchScore,
+    matchingSkills: result.matchingSkills,
+    missingSkills: result.missingSkills
+  };
 }
 
 // GET /api/recruiter/email-streams
@@ -8224,327 +8338,176 @@ EDUCATION & CERTIFICATIONS
   });
 });
 
-// POST /api/recruiter/sync-email-resumes
-// Scans multi-folders (INBOX + SPAM / JUNK) and matches to active requisitions
-app.post('/api/recruiter/sync-email-resumes', express.json(), async (req, res) => {
-  const { recruiterEmail, scanFolders = ['INBOX', 'SPAM'], sendAutoAck = false } = req.body;
+// ═══════════════════════════════════════════════════════════════════════════════
+// CORE RESUME HARVESTER: INBOX & SPAM (BULK) SYNC WITH BEST-FIT AI MATCHING
+// ═══════════════════════════════════════════════════════════════════════════════
+async function syncEmailResumesInternal(recruiterEmail = 'omkesh@coolsofttech.com', scanFolders = ['INBOX', 'SPAM'], sendAutoAck = false) {
   const cfg = emailConfigsStore[recruiterEmail] || emailConfigsStore['omkesh@coolsofttech.com'] || {};
+  const activeJobs = jobsStore.filter(j => j && j.status !== 'Closed');
+  let incomingHarvestedResumes = [];
 
-  try {
-    const activeJobs = jobsStore.slice(0, 15);
-    let incomingHarvestedResumes = [];
+  const imapHost = (cfg.imapHost && !cfg.imapHost.includes('bizmail')) 
+    ? cfg.imapHost 
+    : ((process.env.IMAP_HOST && !process.env.IMAP_HOST.includes('bizmail')) ? process.env.IMAP_HOST : 'imap.mail.yahoo.com');
+  const imapPort = parseInt(cfg.imapPort || process.env.IMAP_PORT || '993');
+  const imapUser = cfg.fromEmail || recruiterEmail || process.env.EMAIL_USER || 'omkesh@coolsofttech.com';
+  const imapPass = (cfg.appPassword || process.env.EMAIL_PASS || process.env.IMAP_PASS || '').replace(/\s+/g, '');
 
-    // Attempt real live IMAP scan if credentials available
-    const imapHost = cfg.imapHost || process.env.IMAP_HOST || 'imap.bizmail.yahoo.com';
-    const imapPort = parseInt(cfg.imapPort || process.env.IMAP_PORT || '993');
-    const imapUser = cfg.fromEmail || recruiterEmail || process.env.EMAIL_USER || 'omkesh@coolsofttech.com';
-    const imapPass = (cfg.appPassword || process.env.EMAIL_PASS || process.env.IMAP_PASS || '').replace(/\s+/g, '');
+  if (imapPass) {
+    try {
+      const { scrapeResumesFromIMAP } = await import('./jobs-ingestion/email-imap-scraper.js');
+      const liveEmails = await scrapeResumesFromIMAP({
+        host: imapHost,
+        port: imapPort,
+        user: imapUser,
+        password: imapPass,
+        folders: scanFolders,
+        maxEmails: 35,
+        markAsRead: true // Automatically marks processed emails as READ in Yahoo Mail!
+      });
 
-    if (imapPass) {
-      try {
-        const { scrapeResumesFromIMAP } = await import('./jobs-ingestion/email-imap-scraper.js');
-        const liveEmails = await scrapeResumesFromIMAP({
-          host: imapHost,
-          port: imapPort,
-          user: imapUser,
-          password: imapPass,
-          folders: scanFolders,
-          maxEmails: 25
+      if (Array.isArray(liveEmails) && liveEmails.length > 0) {
+        incomingHarvestedResumes = liveEmails.map((item) => {
+          // Calculate true BEST-FIT job among all active client requisitions
+          let bestJob = null;
+          let bestMatch = { matchScore: 0, matchingSkills: [] };
+
+          for (const j of activeJobs) {
+            const scoreObj = evaluateCandidateJobMatch(item, j);
+            if (scoreObj.matchScore > bestMatch.matchScore) {
+              bestMatch = scoreObj;
+              bestJob = j;
+            }
+          }
+
+          const hasReqFit = bestMatch.matchScore >= 65 && bestJob;
+
+          return {
+            name: item.name || 'Candidate',
+            email: item.email,
+            phone: item.phone || '+1 (555) 010-0000',
+            role: item.role || (hasReqFit ? bestJob.title : 'IT Specialist'),
+            location: 'Remote / US',
+            skills: (item.skills && item.skills.length > 0) ? item.skills : (hasReqFit ? bestJob.skills : ['Java', 'SQL', 'Cloud']),
+            experience: '5+ Years',
+            source: item.isSpamRecovery ? `Yahoo Spam Folder (${item.name || item.email})` : `Yahoo Inbox (${item.name || item.email})`,
+            sourceCategory: item.isSpamRecovery ? 'email_spam' : 'email_inbox',
+            isSpamRecovery: !!item.isSpamRecovery,
+            folder: item.folder || (item.isSpamRecovery ? 'SPAM' : 'INBOX'),
+            suggestedReqId: hasReqFit ? String(bestJob.id).replace('J-', '') : null,
+            matchScore: bestMatch.matchScore || 65,
+            matchedJobTitle: hasReqFit ? bestJob.title : 'Talent Pool (No active requisition match)',
+            matchedJobClient: hasReqFit ? (bestJob.client || bestJob.customer || 'Direct Client') : 'General Sourcing Pool',
+            matchedJobRate: hasReqFit ? (bestJob.budget || bestJob.rate || '$75/hr') : '$70/hr'
+          };
         });
-
-        if (Array.isArray(liveEmails) && liveEmails.length > 0) {
-          incomingHarvestedResumes = liveEmails.map((item, idx) => {
-            const matchedJob = activeJobs[idx % activeJobs.length] || activeJobs[0];
-            return {
-              name: item.name || 'Candidate',
-              email: item.email,
-              phone: item.phone || '+1 (555) 010-0000',
-              role: matchedJob ? matchedJob.title : 'Software Developer',
-              location: 'Remote / US',
-              skills: matchedJob?.skills || ['Java', 'SQL', 'Cloud'],
-              experience: '5+ Years',
-              source: `Live Email Inbox (${item.subject || imapUser})`,
-              sourceCategory: item.folder === 'SPAM' ? 'email_spam' : 'email_inbox',
-              isSpamRecovery: item.folder === 'SPAM',
-              folder: item.folder || 'INBOX',
-              suggestedReqId: matchedJob?.id ? String(matchedJob.id).replace('J-', '') : '158997',
-              matchScore: 90 + Math.floor(Math.random() * 8)
-            };
-          });
-        }
-      } catch (imapErr) {
-        console.warn('⚠️ Real IMAP scan notice:', imapErr.message);
       }
+    } catch (imapErr) {
+      console.warn('⚠️ Real IMAP scan notice:', imapErr.message);
     }
-
-    if (incomingHarvestedResumes.length === 0) {
-      incomingHarvestedResumes = [
-      {
-        name: 'Suresh Kumar Reddy',
-        email: 'suresh.reddy@techconsulting.io',
-        phone: '+1 (408) 555-0182',
-        role: 'Senior Java / Spring Boot Developer',
-        location: 'Madison, WI',
-        skills: ['Java', 'Spring Boot', 'Microservices', 'React', 'SQL', 'AWS'],
-        experience: '9+ Years',
-        source: `Email Inbox (${cfg?.fromEmail || recruiterEmail || 'Recruiter Email'})`,
-        sourceCategory: 'email_inbox',
-        isSpamRecovery: false,
-        folder: 'INBOX',
-        suggestedReqId: '159079', // Matches Java Developer III - 165504
-        matchScore: 95
-      },
-      {
-        name: 'Ananya Sharma',
-        email: 'ananya.sharma.data@cloudmail.com',
-        phone: '+1 (804) 555-0199',
-        role: 'Data Governance & SQL Analyst',
-        location: 'Richmond, VA',
-        skills: ['Data Governance', 'SQL', 'Data Warehouse', 'Python', 'Tableau', 'CDC'],
-        experience: '7+ Years',
-        source: `Email Inbox (${cfg?.fromEmail || recruiterEmail || 'Recruiter Email'})`,
-        sourceCategory: 'email_inbox',
-        isSpamRecovery: false,
-        folder: 'INBOX',
-        suggestedReqId: '159073', // Matches DBHDS Data Governance Analyst
-        matchScore: 92
-      },
-      {
-        name: 'David Miller',
-        email: 'david.miller.cloud@apexstaffing.com',
-        phone: '+1 (615) 555-0144',
-        role: 'Public Health Program Analyst',
-        location: 'Nashville, TN',
-        skills: ['Strategic Planning', 'Technical Writing', 'Program Management', 'Healthcare'],
-        experience: '8+ Years',
-        source: `Email Inbox (${cfg?.fromEmail || recruiterEmail || 'Recruiter Email'})`,
-        sourceCategory: 'email_inbox',
-        isSpamRecovery: false,
-        folder: 'INBOX',
-        suggestedReqId: '159078', // Matches Public Health Program Director
-        matchScore: 89
-      },
-      {
-        name: 'Gautam Siddharth',
-        email: 'gautam.siddharth.dev@protonmail.com',
-        phone: '+1 (608) 555-0133',
-        role: 'Full Stack Java & Angular Developer',
-        location: 'Madison, WI',
-        skills: ['Java', 'Angular', 'Vue', 'SQL', 'Git', 'Docker'],
-        experience: '8+ Years',
-        source: `Email Spam Folder (${cfg?.fromEmail || recruiterEmail || 'Recruiter Email'})`,
-        sourceCategory: 'email_spam',
-        isSpamRecovery: true,
-        folder: 'SPAM',
-        suggestedReqId: '159077', // Matches Java Developer III - 165503
-        matchScore: 96
-      },
-      {
-        name: 'Meenakshi Iyer',
-        email: 'meenakshi.legal@gmail.com',
-        phone: '+1 (615) 555-0198',
-        role: 'Senior Legal & Regulatory Counsel',
-        location: 'Nashville, TN',
-        skills: ['Legal Writing', 'Regulatory Compliance', 'Health Policy', 'Communications'],
-        experience: '11+ Years',
-        source: `Email Spam Folder (${cfg?.fromEmail || recruiterEmail || 'Recruiter Email'})`,
-        sourceCategory: 'email_spam',
-        isSpamRecovery: true,
-        folder: 'SPAM',
-        suggestedReqId: '159074', // Matches Attorney - 66316 (TN DOH)
-        matchScore: 94
-      },
-      {
-        name: 'Sharath S.',
-        email: 'sharath.s.sec@infotech.io',
-        phone: '+1 (408) 555-0149',
-        role: 'Network Security Engineer || GC || C2C',
-        location: 'Open to Relocate (US Wide)',
-        skills: ['Network Security', 'Cisco', 'Palo Alto', 'Firewalls', 'VPN', 'Routing', 'AWS'],
-        experience: '9+ Years',
-        source: `Email Spam Folder (sharath s)`,
-        sourceCategory: 'email_spam',
-        isSpamRecovery: true,
-        folder: 'SPAM',
-        suggestedReqId: '159079',
-        matchScore: 91
-      },
-      {
-        name: 'A. Naveen',
-        email: 'anaveen@realsoftech.com',
-        phone: '+1 (214) 555-0188',
-        role: 'Senior Power BI Data Analyst / Salesforce Developer',
-        location: 'Dallas, TX',
-        skills: ['Data Governance', 'SQL', 'Data Warehouse', 'Power BI', 'Salesforce', 'DAX', 'ETL'],
-        experience: '8+ Years',
-        source: `Email Spam Folder (anaveen@realsoftech.com)`,
-        sourceCategory: 'email_spam',
-        isSpamRecovery: true,
-        folder: 'SPAM',
-        suggestedReqId: '159073',
-        matchScore: 95
-      },
-      {
-        name: 'Monica Monica',
-        email: 'monica.pmo@techrecruit.us',
-        phone: '+1 (404) 555-0137',
-        role: 'Senior Project Manager [ 18+ Years ] [ H1B ]',
-        location: 'Atlanta, GA',
-        skills: ['Strategic Planning', 'Technical Writing', 'Program Management', 'Project Management', 'Agile', 'Scrum', 'PMP'],
-        experience: '18+ Years',
-        source: `Email Spam Folder (Monica Monica)`,
-        sourceCategory: 'email_spam',
-        isSpamRecovery: true,
-        folder: 'SPAM',
-        suggestedReqId: '159078',
-        matchScore: 94
-      },
-      {
-        name: 'ArunRaju Battu',
-        email: 'arun.battu@hptech.com',
-        phone: '+1 (312) 555-0162',
-        role: 'Senior QA Automation / SDET | AWS Kubernetes | Microservices',
-        location: 'Chicago, IL',
-        skills: ['QA Automation', 'SDET', 'Selenium', 'Java', 'AWS', 'Kubernetes', 'Microservices', 'SQL', 'Git'],
-        experience: '9+ Years',
-        source: `Email Spam Folder (ArunRaju Battu @ HPTec...)`,
-        sourceCategory: 'email_spam',
-        isSpamRecovery: true,
-        folder: 'SPAM',
-        suggestedReqId: '159079',
-        matchScore: 93
-      },
-      {
-        name: 'Satya N.',
-        email: 'satya.dev@bluediamondtech.com',
-        phone: '+1 (608) 555-0171',
-        role: 'Java Fullstack Developer (Spring Boot, React, AWS)',
-        location: 'Madison, WI',
-        skills: ['Java', 'Spring Boot', 'React', 'Vue', 'SQL', 'Git', 'AWS', 'Microservices'],
-        experience: '8+ Years',
-        source: `Email Spam Folder (Satya - Blue Diamond Te...)`,
-        sourceCategory: 'email_spam',
-        isSpamRecovery: true,
-        folder: 'SPAM',
-        suggestedReqId: '159079',
-        matchScore: 98
-      },
-      {
-        name: 'Sai Sree',
-        email: 'saisree.java@gmail.com',
-        phone: '+1 (608) 555-0193',
-        role: 'Java Full Stack Developer (Angular, Vue, SQL)',
-        location: 'Madison, WI',
-        skills: ['Java', 'Angular', 'Vue', 'SQL', 'Git', 'Spring Boot', 'REST APIs'],
-        experience: '7+ Years',
-        source: `Email Spam Folder (Sai Sree)`,
-        sourceCategory: 'email_spam',
-        isSpamRecovery: true,
-        folder: 'SPAM',
-        suggestedReqId: '159077',
-        matchScore: 97
-      }
-    ];
   }
 
-    const requestedFolders = scanFolders.map(f => f.toUpperCase());
-    const eligiblePool = incomingHarvestedResumes.filter(item => 
-      requestedFolders.includes(item.folder) || requestedFolders.includes('ALL')
+  const requestedFolders = scanFolders.map(f => f.toUpperCase());
+  const eligiblePool = incomingHarvestedResumes.filter(item => 
+    requestedFolders.includes(item.folder) || requestedFolders.includes('ALL')
+  );
+
+  const ingested = [];
+  for (const item of eligiblePool) {
+    const alreadyExists = (candidatesStore || []).some(c => 
+      (c.email && item.email && c.email.toLowerCase() === item.email.toLowerCase()) ||
+      (c.name && item.name && c.name.toLowerCase() === item.name.toLowerCase())
     );
 
-    const ingested = [];
-    for (const item of eligiblePool) {
-      const alreadyExists = (candidatesStore || []).some(c => 
-        (c.email && c.email.toLowerCase() === item.email.toLowerCase()) ||
-        (c.name && c.name.toLowerCase() === item.name.toLowerCase())
-      );
+    if (!alreadyExists) {
+      const candId = `cand-email-${Date.now().toString().slice(-5)}-${Math.floor(Math.random()*900+100)}`;
+      const newCand = {
+        id: candId,
+        candidate_id: candId,
+        name: item.name,
+        email: item.email,
+        phone: item.phone,
+        role: item.role,
+        location: item.location,
+        skills: item.skills,
+        experience: item.experience,
+        status: 'New',
+        source: item.source,
+        sourceCategory: item.sourceCategory,
+        isSpamRecovery: item.isSpamRecovery,
+        folder: item.folder,
+        recruiterEmail: recruiterEmail || cfg?.fromEmail || 'omkesh@coolsofttech.com',
+        recruiterName: cfg?.displayName || 'Omkesh',
+        assignedBy: cfg?.displayName || 'Omkesh',
+        recruiter: cfg?.displayName || 'Omkesh',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        notes: item.isSpamRecovery 
+          ? `⚠️ RECOVERED FROM YAHOO SPAM FOLDER: Filtered out by email provider. ${item.suggestedReqId ? `AI best-fit matched to Req #${item.suggestedReqId} (${item.matchScore}% Match).` : 'Added to active talent pool.'}`
+          : `Ingested automatically from Yahoo inbox. ${item.suggestedReqId ? `AI best-fit matched to Req #${item.suggestedReqId} (${item.matchScore}% Match).` : 'Added to active talent pool.'}`,
+        targetReqId: item.suggestedReqId,
+        matchScore: item.matchScore,
+        matchedJobTitle: item.matchedJobTitle,
+        matchedJobClient: item.matchedJobClient,
+        matchedJobRate: item.matchedJobRate
+      };
 
-      if (!alreadyExists) {
-        const candId = `cand-email-${Date.now().toString().slice(-5)}-${Math.floor(Math.random()*900+100)}`;
-        const matchedJob = jobsStore.find(j => String(j.id) === String(item.suggestedReqId)) || activeJobs[0];
-
-        const newCand = {
-          id: candId,
-          candidate_id: candId,
-          name: item.name,
-          email: item.email,
-          phone: item.phone,
-          role: item.role,
-          location: item.location,
-          skills: item.skills,
-          experience: item.experience,
-          status: 'New',
-          source: item.source,
-          sourceCategory: item.sourceCategory,
-          isSpamRecovery: item.isSpamRecovery,
-          folder: item.folder,
-          recruiterEmail: recruiterEmail || cfg?.fromEmail || 'omkesh@coolsofttech.com',
-          recruiterName: cfg?.displayName || 'Omkesh',
-          assignedBy: cfg?.displayName || 'Omkesh',
-          recruiter: cfg?.displayName || 'Omkesh',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          notes: item.isSpamRecovery 
-            ? `⚠️ RECOVERED FROM SPAM FOLDER: Filtered out by email provider. Auto-matched to Req #${item.suggestedReqId} (${item.matchScore}% Match).`
-            : `Ingested automatically from recruiter inbox. Auto-matched to Req #${item.suggestedReqId} (${item.matchScore}% Match).`,
-          targetReqId: item.suggestedReqId,
-          matchScore: item.matchScore,
-          matchedJobTitle: matchedJob?.title || 'Open Position',
-          matchedJobClient: matchedJob?.client || 'Client Agency',
-          matchedJobRate: matchedJob?.rate || '$75/hr'
-        };
-
-        candidatesStore.unshift(newCand);
-        ingested.push(newCand);
-
-        // Send auto-acknowledgement email if configured
-        if (sendAutoAck && cfg && cfg.appPassword && !item.isSpamRecovery) {
-          try {
-            const nodemailer = await import('nodemailer').catch(() => null);
-            if (nodemailer) {
-              const transporter = nodemailer.default.createTransport({
-                host: cfg.smtpHost,
-                port: parseInt(cfg.smtpPort) || 465,
-                secure: cfg.security === 'SSL' || cfg.smtpPort === 465,
-                auth: { user: cfg.fromEmail, pass: (cfg.appPassword || '').replace(/\s+/g, '') },
-                tls: { rejectUnauthorized: false }
-              });
-              await transporter.sendMail({
-                from: `"${cfg.displayName || 'SmartHire Recruitment'}" <${cfg.fromEmail}>`,
-                to: item.email,
-                subject: `Application Received: ${item.role}`,
-                text: `Dear ${item.name},\n\nThank you for reaching out! Your resume for "${item.role}" has been successfully received and indexed in our recruitment platform.\n\nOur technical team is reviewing your profile against our open client requisitions. We will be in touch shortly.\n\nBest regards,\n${cfg.displayName || 'Omkesh'}\n${cfg.fromEmail || 'omkesh@coolsofttech.com'}`
-              });
-            }
-          } catch(emailErr) {
-            console.warn('Auto-ack email delivery skipped:', emailErr.message);
-          }
-        }
-      }
+      candidatesStore.unshift(newCand);
+      ingested.push(newCand);
     }
+  }
 
-    if (ingested.length > 0) {
-      saveCandidatesToDisk();
-    }
+  if (ingested.length > 0) {
+    saveCandidatesToDisk();
+  }
 
-    const spamCount = ingested.filter(c => c.isSpamRecovery).length;
-    const inboxCount = ingested.filter(c => !c.isSpamRecovery).length;
+  return {
+    success: true,
+    ingestedCount: ingested.length,
+    inboxCount: ingested.filter(c => !c.isSpamRecovery).length,
+    spamCount: ingested.filter(c => c.isSpamRecovery).length,
+    candidates: ingested
+  };
+}
 
+// POST /api/recruiter/sync-email-resumes
+// Scans multi-folders (INBOX + SPAM / BULK) and matches to active requisitions
+app.post('/api/recruiter/sync-email-resumes', express.json(), async (req, res) => {
+  const { recruiterEmail, scanFolders = ['INBOX', 'SPAM'], sendAutoAck = false } = req.body;
+  try {
+    const result = await syncEmailResumesInternal(recruiterEmail, scanFolders, sendAutoAck);
     res.json({
       success: true,
-      message: ingested.length > 0 
-        ? `Successfully ingested ${ingested.length} resume(s) (${inboxCount} from Inbox, ${spamCount} recovered from Spam folder)!` 
-        : `Scan complete. All candidate resumes in Inbox and Spam are already indexed.`,
-      count: ingested.length,
-      inboxCount,
-      spamCount,
-      candidates: ingested
+      message: result.ingestedCount > 0 
+        ? `Successfully ingested ${result.ingestedCount} resume(s) (${result.inboxCount} from Inbox, ${result.spamCount} recovered from Spam folder)! Marked read in Yahoo.` 
+        : `Scan complete. All candidate resumes in Inbox and Spam are indexed.`,
+      count: result.ingestedCount,
+      inboxCount: result.inboxCount,
+      spamCount: result.spamCount,
+      candidates: result.candidates
     });
   } catch(err) {
     console.error('Email resume sync error:', err);
     res.json({ success: false, message: `Email sync error: ${err.message}` });
   }
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AUTOMATED 5-MINUTE BACKGROUND EMAIL HARVESTER & SPAM RECOVERY ENGINE
+// ═══════════════════════════════════════════════════════════════════════════════
+setInterval(async () => {
+  try {
+    console.log('\n⏰ [Auto-Harvester] Running scheduled 5-minute Yahoo Inbox & Spam sync...');
+    const result = await syncEmailResumesInternal('omkesh@coolsofttech.com', ['INBOX', 'SPAM'], false);
+    if (result.ingestedCount > 0) {
+      console.log(`✅ [Auto-Harvester] Successfully ingested ${result.ingestedCount} new resumes (${result.inboxCount} Inbox, ${result.spamCount} Spam)! Ingested candidates marked read in Yahoo.`);
+    } else {
+      console.log(`ℹ️ [Auto-Harvester] Check complete. All current resumes in Inbox & Spam are already indexed.`);
+    }
+  } catch (err) {
+    console.warn('⚠️ [Auto-Harvester] Background sync notice:', err.message);
+  }
+}, 5 * 60 * 1000);
 
 // POST /api/recruiter/send-direct-email
 // Strictly sends email from the recruiter's configured personal email address (never generic smarthire)
@@ -8599,6 +8562,20 @@ app.post('/api/recruiter/send-direct-email', express.json(), async (req, res) =>
           text: fullBody
         });
         serverDispatched = true;
+
+        // Automatically append to Yahoo IMAP "Sent" folder in background so it appears in Yahoo webmail
+        import('./jobs-ingestion/email-imap-scraper.js').then(({ appendEmailToSentFolder }) => {
+          appendEmailToSentFolder({
+            host: cfg.imapHost || 'imap.mail.yahoo.com',
+            port: parseInt(cfg.imapPort) || 993,
+            user: senderEmail,
+            password: appPassword,
+            from: `"${senderName}" <${senderEmail}>`,
+            to,
+            subject,
+            text: fullBody
+          }).catch(e => console.warn('Background append to Sent notice:', e.message));
+        }).catch(() => {});
       }
     } catch(err) {
       serverError = err.message;

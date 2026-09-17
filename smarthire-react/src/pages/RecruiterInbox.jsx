@@ -1679,7 +1679,13 @@ export default function RecruiterInbox({ defaultViewMode }) {
       .catch(() => {})
   }, [])
 
-  useEffect(() => { fetchStreamCandidates() }, [fetchStreamCandidates])
+  useEffect(() => {
+    fetchStreamCandidates()
+    const timer = setInterval(() => {
+      fetchStreamCandidates()
+    }, 5 * 60 * 1000)
+    return () => clearInterval(timer)
+  }, [fetchStreamCandidates])
   useEffect(() => { fetchThreads() }, [fetchThreads])
 
   useEffect(() => {
@@ -3999,12 +4005,25 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                 </td>
 
                                 <td style={{ padding: '12px 14px' }}>
-                                  <div style={{ fontSize: 12, fontWeight: 700, color: C.textPrimary }}>
-                                    Req #{c.targetReqId || '159079'}
-                                  </div>
-                                  <span style={{ fontSize: 10.5, fontWeight: 800, color: '#D97706', background: '#FEF3C7', border: '1px solid #FDE68A', padding: '1px 6px', borderRadius: 4, display: 'inline-block', marginTop: 2 }}>
-                                    {c.matchScore || 95}% Fit
-                                  </span>
+                                  {c.targetReqId ? (
+                                    <>
+                                      <div style={{ fontSize: 12, fontWeight: 700, color: C.textPrimary }}>
+                                        Req #{c.targetReqId}
+                                      </div>
+                                      <span style={{ fontSize: 10.5, fontWeight: 800, color: c.matchScore >= 80 ? '#15803D' : '#D97706', background: c.matchScore >= 80 ? '#DCFCE7' : '#FEF3C7', border: `1px solid ${c.matchScore >= 80 ? '#BBF7D0' : '#FDE68A'}`, padding: '1px 6px', borderRadius: 4, display: 'inline-block', marginTop: 2 }}>
+                                        {c.matchScore || 85}% Fit
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <div style={{ fontSize: 11, fontWeight: 700, color: C.textSecondary }}>
+                                        Talent Bench
+                                      </div>
+                                      <span style={{ fontSize: 10, fontWeight: 700, color: '#475569', background: '#F1F5F9', border: '1px solid #CBD5E1', padding: '1px 5px', borderRadius: 4, display: 'inline-block', marginTop: 2 }}>
+                                        Open Pool
+                                      </span>
+                                    </>
+                                  )}
                                 </td>
 
                                 <td style={{ padding: '12px 14px' }}>
