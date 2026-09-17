@@ -9161,9 +9161,9 @@ if (fs.existsSync(distPath)) {
   app.use(express.static(distPath))
 }
 
-// For React Router support - fallback all non-API GET requests to index.html
+// For React Router support - fallback all non-API GET/HEAD requests to index.html
 app.use((req, res, next) => {
-  if (req.method !== 'GET' || req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+  if ((req.method !== 'GET' && req.method !== 'HEAD') || req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
     return next()
   }
   const indexPath = path.join(distPath, 'index.html')
