@@ -31,6 +31,16 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-18 — Fix `useMemo is not defined` ReferenceError in `RecruiterInbox.jsx`
+- **Root Cause**: `calculatedFitScore` was rewritten using `useMemo(...)` to compute candidate fit scores without artificial clamping. Line 1 of `RecruiterInbox.jsx` had imported `{ useState, useEffect, useRef, useCallback }` but omitted `useMemo`.
+- **Resolution**:
+  - Added `useMemo` to the React import statement on line 1 of `smarthire-react/src/pages/RecruiterInbox.jsx`.
+  - Ran Babel AST static analysis traversal across the entire component: verified 0 unresolved identifiers.
+  - Production build in `smarthire-react`: 0 errors (built in 2.04s, output `index-B3W4FWH9.js`).
+  - Root `node build.js`: 0 errors (built in 2.03s).
+  - Committed to Git (`480e0f4`) and pushed to GitHub `origin/main`.
+  - Deployed `dist.tar.gz` to AWS Lightsail server (`34.194.119.199`), restarted PM2 `smarthire-ats`, verified HTTP 200 on `https://smarthireus.com/assets/index-B3W4FWH9.js`.
+
 ### 2026-09-18 — Fix TDZ ReferenceError (`Cannot access 'xe' before initialization` in `RecruiterInbox.jsx`)
 - **Root Cause**: Two newly added `useEffect` hooks syncing `drawerReqId` and candidate target requisitions into `openJobsList` were placed at line 1817, before `const activeCandidate = ...` was lexically declared at line 1988. In production minified bundle, `activeCandidate` was minified to `xe`, triggering a Temporal Dead Zone (TDZ) ReferenceError during initial component render.
 - **Resolution**:
