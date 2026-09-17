@@ -1813,35 +1813,6 @@ export default function RecruiterInbox({ defaultViewMode }) {
     }
   }
 
-  // Ensure drawerReqId synchronizes whenever active candidate changes
-  useEffect(() => {
-    if (activeCandidate?.targetReqId) {
-      const cleanTarget = String(activeCandidate.targetReqId).replace(/^J-/, '')
-      setDrawerReqId(cleanTarget)
-    }
-  }, [activeCandidate?.id, activeCandidate?.email, activeCandidate?.targetReqId])
-
-  // Ensure candidate's target job is registered in openJobsList
-  useEffect(() => {
-    if (activeCandidate?.targetReqId && activeCandidate?.matchedJobTitle) {
-      const cId = String(activeCandidate.targetReqId).replace(/^J-/, '')
-      setOpenJobsList(prev => {
-        if (prev.some(j => String(j.id) === cId)) return prev
-        return [
-          ...prev,
-          {
-            id: cId,
-            title: activeCandidate.matchedJobTitle,
-            client: activeCandidate.matchedJobClient || 'Client Agency',
-            rate: activeCandidate.matchedJobRate || '$75/hr',
-            location: 'Remote / US',
-            skills: activeCandidate.matchingSkills?.length ? activeCandidate.matchingSkills : (activeCandidate.skills || ['Core Skills'])
-          }
-        ]
-      })
-    }
-  }, [activeCandidate?.targetReqId, activeCandidate?.matchedJobTitle, activeCandidate?.matchedJobClient, activeCandidate?.matchedJobRate, activeCandidate?.matchingSkills, activeCandidate?.skills])
-
   // Load live open requisitions to power the Multi-Position AI Matcher
   useEffect(() => {
     fetch('/api/jobs')
@@ -1990,6 +1961,35 @@ export default function RecruiterInbox({ defaultViewMode }) {
     (c.id && activeCandidate?.id && c.id === activeCandidate.id) ||
     (c.email && activeCandidate?.email && c.email === activeCandidate.email)
   )
+
+  // Ensure drawerReqId synchronizes whenever active candidate changes
+  useEffect(() => {
+    if (activeCandidate?.targetReqId) {
+      const cleanTarget = String(activeCandidate.targetReqId).replace(/^J-/, '')
+      setDrawerReqId(cleanTarget)
+    }
+  }, [activeCandidate?.id, activeCandidate?.email, activeCandidate?.targetReqId])
+
+  // Ensure candidate's target job is registered in openJobsList
+  useEffect(() => {
+    if (activeCandidate?.targetReqId && activeCandidate?.matchedJobTitle) {
+      const cId = String(activeCandidate.targetReqId).replace(/^J-/, '')
+      setOpenJobsList(prev => {
+        if (prev.some(j => String(j.id) === cId)) return prev
+        return [
+          ...prev,
+          {
+            id: cId,
+            title: activeCandidate.matchedJobTitle,
+            client: activeCandidate.matchedJobClient || 'Client Agency',
+            rate: activeCandidate.matchedJobRate || '$75/hr',
+            location: 'Remote / US',
+            skills: activeCandidate.matchingSkills?.length ? activeCandidate.matchingSkills : (activeCandidate.skills || ['Core Skills'])
+          }
+        ]
+      })
+    }
+  }, [activeCandidate?.targetReqId, activeCandidate?.matchedJobTitle, activeCandidate?.matchedJobClient, activeCandidate?.matchedJobRate, activeCandidate?.matchingSkills, activeCandidate?.skills])
 
   const handlePrevCandidate = () => {
     if (activeCandidateIndex > 0) {
