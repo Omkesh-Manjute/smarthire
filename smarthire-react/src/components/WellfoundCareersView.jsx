@@ -38,6 +38,23 @@ function ClockIcon({ size = 14, color = '#6B7280' }) {
   )
 }
 
+function BookmarkIcon({ size = 15, filled = false, color = 'currentColor' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? color : 'none'} stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+    </svg>
+  )
+}
+
+function CheckCircleIcon({ size = 16, color = '#10B981' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+      <polyline points="22 4 12 14.01 9 11.01" />
+    </svg>
+  )
+}
+
 // ─── Dynamic Client Domain Resolver (Eliminates Repetitive "Direct Client") ─
 export const resolveClientDomainName = (job) => {
   const text = `${job?.title || ''} ${(job?.skills || []).join(' ')} ${job?.rawDescription || job?.description || ''}`.toLowerCase()
@@ -98,17 +115,25 @@ export const resolveLocalRequirement = (job) => {
   return { label: 'Nationwide (No Local Need)', isLocalNeeded: false, urgency: 'none' }
 }
 
+// ─── Hiring Contact Resolver (Matches Screenshot 1 Avatar Block) ────────────
+export const resolveRecruiterContact = (job, location) => {
+  return {
+    name: 'Sarah J. Thorne',
+    role: 'Employee / Talent Partner',
+    location: location && !location.includes('Remote') ? location : 'South San Francisco, CA',
+    initials: 'ST'
+  }
+}
+
 // ─── Dynamic Company Logo Colors ───────────────────────────────────────────
 const LOGO_PALETTES = [
+  { bg: 'linear-gradient(135deg, #E11D48 0%, #BE123C 100%)', fg: '#FFFFFF' },
   { bg: 'linear-gradient(135deg, #0F172A 0%, #334155 100%)', fg: '#FFFFFF' },
   { bg: 'linear-gradient(135deg, #047857 0%, #10B981 100%)', fg: '#FFFFFF' },
   { bg: 'linear-gradient(135deg, #C2410C 0%, #F97316 100%)', fg: '#FFFFFF' },
   { bg: 'linear-gradient(135deg, #6D28D9 0%, #8B5CF6 100%)', fg: '#FFFFFF' },
   { bg: 'linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%)', fg: '#FFFFFF' },
-  { bg: 'linear-gradient(135deg, #BE185D 0%, #EC4899 100%)', fg: '#FFFFFF' },
-  { bg: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)', fg: '#FFFFFF' },
-  { bg: 'linear-gradient(135deg, #1E293B 0%, #0284C7 100%)', fg: '#FFFFFF' },
-  { bg: 'linear-gradient(135deg, #B91C1C 0%, #EF4444 100%)', fg: '#FFFFFF' }
+  { bg: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)', fg: '#FFFFFF' }
 ]
 
 function CompanyLogo({ job, size = 42 }) {
@@ -124,7 +149,7 @@ function CompanyLogo({ job, size = 42 }) {
     <div style={{
       width: size,
       height: size,
-      borderRadius: 10,
+      borderRadius: Math.round(size * 0.24),
       background: palette.bg,
       color: palette.fg,
       display: 'flex',
@@ -135,11 +160,77 @@ function CompanyLogo({ job, size = 42 }) {
       letterSpacing: '-0.02em',
       fontFamily: "'Plus Jakarta Sans', -apple-system, sans-serif",
       flexShrink: 0,
-      boxShadow: '0 2px 6px rgba(0,0,0,0.08)'
+      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
     }}>
       {letters || 'IT'}
     </div>
   )
+}
+
+// ─── Structured Job Description Parser (Exact Match to Screenshot 2) ────────
+export const parseWellfoundJobDetails = (job, cleanTitle, domainName, location, workMode, localReq) => {
+  let aboutCompany = ''
+  if (/health|clinical|med|epic|dhhs|hospital/i.test(domainName)) {
+    aboutCompany = `${domainName} is an independent digital architecture and enterprise healthcare systems provider building high-converting public health solutions and resilient medical data platforms. Partnering with state health agencies and Medicaid networks, we build secure, patient-centric technology. Quality over volume. Always.`
+  } else if (/transportation|dot|vdot|highway|transit/i.test(domainName)) {
+    aboutCompany = `${domainName} builds mission-critical transportation infrastructure systems, automated highway asset monitoring platforms, and intelligent GIS networks. We bridge the gap between heavy public infrastructure and modern digital architecture with high performance and zero visual lag.`
+  } else if (/cloud|aws|azure|devops|infrastructure/i.test(domainName)) {
+    aboutCompany = `${domainName} is an enterprise cloud architecture studio delivering modern automated microservices, serverless workflows, and multi-region AWS/Azure infrastructure for direct clients. We work with a carefully chosen few with creative freedom, modern toolsets, and zero micromanagement.`
+  } else if (/data|analytics|bi|power\s*bi|sql|etl/i.test(domainName)) {
+    aboutCompany = `${domainName} is an enterprise data and analytics engineering organization building high-throughput data pipelines, cloud warehouses, and real-time operational BI dashboards for direct clients. We emphasize data integrity, scalability, and robust software craftsmanship.`
+  } else if (/education|doe|university|school/i.test(domainName)) {
+    aboutCompany = `${domainName} designs and deploys statewide digital education platforms, online assessment engines, and modern student information systems with an emphasis on accessibility, low latency, and rock-solid reliability.`
+  } else {
+    aboutCompany = `${domainName} is an enterprise digital architecture studio building high-performing digital systems and scalable technology products for direct clients. We work with a carefully chosen few. Quality over volume. Always.`
+  }
+
+  const expStr = job?.experience ? `${job.experience} of experience` : 'proven professional experience'
+  const aboutRole = `We are looking for a ${cleanTitle} with ${expStr} who believes static legacy systems are obsolete. In this role, you will bridge the gap between complex client business requirements and living, high-performance digital solutions. You will be responsible for creating smooth, reliable, and secure technical architectures using modern toolsets and automation. You bring execution, technical mastery, and design sensitivity. We provide creative freedom, direct client impact, and zero micromanagement.`
+
+  const rawSkills = Array.isArray(job?.skills) && job.skills.length > 0 
+    ? job.skills 
+    : ['System Architecture', 'Cloud Infrastructure', 'API Integration', 'Automated Testing', 'Performance Optimization']
+
+  const s0 = rawSkills[0] || 'Interactive Prototyping'
+  const s1 = rawSkills[1] || 'System Build & Architecture'
+  const s2 = rawSkills[2] || 'Enterprise Integration'
+  const s3 = rawSkills[3] || 'Continuous Delivery'
+  const s4 = rawSkills[4] || 'Performance Optimization'
+
+  const whatYouWillDo = [
+    {
+      title: `${s0}:`,
+      description: `Bring static architectural requirements to life with high-fidelity implementations, robust workflows, and dynamic system transitions.`
+    },
+    {
+      title: `${s1}:`,
+      description: `Translate complex enterprise specifications into responsive, high-performance solutions with clean code structure and zero technical debt.`
+    },
+    {
+      title: `${s2}:`,
+      description: `Integrate secure REST/GraphQL APIs, microservice endpoints, and reliable data pipelines without sacrificing latency or system reliability.`
+    },
+    {
+      title: `${s3}:`,
+      description: `Champion automated CI/CD deployment pipelines, unit test coverage, and code reviews using modern version control and DevOps practices.`
+    },
+    {
+      title: `${s4}:`,
+      description: `Ensure all interactive elements, queries, and background processes run at a buttery 60fps and sub-second response times across modern platforms.`
+    }
+  ]
+
+  const whatYouNeed = [
+    `Demonstrated hands-on expertise as a ${cleanTitle} in high-visibility enterprise or direct-client environments.`,
+    `Deep practical proficiency in ${rawSkills.slice(0, 5).join(', ')}.`,
+    `Solid understanding of scalable architecture patterns, automated build pipelines, and system security fundamentals.`,
+    `Strong communication and cross-functional coordination skills with the ability to ship independently.`,
+    localReq.isLocalNeeded 
+      ? `Local candidate or commutable to ${location} to support the client's ${workMode} requirements.`
+      : `Ability to operate autonomously in a remote-first setup with high discipline and ownership.`
+  ]
+
+  return { aboutCompany, aboutRole, whatYouWillDo, whatYouNeed, rawSkills }
 }
 
 export default function WellfoundCareersView({
@@ -152,6 +243,9 @@ export default function WellfoundCareersView({
   setSelectedLocation,
   deadlineFilter = 'All',
   setDeadlineFilter,
+  appliedJobs = [],
+  savedJobs = [],
+  handleToggleSaveJob,
   candidateUser = null,
   handleCandidateSignOut,
   setShowLoginModal,
@@ -162,8 +256,6 @@ export default function WellfoundCareersView({
   themeMode = 'light',
   toggleTheme,
   isLight = true,
-  layoutView = 'wellfound',
-  handleSetLayoutView,
   cleanJobTitleWithPositionNumber,
   resolveJobLocation,
   formatExperience,
@@ -179,9 +271,9 @@ export default function WellfoundCareersView({
   const [heroLocationQuery, setHeroLocationQuery] = useState(selectedLocation === 'All' ? '' : selectedLocation)
   const [activeCategoryFilter, setActiveCategoryFilter] = useState('all')
 
-  // Selected Job for the Right-Side Full JD Panel
+  // Selected Job for the Center Full JD View
   const [selectedJobId, setSelectedJobId] = useState(null)
-  const rightPanelRef = useRef(null)
+  const centerPanelRef = useRef(null)
 
   // Theme-aware color palette
   const colors = {
@@ -261,7 +353,7 @@ export default function WellfoundCareersView({
   }
 
   // 1-Click Trending Filter Selection with Smooth Scroll
-  const handleTrendingCardClick = (categoryKey, term) => {
+  const handleTrendingCardClick = (categoryKey) => {
     setActiveCategoryFilter(categoryKey)
     if (setSearchQuery) setSearchQuery('')
     const feed = document.getElementById('wellfound-split-workspace')
@@ -279,6 +371,16 @@ export default function WellfoundCareersView({
     return jobs.filter(j => j.id !== selectedJob.id).slice(0, 3)
   }, [selectedJob, jobs, getSimilarJobs])
 
+  // Computed properties for selected job
+  const selCleanTitle = selectedJob ? (cleanJobTitleWithPositionNumber ? cleanJobTitleWithPositionNumber(selectedJob.title) : selectedJob.title) : ''
+  const selDomain = selectedJob ? resolveClientDomainName(selectedJob) : ''
+  const selLoc = selectedJob ? (resolveJobLocation ? resolveJobLocation(selectedJob) : (selectedJob.work_mode || 'Remote, US')) : ''
+  const selWorkMode = selectedJob ? resolveWorkArrangement(selectedJob) : 'Hybrid'
+  const selLocalReq = selectedJob ? resolveLocalRequirement(selectedJob) : { label: 'Nationwide', isLocalNeeded: false, urgency: 'none' }
+  const selRecruiter = selectedJob ? resolveRecruiterContact(selectedJob, selLoc) : null
+  const selDetails = selectedJob ? parseWellfoundJobDetails(selectedJob, selCleanTitle, selDomain, selLoc, selWorkMode, selLocalReq) : null
+  const isSaved = selectedJob ? savedJobs.includes(selectedJob.id) : false
+
   return (
     <div style={{
       fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
@@ -287,6 +389,49 @@ export default function WellfoundCareersView({
       minHeight: '100vh',
       transition: 'background-color 0.2s, color 0.2s'
     }}>
+      {/* Dynamic Style for Responsive 3-Column Layout */}
+      <style>{`
+        @media (min-width: 1280px) {
+          .wellfound-3col-workspace {
+            display: grid !important;
+            grid-template-columns: 360px minmax(0, 1fr) 290px !important;
+            gap: 24px !important;
+            align-items: start !important;
+          }
+          .wellfound-sidebar-ads {
+            display: flex !important;
+            flex-direction: column !important;
+          }
+        }
+        @media (min-width: 1024px) and (max-width: 1279px) {
+          .wellfound-3col-workspace {
+            display: grid !important;
+            grid-template-columns: 340px minmax(0, 1fr) !important;
+            gap: 20px !important;
+            align-items: start !important;
+          }
+          .wellfound-sidebar-ads {
+            grid-column: span 2 !important;
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 16px !important;
+            margin-top: 20px !important;
+          }
+        }
+        @media (max-width: 1023px) {
+          .wellfound-3col-workspace {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 20px !important;
+          }
+          .wellfound-sidebar-ads {
+            display: flex !important;
+            flex-direction: column !important;
+            margin-top: 20px !important;
+          }
+        }
+      `}</style>
+
       {/* ─── 1. TOP NAVIGATION BAR WITH AUTH ──────────────────────────────── */}
       <header style={{
         borderBottom: `1px solid ${colors.border}`,
@@ -297,7 +442,7 @@ export default function WellfoundCareersView({
         boxShadow: isLight ? '0 1px 4px rgba(0,0,0,0.03)' : 'none'
       }}>
         <div style={{
-          maxWidth: 1400,
+          maxWidth: 1560,
           margin: '0 auto',
           padding: '0 24px',
           height: 68,
@@ -322,20 +467,6 @@ export default function WellfoundCareersView({
 
             {/* Navigation Tabs */}
             <nav style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <Link
-                to="/about"
-                style={{
-                  fontSize: 14,
-                  fontWeight: 500,
-                  color: colors.textSecondary,
-                  padding: '6px 12px',
-                  borderRadius: 6,
-                  textDecoration: 'none',
-                  transition: 'color 0.15s'
-                }}
-              >
-                Why SmartHire
-              </Link>
               <button
                 onClick={() => {
                   setActiveCategoryFilter('all')
@@ -353,7 +484,7 @@ export default function WellfoundCareersView({
                   cursor: 'pointer'
                 }}
               >
-                Jobs
+                Find Jobs
               </button>
               <button
                 onClick={() => {
@@ -374,29 +505,10 @@ export default function WellfoundCareersView({
               >
                 Remote
               </button>
-              <button
-                onClick={() => {
-                  setActiveCategoryFilter('cloud')
-                  const el = document.getElementById('wellfound-split-workspace')
-                  if (el) el.scrollIntoView({ behavior: 'smooth' })
-                }}
-                style={{
-                  background: activeCategoryFilter === 'cloud' ? (isLight ? '#F3F4F6' : '#1F2937') : 'transparent',
-                  border: 'none',
-                  fontSize: 14,
-                  fontWeight: activeCategoryFilter === 'cloud' ? 700 : 500,
-                  color: colors.textSecondary,
-                  padding: '6px 12px',
-                  borderRadius: 6,
-                  cursor: 'pointer'
-                }}
-              >
-                Direct Client
-              </button>
               <Link
                 to="/ats"
                 style={{
-                  fontSize: 14,
+                  fontSize: 13.5,
                   fontWeight: 500,
                   color: colors.textSecondary,
                   padding: '6px 12px',
@@ -409,132 +521,34 @@ export default function WellfoundCareersView({
             </nav>
           </div>
 
-          {/* Right Header Controls: Layout Switcher, Theme Toggle & Top Auth */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            {/* Multi-view layout dropdown switcher */}
-            {handleSetLayoutView && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: colors.badgeBg, padding: '3px 5px', borderRadius: 8 }}>
-                <button
-                  onClick={() => handleSetLayoutView('wellfound')}
-                  style={{
-                    padding: '4px 8px',
-                    borderRadius: 6,
-                    border: 'none',
-                    fontSize: 11.5,
-                    fontWeight: layoutView === 'wellfound' ? 700 : 500,
-                    backgroundColor: layoutView === 'wellfound' ? (isLight ? '#FFFFFF' : '#374151') : 'transparent',
-                    color: layoutView === 'wellfound' ? colors.textPrimary : colors.textSecondary,
-                    cursor: 'pointer',
-                    boxShadow: layoutView === 'wellfound' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none'
-                  }}
-                  title="Wellfound Modern View"
-                >
-                  Wellfound
-                </button>
-                <button
-                  onClick={() => handleSetLayoutView('split')}
-                  style={{
-                    padding: '4px 8px',
-                    borderRadius: 6,
-                    border: 'none',
-                    fontSize: 11.5,
-                    fontWeight: layoutView === 'split' ? 700 : 500,
-                    backgroundColor: layoutView === 'split' ? (isLight ? '#FFFFFF' : '#374151') : 'transparent',
-                    color: layoutView === 'split' ? colors.textPrimary : colors.textSecondary,
-                    cursor: 'pointer',
-                    boxShadow: layoutView === 'split' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none'
-                  }}
-                  title="LinkedIn Split View"
-                >
-                  Split
-                </button>
-                <button
-                  onClick={() => handleSetLayoutView('zone')}
-                  style={{
-                    padding: '4px 8px',
-                    borderRadius: 6,
-                    border: 'none',
-                    fontSize: 11.5,
-                    fontWeight: layoutView === 'zone' ? 700 : 500,
-                    backgroundColor: layoutView === 'zone' ? (isLight ? '#FFFFFF' : '#374151') : 'transparent',
-                    color: layoutView === 'zone' ? colors.textPrimary : colors.textSecondary,
-                    cursor: 'pointer',
-                    boxShadow: layoutView === 'zone' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none'
-                  }}
-                  title="Zone Cards"
-                >
-                  Zone
-                </button>
-                <button
-                  onClick={() => handleSetLayoutView('classic')}
-                  style={{
-                    padding: '4px 8px',
-                    borderRadius: 6,
-                    border: 'none',
-                    fontSize: 11.5,
-                    fontWeight: layoutView === 'classic' ? 700 : 500,
-                    backgroundColor: layoutView === 'classic' ? (isLight ? '#FFFFFF' : '#374151') : 'transparent',
-                    color: layoutView === 'classic' ? colors.textPrimary : colors.textSecondary,
-                    cursor: 'pointer',
-                    boxShadow: layoutView === 'classic' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none'
-                  }}
-                  title="Classic Table"
-                >
-                  Classic
-                </button>
-              </div>
-            )}
-
-            {/* Dark/Light mode toggle */}
-            {toggleTheme && (
-              <button
-                onClick={toggleTheme}
-                style={{
-                  background: 'none',
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: '50%',
-                  width: 36,
-                  height: 36,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  color: colors.textSecondary,
-                  fontSize: 15
-                }}
-                title={isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-              >
-                {isLight ? '🌙' : '☀️'}
-              </button>
-            )}
-
-            {/* Candidate Authentication Controls in Top Bar */}
+          {/* Right Header Controls: Compact Auth */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {candidateUser ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 8,
-                  padding: '4px 12px 4px 6px',
-                  borderRadius: 24,
-                  backgroundColor: colors.badgeBg,
+                  gap: 6,
+                  padding: '4px 10px 4px 6px',
+                  borderRadius: 20,
+                  backgroundColor: '#F3F4F6',
                   border: `1px solid ${colors.border}`
                 }}>
                   <div style={{
-                    width: 28,
-                    height: 28,
+                    width: 24,
+                    height: 24,
                     borderRadius: '50%',
-                    backgroundColor: '#2065D1',
+                    backgroundColor: '#0A0E1A',
                     color: '#FFFFFF',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: 700
                   }}>
                     {(candidateUser.name || candidateUser.email || 'U').charAt(0).toUpperCase()}
                   </div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: colors.textPrimary }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: colors.textPrimary }}>
                     {candidateUser.name || candidateUser.email?.split('@')[0]}
                   </span>
                 </div>
@@ -544,46 +558,49 @@ export default function WellfoundCareersView({
                     background: 'none',
                     border: 'none',
                     color: colors.textSecondary,
-                    fontSize: 13,
+                    fontSize: 12.5,
                     fontWeight: 500,
                     cursor: 'pointer',
-                    padding: '6px 8px'
+                    padding: '4px 6px'
                   }}
                 >
                   Sign out
                 </button>
               </div>
             ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <button
                   onClick={() => setShowLoginModal && setShowLoginModal(true)}
                   style={{
                     background: 'none',
                     border: 'none',
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: 600,
                     color: colors.textPrimary,
                     cursor: 'pointer',
-                    padding: '8px 12px'
+                    padding: '6px 10px'
                   }}
                 >
-                  Log in
+                  Log In
                 </button>
                 <button
                   onClick={() => setShowLoginModal && setShowLoginModal(true)}
                   style={{
-                    backgroundColor: colors.buttonDark,
-                    color: colors.buttonDarkText,
+                    backgroundColor: '#0A0E1A',
+                    color: '#FFFFFF',
                     border: 'none',
-                    borderRadius: 24,
-                    fontSize: 14,
-                    fontWeight: 600,
-                    padding: '9px 18px',
+                    borderRadius: 6,
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    padding: '6px 14px',
                     cursor: 'pointer',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+                    transition: 'opacity 0.15s ease'
                   }}
+                  onMouseEnter={(e) => e.currentTarget.style.opacity = '0.88'}
+                  onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                 >
-                  Create profile
+                  Sign Up
                 </button>
               </div>
             )}
@@ -593,9 +610,9 @@ export default function WellfoundCareersView({
 
       {/* ─── 2. WELLFOUND HERO SECTION (media_1789654471631.png) ──────────── */}
       <section style={{
-        maxWidth: 1400,
+        maxWidth: 1560,
         margin: '0 auto',
-        padding: '48px 24px 28px',
+        padding: '42px 24px 24px',
         textAlign: 'center',
         position: 'relative'
       }}>
@@ -606,19 +623,19 @@ export default function WellfoundCareersView({
           letterSpacing: '0.08em',
           textTransform: 'uppercase',
           color: colors.accentCoral,
-          marginBottom: 14
+          marginBottom: 12
         }}>
           OVER 100+ VERIFIED DIRECT-CLIENT IT REQUISITIONS
         </div>
 
         {/* Main Headline */}
         <h1 style={{
-          fontSize: 'clamp(34px, 5vw, 54px)',
+          fontSize: 'clamp(32px, 4.5vw, 50px)',
           fontWeight: 900,
           letterSpacing: '-0.035em',
           color: colors.textPrimary,
-          margin: '0 0 28px',
-          lineHeight: 1.1
+          margin: '0 0 24px',
+          lineHeight: 1.15
         }}>
           Find what's next<span style={{ color: colors.accentCoral }}>:</span>
         </h1>
@@ -638,12 +655,6 @@ export default function WellfoundCareersView({
             boxShadow: isLight ? '0 10px 25px rgba(0, 0, 0, 0.05)' : '0 10px 25px rgba(0, 0, 0, 0.3)',
             gap: 12,
             transition: 'box-shadow 0.2s ease, border-color 0.2s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = isLight ? '0 14px 30px rgba(0, 0, 0, 0.08)' : '0 14px 30px rgba(0, 0, 0, 0.5)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = isLight ? '0 10px 25px rgba(0, 0, 0, 0.05)' : '0 10px 25px rgba(0, 0, 0, 0.3)'
           }}
         >
           {/* Left: Job Title Input */}
@@ -675,7 +686,7 @@ export default function WellfoundCareersView({
             <LocationIcon size={20} color={colors.textSecondary} />
             <input
               type="text"
-              placeholder="Location (e.g. Remote, NC, VA)"
+              placeholder="Location (e.g. Remote, NC, VA, MI)"
               value={heroLocationQuery}
               onChange={(e) => setHeroLocationQuery(e.target.value)}
               style={{
@@ -704,16 +715,10 @@ export default function WellfoundCareersView({
               fontWeight: 700,
               cursor: 'pointer',
               flexShrink: 0,
-              transition: 'transform 0.15s ease, opacity 0.15s ease'
+              transition: 'transform 0.15s ease'
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'scale(1.03)'
-              e.currentTarget.style.opacity = '0.92'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)'
-              e.currentTarget.style.opacity = '1'
-            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.03)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
             Search
           </button>
@@ -722,13 +727,13 @@ export default function WellfoundCareersView({
 
       {/* ─── 3. "TRENDING DIRECT CLIENTS" 3-CARD INTERACTIVE GRID ─────────── */}
       <section style={{
-        maxWidth: 1400,
+        maxWidth: 1560,
         margin: '0 auto',
-        padding: '16px 24px 36px'
+        padding: '10px 24px 28px'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <h2 style={{
-            fontSize: 22,
+            fontSize: 21,
             fontWeight: 800,
             color: colors.textPrimary,
             margin: 0,
@@ -737,23 +742,23 @@ export default function WellfoundCareersView({
             Trending direct clients hiring now
           </h2>
           <span style={{ fontSize: 13, color: colors.textSecondary, fontWeight: 500 }}>
-            Click a client to filter opportunities
+            Click a client card to filter open opportunities
           </span>
         </div>
 
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: 20
+          gap: 18
         }}>
           {/* Card 1: Enterprise Cloud & AI */}
           <div
-            onClick={() => handleTrendingCardClick('cloud', 'Cloud')}
+            onClick={() => handleTrendingCardClick('cloud')}
             style={{
               border: `1.5px solid ${activeCategoryFilter === 'cloud' ? colors.activeBorder : colors.border}`,
               borderRadius: 14,
               backgroundColor: activeCategoryFilter === 'cloud' ? colors.activeBg : colors.cardBg,
-              padding: 22,
+              padding: 20,
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
@@ -764,21 +769,17 @@ export default function WellfoundCareersView({
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-4px)'
               e.currentTarget.style.boxShadow = isLight ? '0 12px 24px rgba(0,0,0,0.08)' : '0 12px 24px rgba(0,0,0,0.4)'
-              e.currentTarget.style.borderColor = colors.activeBorder
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)'
               e.currentTarget.style.boxShadow = isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
-              if (activeCategoryFilter !== 'cloud') {
-                e.currentTarget.style.borderColor = colors.border
-              }
             }}
           >
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
                 <div style={{
-                  width: 44,
-                  height: 44,
+                  width: 42,
+                  height: 42,
                   borderRadius: 10,
                   background: 'linear-gradient(135deg, #0F172A 0%, #334155 100%)',
                   color: '#FFFFFF',
@@ -786,7 +787,7 @@ export default function WellfoundCareersView({
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontWeight: 900,
-                  fontSize: 16
+                  fontSize: 15
                 }}>
                   EA
                 </div>
@@ -794,22 +795,22 @@ export default function WellfoundCareersView({
                   <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: colors.textPrimary }}>
                     Enterprise Cloud & AI
                   </h3>
-                  <div style={{ fontSize: 12.5, color: colors.textSecondary }}>State & Enterprise Infrastructure</div>
+                  <div style={{ fontSize: 12, color: colors.textSecondary }}>State & Enterprise Infrastructure</div>
                 </div>
               </div>
 
-              <p style={{ fontSize: 13.5, color: colors.textSecondary, lineHeight: 1.5, margin: '0 0 14px' }}>
-                Modernizing state cloud infrastructures with AWS, Azure microservices, and high-security automated data pipelines.
+              <p style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 1.5, margin: '0 0 12px' }}>
+                Modernizing state cloud infrastructures with AWS, Azure microservices, and automated data pipelines.
               </p>
 
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 18 }}>
-                <span style={{ fontSize: 11.5, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: isLight ? '#FCE7F3' : '#371B2B', color: '#BE185D' }}>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: isLight ? '#FCE7F3' : '#371B2B', color: '#BE185D' }}>
                   Cloud Arch
                 </span>
-                <span style={{ fontSize: 11.5, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
+                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
                   AWS / Azure
                 </span>
-                <span style={{ fontSize: 11.5, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
+                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
                   Remote Available
                 </span>
               </div>
@@ -817,11 +818,11 @@ export default function WellfoundCareersView({
 
             <div style={{
               borderTop: `1px solid ${colors.borderLight}`,
-              paddingTop: 12,
+              paddingTop: 10,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              fontSize: 13.5,
+              fontSize: 13,
               fontWeight: 700,
               color: colors.textPrimary
             }}>
@@ -832,12 +833,12 @@ export default function WellfoundCareersView({
 
           {/* Card 2: State Healthcare Systems */}
           <div
-            onClick={() => handleTrendingCardClick('health', 'Health')}
+            onClick={() => handleTrendingCardClick('health')}
             style={{
               border: `1.5px solid ${activeCategoryFilter === 'health' ? colors.activeBorder : colors.border}`,
               borderRadius: 14,
               backgroundColor: activeCategoryFilter === 'health' ? colors.activeBg : colors.cardBg,
-              padding: 22,
+              padding: 20,
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
@@ -848,21 +849,17 @@ export default function WellfoundCareersView({
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-4px)'
               e.currentTarget.style.boxShadow = isLight ? '0 12px 24px rgba(0,0,0,0.08)' : '0 12px 24px rgba(0,0,0,0.4)'
-              e.currentTarget.style.borderColor = colors.activeBorder
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)'
               e.currentTarget.style.boxShadow = isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
-              if (activeCategoryFilter !== 'health') {
-                e.currentTarget.style.borderColor = colors.border
-              }
             }}
           >
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
                 <div style={{
-                  width: 44,
-                  height: 44,
+                  width: 42,
+                  height: 42,
                   borderRadius: 10,
                   background: 'linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%)',
                   color: '#FFFFFF',
@@ -870,7 +867,7 @@ export default function WellfoundCareersView({
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontWeight: 900,
-                  fontSize: 16
+                  fontSize: 15
                 }}>
                   SH
                 </div>
@@ -878,22 +875,22 @@ export default function WellfoundCareersView({
                   <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: colors.textPrimary }}>
                     State Healthcare Systems
                   </h3>
-                  <div style={{ fontSize: 12.5, color: colors.textSecondary }}>Public Health Agency</div>
+                  <div style={{ fontSize: 12, color: colors.textSecondary }}>Public Health Agency</div>
                 </div>
               </div>
 
-              <p style={{ fontSize: 13.5, color: colors.textSecondary, lineHeight: 1.5, margin: '0 0 14px' }}>
+              <p style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 1.5, margin: '0 0 12px' }}>
                 Empowers statewide public health initiatives, child welfare portals, and Medicaid management systems.
               </p>
 
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 18 }}>
-                <span style={{ fontSize: 11.5, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: isLight ? '#DBEAFE' : '#1E3A8A', color: '#1D4ED8' }}>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: isLight ? '#DBEAFE' : '#1E3A8A', color: '#1D4ED8' }}>
                   Public Sector
                 </span>
-                <span style={{ fontSize: 11.5, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
+                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
                   Healthcare IT
                 </span>
-                <span style={{ fontSize: 11.5, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
+                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
                   Long-term
                 </span>
               </div>
@@ -901,11 +898,11 @@ export default function WellfoundCareersView({
 
             <div style={{
               borderTop: `1px solid ${colors.borderLight}`,
-              paddingTop: 12,
+              paddingTop: 10,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              fontSize: 13.5,
+              fontSize: 13,
               fontWeight: 700,
               color: colors.textPrimary
             }}>
@@ -916,12 +913,12 @@ export default function WellfoundCareersView({
 
           {/* Card 3: Digital Platform Solutions */}
           <div
-            onClick={() => handleTrendingCardClick('dev', 'Developer')}
+            onClick={() => handleTrendingCardClick('dev')}
             style={{
               border: `1.5px solid ${activeCategoryFilter === 'dev' ? colors.activeBorder : colors.border}`,
               borderRadius: 14,
               backgroundColor: activeCategoryFilter === 'dev' ? colors.activeBg : colors.cardBg,
-              padding: 22,
+              padding: 20,
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
@@ -932,21 +929,17 @@ export default function WellfoundCareersView({
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-4px)'
               e.currentTarget.style.boxShadow = isLight ? '0 12px 24px rgba(0,0,0,0.08)' : '0 12px 24px rgba(0,0,0,0.4)'
-              e.currentTarget.style.borderColor = colors.activeBorder
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)'
               e.currentTarget.style.boxShadow = isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
-              if (activeCategoryFilter !== 'dev') {
-                e.currentTarget.style.borderColor = colors.border
-              }
             }}
           >
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
                 <div style={{
-                  width: 44,
-                  height: 44,
+                  width: 42,
+                  height: 42,
                   borderRadius: 10,
                   background: 'linear-gradient(135deg, #047857 0%, #10B981 100%)',
                   color: '#FFFFFF',
@@ -954,7 +947,7 @@ export default function WellfoundCareersView({
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontWeight: 900,
-                  fontSize: 16
+                  fontSize: 15
                 }}>
                   DP
                 </div>
@@ -962,22 +955,22 @@ export default function WellfoundCareersView({
                   <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: colors.textPrimary }}>
                     Digital Platform Solutions
                   </h3>
-                  <div style={{ fontSize: 12.5, color: colors.textSecondary }}>Enterprise Modernization</div>
+                  <div style={{ fontSize: 12, color: colors.textSecondary }}>Enterprise Modernization</div>
                 </div>
               </div>
 
-              <p style={{ fontSize: 13.5, color: colors.textSecondary, lineHeight: 1.5, margin: '0 0 14px' }}>
+              <p style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 1.5, margin: '0 0 12px' }}>
                 Full-stack software engineering, modern React/Node interfaces, and resilient backend microservices.
               </p>
 
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 18 }}>
-                <span style={{ fontSize: 11.5, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: isLight ? '#D1FAE5' : '#064E3B', color: '#047857' }}>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: isLight ? '#D1FAE5' : '#064E3B', color: '#047857' }}>
                   Full Stack
                 </span>
-                <span style={{ fontSize: 11.5, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
+                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
                   Enterprise
                 </span>
-                <span style={{ fontSize: 11.5, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
+                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
                   Hybrid / Onsite
                 </span>
               </div>
@@ -985,11 +978,11 @@ export default function WellfoundCareersView({
 
             <div style={{
               borderTop: `1px solid ${colors.borderLight}`,
-              paddingTop: 12,
+              paddingTop: 10,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              fontSize: 13.5,
+              fontSize: 13,
               fontWeight: 700,
               color: colors.textPrimary
             }}>
@@ -1000,9 +993,9 @@ export default function WellfoundCareersView({
         </div>
       </section>
 
-      {/* ─── 4. INTEGRATED SPLIT VIEW WORKSPACE (LEFT REQS + RIGHT FULL JD) ─ */}
+      {/* ─── 4. AUTHENTIC WELLFOUND 3-COLUMN WORKSPACE ────────────────────── */}
       <section id="wellfound-split-workspace" style={{
-        maxWidth: 1400,
+        maxWidth: 1560,
         margin: '0 auto',
         padding: '8px 24px 64px'
       }}>
@@ -1012,14 +1005,14 @@ export default function WellfoundCareersView({
           alignItems: 'center',
           gap: 8,
           overflowX: 'auto',
-          paddingBottom: 16,
+          paddingBottom: 14,
           marginBottom: 16,
           borderBottom: `1px solid ${colors.borderLight}`
         }}>
           <button
             onClick={() => setActiveCategoryFilter('all')}
             style={{
-              padding: '7px 16px',
+              padding: '6px 16px',
               borderRadius: 20,
               fontSize: 13,
               fontWeight: 600,
@@ -1036,7 +1029,7 @@ export default function WellfoundCareersView({
           <button
             onClick={() => setActiveCategoryFilter('dev')}
             style={{
-              padding: '7px 16px',
+              padding: '6px 16px',
               borderRadius: 20,
               fontSize: 13,
               fontWeight: 600,
@@ -1053,7 +1046,7 @@ export default function WellfoundCareersView({
           <button
             onClick={() => setActiveCategoryFilter('cloud')}
             style={{
-              padding: '7px 16px',
+              padding: '6px 16px',
               borderRadius: 20,
               fontSize: 13,
               fontWeight: 600,
@@ -1070,7 +1063,7 @@ export default function WellfoundCareersView({
           <button
             onClick={() => setActiveCategoryFilter('data')}
             style={{
-              padding: '7px 16px',
+              padding: '6px 16px',
               borderRadius: 20,
               fontSize: 13,
               fontWeight: 600,
@@ -1087,7 +1080,7 @@ export default function WellfoundCareersView({
           <button
             onClick={() => setActiveCategoryFilter('health')}
             style={{
-              padding: '7px 16px',
+              padding: '6px 16px',
               borderRadius: 20,
               fontSize: 13,
               fontWeight: 600,
@@ -1104,7 +1097,7 @@ export default function WellfoundCareersView({
           <button
             onClick={() => setActiveCategoryFilter('mgmt')}
             style={{
-              padding: '7px 16px',
+              padding: '6px 16px',
               borderRadius: 20,
               fontSize: 13,
               fontWeight: 600,
@@ -1120,21 +1113,18 @@ export default function WellfoundCareersView({
           </button>
         </div>
 
-        {/* ── SPLIT VIEW GRID: LEFT JOB FEED (46%) + RIGHT FULL JD DOSSIER (54%) ── */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(360px, 490px) minmax(0, 1fr)',
-          gap: 24,
-          alignItems: 'start'
-        }}>
-          {/* ──── LEFT COLUMN: REQUISITIONS FEED ──── */}
+        {/* ── 3-COLUMN MASTER WORKSPACE: LEFT REQS + CENTER WELLFOUND JD + RIGHT ADS ── */}
+        <div className="wellfound-3col-workspace">
+          {/* ════════ COLUMN 1: LEFT REQUISITIONS FEED (SIDE MAI BAKI KE CARD) ════════ */}
           <div style={{
             display: 'flex',
             flexDirection: 'column',
             gap: 12,
-            maxHeight: 'calc(100vh - 120px)',
+            maxHeight: 'calc(100vh - 110px)',
             overflowY: 'auto',
-            paddingRight: 6
+            paddingRight: 6,
+            position: 'sticky',
+            top: 84
           }}>
             {categoryFilteredJobs.length === 0 ? (
               <div style={{
@@ -1183,30 +1173,30 @@ export default function WellfoundCareersView({
                     key={job.id}
                     onClick={() => {
                       setSelectedJobId(job.id)
-                      if (rightPanelRef.current) {
-                        rightPanelRef.current.scrollTop = 0
+                      if (centerPanelRef.current) {
+                        centerPanelRef.current.scrollTop = 0
                       }
                     }}
                     style={{
                       display: 'flex',
                       flexDirection: 'column',
-                      padding: '16px 18px',
+                      padding: '15px 16px',
                       borderRadius: 12,
-                      border: `1.5px solid ${isSelected ? colors.activeBorder : colors.border}`,
-                      borderLeft: isSelected ? `5px solid ${isLight ? '#0A0E1A' : '#3B82F6'}` : `1.5px solid ${colors.border}`,
+                      border: `1.5px solid ${isSelected ? (isLight ? '#0A0E1A' : '#3B82F6') : colors.border}`,
+                      borderLeft: isSelected ? `4px solid ${isLight ? '#0A0E1A' : '#3B82F6'}` : `1.5px solid ${colors.border}`,
                       backgroundColor: isSelected ? colors.activeBg : colors.cardBg,
                       cursor: 'pointer',
                       transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
-                      gap: 10,
+                      gap: 8,
                       boxShadow: isSelected 
-                        ? (isLight ? '0 6px 18px rgba(32, 101, 209, 0.08)' : '0 6px 18px rgba(0,0,0,0.4)')
+                        ? (isLight ? '0 4px 16px rgba(10, 14, 26, 0.08)' : '0 4px 16px rgba(0,0,0,0.4)')
                         : 'none'
                     }}
                     onMouseEnter={(e) => {
                       if (!isSelected) {
                         e.currentTarget.style.backgroundColor = colors.hoverBg
                         e.currentTarget.style.transform = 'translateY(-2px)'
-                        e.currentTarget.style.boxShadow = isLight ? '0 4px 14px rgba(0,0,0,0.04)' : '0 4px 14px rgba(0,0,0,0.3)'
+                        e.currentTarget.style.boxShadow = isLight ? '0 4px 12px rgba(0,0,0,0.04)' : '0 4px 12px rgba(0,0,0,0.3)'
                       }
                     }}
                     onMouseLeave={(e) => {
@@ -1217,14 +1207,14 @@ export default function WellfoundCareersView({
                       }
                     }}
                   >
-                    {/* Top Row: Avatar, Title & "View Job" Button */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
-                        <CompanyLogo job={job} size={40} />
+                    {/* Top Row: Avatar, Title & Right Arrow */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
+                        <CompanyLogo job={job} size={38} />
                         <div style={{ minWidth: 0, flex: 1 }}>
                           <h4 style={{
                             margin: '0 0 2px',
-                            fontSize: 15.5,
+                            fontSize: 14.5,
                             fontWeight: 700,
                             color: colors.textPrimary,
                             whiteSpace: 'nowrap',
@@ -1234,42 +1224,28 @@ export default function WellfoundCareersView({
                           }}>
                             {cleanTitle}
                           </h4>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: isLight ? '#1E293B' : '#E2E8F0' }}>
+                          <div style={{ fontSize: 12.5, fontWeight: 600, color: isLight ? '#334155' : '#CBD5E1' }}>
                             {domainName}
                           </div>
                         </div>
                       </div>
 
-                      {/* Right Action: "View Job" */}
-                      <button
-                        style={{
-                          padding: '6px 14px',
-                          borderRadius: 6,
-                          border: `1px solid ${isSelected ? (isLight ? '#0A0E1A' : '#3B82F6') : colors.border}`,
-                          backgroundColor: isSelected ? colors.buttonDark : (isLight ? '#FFFFFF' : '#1F2937'),
-                          color: isSelected ? colors.buttonDarkText : colors.textPrimary,
-                          fontSize: 12.5,
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          transition: 'all 0.15s ease',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          flexShrink: 0
-                        }}
-                      >
-                        <span>View Job</span>
-                        <span>→</span>
-                      </button>
+                      <span style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: isSelected ? colors.textPrimary : colors.textMuted
+                      }}>
+                        →
+                      </span>
                     </div>
 
-                    {/* Middle Row: Work Mode, Location & Local Need Badges */}
+                    {/* Bottom Row: Work Mode, Location & Local Need Badges (No Rate) */}
                     <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6, paddingTop: 2 }}>
                       {/* Work Mode Badge */}
                       <span style={{
-                        fontSize: 11.5,
+                        fontSize: 11,
                         fontWeight: 700,
-                        padding: '3px 8px',
+                        padding: '2.5px 7px',
                         borderRadius: 6,
                         backgroundColor: workModeStyles.bg,
                         color: workModeStyles.text,
@@ -1280,26 +1256,26 @@ export default function WellfoundCareersView({
 
                       {/* Location Badge */}
                       <span style={{
-                        fontSize: 11.5,
+                        fontSize: 11,
                         fontWeight: 600,
-                        padding: '3px 8px',
+                        padding: '2.5px 7px',
                         borderRadius: 6,
                         backgroundColor: colors.badgeBg,
                         color: colors.textPrimary,
                         border: `1px solid ${colors.border}`,
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: 4
+                        gap: 3
                       }}>
-                        <LocationIcon size={12} color={colors.textSecondary} />
+                        <LocationIcon size={11} color={colors.textSecondary} />
                         <span>{loc}</span>
                       </span>
 
                       {/* Local Need Badge */}
                       <span style={{
-                        fontSize: 11.5,
+                        fontSize: 11,
                         fontWeight: 700,
-                        padding: '3px 8px',
+                        padding: '2.5px 7px',
                         borderRadius: 6,
                         backgroundColor: localStyles.bg,
                         color: localStyles.text,
@@ -1310,11 +1286,11 @@ export default function WellfoundCareersView({
 
                       {isExpired && (
                         <span style={{
-                          fontSize: 10.5,
+                          fontSize: 10,
                           fontWeight: 700,
                           color: '#DC2626',
                           backgroundColor: isLight ? '#FEE2E2' : '#450A0A',
-                          padding: '2px 6px',
+                          padding: '2px 5px',
                           borderRadius: 4
                         }}>
                           Closed
@@ -1327,150 +1303,152 @@ export default function WellfoundCareersView({
             )}
           </div>
 
-          {/* ──── RIGHT COLUMN: FULL JOB DESCRIPTION (RIGHT PANEL DOSSIER) ──── */}
+          {/* ════════ COLUMN 2: CENTER SPACIOUS WELLFOUND JD VIEW + SIMILAR JOBS ════════ */}
           <div
-            ref={rightPanelRef}
+            ref={centerPanelRef}
             style={{
-              position: 'sticky',
-              top: 88,
               maxHeight: 'calc(100vh - 110px)',
               overflowY: 'auto',
               border: `1px solid ${colors.border}`,
-              borderRadius: 14,
+              borderRadius: 16,
               backgroundColor: colors.cardBg,
-              padding: 28,
-              boxShadow: isLight ? '0 4px 20px rgba(0,0,0,0.03)' : 'none'
+              padding: '32px 36px',
+              boxShadow: isLight ? '0 4px 20px rgba(0,0,0,0.03)' : 'none',
+              position: 'sticky',
+              top: 84
             }}
           >
-            {selectedJob ? (
+            {selectedJob && selDetails ? (
               <div>
-                {/* 1. Google AdSense Slot at Top of JD Panel */}
+                {/* ── 1. WELLFOUND TOP HEADER CARD (EXACT MATCH TO SCREENSHOT 1) ── */}
                 <div style={{
-                  border: `1px dashed ${colors.border}`,
-                  borderRadius: 10,
-                  backgroundColor: isLight ? '#FAFAFA' : '#171F2C',
-                  padding: 12,
-                  marginBottom: 20,
-                  textAlign: 'center'
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 16,
+                  marginBottom: 18
                 }}>
-                  <div style={{
-                    fontSize: 9.5,
-                    fontWeight: 700,
-                    letterSpacing: '0.08em',
-                    color: colors.textMuted,
-                    textTransform: 'uppercase',
-                    marginBottom: 6
-                  }}>
-                    SPONSORED / ADVERTISEMENT
+                  {/* Left: Company Logo & Company Name & Tagline */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0, flex: 1 }}>
+                    <CompanyLogo job={selectedJob} size={50} />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{
+                          fontSize: 17,
+                          fontWeight: 800,
+                          color: colors.textPrimary,
+                          letterSpacing: '-0.01em'
+                        }}>
+                          {selDomain}
+                        </span>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 5,
+                          fontSize: 12,
+                          fontWeight: 700,
+                          color: '#059669',
+                          backgroundColor: isLight ? '#ECFDF5' : '#064E3B',
+                          padding: '2px 8px',
+                          borderRadius: 12
+                        }}>
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#10B981' }} />
+                          Actively Hiring
+                        </span>
+                      </div>
+                      <div style={{
+                        fontSize: 13,
+                        color: colors.textSecondary,
+                        marginTop: 3,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}>
+                        Direct client digital architecture and enterprise systems modernization
+                      </div>
+                    </div>
                   </div>
-                  <ins
-                    className="adsbygoogle"
-                    style={{ display: 'block', width: '100%', height: 90 }}
-                    data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
-                    data-ad-slot="9876543210"
-                    data-ad-format="horizontal"
-                    data-full-width-responsive="true"
-                  />
-                  <div style={{ fontSize: 12, color: colors.textSecondary, marginTop: 4 }}>
-                    💼 Direct Fortune 500 & State Contracts with Fast-Track Recruiter Review
+
+                  {/* Right: Save Button & Apply Now Button (Exact Screenshot 1) */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                    <button
+                      onClick={() => handleToggleSaveJob && handleToggleSaveJob(selectedJob)}
+                      style={{
+                        backgroundColor: isSaved ? (isLight ? '#FEE2E2' : '#450A0A') : colors.cardBg,
+                        color: isSaved ? '#DC2626' : colors.textPrimary,
+                        border: `1px solid ${colors.border}`,
+                        borderRadius: 8,
+                        padding: '9px 16px',
+                        fontSize: 13.5,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <BookmarkIcon size={14} filled={isSaved} color={isSaved ? '#DC2626' : 'currentColor'} />
+                      <span>{isSaved ? 'Saved' : 'Save'}</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleApplyClick && handleApplyClick(selectedJob)}
+                      style={{
+                        backgroundColor: colors.buttonDark,
+                        color: colors.buttonDarkText,
+                        border: 'none',
+                        borderRadius: 8,
+                        padding: '10px 22px',
+                        fontSize: 14,
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 8px rgba(10, 14, 26, 0.2)',
+                        transition: 'transform 0.15s ease'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    >
+                      Apply Now
+                    </button>
                   </div>
                 </div>
 
-                {/* 2. Job Title, Badges & Apply Header */}
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 18 }}>
-                  <div>
-                    {/* Work Mode & Location Badges */}
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-                      <span style={{
-                        fontSize: 12,
-                        fontWeight: 700,
-                        backgroundColor: isLight ? '#DCFCE7' : '#052E16',
-                        color: isLight ? '#15803D' : '#86EFAC',
-                        padding: '4px 10px',
-                        borderRadius: 6
-                      }}>
-                        {resolveWorkArrangement(selectedJob)}
-                      </span>
+                {/* ── 2. JOB TITLE & METADATA LINE ── */}
+                <h1 style={{
+                  fontSize: 27,
+                  fontWeight: 900,
+                  color: colors.textPrimary,
+                  letterSpacing: '-0.03em',
+                  lineHeight: 1.25,
+                  margin: '0 0 10px'
+                }}>
+                  {selCleanTitle}
+                </h1>
 
-                      <span style={{
-                        fontSize: 12,
-                        fontWeight: 700,
-                        backgroundColor: colors.badgeBg,
-                        color: colors.textPrimary,
-                        padding: '4px 10px',
-                        borderRadius: 6
-                      }}>
-                        📍 {resolveJobLocation ? resolveJobLocation(selectedJob) : (selectedJob.work_mode || 'Remote, US')}
-                      </span>
+                {/* Subtitle Metadata: Work Mode | Exp | Contract | Req ID */}
+                <div style={{
+                  fontSize: 14.5,
+                  color: colors.textSecondary,
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: 8,
+                  marginBottom: 8
+                }}>
+                  <span>{selWorkMode} ({selLoc})</span>
+                  <span>•</span>
+                  <span>{formatExperience ? formatExperience(selectedJob) : '4+ years of exp'}</span>
+                  <span>•</span>
+                  <span>{formatContractType ? formatContractType(selectedJob) : 'Contract'}</span>
+                  <span>•</span>
+                  <span>Req #{resolveReqId ? resolveReqId(selectedJob.id, selectedJob) : selectedJob.id}</span>
+                </div>
 
-                      <span style={{
-                        fontSize: 12,
-                        fontWeight: 700,
-                        backgroundColor: resolveLocalRequirement(selectedJob).isLocalNeeded
-                          ? (isLight ? '#FEE2E2' : '#450A0A')
-                          : (isLight ? '#E0F2FE' : '#082F49'),
-                        color: resolveLocalRequirement(selectedJob).isLocalNeeded
-                          ? (isLight ? '#B91C1C' : '#FCA5A5')
-                          : (isLight ? '#0369A1' : '#7DD3FC'),
-                        padding: '4px 10px',
-                        borderRadius: 6
-                      }}>
-                        {resolveLocalRequirement(selectedJob).label}
-                      </span>
-
-                      <span style={{
-                        fontSize: 12,
-                        fontWeight: 700,
-                        backgroundColor: colors.badgeBg,
-                        color: colors.textSecondary,
-                        padding: '4px 10px',
-                        borderRadius: 6
-                      }}>
-                        Req #{resolveReqId ? resolveReqId(selectedJob.id, selectedJob) : selectedJob.id}
-                      </span>
-                    </div>
-
-                    <h2 style={{
-                      fontSize: 25,
-                      fontWeight: 800,
-                      color: colors.textPrimary,
-                      margin: '0 0 6px',
-                      letterSpacing: '-0.02em',
-                      lineHeight: 1.25
-                    }}>
-                      {cleanJobTitleWithPositionNumber ? cleanJobTitleWithPositionNumber(selectedJob.title) : selectedJob.title}
-                    </h2>
-
-                    <div style={{ fontSize: 14.5, fontWeight: 700, color: isLight ? '#1E293B' : '#E2E8F0', display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span>{resolveClientDomainName(selectedJob)}</span>
-                    </div>
-                  </div>
-
-                  {/* Top Apply Button */}
-                  <button
-                    onClick={() => handleApplyClick && handleApplyClick(selectedJob)}
-                    style={{
-                      backgroundColor: colors.buttonDark,
-                      color: colors.buttonDarkText,
-                      border: 'none',
-                      borderRadius: 8,
-                      padding: '12px 24px',
-                      fontSize: 14.5,
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      flexShrink: 0,
-                      boxShadow: '0 4px 14px rgba(10, 14, 26, 0.25)',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      transition: 'all 0.15s ease'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                    onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                  >
-                    <span>Apply for this position</span>
-                    <span>→</span>
-                  </button>
+                {/* Posted Status Line */}
+                <div style={{ fontSize: 13, color: colors.textMuted, marginBottom: 14 }}>
+                  Posted: 2 days ago • Recruiter recently active
                 </div>
 
                 {/* Timezone Post Clocks */}
@@ -1479,11 +1457,11 @@ export default function WellfoundCareersView({
                     backgroundColor: colors.subtleBg,
                     borderRadius: 8,
                     padding: '8px 12px',
-                    display: 'flex',
+                    display: 'inline-flex',
                     gap: 16,
                     fontSize: 12,
                     color: colors.textSecondary,
-                    marginBottom: 22,
+                    marginBottom: 20,
                     flexWrap: 'wrap',
                     alignItems: 'center'
                   }}>
@@ -1496,44 +1474,272 @@ export default function WellfoundCareersView({
                   </div>
                 )}
 
-                {/* 3. Full Job Description Body */}
+                {/* Horizontal Divider */}
+                <div style={{ borderBottom: `1px solid ${colors.borderLight}`, margin: '14px 0 24px' }} />
+
+                {/* ── 3. 2-COLUMN ATTRIBUTE MATRIX (EXACT MATCH TO SCREENSHOT 1) ── */}
                 <div style={{
-                  fontSize: 14,
-                  lineHeight: 1.75,
-                  color: colors.textPrimary,
-                  whiteSpace: 'pre-wrap',
-                  borderTop: `1px solid ${colors.borderLight}`,
-                  paddingTop: 18,
-                  marginBottom: 24
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                  gap: '24px 32px',
+                  marginBottom: 28
                 }}>
-                  {getFullDescriptionText ? getFullDescriptionText(selectedJob) : (selectedJob.rawDescription || selectedJob.description || '')}
+                  {/* Left Column Attributes */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    <div>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: colors.textPrimary, marginBottom: 4 }}>
+                        Hires remotely in
+                      </div>
+                      <div style={{ fontSize: 14.5, color: colors.textSecondary, fontWeight: 500 }}>
+                        {selWorkMode === 'Remote' ? 'Everywhere (US)' : `${selLoc} & Commutable Regions`}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: colors.textPrimary, marginBottom: 4 }}>
+                        Company Location
+                      </div>
+                      <div style={{ fontSize: 14.5, color: colors.textSecondary, fontWeight: 500 }}>
+                        {selLoc}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: colors.textPrimary, marginBottom: 4 }}>
+                        Relocation
+                      </div>
+                      <div style={{ fontSize: 14.5, color: colors.textSecondary, fontWeight: 500 }}>
+                        {selLocalReq.isLocalNeeded ? 'Not Allowed (Local Residing Only)' : 'Not Required'}
+                      </div>
+                    </div>
+
+                    {/* Hiring Contact Block */}
+                    <div>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: colors.textPrimary, marginBottom: 8 }}>
+                        Hiring contact
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{
+                          width: 42,
+                          height: 42,
+                          borderRadius: 8,
+                          backgroundColor: '#1E293B',
+                          color: '#FFFFFF',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 800,
+                          fontSize: 14,
+                          flexShrink: 0
+                        }}>
+                          {selRecruiter?.initials || 'ST'}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: colors.textPrimary }}>
+                            {selRecruiter?.name || 'Sarah J. Thorne'}
+                          </div>
+                          <div style={{ fontSize: 12.5, color: colors.textSecondary }}>
+                            {selRecruiter?.role || 'Employee / Talent Partner'}
+                          </div>
+                          <div style={{ fontSize: 12, color: colors.textMuted }}>
+                            {selRecruiter?.location || selLoc}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column Attributes */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    <div>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: colors.textPrimary, marginBottom: 4 }}>
+                        Remote Work Policy
+                      </div>
+                      <div style={{ fontSize: 14.5, color: colors.textSecondary, fontWeight: 500 }}>
+                        {selWorkMode === 'Remote' 
+                          ? 'Remote only' 
+                          : selWorkMode === 'Hybrid' 
+                          ? 'Hybrid (2-3 days onsite / week)' 
+                          : 'Onsite in office'}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: colors.textPrimary, marginBottom: 4 }}>
+                        Visa Sponsorship
+                      </div>
+                      <div style={{ fontSize: 14.5, color: colors.textSecondary, fontWeight: 500 }}>
+                        {selLocalReq.urgency === 'high' 
+                          ? 'Not Available (US Citizen / Green Card Required)' 
+                          : 'Available / All Authorizations Considered'}
+                      </div>
+                    </div>
+
+                    {/* Skills Pills (Matching Soft Purple Rounded Pills from Screenshot 1) */}
+                    <div>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: colors.textPrimary, marginBottom: 8 }}>
+                        Skills
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                        {(selDetails?.rawSkills || []).map((skill, sIdx) => (
+                          <span
+                            key={sIdx}
+                            style={{
+                              display: 'inline-block',
+                              fontSize: 12.5,
+                              fontWeight: 600,
+                              padding: '5px 12px',
+                              borderRadius: 20,
+                              backgroundColor: isLight ? '#F1F0FB' : '#2E1065',
+                              color: isLight ? '#581C87' : '#DDD6FE',
+                              border: `1px solid ${isLight ? '#E9D5FF' : '#4C1D95'}`
+                            }}
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                {/* 4. Required Skills */}
-                {Array.isArray(selectedJob.skills) && selectedJob.skills.length > 0 && (
-                  <div style={{ marginBottom: 28 }}>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: colors.textSecondary, marginBottom: 10, letterSpacing: '0.05em' }}>
-                      REQUIRED SKILLS & TECHNOLOGIES
-                    </div>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                      {selectedJob.skills.map((s, i) => (
-                        <span key={i} style={{
-                          fontSize: 12,
-                          fontWeight: 700,
-                          backgroundColor: colors.subtleBg,
-                          color: isLight ? '#1E293B' : '#E2E8F0',
-                          border: `1px solid ${colors.border}`,
-                          padding: '4px 10px',
-                          borderRadius: 6
+                {/* Horizontal Divider */}
+                <div style={{ borderBottom: `1px solid ${colors.borderLight}`, margin: '24px 0' }} />
+
+                {/* ── 4. "ABOUT THE JOB" SECTION (EXACT MATCH TO SCREENSHOT 2) ── */}
+                <div>
+                  <h2 style={{
+                    fontSize: 26,
+                    fontWeight: 900,
+                    color: colors.textPrimary,
+                    margin: '0 0 22px',
+                    letterSpacing: '-0.025em'
+                  }}>
+                    About the job
+                  </h2>
+
+                  {/* Section: About Company */}
+                  <div style={{ marginBottom: 22 }}>
+                    <h3 style={{
+                      fontSize: 15.5,
+                      fontWeight: 800,
+                      color: colors.textPrimary,
+                      margin: '0 0 8px'
+                    }}>
+                      About {selDomain}:
+                    </h3>
+                    <p style={{
+                      fontSize: 14.5,
+                      lineHeight: 1.85,
+                      color: isLight ? '#374151' : '#D1D5DB',
+                      margin: 0
+                    }}>
+                      {selDetails?.aboutCompany}
+                    </p>
+                  </div>
+
+                  {/* Section: About The Role */}
+                  <div style={{ marginBottom: 24 }}>
+                    <h3 style={{
+                      fontSize: 15.5,
+                      fontWeight: 800,
+                      color: colors.textPrimary,
+                      margin: '0 0 8px'
+                    }}>
+                      About The Role:
+                    </h3>
+                    <p style={{
+                      fontSize: 14.5,
+                      lineHeight: 1.85,
+                      color: isLight ? '#374151' : '#D1D5DB',
+                      margin: 0
+                    }}>
+                      {selDetails?.aboutRole}
+                    </p>
+                  </div>
+
+                  {/* Section: What You Will Do */}
+                  <div style={{ marginBottom: 24 }}>
+                    <h3 style={{
+                      fontSize: 15.5,
+                      fontWeight: 800,
+                      color: colors.textPrimary,
+                      margin: '0 0 12px'
+                    }}>
+                      What You Will Do:
+                    </h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {selDetails?.whatYouWillDo.map((item, wIdx) => (
+                        <div key={wIdx} style={{
+                          fontSize: 14.5,
+                          lineHeight: 1.8,
+                          color: isLight ? '#374151' : '#D1D5DB'
                         }}>
-                          {s}
-                        </span>
+                          <strong style={{ color: colors.textPrimary, fontWeight: 700 }}>
+                            {item.title}{' '}
+                          </strong>
+                          {item.description}
+                        </div>
                       ))}
                     </div>
                   </div>
-                )}
 
-                {/* 5. Bottom Prominent Apply Action Bar */}
+                  {/* Section: What You'll Need */}
+                  <div style={{ marginBottom: 26 }}>
+                    <h3 style={{
+                      fontSize: 15.5,
+                      fontWeight: 800,
+                      color: colors.textPrimary,
+                      margin: '0 0 10px'
+                    }}>
+                      What You'll Need:
+                    </h3>
+                    <ul style={{
+                      margin: 0,
+                      paddingLeft: 20,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 8
+                    }}>
+                      {selDetails?.whatYouNeed.map((need, nIdx) => (
+                        <li key={nIdx} style={{
+                          fontSize: 14.5,
+                          lineHeight: 1.8,
+                          color: isLight ? '#374151' : '#D1D5DB'
+                        }}>
+                          {need}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Additional Original JD Notes if present */}
+                  {selectedJob?.description && selectedJob.description.length > 300 && (
+                    <div style={{
+                      backgroundColor: colors.subtleBg,
+                      border: `1px solid ${colors.borderLight}`,
+                      borderRadius: 10,
+                      padding: '16px 20px',
+                      marginBottom: 26
+                    }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: colors.textSecondary, marginBottom: 8, letterSpacing: '0.04em' }}>
+                        TECHNICAL SPECIFICATIONS & CLIENT DETAILS
+                      </div>
+                      <div style={{
+                        fontSize: 13.5,
+                        lineHeight: 1.7,
+                        color: colors.textSecondary,
+                        whiteSpace: 'pre-wrap',
+                        maxHeight: 280,
+                        overflowY: 'auto'
+                      }}>
+                        {getFullDescriptionText ? getFullDescriptionText(selectedJob) : selectedJob.description}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* ── 5. BOTTOM PROMINENT APPLY ACTION BAR ── */}
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -1541,8 +1747,8 @@ export default function WellfoundCareersView({
                   flexWrap: 'wrap',
                   gap: 16,
                   borderTop: `1px solid ${colors.border}`,
-                  paddingTop: 22,
-                  marginBottom: 26
+                  paddingTop: 24,
+                  marginBottom: 28
                 }}>
                   <div>
                     <div style={{ fontSize: 13, color: colors.textSecondary, fontWeight: 500 }}>
@@ -1560,11 +1766,11 @@ export default function WellfoundCareersView({
                       color: colors.buttonDarkText,
                       border: 'none',
                       borderRadius: 8,
-                      padding: '13px 30px',
-                      fontSize: 15,
+                      padding: '12px 28px',
+                      fontSize: 14.5,
                       fontWeight: 800,
                       cursor: 'pointer',
-                      boxShadow: '0 4px 16px rgba(10, 14, 26, 0.3)',
+                      boxShadow: '0 4px 16px rgba(10, 14, 26, 0.25)',
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: 8,
@@ -1578,7 +1784,7 @@ export default function WellfoundCareersView({
                   </button>
                 </div>
 
-                {/* 6. Similar Jobs Recommendations Footer */}
+                {/* ── 6. SIMILAR JOBS FOOTER (BOTEM MAI SIMILER) ── */}
                 {similarJobsList.length > 0 && (
                   <div style={{
                     borderTop: `1px solid ${colors.border}`,
@@ -1609,8 +1815,8 @@ export default function WellfoundCareersView({
                           key={simJob.id}
                           onClick={() => {
                             setSelectedJobId(simJob.id)
-                            if (rightPanelRef.current) {
-                              rightPanelRef.current.scrollTop = 0
+                            if (centerPanelRef.current) {
+                              centerPanelRef.current.scrollTop = 0
                             }
                           }}
                           style={{
@@ -1703,6 +1909,166 @@ export default function WellfoundCareersView({
               </div>
             )}
           </div>
+
+          {/* ════════ COLUMN 3: RIGHT ADSENSE & HIGHLIGHTS SIDEBAR (RIGHT SIDE MAI ADD) ════════ */}
+          <div className="wellfound-sidebar-ads" style={{
+            position: 'sticky',
+            top: 84,
+            gap: 16
+          }}>
+            {/* AdSense Unit 1: Sponsored Display Box */}
+            <div style={{
+              border: `1px solid ${colors.border}`,
+              borderRadius: 14,
+              backgroundColor: colors.cardBg,
+              padding: 16,
+              boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none',
+              textAlign: 'center'
+            }}>
+              <div style={{
+                fontSize: 10,
+                fontWeight: 800,
+                letterSpacing: '0.08em',
+                color: colors.textMuted,
+                textTransform: 'uppercase',
+                marginBottom: 10
+              }}>
+                SPONSORED / ADVERTISEMENT
+              </div>
+
+              {/* Google AdSense Responsive Unit */}
+              <div style={{
+                minHeight: 180,
+                backgroundColor: isLight ? '#F9FAFB' : '#171F2C',
+                borderRadius: 10,
+                border: `1px dashed ${colors.border}`,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 14,
+                gap: 8
+              }}>
+                <ins
+                  className="adsbygoogle"
+                  style={{ display: 'block', width: '100%', height: 140 }}
+                  data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+                  data-ad-slot="9876543210"
+                  data-ad-format="auto"
+                  data-full-width-responsive="true"
+                />
+                <div style={{ fontSize: 12, fontWeight: 700, color: colors.textPrimary }}>
+                  Direct Fortune 500 Contracts
+                </div>
+                <div style={{ fontSize: 11.5, color: colors.textSecondary, lineHeight: 1.4 }}>
+                  Fast-track your application with priority recruiter review.
+                </div>
+              </div>
+            </div>
+
+            {/* Checklist Card: "Level up your job search" (Reference Card) */}
+            <div style={{
+              border: `1px solid ${colors.border}`,
+              borderRadius: 14,
+              backgroundColor: colors.cardBg,
+              padding: 20,
+              boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
+            }}>
+              <h3 style={{
+                fontSize: 15,
+                fontWeight: 800,
+                color: colors.textPrimary,
+                margin: '0 0 4px',
+                letterSpacing: '-0.01em'
+              }}>
+                Level up your job search
+              </h3>
+              <p style={{
+                fontSize: 12.5,
+                color: colors.textSecondary,
+                margin: '0 0 16px',
+                lineHeight: 1.4
+              }}>
+                Why top professionals apply directly through SmartHire:
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <CheckCircleIcon size={16} color="#10B981" />
+                  <div style={{ fontSize: 13, color: colors.textPrimary, fontWeight: 600, lineHeight: 1.3 }}>
+                    Verified Direct Client contracts only
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <CheckCircleIcon size={16} color="#10B981" />
+                  <div style={{ fontSize: 13, color: colors.textPrimary, fontWeight: 600, lineHeight: 1.3 }}>
+                    Zero third-party markups or rate cuts
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <CheckCircleIcon size={16} color="#10B981" />
+                  <div style={{ fontSize: 13, color: colors.textPrimary, fontWeight: 600, lineHeight: 1.3 }}>
+                    Instant ATS parsing & skill matching
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <CheckCircleIcon size={16} color="#10B981" />
+                  <div style={{ fontSize: 13, color: colors.textPrimary, fontWeight: 600, lineHeight: 1.3 }}>
+                    Fast-track recruiter review in 24h
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* AdSense Unit 2: Career Partner Spotlight */}
+            <div style={{
+              border: `1px solid ${colors.border}`,
+              borderRadius: 14,
+              backgroundColor: colors.cardBg,
+              padding: 16,
+              boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none',
+              textAlign: 'center'
+            }}>
+              <div style={{
+                fontSize: 10,
+                fontWeight: 800,
+                letterSpacing: '0.08em',
+                color: colors.textMuted,
+                textTransform: 'uppercase',
+                marginBottom: 10
+              }}>
+                CAREER PARTNER SPOTLIGHT
+              </div>
+
+              <div style={{
+                minHeight: 120,
+                backgroundColor: isLight ? '#F9FAFB' : '#171F2C',
+                borderRadius: 10,
+                border: `1px dashed ${colors.border}`,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 12,
+                gap: 6
+              }}>
+                <ins
+                  className="adsbygoogle"
+                  style={{ display: 'block', width: '100%', height: 90 }}
+                  data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+                  data-ad-slot="1234567890"
+                  data-ad-format="auto"
+                  data-full-width-responsive="true"
+                />
+                <div style={{ fontSize: 11.5, color: colors.textSecondary }}>
+                  Explore verified enterprise staffing opportunities
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -1713,7 +2079,7 @@ export default function WellfoundCareersView({
         padding: '36px 24px 50px'
       }}>
         <div style={{
-          maxWidth: 1400,
+          maxWidth: 1560,
           margin: '0 auto',
           display: 'flex',
           alignItems: 'center',

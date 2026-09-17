@@ -5,20 +5,7 @@ import SmartHireBotWidget from '../components/SmartHireBotWidget'
 import { saveCareerApplication, getAtsJobs, saveRequisitionCandidates, saveCandidate } from '../lib/atsFirestore'
 import { loginWithGoogle } from '../lib/firebase'
 import { formatJobDescription, resolveJobLocation, cleanJobTitleWithPositionNumber, resolveReqId } from '../utils/formatJobDescription'
-import ClassicCareersView from '../components/ClassicCareersView'
-import ZoneCareersView from '../components/ZoneCareersView'
-import LinkedInCareersView from '../components/LinkedInCareersView'
 import WellfoundCareersView from '../components/WellfoundCareersView'
-import {
-  CategoryFinanceIcon,
-  CategoryMarketingIcon,
-  CategoryDesignIcon,
-  CategoryDevIcon,
-  CategoryHardwareIcon,
-  CategoryCustomerServiceIcon,
-  CategoryHealthcareIcon,
-  CategoryBankingIcon
-} from '../components/ZoneCareerAssets'
 
 export default function PublicCareers() {
   const navigate = useNavigate()
@@ -209,24 +196,8 @@ export default function PublicCareers() {
       .map(item => item.job)
   }
 
-  // ─── QUAD-VIEW LAYOUT PREFERENCE (WELLFOUND VS SPLIT VS ZONE VS CLASSIC) ──
-  const [layoutView, setLayoutView] = useState(() => {
-    try {
-      const v2 = localStorage.getItem('smarthire_career_layout_view_v2')
-      if (v2) return v2
-      return 'wellfound'
-    } catch (e) {
-      return 'wellfound'
-    }
-  })
-
-  const handleSetLayoutView = (view) => {
-    setLayoutView(view)
-    try {
-      localStorage.setItem('smarthire_career_layout_view', view)
-      localStorage.setItem('smarthire_career_layout_view_v2', view)
-    } catch (e) {}
-  }
+  // ─── AUTHENTIC WELLFOUND CAREERS VIEW ──
+  const layoutView = 'wellfound'
 
   const [currentTime, setCurrentTime] = useState(new Date())
   const [clocksExpanded, setClocksExpanded] = useState(false)
@@ -974,446 +945,47 @@ export default function PublicCareers() {
     <div style={{
       position: 'relative',
       minHeight: '100vh',
-      backgroundColor: layoutView === 'wellfound' ? (isLight ? '#FFFFFF' : '#0B0F19') : layoutView === 'split' ? (isLight ? '#F3F2F0' : '#0B0F19') : layoutView === 'classic' ? (isLight ? '#FAFBFD' : '#080C14') : (isLight ? '#FFFFFF' : '#141A21'),
+      backgroundColor: isLight ? '#FFFFFF' : '#0B0F19',
       color: isLight ? '#0F172A' : '#F8FAFC',
       transition: 'background-color 0.2s, color 0.2s'
     }}>
-      {/* ─── 1-CLICK QUAD LAYOUT TOGGLE: WELLFOUND VS SPLIT VS ZONE VS CLASSIC ─── */}
-      {layoutView === 'wellfound' ? (
-        <WellfoundCareersView
-          jobs={jobs}
-          filteredJobs={filteredJobs}
-          loading={loading}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          selectedLocation={selectedLocation}
-          setSelectedLocation={setSelectedLocation}
-          deadlineFilter={deadlineFilter}
-          setDeadlineFilter={setDeadlineFilter}
-          appliedJobs={appliedJobs}
-          savedJobs={savedJobs}
-          handleToggleSaveJob={handleToggleSaveJob}
-          candidateUser={candidateUser}
-          handleCandidateSignOut={handleCandidateSignOut}
-          setShowLoginModal={setShowLoginModal}
-          handleApplyClick={handleApplyClick}
-          setFullJdModalJob={setFullJdModalJob}
-          setActiveChatCandidate={setActiveChatCandidate}
-          setShowCvUploadModal={setShowCvUploadModal}
-          clocksExpanded={clocksExpanded}
-          setClocksExpanded={setClocksExpanded}
-          formatLiveTime={formatLiveTime}
-          themeMode={themeMode}
-          toggleTheme={toggleTheme}
-          isLight={isLight}
-          layoutView={layoutView}
-          handleSetLayoutView={handleSetLayoutView}
-          cleanJobTitleWithPositionNumber={cleanJobTitleWithPositionNumber}
-          resolveJobLocation={resolveJobLocation}
-          formatExperience={formatExperience}
-          formatRateOrSalary={formatRateOrSalary}
-          formatContractType={formatContractType}
-          isJobExpired={isJobExpired}
-          getFullDescriptionText={getFullDescriptionText}
-          getSimilarJobs={getSimilarJobs}
-          getJobPostTimezones={getJobPostTimezones}
-        />
-      ) : layoutView === 'split' ? (
-        <LinkedInCareersView
-          jobs={jobs}
-          filteredJobs={filteredJobs}
-          loading={loading}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          selectedLocation={selectedLocation}
-          setSelectedLocation={setSelectedLocation}
-          deadlineFilter={deadlineFilter}
-          setDeadlineFilter={setDeadlineFilter}
-          appliedJobs={appliedJobs}
-          savedJobs={savedJobs}
-          handleToggleSaveJob={handleToggleSaveJob}
-          candidateUser={candidateUser}
-          handleCandidateSignOut={handleCandidateSignOut}
-          setShowLoginModal={setShowLoginModal}
-          handleApplyClick={handleApplyClick}
-          setFullJdModalJob={setFullJdModalJob}
-          setActiveChatCandidate={setActiveChatCandidate}
-          setShowCvUploadModal={setShowCvUploadModal}
-          clocksExpanded={clocksExpanded}
-          setClocksExpanded={setClocksExpanded}
-          formatLiveTime={formatLiveTime}
-          themeMode={themeMode}
-          toggleTheme={toggleTheme}
-          isLight={isLight}
-          layoutView={layoutView}
-          handleSetLayoutView={handleSetLayoutView}
-          cleanJobTitleWithPositionNumber={cleanJobTitleWithPositionNumber}
-          resolveJobLocation={resolveJobLocation}
-          formatExperience={formatExperience}
-          formatRateOrSalary={formatRateOrSalary}
-          formatContractType={formatContractType}
-          isJobExpired={isJobExpired}
-          getFullDescriptionText={getFullDescriptionText}
-        />
-      ) : layoutView === 'classic' ? (
-        <ClassicCareersView
-          jobs={jobs}
-          filteredJobs={filteredJobs}
-          loading={loading}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          selectedLocation={selectedLocation}
-          setSelectedLocation={setSelectedLocation}
-          deadlineFilter={deadlineFilter}
-          setDeadlineFilter={setDeadlineFilter}
-          activeOpenJobs={activeOpenJobs}
-          todayDeadlineCount={todayDeadlineCount}
-          remoteCount={remoteCount}
-          hybridCount={hybridCount}
-          onsiteCount={onsiteCount}
-          appliedJobs={appliedJobs}
-          savedJobs={savedJobs}
-          handleToggleSaveJob={handleToggleSaveJob}
-          candidateUser={candidateUser}
-          handleCandidateSignOut={handleCandidateSignOut}
-          setShowLoginModal={setShowLoginModal}
-          handleApplyClick={handleApplyClick}
-          setFullJdModalJob={setFullJdModalJob}
-          setActiveChatCandidate={setActiveChatCandidate}
-          clocksExpanded={clocksExpanded}
-          setClocksExpanded={setClocksExpanded}
-          formatLiveTime={formatLiveTime}
-          themeMode={themeMode}
-          setThemeMode={setThemeMode}
-          isLight={isLight}
-          layoutView={layoutView}
-          handleSetLayoutView={handleSetLayoutView}
-          cleanJobTitleWithPositionNumber={cleanJobTitleWithPositionNumber}
-          resolveJobLocation={resolveJobLocation}
-          formatExperience={formatExperience}
-          isJobExpired={isJobExpired}
-          isDeadlineToday={isDeadlineToday}
-        />
-      ) : (
-        <ZoneCareersView
-          jobs={jobs}
-          filteredJobs={filteredJobs}
-          loading={loading}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          selectedLocation={selectedLocation}
-          setSelectedLocation={setSelectedLocation}
-          selectedCategory={selectedCategory}
-          setSelectedCategory={setSelectedCategory}
-          HOT_CATEGORIES={HOT_CATEGORIES}
-          deadlineFilter={deadlineFilter}
-          setDeadlineFilter={setDeadlineFilter}
-          activeOpenJobs={activeOpenJobs}
-          todayDeadlineCount={todayDeadlineCount}
-          remoteCount={remoteCount}
-          hybridCount={hybridCount}
-          onsiteCount={onsiteCount}
-          appliedJobs={appliedJobs}
-          savedJobs={savedJobs}
-          handleToggleSaveJob={handleToggleSaveJob}
-          candidateUser={candidateUser}
-          handleCandidateSignOut={handleCandidateSignOut}
-          setShowLoginModal={setShowLoginModal}
-          handleApplyClick={handleApplyClick}
-          setFullJdModalJob={setFullJdModalJob}
-          setActiveChatCandidate={setActiveChatCandidate}
-          setShowCvUploadModal={setShowCvUploadModal}
-          clocksExpanded={clocksExpanded}
-          setClocksExpanded={setClocksExpanded}
-          formatLiveTime={formatLiveTime}
-          themeMode={themeMode}
-          toggleTheme={toggleTheme}
-          isLight={isLight}
-          layoutView={layoutView}
-          handleSetLayoutView={handleSetLayoutView}
-          cleanJobTitleWithPositionNumber={cleanJobTitleWithPositionNumber}
-          resolveJobLocation={resolveJobLocation}
-          formatExperience={formatExperience}
-          formatRateOrSalary={formatRateOrSalary}
-          formatContractType={formatContractType}
-          isJobExpired={isJobExpired}
-        />
-      )}
-
-      {/* ─── FULL JD READER MODAL (FOR CLASSIC / ZONE / SPLIT MODES) ────── */}
-      {fullJdModalJob && layoutView !== 'wellfound' && (
-        <div style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.75)',
-          backdropFilter: 'blur(8px)',
-          zIndex: 200,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 20
-        }}>
-          <div style={{
-            backgroundColor: theme.cardBg,
-            border: `1px solid ${theme.border}`,
-            borderRadius: 18,
-            width: '100%',
-            maxWidth: 780,
-            maxHeight: '90vh',
-            overflowY: 'auto',
-            padding: 32,
-            boxShadow: '0 25px 60px rgba(0,0,0,0.4)',
-            position: 'relative'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
-              <div>
-                <span style={{
-                  fontSize: 11,
-                  fontWeight: 800,
-                  backgroundColor: isLight ? '#FEE9D1' : '#33201C',
-                  color: theme.primary,
-                  padding: '3px 8px',
-                  borderRadius: 6,
-                  textTransform: 'uppercase'
-                }}>
-                  {formatContractType(fullJdModalJob)} · {fullJdModalJob.work_mode || 'Remote'}
-                </span>
-                <h2 style={{ fontSize: 24, fontWeight: 800, color: theme.textPrimary, margin: '8px 0 4px', fontFamily: "'Barlow', sans-serif" }}>
-                  {cleanJobTitleWithPositionNumber(fullJdModalJob.title)}
-                </h2>
-                <div style={{ fontSize: 13, color: '#00B8D9', fontWeight: 700 }}>
-                  Direct Client · 📍 {resolveJobLocation(fullJdModalJob) || 'Remote, US'}
-                </div>
-              </div>
-              <button
-                onClick={() => setFullJdModalJob(null)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: 22,
-                  cursor: 'pointer',
-                  color: theme.textSecondary
-                }}
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Timezone Post Times */}
-            {(() => {
-              const tz = getJobPostTimezones(fullJdModalJob)
-              return (
-                <div style={{
-                  backgroundColor: theme.surface,
-                  borderRadius: 10,
-                  padding: '10px 14px',
-                  display: 'flex',
-                  gap: 16,
-                  fontSize: 11.5,
-                  color: theme.textSecondary,
-                  marginBottom: 20,
-                  flexWrap: 'wrap'
-                }}>
-                  <span>🕒 <strong>EST:</strong> {tz.EST}</span>
-                  <span><strong>CST:</strong> {tz.CST}</span>
-                  <span><strong>PST:</strong> {tz.PST}</span>
-                </div>
-              )
-            })()}
-
-            {/* Job Description Content */}
-            <div style={{
-              fontSize: 14,
-              lineHeight: 1.7,
-              color: theme.textPrimary,
-              whiteSpace: 'pre-wrap',
-              borderTop: `1px solid ${theme.border}`,
-              paddingTop: 18,
-              marginBottom: 24
-            }}>
-              {getFullDescriptionText(fullJdModalJob)}
-            </div>
-
-            {/* Skills Pills */}
-            {Array.isArray(fullJdModalJob.skills) && fullJdModalJob.skills.length > 0 && (
-              <div style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: theme.textSecondary, marginBottom: 8 }}>REQUIRED SKILLS</div>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {fullJdModalJob.skills.map((s, i) => (
-                    <span key={i} style={{
-                      fontSize: 11.5,
-                      fontWeight: 700,
-                      backgroundColor: theme.surface,
-                      color: theme.primary,
-                      border: `1px solid ${theme.border}`,
-                      padding: '3px 10px',
-                      borderRadius: 6
-                    }}>
-                      {s}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Modal Actions — Prominent Bottom Apply Bar */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: 16,
-              borderTop: `1px solid ${theme.border}`,
-              paddingTop: 20,
-              marginBottom: 20
-            }}>
-              <div>
-                <div style={{ fontSize: 12.5, color: theme.textSecondary, fontWeight: 500 }}>
-                  Direct Client Opportunity · Verified Rate
-                </div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: theme.textPrimary }}>
-                  Ready to submit your profile?
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: 12 }}>
-                <button
-                  onClick={() => setFullJdModalJob(null)}
-                  style={{
-                    background: 'none',
-                    border: `1px solid ${theme.border}`,
-                    color: theme.textPrimary,
-                    borderRadius: 8,
-                    padding: '10px 18px',
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
-                >
-                  Close
-                </button>
-                <button
-                  onClick={() => {
-                    const jobToApply = fullJdModalJob
-                    setFullJdModalJob(null)
-                    handleApplyClick(jobToApply)
-                  }}
-                  style={{
-                    backgroundColor: '#0A0E1A',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    borderRadius: 8,
-                    padding: '11px 26px',
-                    fontSize: 14.5,
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 14px rgba(10, 14, 26, 0.25)',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 8
-                  }}
-                >
-                  <span>Apply for this position</span>
-                  <span>→</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Similar Jobs Footer */}
-            {(() => {
-              const similarJobs = getSimilarJobs(fullJdModalJob, jobs, 3)
-              if (!similarJobs || similarJobs.length === 0) return null
-              return (
-                <div style={{
-                  borderTop: `1px solid ${theme.border}`,
-                  paddingTop: 22,
-                  marginTop: 10
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: 14
-                  }}>
-                    <h4 style={{
-                      margin: 0,
-                      fontSize: 15.5,
-                      fontWeight: 800,
-                      color: theme.textPrimary,
-                      letterSpacing: '-0.01em'
-                    }}>
-                      Similar jobs you may be interested in
-                    </h4>
-                    <span style={{ fontSize: 12, color: theme.textSecondary }}>
-                      Matched by title & skills
-                    </span>
-                  </div>
-
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-                    gap: 12
-                  }}>
-                    {similarJobs.map(simJob => (
-                      <div
-                        key={simJob.id}
-                        onClick={() => {
-                          setFullJdModalJob(simJob)
-                          const modalScroll = document.getElementById('full-jd-modal-scroll')
-                          if (modalScroll) modalScroll.scrollTop = 0
-                        }}
-                        style={{
-                          border: `1px solid ${theme.border}`,
-                          borderRadius: 10,
-                          padding: 14,
-                          backgroundColor: theme.surface,
-                          cursor: 'pointer',
-                          transition: 'all 0.15s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.borderColor = '#2065D1'
-                          e.currentTarget.style.transform = 'translateY(-2px)'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.borderColor = theme.border
-                          e.currentTarget.style.transform = 'translateY(0)'
-                        }}
-                      >
-                        <div style={{ fontSize: 11, fontWeight: 700, color: '#00A76F', textTransform: 'uppercase', marginBottom: 4 }}>
-                          Direct Client
-                        </div>
-                        <div style={{
-                          fontSize: 13.5,
-                          fontWeight: 700,
-                          color: theme.textPrimary,
-                          marginBottom: 6,
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis'
-                        }}>
-                          {cleanJobTitleWithPositionNumber(simJob.title)}
-                        </div>
-                        <div style={{ fontSize: 12, color: theme.textSecondary, marginBottom: 10 }}>
-                          {resolveJobLocation(simJob) || 'Remote, US'} • {formatRateOrSalary(simJob)}
-                        </div>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'flex-end',
-                          fontSize: 12,
-                          fontWeight: 700,
-                          color: '#2065D1'
-                        }}>
-                          View Job →
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            })()}
-          </div>
-        </div>
-      )}
+      {/* ─── WELLFOUND CAREERS MASTER VIEW (ZONAL & CLASSIC REMOVED) ─── */}
+      <WellfoundCareersView
+        jobs={jobs}
+        filteredJobs={filteredJobs}
+        loading={loading}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        selectedLocation={selectedLocation}
+        setSelectedLocation={setSelectedLocation}
+        deadlineFilter={deadlineFilter}
+        setDeadlineFilter={setDeadlineFilter}
+        appliedJobs={appliedJobs}
+        savedJobs={savedJobs}
+        handleToggleSaveJob={handleToggleSaveJob}
+        candidateUser={candidateUser}
+        handleCandidateSignOut={handleCandidateSignOut}
+        setShowLoginModal={setShowLoginModal}
+        handleApplyClick={handleApplyClick}
+        setFullJdModalJob={setFullJdModalJob}
+        setActiveChatCandidate={setActiveChatCandidate}
+        setShowCvUploadModal={setShowCvUploadModal}
+        clocksExpanded={clocksExpanded}
+        setClocksExpanded={setClocksExpanded}
+        formatLiveTime={formatLiveTime}
+        themeMode={themeMode}
+        toggleTheme={toggleTheme}
+        isLight={isLight}
+        cleanJobTitleWithPositionNumber={cleanJobTitleWithPositionNumber}
+        resolveJobLocation={resolveJobLocation}
+        formatExperience={formatExperience}
+        formatRateOrSalary={formatRateOrSalary}
+        formatContractType={formatContractType}
+        isJobExpired={isJobExpired}
+        getFullDescriptionText={getFullDescriptionText}
+        getSimilarJobs={getSimilarJobs}
+        getJobPostTimezones={getJobPostTimezones}
+      />
 
       {/* ─── CANDIDATE 1-CLICK APPLY MODAL ─────────────────────────────────── */}
       {selectedJob && (
