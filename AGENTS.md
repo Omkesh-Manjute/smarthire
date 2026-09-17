@@ -31,6 +31,44 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-18 — Fix TDZ ReferenceError (`Cannot access 'xe' before initialization` in `RecruiterInbox.jsx`)
+- **Root Cause**: Two newly added `useEffect` hooks syncing `drawerReqId` and candidate target requisitions into `openJobsList` were placed at line 1817, before `const activeCandidate = ...` was lexically declared at line 1988. In production minified bundle, `activeCandidate` was minified to `xe`, triggering a Temporal Dead Zone (TDZ) ReferenceError during initial component render.
+- **Resolution**:
+  - Relocated both `useEffect` hooks to safely execute immediately after `activeCandidate` and `activeCandidateIndex` are initialized.
+  - Verified bundle AST analysis: `activeCandidate` (`xe`) is 0 times accessed before declaration (`usedBefore: false`).
+  - Production build in `smarthire-react`: 0 errors (built in 2.13s).
+  - Root `node build.js`: 0 errors (built in 1.92s).
+  - Committed to Git (`7a240be`) and pushed to GitHub `origin/main`.
+  - Deployed updated `dist.tar.gz` (`index-CIJmQ8_r.js`) to AWS Lightsail server (`34.194.119.199`), restarted PM2 `smarthire-ats`, verified HTTP 200 OK.
+
+### 2026-09-18 — Accurate Resume Text Extraction, AI Match Engine Refinement, Single/Bulk Candidate Deletion, Real Scan Ingest & UI Decluttering
+- **Authentic Resume Text Extraction & Domain-Specific Generators (`RecruiterInbox.jsx`, `email-imap-scraper.js`)**:
+  - Solved root issue where candidate resumes displayed generic QA Automation text (e.g., Anusha, a Senior .NET Developer, had "Lead QA Automation Engineer / SDET with SAP/NIEM experience").
+  - Fixed `email-imap-scraper.js` to extract and preserve clean body text (`resumeText: cleanBody`) stripping HTML tags and MIME artifacts.
+  - Rewrote `getFullResumeText(candidate)` with strict role precedence:
+    - Dedicated .NET / C# / ASP.NET Full Stack generator for Microsoft stack engineers.
+    - Dedicated SAP Functional & Technical Consultant generator (NOT QA).
+    - QA Automation / SDET generator only applied when roles specifically indicate test automation.
+    - Added authentic generators for TPM/Scrum Master, Data/Power BI Analyst, and Cloud/DevOps.
+- **Accurate Scoring & Non-Overlapping Precision Token Highlighting (`RecruiterInbox.jsx`)**:
+  - Removed artificial `Math.max(65, ...)` clamping that previously forced 65% scores regardless of skill overlap.
+  - Replaced fragile string replace highlighting with non-overlapping token index interval highlighter. Accurately highlights symbols like `.NET`, `C#`, `SQL Server`, `Microservices`, `Azure` in bright yellow (`#FEF08A`) and search query in soft blue (`#BAE6FD`).
+  - Added dynamic sync effect ensuring `drawerReqId` automatically tracks the active candidate's `targetReqId` and candidate target requisitions are dynamically registered in `openJobsList`.
+- **Single & Bulk Candidate Deletion (`RecruiterInbox.jsx`, `server/index.js`)**:
+  - Added single candidate delete button `[ 🗑️ Delete ]` in Candidate Card View top bar with confirmation dialog.
+  - Added `[ 🗑️ Delete Selected (N) ]` to Database Table View bulk action bar and `[ 🗑️ ]` delete button to each table row.
+  - Wired into `DELETE /api/candidates/:id` and `POST /api/candidates/bulk-delete` with optimistic UI update and toast notifications.
+- **Database Ghost Rows & Normalization Fix (`candidates.json`, `server/index.js`, `RecruiterInbox.jsx`)**:
+  - Normalized 24 legacy candidates in `candidates.json`, promoting nested `extracted_profile: { name, email, role, skills }` to top level.
+  - Added clean fallbacks in Database Table View and Candidate Dossier preventing blank names or generic placeholder roles.
+- **Live "Scan Ingest" Button & UI Decluttering (`RecruiterInbox.jsx`)**:
+  - Wired "Scan Ingest" sidebar button directly to `handleSyncEmailResumes()` with dynamic `syncingEmailResumes` loading status.
+  - Removed cluttered cluster of 4 action icon buttons (`[✏️] [👥] [💬] [⭐]`) from the candidate dossier.
+  - Removed fake `Gender: Male (mostly)` field and removed fake "Upgrade to Pro" promo banner.
+- **Verification & Deployment**:
+  - Vite frontend production build: 0 errors, 0 warnings (built in 2.43s).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 2.11s).
+
 ### 2026-09-18 — Yahoo Sent Folder IMAP Append, Real Spam ("Bulk") Ingestion with Auto-Mark Read, 5-Min Cron & Domain-Aware AI Job Matching
 - **Yahoo Mail "Sent" Folder Sync (`appendEmailToSentFolder` in `email-imap-scraper.js`, `server/index.js`)**:
   - Solved root issue where outbound emails dispatched via SMTP (`smtp.bizmail.yahoo.com:465`) never appeared in Yahoo webmail's "Sent" folder (`mail.yahoo.com/d/folders/2`).
