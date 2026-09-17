@@ -219,7 +219,63 @@ export default function AiMatchingCandidatesModal({
               ) : (
                 matchingCandidates.map((cand, idx) => {
                   const isAssigned = assignedMap[cand.id]
-                  const fitScore = cand.matchScore || Math.floor(88 + ((idx * 7) % 10))
+
+                  // ── Real AI Multi-Criteria Scoring ──
+                  const candSkillNames = (Array.isArray(cand.skills) ? cand.skills : (cand.skills || '').split(',').map(s => s.trim())).map(s => s.toLowerCase())
+                  const reqSkills = Array.isArray(job.skills) ? job.skills : (typeof job.skills === 'string' ? job.skills.split(',').map(s => s.trim()) : [])
+                  const reqTitle = (job.title || '').toLowerCase()
+                  const candTitle = (cand.fullRole || cand.role || '').toLowerCase()
+
+                  // 1. Title match (0-20)
+                  let titlePts = 0
+                  if (reqTitle && candTitle) {
+                    if (candTitle === reqTitle) { titlePts = 20 }
+                    else {
+                      const reqWords = reqTitle.split(/\s+/).filter(w => w.length > 3)
+                      const matchedWords = reqWords.filter(w => candTitle.includes(w))
+                      const ratio = reqWords.length > 0 ? matchedWords.length / reqWords.length : 0
+                      titlePts = ratio >= 0.75 ? 16 : ratio >= 0.4 ? 10 : 4
+                    }
+                  } else { titlePts = 10 }
+
+                  // 2. Skills match (0-45)
+                  const matchedReqSkills = reqSkills.length > 0
+                    ? reqSkills.filter(rs => candSkillNames.some(cs => cs.includes(rs.toLowerCase().trim()) || rs.toLowerCase().trim().includes(cs)))
+                    : candSkillNames.slice(0, 5).map(s => s)
+                  const skillPts = reqSkills.length > 0
+                    ? Math.round((matchedReqSkills.length / reqSkills.length) * 45)
+                    : 35
+
+                  // 3. Nice-to-have bonus (0-15)
+                  const niceKeywords = ['agile', 'scrum', 'jira', 'sql', 'power bi', 'aws', 'azure', 'python', 'sharepoint']
+                  const bonusMatched = niceKeywords.filter(kw => candSkillNames.some(cs => cs.includes(kw)))
+                  const bonusPts = Math.min(15, bonusMatched.length * 2)
+
+                  // 4. Govt/State experience (0-15)
+                  const govtKeywords = ['state of', 'department of', 'county', 'dcf', 'hhs', 'government', 'federal', 'agency', 'city of', 'division of']
+                  const candText = [cand.resumeText || '', cand.comments || '', ...(Array.isArray(cand.projects) ? cand.projects.map(p => `${p.client} ${p.description}`) : [])].join(' ').toLowerCase()
+                  const govtMatches = govtKeywords.filter(kw => candText.includes(kw))
+                  const govtPts = govtMatches.length >= 3 ? 15 : govtMatches.length >= 1 ? 8 : 0
+
+                  // 5. Experience (0-5)
+                  const candExp = parseInt(cand.exp || cand.experience || '0') || 0
+                  const reqExpMatch = (job.description || '').match(/(\d+)\+?\s*years?/i)
+                  const reqExp = reqExpMatch ? parseInt(reqExpMatch[1]) : 5
+                  const expPts = candExp >= reqExp ? 5 : candExp >= reqExp - 2 ? 3 : 1
+
+                  const rawScore = titlePts + skillPts + bonusPts + govtPts + expPts
+                  const fitScore = Math.min(99, Math.max(55, rawScore))
+
+                  // Build brief why-reasons
+                  const whyReasons = []
+                  if (titlePts >= 16) whyReasons.push({ t: 'good', r: `Title match: "${cand.fullRole || cand.role}"` })
+                  else if (titlePts >= 10) whyReasons.push({ t: 'info', r: `Partial title match` })
+                  if (matchedReqSkills.length > 0) whyReasons.push({ t: 'good', r: `${matchedReqSkills.length}/${reqSkills.length || '?'} required skills matched` })
+                  if (govtPts > 0) whyReasons.push({ t: 'good', r: 'State/government experience detected' })
+                  if (bonusPts > 0) whyReasons.push({ t: 'info', r: `${bonusMatched.length} bonus skills (${bonusMatched.slice(0, 3).join(', ')})` })
+
+                  const scoreColor = fitScore >= 90 ? '#15803d' : fitScore >= 80 ? '#16a34a' : fitScore >= 70 ? '#0369a1' : '#92400e'
+                  const scoreLabel = fitScore >= 90 ? 'Excellent' : fitScore >= 80 ? 'Strong' : fitScore >= 70 ? 'Good' : 'Moderate'
 
                   return (
                     <div
@@ -227,7 +283,7 @@ export default function AiMatchingCandidatesModal({
                       style={{
                         background: '#ffffff',
                         border: '1px solid #7f9db9',
-                        borderLeft: `4px solid ${fitScore >= 90 ? '#16a34a' : '#0284c7'}`,
+                        borderLeft: `4px solid ${scoreColor}`,
                         borderRadius: 0,
                         padding: '10px 14px',
                         display: 'flex',
@@ -245,17 +301,17 @@ export default function AiMatchingCandidatesModal({
                           >
                             👤 {cand.name}
                           </span>
-                          
+
                           <span style={{
-                            background: fitScore >= 90 ? '#dcfce7' : '#e0f2fe',
-                            color: fitScore >= 90 ? '#166534' : '#0369a1',
-                            border: `1px solid ${fitScore >= 90 ? '#bbf7d0' : '#bae6fd'}`,
+                            background: fitScore >= 90 ? '#dcfce7' : fitScore >= 80 ? '#d1fae5' : fitScore >= 70 ? '#e0f2fe' : '#fef3c7',
+                            color: scoreColor,
+                            border: `1px solid ${scoreColor}44`,
                             padding: '1px 6px',
                             fontSize: '10.5px',
                             fontWeight: 'bold',
                             borderRadius: 0
                           }}>
-                            🎯 {fitScore}% Match
+                            {fitScore}% — {scoreLabel}
                           </span>
 
                           <span style={{ color: '#475569', fontSize: '11px' }}>
@@ -265,6 +321,12 @@ export default function AiMatchingCandidatesModal({
                           <span style={{ color: '#0284c7', fontSize: '10.5px', fontWeight: 'bold' }}>
                             📅 Avbl: {cand.avblDate || 'Immediate'}
                           </span>
+
+                          {govtPts > 0 && (
+                            <span style={{ background: '#f3e8ff', color: '#7c3aed', fontSize: '9.5px', padding: '1px 6px', border: '1px solid #d8b4fe', fontWeight: 'bold' }}>
+                              🏛️ Govt Exp
+                            </span>
+                          )}
                         </div>
 
                         {/* Action Buttons */}
@@ -319,11 +381,23 @@ export default function AiMatchingCandidatesModal({
                         </div>
                       </div>
 
+                      {/* Why This Match? (inline brief reasons) */}
+                      {whyReasons.length > 0 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', fontSize: '10px' }}>
+                          <span style={{ color: '#64748b', fontWeight: 'bold' }}>Why match:</span>
+                          {whyReasons.map((wr, wi) => (
+                            <span key={wi} style={{ background: wr.t === 'good' ? '#dcfce7' : '#e0f2fe', color: wr.t === 'good' ? '#15803d' : '#0369a1', border: `1px solid ${wr.t === 'good' ? '#86efac' : '#bae6fd'}`, padding: '1px 6px' }}>
+                              {wr.t === 'good' ? '✅' : 'ℹ️'} {wr.r}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
                       {/* Matching Skills Breakdown */}
                       <div style={{ fontSize: '10.5px', color: '#166534' }}>
-                        <strong>Matched Skills: </strong>
+                        <strong>Skills: </strong>
                         <span style={{ color: '#0f172a' }}>
-                          {Array.isArray(cand.skills) ? cand.skills.join(', ') : (cand.skills || 'Routing, BGP, Network Security, Cisco, Cloud')}
+                          {Array.isArray(cand.skills) ? cand.skills.join(', ') : (cand.skills || 'General IT Consulting')}
                         </span>
                       </div>
                     </div>

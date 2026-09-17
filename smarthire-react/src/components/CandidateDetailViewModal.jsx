@@ -865,7 +865,8 @@ export default function CandidateDetailViewModal({
       author: userName,
       role: userRole === 'admin' ? 'Account Manager' : 'Recruiter',
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-      text: newNoteText.trim()
+      text: newNoteText.trim(),
+      type: 'manual'
     }
     const nextNotes = [newNote, ...interactionNotes]
     setInteractionNotes(nextNotes)
@@ -877,14 +878,164 @@ export default function CandidateDetailViewModal({
     setTimeout(() => setToastMsg(null), 2500)
   }
 
-  // Calculate dynamic AI match percentage based on candidate skills vs active requisition
-  const aiMatchScore = useMemo(() => {
-    if (!reqRequiredSkills || reqRequiredSkills.length === 0) return 95
-    const candSkills = skillsList.map(s => s.name.toLowerCase())
-    const matchedCount = reqRequiredSkills.filter(rs => candSkills.some(cs => cs.includes(rs.toLowerCase().trim()) || rs.toLowerCase().trim().includes(cs))).length
-    const score = Math.min(99, Math.max(75, Math.round((matchedCount / reqRequiredSkills.length) * 100)))
-    return score
-  }, [reqRequiredSkills, skillsList])
+  // ─── Image rotation state (per doc type) ───
+  const [imgRotation, setImgRotation] = useState(0)
+  // Reset rotation when active doc changes
+  useEffect(() => { setImgRotation(0) }, [activeDocType])
+
+  // ─── Full AI Match scoring: title + skills + govt exp + years ───
+  const aiMatch = useMemo(() => {
+    const candSkillNames = skillsList.map(s => s.name.toLowerCase())
+    const reqTitle = (reqContext?.title || candidate.jobTitle || formData.jobTitle || '').toLowerCase()
+    const candTitle = (formData.jobTitle || candidate.jobTitle || candidate.fullRole || '').toLowerCase()
+    const resumeText = (candidate.resumeText || documents?.resume?.resumeText || '').toLowerCase()
+    const projectText = projectsList.map(p => `${p.client} ${p.description || ''}`).join(' ').toLowerCase()
+    const allText = `${resumeText} ${projectText}`
+
+    // ── 1. Title Match (0–20 pts) ──
+    let titlePts = 0
+    let titleReason = ''
+    if (reqTitle && candTitle) {
+      if (candTitle === reqTitle) { titlePts = 20; titleReason = `Exact title match: "${formData.jobTitle}"` }
+      else {
+        // Check word overlap
+        const reqWords = reqTitle.split(/\s+/).filter(w => w.length > 3)
+        const matchedWords = reqWords.filter(w => candTitle.includes(w))
+        const ratio = reqWords.length > 0 ? matchedWords.length / reqWords.length : 0
+        if (ratio >= 0.75) { titlePts = 16; titleReason = `Strong title match: "${formData.jobTitle}" aligns with JD "${reqContext?.title || ''}"` }
+        else if (ratio >= 0.4) { titlePts = 10; titleReason = `Partial title match: "${formData.jobTitle}" shares keywords with JD` }
+        else { titlePts = 4; titleReason = `Title diverges: "${formData.jobTitle}" vs JD "${reqContext?.title || ''}" — verify role fit` }
+      }
+    } else {
+      titlePts = 10; titleReason = 'Job title not specified — default partial credit applied'
+    }
+
+    // ── 2. Required Skills Match (0–45 pts) ──
+    let matchedReqSkills = []
+    let missingReqSkills = []
+    if (reqRequiredSkills.length > 0) {
+      reqRequiredSkills.forEach(rs => {
+        const rsLow = rs.toLowerCase().trim()
+        const found = candSkillNames.some(cs => cs.includes(rsLow) || rsLow.includes(cs))
+        if (found) matchedReqSkills.push(rs)
+        else missingReqSkills.push(rs)
+      })
+    } else {
+      matchedReqSkills = skillsList.slice(0, 5).map(s => s.name)
+    }
+    const skillPts = reqRequiredSkills.length > 0
+      ? Math.round((matchedReqSkills.length / reqRequiredSkills.length) * 45)
+      : 38
+
+    // ── 3. Nice-to-Have / Bonus Skills (0–15 pts) ──
+    const niceToHaveKeywords = ['agile', 'scrum', 'jira', 'confluence', 'sql', 'power bi', 'tableau', 'aws', 'azure', 'python', 'sharepoint', 'salesforce', 'oracle', 'sap', 'erp', 'ms office', 'visio']
+    const bonusMatched = niceToHaveKeywords.filter(kw => candSkillNames.some(cs => cs.includes(kw)) || allText.includes(kw))
+    const bonusPts = Math.min(15, Math.round(bonusMatched.length * 1.5))
+
+    // ── 4. State/Government Experience (0–15 pts) ──
+    const govtKeywords = ['state of', 'department of', 'county', 'dot ', 'doh ', 'dcf', 'hhs', 'dmv', 'division of', 'public sector', 'government', 'dept of', 'agency', 'city of', 'federal', 'municipality']
+    const govtMatches = govtKeywords.filter(kw => allText.includes(kw))
+    let govtPts = 0
+    let govtReason = ''
+    if (govtMatches.length >= 3) { govtPts = 15; govtReason = `Strong state/government background — experience at government/public sector organizations` }
+    else if (govtMatches.length >= 1) { govtPts = 8; govtReason = `Some government/public sector experience detected` }
+    else { govtReason = 'No government/state agency experience detected in resume' }
+
+    // Also check project clients directly
+    const govtClients = projectsList.filter(p => govtKeywords.some(kw => (p.client || '').toLowerCase().includes(kw)))
+    if (govtClients.length > 0 && govtPts < 15) {
+      govtPts = Math.max(govtPts, govtClients.length >= 2 ? 15 : 8)
+      govtReason = `Government client experience: ${govtClients.map(p => p.client).join(', ')}`
+    }
+
+    // ── 5. Experience Adequacy (0–5 pts) ──
+    const candExp = parseInt(formData.experience || candidate.exp || '0') || 0
+    const reqExpMatch = (reqContext?.description || '').match(/(\d+)\+?\s*years?/i)
+    const reqExp = reqExpMatch ? parseInt(reqExpMatch[1]) : 5
+    const expPts = candExp >= reqExp ? 5 : candExp >= reqExp - 2 ? 3 : 1
+    const expReason = candExp >= reqExp
+      ? `${candExp}+ years experience meets or exceeds the JD requirement of ${reqExp}+ years`
+      : `${candExp} years experience (JD requires ${reqExp}+ years) — gap of ${reqExp - candExp} years`
+
+    // ── Final Score ──
+    const rawScore = titlePts + skillPts + bonusPts + govtPts + expPts
+    const score = Math.min(99, Math.max(55, rawScore))
+    const label = score >= 90 ? 'Excellent Match' : score >= 80 ? 'Strong Candidate Match' : score >= 70 ? 'Good Candidate Match' : 'Moderate Match — Review Skills'
+    const labelColor = score >= 90 ? '#15803d' : score >= 80 ? '#16a34a' : score >= 70 ? '#0369a1' : '#92400e'
+    const labelBg = score >= 90 ? '#dcfce7' : score >= 80 ? '#f0fdf4' : score >= 70 ? '#e0f2fe' : '#fef3c7'
+
+    // ── Build Reasons Array ──
+    const reasons = []
+    reasons.push({ type: 'info', text: titleReason })
+    if (matchedReqSkills.length > 0) {
+      reasons.push({ type: 'good', text: `Has ${matchedReqSkills.length} of ${reqRequiredSkills.length || matchedReqSkills.length} required skills: ${matchedReqSkills.slice(0, 6).join(', ')}${matchedReqSkills.length > 6 ? '...' : ''}` })
+    }
+    if (missingReqSkills.length > 0) {
+      reasons.push({ type: 'warn', text: `Missing ${missingReqSkills.length} required skill${missingReqSkills.length > 1 ? 's' : ''}: ${missingReqSkills.slice(0, 4).join(', ')} — review in screening call` })
+    }
+    if (govtPts > 0) {
+      reasons.push({ type: 'good', text: `Government/State experience: ${govtReason}` })
+    } else {
+      reasons.push({ type: 'neutral', text: govtReason })
+    }
+    reasons.push({ type: expPts >= 4 ? 'good' : 'warn', text: expReason })
+    if (bonusMatched.length > 0) {
+      reasons.push({ type: 'info', text: `Bonus skills match: ${bonusMatched.slice(0, 5).join(', ')}` })
+    }
+
+    return { score, label, labelColor, labelBg, reasons, matchedReqSkills, missingReqSkills, govtPts, skillPts, titlePts, expPts, bonusPts }
+  }, [reqRequiredSkills, skillsList, formData.jobTitle, formData.experience, projectsList, candidate.resumeText, documents?.resume?.resumeText, reqContext])
+
+  // ─── Auto-generate Interaction Note once (when notes list is empty) ───
+  useEffect(() => {
+    if (!isOpen || !candidate) return
+    // Small delay so skillsList/projectsList are settled
+    const timer = setTimeout(() => {
+      setInteractionNotes(prevNotes => {
+        const hasAutoNote = prevNotes.some(n => n.type === 'auto')
+        if (prevNotes.length > 0 || hasAutoNote) return prevNotes
+
+        const candSkillNames = skillsList.map(s => s.name)
+        const reqTitle = reqContext?.title || candidate.jobTitle || formData.jobTitle || 'this position'
+        const matchedReq = aiMatch.matchedReqSkills || []
+        const missingReq = aiMatch.missingReqSkills || []
+
+        // Govt experience detection
+        const allProjectText = projectsList.map(p => `${p.client} ${p.description || ''}`).join(' ').toLowerCase()
+        const govtKeywords = ['state of', 'department of', 'county', 'dcf', 'hhs', 'government', 'federal', 'agency']
+        const hasGovtExp = govtKeywords.some(kw => allProjectText.includes(kw)) ||
+          govtKeywords.some(kw => (candidate.resumeText || '').toLowerCase().includes(kw))
+
+        let noteLines = []
+        noteLines.push(`Candidate has ${matchedReq.length} of ${reqRequiredSkills.length || candSkillNames.length} required skills for "${reqTitle}".`)
+        if (matchedReq.length > 0) noteLines.push(`Matched required skills: ${matchedReq.slice(0, 6).join(', ')}${matchedReq.length > 6 ? '...' : ''}.`)
+        if (candSkillNames.length > matchedReq.length) {
+          const additional = candSkillNames.filter(sn => !matchedReq.some(m => m.toLowerCase().includes(sn.toLowerCase())))
+          if (additional.length > 0) noteLines.push(`Additional profiled skills: ${additional.slice(0, 6).join(', ')}${additional.length > 6 ? ' and more' : ''}.`)
+        }
+        if (hasGovtExp) noteLines.push(`Candidate has prior experience with state/government/department clients — applicable to this engagement.`)
+        if (missingReq.length > 0) noteLines.push(`Skills gap to discuss in screening: ${missingReq.slice(0, 4).join(', ')}.`)
+        noteLines.push(`Overall AI Match Score: ${aiMatch.score}% — ${aiMatch.label}.`)
+
+        const autoNote = {
+          id: Date.now(),
+          author: 'SmartHire AI',
+          role: 'AI Screener',
+          date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+          text: noteLines.join(' '),
+          type: 'auto'
+        }
+        const nextNotes = [autoNote]
+        try {
+          localStorage.setItem(`smarthire_candidate_notes_${cleanCandId}`, JSON.stringify(nextNotes))
+        } catch(e) {}
+        return nextNotes
+      })
+    }, 600)
+    return () => clearTimeout(timer)
+  }, [isOpen, cleanCandId, candidate?.id])
+
+
 
   return (
     <div style={{
@@ -1034,14 +1185,14 @@ export default function CandidateDetailViewModal({
                 value={formData.firstName}
                 onChange={e => handleInputChange('firstName', e.target.value)}
                 placeholder="First"
-                style={{ padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', width: '90px' }}
+                style={{ padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', width: '90px', borderRadius: '0' }}
               />
               <input
                 type="text"
                 value={formData.lastName}
                 onChange={e => handleInputChange('lastName', e.target.value)}
                 placeholder="Last"
-                style={{ padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', width: '100px', marginLeft: '3px' }}
+                style={{ padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', width: '100px', marginLeft: '3px', borderRadius: '0' }}
               />
             </div>
 
@@ -1052,7 +1203,7 @@ export default function CandidateDetailViewModal({
                 placeholder="candidate@email.com"
                 value={formData.email}
                 onChange={e => handleInputChange('email', e.target.value)}
-                style={{ padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', width: '160px' }}
+                style={{ padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', width: '160px', borderRadius: '0' }}
               />
             </div>
 
@@ -1062,14 +1213,14 @@ export default function CandidateDetailViewModal({
                 type="text"
                 value={formData.payRate}
                 onChange={e => handleInputChange('payRate', e.target.value)}
-                style={{ padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', width: '40px' }}
+                style={{ padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', width: '40px', borderRadius: '0' }}
               />
               <span style={{ margin: '0 3px' }}>To</span>
               <input
                 type="text"
                 value={formData.payRateTo}
                 onChange={e => handleInputChange('payRateTo', e.target.value)}
-                style={{ padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', width: '40px' }}
+                style={{ padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', width: '40px', borderRadius: '0' }}
               />
               <span style={{ marginLeft: '3px' }}>per hour</span>
             </div>
@@ -1078,7 +1229,7 @@ export default function CandidateDetailViewModal({
               <select
                 value={formData.rateType}
                 onChange={e => handleInputChange('rateType', e.target.value)}
-                style={{ padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9' }}
+                style={{ padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: '0' }}
               >
                 <option value="C2C">C2C</option>
                 <option value="W2">W2</option>
@@ -1093,7 +1244,7 @@ export default function CandidateDetailViewModal({
                 type="text"
                 value={formData.availableDate}
                 onChange={e => handleInputChange('availableDate', e.target.value)}
-                style={{ padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', width: '80px' }}
+                style={{ padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', width: '80px', borderRadius: '0' }}
               />
             </div>
           </div>
@@ -2126,6 +2277,7 @@ export default function CandidateDetailViewModal({
                     <span style={{ fontWeight: 'bold', color: '#000080' }}>
                       Candidate Recruiter Interaction Log ({interactionNotes.length} notes)
                     </span>
+                    <span style={{ fontSize: '10px', color: '#64748b' }}>🤖 = AI Auto-generated note</span>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
@@ -2134,15 +2286,23 @@ export default function CandidateDetailViewModal({
                         No interaction notes recorded yet. Add your first recruiter note below.
                       </div>
                     ) : (
-                      interactionNotes.map(note => (
-                        <div key={note.id} style={{ border: '1px solid #cbd5e1', padding: '8px 10px', background: '#f8fafc' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px', fontSize: '10.5px' }}>
-                            <strong style={{ color: '#000080' }}>{note.author} ({note.role})</strong>
-                            <span style={{ color: '#64748b' }}>{note.date}</span>
+                      interactionNotes.map(note => {
+                        const isAuto = note.type === 'auto'
+                        return (
+                          <div key={note.id} style={{ border: `1px solid ${isAuto ? '#bae6fd' : '#cbd5e1'}`, padding: '8px 10px', background: isAuto ? '#f0f9ff' : '#f8fafc' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '10.5px', alignItems: 'center' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                <strong style={{ color: isAuto ? '#0369a1' : '#000080' }}>{note.author} ({note.role})</strong>
+                                {isAuto && (
+                                  <span style={{ background: '#0369a1', color: '#ffffff', fontSize: '9px', padding: '1px 5px', fontWeight: 'bold' }}>🤖 Auto</span>
+                                )}
+                              </div>
+                              <span style={{ color: '#64748b' }}>{note.date}</span>
+                            </div>
+                            <p style={{ margin: 0, color: '#0f172a', fontSize: '11px', lineHeight: '1.5' }}>{note.text}</p>
                           </div>
-                          <p style={{ margin: 0, color: '#0f172a', fontSize: '11px', lineHeight: '1.4' }}>{note.text}</p>
-                        </div>
-                      ))
+                        )
+                      })
                     )}
                   </div>
 
@@ -2154,13 +2314,13 @@ export default function CandidateDetailViewModal({
                       value={newNoteText}
                       onChange={e => setNewNoteText(e.target.value)}
                       placeholder="Add recruiter feedback, interview notes, screening feedback..."
-                      style={{ width: '100%', padding: '4px', fontSize: '11px', border: '1px solid #7f9db9', boxSizing: 'border-box', marginBottom: '6px' }}
+                      style={{ width: '100%', padding: '4px', fontSize: '11px', border: '1px solid #7f9db9', boxSizing: 'border-box', marginBottom: '6px', borderRadius: '0' }}
                     />
                     <div style={{ textAlign: 'right' }}>
                       <button
                         type="button"
                         onClick={handleAddNote}
-                        style={{ background: '#0033cc', border: '1px solid #002299', color: '#ffffff', padding: '4px 16px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '3px' }}
+                        style={{ background: '#0033cc', border: '1px solid #002299', color: '#ffffff', padding: '4px 16px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '0' }}
                       >
                         Save Note
                       </button>
@@ -2168,6 +2328,7 @@ export default function CandidateDetailViewModal({
                   </div>
                 </div>
               )}
+
 
               {/* ─── 6. SUBMISSION HISTORY TAB ─── */}
               {activeTab === 'submissions' && (
@@ -2267,26 +2428,92 @@ export default function CandidateDetailViewModal({
               {/* ─── 8. AI MATCH TAB ─── */}
               {activeTab === 'ai_fit' && (
                 <div>
-                  <div style={{ background: '#f0fdf4', border: '1px solid #86efac', padding: '10px 14px', borderRadius: '4px', marginBottom: '12px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  {/* Score Header Card */}
+                  <div style={{ background: aiMatch.labelBg, border: `1px solid ${aiMatch.labelColor}33`, padding: '12px 14px', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                       <div>
-                        <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#166534' }}>
-                          AI Match Score: {aiMatchScore}%
+                        <span style={{ fontSize: '22px', fontWeight: 'bold', color: aiMatch.labelColor }}>
+                          {aiMatch.score}%
                         </span>
-                        <div style={{ fontSize: '11px', color: '#475569', marginTop: '2px' }}>
-                          Evaluated against target Requisition #{reqContext?.id || candidate.jobId || 'Active Job'}.
+                        <span style={{ fontSize: '12px', fontWeight: 'bold', color: aiMatch.labelColor, marginLeft: '8px' }}>
+                          AI Match Score
+                        </span>
+                        <div style={{ fontSize: '10.5px', color: '#475569', marginTop: '2px' }}>
+                          Evaluated against Req #{reqContext?.id || candidate.jobId || 'Active Job'} — {reqContext?.title || candidate.jobTitle || ''}
                         </div>
                       </div>
-                      <span style={{ background: '#16a34a', color: '#ffffff', padding: '3px 10px', borderRadius: '12px', fontWeight: 'bold', fontSize: '10.5px' }}>
-                        Strong Candidate Match
+                      <span style={{ background: aiMatch.labelColor, color: '#ffffff', padding: '4px 12px', fontWeight: 'bold', fontSize: '10.5px' }}>
+                        {aiMatch.label}
                       </span>
+                    </div>
+                    {/* Score Progress Bar */}
+                    <div style={{ background: '#e2e8f0', height: '6px', width: '100%', marginBottom: '6px' }}>
+                      <div style={{ background: aiMatch.labelColor, height: '6px', width: `${aiMatch.score}%`, transition: 'width 0.4s ease' }} />
+                    </div>
+                    {/* Score Breakdown Pills */}
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', fontSize: '10px' }}>
+                      <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '1px 7px', border: '1px solid #bae6fd' }}>Title: {aiMatch.titlePts}/20</span>
+                      <span style={{ background: '#dcfce7', color: '#166534', padding: '1px 7px', border: '1px solid #86efac' }}>Skills: {aiMatch.skillPts}/45</span>
+                      <span style={{ background: '#f3e8ff', color: '#7c3aed', padding: '1px 7px', border: '1px solid #d8b4fe' }}>Govt Exp: {aiMatch.govtPts}/15</span>
+                      <span style={{ background: '#fef9c3', color: '#854d0e', padding: '1px 7px', border: '1px solid #fde68a' }}>Bonus Skills: {aiMatch.bonusPts}/15</span>
+                      <span style={{ background: '#f0fdf4', color: '#15803d', padding: '1px 7px', border: '1px solid #86efac' }}>Experience: {aiMatch.expPts}/5</span>
                     </div>
                   </div>
 
-                  <div style={{ border: '1px solid #cbd5e1', padding: '8px 10px', background: '#f8fafc', marginBottom: '10px' }}>
-                    <strong style={{ color: '#166534', display: 'block', marginBottom: '4px' }}>✅ Candidate Verified Skills:</strong>
-                    <div style={{ fontSize: '11px', color: '#334155' }}>
-                      {skillsList.map(s => s.name).join(', ') || 'General IT Engineering & Consulting'}
+                  {/* Why This Match? */}
+                  <div style={{ border: '1px solid #cbd5e1', background: '#f8fafc', marginBottom: '12px' }}>
+                    <div style={{ background: '#1e3a8a', color: '#ffffff', padding: '5px 10px', fontWeight: 'bold', fontSize: '11px' }}>
+                      Why This Match?
+                    </div>
+                    <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                      {aiMatch.reasons.map((r, ri) => {
+                        const icon = r.type === 'good' ? '✅' : r.type === 'warn' ? '⚠️' : r.type === 'neutral' ? 'ℹ️' : 'ℹ️'
+                        const col = r.type === 'good' ? '#15803d' : r.type === 'warn' ? '#92400e' : '#475569'
+                        const bg = r.type === 'good' ? '#f0fdf4' : r.type === 'warn' ? '#fef3c7' : '#f8fafc'
+                        return (
+                          <div key={ri} style={{ display: 'flex', gap: '6px', alignItems: 'flex-start', background: bg, padding: '4px 8px', border: `1px solid ${r.type === 'good' ? '#86efac' : r.type === 'warn' ? '#fde68a' : '#e2e8f0'}` }}>
+                            <span style={{ fontSize: '11px', flexShrink: 0, marginTop: '1px' }}>{icon}</span>
+                            <span style={{ fontSize: '10.5px', color: col, lineHeight: '1.4' }}>{r.text}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Matched vs Missing Skills */}
+                  {aiMatch.matchedReqSkills.length > 0 && (
+                    <div style={{ border: '1px solid #86efac', background: '#f0fdf4', padding: '8px 10px', marginBottom: '8px' }}>
+                      <strong style={{ color: '#15803d', fontSize: '10.5px', display: 'block', marginBottom: '4px' }}>✅ Verified Required Skills ({aiMatch.matchedReqSkills.length}):</strong>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                        {aiMatch.matchedReqSkills.map((sk, i) => (
+                          <span key={i} style={{ background: '#dcfce7', color: '#15803d', border: '1px solid #86efac', padding: '1px 7px', fontSize: '10px', fontWeight: 'bold' }}>{sk}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {aiMatch.missingReqSkills.length > 0 && (
+                    <div style={{ border: '1px solid #fde68a', background: '#fef3c7', padding: '8px 10px', marginBottom: '8px' }}>
+                      <strong style={{ color: '#92400e', fontSize: '10.5px', display: 'block', marginBottom: '4px' }}>⚠️ Missing Required Skills ({aiMatch.missingReqSkills.length}) — discuss in screening:</strong>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                        {aiMatch.missingReqSkills.map((sk, i) => (
+                          <span key={i} style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', padding: '1px 7px', fontSize: '10px' }}>{sk}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* All Candidate Skills */}
+                  <div style={{ border: '1px solid #cbd5e1', padding: '8px 10px', background: '#f8fafc' }}>
+                    <strong style={{ color: '#1e3a8a', display: 'block', marginBottom: '4px', fontSize: '10.5px' }}>All Profiled Skills:</strong>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                      {skillsList.map((sk, i) => {
+                        const isReq = aiMatch.matchedReqSkills.some(m => m.toLowerCase().includes(sk.name.toLowerCase()) || sk.name.toLowerCase().includes(m.toLowerCase()))
+                        return (
+                          <span key={i} style={{ background: isReq ? '#dcfce7' : '#f1f5f9', color: isReq ? '#15803d' : '#475569', border: isReq ? '1px solid #86efac' : '1px solid #cbd5e1', padding: '1px 7px', fontSize: '10px', fontWeight: isReq ? 'bold' : 'normal' }}>
+                            {sk.name}
+                          </span>
+                        )
+                      })}
                     </div>
                   </div>
                 </div>
@@ -2377,6 +2604,28 @@ export default function CandidateDetailViewModal({
                   +
                 </button>
 
+                {/* Rotate Button — visible for image docs */}
+                {(currentDoc?.fileType?.startsWith('image/') ||
+                  currentDoc?.fileName?.match(/\.(png|jpe?g|gif|webp)$/i) ||
+                  (typeof currentDoc?.fileData === 'string' && currentDoc.fileData.startsWith('data:image/'))) && (
+                  <button
+                    type="button"
+                    onClick={() => setImgRotation(prev => (prev + 90) % 360)}
+                    style={{
+                      border: '1px solid #7f9db9',
+                      background: imgRotation > 0 ? '#e0f2fe' : '#ffffff',
+                      color: imgRotation > 0 ? '#0369a1' : '#0f172a',
+                      padding: '1px 7px',
+                      cursor: 'pointer',
+                      fontSize: '10.5px',
+                      fontWeight: 'bold'
+                    }}
+                    title={`Rotate image (currently ${imgRotation}°)`}
+                  >
+                    ↻ Rotate{imgRotation > 0 ? ` (${imgRotation}°)` : ''}
+                  </button>
+                )}
+
                 {currentDoc?.fileData && (
                   <a
                     href={currentDoc.fileData}
@@ -2411,8 +2660,19 @@ export default function CandidateDetailViewModal({
                 />
               ) : (currentDoc?.fileData && (currentDoc.fileType?.includes('image') || currentDoc.fileData.startsWith('data:image/'))) ||
                   (currentDoc?.storageUrl && (currentDoc.storageUrl.includes('.jpg') || currentDoc.storageUrl.includes('.jpeg') || currentDoc.storageUrl.includes('.png') || currentDoc.storageUrl.includes('firebasestorage'))) ? (
-                <div style={{ width: '100%', transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top center' }}>
-                  <img src={currentDoc.fileData || currentDoc.storageUrl} alt={currentDoc.title} style={{ width: '100%', display: 'block', borderRadius: '4px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }} />
+                <div style={{ width: '100%', transform: `scale(${zoomLevel / 100}) rotate(${imgRotation}deg)`, transformOrigin: 'top center', transition: 'transform 0.3s ease' }}>
+                  <img
+                    src={currentDoc.fileData || currentDoc.storageUrl}
+                    alt={currentDoc.title}
+                    onLoad={e => {
+                      if ((activeDocType === 'dlFront' || activeDocType === 'dlBack') && imgRotation === 0) {
+                        if (e.target.naturalHeight > e.target.naturalWidth * 1.15) {
+                          setImgRotation(90)
+                        }
+                      }
+                    }}
+                    style={{ width: '100%', display: 'block', borderRadius: '4px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
+                  />
                 </div>
               ) : (
                 <div style={{
@@ -2621,18 +2881,28 @@ export default function CandidateDetailViewModal({
                           {(currentDoc.fileType?.startsWith('image/') ||
                             currentDoc.fileName?.match(/\.(png|jpe?g|gif|webp|svg)$/i) ||
                             (typeof currentDoc.fileData === 'string' && currentDoc.fileData.startsWith('data:image/'))) ? (
-                            <div style={{ textAlign: 'center', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '12px', overflow: 'auto', maxHeight: '520px' }}>
+                            <div style={{ textAlign: 'center', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '12px', overflow: 'auto', maxHeight: '540px' }}>
                               <img
                                 src={currentDoc.fileData || currentDoc.storageUrl}
                                 alt={currentDoc.title}
+                                onLoad={e => {
+                                  if ((activeDocType === 'dlFront' || activeDocType === 'dlBack') && imgRotation === 0) {
+                                    if (e.target.naturalHeight > e.target.naturalWidth * 1.15) {
+                                      setImgRotation(90)
+                                    }
+                                  }
+                                }}
                                 style={{
-                                  maxWidth: '100%',
+                                  maxWidth: imgRotation % 180 !== 0 ? '80%' : '100%',
                                   width: `${zoomLevel}%`,
-                                  maxHeight: '480px',
+                                  maxHeight: imgRotation % 180 !== 0 ? '420px' : '480px',
                                   objectFit: 'contain',
                                   boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                                  borderRadius: '3px',
-                                  background: '#ffffff'
+                                  background: '#ffffff',
+                                  transform: `rotate(${imgRotation}deg)`,
+                                  transition: 'transform 0.3s ease',
+                                  display: 'block',
+                                  margin: '0 auto'
                                 }}
                               />
                             </div>
