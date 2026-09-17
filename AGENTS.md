@@ -31,6 +31,40 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-17 — Wellfound Page 1 & Page 2 Separation, Technical Specs Scroll Removal, Multi-Column Footer & Full SEO Suite
+- **Page 1 vs Page 2 Separation (`WellfoundCareersView.jsx`, `PublicCareers.jsx`)**:
+  - **Page 1 (Default `/jobs` Front Page, `!selectedJobId`)**:
+    - Matches `media_1789659179557.png`: Hero search bar + 3 clickable trending direct client cards.
+    - Category filter tabs ribbon (`All Requisitions`, `Engineering`, `Cloud & Infrastructure`, `Data & AI`, `Public Health & State`, `Management & Governance`).
+    - 2-Column layout: Left side renders 5 categorized job sections (`Trending direct client jobs`, `Engineering jobs`, `Data and Analytics jobs`, `Cloud & Infrastructure jobs`, `Management & Public Sector jobs`); right side renders sticky Google AdSense sidebar.
+    - Flat high-density job rows with company logo, clean title, domain, work mode pill, location, local requirement badge, and a single **`View Job →`** button (no save, no apply on Page 1).
+    - Clicking any row or `View Job →` smoothly updates URL to `/jobs?jobId={id}` and opens Page 2.
+  - **Page 2 (Job Detail View, `selectedJobId && selectedJob`)**:
+    - Matches `media_1789659080974.png` & `media_1789657089815.png`:
+    - Top navigation breadcrumb with **`← Back to all jobs`** button returning user seamlessly to Page 1.
+    - 3-Column workspace: Left side requisition cards feed with active left accent border (`4px solid #0A0E1A`), Center spacious Wellfound Job Dossier, Right Google AdSense sidebar.
+    - **TECHNICAL SPECIFICATIONS & CLIENT DETAILS**: Completely removed inner scroll trap (`maxHeight: 280, overflowY: 'auto'`). The full technical details and specifications now render inline seamlessly with the rest of the JD.
+    - Bottom prominent apply bar (`Apply for this position →`) and algorithmic similar jobs recommendation cards.
+  - Added `popstate` event listener so browser Back and Forward buttons navigate cleanly between Page 1 and Page 2.
+- **Multi-Column Wellfound Footer (`media_1789659143215.png`)**:
+  - Brand column: `smarthire:` with red dot colon, mission statement, and clickable SVG social icons (X/Twitter, Instagram, LinkedIn).
+  - 3 structured link columns: `For Candidates`, `For Recruiters & Clients`, `Company`.
+  - Bottom bar: `Copyright © 2026 SmartHire LLC. All rights reserved. Cookie Preferences | Browse by: Direct Client Jobs · Remote Jobs · High Priority Requisitions · State IT Contracts · Enterprise Tech Hubs`.
+- **End-to-End Google SEO Suite for Top Ranking**:
+  - **Google for Jobs Schema.org (`@type: JobPosting`)**: Dynamic JSON-LD injection on Page 2 with clean title, rich HTML description, req ID, ISO date, contractor type, remote telecommute status, and directApply flag.
+  - **Google ItemList Schema**: Injected on Page 1 listing top direct client requisitions with deep links.
+  - **Dynamic Meta Tags**: Automated title and description updates for both Page 1 (`Direct Client IT Jobs, C2C & W2 Remote Contracts | SmartHire ATS`) and Page 2 (`{Job Title} | Direct Client Job in {Location} | SmartHire Careers`).
+  - **OpenGraph & Twitter Cards**: Dynamic `og:title`, `og:description`, `og:url`, `og:type`, and `twitter:card` for social crawler previews.
+  - **Sitemap & Robots.txt**: Updated with `https://smarthireus.com` primary URLs and Google crawler indexing directives.
+  - **Fonts**: Added Google Font preconnect and stylesheet link for `Plus Jakarta Sans` (`400-900`).
+- **Production Build & AWS Lightsail Deployment**:
+  - AST Scope Checker: 0 undeclared variables across all components.
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings (built in 2.38s).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 1.95s).
+  - Git committed (`bbb0ee1`) and pushed to GitHub `origin/main`.
+  - Uploaded `dist.tar.gz` to AWS Lightsail server (`34.194.119.199`), extracted, and restarted PM2 `smarthire-ats`.
+  - Verified HTTP 200 OK and active bundle `index-C6bMjHJE.js` on `https://smarthireus.com/jobs`.
+
 ### 2026-09-17 — Fix Undeclared Category*Icon in HOT_CATEGORIES & AST Scope Verification
 - **Issue Resolved**: When `ZoneCareerAssets.jsx` was removed, `HOT_CATEGORIES` in `PublicCareers.jsx` still had legacy `icon: CategoryFinanceIcon`, etc. which caused runtime `ReferenceError: CategoryFinanceIcon is not defined` inside the React error boundary.
 - **Resolution**:
