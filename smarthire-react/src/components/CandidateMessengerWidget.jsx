@@ -477,7 +477,7 @@ export default function CandidateMessengerWidget({ candidate, role = 'candidate'
                     backgroundColor: matchScore >= 80 ? '#DCFCE7' : matchScore >= 60 ? '#FEF3C7' : '#FEE2E2',
                     color: matchScore >= 80 ? '#15803D' : matchScore >= 60 ? '#B45309' : '#B91C1C'
                   }}>
-                    {matchScore >= 80 ? '🔥 High Suitability' : matchScore >= 60 ? '⚡ Moderate Fit' : '⚠️ Low Match'}
+                    {matchScore >= 80 ? 'High Suitability' : matchScore >= 60 ? 'Moderate Fit' : 'Low Match'}
                   </div>
                 </div>
               ) : (
@@ -621,7 +621,7 @@ export default function CandidateMessengerWidget({ candidate, role = 'candidate'
             {/* AI Assessment card */}
             <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: 12, padding: 14, marginBottom: 18 }}>
               <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 800, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 6 }}>
-                ⚡ AI Evaluation Breakdown
+                AI Evaluation Breakdown
               </h4>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F8FAFC', padding: 10, borderRadius: 8, marginBottom: 12 }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: '#334155' }}>JD Match Confidence Score:</span>

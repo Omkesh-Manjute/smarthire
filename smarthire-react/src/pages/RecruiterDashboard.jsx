@@ -1679,7 +1679,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
   const handleManagerUpdateStatus = (candidateId, newStatus) => {
     const dateStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     handleUpdatePotentialCandidate(candidateId, 'status', newStatus)
-    setSaveToastMessage(`⚡ Candidate status updated to "${newStatus}" by ${userName} (${isManager ? 'Manager' : 'Admin'})!`)
+    setSaveToastMessage(`Candidate status updated to "${newStatus}" by ${userName} (${isManager ? 'Manager' : 'Admin'})!`)
     setTimeout(() => setSaveToastMessage(null), 4000)
   }
 
@@ -4196,7 +4196,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                 className="tf-subbar-brand"
                 title="SmartWorks Home — Click to return to Requisitions Home"
               >
-                <span className="tf-subbar-brand-icon">⚡</span>
+                <span className="tf-subbar-brand-icon">SH</span>
                 <span className="tf-subbar-brand-title">SmartWorks</span>
               </div>
 
@@ -4481,7 +4481,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                       </div>
 
                       <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Rating:</label>
-                      <div>⛔ ⭐️⭐️⭐️⭐️⭐️</div>
+                      <div style={{ color: '#f59e0b' }}>★★★★★</div>
 
                       <div style={{ gridColumn: 'span 2' }}>
                         <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1e3a8a', fontWeight: 'bold' }}>
@@ -5541,7 +5541,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
                   <div style={{ background: '#eff6ff', border: '1px dashed #3b82f6', borderRadius: '4px', padding: '10px 12px', marginBottom: '12px' }}>
                     <div style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>
-                      ⚡ Smart AI Resume Auto-Parser
+                      Smart AI Resume Auto-Parser
                     </div>
                     <div style={{ fontSize: '11px', color: '#475569', marginBottom: '6px' }}>
                       Select the word resume (*.doc, *.docx, *.pdf) to auto-fill all candidate details:
@@ -5848,13 +5848,13 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                           </div>
 
                           <label style={{ color: '#1e3a8a', textAlign: 'right' }}>Overall Rating:</label>
-                          <div>⭐️⭐️⭐️⭐️⭐️ (5/5)</div>
+                          <div style={{ color: '#f59e0b' }}>★★★★★ (5/5)</div>
 
                           <label style={{ color: '#1e3a8a', textAlign: 'right' }}>Technical Rating:</label>
-                          <div>⭐️⭐️⭐️⭐️⭐️ (5/5)</div>
+                          <div style={{ color: '#f59e0b' }}>★★★★★ (5/5)</div>
 
                           <label style={{ color: '#1e3a8a', textAlign: 'right' }}>Comm Skill:</label>
-                          <div>⭐️⭐️⭐️⭐️ (4/5)</div>
+                          <div style={{ color: '#f59e0b' }}>★★★★☆ (4/5)</div>
 
                           <div style={{ gridColumn: 'span 2', marginTop: '4px' }}>
                             <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1e3a8a' }}>
@@ -5975,7 +5975,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                               <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', background: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
                                 <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0f172a' }}>{skillName}</td>
                                 <td style={{ padding: '6px 8px', color: '#475569' }}>{expYears} Years</td>
-                                <td style={{ padding: '6px 8px', color: '#eab308' }}>⭐️⭐️⭐️⭐️⭐️</td>
+                                <td style={{ padding: '6px 8px', color: '#eab308' }}>★★★★★</td>
                                 <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold' }}>2026 (Current)</td>
                                 <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                   <span
@@ -7977,7 +7977,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                                       </span>
                                       {pc.source && pc.source.includes('Auto-Apply') && (
                                         <span style={{ background: '#dcfce7', color: '#15803d', fontSize: '9px', fontWeight: 'bold', padding: '1px 4px', border: '1px solid #bbf7d0' }}>
-                                          ⚡ AUTO-APPLIED
+                                          AUTO-APPLIED
                                         </span>
                                       )}
                                       {pc.pushedToJobsInHand && (
@@ -8684,7 +8684,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                         type="submit"
                         className="tf-btn-filter-search"
                       >
-                        ⚡ Search Requisitions
+                        Search Requisitions
                       </button>
                     </div>
                   </form>
@@ -8727,7 +8727,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                           className="tf-btn-action-scrape"
                           title="Scrape and sync live job requisitions from JobsInHand"
                         >
-                          {isScrapingJobs ? '⏳ Syncing Requisitions...' : '⚡ Scrape Live JDs'}
+                          {isScrapingJobs ? '⏳ Syncing Requisitions...' : 'Scrape Live JDs'}
                         </button>
                         <button
                           type="button"
@@ -9728,7 +9728,6 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                 <div style={{ border: '1px solid #bfdbfe', borderRadius: '6px', background: '#eff6ff', padding: '14px', marginBottom: '14px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '16px' }}>⚡</span>
                       <strong style={{ color: '#1e3a8a', fontSize: '13px' }}>AI Match & Competency Intelligence</strong>
                     </div>
                     <button

@@ -31,6 +31,15 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-17 — Site-Wide Professional Symbol & Emoji Cleanup
+- **Complete Symbol & Emoji Removal Across Entire Website**:
+  - Removed all stars (`⭐`, `⭐️`, `★`, `☆`), diamonds (`💎`), fire/flames (`🔥`), and lightning bolts (`⚡`) across public and recruiter pages.
+  - Replaced cartoon stars with clean typography, star glyphs, or textual badges.
+  - Cleaned navigation bars, filter ribbons, AI match confidence pills, score badges, action buttons, dropdowns, and marketing pages (`LinkedInCareersView.jsx`, `ZoneCareersView.jsx`, `ClassicCareersView.jsx`, `PublicCareers.jsx`, `Homepage.jsx`, `RecruiterInbox.jsx`, `RecruiterDashboard.jsx`, `CandidateDetailViewModal.jsx`, `ScreeningModule.jsx`, `JobsModule.jsx`, `CandidatesModule.jsx`, `About.jsx`, `Blog.jsx`, `CandidateChat.jsx`, `PrivacyPolicy.jsx`, `Terms.jsx`, `BrandingCenter.jsx`, `AutomationModule.jsx`, `QuickSearchModal.jsx`, `SmartATSApp.jsx`).
+- **Production Build Verification**:
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings (built in 2.04s).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 2.04s).
+
 ### 2026-09-17 — Real IMAP Email Harvester & Direct Outbound SMTP Engine
 - **Inbound Email Scraping (IMAP Port 993 SSL) (`email-imap-scraper.js`, `server/index.js`)**:
   - Implemented dependency-free TLS-based IMAP client connecting over port 993 SSL.

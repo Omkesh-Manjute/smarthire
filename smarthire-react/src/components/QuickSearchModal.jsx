@@ -14,7 +14,7 @@ const SEARCH_ITEMS = [
   { id: 'ats-set', title: 'ATS Workspace Settings', category: 'Administration', icon: '🛠️', path: '/ats?tab=settings', keywords: 'settings config email templates stages' },
   { id: 'ats-users', title: 'Manage Team Users & Roles', category: 'Administration', icon: '👥', path: '/ats?tab=users', keywords: 'users team recruiters permissions access roles' },
   
-  { id: 'pg-exec', title: 'Executive Command Console', category: 'Navigation', icon: '⚡', path: '/dashboard', keywords: 'dashboard executive summary verify command' },
+  { id: 'pg-exec', title: 'Executive Command Console', category: 'Navigation', icon: '📊', path: '/dashboard', keywords: 'dashboard executive summary verify command' },
   { id: 'pg-li', title: 'LinkedIn Automation Studio', category: 'Socials & Automation', icon: '🌐', path: '/linkedin-posts', keywords: 'linkedin social auto post scheduled campaigns' },
   { id: 'pg-brand', title: 'AI Branding & Socials Center', category: 'Creative Tools', icon: '🎨', path: '/branding', keywords: 'branding social flyer banner canvas ai generator' },
   { id: 'pg-careers', title: 'Public Careers Portal', category: 'Public', icon: '🚀', path: '/jobs', keywords: 'careers public job board applicants apply' },

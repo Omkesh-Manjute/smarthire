@@ -101,7 +101,7 @@ function AutomationModule({ apiOnline }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
         {[
           { icon: '✅', label: 'Services Online', value: apiOnline ? '6/6' : '4/6', color: '#16a34a', bg: '#f0fdf4' },
-          { icon: '⚡', label: 'Cron Jobs Active', value: '5', color: '#2563eb', bg: '#eff6ff' },
+          { icon: '⚙️', label: 'Cron Jobs Active', value: '5', color: '#2563eb', bg: '#eff6ff' },
           { icon: '📨', label: 'Webhooks Today', value: '28', color: '#d97706', bg: '#fffbeb' },
           { icon: '🤖', label: 'AI Calls Made', value: '142', color: '#7c3aed', bg: '#f5f3ff' },
         ].map(s => (

@@ -1134,7 +1134,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
             fontSize: '10.5px'
           }}>
             <span style={{ color: '#0284c7', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => setIsOpen(false)}>
-              ⚡ Live Team Activity
+              Live Team Activity
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b' }}>
               <span>{isSoundEnabled ? '🔊 Sound ON' : '🔇 Muted'}</span>
@@ -1245,7 +1245,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
                   padding: '3px 9px',
                   borderRadius: '12px'
                 }}>
-                  ⚡ Priority: {selectedInquiry.priority || 'Normal'}
+                  Priority: {selectedInquiry.priority || 'Normal'}
                 </span>
 
                 <span style={{

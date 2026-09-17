@@ -2824,7 +2824,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                 fontWeight: 800,
                                 fontSize: 11
                               }}>
-                                ⚡ {c.matchScore || 85}% Fit
+                                {c.matchScore || 85}% Fit
                               </span>
                             </td>
                             <td style={{ padding: '12px 14px' }}>
@@ -3270,7 +3270,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
                     <div>
                       <span style={{ color: C.textSecondary, display: 'block', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase' }}>AI Fit Match</span>
-                      <strong style={{ color: '#D97706', fontSize: 12.5 }}>🔥 {calculatedFitScore}% Fit</strong>
+                      <strong style={{ color: '#D97706', fontSize: 12.5 }}>{calculatedFitScore}% Fit</strong>
                     </div>
 
                     <div style={{ marginTop: 4 }}>
@@ -3508,7 +3508,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                               padding: '2px 8px',
                               borderRadius: 4
                             }}>
-                              🔥 {calculatedFitScore}% Match Fit
+                              {calculatedFitScore}% Match Fit
                             </span>
 
                             <span style={{ fontSize: 11, color: '#B45309', backgroundColor: '#FEF3C7', padding: '2px 8px', borderRadius: 4, fontWeight: 800, border: '1px solid #FDE68A' }}>
@@ -3741,7 +3741,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     { id: 'spam', label: 'Spam / Recovered', icon: '🛡️', count: streamCandidates.filter(c => c.sourceCategory === 'email_spam' || c.isSpamRecovery).length },
                     { id: 'careers', label: 'Careers Portal', icon: '🌐', count: streamCandidates.filter(c => c.sourceCategory === 'careers_portal').length },
                     { id: 'vendor', label: 'Vendor Bench', icon: '🏢', count: streamCandidates.filter(c => c.sourceCategory === 'vendor_bench').length },
-                    { id: 'favorites', label: 'Starred Favorites', icon: '⭐', count: favoriteCandidateIds.size }
+                    { id: 'favorites', label: 'Starred Favorites', icon: '★', count: favoriteCandidateIds.size }
                   ].map(cat => {
                     const isSelected = tableCategory === cat.id
                     return (
@@ -4003,7 +4003,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                     Req #{c.targetReqId || '159079'}
                                   </div>
                                   <span style={{ fontSize: 10.5, fontWeight: 800, color: '#D97706', background: '#FEF3C7', border: '1px solid #FDE68A', padding: '1px 6px', borderRadius: 4, display: 'inline-block', marginTop: 2 }}>
-                                    🔥 {c.matchScore || 95}% Fit
+                                    {c.matchScore || 95}% Fit
                                   </span>
                                 </td>
 
@@ -4763,7 +4763,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                         borderRadius: 8,
                         border: `1px solid ${C.border}`
                       }}>
-                        {['👍', '👋', '🚀', '📄', '✅', '🎉', '💡', '👏', '😊', '🔥'].map(emoji => (
+                        {['👍', '👋', '🚀', '📄', '✅', '🎉', '💡', '👏', '😊', '🤝'].map(emoji => (
                           <button
                             key={emoji}
                             type="button"
@@ -5703,7 +5703,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
             flexShrink: 0
           }}>
             <span style={{ fontSize: 10.5, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-              ⚡ Templates:
+              Templates:
             </span>
             <button
               type="button"
@@ -6014,7 +6014,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                         fontSize: 11,
                         fontWeight: 800
                       }}>
-                        ⚡ {dynamicMatchScore}% Fit for Req #{currentReqId}
+                        {dynamicMatchScore}% Fit for Req #{currentReqId}
                       </span>
                     </div>
 

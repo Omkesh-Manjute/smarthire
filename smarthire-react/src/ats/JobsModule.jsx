@@ -264,10 +264,10 @@ function JobsModule({
     const reqSkillsFormatted = skills.map(s => `✔ ${s}`).join('\n')
 
     const prefSkills = Array.isArray(job.preferredSkills) && job.preferredSkills.length > 0
-      ? job.preferredSkills.map(s => `⭐ ${s}`).join('\n')
+      ? job.preferredSkills.map(s => `• ${s}`).join('\n')
       : Array.isArray(job.preferred_skills) && job.preferred_skills.length > 0
-      ? job.preferred_skills.map(s => `⭐ ${s}`).join('\n')
-      : `⭐ Bachelor's degree in Computer Science or related field\n⭐ Certification in Agile methodologies or relevant domain`
+      ? job.preferred_skills.map(s => `• ${s}`).join('\n')
+      : `• Bachelor's degree in Computer Science or related field\n• Certification in Agile methodologies or relevant domain`
 
     const cleanTitleTag = '#' + title.replace(/[^a-zA-Z0-9]/g, '')
     const locTag = '#' + loc.replace(/[^a-zA-Z0-9]/g, '')
@@ -618,7 +618,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
             disabled={isScraping}
             style={{ background: '#16a34a', color: '#ffffff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
           >
-            {isScraping ? '⏳ Syncing Jobs...' : '⚡ Scrape Now'}
+            {isScraping ? '⏳ Syncing Jobs...' : 'Scrape Now'}
           </button>
         </div>
       </div>

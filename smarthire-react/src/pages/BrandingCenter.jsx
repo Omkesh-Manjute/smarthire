@@ -1162,10 +1162,10 @@ function BrandingCenter() {
                             cursor: 'pointer'
                           }}
                         >
-                          <option value="neon">💎 Cyan Neon (VerifyHire)</option>
-                          <option value="purple">🔮 Royal Premium (Purple)</option>
-                          <option value="gold">🌟 Sunset Gold (Corporate)</option>
-                          <option value="navy">🔵 Classic Navy (Enterprise)</option>
+                          <option value="neon">Cyan Neon (VerifyHire)</option>
+                          <option value="purple">Royal Premium (Purple)</option>
+                          <option value="gold">Sunset Gold (Corporate)</option>
+                          <option value="navy">Classic Navy (Enterprise)</option>
                         </select>
                       </div>
                     </div>

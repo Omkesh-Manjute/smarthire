@@ -305,7 +305,7 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
         <div style={styles.kpiCard}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <span style={styles.kpiLabel}>AI Shortlisted</span>
-            <span style={styles.kpiIconAmber}>⭐</span>
+            <span style={styles.kpiIconAmber}>✓</span>
           </div>
           <div style={styles.kpiValue}>{shortlistedCount}</div>
           <div style={styles.kpiSub}>Rating 4+ or shortlisted</div>
@@ -339,7 +339,7 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
           {[
             { id: 'all', label: 'All' },
             { id: 'submitted', label: 'New / Submitted' },
-            { id: 'shortlisted', label: '⭐ Shortlisted' },
+            { id: 'shortlisted', label: 'Shortlisted' },
             { id: 'reviewed', label: 'Reviewed' },
             { id: 'rejected', label: 'Rejected' }
           ].map(tab => (
@@ -482,7 +482,7 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
                               background: aiScore >= 85 ? '#dcfce7' : aiScore >= 75 ? '#eff6ff' : '#fef3c7',
                               color: aiScore >= 85 ? '#166534' : aiScore >= 75 ? '#1d4ed8' : '#b45309'
                             }}>
-                              🔥 {aiScore}%
+                              {aiScore}%
                             </span>
                           </div>
                         ) : (
@@ -510,7 +510,7 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
                               session.status === 'rejected' ? styles.statusRejected :
                               styles.statusPending)
                         }}>
-                          {session.status === 'shortlisted' ? '⭐ Shortlisted' :
+                          {session.status === 'shortlisted' ? 'Shortlisted' :
                            session.status === 'submitted' ? '📥 New Submitted' :
                            session.status === 'reviewed' ? '✓ Reviewed' :
                            session.status === 'rejected' ? '✕ Rejected' :
@@ -790,7 +790,7 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
                   disabled={isSavingReview}
                   style={styles.shortlistTopBtn}
                 >
-                  ⭐ Shortlist Candidate
+                  Shortlist Candidate
                 </button>
                 <button
                   type="button"
@@ -896,7 +896,7 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
                       style={styles.sideSelect}
                     >
                       <option value="submitted">New / Submitted</option>
-                      <option value="shortlisted">⭐ Shortlisted</option>
+                      <option value="shortlisted">Shortlisted</option>
                       <option value="reviewed">Reviewed</option>
                       <option value="rejected">Rejected</option>
                     </select>

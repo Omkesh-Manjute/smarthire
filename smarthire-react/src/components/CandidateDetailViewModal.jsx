@@ -962,7 +962,7 @@ export default function CandidateDetailViewModal({
                 { id: 'notes', label: `Interaction Notes (${interactionNotes.length})` },
                 { id: 'submissions', label: 'Submission History' },
                 { id: 'projects', label: 'Projects' },
-                { id: 'ai_fit', label: '⚡ AI Match' }
+                { id: 'ai_fit', label: 'AI Match' }
               ].map(tab => {
                 const isActive = activeTab === tab.id
                 return (
@@ -1202,17 +1202,17 @@ export default function CandidateDetailViewModal({
 
                       <label style={{ color: '#000080', fontWeight: 'bold' }}>Overall Rating:</label>
                       <div style={{ color: '#f59e0b', fontSize: '12px' }}>
-                        {'⭐'.repeat(formData.overallRating || 5)}
+                        {'★'.repeat(formData.overallRating || 5)}
                       </div>
 
                       <label style={{ color: '#000080', fontWeight: 'bold' }}>Technical Rating:</label>
                       <div style={{ color: '#f59e0b', fontSize: '12px' }}>
-                        {'⭐'.repeat(formData.techRating || 5)}
+                        {'★'.repeat(formData.techRating || 5)}
                       </div>
 
                       <label style={{ color: '#000080', fontWeight: 'bold' }}>Comm Skill:</label>
                       <div style={{ color: '#f59e0b', fontSize: '12px' }}>
-                        {'⭐'.repeat(formData.commRating || 4)}
+                        {'★'.repeat(formData.commRating || 4)}
                       </div>
 
                       <div style={{ gridColumn: 'span 2', marginTop: '4px' }}>
@@ -1307,7 +1307,7 @@ export default function CandidateDetailViewModal({
                   <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '4px', padding: '8px 12px', marginBottom: '12px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                       <span style={{ fontWeight: 'bold', color: '#166534', fontSize: '11.5px' }}>
-                        ⭐ Requisition Required Skills Alignment ({reqContext?.id || 'Active Job'}):
+                        Requisition Required Skills Alignment ({reqContext?.id || 'Active Job'}):
                       </span>
                       <span style={{ fontSize: '10px', background: '#16a34a', color: '#ffffff', padding: '1px 6px', borderRadius: '10px', fontWeight: 'bold' }}>
                         {skillsList.filter(s => s.required === 'Yes').length} / {reqRequiredSkills.length} Matched
@@ -1393,14 +1393,14 @@ export default function CandidateDetailViewModal({
                               <td style={{ padding: '5px 8px' }}>
                                 {isHighlighted ? (
                                   <span style={{ background: '#dcfce7', color: '#15803d', border: '1px solid #86efac', padding: '1px 6px', borderRadius: '3px', fontWeight: 'bold', fontSize: '10px' }}>
-                                    ⭐ REQUIRED (MATCH)
+                                    REQUIRED (MATCH)
                                   </span>
                                 ) : (
                                   <span style={{ color: '#64748b', fontSize: '10px' }}>Optional</span>
                                 )}
                               </td>
                               <td style={{ padding: '5px 8px' }}>{sk.experience}</td>
-                              <td style={{ padding: '5px 8px', color: '#f59e0b' }}>{'⭐'.repeat(sk.rating || 5)}</td>
+                              <td style={{ padding: '5px 8px', color: '#f59e0b' }}>{'★'.repeat(sk.rating || 5)}</td>
                               <td style={{ padding: '5px 8px' }}>{sk.lastUsed}</td>
                               <td style={{ padding: '5px 8px', textAlign: 'center' }}>
                                 <span
@@ -2112,7 +2112,7 @@ export default function CandidateDetailViewModal({
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#166534' }}>
-                          ⚡ AI Match Score: {aiMatchScore}%
+                          AI Match Score: {aiMatchScore}%
                         </span>
                         <div style={{ fontSize: '11px', color: '#475569', marginTop: '2px' }}>
                           Evaluated against target Requisition #{reqContext?.id || candidate.jobId || 'Active Job'}.
@@ -2342,7 +2342,7 @@ export default function CandidateDetailViewModal({
                                       fontWeight: isReq ? 'bold' : 'normal'
                                     }}
                                   >
-                                    {isReq ? '⭐ ' : ''}{sk.name}
+                                    {isReq ? '• ' : ''}{sk.name}
                                   </span>
                                 )
                               })}

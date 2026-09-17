@@ -66,7 +66,7 @@ function Pricing() {
       description: 'Scan Driver\'s Licenses and work Visas for validity, checking expiration and anti-tampering using Groq Vision.'
     },
     {
-      icon: '⚡',
+      icon: '🌐',
       title: 'Integrated Job & Content Pipeline',
       description: 'Ingest active vacancies from the web, and auto-generate premium B2B LinkedIn posts to attract candidate traffic.'
     },

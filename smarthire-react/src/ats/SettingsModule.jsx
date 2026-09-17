@@ -528,7 +528,7 @@ function SettingsModule() {
                   style={{ width: 16, height: 16, cursor: 'pointer' }}
                 />
                 <label htmlFor="autoAckCheck" style={{ fontSize: 12.5, fontWeight: 600, color: '#1e293b', cursor: 'pointer' }}>
-                  ⚡ Send Instant Auto-Acknowledgement Email to Candidates upon Resume Ingestion
+                  Send Instant Auto-Acknowledgement Email to Candidates upon Resume Ingestion
                 </label>
               </div>
 
@@ -558,7 +558,7 @@ function SettingsModule() {
                     boxShadow: '0 2px 8px rgba(22, 163, 74, 0.25)'
                   }}
                 >
-                  {syncingResumes ? '⏳ Scanning Recruiter Email Inbox...' : '⚡ Scan & Ingest Resumes from Email Now'}
+                  {syncingResumes ? '⏳ Scanning Recruiter Email Inbox...' : 'Scan & Ingest Resumes from Email Now'}
                 </button>
               </div>
             </div>

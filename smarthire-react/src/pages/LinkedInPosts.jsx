@@ -463,7 +463,7 @@ function LinkedInPosts() {
                 display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'center',
                 boxShadow: 'var(--shadow)'
               }}>
-                <div style={{ fontSize: 24 }}>⚡</div>
+                <div style={{ fontSize: 24 }}>🌐</div>
                 <div style={{ flex: 1, minWidth: 260 }}>
                   <div style={{ color: 'var(--brand)', fontWeight: 800, fontSize: 14, marginBottom: 4, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
                     Automated Ingestion Source

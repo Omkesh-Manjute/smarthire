@@ -179,7 +179,7 @@ function CandidatesModule({
       return { bg: '#ecfdf5', text: '#059669', border: '#a7f3d0', suffix: ' ✓' }
     }
     if (preferredSkills.includes(skillLower)) {
-      return { bg: '#faf5ff', text: '#7e22ce', border: '#e9d5ff', suffix: ' ⭐' }
+      return { bg: '#faf5ff', text: '#7e22ce', border: '#e9d5ff', suffix: ' (Pref)' }
     }
     return { bg: '#f8fafc', text: '#475569', border: '#e2e8f0', suffix: '' }
   }
@@ -1042,7 +1042,6 @@ function CandidatesModule({
               transition: 'all 0.15s'
             }}
           >
-            <span style={{ fontSize: '13px' }}>⚡</span>
             <span>Filter</span>
             {(selectedJob !== 'All' || statusFilter !== 'All' || Object.values(systemFilters).some(Boolean) || query) && (
               <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#2563eb' }} />

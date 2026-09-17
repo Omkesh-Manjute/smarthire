@@ -551,7 +551,7 @@ function Homepage() {
                               <span className="tf-cand-name">Jordan L.</span>
                               <span className="tf-cand-role">Sr AWS Developer (Req #74921)</span>
                             </div>
-                            <span className="tf-pill-badge blue">⚡ AI SCREENED</span>
+                            <span className="tf-pill-badge blue">AI SCREENED</span>
                           </li>
                           <li>
                             <div className="tf-cand-mini-info">
@@ -657,7 +657,7 @@ function Homepage() {
                 <p className="tf-feature-desc">
                   Zero-login candidate screening portal. Candidates record 1-way video answers, voice notes, or written synthesis on their schedule. Automatic Whisper AI transcripts, speech-to-text, and objective fit scoring.
                 </p>
-                <div className="tf-feature-tag">🎥 Video · 🎙️ Voice · ⚡ AI Scoring</div>
+                <div className="tf-feature-tag">Video · Voice Note · AI Scoring</div>
               </div>
 
               {/* Feature 4: 1-Click Digital RTR & Compliance Document Intake */}
@@ -1133,7 +1133,7 @@ function Homepage() {
                       <span className="tf-table-count">All candidates (1,240)</span>
                       <div className="tf-table-head-actions">
                         <span className="tf-mini-btn">↕ Sort</span>
-                        <span className="tf-mini-btn">⚡ Filter</span>
+                        <span className="tf-mini-btn">Filter</span>
                       </div>
                     </div>
 
@@ -1448,7 +1448,7 @@ function Homepage() {
                 <div className="tf-review-body">
                   {/* Rating Strip */}
                   <div className="tf-rating-strip">
-                    <span className="tf-star-row">⭐⭐⭐⭐⭐</span>
+                    <span className="tf-star-row">★★★★★</span>
                     <span className="tf-verdict-pill green">✓ Highly Recommended</span>
                     <span className="tf-rate-pill">$80/hr (Matches Client Budget)</span>
                   </div>
@@ -1456,7 +1456,7 @@ function Homepage() {
                   {/* AI Speech Transcript Box */}
                   <div className="tf-transcript-box">
                     <div className="tf-transcript-head">
-                      <span className="tf-engine-badge">⚡ Groq Whisper AI Verbatim Transcript</span>
+                      <span className="tf-engine-badge">Groq Whisper AI Verbatim Transcript</span>
                       <span className="tf-copy-link">1-Click Copy</span>
                     </div>
                     <p className="tf-transcript-text">
@@ -1475,7 +1475,7 @@ function Homepage() {
                       <span><strong>Communication Clarity:</strong> Concise, articulate, structured problem breakdown.</span>
                     </div>
                     <div className="tf-insight-row">
-                      <span className="tf-insight-icon blue">⚡</span>
+                      <span className="tf-insight-icon blue">●</span>
                       <span><strong>Availability:</strong> Immediate 2-week notice; fully authorized for W2 / C2C contract.</span>
                     </div>
                   </div>
@@ -1483,7 +1483,7 @@ function Homepage() {
                   {/* Recruiter Quick Actions Bar */}
                   <div className="tf-rec-action-bar">
                     <button type="button" className="tf-btn-action primary">
-                      ⭐ Shortlist Candidate
+                      Shortlist Candidate
                     </button>
                     <button type="button" className="tf-btn-action secondary">
                       💼 Push to Req #74921
@@ -1536,7 +1536,7 @@ function Homepage() {
                     <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
                   </svg>
                 </div>
-                <h4>⚡ AI Transcription & Scoring</h4>
+                <h4>AI Transcription & Scoring</h4>
                 <p>
                   Powered by Whisper and Groq AI models. Spoken answers are instantly transcribed into searchable text with automated candidate fit scoring (0-100%) and key takeaway summaries.
                 </p>
@@ -1634,7 +1634,7 @@ function Homepage() {
         <section className="tf-customization-section" id="workflows">
           <div className="tf-container">
             <div className="tf-customization-header text-center">
-              <span className="tf-eyebrow-amber">⚡ REAL-TIME RECRUITMENT INTELLIGENCE</span>
+              <span className="tf-eyebrow-amber">REAL-TIME RECRUITMENT INTELLIGENCE</span>
               <h2 className="tf-section-title">
                 Total command over your{' '}
                 <span className="tf-highlight-box">entire recruiting pipeline</span>
@@ -1683,7 +1683,7 @@ function Homepage() {
                 <div className="tf-persp-dashboard-layout">
                   {/* Left Micro Dark Sidebar */}
                   <div className="tf-persp-sidebar">
-                    <div className="tf-persp-side-logo">⚡</div>
+                    <div className="tf-persp-side-logo">SH</div>
                     <div className="tf-persp-side-item" title="Home">🏠</div>
                     <div className="tf-persp-side-item" title="Workqueue">📋</div>
                     <div className="tf-persp-side-item active" title="Reports">📊</div>
@@ -1698,7 +1698,7 @@ function Homepage() {
                       <div className="tf-persp-subbar-left">
                         <span className="tf-persp-subbar-title">Reports</span>
                         <span className="tf-persp-subbar-sep">/</span>
-                        <span className="tf-persp-subbar-pill">Analytics ⭐ Org Overview</span>
+                        <span className="tf-persp-subbar-pill">Analytics · Org Overview</span>
                       </div>
                       <div className="tf-persp-subbar-right">
                         <span className="tf-persp-date-badge">📅 This Month</span>

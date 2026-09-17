@@ -324,7 +324,7 @@ function BlogPostContent({ post }) {
           <h3 style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', margin: '0 0 10px' }}>🚀 Ready to Find Your Next IT Contract?</h3>
           <p style={{ color: '#94A3B8', margin: '0 0 20px', fontSize: 15, lineHeight: 1.6 }}>Browse 60+ active direct-client IT requisitions — State, Healthcare & Enterprise. C2C, W2, and 1099 roles available. No intermediary layers.</p>
           <a href="/jobs" style={{ display: 'inline-block', background: 'linear-gradient(135deg, #FF6B00, #FFA040)', color: '#FFFFFF', fontWeight: 800, fontSize: 15, padding: '12px 30px', borderRadius: 8, textDecoration: 'none', letterSpacing: '-0.01em' }}>
-            ⚡ Browse Open IT Roles →
+            Browse Open IT Roles →
           </a>
         </div>
 
@@ -389,7 +389,7 @@ function BlogIndex() {
       {/* Hero header */}
       <header style={{ textAlign: 'center', padding: '60px 0 48px' }}>
         <span style={{ display: 'inline-block', fontSize: 11.5, fontWeight: 700, color: '#FF6B00', backgroundColor: 'rgba(255, 107, 0, 0.08)', border: '1px solid rgba(255, 107, 0, 0.25)', padding: '4px 14px', borderRadius: 20, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 18 }}>
-          ✦ SmartHire Blog
+          SmartHire Blog
         </span>
         <h1 style={{ fontSize: 'clamp(30px, 5vw, 48px)', fontWeight: 900, color: '#0F172A', margin: '0 0 16px', letterSpacing: '-0.03em', lineHeight: 1.15 }}>
           IT Career & Staffing Insights
@@ -444,7 +444,7 @@ function BlogIndex() {
           <p style={{ color: '#94A3B8', margin: 0, fontSize: 15, lineHeight: 1.6 }}>60+ active direct-client requisitions · C2C, W2, 1099 accepted</p>
         </div>
         <a href="/jobs" style={{ display: 'inline-block', background: 'linear-gradient(135deg, #FF6B00, #FFA040)', color: '#FFFFFF', fontWeight: 800, fontSize: 15, padding: '13px 28px', borderRadius: 10, textDecoration: 'none', flexShrink: 0, whiteSpace: 'nowrap' }}>
-          ⚡ View Open Jobs →
+          View Open Jobs →
         </a>
       </section>
     </div>
@@ -472,7 +472,7 @@ export default function Blog() {
             <a href="/blog" style={{ fontSize: 13.5, fontWeight: 600, color: '#2563EB', textDecoration: 'none', padding: '6px 12px', borderRadius: 7, backgroundColor: '#EFF6FF' }}>Blog</a>
             <a href="/about" style={{ fontSize: 13.5, fontWeight: 600, color: '#475569', textDecoration: 'none', padding: '6px 12px', borderRadius: 7 }}>About</a>
             <a href="/jobs" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 700, color: '#FFFFFF', background: 'linear-gradient(135deg, #2563EB, #1D4ED8)', padding: '7px 16px', borderRadius: 8, textDecoration: 'none', marginLeft: 4 }}>
-              ⚡ Apply Now
+              Apply Now
             </a>
           </nav>
         </div>

@@ -330,7 +330,7 @@ export default function AuditActivityLogModule({ isCompact = false }) {
             <option value="MANAGER_REJECTION">❌ Manager Rejections</option>
             <option value="INTERVIEW_SCHEDULED">📅 Client Interviews</option>
             <option value="CANDIDATE_SOURCED">📥 Sourced Candidates</option>
-            <option value="STATUS_CHANGE">⚡ Status Updates</option>
+            <option value="STATUS_CHANGE">Status Updates</option>
           </select>
 
           {/* Role Filter */}

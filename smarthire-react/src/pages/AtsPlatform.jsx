@@ -625,7 +625,7 @@ export default function AtsPlatform() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 color: '#ffffff', fontWeight: '900', fontSize: '15px'
               }}>
-                ⚡
+                SH
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <span style={{ fontSize: '14.5px', fontWeight: '800', color: '#ffffff', letterSpacing: '-0.01em' }}>
@@ -646,7 +646,7 @@ export default function AtsPlatform() {
                 color: '#ffffff', fontWeight: '900', cursor: 'pointer'
               }}
             >
-              ⚡
+              SH
             </div>
           )}
 

@@ -364,9 +364,9 @@ function Terms() {
               color: '#64748b',
               paddingTop: '8px'
             }}>
-              <span>📅 <strong>Effective Date:</strong> August 26, 2026</span>
-              <span>⚡ <strong>MSA Ref:</strong> SH-ENT-2026-V3</span>
-              <span>🏛️ <strong>Entity:</strong> SmartHire Enterprise Inc.</span>
+              <span><strong>Effective Date:</strong> August 26, 2026</span>
+              <span><strong>MSA Ref:</strong> SH-ENT-2026-V3</span>
+              <span><strong>Entity:</strong> SmartHire Enterprise Inc.</span>
             </div>
 
             {/* 4 Quick Highlights */}

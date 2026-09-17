@@ -360,9 +360,9 @@ function PrivacyPolicy() {
               color: '#64748b',
               paddingTop: '8px'
             }}>
-              <span>📅 <strong>Last Updated:</strong> August 26, 2026</span>
-              <span>⚡ <strong>Version:</strong> 3.4 (Enterprise Edition)</span>
-              <span>🌐 <strong>Compliance:</strong> Global (GDPR, CCPA & EEOC Compliant)</span>
+              <span><strong>Last Updated:</strong> August 26, 2026</span>
+              <span><strong>Version:</strong> 3.4 (Enterprise Edition)</span>
+              <span><strong>Compliance:</strong> Global (GDPR, CCPA & EEOC Compliant)</span>
             </div>
 
             {/* 4 Quick Trust Badges */}

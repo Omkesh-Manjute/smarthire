@@ -698,9 +698,9 @@ export default function CandidateChat() {
               </p>
 
               <div style={styles.highlightsRow}>
-                <div style={styles.highlightPill}>⚡ Takes around 2-3 min</div>
-                <div style={styles.highlightPill}>🎥 Video, Voice, or Text</div>
-                <div style={styles.highlightPill}>↺ Unlimited Retakes</div>
+                <div style={styles.highlightPill}>Takes around 2-3 min</div>
+                <div style={styles.highlightPill}>Video, Voice, or Text</div>
+                <div style={styles.highlightPill}>Unlimited Retakes</div>
               </div>
             </div>
 

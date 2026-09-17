@@ -659,11 +659,11 @@ export function SmartATSApp() {
     return 'score-red';
   };
   const getScoreLabel = (score) => {
-    if (score >= 85) return 'Excellent Match 🔥';
-    if (score >= 70) return 'Strong Match 💪';
-    if (score >= 50) return 'Good Match 👍';
-    if (score >= 30) return 'Partial Match 🤔';
-    return 'Low Match ❌';
+    if (score >= 85) return 'Excellent Match';
+    if (score >= 70) return 'Strong Match';
+    if (score >= 50) return 'Good Match';
+    if (score >= 30) return 'Partial Match';
+    return 'Low Match';
   };
   const getAiRecColor = (rec) => {
     if (rec.includes('STRONG')) return 'airec-green';
@@ -1302,7 +1302,7 @@ export function SmartATSApp() {
                     }}
                   >
                     {' '}
-                    <p className="text-sm font-bold text-green-400">Supabase ⭐ Recommended</p>{' '}
+                    <p className="text-sm font-bold text-green-400">Supabase (Recommended)</p>{' '}
                     <p className="text-xs text-gray-400 mt-1">500MB free • PostgreSQL • Real-time</p>{' '}
                     <a
                       href="https://supabase.com"
@@ -1960,7 +1960,7 @@ export function SmartATSApp() {
                         <div className="mb-3">
                           {' '}
                           <p className="text-xs text-gray-500 font-medium uppercase mb-2">
-                            ⭐ Preferred ({jdAnalysis.preferredSkills.length})
+                            Preferred ({jdAnalysis.preferredSkills.length})
                           </p>{' '}
                           <div className="flex flex-wrap">
                             {jdAnalysis.preferredSkills.map((s, i) => (
@@ -2561,7 +2561,7 @@ export function SmartATSApp() {
                               <div className="mb-3">
                                 {' '}
                                 <p className="text-xs font-bold uppercase tracking-wide mb-2 text-gray-300">
-                                  ⭐ Preferred Skills
+                                  Preferred Skills
                                 </p>{' '}
                                 <div className="grid grid-cols-1 sm-grid-cols-2 gap-3">
                                   {' '}

@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react'
 const PIPELINE_STAGES = [
   { id: 'New',                 label: 'New Applied',       icon: '🆕', color: '#3b82f6', bg: '#eff6ff',  border: '#bfdbfe', headerBg: '#dbeafe' },
   { id: 'Reviewed',            label: 'Reviewed',          icon: '👁️', color: '#7c3aed', bg: '#f5f3ff',  border: '#ddd6fe', headerBg: '#ede9fe' },
-  { id: 'Shortlisted',         label: 'Shortlisted',       icon: '⭐', color: '#0284c7', bg: '#f0f9ff',  border: '#bae6fd', headerBg: '#e0f2fe' },
+  { id: 'Shortlisted',         label: 'Shortlisted',       icon: '★', color: '#0284c7', bg: '#f0f9ff',  border: '#bae6fd', headerBg: '#e0f2fe' },
   { id: 'RTR Requested',       label: 'RTR Sent',          icon: '📨', color: '#d97706', bg: '#fffbeb',  border: '#fef3c7', headerBg: '#fef3c7' },
   { id: 'RTR Received',        label: 'RTR Signed',        icon: '📩', color: '#ea580c', bg: '#fff7ed',  border: '#ffedd5', headerBg: '#ffedd5' },
   { id: 'Interview Scheduled', label: 'Interview',         icon: '🎙️', color: '#db2777', bg: '#fdf2f8',  border: '#fbcfe8', headerBg: '#fce7f3' },

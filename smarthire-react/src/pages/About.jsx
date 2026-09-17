@@ -339,7 +339,7 @@ function About() {
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', flexWrap: 'wrap', marginBottom: '45px' }}>
                 <Link to="/ats" className="tf-btn tf-btn-primary">
-                  ⚡ Explore ATS Portal
+                  Explore ATS Portal
                 </Link>
                 <button
                   type="button"
@@ -494,7 +494,9 @@ function About() {
                   fontSize: '22px',
                   marginBottom: '16px'
                 }}>
-                  ⚡
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                  </svg>
                 </div>
                 <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', margin: '0 0 8px' }}>
                   Automated Semantic Gap Analysis

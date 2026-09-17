@@ -301,7 +301,7 @@ export default function AiMatchingCandidatesModal({
                               borderRadius: 0
                             }}
                           >
-                            {isAssigned ? '✅ Assigned to Req' : '⚡ 1-Click Submit to Req'}
+                            {isAssigned ? 'Assigned to Req' : '1-Click Submit to Req'}
                           </button>
                         </div>
                       </div>

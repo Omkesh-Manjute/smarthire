@@ -895,10 +895,10 @@ export default function ClassicCareersView({
                 }}
               >
                 <option value="All">All Work Modes</option>
-                <option value="Today">⏰ Closing Today {todayDeadlineCount > 0 ? `(${todayDeadlineCount})` : ''}</option>
-                <option value="Remote">🏠 Remote ({remoteCount})</option>
-                <option value="Hybrid">🏢 Hybrid ({hybridCount})</option>
-                <option value="Onsite">📍 Onsite ({onsiteCount})</option>
+                <option value="Today">Closing Today {todayDeadlineCount > 0 ? `(${todayDeadlineCount})` : ''}</option>
+                <option value="Remote">Remote ({remoteCount})</option>
+                <option value="Hybrid">Hybrid ({hybridCount})</option>
+                <option value="Onsite">Onsite ({onsiteCount})</option>
               </select>
             </div>
 
@@ -1017,7 +1017,7 @@ export default function ClassicCareersView({
                 transition: 'all 0.15s ease'
               }}
             >
-              🏠 Remote ({remoteCount})
+              Remote ({remoteCount})
             </button>
 
             <button
@@ -1041,7 +1041,7 @@ export default function ClassicCareersView({
                 transition: 'all 0.15s ease'
               }}
             >
-              🏢 Hybrid ({hybridCount})
+              Hybrid ({hybridCount})
             </button>
 
             <button
@@ -1065,7 +1065,7 @@ export default function ClassicCareersView({
                 transition: 'all 0.15s ease'
               }}
             >
-              📍 Onsite ({onsiteCount})
+              Onsite ({onsiteCount})
             </button>
           </div>
         </div>
@@ -1182,7 +1182,7 @@ export default function ClassicCareersView({
                         color: workModeText === 'Remote' ? '#065F46' : workModeText === 'Hybrid' ? '#92400E' : (isLight ? '#475569' : '#94A3B8'),
                         border: `1px solid ${workModeText === 'Remote' ? (isLight ? '#A7F3D0' : 'rgba(16, 185, 129, 0.25)') : workModeText === 'Hybrid' ? (isLight ? '#FDE68A' : 'rgba(245, 158, 11, 0.25)') : theme.border}`
                       }}>
-                        {workModeText === 'Remote' ? '🏠 Remote' : workModeText === 'Hybrid' ? '🏢 Hybrid' : '📍 Onsite'}
+                        {workModeText === 'Remote' ? 'Remote' : workModeText === 'Hybrid' ? 'Hybrid' : 'Onsite'}
                       </span>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

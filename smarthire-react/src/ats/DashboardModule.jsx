@@ -845,7 +845,7 @@ function DashboardModule({
                               <span style={{ color: '#0066cc', cursor: 'pointer', textDecoration: 'underline' }}>{pc.name}</span>
                               {pc.source && pc.source.includes('Auto-Apply') && (
                                 <span style={{ marginLeft: '6px', background: '#dcfce7', color: '#15803d', fontSize: '9px', fontWeight: 'bold', padding: '1px 4px', borderRadius: '2px', border: '1px solid #bbf7d0' }}>
-                                  ⚡ AUTO-APPLIED
+                                  AUTO-APPLIED
                                 </span>
                               )}
                               {pc.pushedToJobsInHand && (
