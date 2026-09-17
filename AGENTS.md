@@ -31,6 +31,18 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-17 — Fix Undeclared Category*Icon in HOT_CATEGORIES & AST Scope Verification
+- **Issue Resolved**: When `ZoneCareerAssets.jsx` was removed, `HOT_CATEGORIES` in `PublicCareers.jsx` still had legacy `icon: CategoryFinanceIcon`, etc. which caused runtime `ReferenceError: CategoryFinanceIcon is not defined` inside the React error boundary.
+- **Resolution**:
+  - Removed all `icon: Category*Icon` properties from `HOT_CATEGORIES`.
+  - Created automated AST scope checker script (`scratch/scope_checker.mjs`) using `@babel/parser` and `@babel/traverse` to verify all referenced identifiers are strictly declared and in scope across all careers components.
+  - Verified 0 undeclared identifiers across `PublicCareers.jsx` and `WellfoundCareersView.jsx`.
+- **Production Build & Live Deployment**:
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings (built in 2.72s).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 1.97s).
+  - Pushed to GitHub `main` (`239e1da`), uploaded `dist.tar.gz` to AWS Lightsail, and restarted PM2 `smarthire-ats`.
+  - Active bundle verified: `index-DCN7NVwn.js` returning HTTP 200 OK.
+
 ### 2026-09-17 — Wellfound 3-Column Layout, Clean Header, Compact Auth & Complete Removal of Zonal/Classic Themes
 - **3-Column Wellfound Master Layout (`WellfoundCareersView.jsx`, `PublicCareers.jsx`)**:
   - Left Column (Side Feed): Requisition cards with company logo badges, clean job titles (no rate), domain names, work mode pills (`Remote`, `Hybrid`, `Onsite`), location badge, and local candidate need badges (`Local Required`, `Local Commutable`, `Nationwide`). Hover animations and active left-accent border (`4px solid #0A0E1A`).
