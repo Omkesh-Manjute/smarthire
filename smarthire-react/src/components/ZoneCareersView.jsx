@@ -253,7 +253,7 @@ export default function ZoneCareersView({
                 gap: 4
               }}
             >
-              <span>🏛️ Classic ATS</span>
+              <span>Classic ATS</span>
             </button>
             <button
               type="button"
@@ -272,7 +272,7 @@ export default function ZoneCareersView({
                 gap: 4
               }}
             >
-              <span>⚡ Split View</span>
+              <span>Split View</span>
             </button>
             <button
               type="button"
@@ -291,7 +291,7 @@ export default function ZoneCareersView({
                 gap: 4
               }}
             >
-              <span>✨ Zone Modern</span>
+              <span>Zone Modern</span>
             </button>
           </div>
 
@@ -429,7 +429,7 @@ export default function ZoneCareersView({
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.primary}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#1C252E'}
           >
-            <span>⚡ ATS Portal</span>
+            <span>ATS Portal</span>
             <span>↗</span>
           </button>
         </div>
@@ -1098,7 +1098,7 @@ export default function ZoneCareersView({
                         onMouseEnter={(e) => { if (!expired) e.currentTarget.style.transform = 'translateY(-1px)' }}
                         onMouseLeave={(e) => { if (!expired) e.currentTarget.style.transform = 'translateY(0)' }}
                       >
-                        {expired ? 'Closed' : '⚡ Apply Now'}
+                        {expired ? 'Closed' : 'Apply Now'}
                       </button>
                     )}
                   </div>

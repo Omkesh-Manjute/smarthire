@@ -546,7 +546,6 @@ export default function ClassicCareersView({
               transition: 'all 0.18s ease'
             }}
           >
-            <span style={{ color: '#2563EB' }}>⚡</span>
             <span>ATS Portal</span>
             <span style={{ fontSize: 10, opacity: 0.6 }}>↗</span>
           </button>
@@ -578,7 +577,7 @@ export default function ClassicCareersView({
                 gap: 4
               }}
             >
-              <span>🏛️ Classic ATS</span>
+              <span>Classic ATS</span>
             </button>
             <button
               type="button"
@@ -597,7 +596,7 @@ export default function ClassicCareersView({
                 gap: 4
               }}
             >
-              <span>⚡ Split View</span>
+              <span>Split View</span>
             </button>
             <button
               type="button"
@@ -616,7 +615,7 @@ export default function ClassicCareersView({
                 gap: 4
               }}
             >
-              <span>✨ Zone Modern</span>
+              <span>Zone Modern</span>
             </button>
           </div>
 
@@ -665,7 +664,7 @@ export default function ClassicCareersView({
               transition: 'all 0.18s ease'
             }}
           >
-            ⚡ {jobs.length} Positions
+            {jobs.length} Positions
           </button>
         </div>
       </header>
@@ -875,7 +874,6 @@ export default function ClassicCareersView({
 
             {/* Work Mode Select */}
             <div style={{ flex: '1 1 180px', display: 'flex', alignItems: 'center', padding: '0 8px' }}>
-              <span style={{ fontSize: 14, color: '#64748B', marginRight: 6 }}>🌐</span>
               <select
                 value={selectedLocation}
                 onChange={(e) => {
@@ -1116,7 +1114,6 @@ export default function ClassicCareersView({
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: '60px 0', color: theme.textSecondary }}>
-            <div style={{ fontSize: 28, marginBottom: 12 }}>⚡</div>
             <p>Loading active vacancies...</p>
           </div>
         ) : filteredJobs.length === 0 ? (
@@ -1359,7 +1356,7 @@ export default function ClassicCareersView({
                           onClick={() => handleApplyClick(job)}
                           className="sh-apply-btn"
                         >
-                          <span>⚡ Apply Now</span>
+                          <span>Apply Now</span>
                         </button>
                       )}
                     </div>
@@ -1413,7 +1410,7 @@ export default function ClassicCareersView({
             <div style={{ fontSize: 12.5, fontWeight: 800, color: theme.textPrimary, marginBottom: 14, letterSpacing: '0.04em' }}>PORTAL</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 9, fontSize: 13, color: theme.textSecondary }}>
               <a href="#jobs-list" style={{ color: 'inherit', textDecoration: 'none' }}>Job Listings</a>
-              <button onClick={() => handleSetLayoutView('zone')} style={{ background: 'none', border: 'none', padding: 0, textAlign: 'left', color: 'inherit', fontSize: 13, cursor: 'pointer' }}>✨ Modern Zone View</button>
+              <button onClick={() => handleSetLayoutView('zone')} style={{ background: 'none', border: 'none', padding: 0, textAlign: 'left', color: 'inherit', fontSize: 13, cursor: 'pointer' }}>Zone Modern View</button>
               <Link to="/ats" style={{ color: 'inherit', textDecoration: 'none' }}>Recruiter Platform</Link>
               <Link to="/blog" style={{ color: 'inherit', textDecoration: 'none' }}>Career Blog</Link>
             </div>

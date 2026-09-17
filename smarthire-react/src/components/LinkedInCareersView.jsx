@@ -337,7 +337,7 @@ export default function LinkedInCareersView({
                   transition: 'all 0.15s ease'
                 }}
               >
-                ⚡ Split View
+                Split View
               </button>
               <button
                 onClick={() => handleSetLayoutView('zone')}
@@ -353,7 +353,7 @@ export default function LinkedInCareersView({
                   transition: 'all 0.15s ease'
                 }}
               >
-                🌐 Zone
+                Zone
               </button>
               <button
                 onClick={() => handleSetLayoutView('classic')}
@@ -369,7 +369,7 @@ export default function LinkedInCareersView({
                   transition: 'all 0.15s ease'
                 }}
               >
-                📋 Classic
+                Classic
               </button>
             </div>
 
@@ -482,9 +482,9 @@ export default function LinkedInCareersView({
           </span>
           {[
             { id: 'All', label: 'All Modes' },
-            { id: 'Remote', label: '🏠 Remote' },
-            { id: 'Hybrid', label: '🔄 Hybrid' },
-            { id: 'Onsite', label: '🏢 On-site' }
+            { id: 'Remote', label: 'Remote' },
+            { id: 'Hybrid', label: 'Hybrid' },
+            { id: 'Onsite', label: 'On-site' }
           ].map(loc => (
             <button
               key={loc.id}
@@ -515,9 +515,9 @@ export default function LinkedInCareersView({
           {[
             { id: 'all', label: 'All Rates' },
             { id: '60', label: '$60+/hr' },
-            { id: '75', label: '🔥 $75+/hr' },
-            { id: '85', label: '⭐ $85+/hr' },
-            { id: '100', label: '💎 $100+/hr' }
+            { id: '75', label: '$75+/hr' },
+            { id: '85', label: '$85+/hr' },
+            { id: '100', label: '$100+/hr' }
           ].map(p => (
             <button
               key={p.id}
@@ -633,7 +633,7 @@ export default function LinkedInCareersView({
               backgroundColor: themeTokens.greenSoftBg,
               color: themeTokens.greenAccent
             }}>
-              🛡️ Direct Client
+              Direct Client
             </span>
           </div>
 
@@ -645,12 +645,10 @@ export default function LinkedInCareersView({
           }}>
             {loading ? (
               <div style={{ padding: '40px 20px', textAlign: 'center', color: themeTokens.textSecondary }}>
-                <div style={{ fontSize: 24, marginBottom: 8 }}>⚡</div>
                 <div style={{ fontWeight: 600 }}>Loading open direct client jobs...</div>
               </div>
             ) : domainAndPayFilteredJobs.length === 0 ? (
               <div style={{ padding: '40px 20px', textAlign: 'center', color: themeTokens.textSecondary }}>
-                <div style={{ fontSize: 32, marginBottom: 12 }}>🔍</div>
                 <div style={{ fontWeight: 600, color: themeTokens.textPrimary, fontSize: 16, marginBottom: 4 }}>
                   No jobs found matching your filters
                 </div>
@@ -795,7 +793,7 @@ export default function LinkedInCareersView({
                         alignItems: 'center',
                         gap: 6
                       }}>
-                        <span>💵 {payRate}</span>
+                        <span>{payRate}</span>
                         <span style={{ color: themeTokens.textMuted, fontWeight: 400 }}>·</span>
                         <span style={{ color: themeTokens.textSecondary, fontWeight: 500 }}>{contractTypeStr}</span>
                       </div>
@@ -811,7 +809,7 @@ export default function LinkedInCareersView({
                         flexWrap: 'wrap'
                       }}>
                         <span style={{ color: themeTokens.greenAccent, fontWeight: 600 }}>
-                          ⚡ Be an early applicant
+                          Be an early applicant
                         </span>
                         <span>·</span>
                         <span>{postedAgo}</span>
@@ -836,7 +834,7 @@ export default function LinkedInCareersView({
                             fontWeight: 600,
                             fontSize: 11
                           }}>
-                            🔖 Saved
+                            Saved
                           </span>
                         )}
                       </div>
@@ -942,12 +940,13 @@ export default function LinkedInCareersView({
                       alignItems: 'center',
                       justifyContent: 'center',
                       color: savedJobs[selectedJob.id] ? themeTokens.brandBlue : themeTokens.textSecondary,
-                      cursor: 'pointer',
-                      fontSize: 16
+                      cursor: 'pointer'
                     }}
                     title={savedJobs[selectedJob.id] ? 'Remove from saved' : 'Save job'}
                   >
-                    {savedJobs[selectedJob.id] ? '★' : '☆'}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill={savedJobs[selectedJob.id] ? themeTokens.brandBlue : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                    </svg>
                   </button>
                 </div>
               </div>
@@ -1039,7 +1038,7 @@ export default function LinkedInCareersView({
                   fontWeight: 600,
                   border: `1px solid ${isLight ? 'rgba(5, 118, 66, 0.2)' : 'rgba(5, 118, 66, 0.4)'}`
                 }}>
-                  💵 {formatRateOrSalary ? formatRateOrSalary(selectedJob) : 'Competitive'}
+                  {formatRateOrSalary ? formatRateOrSalary(selectedJob) : 'Competitive'}
                 </span>
 
                 <span style={{
@@ -1051,7 +1050,7 @@ export default function LinkedInCareersView({
                   fontWeight: 500,
                   border: `1px solid ${themeTokens.pillBorder}`
                 }}>
-                  ⏱️ {formatExperience ? formatExperience(selectedJob.experience) : '5+ Years Exp'}
+                  {formatExperience ? formatExperience(selectedJob.experience) : '5+ Years Exp'}
                 </span>
               </div>
 
@@ -1099,7 +1098,7 @@ export default function LinkedInCareersView({
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  {savedJobs[selectedJob.id] ? '★ Saved' : 'Save'}
+                  {savedJobs[selectedJob.id] ? 'Saved' : 'Save'}
                 </button>
               </div>
 
@@ -1141,7 +1140,7 @@ export default function LinkedInCareersView({
                         gap: 6
                       }}
                     >
-                      ✦ {showMatchDetails ? 'Hide match details' : 'Show match details'}
+                      {showMatchDetails ? 'Hide match details' : 'Show match details'}
                     </button>
                   </div>
 
@@ -1183,7 +1182,7 @@ export default function LinkedInCareersView({
                       <span>Work Arrangement: {selectedJob.work_mode || 'On-site'} location alignment ({resolveJobLocation ? resolveJobLocation(selectedJob) : 'Location'})</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: themeTokens.brandBlue, fontWeight: 600 }}>
-                      <span>✦</span>
+                      <span>•</span>
                       <span>Contract Structure: Verified C2C / W2 requisition format</span>
                     </div>
                   </div>
@@ -1206,29 +1205,33 @@ export default function LinkedInCareersView({
                       onClick={() => setFeedbackGiven('up')}
                       style={{
                         background: feedbackGiven === 'up' ? themeTokens.brandBlueSoft : 'none',
-                        border: 'none',
+                        border: `1px solid ${themeTokens.pillBorder}`,
                         cursor: 'pointer',
-                        fontSize: 14,
-                        padding: '2px 6px',
-                        borderRadius: 4
+                        fontSize: 12,
+                        padding: '3px 8px',
+                        borderRadius: 4,
+                        color: feedbackGiven === 'up' ? themeTokens.brandBlue : themeTokens.textSecondary,
+                        fontWeight: 500
                       }}
                       title="Helpful"
                     >
-                      👍
+                      Yes
                     </button>
                     <button
                       onClick={() => setFeedbackGiven('down')}
                       style={{
                         background: feedbackGiven === 'down' ? themeTokens.brandBlueSoft : 'none',
-                        border: 'none',
+                        border: `1px solid ${themeTokens.pillBorder}`,
                         cursor: 'pointer',
-                        fontSize: 14,
-                        padding: '2px 6px',
-                        borderRadius: 4
+                        fontSize: 12,
+                        padding: '3px 8px',
+                        borderRadius: 4,
+                        color: feedbackGiven === 'down' ? themeTokens.brandBlue : themeTokens.textSecondary,
+                        fontWeight: 500
                       }}
                       title="Not helpful"
                     >
-                      👎
+                      No
                     </button>
                   </div>
                 </div>
@@ -1301,7 +1304,7 @@ export default function LinkedInCareersView({
                   color: themeTokens.textSecondary
                 }}>
                   <div style={{ fontWeight: 600, color: themeTokens.textPrimary, marginBottom: 4 }}>
-                    🛡️ SmartHire Direct Client Commitment
+                    SmartHire Direct Client Commitment
                   </div>
                   All requisitions listed on this portal are authorized direct client contracts. Resumes submitted are securely reviewed by assigned recruitment partners with candidate privacy and rate transparency.
                 </div>

@@ -1216,7 +1216,7 @@ export default function PublicCareers() {
                   boxShadow: '0 4px 14px rgba(250, 84, 28, 0.4)'
                 }}
               >
-                ⚡ Apply for this position
+                Apply for this position
               </button>
             </div>
           </div>
@@ -1417,7 +1417,7 @@ export default function PublicCareers() {
 
                   {autoFillSuccess && (
                     <div style={{ marginTop: 8, fontSize: 12, color: '#15803D', fontWeight: 700 }}>
-                      ✨ Details auto-populated from resume! Review below.
+                      Details auto-populated from resume! Review below.
                     </div>
                   )}
                 </div>
@@ -1566,7 +1566,7 @@ export default function PublicCareers() {
                       transition: 'background-color 0.15s'
                     }}
                   >
-                    {submitting ? '⚡ Submitting...' : '🚀 Submit Direct Application'}
+                    {submitting ? 'Submitting...' : 'Submit Application'}
                   </button>
                 </form>
               </>
