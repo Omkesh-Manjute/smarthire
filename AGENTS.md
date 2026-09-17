@@ -31,6 +31,32 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-17 — Wellfound 3-Column Layout, Clean Header, Compact Auth & Complete Removal of Zonal/Classic Themes
+- **3-Column Wellfound Master Layout (`WellfoundCareersView.jsx`, `PublicCareers.jsx`)**:
+  - Left Column (Side Feed): Requisition cards with company logo badges, clean job titles (no rate), domain names, work mode pills (`Remote`, `Hybrid`, `Onsite`), location badge, and local candidate need badges (`Local Required`, `Local Commutable`, `Nationwide`). Hover animations and active left-accent border (`4px solid #0A0E1A`).
+  - Center Column (Spacious Wellfound Job Dossier): Exact match to screenshots (`media_1789657089815.png` & `media_1789657104448.png`):
+    - Header: Company logo with `● Actively Hiring` emerald pill, tagline, `Save` button, and solid black `Apply Now` button.
+    - Title & Metadata: Bold title, Work Mode, Experience, Contract type, Req ID, and live timezone clocks (EST/CST/PST).
+    - 2-Column Attribute Matrix: Hires remotely in, Company location, Relocation, Hiring contact card (`Sarah J. Thorne`), Remote work policy, Visa sponsorship, and soft purple rounded skill pills (`#F1F0FB` / `#581C87`).
+    - About the Job: Generous line-height (`1.85`), structured About Company, About The Role, What You Will Do, and What You'll Need.
+    - Bottom prominent `Apply for this position` bar with 1-click apply trigger.
+    - Algorithmic "Similar jobs you may be interested in" recommendation cards at the bottom of the center column.
+  - Right Column (Dedicated Google AdSense Sidebar): `SPONSORED / ADVERTISEMENT` responsive units, "Level up your job search" benefit checklist card, and secondary career partner spotlight.
+- **Top Header & Navigation Bar Cleanups**:
+  - Removed "Direct Client" and "Why SmartHire" tabs from top navigation.
+  - Removed dark theme toggle button completely, locking to crisp, high-contrast light Wellfound aesthetics.
+  - Made the top "Sign Up" button compact and smaller (`padding: 6px 14px`, `fontSize: 12.5px`).
+  - Completely removed salary/rate references from top navigation and feed cards.
+- **Permanent Removal of Zonal & Classic Views**:
+  - Removed `ZoneCareersView` and `ClassicCareersView` components and imports.
+  - Hardcoded layout to pure `wellfound` mode, eliminating legacy modals and redundant layout switchers.
+- **Production Build & Live AWS Deployment**:
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings (built in 2.07s).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 1.88s).
+  - Git committed and pushed to GitHub `origin/main` (`3f1034e`).
+  - Uploaded `dist.tar.gz` to AWS Lightsail server (`34.194.119.199`), extracted, and restarted PM2 `smarthire-ats`.
+  - Verified HTTP 200 OK and active bundle `index-B-yLF8Fe.js` on `https://smarthireus.com/jobs`.
+
 ### 2026-09-17 — Wellfound UI/UX Front Page Redesign (`https://wellfound.com/jobs`), AdSense Sidebar & Similar Jobs Footer
 - **Wellfound UI/UX Redesign (`WellfoundCareersView.jsx`, `PublicCareers.jsx`)**:
   - Implemented high-density Wellfound styling using `Plus Jakarta Sans` / `Inter`, dark `#0A0E1A` high-contrast typography, and coral `#F43F5E` accents.
