@@ -9,6 +9,7 @@ Allow: /contact
 Allow: /privacy
 Allow: /terms
 Allow: /login
+Allow: /screening
 
 # Disallow protected recruiter/admin and candidate chat routes
 Disallow: /dashboard
@@ -17,7 +18,9 @@ Disallow: /reports
 Disallow: /pricing
 Disallow: /branding
 Disallow: /inbox
+Disallow: /messages
 Disallow: /linkedin-posts
 Disallow: /candidate-chat/
 
+Sitemap: https://smarthireus.com/sitemap.xml
 Sitemap: https://smarthire-4zqf.onrender.com/sitemap.xml

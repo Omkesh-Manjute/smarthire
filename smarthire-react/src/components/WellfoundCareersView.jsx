@@ -55,6 +55,41 @@ function CheckCircleIcon({ size = 16, color = '#10B981' }) {
   )
 }
 
+function ArrowLeftIcon({ size = 16, color = 'currentColor' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="19" y1="12" x2="5" y2="12" />
+      <polyline points="12 19 5 12 12 5" />
+    </svg>
+  )
+}
+
+function TwitterIcon({ size = 18, color = 'currentColor' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  )
+}
+
+function InstagramIcon({ size = 18, color = 'currentColor' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+    </svg>
+  )
+}
+
+function LinkedInIcon({ size = 18, color = 'currentColor' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.25c-.9 0-1.63.73-1.63 1.63a1.63 1.63 0 0 0 1.63 1.63 1.63 1.63 0 0 0 1.63-1.63c0-.9-.73-1.63-1.63-1.63z" />
+    </svg>
+  )
+}
+
 // ─── Dynamic Client Domain Resolver (Eliminates Repetitive "Direct Client") ─
 export const resolveClientDomainName = (job) => {
   const text = `${job?.title || ''} ${(job?.skills || []).join(' ')} ${job?.rawDescription || job?.description || ''}`.toLowerCase()
@@ -168,44 +203,25 @@ function CompanyLogo({ job, size = 42 }) {
   )
 }
 
-// ─── Structured Job Description Parser (Exact Match to Screenshot 2) ────────
-export const parseWellfoundJobDetails = (job, cleanTitle, domainName, location, workMode, localReq) => {
-  let aboutCompany = ''
-  if (/health|clinical|med|epic|dhhs|hospital/i.test(domainName)) {
-    aboutCompany = `${domainName} is an independent digital architecture and enterprise healthcare systems provider building high-converting public health solutions and resilient medical data platforms. Partnering with state health agencies and Medicaid networks, we build secure, patient-centric technology. Quality over volume. Always.`
-  } else if (/transportation|dot|vdot|highway|transit/i.test(domainName)) {
-    aboutCompany = `${domainName} builds mission-critical transportation infrastructure systems, automated highway asset monitoring platforms, and intelligent GIS networks. We bridge the gap between heavy public infrastructure and modern digital architecture with high performance and zero visual lag.`
-  } else if (/cloud|aws|azure|devops|infrastructure/i.test(domainName)) {
-    aboutCompany = `${domainName} is an enterprise cloud architecture studio delivering modern automated microservices, serverless workflows, and multi-region AWS/Azure infrastructure for direct clients. We work with a carefully chosen few with creative freedom, modern toolsets, and zero micromanagement.`
-  } else if (/data|analytics|bi|power\s*bi|sql|etl/i.test(domainName)) {
-    aboutCompany = `${domainName} is an enterprise data and analytics engineering organization building high-throughput data pipelines, cloud warehouses, and real-time operational BI dashboards for direct clients. We emphasize data integrity, scalability, and robust software craftsmanship.`
-  } else if (/education|doe|university|school/i.test(domainName)) {
-    aboutCompany = `${domainName} designs and deploys statewide digital education platforms, online assessment engines, and modern student information systems with an emphasis on accessibility, low latency, and rock-solid reliability.`
-  } else {
-    aboutCompany = `${domainName} is an enterprise digital architecture studio building high-performing digital systems and scalable technology products for direct clients. We work with a carefully chosen few. Quality over volume. Always.`
-  }
+// ─── Parse Job Content for Spacious Wellfound Dossier Layout ────────────────
+function parseWellfoundJobDetails(job, cleanTitle, domainName, location, workMode, localReq) {
+  const rawSkills = Array.isArray(job.skills) && job.skills.length > 0
+    ? job.skills
+    : ['Cloud Architecture', 'Microservices', 'REST APIs', 'Agile / Scrum', 'CI/CD']
 
-  const expStr = job?.experience ? `${job.experience} of experience` : 'proven professional experience'
-  const aboutRole = `We are looking for a ${cleanTitle} with ${expStr} who believes static legacy systems are obsolete. In this role, you will bridge the gap between complex client business requirements and living, high-performance digital solutions. You will be responsible for creating smooth, reliable, and secure technical architectures using modern toolsets and automation. You bring execution, technical mastery, and design sensitivity. We provide creative freedom, direct client impact, and zero micromanagement.`
+  const aboutCompany = `${domainName} is delivering mission-critical modern technological platforms to enhance operational efficiency, security, and public sector services. We value engineers and leaders who take bold ownership, thrive in collaborative teams, and design scalable architectures built for enterprise longevity.`
 
-  const rawSkills = Array.isArray(job?.skills) && job.skills.length > 0 
-    ? job.skills 
-    : ['System Architecture', 'Cloud Infrastructure', 'API Integration', 'Automated Testing', 'Performance Optimization']
+  const aboutRole = `We are seeking a talented and detail-oriented ${cleanTitle} to spearhead key engineering initiatives. In this high-impact engagement, you will collaborate closely with enterprise systems architects, product owners, and engineering leaders to design, build, and optimize resilient distributed workflows.`
 
-  const s0 = rawSkills[0] || 'Interactive Prototyping'
-  const s1 = rawSkills[1] || 'System Build & Architecture'
-  const s2 = rawSkills[2] || 'Enterprise Integration'
-  const s3 = rawSkills[3] || 'Continuous Delivery'
-  const s4 = rawSkills[4] || 'Performance Optimization'
+  const s1 = rawSkills[0] || 'Core Architecture'
+  const s2 = rawSkills[1] || 'API & Microservices'
+  const s3 = rawSkills[2] || 'Automated CI/CD'
+  const s4 = rawSkills[3] || 'Scalability & Performance'
 
   const whatYouWillDo = [
     {
-      title: `${s0}:`,
-      description: `Bring static architectural requirements to life with high-fidelity implementations, robust workflows, and dynamic system transitions.`
-    },
-    {
       title: `${s1}:`,
-      description: `Translate complex enterprise specifications into responsive, high-performance solutions with clean code structure and zero technical debt.`
+      description: `Drive hands-on implementation and technical governance across modern enterprise cloud environments, ensuring clean code standards and scalable design.`
     },
     {
       title: `${s2}:`,
@@ -238,6 +254,7 @@ export default function WellfoundCareersView({
   jobs = [],
   filteredJobs = [],
   loading = false,
+  targetJobId = null,
   searchQuery = '',
   setSearchQuery,
   selectedLocation = 'All',
@@ -254,6 +271,9 @@ export default function WellfoundCareersView({
   setFullJdModalJob,
   setActiveChatCandidate,
   setShowCvUploadModal,
+  clocksExpanded = false,
+  setClocksExpanded,
+  formatLiveTime,
   themeMode = 'light',
   toggleTheme,
   isLight = true,
@@ -272,9 +292,58 @@ export default function WellfoundCareersView({
   const [heroLocationQuery, setHeroLocationQuery] = useState(selectedLocation === 'All' ? '' : selectedLocation)
   const [activeCategoryFilter, setActiveCategoryFilter] = useState('all')
 
-  // Selected Job for the Center Full JD View
-  const [selectedJobId, setSelectedJobId] = useState(null)
+  // Selected Job for Page 2 (Job Detail View)
+  const [selectedJobId, setSelectedJobId] = useState(() => {
+    if (targetJobId) return targetJobId
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search)
+      return p.get('jobId') || p.get('job') || null
+    }
+    return null
+  })
   const centerPanelRef = useRef(null)
+
+  // Listen to browser navigation popstate (Back/Forward buttons)
+  useEffect(() => {
+    const onPopState = () => {
+      const p = new URLSearchParams(window.location.search)
+      const jId = p.get('jobId') || p.get('job') || null
+      setSelectedJobId(jId)
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
+
+  // Synchronize when targetJobId prop changes
+  useEffect(() => {
+    if (targetJobId) {
+      setSelectedJobId(targetJobId)
+    }
+  }, [targetJobId])
+
+  // Select a job to open Page 2
+  const handleSelectJob = (jobId) => {
+    setSelectedJobId(jobId)
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href)
+      if (jobId) {
+        url.searchParams.set('jobId', jobId)
+      } else {
+        url.searchParams.delete('jobId')
+        url.searchParams.delete('job')
+      }
+      window.history.pushState({}, '', url.pathname + url.search)
+    }
+    if (centerPanelRef.current) {
+      centerPanelRef.current.scrollTop = 0
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  // Return to Page 1
+  const handleBackToAllJobs = () => {
+    handleSelectJob(null)
+  }
 
   // Theme-aware color palette
   const colors = {
@@ -321,20 +390,23 @@ export default function WellfoundCareersView({
     })
   }, [filteredJobs, activeCategoryFilter])
 
-  // Automatically select the first job if none selected or if current selection leaves the list
-  useEffect(() => {
-    if (categoryFilteredJobs.length > 0) {
-      if (!selectedJobId || !categoryFilteredJobs.some(j => j.id === selectedJobId)) {
-        setSelectedJobId(categoryFilteredJobs[0].id)
-      }
-    } else {
-      setSelectedJobId(null)
-    }
-  }, [categoryFilteredJobs, selectedJobId])
-
+  // Selected Job object for Page 2
   const selectedJob = useMemo(() => {
-    return categoryFilteredJobs.find(j => j.id === selectedJobId) || categoryFilteredJobs[0] || null
-  }, [categoryFilteredJobs, selectedJobId])
+    if (!selectedJobId) return null
+    return (jobs || []).find(j => j.id === selectedJobId) || null
+  }, [jobs, selectedJobId])
+
+  // Categorized Buckets for Page 1 default view
+  const categorizedJobBuckets = useMemo(() => {
+    const list = jobs || []
+    return {
+      trending: list.slice(0, 6),
+      engineering: list.filter(j => /software|engineer|developer|java|python|c#|\.net|react|full\s*stack|frontend|backend/i.test(`${j.title || ''} ${(j.skills || []).join(' ')}`)).slice(0, 6),
+      dataAnalytics: list.filter(j => /data|analytics|analyst|bi|power\s*bi|sql|etl|machine\s*learning|ai|scientist/i.test(`${j.title || ''} ${(j.skills || []).join(' ')}`)).slice(0, 6),
+      cloudDevops: list.filter(j => /cloud|aws|azure|gcp|devops|kubernetes|docker|infrastructure|terraform/i.test(`${j.title || ''} ${(j.skills || []).join(' ')}`)).slice(0, 6),
+      managementPublic: list.filter(j => /director|manager|lead|scrum|product|project|program|business\s*analyst|health|clinical|med/i.test(`${j.title || ''} ${(j.skills || []).join(' ')}`)).slice(0, 6)
+    }
+  }, [jobs])
 
   // Handle Search Submission from Hero
   const handleHeroSearchSubmit = (e) => {
@@ -372,7 +444,7 @@ export default function WellfoundCareersView({
     return jobs.filter(j => j.id !== selectedJob.id).slice(0, 3)
   }, [selectedJob, jobs, getSimilarJobs])
 
-  // Computed properties for selected job
+  // Computed properties for selected job (Page 2)
   const selCleanTitle = selectedJob ? (cleanJobTitleWithPositionNumber ? cleanJobTitleWithPositionNumber(selectedJob.title) : selectedJob.title) : ''
   const selDomain = selectedJob ? resolveClientDomainName(selectedJob) : ''
   const selLoc = selectedJob ? (resolveJobLocation ? resolveJobLocation(selectedJob) : (selectedJob.work_mode || 'Remote, US')) : ''
@@ -390,6 +462,476 @@ export default function WellfoundCareersView({
     )
   )
 
+  // ─── FULL SEO DYNAMIC ENGINE (Google Jobs Schema.org & Meta Tags) ─────────
+  useEffect(() => {
+    const siteUrl = 'https://smarthireus.com'
+    const currentUrl = typeof window !== 'undefined' ? window.location.href : `${siteUrl}/jobs`
+
+    const setMeta = (name, content, isProperty = false) => {
+      const attr = isProperty ? 'property' : 'name'
+      let el = document.querySelector(`meta[${attr}="${name}"]`)
+      if (!el) {
+        el = document.createElement('meta')
+        el.setAttribute(attr, name)
+        document.head.appendChild(el)
+      }
+      el.setAttribute('content', content)
+    }
+
+    if (selectedJob) {
+      // ── Page 2 SEO (Job Detail)
+      const pageTitle = `${selCleanTitle} | Direct Client Job in ${selLoc} | SmartHire Careers`
+      document.title = pageTitle
+
+      const desc = `Apply for ${selCleanTitle} at Direct Client in ${selLoc}. Verified ${selWorkMode} IT contract opportunity with competitive rate and fast recruiter review.`
+      setMeta('description', desc)
+      setMeta('keywords', `${selCleanTitle}, direct client it jobs, ${selLoc} IT jobs, ${selWorkMode} it contracts, c2c jobs, w2 contracts, smarthire careers`)
+      setMeta('robots', 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1')
+
+      // OpenGraph
+      setMeta('og:type', 'article', true)
+      setMeta('og:title', pageTitle, true)
+      setMeta('og:description', desc, true)
+      setMeta('og:url', currentUrl, true)
+      setMeta('og:site_name', 'SmartHire Careers', true)
+
+      // Twitter
+      setMeta('twitter:card', 'summary_large_image')
+      setMeta('twitter:title', pageTitle)
+      setMeta('twitter:description', desc)
+
+      // Canonical
+      let canonical = document.querySelector('link[rel="canonical"]')
+      if (!canonical) {
+        canonical = document.createElement('link')
+        canonical.setAttribute('rel', 'canonical')
+        document.head.appendChild(canonical)
+      }
+      canonical.setAttribute('href', `${siteUrl}/jobs?jobId=${selectedJob.id}`)
+
+      // Google for Jobs: Schema.org JobPosting JSON-LD
+      const existingLd = document.getElementById('smarthire-jobposting-jsonld')
+      if (existingLd) existingLd.remove()
+
+      const ldScript = document.createElement('script')
+      ldScript.id = 'smarthire-jobposting-jsonld'
+      ldScript.type = 'application/ld+json'
+
+      const isRemote = selWorkMode.toLowerCase().includes('remote')
+      const validUntil = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
+      const jobPostingSchema = {
+        "@context": "https://schema.org/",
+        "@type": "JobPosting",
+        "title": selCleanTitle,
+        "description": `<p><strong>Role:</strong> ${selCleanTitle}</p><p><strong>Client Domain:</strong> ${selDomain}</p><p><strong>Location:</strong> ${selLoc}</p><p><strong>Work Policy:</strong> ${selWorkMode}</p><p>${(getFullDescriptionText ? getFullDescriptionText(selectedJob) : selectedJob.description || '').replace(/\n/g, '<br/>')}</p>`,
+        "identifier": {
+          "@type": "PropertyValue",
+          "name": "SmartHire ATS",
+          "value": resolveReqId(selectedJob)
+        },
+        "datePosted": selectedJob.creationDate ? new Date(selectedJob.creationDate).toISOString().split('T')[0] : '2026-09-15',
+        "validThrough": validUntil,
+        "employmentType": "CONTRACTOR",
+        "hiringOrganization": {
+          "@type": "Organization",
+          "name": selDomain || "Enterprise Direct Client",
+          "sameAs": siteUrl
+        },
+        "jobLocation": {
+          "@type": "Place",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": selLoc.split(',')[0]?.trim() || "Richmond",
+            "addressRegion": selLoc.split(',')[1]?.trim() || "VA",
+            "addressCountry": "US"
+          }
+        },
+        ...(isRemote ? {
+          "jobLocationType": "TELECOMMUTE",
+          "applicantLocationRequirements": {
+            "@type": "Country",
+            "name": "USA"
+          }
+        } : {}),
+        "directApply": true
+      }
+
+      ldScript.textContent = JSON.stringify(jobPostingSchema)
+      document.head.appendChild(ldScript)
+
+    } else {
+      // ── Page 1 SEO (All Jobs)
+      const pageTitle = 'Direct Client IT Jobs, C2C & W2 Remote Contracts | SmartHire ATS'
+      document.title = pageTitle
+
+      const desc = 'Browse 100+ verified direct client IT requisitions across State, Healthcare, Cloud and Enterprise clients. Remote, hybrid & onsite roles with fast ATS recruiter review.'
+      setMeta('description', desc)
+      setMeta('keywords', 'direct client it jobs, state it contracts, remote c2c jobs, w2 contracts, cloud engineer direct client, java developer state contracts, it staffing portal, smarthire ats')
+      setMeta('robots', 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1')
+
+      // OpenGraph
+      setMeta('og:type', 'website', true)
+      setMeta('og:title', pageTitle, true)
+      setMeta('og:description', desc, true)
+      setMeta('og:url', `${siteUrl}/jobs`, true)
+      setMeta('og:site_name', 'SmartHire Careers', true)
+
+      // Twitter
+      setMeta('twitter:card', 'summary_large_image')
+      setMeta('twitter:title', pageTitle)
+      setMeta('twitter:description', desc)
+
+      // Canonical
+      let canonical = document.querySelector('link[rel="canonical"]')
+      if (!canonical) {
+        canonical = document.createElement('link')
+        canonical.setAttribute('rel', 'canonical')
+        document.head.appendChild(canonical)
+      }
+      canonical.setAttribute('href', `${siteUrl}/jobs`)
+
+      // Google Job ItemList schema for Page 1
+      const existingLd = document.getElementById('smarthire-jobposting-jsonld')
+      if (existingLd) existingLd.remove()
+
+      const ldScript = document.createElement('script')
+      ldScript.id = 'smarthire-jobposting-jsonld'
+      ldScript.type = 'application/ld+json'
+
+      const itemListSchema = {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "name": "Direct Client IT Requisitions",
+        "description": "Verified direct-client contract positions in Cloud, Software Engineering, Data & Public Sector IT.",
+        "itemListElement": (jobs || []).slice(0, 25).map((job, idx) => ({
+          "@type": "ListItem",
+          "position": idx + 1,
+          "url": `${siteUrl}/jobs?jobId=${job.id}`,
+          "name": cleanJobTitleWithPositionNumber ? cleanJobTitleWithPositionNumber(job.title) : job.title
+        }))
+      }
+
+      ldScript.textContent = JSON.stringify(itemListSchema)
+      document.head.appendChild(ldScript)
+    }
+
+    return () => {
+      const ld = document.getElementById('smarthire-jobposting-jsonld')
+      if (ld) ld.remove()
+    }
+  }, [selectedJob, selCleanTitle, selLoc, selWorkMode, selDomain, jobs, cleanJobTitleWithPositionNumber, getFullDescriptionText])
+
+  // ─── Render Clean Job Row for Page 1 Feed (No save, No apply button) ──────
+  const renderJobRow = (job) => {
+    const cleanTitle = cleanJobTitleWithPositionNumber ? cleanJobTitleWithPositionNumber(job.title) : job.title
+    const domainName = resolveClientDomainName(job)
+    const loc = resolveJobLocation ? resolveJobLocation(job) : (job.work_mode || 'Remote, US')
+    const workMode = resolveWorkArrangement(job)
+    const localReq = resolveLocalRequirement(job)
+    const isExpired = isJobExpired ? isJobExpired(job) : false
+
+    const workModeBadge = workMode === 'Remote'
+      ? { bg: isLight ? '#DCFCE7' : '#052E16', text: isLight ? '#15803D' : '#86EFAC', border: isLight ? '#BBF7D0' : '#166534' }
+      : workMode === 'Hybrid'
+      ? { bg: isLight ? '#EDE9FE' : '#2E1065', text: isLight ? '#6D28D9' : '#C4B5FD', border: isLight ? '#DDD6FE' : '#5B21B6' }
+      : { bg: isLight ? '#FEF3C7' : '#451A03', text: isLight ? '#B45309' : '#FDE68A', border: isLight ? '#FDE68A' : '#92400E' }
+
+    return (
+      <div
+        key={job.id}
+        onClick={() => handleSelectJob(job.id)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '16px 20px',
+          borderBottom: `1px solid ${colors.borderLight}`,
+          backgroundColor: colors.cardBg,
+          cursor: 'pointer',
+          transition: 'background-color 0.15s ease, transform 0.15s ease',
+          gap: 16
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = colors.hoverBg
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = colors.cardBg
+        }}
+      >
+        {/* Left: Company Logo & Info */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0, flex: 1 }}>
+          <CompanyLogo job={job} size={42} />
+
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <h4 style={{
+              margin: '0 0 5px',
+              fontSize: 15.5,
+              fontWeight: 700,
+              color: colors.textPrimary,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              letterSpacing: '-0.01em'
+            }}>
+              {cleanTitle}
+            </h4>
+
+            <div style={{
+              fontSize: 13,
+              color: colors.textSecondary,
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 6
+            }}>
+              <span style={{ fontWeight: 600, color: colors.textPrimary }}>{domainName}</span>
+              <span style={{ color: colors.textMuted }}>•</span>
+              <span style={{
+                fontSize: 11.5,
+                fontWeight: 700,
+                padding: '2px 8px',
+                borderRadius: 4,
+                backgroundColor: workModeBadge.bg,
+                color: workModeBadge.text,
+                border: `1px solid ${workModeBadge.border}`
+              }}>
+                {workMode}
+              </span>
+              <span style={{ color: colors.textMuted }}>•</span>
+              <span>{loc}</span>
+              <span style={{ color: colors.textMuted }}>•</span>
+              <span style={{
+                fontSize: 11.5,
+                fontWeight: 600,
+                padding: '2px 8px',
+                borderRadius: 4,
+                backgroundColor: colors.badgeBg,
+                color: colors.textSecondary
+              }}>
+                {localReq.label}
+              </span>
+              {isExpired && (
+                <span style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: '#DC2626',
+                  backgroundColor: isLight ? '#FEE2E2' : '#450A0A',
+                  padding: '1px 6px',
+                  borderRadius: 4,
+                  marginLeft: 4
+                }}>
+                  Closed
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right: View Job Action Button Only (No save, No apply on page 1) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              handleSelectJob(job.id)
+            }}
+            style={{
+              padding: '8px 18px',
+              borderRadius: 6,
+              border: `1px solid ${colors.border}`,
+              backgroundColor: isLight ? '#FFFFFF' : '#1F2937',
+              color: colors.textPrimary,
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = colors.textPrimary
+              e.currentTarget.style.backgroundColor = colors.buttonDark
+              e.currentTarget.style.color = colors.buttonDarkText
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = colors.border
+              e.currentTarget.style.backgroundColor = isLight ? '#FFFFFF' : '#1F2937'
+              e.currentTarget.style.color = colors.textPrimary
+            }}
+          >
+            <span>View Job</span>
+            <ChevronRightIcon size={13} color="currentColor" />
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ─── Dedicated Reusable Google AdSense & Highlights Sidebar ───────────────
+  const renderSidebarAds = () => (
+    <div className="wellfound-sidebar-ads" style={{
+      position: 'sticky',
+      top: 84,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 16
+    }}>
+      {/* AdSense Unit 1: Sponsored Display Box */}
+      <div style={{
+        border: `1px solid ${colors.border}`,
+        borderRadius: 14,
+        backgroundColor: colors.cardBg,
+        padding: 16,
+        boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none',
+        textAlign: 'center'
+      }}>
+        <div style={{
+          fontSize: 10,
+          fontWeight: 800,
+          letterSpacing: '0.08em',
+          color: colors.textMuted,
+          textTransform: 'uppercase',
+          marginBottom: 10
+        }}>
+          SPONSORED / ADVERTISEMENT
+        </div>
+
+        {/* Google AdSense Responsive Unit */}
+        <div style={{
+          minHeight: 180,
+          backgroundColor: isLight ? '#F9FAFB' : '#171F2C',
+          borderRadius: 10,
+          border: `1px dashed ${colors.border}`,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 14,
+          gap: 8
+        }}>
+          <ins
+            className="adsbygoogle"
+            style={{ display: 'block', width: '100%', height: 140 }}
+            data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+            data-ad-slot="9876543210"
+            data-ad-format="auto"
+            data-full-width-responsive="true"
+          />
+          <div style={{ fontSize: 12, fontWeight: 700, color: colors.textPrimary }}>
+            Direct Fortune 500 Contracts
+          </div>
+          <div style={{ fontSize: 11.5, color: colors.textSecondary, lineHeight: 1.4 }}>
+            Fast-track your application with priority recruiter review.
+          </div>
+        </div>
+      </div>
+
+      {/* Checklist Card: "Level up your job search" (Reference Card) */}
+      <div style={{
+        border: `1px solid ${colors.border}`,
+        borderRadius: 14,
+        backgroundColor: colors.cardBg,
+        padding: 20,
+        boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
+      }}>
+        <h3 style={{
+          fontSize: 15,
+          fontWeight: 800,
+          color: colors.textPrimary,
+          margin: '0 0 4px',
+          letterSpacing: '-0.01em'
+        }}>
+          Level up your job search
+        </h3>
+        <p style={{
+          fontSize: 12.5,
+          color: colors.textSecondary,
+          margin: '0 0 16px',
+          lineHeight: 1.4
+        }}>
+          Why top professionals apply directly through SmartHire:
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <CheckCircleIcon size={16} color="#10B981" />
+            <div style={{ fontSize: 13, color: colors.textPrimary, fontWeight: 600, lineHeight: 1.3 }}>
+              Verified Direct Client contracts only
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <CheckCircleIcon size={16} color="#10B981" />
+            <div style={{ fontSize: 13, color: colors.textPrimary, fontWeight: 600, lineHeight: 1.3 }}>
+              Zero third-party markups or rate cuts
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <CheckCircleIcon size={16} color="#10B981" />
+            <div style={{ fontSize: 13, color: colors.textPrimary, fontWeight: 600, lineHeight: 1.3 }}>
+              Instant ATS parsing & skill matching
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <CheckCircleIcon size={16} color="#10B981" />
+            <div style={{ fontSize: 13, color: colors.textPrimary, fontWeight: 600, lineHeight: 1.3 }}>
+              Fast-track recruiter review in 24h
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* AdSense Unit 2: Career Partner Spotlight */}
+      <div style={{
+        border: `1px solid ${colors.border}`,
+        borderRadius: 14,
+        backgroundColor: colors.cardBg,
+        padding: 16,
+        boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none',
+        textAlign: 'center'
+      }}>
+        <div style={{
+          fontSize: 10,
+          fontWeight: 800,
+          letterSpacing: '0.08em',
+          color: colors.textMuted,
+          textTransform: 'uppercase',
+          marginBottom: 10
+        }}>
+          CAREER PARTNER SPOTLIGHT
+        </div>
+
+        <div style={{
+          minHeight: 120,
+          backgroundColor: isLight ? '#F9FAFB' : '#171F2C',
+          borderRadius: 10,
+          border: `1px dashed ${colors.border}`,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 12,
+          gap: 6
+        }}>
+          <ins
+            className="adsbygoogle"
+            style={{ display: 'block', width: '100%', height: 90 }}
+            data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+            data-ad-slot="1234567890"
+            data-ad-format="auto"
+            data-full-width-responsive="true"
+          />
+          <div style={{ fontSize: 11.5, color: colors.textSecondary }}>
+            Explore verified enterprise staffing opportunities
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <div style={{
       fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
@@ -398,7 +940,7 @@ export default function WellfoundCareersView({
       minHeight: '100vh',
       transition: 'background-color 0.2s, color 0.2s'
     }}>
-      {/* Dynamic Style for Responsive 3-Column Layout */}
+      {/* Responsive Grid Layout Styles */}
       <style>{`
         @media (min-width: 1280px) {
           .wellfound-3col-workspace {
@@ -407,9 +949,11 @@ export default function WellfoundCareersView({
             gap: 24px !important;
             align-items: start !important;
           }
-          .wellfound-sidebar-ads {
-            display: flex !important;
-            flex-direction: column !important;
+          .wellfound-2col-workspace {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) 300px !important;
+            gap: 28px !important;
+            align-items: start !important;
           }
         }
         @media (min-width: 1024px) and (max-width: 1279px) {
@@ -419,84 +963,90 @@ export default function WellfoundCareersView({
             gap: 20px !important;
             align-items: start !important;
           }
-          .wellfound-sidebar-ads {
-            grid-column: span 2 !important;
+          .wellfound-2col-workspace {
             display: grid !important;
-            grid-template-columns: 1fr 1fr !important;
-            gap: 16px !important;
-            margin-top: 20px !important;
+            grid-template-columns: minmax(0, 1fr) 280px !important;
+            gap: 24px !important;
+            align-items: start !important;
           }
         }
         @media (max-width: 1023px) {
-          .wellfound-3col-workspace {
+          .wellfound-3col-workspace,
+          .wellfound-2col-workspace {
             display: flex !important;
             flex-direction: column !important;
             gap: 20px !important;
           }
-          .wellfound-sidebar-ads {
-            display: flex !important;
-            flex-direction: column !important;
-            margin-top: 20px !important;
-          }
         }
       `}</style>
 
-      {/* ─── 1. TOP NAVIGATION BAR WITH AUTH ──────────────────────────────── */}
+      {/* ─── 1. WELLFOUND TOP NAVIGATION BAR ──────────────────────────────── */}
       <header style={{
         borderBottom: `1px solid ${colors.border}`,
         backgroundColor: colors.cardBg,
         position: 'sticky',
         top: 0,
         zIndex: 100,
-        boxShadow: isLight ? '0 1px 4px rgba(0,0,0,0.03)' : 'none'
+        boxShadow: isLight ? '0 1px 3px rgba(0,0,0,0.04)' : '0 1px 3px rgba(0,0,0,0.2)'
       }}>
         <div style={{
           maxWidth: 1560,
           margin: '0 auto',
-          padding: '0 24px',
-          height: 68,
+          padding: '12px 24px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: 20
+          gap: 16
         }}>
-          {/* Brand Logo: smarthire: */}
+          {/* Left Brand & Navigation Tabs */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
-            <Link to="/jobs" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>
+            <Link
+              to="/jobs"
+              onClick={handleBackToAllJobs}
+              style={{
+                textDecoration: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2
+              }}
+            >
               <span style={{
-                fontSize: 25,
+                fontSize: 22,
                 fontWeight: 900,
-                letterSpacing: '-0.035em',
                 color: colors.textPrimary,
-                fontFamily: "'Plus Jakarta Sans', sans-serif"
+                letterSpacing: '-0.03em'
               }}>
-                smarthire<span style={{ color: colors.accentCoral }}>:</span>
+                smarthire
+              </span>
+              <span style={{
+                fontSize: 22,
+                fontWeight: 900,
+                color: colors.accentCoral,
+                marginLeft: 1
+              }}>
+                :
               </span>
             </Link>
 
-            {/* Navigation Tabs */}
-            <nav style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <nav style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <button
-                onClick={() => {
-                  setActiveCategoryFilter('all')
-                  if (setSearchQuery) setSearchQuery('')
-                  if (setSelectedLocation) setSelectedLocation('All')
-                }}
+                onClick={handleBackToAllJobs}
                 style={{
-                  background: activeCategoryFilter === 'all' && !searchQuery ? (isLight ? '#F3F4F6' : '#1F2937') : 'transparent',
+                  background: !selectedJobId ? (isLight ? '#F3F4F6' : '#1F2937') : 'transparent',
                   border: 'none',
                   fontSize: 14,
-                  fontWeight: activeCategoryFilter === 'all' && !searchQuery ? 700 : 500,
-                  color: colors.textPrimary,
-                  padding: '6px 14px',
-                  borderRadius: 20,
+                  fontWeight: !selectedJobId ? 700 : 500,
+                  color: !selectedJobId ? colors.textPrimary : colors.textSecondary,
+                  padding: '6px 12px',
+                  borderRadius: 6,
                   cursor: 'pointer'
                 }}
               >
-                Find Jobs
+                Jobs
               </button>
               <button
                 onClick={() => {
+                  handleBackToAllJobs()
                   if (setSelectedLocation) setSelectedLocation('Remote')
                   const el = document.getElementById('wellfound-split-workspace')
                   if (el) el.scrollIntoView({ behavior: 'smooth' })
@@ -617,787 +1167,984 @@ export default function WellfoundCareersView({
         </div>
       </header>
 
-      {/* ─── 2. WELLFOUND HERO SECTION (media_1789654471631.png) ──────────── */}
-      <section style={{
-        maxWidth: 1560,
-        margin: '0 auto',
-        padding: '42px 24px 24px',
-        textAlign: 'center',
-        position: 'relative'
-      }}>
-        {/* Eyebrow */}
-        <div style={{
-          fontSize: 12.5,
-          fontWeight: 800,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-          color: colors.accentCoral,
-          marginBottom: 12
-        }}>
-          OVER 100+ VERIFIED DIRECT-CLIENT IT REQUISITIONS
-        </div>
-
-        {/* Main Headline */}
-        <h1 style={{
-          fontSize: 'clamp(32px, 4.5vw, 50px)',
-          fontWeight: 900,
-          letterSpacing: '-0.035em',
-          color: colors.textPrimary,
-          margin: '0 0 24px',
-          lineHeight: 1.15
-        }}>
-          Find what's next<span style={{ color: colors.accentCoral }}>:</span>
-        </h1>
-
-        {/* Dual-Input Search Pill Container */}
-        <form
-          onSubmit={handleHeroSearchSubmit}
-          style={{
-            maxWidth: 820,
+      {/* ═══════════════════════════════════════════════════════════════════════
+          PAGE 1: ALL JOBS CATEGORIZED FRONT PAGE (When !selectedJob)
+          Matches media_1789659179557.png
+      ═══════════════════════════════════════════════════════════════════════ */}
+      {!selectedJob && (
+        <main>
+          {/* ── 1. Hero Section ── */}
+          <section style={{
+            maxWidth: 1560,
             margin: '0 auto',
-            backgroundColor: colors.cardBg,
-            border: `1px solid ${colors.border}`,
-            borderRadius: 50,
-            padding: '8px 10px 8px 24px',
-            display: 'flex',
-            alignItems: 'center',
-            boxShadow: isLight ? '0 10px 25px rgba(0, 0, 0, 0.05)' : '0 10px 25px rgba(0, 0, 0, 0.3)',
-            gap: 12,
-            transition: 'box-shadow 0.2s ease, border-color 0.2s ease'
-          }}
-        >
-          {/* Left: Job Title Input */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
-            <SearchIcon size={20} color={colors.textSecondary} />
-            <input
-              type="text"
-              placeholder="Job title, keywords, or skills"
-              value={heroTitleQuery}
-              onChange={(e) => setHeroTitleQuery(e.target.value)}
-              style={{
-                width: '100%',
-                border: 'none',
-                outline: 'none',
-                backgroundColor: 'transparent',
-                fontSize: 15,
-                fontWeight: 500,
-                color: colors.textPrimary,
-                fontFamily: 'inherit'
-              }}
-            />
-          </div>
-
-          {/* Vertical Divider */}
-          <div style={{ width: 1, height: 32, backgroundColor: colors.border }} />
-
-          {/* Right: Location Input */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
-            <LocationIcon size={20} color={colors.textSecondary} />
-            <input
-              type="text"
-              placeholder="Location (e.g. Remote, NC, VA, MI)"
-              value={heroLocationQuery}
-              onChange={(e) => setHeroLocationQuery(e.target.value)}
-              style={{
-                width: '100%',
-                border: 'none',
-                outline: 'none',
-                backgroundColor: 'transparent',
-                fontSize: 15,
-                fontWeight: 500,
-                color: colors.textPrimary,
-                fontFamily: 'inherit'
-              }}
-            />
-          </div>
-
-          {/* Black Pill Search Button */}
-          <button
-            type="submit"
-            style={{
-              backgroundColor: colors.buttonDark,
-              color: colors.buttonDarkText,
-              border: 'none',
-              borderRadius: 30,
-              padding: '12px 28px',
-              fontSize: 14.5,
-              fontWeight: 700,
-              cursor: 'pointer',
-              flexShrink: 0,
-              transition: 'transform 0.15s ease'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.03)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            Search
-          </button>
-        </form>
-      </section>
-
-      {/* ─── 3. "TRENDING DIRECT CLIENTS" 3-CARD INTERACTIVE GRID ─────────── */}
-      <section style={{
-        maxWidth: 1560,
-        margin: '0 auto',
-        padding: '10px 24px 28px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <h2 style={{
-            fontSize: 21,
-            fontWeight: 800,
-            color: colors.textPrimary,
-            margin: 0,
-            letterSpacing: '-0.02em'
+            padding: '42px 24px 24px',
+            textAlign: 'center',
+            position: 'relative'
           }}>
-            Trending direct clients hiring now
-          </h2>
-          <span style={{ fontSize: 13, color: colors.textSecondary, fontWeight: 500 }}>
-            Click a client card to filter open opportunities
-          </span>
-        </div>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: 18
-        }}>
-          {/* Card 1: Enterprise Cloud & AI */}
-          <div
-            onClick={() => handleTrendingCardClick('cloud')}
-            style={{
-              border: `1.5px solid ${activeCategoryFilter === 'cloud' ? colors.activeBorder : colors.border}`,
-              borderRadius: 14,
-              backgroundColor: activeCategoryFilter === 'cloud' ? colors.activeBg : colors.cardBg,
-              padding: 20,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              cursor: 'pointer',
-              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-              boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)'
-              e.currentTarget.style.boxShadow = isLight ? '0 12px 24px rgba(0,0,0,0.08)' : '0 12px 24px rgba(0,0,0,0.4)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
-            }}
-          >
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-                <div style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 10,
-                  background: 'linear-gradient(135deg, #0F172A 0%, #334155 100%)',
-                  color: '#FFFFFF',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 900,
-                  fontSize: 15
-                }}>
-                  EA
-                </div>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: colors.textPrimary }}>
-                    Enterprise Cloud & AI
-                  </h3>
-                  <div style={{ fontSize: 12, color: colors.textSecondary }}>State & Enterprise Infrastructure</div>
-                </div>
-              </div>
-
-              <p style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 1.5, margin: '0 0 12px' }}>
-                Modernizing state cloud infrastructures with AWS, Azure microservices, and automated data pipelines.
-              </p>
-
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: isLight ? '#FCE7F3' : '#371B2B', color: '#BE185D' }}>
-                  Cloud Arch
-                </span>
-                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
-                  AWS / Azure
-                </span>
-                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
-                  Remote Available
-                </span>
-              </div>
-            </div>
-
+            {/* Eyebrow */}
             <div style={{
-              borderTop: `1px solid ${colors.borderLight}`,
-              paddingTop: 10,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              fontSize: 13,
-              fontWeight: 700,
-              color: colors.textPrimary
+              fontSize: 12.5,
+              fontWeight: 800,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: colors.accentCoral,
+              marginBottom: 12
             }}>
-              <span>View Open Positions</span>
-              <ChevronRightIcon size={14} color={colors.textPrimary} />
-            </div>
-          </div>
-
-          {/* Card 2: State Healthcare Systems */}
-          <div
-            onClick={() => handleTrendingCardClick('health')}
-            style={{
-              border: `1.5px solid ${activeCategoryFilter === 'health' ? colors.activeBorder : colors.border}`,
-              borderRadius: 14,
-              backgroundColor: activeCategoryFilter === 'health' ? colors.activeBg : colors.cardBg,
-              padding: 20,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              cursor: 'pointer',
-              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-              boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)'
-              e.currentTarget.style.boxShadow = isLight ? '0 12px 24px rgba(0,0,0,0.08)' : '0 12px 24px rgba(0,0,0,0.4)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
-            }}
-          >
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-                <div style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 10,
-                  background: 'linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%)',
-                  color: '#FFFFFF',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 900,
-                  fontSize: 15
-                }}>
-                  SH
-                </div>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: colors.textPrimary }}>
-                    State Healthcare Systems
-                  </h3>
-                  <div style={{ fontSize: 12, color: colors.textSecondary }}>Public Health Agency</div>
-                </div>
-              </div>
-
-              <p style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 1.5, margin: '0 0 12px' }}>
-                Empowers statewide public health initiatives, child welfare portals, and Medicaid management systems.
-              </p>
-
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: isLight ? '#DBEAFE' : '#1E3A8A', color: '#1D4ED8' }}>
-                  Public Sector
-                </span>
-                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
-                  Healthcare IT
-                </span>
-                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
-                  Long-term
-                </span>
-              </div>
+              OVER 100+ VERIFIED DIRECT-CLIENT IT REQUISITIONS
             </div>
 
-            <div style={{
-              borderTop: `1px solid ${colors.borderLight}`,
-              paddingTop: 10,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              fontSize: 13,
-              fontWeight: 700,
-              color: colors.textPrimary
+            {/* Main Headline */}
+            <h1 style={{
+              fontSize: 'clamp(32px, 4.5vw, 50px)',
+              fontWeight: 900,
+              letterSpacing: '-0.035em',
+              color: colors.textPrimary,
+              margin: '0 0 24px',
+              lineHeight: 1.15
             }}>
-              <span>View Open Positions</span>
-              <ChevronRightIcon size={14} color={colors.textPrimary} />
-            </div>
-          </div>
+              Find what's next<span style={{ color: colors.accentCoral }}>:</span>
+            </h1>
 
-          {/* Card 3: Digital Platform Solutions */}
-          <div
-            onClick={() => handleTrendingCardClick('dev')}
-            style={{
-              border: `1.5px solid ${activeCategoryFilter === 'dev' ? colors.activeBorder : colors.border}`,
-              borderRadius: 14,
-              backgroundColor: activeCategoryFilter === 'dev' ? colors.activeBg : colors.cardBg,
-              padding: 20,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              cursor: 'pointer',
-              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-              boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)'
-              e.currentTarget.style.boxShadow = isLight ? '0 12px 24px rgba(0,0,0,0.08)' : '0 12px 24px rgba(0,0,0,0.4)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
-            }}
-          >
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-                <div style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 10,
-                  background: 'linear-gradient(135deg, #047857 0%, #10B981 100%)',
-                  color: '#FFFFFF',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 900,
-                  fontSize: 15
-                }}>
-                  DP
-                </div>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: colors.textPrimary }}>
-                    Digital Platform Solutions
-                  </h3>
-                  <div style={{ fontSize: 12, color: colors.textSecondary }}>Enterprise Modernization</div>
-                </div>
+            {/* Dual-Input Search Pill Container */}
+            <form
+              onSubmit={handleHeroSearchSubmit}
+              style={{
+                maxWidth: 820,
+                margin: '0 auto',
+                backgroundColor: colors.cardBg,
+                border: `1px solid ${colors.border}`,
+                borderRadius: 50,
+                padding: '8px 10px 8px 24px',
+                display: 'flex',
+                alignItems: 'center',
+                boxShadow: isLight ? '0 10px 25px rgba(0, 0, 0, 0.05)' : '0 10px 25px rgba(0, 0, 0, 0.3)',
+                gap: 12,
+                transition: 'box-shadow 0.2s ease, border-color 0.2s ease'
+              }}
+            >
+              {/* Left: Job Title Input */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
+                <SearchIcon size={20} color={colors.textSecondary} />
+                <input
+                  type="text"
+                  placeholder="Job title, keywords, or skills"
+                  value={heroTitleQuery}
+                  onChange={(e) => setHeroTitleQuery(e.target.value)}
+                  style={{
+                    width: '100%',
+                    border: 'none',
+                    outline: 'none',
+                    backgroundColor: 'transparent',
+                    fontSize: 15,
+                    fontWeight: 500,
+                    color: colors.textPrimary,
+                    fontFamily: 'inherit'
+                  }}
+                />
               </div>
 
-              <p style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 1.5, margin: '0 0 12px' }}>
-                Full-stack software engineering, modern React/Node interfaces, and resilient backend microservices.
-              </p>
+              {/* Vertical Divider */}
+              <div style={{ width: 1, height: 32, backgroundColor: colors.border }} />
 
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: isLight ? '#D1FAE5' : '#064E3B', color: '#047857' }}>
-                  Full Stack
-                </span>
-                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
-                  Enterprise
-                </span>
-                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
-                  Hybrid / Onsite
-                </span>
+              {/* Right: Location Input */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
+                <LocationIcon size={20} color={colors.textSecondary} />
+                <input
+                  type="text"
+                  placeholder="Location (e.g. Remote, NC, VA, MI)"
+                  value={heroLocationQuery}
+                  onChange={(e) => setHeroLocationQuery(e.target.value)}
+                  style={{
+                    width: '100%',
+                    border: 'none',
+                    outline: 'none',
+                    backgroundColor: 'transparent',
+                    fontSize: 15,
+                    fontWeight: 500,
+                    color: colors.textPrimary,
+                    fontFamily: 'inherit'
+                  }}
+                />
               </div>
-            </div>
 
-            <div style={{
-              borderTop: `1px solid ${colors.borderLight}`,
-              paddingTop: 10,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              fontSize: 13,
-              fontWeight: 700,
-              color: colors.textPrimary
-            }}>
-              <span>View Open Positions</span>
-              <ChevronRightIcon size={14} color={colors.textPrimary} />
-            </div>
-          </div>
-        </div>
-      </section>
+              {/* Black Pill Search Button */}
+              <button
+                type="submit"
+                style={{
+                  backgroundColor: colors.buttonDark,
+                  color: colors.buttonDarkText,
+                  border: 'none',
+                  borderRadius: 30,
+                  padding: '12px 28px',
+                  fontSize: 14.5,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                  transition: 'transform 0.15s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.03)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                Search
+              </button>
+            </form>
+          </section>
 
-      {/* ─── 4. AUTHENTIC WELLFOUND 3-COLUMN WORKSPACE ────────────────────── */}
-      <section id="wellfound-split-workspace" style={{
-        maxWidth: 1560,
-        margin: '0 auto',
-        padding: '8px 24px 64px'
-      }}>
-        {/* Category Filter Pills Ribbon */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          overflowX: 'auto',
-          paddingBottom: 14,
-          marginBottom: 16,
-          borderBottom: `1px solid ${colors.borderLight}`
-        }}>
-          <button
-            onClick={() => setActiveCategoryFilter('all')}
-            style={{
-              padding: '6px 16px',
-              borderRadius: 20,
-              fontSize: 13,
-              fontWeight: 600,
-              border: `1px solid ${activeCategoryFilter === 'all' ? colors.buttonDark : colors.border}`,
-              backgroundColor: activeCategoryFilter === 'all' ? colors.buttonDark : colors.cardBg,
-              color: activeCategoryFilter === 'all' ? colors.buttonDarkText : colors.textPrimary,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            All Requisitions ({filteredJobs.length})
-          </button>
-          <button
-            onClick={() => setActiveCategoryFilter('dev')}
-            style={{
-              padding: '6px 16px',
-              borderRadius: 20,
-              fontSize: 13,
-              fontWeight: 600,
-              border: `1px solid ${activeCategoryFilter === 'dev' ? colors.buttonDark : colors.border}`,
-              backgroundColor: activeCategoryFilter === 'dev' ? colors.buttonDark : colors.cardBg,
-              color: activeCategoryFilter === 'dev' ? colors.buttonDarkText : colors.textPrimary,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            Engineering
-          </button>
-          <button
-            onClick={() => setActiveCategoryFilter('cloud')}
-            style={{
-              padding: '6px 16px',
-              borderRadius: 20,
-              fontSize: 13,
-              fontWeight: 600,
-              border: `1px solid ${activeCategoryFilter === 'cloud' ? colors.buttonDark : colors.border}`,
-              backgroundColor: activeCategoryFilter === 'cloud' ? colors.buttonDark : colors.cardBg,
-              color: activeCategoryFilter === 'cloud' ? colors.buttonDarkText : colors.textPrimary,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            Cloud & Infrastructure
-          </button>
-          <button
-            onClick={() => setActiveCategoryFilter('data')}
-            style={{
-              padding: '6px 16px',
-              borderRadius: 20,
-              fontSize: 13,
-              fontWeight: 600,
-              border: `1px solid ${activeCategoryFilter === 'data' ? colors.buttonDark : colors.border}`,
-              backgroundColor: activeCategoryFilter === 'data' ? colors.buttonDark : colors.cardBg,
-              color: activeCategoryFilter === 'data' ? colors.buttonDarkText : colors.textPrimary,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            Data & AI
-          </button>
-          <button
-            onClick={() => setActiveCategoryFilter('health')}
-            style={{
-              padding: '6px 16px',
-              borderRadius: 20,
-              fontSize: 13,
-              fontWeight: 600,
-              border: `1px solid ${activeCategoryFilter === 'health' ? colors.buttonDark : colors.border}`,
-              backgroundColor: activeCategoryFilter === 'health' ? colors.buttonDark : colors.cardBg,
-              color: activeCategoryFilter === 'health' ? colors.buttonDarkText : colors.textPrimary,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            Public Health & State
-          </button>
-          <button
-            onClick={() => setActiveCategoryFilter('mgmt')}
-            style={{
-              padding: '6px 16px',
-              borderRadius: 20,
-              fontSize: 13,
-              fontWeight: 600,
-              border: `1px solid ${activeCategoryFilter === 'mgmt' ? colors.buttonDark : colors.border}`,
-              backgroundColor: activeCategoryFilter === 'mgmt' ? colors.buttonDark : colors.cardBg,
-              color: activeCategoryFilter === 'mgmt' ? colors.buttonDarkText : colors.textPrimary,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            Management & Governance
-          </button>
-        </div>
-
-        {/* ── 3-COLUMN MASTER WORKSPACE: LEFT REQS + CENTER WELLFOUND JD + RIGHT ADS ── */}
-        <div className="wellfound-3col-workspace">
-          {/* ════════ COLUMN 1: LEFT REQUISITIONS FEED (SIDE MAI BAKI KE CARD) ════════ */}
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 12,
-            maxHeight: 'calc(100vh - 110px)',
-            overflowY: 'auto',
-            paddingRight: 6,
-            position: 'sticky',
-            top: 84
+          {/* ── 2. Trending Direct Clients 3-Card Grid ── */}
+          <section style={{
+            maxWidth: 1560,
+            margin: '0 auto',
+            padding: '10px 24px 28px'
           }}>
-            {categoryFilteredJobs.length === 0 ? (
-              <div style={{
-                textAlign: 'center',
-                padding: '48px 24px',
-                border: `1px dashed ${colors.border}`,
-                borderRadius: 12,
-                color: colors.textSecondary
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <h2 style={{
+                fontSize: 21,
+                fontWeight: 800,
+                color: colors.textPrimary,
+                margin: 0,
+                letterSpacing: '-0.02em'
               }}>
-                <div style={{ fontSize: 32, marginBottom: 8 }}>🔍</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: colors.textPrimary, marginBottom: 4 }}>
-                  No open requisitions found
-                </div>
-                <div style={{ fontSize: 13 }}>
-                  Try changing your search query or switching categories.
-                </div>
-              </div>
-            ) : (
-              categoryFilteredJobs.map(job => {
-                const isSelected = selectedJob?.id === job.id
-                const cleanTitle = cleanJobTitleWithPositionNumber ? cleanJobTitleWithPositionNumber(job.title) : job.title
-                const domainName = resolveClientDomainName(job)
-                const loc = resolveJobLocation ? resolveJobLocation(job) : (job.work_mode || 'Remote, US')
-                const workMode = resolveWorkArrangement(job)
-                const localReq = resolveLocalRequirement(job)
-                const isExpired = isJobExpired ? isJobExpired(job) : false
+                Trending direct clients hiring now
+              </h2>
+              <span style={{ fontSize: 13, color: colors.textSecondary, fontWeight: 500 }}>
+                Click a client card to filter open opportunities
+              </span>
+            </div>
 
-                // Color mappings for Work Mode
-                const workModeStyles = workMode === 'Remote'
-                  ? { bg: isLight ? '#DCFCE7' : '#052E16', text: isLight ? '#15803D' : '#86EFAC', border: isLight ? '#BBF7D0' : '#166534' }
-                  : workMode === 'Hybrid'
-                  ? { bg: isLight ? '#EDE9FE' : '#2E1065', text: isLight ? '#6D28D9' : '#C4B5FD', border: isLight ? '#DDD6FE' : '#5B21B6' }
-                  : { bg: isLight ? '#FEF3C7' : '#451A03', text: isLight ? '#B45309' : '#FDE68A', border: isLight ? '#FDE68A' : '#92400E' }
-
-                // Color mappings for Local Need
-                const localStyles = localReq.urgency === 'high'
-                  ? { bg: isLight ? '#FEE2E2' : '#450A0A', text: isLight ? '#B91C1C' : '#FCA5A5', border: isLight ? '#FECACA' : '#991B1B' }
-                  : localReq.urgency === 'medium'
-                  ? { bg: isLight ? '#FFEDD5' : '#431407', text: isLight ? '#C2410C' : '#FDBA74', border: isLight ? '#FED7AA' : '#9A3412' }
-                  : localReq.urgency === 'commutable'
-                  ? { bg: isLight ? '#F1F5F9' : '#1E293B', text: isLight ? '#334155' : '#CBD5E1', border: isLight ? '#E2E8F0' : '#334155' }
-                  : { bg: isLight ? '#E0F2FE' : '#082F49', text: isLight ? '#0369A1' : '#7DD3FC', border: isLight ? '#BAE6FD' : '#075985' }
-
-                return (
-                  <div
-                    key={job.id}
-                    onClick={() => {
-                      setSelectedJobId(job.id)
-                      if (centerPanelRef.current) {
-                        centerPanelRef.current.scrollTop = 0
-                      }
-                    }}
-                    style={{
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gap: 18
+            }}>
+              {/* Card 1: Enterprise Cloud & AI */}
+              <div
+                onClick={() => handleTrendingCardClick('cloud')}
+                style={{
+                  border: `1.5px solid ${activeCategoryFilter === 'cloud' ? colors.activeBorder : colors.border}`,
+                  borderRadius: 14,
+                  backgroundColor: activeCategoryFilter === 'cloud' ? colors.activeBg : colors.cardBg,
+                  padding: 20,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-4px)'
+                  e.currentTarget.style.boxShadow = isLight ? '0 12px 24px rgba(0,0,0,0.08)' : '0 12px 24px rgba(0,0,0,0.4)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.boxShadow = isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+                    <div style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: 10,
+                      background: 'linear-gradient(135deg, #0F172A 0%, #334155 100%)',
+                      color: '#FFFFFF',
                       display: 'flex',
-                      flexDirection: 'column',
-                      padding: '15px 16px',
-                      borderRadius: 12,
-                      border: `1.5px solid ${isSelected ? (isLight ? '#0A0E1A' : '#3B82F6') : colors.border}`,
-                      borderLeft: isSelected ? `4px solid ${isLight ? '#0A0E1A' : '#3B82F6'}` : `1.5px solid ${colors.border}`,
-                      backgroundColor: isSelected ? colors.activeBg : colors.cardBg,
-                      cursor: 'pointer',
-                      transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
-                      gap: 8,
-                      boxShadow: isSelected 
-                        ? (isLight ? '0 4px 16px rgba(10, 14, 26, 0.08)' : '0 4px 16px rgba(0,0,0,0.4)')
-                        : 'none'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isSelected) {
-                        e.currentTarget.style.backgroundColor = colors.hoverBg
-                        e.currentTarget.style.transform = 'translateY(-2px)'
-                        e.currentTarget.style.boxShadow = isLight ? '0 4px 12px rgba(0,0,0,0.04)' : '0 4px 12px rgba(0,0,0,0.3)'
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isSelected) {
-                        e.currentTarget.style.backgroundColor = colors.cardBg
-                        e.currentTarget.style.transform = 'translateY(0)'
-                        e.currentTarget.style.boxShadow = 'none'
-                      }
-                    }}
-                  >
-                    {/* Top Row: Avatar, Title & Right Arrow */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
-                        <CompanyLogo job={job} size={38} />
-                        <div style={{ minWidth: 0, flex: 1 }}>
-                          <h4 style={{
-                            margin: '0 0 2px',
-                            fontSize: 14.5,
-                            fontWeight: 700,
-                            color: colors.textPrimary,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            letterSpacing: '-0.01em'
-                          }}>
-                            {cleanTitle}
-                          </h4>
-                          <div style={{ fontSize: 12.5, fontWeight: 600, color: isLight ? '#334155' : '#CBD5E1' }}>
-                            {domainName}
-                          </div>
-                        </div>
-                      </div>
-
-                      <span style={{
-                        fontSize: 13,
-                        fontWeight: 700,
-                        color: isSelected ? colors.textPrimary : colors.textMuted
-                      }}>
-                        →
-                      </span>
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 900,
+                      fontSize: 15
+                    }}>
+                      EA
                     </div>
-
-                    {/* Bottom Row: Work Mode, Location & Local Need Badges (No Rate) */}
-                    <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6, paddingTop: 2 }}>
-                      {/* Work Mode Badge */}
-                      <span style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        padding: '2.5px 7px',
-                        borderRadius: 6,
-                        backgroundColor: workModeStyles.bg,
-                        color: workModeStyles.text,
-                        border: `1px solid ${workModeStyles.border}`
-                      }}>
-                        {workMode}
-                      </span>
-
-                      {/* Location Badge */}
-                      <span style={{
-                        fontSize: 11,
-                        fontWeight: 600,
-                        padding: '2.5px 7px',
-                        borderRadius: 6,
-                        backgroundColor: colors.badgeBg,
-                        color: colors.textPrimary,
-                        border: `1px solid ${colors.border}`,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 3
-                      }}>
-                        <LocationIcon size={11} color={colors.textSecondary} />
-                        <span>{loc}</span>
-                      </span>
-
-                      {/* Local Need Badge */}
-                      <span style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        padding: '2.5px 7px',
-                        borderRadius: 6,
-                        backgroundColor: localStyles.bg,
-                        color: localStyles.text,
-                        border: `1px solid ${localStyles.border}`
-                      }}>
-                        {localReq.label}
-                      </span>
-
-                      {isExpired && (
-                        <span style={{
-                          fontSize: 10,
-                          fontWeight: 700,
-                          color: '#DC2626',
-                          backgroundColor: isLight ? '#FEE2E2' : '#450A0A',
-                          padding: '2px 5px',
-                          borderRadius: 4
-                        }}>
-                          Closed
-                        </span>
-                      )}
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: colors.textPrimary }}>
+                        Enterprise Cloud & AI
+                      </h3>
+                      <div style={{ fontSize: 12, color: colors.textSecondary }}>State & Enterprise Infrastructure</div>
                     </div>
                   </div>
-                )
-              })
-            )}
-          </div>
 
-          {/* ════════ COLUMN 2: CENTER SPACIOUS WELLFOUND JD VIEW + SIMILAR JOBS ════════ */}
-          <div
-            ref={centerPanelRef}
-            style={{
-              maxHeight: 'calc(100vh - 110px)',
-              overflowY: 'auto',
-              border: `1px solid ${colors.border}`,
-              borderRadius: 16,
-              backgroundColor: colors.cardBg,
-              padding: '32px 36px',
-              boxShadow: isLight ? '0 4px 20px rgba(0,0,0,0.03)' : 'none',
-              position: 'sticky',
-              top: 84
-            }}
-          >
-            {selectedJob && selDetails ? (
-              <div>
-                {/* ── 1. WELLFOUND TOP HEADER CARD (EXACT MATCH TO SCREENSHOT 1) ── */}
+                  <p style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 1.5, margin: '0 0 12px' }}>
+                    Modernizing state cloud infrastructures with AWS, Azure microservices, and automated data pipelines.
+                  </p>
+
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: isLight ? '#FCE7F3' : '#371B2B', color: '#BE185D' }}>
+                      Cloud Arch
+                    </span>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
+                      AWS / Azure
+                    </span>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
+                      Remote Available
+                    </span>
+                  </div>
+                </div>
+
                 <div style={{
+                  borderTop: `1px solid ${colors.borderLight}`,
+                  paddingTop: 10,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  gap: 16,
-                  marginBottom: 18
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: colors.textPrimary
                 }}>
-                  {/* Left: Company Logo & Company Name & Tagline */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0, flex: 1 }}>
-                    <CompanyLogo job={selectedJob} size={50} />
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span>View Open Positions</span>
+                  <ChevronRightIcon size={14} color={colors.textPrimary} />
+                </div>
+              </div>
+
+              {/* Card 2: State Healthcare Systems */}
+              <div
+                onClick={() => handleTrendingCardClick('health')}
+                style={{
+                  border: `1.5px solid ${activeCategoryFilter === 'health' ? colors.activeBorder : colors.border}`,
+                  borderRadius: 14,
+                  backgroundColor: activeCategoryFilter === 'health' ? colors.activeBg : colors.cardBg,
+                  padding: 20,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-4px)'
+                  e.currentTarget.style.boxShadow = isLight ? '0 12px 24px rgba(0,0,0,0.08)' : '0 12px 24px rgba(0,0,0,0.4)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.boxShadow = isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+                    <div style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: 10,
+                      background: 'linear-gradient(135deg, #0284C7 0%, #38BDF8 100%)',
+                      color: '#FFFFFF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 900,
+                      fontSize: 15
+                    }}>
+                      SH
+                    </div>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: colors.textPrimary }}>
+                        State Healthcare Systems
+                      </h3>
+                      <div style={{ fontSize: 12, color: colors.textSecondary }}>Public Sector Health Portals</div>
+                    </div>
+                  </div>
+
+                  <p style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 1.5, margin: '0 0 12px' }}>
+                    Leading healthcare systems, clinical integration, and large-scale public data exchange platforms.
+                  </p>
+
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: isLight ? '#E0F2FE' : '#082F49', color: '#0284C7' }}>
+                      Healthcare IT
+                    </span>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
+                      Long-term
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{
+                  borderTop: `1px solid ${colors.borderLight}`,
+                  paddingTop: 10,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: colors.textPrimary
+                }}>
+                  <span>View Open Positions</span>
+                  <ChevronRightIcon size={14} color={colors.textPrimary} />
+                </div>
+              </div>
+
+              {/* Card 3: Digital Platform Solutions */}
+              <div
+                onClick={() => handleTrendingCardClick('dev')}
+                style={{
+                  border: `1.5px solid ${activeCategoryFilter === 'dev' ? colors.activeBorder : colors.border}`,
+                  borderRadius: 14,
+                  backgroundColor: activeCategoryFilter === 'dev' ? colors.activeBg : colors.cardBg,
+                  padding: 20,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-4px)'
+                  e.currentTarget.style.boxShadow = isLight ? '0 12px 24px rgba(0,0,0,0.08)' : '0 12px 24px rgba(0,0,0,0.4)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.boxShadow = isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+                    <div style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: 10,
+                      background: 'linear-gradient(135deg, #047857 0%, #10B981 100%)',
+                      color: '#FFFFFF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 900,
+                      fontSize: 15
+                    }}>
+                      DP
+                    </div>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: colors.textPrimary }}>
+                        Digital Platform Solutions
+                      </h3>
+                      <div style={{ fontSize: 12, color: colors.textSecondary }}>Enterprise Modernization</div>
+                    </div>
+                  </div>
+
+                  <p style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 1.5, margin: '0 0 12px' }}>
+                    Full-stack software engineering, modern React/Node interfaces, and resilient backend microservices.
+                  </p>
+
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: isLight ? '#D1FAE5' : '#064E3B', color: '#047857' }}>
+                      Full Stack
+                    </span>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
+                      Enterprise
+                    </span>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
+                      Hybrid / Onsite
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{
+                  borderTop: `1px solid ${colors.borderLight}`,
+                  paddingTop: 10,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: colors.textPrimary
+                }}>
+                  <span>View Open Positions</span>
+                  <ChevronRightIcon size={14} color={colors.textPrimary} />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ── 3. Page 1 2-Column Feed: Categorized Listings + Right AdSense ── */}
+          <section id="wellfound-split-workspace" style={{
+            maxWidth: 1560,
+            margin: '0 auto',
+            padding: '8px 24px 64px'
+          }}>
+            {/* Category Filter Pills Ribbon */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              overflowX: 'auto',
+              paddingBottom: 14,
+              marginBottom: 24,
+              borderBottom: `1px solid ${colors.borderLight}`
+            }}>
+              <button
+                onClick={() => setActiveCategoryFilter('all')}
+                style={{
+                  padding: '6px 16px',
+                  borderRadius: 20,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  border: `1px solid ${activeCategoryFilter === 'all' ? colors.buttonDark : colors.border}`,
+                  backgroundColor: activeCategoryFilter === 'all' ? colors.buttonDark : colors.cardBg,
+                  color: activeCategoryFilter === 'all' ? colors.buttonDarkText : colors.textPrimary,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                All Requisitions ({filteredJobs.length})
+              </button>
+              <button
+                onClick={() => setActiveCategoryFilter('dev')}
+                style={{
+                  padding: '6px 16px',
+                  borderRadius: 20,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  border: `1px solid ${activeCategoryFilter === 'dev' ? colors.buttonDark : colors.border}`,
+                  backgroundColor: activeCategoryFilter === 'dev' ? colors.buttonDark : colors.cardBg,
+                  color: activeCategoryFilter === 'dev' ? colors.buttonDarkText : colors.textPrimary,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                Engineering
+              </button>
+              <button
+                onClick={() => setActiveCategoryFilter('cloud')}
+                style={{
+                  padding: '6px 16px',
+                  borderRadius: 20,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  border: `1px solid ${activeCategoryFilter === 'cloud' ? colors.buttonDark : colors.border}`,
+                  backgroundColor: activeCategoryFilter === 'cloud' ? colors.buttonDark : colors.cardBg,
+                  color: activeCategoryFilter === 'cloud' ? colors.buttonDarkText : colors.textPrimary,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                Cloud & Infrastructure
+              </button>
+              <button
+                onClick={() => setActiveCategoryFilter('data')}
+                style={{
+                  padding: '6px 16px',
+                  borderRadius: 20,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  border: `1px solid ${activeCategoryFilter === 'data' ? colors.buttonDark : colors.border}`,
+                  backgroundColor: activeCategoryFilter === 'data' ? colors.buttonDark : colors.cardBg,
+                  color: activeCategoryFilter === 'data' ? colors.buttonDarkText : colors.textPrimary,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                Data & AI
+              </button>
+              <button
+                onClick={() => setActiveCategoryFilter('health')}
+                style={{
+                  padding: '6px 16px',
+                  borderRadius: 20,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  border: `1px solid ${activeCategoryFilter === 'health' ? colors.buttonDark : colors.border}`,
+                  backgroundColor: activeCategoryFilter === 'health' ? colors.buttonDark : colors.cardBg,
+                  color: activeCategoryFilter === 'health' ? colors.buttonDarkText : colors.textPrimary,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                Public Health & State
+              </button>
+              <button
+                onClick={() => setActiveCategoryFilter('mgmt')}
+                style={{
+                  padding: '6px 16px',
+                  borderRadius: 20,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  border: `1px solid ${activeCategoryFilter === 'mgmt' ? colors.buttonDark : colors.border}`,
+                  backgroundColor: activeCategoryFilter === 'mgmt' ? colors.buttonDark : colors.cardBg,
+                  color: activeCategoryFilter === 'mgmt' ? colors.buttonDarkText : colors.textPrimary,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                Management & Governance
+              </button>
+            </div>
+
+            {/* 2-Column Master Layout: Left Categorized Feeds + Right AdSense */}
+            <div className="wellfound-2col-workspace">
+              {/* ── Left Column: Job Feeds ── */}
+              <div>
+                {/* When User is filtering or searching, show flat list */}
+                {activeCategoryFilter !== 'all' || searchQuery ? (
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                      <h2 style={{ fontSize: 20, fontWeight: 800, color: colors.textPrimary, margin: 0, letterSpacing: '-0.02em' }}>
+                        {activeCategoryFilter === 'cloud' && 'Cloud & Infrastructure Jobs'}
+                        {activeCategoryFilter === 'dev' && 'Engineering Jobs'}
+                        {activeCategoryFilter === 'data' && 'Data & Analytics Jobs'}
+                        {activeCategoryFilter === 'health' && 'Public Health & State Jobs'}
+                        {activeCategoryFilter === 'mgmt' && 'Management & Governance Jobs'}
+                        {activeCategoryFilter === 'all' && `Search Results (${categoryFilteredJobs.length})`}
+                      </h2>
+                      <span style={{ fontSize: 13, color: colors.textSecondary }}>
+                        Showing {categoryFilteredJobs.length} matches
+                      </span>
+                    </div>
+
+                    <div style={{ border: `1px solid ${colors.border}`, borderRadius: 12, overflow: 'hidden' }}>
+                      {categoryFilteredJobs.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '48px 24px', color: colors.textSecondary }}>
+                          <div style={{ fontSize: 32, marginBottom: 8 }}>🔍</div>
+                          <div style={{ fontSize: 16, fontWeight: 700, color: colors.textPrimary, marginBottom: 4 }}>
+                            No open requisitions found
+                          </div>
+                          <div style={{ fontSize: 13 }}>
+                            Try adjusting your search terms or clearing your category filters.
+                          </div>
+                        </div>
+                      ) : (
+                        categoryFilteredJobs.map(job => renderJobRow(job))
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  /* When on default view, render 5 Categorized Sections */
+                  <div>
+                    {/* Section 1: Trending Direct Client Jobs */}
+                    <div style={{ marginBottom: 38 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                        <h2 style={{ fontSize: 20, fontWeight: 800, color: colors.textPrimary, margin: 0, letterSpacing: '-0.02em' }}>
+                          Trending direct client jobs
+                        </h2>
+                        <span style={{ fontSize: 13, color: colors.textSecondary }}>
+                          High priority requisitions
+                        </span>
+                      </div>
+                      <div style={{ border: `1px solid ${colors.border}`, borderRadius: 12, overflow: 'hidden' }}>
+                        {categorizedJobBuckets.trending.map(job => renderJobRow(job))}
+                      </div>
+                    </div>
+
+                    {/* Section 2: Engineering Jobs */}
+                    <div style={{ marginBottom: 38 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                        <h2 style={{ fontSize: 20, fontWeight: 800, color: colors.textPrimary, margin: 0, letterSpacing: '-0.02em' }}>
+                          Engineering jobs
+                        </h2>
+                        <button
+                          onClick={() => setActiveCategoryFilter('dev')}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: colors.textPrimary,
+                            cursor: 'pointer',
+                            textDecoration: 'underline'
+                          }}
+                        >
+                          View all engineering jobs →
+                        </button>
+                      </div>
+                      <div style={{ border: `1px solid ${colors.border}`, borderRadius: 12, overflow: 'hidden' }}>
+                        {categorizedJobBuckets.engineering.map(job => renderJobRow(job))}
+                      </div>
+                    </div>
+
+                    {/* Section 3: Data & Analytics Jobs */}
+                    <div style={{ marginBottom: 38 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                        <h2 style={{ fontSize: 20, fontWeight: 800, color: colors.textPrimary, margin: 0, letterSpacing: '-0.02em' }}>
+                          Data and Analytics jobs
+                        </h2>
+                        <button
+                          onClick={() => setActiveCategoryFilter('data')}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: colors.textPrimary,
+                            cursor: 'pointer',
+                            textDecoration: 'underline'
+                          }}
+                        >
+                          View all data & analytics jobs →
+                        </button>
+                      </div>
+                      <div style={{ border: `1px solid ${colors.border}`, borderRadius: 12, overflow: 'hidden' }}>
+                        {categorizedJobBuckets.dataAnalytics.map(job => renderJobRow(job))}
+                      </div>
+                    </div>
+
+                    {/* Section 4: Cloud & Infrastructure Jobs */}
+                    <div style={{ marginBottom: 38 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                        <h2 style={{ fontSize: 20, fontWeight: 800, color: colors.textPrimary, margin: 0, letterSpacing: '-0.02em' }}>
+                          Cloud & Infrastructure jobs
+                        </h2>
+                        <button
+                          onClick={() => setActiveCategoryFilter('cloud')}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: colors.textPrimary,
+                            cursor: 'pointer',
+                            textDecoration: 'underline'
+                          }}
+                        >
+                          View all cloud jobs →
+                        </button>
+                      </div>
+                      <div style={{ border: `1px solid ${colors.border}`, borderRadius: 12, overflow: 'hidden' }}>
+                        {categorizedJobBuckets.cloudDevops.map(job => renderJobRow(job))}
+                      </div>
+                    </div>
+
+                    {/* Section 5: Management & Public Sector Jobs */}
+                    <div style={{ marginBottom: 38 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                        <h2 style={{ fontSize: 20, fontWeight: 800, color: colors.textPrimary, margin: 0, letterSpacing: '-0.02em' }}>
+                          Management & Public Sector jobs
+                        </h2>
+                        <button
+                          onClick={() => setActiveCategoryFilter('mgmt')}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: colors.textPrimary,
+                            cursor: 'pointer',
+                            textDecoration: 'underline'
+                          }}
+                        >
+                          View all management jobs →
+                        </button>
+                      </div>
+                      <div style={{ border: `1px solid ${colors.border}`, borderRadius: 12, overflow: 'hidden' }}>
+                        {categorizedJobBuckets.managementPublic.map(job => renderJobRow(job))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ── Right Column: AdSense Sidebar ── */}
+              <div>
+                {renderSidebarAds()}
+              </div>
+            </div>
+          </section>
+        </main>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════════════
+          PAGE 2: 3-COLUMN JOB DOSSIER WORKSPACE (When selectedJobId && selectedJob)
+          Matches media_1789659080974.png & media_1789657089815.png
+      ═══════════════════════════════════════════════════════════════════════ */}
+      {selectedJob && (
+        <main>
+          {/* Top Breadcrumb & Back Action Bar */}
+          <div style={{
+            maxWidth: 1560,
+            margin: '0 auto',
+            padding: '16px 24px 8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 16
+          }}>
+            <button
+              onClick={handleBackToAllJobs}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                backgroundColor: colors.cardBg,
+                border: `1px solid ${colors.border}`,
+                borderRadius: 8,
+                padding: '8px 16px',
+                fontSize: 13.5,
+                fontWeight: 700,
+                color: colors.textPrimary,
+                cursor: 'pointer',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = colors.hoverBg
+                e.currentTarget.style.borderColor = colors.textPrimary
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = colors.cardBg
+                e.currentTarget.style.borderColor = colors.border
+              }}
+            >
+              <ArrowLeftIcon size={16} color="currentColor" />
+              <span>Back to all jobs</span>
+            </button>
+
+            <div style={{
+              fontSize: 13,
+              color: colors.textSecondary,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6
+            }}>
+              <span style={{ cursor: 'pointer' }} onClick={handleBackToAllJobs}>Jobs</span>
+              <span>/</span>
+              <span style={{ fontWeight: 600, color: colors.textPrimary, maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {selCleanTitle}
+              </span>
+            </div>
+          </div>
+
+          {/* 3-Column Master Layout */}
+          <section style={{
+            maxWidth: 1560,
+            margin: '0 auto',
+            padding: '12px 24px 64px'
+          }}>
+            <div className="wellfound-3col-workspace">
+              {/* ════════ COLUMN 1: LEFT REQUISITIONS FEED (SIDE MAI BAKI KE CARD) ════════ */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+                maxHeight: 'calc(100vh - 110px)',
+                overflowY: 'auto',
+                paddingRight: 6,
+                position: 'sticky',
+                top: 84
+              }}>
+                {(jobs || []).map(job => {
+                  const isSelected = selectedJob?.id === job.id
+                  const cleanTitle = cleanJobTitleWithPositionNumber ? cleanJobTitleWithPositionNumber(job.title) : job.title
+                  const domainName = resolveClientDomainName(job)
+                  const loc = resolveJobLocation ? resolveJobLocation(job) : (job.work_mode || 'Remote, US')
+                  const workMode = resolveWorkArrangement(job)
+                  const localReq = resolveLocalRequirement(job)
+                  const isExpired = isJobExpired ? isJobExpired(job) : false
+
+                  const workModeStyles = workMode === 'Remote'
+                    ? { bg: isLight ? '#DCFCE7' : '#052E16', text: isLight ? '#15803D' : '#86EFAC', border: isLight ? '#BBF7D0' : '#166534' }
+                    : workMode === 'Hybrid'
+                    ? { bg: isLight ? '#EDE9FE' : '#2E1065', text: isLight ? '#6D28D9' : '#C4B5FD', border: isLight ? '#DDD6FE' : '#5B21B6' }
+                    : { bg: isLight ? '#FEF3C7' : '#451A03', text: isLight ? '#B45309' : '#FDE68A', border: isLight ? '#FDE68A' : '#92400E' }
+
+                  const localStyles = localReq.urgency === 'high'
+                    ? { bg: isLight ? '#FEE2E2' : '#450A0A', text: isLight ? '#B91C1C' : '#FCA5A5', border: isLight ? '#FECACA' : '#991B1B' }
+                    : localReq.urgency === 'medium'
+                    ? { bg: isLight ? '#FFEDD5' : '#431407', text: isLight ? '#C2410C' : '#FDBA74', border: isLight ? '#FED7AA' : '#9A3412' }
+                    : localReq.urgency === 'commutable'
+                    ? { bg: isLight ? '#F1F5F9' : '#1E293B', text: isLight ? '#334155' : '#CBD5E1', border: isLight ? '#E2E8F0' : '#334155' }
+                    : { bg: isLight ? '#E0F2FE' : '#082F49', text: isLight ? '#0369A1' : '#7DD3FC', border: isLight ? '#BAE6FD' : '#075985' }
+
+                  return (
+                    <div
+                      key={job.id}
+                      onClick={() => handleSelectJob(job.id)}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        padding: '15px 16px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${isSelected ? (isLight ? '#0A0E1A' : '#3B82F6') : colors.border}`,
+                        borderLeft: isSelected ? `4px solid ${isLight ? '#0A0E1A' : '#3B82F6'}` : `1.5px solid ${colors.border}`,
+                        backgroundColor: isSelected ? colors.activeBg : colors.cardBg,
+                        cursor: 'pointer',
+                        transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
+                        gap: 8,
+                        boxShadow: isSelected 
+                          ? (isLight ? '0 4px 16px rgba(10, 14, 26, 0.08)' : '0 4px 16px rgba(0,0,0,0.4)')
+                          : 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.backgroundColor = colors.hoverBg
+                          e.currentTarget.style.transform = 'translateY(-2px)'
+                          e.currentTarget.style.boxShadow = isLight ? '0 4px 12px rgba(0,0,0,0.04)' : '0 4px 12px rgba(0,0,0,0.3)'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.backgroundColor = colors.cardBg
+                          e.currentTarget.style.transform = 'translateY(0)'
+                          e.currentTarget.style.boxShadow = 'none'
+                        }
+                      }}
+                    >
+                      {/* Top Row: Avatar, Title & Right Arrow */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
+                          <CompanyLogo job={job} size={38} />
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <h4 style={{
+                              margin: '0 0 2px',
+                              fontSize: 14.5,
+                              fontWeight: 700,
+                              color: colors.textPrimary,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              letterSpacing: '-0.01em'
+                            }}>
+                              {cleanTitle}
+                            </h4>
+                            <div style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: colors.textSecondary,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }}>
+                              {domainName}
+                            </div>
+                          </div>
+                        </div>
+
+                        <ChevronRightIcon size={14} color={isSelected ? (isLight ? '#0A0E1A' : '#3B82F6') : colors.textMuted} />
+                      </div>
+
+                      {/* Middle Row: Work Mode Pill & Location Badge */}
+                      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
                         <span style={{
-                          fontSize: 17,
-                          fontWeight: 800,
-                          color: colors.textPrimary,
-                          letterSpacing: '-0.01em'
+                          fontSize: 11,
+                          fontWeight: 700,
+                          padding: '2px 8px',
+                          borderRadius: 4,
+                          backgroundColor: workModeStyles.bg,
+                          color: workModeStyles.text,
+                          border: `1px solid ${workModeStyles.border}`
                         }}>
+                          {workMode}
+                        </span>
+
+                        <span style={{
+                          fontSize: 11,
+                          fontWeight: 500,
+                          color: colors.textSecondary,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 3
+                        }}>
+                          <LocationIcon size={12} color={colors.textSecondary} />
+                          <span>{loc}</span>
+                        </span>
+                      </div>
+
+                      {/* Bottom Row: Local Candidate Requirement Pill */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 }}>
+                        <span style={{
+                          fontSize: 10.5,
+                          fontWeight: 700,
+                          padding: '2px 7px',
+                          borderRadius: 4,
+                          backgroundColor: localStyles.bg,
+                          color: localStyles.text,
+                          border: `1px solid ${localStyles.border}`
+                        }}>
+                          {localReq.label}
+                        </span>
+
+                        {isExpired && (
+                          <span style={{
+                            fontSize: 10.5,
+                            fontWeight: 700,
+                            color: '#DC2626',
+                            backgroundColor: isLight ? '#FEE2E2' : '#450A0A',
+                            padding: '1px 6px',
+                            borderRadius: 4
+                          }}>
+                            Closed
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* ════════ COLUMN 2: CENTER SPACIOUS WELLFOUND JOB DOSSIER ════════ */}
+              <article
+                ref={centerPanelRef}
+                style={{
+                  backgroundColor: colors.cardBg,
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: 16,
+                  padding: '32px 36px',
+                  boxShadow: isLight ? '0 4px 20px rgba(0, 0, 0, 0.04)' : 'none',
+                  minHeight: 600
+                }}
+              >
+                {/* ── 1. HEADER ROW: LOGO, TAGLINE, SAVE, APPLY NOW ── */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  gap: 20,
+                  marginBottom: 20,
+                  flexWrap: 'wrap'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                    <CompanyLogo job={selectedJob} size={58} />
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <span style={{ fontSize: 16, fontWeight: 800, color: colors.textPrimary }}>
                           {selDomain}
                         </span>
                         <span style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          padding: '2px 8px',
+                          borderRadius: 12,
+                          backgroundColor: isLight ? '#DCFCE7' : '#052E16',
+                          color: isLight ? '#15803D' : '#86EFAC',
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: 5,
-                          fontSize: 12,
-                          fontWeight: 700,
-                          color: '#059669',
-                          backgroundColor: isLight ? '#ECFDF5' : '#064E3B',
-                          padding: '2px 8px',
-                          borderRadius: 12
+                          gap: 4
                         }}>
-                          <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#10B981' }} />
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#10B981', display: 'inline-block' }} />
                           Actively Hiring
                         </span>
                       </div>
-                      <div style={{
-                        fontSize: 13,
-                        color: colors.textSecondary,
-                        marginTop: 3,
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis'
-                      }}>
-                        Direct client digital architecture and enterprise systems modernization
+                      <div style={{ fontSize: 13, color: colors.textSecondary }}>
+                        Direct-client contract opportunity with priority ATS review
                       </div>
                     </div>
                   </div>
 
-                  {/* Right: Save Button & Apply Now Button (Exact Screenshot 1) */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                  {/* Top Action Buttons */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <button
                       onClick={() => handleToggleSaveJob && handleToggleSaveJob(selectedJob)}
                       style={{
-                        backgroundColor: isSaved ? (isLight ? '#FEE2E2' : '#450A0A') : colors.cardBg,
-                        color: isSaved ? '#DC2626' : colors.textPrimary,
-                        border: `1px solid ${colors.border}`,
+                        padding: '10px 18px',
                         borderRadius: 8,
-                        padding: '9px 16px',
+                        border: `1px solid ${colors.border}`,
+                        backgroundColor: colors.cardBg,
+                        color: colors.textPrimary,
                         fontSize: 13.5,
                         fontWeight: 700,
                         cursor: 'pointer',
-                        display: 'inline-flex',
+                        display: 'flex',
                         alignItems: 'center',
                         gap: 6,
-                        transition: 'all 0.15s ease'
+                        transition: 'background-color 0.15s ease'
                       }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.hoverBg}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.cardBg}
                     >
-                      <BookmarkIcon size={14} filled={isSaved} color={isSaved ? '#DC2626' : 'currentColor'} />
+                      <BookmarkIcon size={15} filled={isSaved} color={colors.textPrimary} />
                       <span>{isSaved ? 'Saved' : 'Save'}</span>
                     </button>
 
@@ -1408,339 +2155,265 @@ export default function WellfoundCareersView({
                         color: colors.buttonDarkText,
                         border: 'none',
                         borderRadius: 8,
-                        padding: '10px 22px',
-                        fontSize: 14,
+                        padding: '10px 24px',
+                        fontSize: 13.5,
                         fontWeight: 800,
                         cursor: 'pointer',
-                        boxShadow: '0 2px 8px rgba(10, 14, 26, 0.2)',
-                        transition: 'transform 0.15s ease'
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        transition: 'opacity 0.15s ease'
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                      onMouseEnter={(e) => e.currentTarget.style.opacity = '0.88'}
+                      onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                     >
                       Apply Now
                     </button>
                   </div>
                 </div>
 
-                {/* ── 2. JOB TITLE & METADATA LINE ── */}
-                <h1 style={{
-                  fontSize: 27,
-                  fontWeight: 900,
-                  color: colors.textPrimary,
-                  letterSpacing: '-0.03em',
-                  lineHeight: 1.25,
-                  margin: '0 0 10px'
-                }}>
-                  {selCleanTitle}
-                </h1>
-
-                {/* Subtitle Metadata: Work Mode | Exp | Contract | Req ID */}
-                <div style={{
-                  fontSize: 14.5,
-                  color: colors.textSecondary,
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                  gap: 8,
-                  marginBottom: 8
-                }}>
-                  <span>{selWorkMode} ({selLoc})</span>
-                  <span>•</span>
-                  <span>{formatExperience ? formatExperience(selectedJob) : '4+ years of exp'}</span>
-                  <span>•</span>
-                  <span>{formatContractType ? formatContractType(selectedJob) : 'Contract'}</span>
-                  <span>•</span>
-                  <span>Req #{resolveReqId ? resolveReqId(selectedJob.id, selectedJob) : selectedJob.id}</span>
-                </div>
-
-                {/* Posted Status Line */}
-                <div style={{ fontSize: 13, color: colors.textMuted, marginBottom: 14 }}>
-                  Posted: 2 days ago • Recruiter recently active
-                </div>
-
-                {/* Timezone Post Clocks */}
-                {getJobPostTimezones && (
-                  <div style={{
-                    backgroundColor: colors.subtleBg,
-                    borderRadius: 8,
-                    padding: '8px 12px',
-                    display: 'inline-flex',
-                    gap: 16,
-                    fontSize: 12,
-                    color: colors.textSecondary,
-                    marginBottom: 20,
-                    flexWrap: 'wrap',
-                    alignItems: 'center'
+                {/* ── 2. JOB TITLE & METADATA ROW ── */}
+                <div style={{ marginBottom: 24 }}>
+                  <h1 style={{
+                    fontSize: 'clamp(24px, 3vw, 32px)',
+                    fontWeight: 900,
+                    letterSpacing: '-0.03em',
+                    color: colors.textPrimary,
+                    margin: '0 0 10px',
+                    lineHeight: 1.2
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <ClockIcon size={14} color={colors.textSecondary} />
-                      <span><strong>EST:</strong> {getJobPostTimezones(selectedJob).EST}</span>
-                    </div>
-                    <span><strong>CST:</strong> {getJobPostTimezones(selectedJob).CST}</span>
-                    <span><strong>PST:</strong> {getJobPostTimezones(selectedJob).PST}</span>
+                    {selCleanTitle}
+                  </h1>
+
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: 12,
+                    fontSize: 13,
+                    color: colors.textSecondary
+                  }}>
+                    <span style={{
+                      fontWeight: 700,
+                      padding: '3px 10px',
+                      borderRadius: 6,
+                      backgroundColor: selWorkMode === 'Remote' ? (isLight ? '#DCFCE7' : '#052E16') : (isLight ? '#EDE9FE' : '#2E1065'),
+                      color: selWorkMode === 'Remote' ? (isLight ? '#15803D' : '#86EFAC') : (isLight ? '#6D28D9' : '#C4B5FD')
+                    }}>
+                      {selWorkMode}
+                    </span>
+
+                    <span>{formatExperience ? formatExperience(selectedJob) : '5+ Years Experience'}</span>
+                    <span>•</span>
+                    <span>{formatContractType ? formatContractType(selectedJob) : 'Contract (C2C / W2)'}</span>
+                    <span>•</span>
+                    <span>Req #{resolveReqId(selectedJob)}</span>
+
+                    {/* Timezone Indicator */}
+                    {getJobPostTimezones && (
+                      <>
+                        <span>•</span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: colors.textMuted }}>
+                          <ClockIcon size={13} color={colors.textMuted} />
+                          <span>EST: {getJobPostTimezones(selectedJob).EST?.split('at')[1] || '09:00 AM EST'}</span>
+                        </span>
+                      </>
+                    )}
                   </div>
-                )}
+                </div>
 
-                {/* Horizontal Divider */}
-                <div style={{ borderBottom: `1px solid ${colors.borderLight}`, margin: '14px 0 24px' }} />
-
-                {/* ── 3. 2-COLUMN ATTRIBUTE MATRIX (EXACT MATCH TO SCREENSHOT 1) ── */}
+                {/* ── 3. 2-COLUMN ATTRIBUTE MATRIX ── */}
                 <div style={{
+                  borderTop: `1px solid ${colors.border}`,
+                  borderBottom: `1px solid ${colors.border}`,
+                  padding: '24px 0',
+                  marginBottom: 32,
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                  gap: '24px 32px',
-                  marginBottom: 28
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                  gap: 20
                 }}>
-                  {/* Left Column Attributes */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  {/* Left Column of Matrix */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                     <div>
-                      <div style={{ fontSize: 12.5, fontWeight: 700, color: colors.textPrimary, marginBottom: 4 }}>
-                        Hires remotely in
+                      <div style={{ fontSize: 11.5, fontWeight: 700, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
+                        HIRES REMOTELY IN
                       </div>
-                      <div style={{ fontSize: 14.5, color: colors.textSecondary, fontWeight: 500 }}>
-                        {selWorkMode === 'Remote' ? 'Everywhere (US)' : `${selLoc} & Commutable Regions`}
+                      <div style={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary }}>
+                        {selLoc.includes('Remote') ? 'Everywhere in the United States' : selLoc}
                       </div>
                     </div>
 
                     <div>
-                      <div style={{ fontSize: 12.5, fontWeight: 700, color: colors.textPrimary, marginBottom: 4 }}>
-                        Company Location
+                      <div style={{ fontSize: 11.5, fontWeight: 700, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
+                        COMPANY LOCATION
                       </div>
-                      <div style={{ fontSize: 14.5, color: colors.textSecondary, fontWeight: 500 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary }}>
                         {selLoc}
                       </div>
                     </div>
 
                     <div>
-                      <div style={{ fontSize: 12.5, fontWeight: 700, color: colors.textPrimary, marginBottom: 4 }}>
-                        Relocation
+                      <div style={{ fontSize: 11.5, fontWeight: 700, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
+                        RELOCATION
                       </div>
-                      <div style={{ fontSize: 14.5, color: colors.textSecondary, fontWeight: 500 }}>
-                        {selLocalReq.isLocalNeeded ? 'Not Allowed (Local Residing Only)' : 'Not Required'}
-                      </div>
-                    </div>
-
-                    {/* Hiring Contact Block */}
-                    <div>
-                      <div style={{ fontSize: 12.5, fontWeight: 700, color: colors.textPrimary, marginBottom: 8 }}>
-                        Hiring contact
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{
-                          width: 42,
-                          height: 42,
-                          borderRadius: 8,
-                          backgroundColor: '#1E293B',
-                          color: '#FFFFFF',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 800,
-                          fontSize: 14,
-                          flexShrink: 0
-                        }}>
-                          {selRecruiter?.initials || 'ST'}
-                        </div>
-                        <div>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: colors.textPrimary }}>
-                            {selRecruiter?.name || 'Sarah J. Thorne'}
-                          </div>
-                          <div style={{ fontSize: 12.5, color: colors.textSecondary }}>
-                            {selRecruiter?.role || 'Employee / Talent Partner'}
-                          </div>
-                          <div style={{ fontSize: 12, color: colors.textMuted }}>
-                            {selRecruiter?.location || selLoc}
-                          </div>
-                        </div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary }}>
+                        {selLocalReq.isLocalNeeded ? 'Not provided (Local candidates required)' : 'Not required for remote roles'}
                       </div>
                     </div>
                   </div>
 
-                  {/* Right Column Attributes */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                    <div>
-                      <div style={{ fontSize: 12.5, fontWeight: 700, color: colors.textPrimary, marginBottom: 4 }}>
-                        Remote Work Policy
+                  {/* Right Column of Matrix */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {/* Hiring Contact Card */}
+                    {selRecruiter && (
+                      <div>
+                        <div style={{ fontSize: 11.5, fontWeight: 700, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 }}>
+                          HIRING CONTACT
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div style={{
+                            width: 38,
+                            height: 38,
+                            borderRadius: '50%',
+                            backgroundColor: isLight ? '#F3F4F6' : '#1E293B',
+                            color: colors.textPrimary,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: 13,
+                            fontWeight: 800,
+                            border: `1px solid ${colors.border}`
+                          }}>
+                            {selRecruiter.initials}
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 13.5, fontWeight: 700, color: colors.textPrimary }}>
+                              {selRecruiter.name}
+                            </div>
+                            <div style={{ fontSize: 12, color: colors.textSecondary }}>
+                              {selRecruiter.role} · {selRecruiter.location}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div style={{ fontSize: 14.5, color: colors.textSecondary, fontWeight: 500 }}>
-                        {selWorkMode === 'Remote' 
-                          ? 'Remote only' 
-                          : selWorkMode === 'Hybrid' 
-                          ? 'Hybrid (2-3 days onsite / week)' 
-                          : 'Onsite in office'}
+                    )}
+
+                    <div>
+                      <div style={{ fontSize: 11.5, fontWeight: 700, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
+                        REMOTE WORK POLICY
+                      </div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary }}>
+                        {selWorkMode === 'Remote' ? 'Fully Remote (Work from home anywhere in US)' : `${selWorkMode} schedule`}
                       </div>
                     </div>
 
                     <div>
-                      <div style={{ fontSize: 12.5, fontWeight: 700, color: colors.textPrimary, marginBottom: 4 }}>
-                        Visa Sponsorship
+                      <div style={{ fontSize: 11.5, fontWeight: 700, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
+                        VISA & WORK AUTHORIZATION
                       </div>
-                      <div style={{ fontSize: 14.5, color: colors.textSecondary, fontWeight: 500 }}>
-                        {selLocalReq.urgency === 'high' 
-                          ? 'Not Available (US Citizen / Green Card Required)' 
-                          : 'Available / All Authorizations Considered'}
+                      <div style={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary }}>
+                        US Citizens, Green Card, H-1B Transfer, C2C / W2 Eligible
                       </div>
                     </div>
+                  </div>
 
-                    {/* Skills Pills (Matching Soft Purple Rounded Pills from Screenshot 1) */}
-                    <div>
-                      <div style={{ fontSize: 12.5, fontWeight: 700, color: colors.textPrimary, marginBottom: 8 }}>
-                        Skills
-                      </div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                        {(selDetails?.rawSkills || []).map((skill, sIdx) => (
-                          <span
-                            key={sIdx}
-                            style={{
-                              display: 'inline-block',
-                              fontSize: 12.5,
-                              fontWeight: 600,
-                              padding: '5px 12px',
-                              borderRadius: 20,
-                              backgroundColor: isLight ? '#F1F0FB' : '#2E1065',
-                              color: isLight ? '#581C87' : '#DDD6FE',
-                              border: `1px solid ${isLight ? '#E9D5FF' : '#4C1D95'}`
-                            }}
-                          >
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
+                  {/* Skills Pills Full-Width Row */}
+                  <div style={{ gridColumn: '1 / -1', paddingTop: 6 }}>
+                    <div style={{ fontSize: 11.5, fontWeight: 700, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 10 }}>
+                      SKILLS & TECHNOLOGIES
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {selDetails?.rawSkills.map((skill, i) => (
+                        <span
+                          key={i}
+                          style={{
+                            fontSize: 12.5,
+                            fontWeight: 600,
+                            padding: '6px 14px',
+                            borderRadius: 20,
+                            backgroundColor: isLight ? '#F1F0FB' : '#2A1F45',
+                            color: isLight ? '#581C87' : '#E9D5FF',
+                            border: `1px solid ${isLight ? '#E9D5FF' : '#581C87'}`
+                          }}
+                        >
+                          {skill}
+                        </span>
+                      ))}
                     </div>
                   </div>
                 </div>
 
-                {/* Horizontal Divider */}
-                <div style={{ borderBottom: `1px solid ${colors.borderLight}`, margin: '24px 0' }} />
-
-                {/* ── 4. "ABOUT THE JOB" SECTION (EXACT MATCH TO SCREENSHOT 2) ── */}
-                <div>
-                  <h2 style={{
-                    fontSize: 26,
-                    fontWeight: 900,
-                    color: colors.textPrimary,
-                    margin: '0 0 22px',
-                    letterSpacing: '-0.025em'
-                  }}>
-                    About the job
-                  </h2>
-
-                  {/* Section: About Company */}
-                  <div style={{ marginBottom: 22 }}>
-                    <h3 style={{
-                      fontSize: 15.5,
-                      fontWeight: 800,
-                      color: colors.textPrimary,
-                      margin: '0 0 8px'
-                    }}>
-                      About {selDomain}:
+                {/* ── 4. STRUCTURED ABOUT THE JOB SECTIONS ── */}
+                <div style={{ marginBottom: 36, lineHeight: 1.85, fontSize: 15, color: colors.textPrimary }}>
+                  {/* About the Company */}
+                  <div style={{ marginBottom: 28 }}>
+                    <h3 style={{ fontSize: 18, fontWeight: 800, color: colors.textPrimary, margin: '0 0 10px', letterSpacing: '-0.02em' }}>
+                      About the Company
                     </h3>
-                    <p style={{
-                      fontSize: 14.5,
-                      lineHeight: 1.85,
-                      color: isLight ? '#374151' : '#D1D5DB',
-                      margin: 0
-                    }}>
+                    <p style={{ margin: 0, color: colors.textSecondary, fontSize: 14.5 }}>
                       {selDetails?.aboutCompany}
                     </p>
                   </div>
 
-                  {/* Section: About The Role */}
-                  <div style={{ marginBottom: 24 }}>
-                    <h3 style={{
-                      fontSize: 15.5,
-                      fontWeight: 800,
-                      color: colors.textPrimary,
-                      margin: '0 0 8px'
-                    }}>
-                      About The Role:
+                  {/* About the Role */}
+                  <div style={{ marginBottom: 28 }}>
+                    <h3 style={{ fontSize: 18, fontWeight: 800, color: colors.textPrimary, margin: '0 0 10px', letterSpacing: '-0.02em' }}>
+                      About the Role
                     </h3>
-                    <p style={{
-                      fontSize: 14.5,
-                      lineHeight: 1.85,
-                      color: isLight ? '#374151' : '#D1D5DB',
-                      margin: 0
-                    }}>
+                    <p style={{ margin: 0, color: colors.textSecondary, fontSize: 14.5 }}>
                       {selDetails?.aboutRole}
                     </p>
                   </div>
 
-                  {/* Section: What You Will Do */}
-                  <div style={{ marginBottom: 24 }}>
-                    <h3 style={{
-                      fontSize: 15.5,
-                      fontWeight: 800,
-                      color: colors.textPrimary,
-                      margin: '0 0 12px'
-                    }}>
-                      What You Will Do:
+                  {/* What You Will Do */}
+                  <div style={{ marginBottom: 28 }}>
+                    <h3 style={{ fontSize: 18, fontWeight: 800, color: colors.textPrimary, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
+                      What You Will Do
                     </h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                      {selDetails?.whatYouWillDo.map((item, wIdx) => (
-                        <div key={wIdx} style={{
-                          fontSize: 14.5,
-                          lineHeight: 1.8,
-                          color: isLight ? '#374151' : '#D1D5DB'
-                        }}>
-                          <strong style={{ color: colors.textPrimary, fontWeight: 700 }}>
-                            {item.title}{' '}
-                          </strong>
-                          {item.description}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                      {selDetails?.whatYouWillDo.map((item, idx) => (
+                        <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                          <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: colors.accentCoral, marginTop: 10, flexShrink: 0 }} />
+                          <div style={{ fontSize: 14.5, color: colors.textSecondary }}>
+                            <strong style={{ color: colors.textPrimary }}>{item.title}</strong> {item.description}
+                          </div>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* Section: What You'll Need */}
-                  <div style={{ marginBottom: 26 }}>
-                    <h3 style={{
-                      fontSize: 15.5,
-                      fontWeight: 800,
-                      color: colors.textPrimary,
-                      margin: '0 0 10px'
-                    }}>
-                      What You'll Need:
+                  {/* What You'll Need */}
+                  <div style={{ marginBottom: 28 }}>
+                    <h3 style={{ fontSize: 18, fontWeight: 800, color: colors.textPrimary, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
+                      What You'll Need
                     </h3>
-                    <ul style={{
-                      margin: 0,
-                      paddingLeft: 20,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 8
-                    }}>
-                      {selDetails?.whatYouNeed.map((need, nIdx) => (
-                        <li key={nIdx} style={{
-                          fontSize: 14.5,
-                          lineHeight: 1.8,
-                          color: isLight ? '#374151' : '#D1D5DB'
-                        }}>
-                          {need}
-                        </li>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {selDetails?.whatYouNeed.map((req, idx) => (
+                        <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                          <CheckCircleIcon size={16} color="#10B981" />
+                          <div style={{ fontSize: 14.5, color: colors.textSecondary }}>
+                            {req}
+                          </div>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   </div>
 
-                  {/* Additional Original JD Notes if present */}
-                  {selectedJob?.description && selectedJob.description.length > 300 && (
+                  {/* ── 5. TECHNICAL SPECIFICATIONS & CLIENT DETAILS (NO SCROLL TRAP!) ── */}
+                  {((getFullDescriptionText && getFullDescriptionText(selectedJob)) || selectedJob.description) && (
                     <div style={{
                       backgroundColor: colors.subtleBg,
-                      border: `1px solid ${colors.borderLight}`,
+                      border: `1px solid ${colors.border}`,
                       borderRadius: 10,
-                      padding: '16px 20px',
-                      marginBottom: 26
+                      padding: '20px 24px',
+                      marginBottom: 28
                     }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: colors.textSecondary, marginBottom: 8, letterSpacing: '0.04em' }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: colors.textSecondary, marginBottom: 12, letterSpacing: '0.04em' }}>
                         TECHNICAL SPECIFICATIONS & CLIENT DETAILS
                       </div>
                       <div style={{
-                        fontSize: 13.5,
-                        lineHeight: 1.7,
+                        fontSize: 14,
+                        lineHeight: 1.75,
                         color: colors.textSecondary,
-                        whiteSpace: 'pre-wrap',
-                        maxHeight: 280,
-                        overflowY: 'auto'
+                        whiteSpace: 'pre-wrap'
                       }}>
                         {getFullDescriptionText ? getFullDescriptionText(selectedJob) : selectedJob.description}
                       </div>
@@ -1748,7 +2421,7 @@ export default function WellfoundCareersView({
                   )}
                 </div>
 
-                {/* ── 5. BOTTOM PROMINENT APPLY ACTION BAR ── */}
+                {/* ── 6. BOTTOM PROMINENT APPLY ACTION BAR ── */}
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -1779,124 +2452,90 @@ export default function WellfoundCareersView({
                       fontSize: 14.5,
                       fontWeight: 800,
                       cursor: 'pointer',
-                      boxShadow: '0 4px 16px rgba(10, 14, 26, 0.25)',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      transition: 'all 0.15s ease'
+                      boxShadow: '0 2px 10px rgba(0,0,0,0.15)',
+                      transition: 'opacity 0.15s ease'
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                    onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                    onMouseEnter={(e) => e.currentTarget.style.opacity = '0.88'}
+                    onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                   >
-                    <span>Apply for this position</span>
-                    <span>→</span>
+                    Apply for this position →
                   </button>
                 </div>
 
-                {/* ── 6. SIMILAR JOBS FOOTER (BOTEM MAI SIMILER) ── */}
+                {/* ── 7. SIMILAR JOBS RECOMMENDATION FOOTER ── */}
                 {similarJobsList.length > 0 && (
                   <div style={{
-                    borderTop: `1px solid ${colors.border}`,
-                    paddingTop: 24
+                    marginTop: 36,
+                    paddingTop: 28,
+                    borderTop: `1px solid ${colors.border}`
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                      <h4 style={{
-                        margin: 0,
-                        fontSize: 16,
-                        fontWeight: 800,
-                        color: colors.textPrimary,
-                        letterSpacing: '-0.01em'
-                      }}>
-                        Similar jobs you may be interested in
-                      </h4>
-                      <span style={{ fontSize: 12, color: colors.textSecondary }}>
-                        Matched by domain & skills
-                      </span>
+                    <div style={{
+                      fontSize: 18,
+                      fontWeight: 800,
+                      color: colors.textPrimary,
+                      marginBottom: 16,
+                      letterSpacing: '-0.02em'
+                    }}>
+                      Similar jobs you may be interested in
                     </div>
 
                     <div style={{
                       display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                      gap: 12
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                      gap: 14
                     }}>
                       {similarJobsList.map(simJob => (
                         <div
                           key={simJob.id}
-                          onClick={() => {
-                            setSelectedJobId(simJob.id)
-                            if (centerPanelRef.current) {
-                              centerPanelRef.current.scrollTop = 0
-                            }
-                          }}
+                          onClick={() => handleSelectJob(simJob.id)}
                           style={{
                             border: `1px solid ${colors.border}`,
                             borderRadius: 10,
-                            padding: 14,
+                            padding: 16,
                             backgroundColor: colors.subtleBg,
                             cursor: 'pointer',
-                            transition: 'all 0.18s ease'
+                            transition: 'all 0.15s ease',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between'
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = colors.activeBorder
+                            e.currentTarget.style.backgroundColor = colors.cardBg
+                            e.currentTarget.style.borderColor = colors.textPrimary
                             e.currentTarget.style.transform = 'translateY(-2px)'
-                            e.currentTarget.style.boxShadow = isLight ? '0 6px 14px rgba(0,0,0,0.04)' : '0 6px 14px rgba(0,0,0,0.3)'
                           }}
                           onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = colors.subtleBg
                             e.currentTarget.style.borderColor = colors.border
                             e.currentTarget.style.transform = 'translateY(0)'
-                            e.currentTarget.style.boxShadow = 'none'
                           }}
                         >
-                          <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-                            <span style={{
-                              fontSize: 10.5,
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                              <CompanyLogo job={simJob} size={32} />
+                              <div style={{ fontSize: 12, fontWeight: 700, color: colors.textSecondary }}>
+                                {resolveClientDomainName(simJob)}
+                              </div>
+                            </div>
+                            <div style={{
+                              fontSize: 14,
                               fontWeight: 700,
-                              backgroundColor: isLight ? '#E0F2FE' : '#082F49',
-                              color: '#0369A1',
-                              padding: '2px 6px',
-                              borderRadius: 4
+                              color: colors.textPrimary,
+                              marginBottom: 6,
+                              lineHeight: 1.3
                             }}>
-                              {resolveWorkArrangement(simJob)}
-                            </span>
-                            <span style={{
-                              fontSize: 10.5,
-                              fontWeight: 700,
-                              backgroundColor: resolveLocalRequirement(simJob).isLocalNeeded
-                                ? (isLight ? '#FEE2E2' : '#450A0A')
-                                : (isLight ? '#DCFCE7' : '#052E16'),
-                              color: resolveLocalRequirement(simJob).isLocalNeeded
-                                ? (isLight ? '#B91C1C' : '#FCA5A5')
-                                : (isLight ? '#15803D' : '#86EFAC'),
-                              padding: '2px 6px',
-                              borderRadius: 4
-                            }}>
-                              {resolveLocalRequirement(simJob).label}
-                            </span>
+                              {cleanJobTitleWithPositionNumber ? cleanJobTitleWithPositionNumber(simJob.title) : simJob.title}
+                            </div>
+                            <div style={{ fontSize: 12, color: colors.textMuted }}>
+                              {resolveJobLocation ? resolveJobLocation(simJob) : (simJob.work_mode || 'Remote')}
+                            </div>
                           </div>
 
                           <div style={{
-                            fontSize: 13.5,
+                            marginTop: 12,
+                            fontSize: 12.5,
                             fontWeight: 700,
-                            color: colors.textPrimary,
-                            marginBottom: 4,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
-                          }}>
-                            {cleanJobTitleWithPositionNumber ? cleanJobTitleWithPositionNumber(simJob.title) : simJob.title}
-                          </div>
-
-                          <div style={{ fontSize: 12, color: colors.textSecondary, marginBottom: 8 }}>
-                            📍 {resolveJobLocation ? resolveJobLocation(simJob) : (simJob.work_mode || 'Remote, US')}
-                          </div>
-
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'flex-end',
-                            fontSize: 12,
-                            fontWeight: 700,
-                            color: '#2065D1'
+                            color: isLight ? '#0A0E1A' : '#60A5FA'
                           }}>
                             View Details →
                           </div>
@@ -1905,211 +2544,213 @@ export default function WellfoundCareersView({
                     </div>
                   </div>
                 )}
-              </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '60px 20px', color: colors.textSecondary }}>
-                <div style={{ fontSize: 36, marginBottom: 12 }}>💼</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: colors.textPrimary, marginBottom: 4 }}>
-                  Select a requisition on the left
-                </div>
-                <div style={{ fontSize: 13 }}>
-                  Click any job to view its full responsibilities, requirements, and submit your profile.
-                </div>
-              </div>
-            )}
-          </div>
+              </article>
 
-          {/* ════════ COLUMN 3: RIGHT ADSENSE & HIGHLIGHTS SIDEBAR (RIGHT SIDE MAI ADD) ════════ */}
-          <div className="wellfound-sidebar-ads" style={{
-            position: 'sticky',
-            top: 84,
-            gap: 16
-          }}>
-            {/* AdSense Unit 1: Sponsored Display Box */}
-            <div style={{
-              border: `1px solid ${colors.border}`,
-              borderRadius: 14,
-              backgroundColor: colors.cardBg,
-              padding: 16,
-              boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none',
-              textAlign: 'center'
-            }}>
-              <div style={{
-                fontSize: 10,
-                fontWeight: 800,
-                letterSpacing: '0.08em',
-                color: colors.textMuted,
-                textTransform: 'uppercase',
-                marginBottom: 10
-              }}>
-                SPONSORED / ADVERTISEMENT
-              </div>
-
-              {/* Google AdSense Responsive Unit */}
-              <div style={{
-                minHeight: 180,
-                backgroundColor: isLight ? '#F9FAFB' : '#171F2C',
-                borderRadius: 10,
-                border: `1px dashed ${colors.border}`,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: 14,
-                gap: 8
-              }}>
-                <ins
-                  className="adsbygoogle"
-                  style={{ display: 'block', width: '100%', height: 140 }}
-                  data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
-                  data-ad-slot="9876543210"
-                  data-ad-format="auto"
-                  data-full-width-responsive="true"
-                />
-                <div style={{ fontSize: 12, fontWeight: 700, color: colors.textPrimary }}>
-                  Direct Fortune 500 Contracts
-                </div>
-                <div style={{ fontSize: 11.5, color: colors.textSecondary, lineHeight: 1.4 }}>
-                  Fast-track your application with priority recruiter review.
-                </div>
+              {/* ════════ COLUMN 3: RIGHT ADSENSE & HIGHLIGHTS SIDEBAR ════════ */}
+              <div>
+                {renderSidebarAds()}
               </div>
             </div>
+          </section>
+        </main>
+      )}
 
-            {/* Checklist Card: "Level up your job search" (Reference Card) */}
-            <div style={{
-              border: `1px solid ${colors.border}`,
-              borderRadius: 14,
-              backgroundColor: colors.cardBg,
-              padding: 20,
-              boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
-            }}>
-              <h3 style={{
-                fontSize: 15,
-                fontWeight: 800,
-                color: colors.textPrimary,
-                margin: '0 0 4px',
-                letterSpacing: '-0.01em'
-              }}>
-                Level up your job search
-              </h3>
-              <p style={{
-                fontSize: 12.5,
-                color: colors.textSecondary,
-                margin: '0 0 16px',
-                lineHeight: 1.4
-              }}>
-                Why top professionals apply directly through SmartHire:
-              </p>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <CheckCircleIcon size={16} color="#10B981" />
-                  <div style={{ fontSize: 13, color: colors.textPrimary, fontWeight: 600, lineHeight: 1.3 }}>
-                    Verified Direct Client contracts only
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <CheckCircleIcon size={16} color="#10B981" />
-                  <div style={{ fontSize: 13, color: colors.textPrimary, fontWeight: 600, lineHeight: 1.3 }}>
-                    Zero third-party markups or rate cuts
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <CheckCircleIcon size={16} color="#10B981" />
-                  <div style={{ fontSize: 13, color: colors.textPrimary, fontWeight: 600, lineHeight: 1.3 }}>
-                    Instant ATS parsing & skill matching
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <CheckCircleIcon size={16} color="#10B981" />
-                  <div style={{ fontSize: 13, color: colors.textPrimary, fontWeight: 600, lineHeight: 1.3 }}>
-                    Fast-track recruiter review in 24h
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* AdSense Unit 2: Career Partner Spotlight */}
-            <div style={{
-              border: `1px solid ${colors.border}`,
-              borderRadius: 14,
-              backgroundColor: colors.cardBg,
-              padding: 16,
-              boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none',
-              textAlign: 'center'
-            }}>
-              <div style={{
-                fontSize: 10,
-                fontWeight: 800,
-                letterSpacing: '0.08em',
-                color: colors.textMuted,
-                textTransform: 'uppercase',
-                marginBottom: 10
-              }}>
-                CAREER PARTNER SPOTLIGHT
-              </div>
-
-              <div style={{
-                minHeight: 120,
-                backgroundColor: isLight ? '#F9FAFB' : '#171F2C',
-                borderRadius: 10,
-                border: `1px dashed ${colors.border}`,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: 12,
-                gap: 6
-              }}>
-                <ins
-                  className="adsbygoogle"
-                  style={{ display: 'block', width: '100%', height: 90 }}
-                  data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
-                  data-ad-slot="1234567890"
-                  data-ad-format="auto"
-                  data-full-width-responsive="true"
-                />
-                <div style={{ fontSize: 11.5, color: colors.textSecondary }}>
-                  Explore verified enterprise staffing opportunities
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── 5. WELLFOUND FOOTER ─────────────────────────────────────────── */}
+      {/* ─── 5. MULTI-COLUMN WELLFOUND FOOTER (media_1789659143215.png) ───── */}
       <footer style={{
         borderTop: `1px solid ${colors.border}`,
         backgroundColor: colors.cardBg,
-        padding: '36px 24px 50px'
+        padding: '48px 24px 40px'
       }}>
         <div style={{
           maxWidth: 1560,
-          margin: '0 auto',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 20
+          margin: '0 auto'
         }}>
-          <div>
-            <span style={{ fontSize: 20, fontWeight: 900, color: colors.textPrimary }}>
-              smarthire<span style={{ color: colors.accentCoral }}>:</span>
-            </span>
-            <div style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4 }}>
-              Direct-client IT requisition ecosystem & applicant tracking platform.
+          {/* Top 4-Column Grid */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: 40,
+            marginBottom: 44
+          }}>
+            {/* Col 1: Brand, Tagline & Social */}
+            <div>
+              <div style={{
+                fontSize: 22,
+                fontWeight: 900,
+                color: colors.textPrimary,
+                letterSpacing: '-0.03em',
+                marginBottom: 12
+              }}>
+                smarthire<span style={{ color: colors.accentCoral }}>:</span>
+              </div>
+              <p style={{
+                fontSize: 13.5,
+                color: colors.textSecondary,
+                lineHeight: 1.6,
+                margin: '0 0 20px',
+                maxWidth: 290
+              }}>
+                Direct-client IT requisition ecosystem and next-generation applicant tracking system. Connecting elite engineering talent with state and enterprise clients.
+              </p>
+
+              {/* Social SVG Icons */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <a
+                  href="https://twitter.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: colors.textSecondary, transition: 'color 0.15s' }}
+                  aria-label="SmartHire on X / Twitter"
+                >
+                  <TwitterIcon size={18} color="currentColor" />
+                </a>
+                <a
+                  href="https://instagram.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: colors.textSecondary, transition: 'color 0.15s' }}
+                  aria-label="SmartHire on Instagram"
+                >
+                  <InstagramIcon size={18} color="currentColor" />
+                </a>
+                <a
+                  href="https://linkedin.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: colors.textSecondary, transition: 'color 0.15s' }}
+                  aria-label="SmartHire on LinkedIn"
+                >
+                  <LinkedInIcon size={18} color="currentColor" />
+                </a>
+              </div>
+            </div>
+
+            {/* Col 2: For Candidates */}
+            <div>
+              <h3 style={{
+                fontSize: 13.5,
+                fontWeight: 800,
+                color: colors.textPrimary,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                margin: '0 0 16px'
+              }}>
+                For Candidates
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13.5 }}>
+                <Link to="/jobs" onClick={handleBackToAllJobs} style={{ color: colors.textSecondary, textDecoration: 'none' }}>
+                  Browse Direct Client Jobs
+                </Link>
+                <Link to="/jobs" onClick={() => { handleBackToAllJobs(); if (setSelectedLocation) setSelectedLocation('Remote') }} style={{ color: colors.textSecondary, textDecoration: 'none' }}>
+                  Remote IT Careers
+                </Link>
+                <Link to="/jobs" onClick={() => { handleBackToAllJobs(); setActiveCategoryFilter('dev') }} style={{ color: colors.textSecondary, textDecoration: 'none' }}>
+                  Software & Cloud Engineering
+                </Link>
+                <Link to="/jobs" onClick={() => { handleBackToAllJobs(); setActiveCategoryFilter('data') }} style={{ color: colors.textSecondary, textDecoration: 'none' }}>
+                  Data & AI Architect Roles
+                </Link>
+                <Link to="/screening" style={{ color: colors.textSecondary, textDecoration: 'none' }}>
+                  PeekHire Video & Voice Screening
+                </Link>
+                <Link to="/blog" style={{ color: colors.textSecondary, textDecoration: 'none' }}>
+                  C2C vs W2 Contract Guide
+                </Link>
+              </div>
+            </div>
+
+            {/* Col 3: For Recruiters & Clients */}
+            <div>
+              <h3 style={{
+                fontSize: 13.5,
+                fontWeight: 800,
+                color: colors.textPrimary,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                margin: '0 0 16px'
+              }}>
+                For Recruiters & Clients
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13.5 }}>
+                <Link to="/ats" style={{ color: colors.textSecondary, textDecoration: 'none' }}>
+                  SmartHire ATS Platform
+                </Link>
+                <Link to="/screening" style={{ color: colors.textSecondary, textDecoration: 'none' }}>
+                  AI Asynchronous Screening
+                </Link>
+                <Link to="/ats" style={{ color: colors.textSecondary, textDecoration: 'none' }}>
+                  Automated IMAP Resume Sync
+                </Link>
+                <Link to="/ats" style={{ color: colors.textSecondary, textDecoration: 'none' }}>
+                  Candidate Deduplication Engine
+                </Link>
+                <Link to="/login" style={{ color: colors.textSecondary, textDecoration: 'none' }}>
+                  Recruiter Portal Login
+                </Link>
+              </div>
+            </div>
+
+            {/* Col 4: Company */}
+            <div>
+              <h3 style={{
+                fontSize: 13.5,
+                fontWeight: 800,
+                color: colors.textPrimary,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                margin: '0 0 16px'
+              }}>
+                Company
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13.5 }}>
+                <Link to="/about" style={{ color: colors.textSecondary, textDecoration: 'none' }}>
+                  About SmartHire
+                </Link>
+                <Link to="/contact" style={{ color: colors.textSecondary, textDecoration: 'none' }}>
+                  Contact & Help Center
+                </Link>
+                <Link to="/privacy" style={{ color: colors.textSecondary, textDecoration: 'none' }}>
+                  Privacy Policy
+                </Link>
+                <Link to="/terms" style={{ color: colors.textSecondary, textDecoration: 'none' }}>
+                  Terms of Service
+                </Link>
+                <Link to="/support" style={{ color: colors.textSecondary, textDecoration: 'none' }}>
+                  Security & Compliance
+                </Link>
+              </div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 20, fontSize: 13, color: colors.textSecondary }}>
-            <Link to="/about" style={{ textDecoration: 'none', color: 'inherit' }}>About</Link>
-            <Link to="/privacy" style={{ textDecoration: 'none', color: 'inherit' }}>Privacy Policy</Link>
-            <Link to="/terms" style={{ textDecoration: 'none', color: 'inherit' }}>Terms of Service</Link>
-            <Link to="/contact" style={{ textDecoration: 'none', color: 'inherit' }}>Contact</Link>
+          {/* Bottom Copyright & Browse links */}
+          <div style={{
+            borderTop: `1px solid ${colors.borderLight}`,
+            paddingTop: 24,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 16,
+            fontSize: 12.5,
+            color: colors.textMuted
+          }}>
+            <div>
+              Copyright © 2026 SmartHire LLC. All rights reserved. <span style={{ marginLeft: 8, cursor: 'pointer', textDecoration: 'underline' }}>Cookie Preferences</span>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+              <span>Browse by:</span>
+              <span style={{ color: colors.textSecondary }}>Direct Client Jobs</span>
+              <span>•</span>
+              <span style={{ color: colors.textSecondary }}>Remote Jobs</span>
+              <span>•</span>
+              <span style={{ color: colors.textSecondary }}>Locations</span>
+              <span>•</span>
+              <span style={{ color: colors.textSecondary }}>High Priority Requisitions</span>
+              <span>•</span>
+              <span style={{ color: colors.textSecondary }}>Enterprise Clients</span>
+              <span>•</span>
+              <span style={{ color: colors.textSecondary }}>Tech Hubs</span>
+            </div>
           </div>
         </div>
       </footer>

@@ -955,6 +955,7 @@ export default function PublicCareers() {
         jobs={jobs}
         filteredJobs={filteredJobs}
         loading={loading}
+        targetJobId={targetJobId}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         selectedLocation={selectedLocation}
