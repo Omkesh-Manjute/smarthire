@@ -1015,6 +1015,8 @@ export default function PublicCareers() {
           formatContractType={formatContractType}
           isJobExpired={isJobExpired}
           getFullDescriptionText={getFullDescriptionText}
+          getSimilarJobs={getSimilarJobs}
+          getJobPostTimezones={getJobPostTimezones}
         />
       ) : layoutView === 'split' ? (
         <LinkedInCareersView
@@ -1138,8 +1140,8 @@ export default function PublicCareers() {
         />
       )}
 
-      {/* ─── FULL JD READER MODAL ──────────────────────────────────────────── */}
-      {fullJdModalJob && (
+      {/* ─── FULL JD READER MODAL (FOR CLASSIC / ZONE / SPLIT MODES) ────── */}
+      {fullJdModalJob && layoutView !== 'wellfound' && (
         <div style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
