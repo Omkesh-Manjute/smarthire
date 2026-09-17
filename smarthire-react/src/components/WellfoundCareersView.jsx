@@ -199,9 +199,16 @@ function parseWellfoundJobDetails(job, cleanTitle, domainName, location, workMod
     ? job.skills
     : ['Cloud Architecture', 'Microservices', 'REST APIs', 'Agile / Scrum', 'CI/CD']
 
-  const text = String(fullText || '').trim()
-
   const aboutCompany = `${domainName} is delivering mission-critical modern technological platforms to enhance operational efficiency, security, and public sector services. We value engineers and leaders who take bold ownership, thrive in collaborative teams, and design scalable architectures built for enterprise longevity.`
+
+  let text = String(fullText || '').trim()
+
+  // Clean out common boilerplate and legal disclaimers
+  text = text
+    .replace(/Pursuant to the State of.*?policy of non-discrimination.*?$/is, '')
+    .replace(/Equal Opportunity Employer.*?$/is, '')
+    .replace(/We are an equal opportunity employer.*?$/is, '')
+    .replace(/\bEEO\b.*?$/is, '')
 
   let summary = ''
   let responsibilities = []
@@ -220,7 +227,7 @@ function parseWellfoundJobDetails(job, cleanTitle, domainName, location, workMod
     if (respMatch && respMatch[1].trim()) {
       responsibilities = respMatch[1]
         .split('\n')
-        .map(l => l.replace(/^[•\-\*\s]+/, '').trim())
+        .map(l => l.replace(/^[•\u2022\u2023\u25E6\u2043\u2219\*\-\d\.]\s*/, '').trim())
         .filter(l => l.length > 5)
     }
 
@@ -228,7 +235,7 @@ function parseWellfoundJobDetails(job, cleanTitle, domainName, location, workMod
     if (skillsMatch && skillsMatch[1].trim()) {
       requiredSkills = skillsMatch[1]
         .split('\n')
-        .map(l => l.replace(/^[•\-\*\s]+/, '').trim())
+        .map(l => l.replace(/^[•\u2022\u2023\u25E6\u2043\u2219\*\-\d\.]\s*/, '').trim())
         .filter(l => l.length > 3)
     }
 
@@ -236,7 +243,7 @@ function parseWellfoundJobDetails(job, cleanTitle, domainName, location, workMod
     if (prefMatch && prefMatch[1].trim()) {
       preferredSkills = prefMatch[1]
         .split('\n')
-        .map(l => l.replace(/^[•\-\*\s]+/, '').trim())
+        .map(l => l.replace(/^[•\u2022\u2023\u25E6\u2043\u2219\*\-\d\.]\s*/, '').trim())
         .filter(l => l.length > 3)
     }
 
@@ -244,7 +251,7 @@ function parseWellfoundJobDetails(job, cleanTitle, domainName, location, workMod
     if (overviewMatch && overviewMatch[1].trim()) {
       engagementDetails = overviewMatch[1]
         .split('\n')
-        .map(l => l.replace(/^[•\-\*\s]+/, '').trim())
+        .map(l => l.replace(/^[•\u2022\u2023\u25E6\u2043\u2219\*\-\d\.]\s*/, '').trim())
         .filter(l => l.length > 3 && !l.toLowerCase().includes('position title'))
     }
   } else if (text.length > 30) {
@@ -254,21 +261,65 @@ function parseWellfoundJobDetails(job, cleanTitle, domainName, location, workMod
       .replace(/Description\s*:\s*/i, '')
       .trim()
 
-    const lines = cleaned.split('\n').map(l => l.trim()).filter(Boolean)
-    const bullets = lines.filter(l => /^[•\-\*\d\.]\s+/.test(l)).map(l => l.replace(/^[•\-\*\d\.]\s+/, '').trim())
-
-    if (bullets.length >= 3) {
-      responsibilities = bullets.slice(0, Math.ceil(bullets.length / 2))
-      requiredSkills = bullets.slice(Math.ceil(bullets.length / 2))
-      summary = lines.filter(l => !/^[•\-\*\d\.]\s+/.test(l)).slice(0, 3).join(' ')
+    // Split on inline bullets or newlines
+    const parts = cleaned.split(/(?:\r?\n\s*|\s+)[•\u2022\u2023\u25E6\u2043\u2219\*\-]\s+/)
+    if (parts.length > 1) {
+      summary = parts[0].trim()
+      responsibilities = parts.slice(1).map(p => p.trim()).filter(p => p.length > 5)
     } else {
-      summary = cleaned.slice(0, 450)
+      const lines = cleaned.split('\n').map(l => l.trim()).filter(Boolean)
+      const bullets = lines.filter(l => /^[•\u2022\u2023\u25E6\u2043\u2219\*\-\d\.]\s+/.test(l)).map(l => l.replace(/^[•\u2022\u2023\u25E6\u2043\u2219\*\-\d\.]\s+/, '').trim())
+
+      if (bullets.length >= 2) {
+        responsibilities = bullets
+        summary = lines.filter(l => !/^[•\u2022\u2023\u25E6\u2043\u2219\*\-\d\.]\s+/.test(l)).slice(0, 3).join(' ')
+      } else {
+        summary = cleaned.slice(0, 450)
+      }
     }
   }
 
+  // Detect and unpack any inline bullets trapped inside summary
+  if (/(?:\r?\n\s*|\s+)[•\u2022\u2023\u25E6\u2043\u2219\*\-]\s+/.test(summary)) {
+    const splitSummary = summary.split(/(?:\r?\n\s*|\s+)[•\u2022\u2023\u25E6\u2043\u2219\*\-]\s+/)
+    if (splitSummary.length > 1) {
+      summary = splitSummary[0].trim()
+      const extraBullets = splitSummary.slice(1).map(b => b.trim()).filter(b => b.length > 5)
+      responsibilities = [...extraBullets, ...responsibilities]
+    }
+  }
+
+  // Expand any items in responsibilities that contain nested/inline bullets
+  const expandedResp = []
+  responsibilities.forEach(item => {
+    if (/(?:\r?\n\s*|\s+)[•\u2022\u2023\u25E6\u2043\u2219\*\-]\s+/.test(item)) {
+      const sub = item.split(/(?:\r?\n\s*|\s+)[•\u2022\u2023\u25E6\u2043\u2219\*\-]\s+/).map(s => s.trim()).filter(Boolean)
+      expandedResp.push(...sub)
+    } else {
+      expandedResp.push(item)
+    }
+  })
+  responsibilities = expandedResp
+    .map(r => r.replace(/^[•\u2022\u2023\u25E6\u2043\u2219\*\-\d\.]\s*/, '').trim())
+    .filter(r => !/pursuant to the state|policy of non-discrimination|affirmative action|equal opportunity employer|does not discriminate|eeo\b/i.test(r) && r.length > 5)
+
+  // Expand any items in requiredSkills that contain nested/inline bullets
+  const expandedSkills = []
+  requiredSkills.forEach(item => {
+    if (/(?:\r?\n\s*|\s+)[•\u2022\u2023\u25E6\u2043\u2219\*\-]\s+/.test(item)) {
+      const sub = item.split(/(?:\r?\n\s*|\s+)[•\u2022\u2023\u25E6\u2043\u2219\*\-]\s+/).map(s => s.trim()).filter(Boolean)
+      expandedSkills.push(...sub)
+    } else {
+      expandedSkills.push(item)
+    }
+  })
+  requiredSkills = expandedSkills
+    .map(s => s.replace(/^[•\u2022\u2023\u25E6\u2043\u2219\*\-\d\.]\s*/, '').trim())
+    .filter(s => !/pursuant to the state|policy of non-discrimination|affirmative action|equal opportunity employer|does not discriminate|eeo\b/i.test(s) && s.length > 3)
+
   // Graceful high-quality fallbacks if requisition data is sparse
   if (!summary) {
-    summary = `We are seeking a talented and detail-oriented ${cleanTitle} to spearhead key engineering initiatives. In this high-impact engagement, you will collaborate closely with enterprise systems architects, product owners, and engineering leaders to design, build, and optimize resilient distributed workflows.`
+    summary = `We are seeking a talented and dedicated ${cleanTitle} to support enterprise operations and deliver high-impact results. In this direct client engagement, you will collaborate closely with cross-functional teams to execute critical workflows and ensure operational excellence.`
   }
 
   if (responsibilities.length === 0) {
@@ -277,19 +328,19 @@ function parseWellfoundJobDetails(job, cleanTitle, domainName, location, workMod
     const s3 = rawSkills[2] || 'Automated CI/CD'
     const s4 = rawSkills[3] || 'Scalability & Performance'
     responsibilities = [
-      `Drive hands-on implementation and technical governance across modern enterprise cloud environments, ensuring clean code standards and scalable design (${s1}).`,
-      `Integrate secure REST/GraphQL APIs, microservice endpoints, and reliable data pipelines without sacrificing latency or system reliability (${s2}).`,
-      `Champion automated CI/CD deployment pipelines, unit test coverage, and code reviews using modern version control and DevOps practices (${s3}).`,
-      `Ensure all interactive elements, queries, and background processes run at a buttery 60fps and sub-second response times across modern platforms (${s4}).`
+      `Drive hands-on execution and technical governance across modern enterprise environments, specializing in ${s1}.`,
+      `Design and integrate secure, scalable solutions and reliable workflows (${s2}).`,
+      `Champion best practices, documentation, and quality standards adhering to industry benchmarks (${s3}).`,
+      `Ensure all operations, interactive services, and platform tasks meet enterprise reliability and quality targets (${s4}).`
     ]
   }
 
   if (requiredSkills.length === 0) {
     requiredSkills = [
-      `Demonstrated hands-on expertise as a ${cleanTitle} in high-visibility enterprise or direct-client environments.`,
-      `Deep practical proficiency in ${rawSkills.slice(0, 5).join(', ')}.`,
-      `Solid understanding of scalable architecture patterns, automated build pipelines, and system security fundamentals.`,
-      `Strong communication and cross-functional coordination skills with the ability to ship independently.`,
+      `Demonstrated practical experience as a ${cleanTitle} in direct-client or enterprise environments.`,
+      `Hands-on proficiency in ${rawSkills.slice(0, 5).join(', ')}.`,
+      `Strong understanding of quality standards, operational workflows, and system fundamentals.`,
+      `Excellent communication, accountability, and problem-solving skills with ability to work independently.`,
       localReq.isLocalNeeded 
         ? `Local candidate or commutable to ${location} to support the client's ${workMode} requirements.`
         : `Ability to operate autonomously in a remote-first setup with high discipline and ownership.`
@@ -300,7 +351,7 @@ function parseWellfoundJobDetails(job, cleanTitle, domainName, location, workMod
     engagementDetails = [
       `Client / Agency: Direct Client`,
       `Work Arrangement: ${workMode || 'Remote / Hybrid'}`,
-      `Interview Type: Webcam / In-Person`,
+      `Interview Type: Webcam / Virtual Video Interview`,
       `Engagement: Long-Term Contract (C2C / W2)`
     ]
   }
@@ -2380,85 +2431,158 @@ export default function WellfoundCareersView({
                   </div>
                 </div>
 
-                {/* ── 4. STRUCTURED ABOUT THE JOB SECTIONS (UNIFIED WELLFOUND DOSSIER) ── */}
-                <div style={{ marginBottom: 36, lineHeight: 1.85, fontSize: 15, color: colors.textPrimary }}>
-                  {/* About the Company */}
-                  <div style={{ marginBottom: 28 }}>
-                    <h3 style={{ fontSize: 18, fontWeight: 800, color: colors.textPrimary, margin: '0 0 10px', letterSpacing: '-0.02em' }}>
-                      About the Company
+                {/* ── 4. STRUCTURED ABOUT THE JOB SECTIONS (EXACT WELLFOUND LAYOUT) ── */}
+                <div style={{ marginBottom: 36, lineHeight: 1.75, fontSize: 15, fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
+                  {/* About the Role */}
+                  <div style={{ marginBottom: 30 }}>
+                    <h3 style={{ fontSize: 19, fontWeight: 800, color: colors.textPrimary, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
+                      About the Role
                     </h3>
-                    <p style={{ margin: 0, color: colors.textSecondary, fontSize: 14.5, lineHeight: 1.85 }}>
-                      {selDetails?.aboutCompany}
-                    </p>
-                  </div>
-
-                  {/* About the Role & Project Objective */}
-                  <div style={{ marginBottom: 28 }}>
-                    <h3 style={{ fontSize: 18, fontWeight: 800, color: colors.textPrimary, margin: '0 0 10px', letterSpacing: '-0.02em' }}>
-                      About the Role & Project Objective
-                    </h3>
-                    <p style={{ margin: 0, color: colors.textSecondary, fontSize: 14.5, lineHeight: 1.85 }}>
+                    <p style={{
+                      margin: 0,
+                      color: isLight ? '#1E293B' : '#E2E8F0',
+                      fontSize: 15,
+                      lineHeight: 1.75
+                    }}>
                       {selDetails?.summary}
                     </p>
                   </div>
 
-                  {/* Key Roles & Responsibilities */}
-                  <div style={{ marginBottom: 28 }}>
-                    <h3 style={{ fontSize: 18, fontWeight: 800, color: colors.textPrimary, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
-                      Key Roles & Responsibilities
+                  {/* What You'll Do */}
+                  <div style={{ marginBottom: 30 }}>
+                    <h3 style={{ fontSize: 19, fontWeight: 800, color: colors.textPrimary, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
+                      What You'll Do
                     </h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                      {selDetails?.responsibilities?.map((item, idx) => (
-                        <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                          <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: colors.accentCoral, marginTop: 9, flexShrink: 0 }} />
-                          <div style={{ fontSize: 14.5, color: colors.textSecondary, lineHeight: 1.75 }}>
-                            {item}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    <ul style={{
+                      margin: 0,
+                      padding: '0 0 0 20px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 10,
+                      listStyleType: 'disc'
+                    }}>
+                      {selDetails?.responsibilities?.map((item, idx) => {
+                        const colonIdx = item.indexOf(':')
+                        let prefix = null
+                        let rest = item
+                        if (colonIdx > 0 && colonIdx < 50 && !item.slice(0, colonIdx).includes('.')) {
+                          prefix = item.slice(0, colonIdx).trim()
+                          rest = item.slice(colonIdx + 1).trim()
+                        }
+                        return (
+                          <li key={idx} style={{
+                            fontSize: 15,
+                            lineHeight: 1.65,
+                            color: isLight ? '#1E293B' : '#E2E8F0',
+                            paddingLeft: 4
+                          }}>
+                            {prefix ? (
+                              <>
+                                <strong style={{ color: isLight ? '#0A0E1A' : '#FFFFFF', fontWeight: 700 }}>
+                                  {prefix}:
+                                </strong>{' '}
+                                {rest}
+                              </>
+                            ) : (
+                              rest
+                            )}
+                          </li>
+                        )
+                      })}
+                    </ul>
                   </div>
 
-                  {/* Required Technical Proficiencies & Skills */}
-                  <div style={{ marginBottom: 28 }}>
-                    <h3 style={{ fontSize: 18, fontWeight: 800, color: colors.textPrimary, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
-                      Required Technical Proficiencies & Skills
+                  {/* Who You Are (All Levels) */}
+                  <div style={{ marginBottom: 30 }}>
+                    <h3 style={{ fontSize: 19, fontWeight: 800, color: colors.textPrimary, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
+                      Who You Are (All Levels)
                     </h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                      {selDetails?.requiredSkills?.map((req, idx) => (
-                        <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                          <CheckCircleIcon size={16} color="#10B981" style={{ flexShrink: 0, marginTop: 3 }} />
-                          <div style={{ fontSize: 14.5, color: colors.textSecondary, lineHeight: 1.75 }}>
-                            {req}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    <ul style={{
+                      margin: 0,
+                      padding: '0 0 0 20px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 10,
+                      listStyleType: 'disc'
+                    }}>
+                      {selDetails?.requiredSkills?.map((req, idx) => {
+                        const colonIdx = req.indexOf(':')
+                        let prefix = null
+                        let rest = req
+                        if (colonIdx > 0 && colonIdx < 50 && !req.slice(0, colonIdx).includes('.')) {
+                          prefix = req.slice(0, colonIdx).trim()
+                          rest = req.slice(colonIdx + 1).trim()
+                        }
+                        return (
+                          <li key={idx} style={{
+                            fontSize: 15,
+                            lineHeight: 1.65,
+                            color: isLight ? '#1E293B' : '#E2E8F0',
+                            paddingLeft: 4
+                          }}>
+                            {prefix ? (
+                              <>
+                                <strong style={{ color: isLight ? '#0A0E1A' : '#FFFFFF', fontWeight: 700 }}>
+                                  {prefix}:
+                                </strong>{' '}
+                                {rest}
+                              </>
+                            ) : (
+                              rest
+                            )}
+                          </li>
+                        )
+                      })}
+                    </ul>
                   </div>
 
-                  {/* Preferred Qualifications & Domain Skills (if present) */}
+                  {/* Preferred Qualifications (if present) */}
                   {selDetails?.preferredSkills && selDetails.preferredSkills.length > 0 && (
-                    <div style={{ marginBottom: 28 }}>
-                      <h3 style={{ fontSize: 18, fontWeight: 800, color: colors.textPrimary, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
-                        Preferred Qualifications & Domain Skills
+                    <div style={{ marginBottom: 30 }}>
+                      <h3 style={{ fontSize: 19, fontWeight: 800, color: colors.textPrimary, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
+                        Preferred Qualifications
                       </h3>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      <ul style={{
+                        margin: 0,
+                        padding: '0 0 0 20px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 10,
+                        listStyleType: 'disc'
+                      }}>
                         {selDetails.preferredSkills.map((req, idx) => (
-                          <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                            <CheckCircleIcon size={16} color="#6366F1" style={{ flexShrink: 0, marginTop: 3 }} />
-                            <div style={{ fontSize: 14.5, color: colors.textSecondary, lineHeight: 1.75 }}>
-                              {req}
-                            </div>
-                          </div>
+                          <li key={idx} style={{
+                            fontSize: 15,
+                            lineHeight: 1.65,
+                            color: isLight ? '#1E293B' : '#E2E8F0',
+                            paddingLeft: 4
+                          }}>
+                            {req}
+                          </li>
                         ))}
-                      </div>
+                      </ul>
                     </div>
                   )}
 
+                  {/* About the Company */}
+                  <div style={{ marginBottom: 30 }}>
+                    <h3 style={{ fontSize: 19, fontWeight: 800, color: colors.textPrimary, margin: '0 0 12px', letterSpacing: '-0.02em' }}>
+                      About the Company
+                    </h3>
+                    <p style={{
+                      margin: 0,
+                      color: isLight ? '#1E293B' : '#E2E8F0',
+                      fontSize: 15,
+                      lineHeight: 1.75
+                    }}>
+                      {selDetails?.aboutCompany}
+                    </p>
+                  </div>
+
                   {/* Project & Engagement Specifications */}
                   {selDetails?.engagementDetails && selDetails.engagementDetails.length > 0 && (
-                    <div style={{ marginBottom: 28 }}>
-                      <h3 style={{ fontSize: 18, fontWeight: 800, color: colors.textPrimary, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
+                    <div style={{ marginBottom: 30 }}>
+                      <h3 style={{ fontSize: 19, fontWeight: 800, color: colors.textPrimary, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
                         Project & Engagement Specifications
                       </h3>
                       <div style={{

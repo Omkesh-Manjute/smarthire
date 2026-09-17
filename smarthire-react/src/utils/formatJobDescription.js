@@ -349,14 +349,18 @@ export function formatJobDescription(rawText = '', jobMeta = {}) {
       .replace(/Please provide Requirement id.*$/gi, '')
       .replace(/\b(?:VDOT|VDH|NCDOT|NCDIT|NC\s*DHHS|NC\s*FAST|DHHS|VRS|ETF|TN\s*DOH|TN\s*DOE)\b/gi, 'Enterprise Client')
       .replace(/\s*\(\s*\d{4,8}[a-zA-Z]?\s*\)/g, '')
+      .replace(/Pursuant to the State of.*?policy of non-discrimination.*?$/is, '')
+      .replace(/Equal Opportunity Employer.*?$/is, '')
+      .replace(/We are an equal opportunity employer.*?$/is, '')
+      .replace(/\bEEO\b.*?$/is, '')
       .trim();
   }
 
   // Separate summary paragraph vs responsibilities vs skills
   const rawSentences = mainBody
-    .split(/(?<=[.?!])\s+(?=[A-Z])|\n\s*•|\n\s*-|\n\s*\*/)
-    .map(s => s.trim())
-    .filter(s => s.length > 10);
+    .split(/(?<=[.?!])\s+(?=[A-Z])|(?:\r?\n\s*|\s+)[•\u2022\u2023\u25E6\u2043\u2219\*\-]\s+|\n\s*•|\n\s*-|\n\s*\*|\n\s*\d+\.\s+/)
+    .map(s => s.replace(/^[•\u2022\u2023\u25E6\u2043\u2219\*\-\d\.]\s+/, '').trim())
+    .filter(s => s.length > 8 && !/policy of non-discrimination|equal opportunity employer|affirmative action|does not discriminate/i.test(s));
 
   let summaryLines = [];
   let respLines = [];
@@ -369,10 +373,10 @@ export function formatJobDescription(rawText = '', jobMeta = {}) {
       reqSkillLines.push(sentence);
     } else if (sLower.includes('additional skills beyond') || sLower.includes('nice to have') || sLower.includes('preferred') || sLower.includes('familiarity with')) {
       prefSkillLines.push(sentence);
-    } else if (sLower.includes('responsible for') || sLower.includes('responsibilities of') || sLower.includes('responsibility includes') || sLower.includes('role involves') || sLower.includes('assist with') || sLower.includes('contributes to') || sLower.includes('collaborate with') || sLower.includes('architected') || sLower.includes('develop') || sLower.includes('oversee') || sLower.includes('ensuring') || sLower.includes('guiding') || sLower.includes('testing')) {
+    } else if (sLower.includes('responsible for') || sLower.includes('responsibilities of') || sLower.includes('responsibility includes') || sLower.includes('role involves') || sLower.includes('assist with') || sLower.includes('serves as') || sLower.includes('operates') || sLower.includes('performing') || sLower.includes('cleans') || sLower.includes('polices') || sLower.includes('maintains') || sLower.includes('trains') || sLower.includes('contributes to') || sLower.includes('collaborate with') || sLower.includes('architected') || sLower.includes('develop') || sLower.includes('oversee') || sLower.includes('ensuring') || sLower.includes('guiding') || sLower.includes('testing')) {
       respLines.push(sentence);
     } else {
-      if (summaryLines.length < 2) {
+      if (summaryLines.length < 2 && !sLower.includes('custodian') && !sLower.includes('sweeps') && !sLower.includes('mops')) {
         summaryLines.push(sentence);
       } else {
         respLines.push(sentence);
