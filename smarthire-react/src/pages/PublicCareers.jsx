@@ -7,6 +7,7 @@ import { loginWithGoogle } from '../lib/firebase'
 import { formatJobDescription, resolveJobLocation, cleanJobTitleWithPositionNumber, resolveReqId } from '../utils/formatJobDescription'
 import ClassicCareersView from '../components/ClassicCareersView'
 import ZoneCareersView from '../components/ZoneCareersView'
+import LinkedInCareersView from '../components/LinkedInCareersView'
 import {
   CategoryFinanceIcon,
   CategoryMarketingIcon,
@@ -176,12 +177,12 @@ export default function PublicCareers() {
     try { localStorage.setItem('smarthire_theme', next) } catch(e) {}
   }
 
-  // ─── DUAL-VIEW LAYOUT PREFERENCE (CLASSIC ATS VS ZONE MODERN) ───────────
+  // ─── TRI-VIEW LAYOUT PREFERENCE (SPLIT LINKEDIN VS ZONE VS CLASSIC) ───────
   const [layoutView, setLayoutView] = useState(() => {
     try {
-      return localStorage.getItem('smarthire_career_layout_view') || 'classic'
+      return localStorage.getItem('smarthire_career_layout_view') || 'split'
     } catch (e) {
-      return 'classic'
+      return 'split'
     }
   })
 
@@ -938,12 +939,49 @@ export default function PublicCareers() {
     <div style={{
       position: 'relative',
       minHeight: '100vh',
-      backgroundColor: layoutView === 'classic' ? (isLight ? '#FAFBFD' : '#080C14') : (isLight ? '#FFFFFF' : '#141A21'),
+      backgroundColor: layoutView === 'split' ? (isLight ? '#F3F2F0' : '#0B0F19') : layoutView === 'classic' ? (isLight ? '#FAFBFD' : '#080C14') : (isLight ? '#FFFFFF' : '#141A21'),
       color: isLight ? '#0F172A' : '#F8FAFC',
       transition: 'background-color 0.2s, color 0.2s'
     }}>
-      {/* ─── 1-CLICK DUAL LAYOUT TOGGLE: CLASSIC ATS VS ZONE MODERN ─────────── */}
-      {layoutView === 'classic' ? (
+      {/* ─── 1-CLICK TRI LAYOUT TOGGLE: SPLIT (LINKEDIN) VS ZONE VS CLASSIC ─── */}
+      {layoutView === 'split' ? (
+        <LinkedInCareersView
+          jobs={jobs}
+          filteredJobs={filteredJobs}
+          loading={loading}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          selectedLocation={selectedLocation}
+          setSelectedLocation={setSelectedLocation}
+          deadlineFilter={deadlineFilter}
+          setDeadlineFilter={setDeadlineFilter}
+          appliedJobs={appliedJobs}
+          savedJobs={savedJobs}
+          handleToggleSaveJob={handleToggleSaveJob}
+          candidateUser={candidateUser}
+          handleCandidateSignOut={handleCandidateSignOut}
+          setShowLoginModal={setShowLoginModal}
+          handleApplyClick={handleApplyClick}
+          setFullJdModalJob={setFullJdModalJob}
+          setActiveChatCandidate={setActiveChatCandidate}
+          setShowCvUploadModal={setShowCvUploadModal}
+          clocksExpanded={clocksExpanded}
+          setClocksExpanded={setClocksExpanded}
+          formatLiveTime={formatLiveTime}
+          themeMode={themeMode}
+          toggleTheme={toggleTheme}
+          isLight={isLight}
+          layoutView={layoutView}
+          handleSetLayoutView={handleSetLayoutView}
+          cleanJobTitleWithPositionNumber={cleanJobTitleWithPositionNumber}
+          resolveJobLocation={resolveJobLocation}
+          formatExperience={formatExperience}
+          formatRateOrSalary={formatRateOrSalary}
+          formatContractType={formatContractType}
+          isJobExpired={isJobExpired}
+          getFullDescriptionText={getFullDescriptionText}
+        />
+      ) : layoutView === 'classic' ? (
         <ClassicCareersView
           jobs={jobs}
           filteredJobs={filteredJobs}

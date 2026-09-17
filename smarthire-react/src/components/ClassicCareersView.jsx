@@ -582,6 +582,25 @@ export default function ClassicCareersView({
             </button>
             <button
               type="button"
+              onClick={() => handleSetLayoutView('split')}
+              style={{
+                background: layoutView === 'split' ? '#0A66C2' : 'transparent',
+                color: layoutView === 'split' ? '#FFFFFF' : theme.textSecondary,
+                border: 'none',
+                borderRadius: 16,
+                padding: '4px 10px',
+                fontSize: 11.5,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4
+              }}
+            >
+              <span>⚡ Split View</span>
+            </button>
+            <button
+              type="button"
               onClick={() => handleSetLayoutView('zone')}
               style={{
                 background: layoutView === 'zone' ? '#FA541C' : 'transparent',
