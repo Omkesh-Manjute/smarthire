@@ -31,6 +31,25 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-17 — Wellfound UI/UX Front Page Redesign (`https://wellfound.com/jobs`), AdSense Sidebar & Similar Jobs Footer
+- **Wellfound UI/UX Redesign (`WellfoundCareersView.jsx`, `PublicCareers.jsx`)**:
+  - Implemented high-density Wellfound styling using `Plus Jakarta Sans` / `Inter`, dark `#0A0E1A` high-contrast typography, and coral `#F43F5E` accents.
+  - Top navigation bar featuring iconic `smarthire:` branding with red dot colon, navigation tabs, theme toggle, and top authentication (`Log in` and `Create profile / Sign In` pill).
+  - Hero section featuring `Find what's next:` headline, dual search pill (`🔍 Job title` | `📍 Location` | `Search` button), and 3-card "Trending direct clients hiring now" grid.
+  - Categorized job feeds (`Trending direct client jobs`, `Engineering jobs`, `Data and Analytics jobs`, `Cloud & Infrastructure jobs`, `Management & Public Sector jobs`).
+  - Job rows feature company logo badges, metadata, and a single clean **`View Job`** button (no Save button, no direct Apply button on rows).
+- **Google AdSense Right Sticky Sidebar**:
+  - Removed side login/signup card to monetize sidebar space with dedicated **Google AdSense responsive ad units** (`SPONSORED / ADVERTISEMENT`) ready for publisher ID approval.
+  - Added "Level up your job search" benefit checklist card matching reference screenshots.
+- **Full JD View & Similar Jobs Recommendation Footer**:
+  - Clicking `View Job` or a card opens the full Job Description modal (second page/view).
+  - Prominent **`Apply for this position` (Apply Now)** button placed at the bottom of the job description.
+  - Added algorithmic **"Similar jobs you may be interested in"** footer matching 3 related opportunities by skills, domain, and work mode with 1-click view/switch.
+- **Production Build & Live Deployment**:
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings (built in 2.37s).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 2.16s).
+  - Deployed to AWS Lightsail server, PM2 `smarthire-ats` online, verified HTTP 200 on `https://smarthireus.com/jobs`.
+
 ### 2026-09-17 — Site-Wide Professional Symbol & Emoji Cleanup
 - **Complete Symbol & Emoji Removal Across Entire Website**:
   - Removed all stars (`⭐`, `⭐️`, `★`, `☆`), diamonds (`💎`), fire/flames (`🔥`), and lightning bolts (`⚡`) across public and recruiter pages.
