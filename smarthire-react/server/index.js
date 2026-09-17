@@ -8445,6 +8445,7 @@ app.post('/api/recruiter/sync-email-resumes', express.json(), async (req, res) =
         matchScore: 97
       }
     ];
+  }
 
     const requestedFolders = scanFolders.map(f => f.toUpperCase());
     const eligiblePool = incomingHarvestedResumes.filter(item => 
