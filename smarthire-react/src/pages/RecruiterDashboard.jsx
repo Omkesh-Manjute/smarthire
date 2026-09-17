@@ -1784,14 +1784,16 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       }
     } catch (e) {}
 
-    // Read from localStorage for all searchKeys
+    // Read from localStorage for all searchKeys and deduplicate
     let localCandidates = []
     searchKeys.forEach(k => {
       try {
         const raw = localStorage.getItem(`smarthire_potential_candidates_${k}`)
         if (raw) {
           const parsed = JSON.parse(raw)
-          if (Array.isArray(parsed)) localCandidates.push(...parsed)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            localCandidates = deduplicateCandidates([...localCandidates, ...parsed])
+          }
         }
       } catch (e) {}
     })
@@ -10213,7 +10215,17 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                     lastChangedOn: new Date().toLocaleDateString()
                   }
 
-                  const updatedSubmissions = [subObj, ...existingSubmissions.filter(s => s.id !== candId)]
+                  const normFullName = fullName.toLowerCase().trim()
+                  const normEmail = (candidateIntakeData.email || '').toLowerCase().trim()
+                  const filteredSubs = existingSubmissions.filter(s => {
+                    if (!s) return false
+                    const sId = String(s.id || s.canId || s.candidateId || '').trim()
+                    if (sId && sId === candId) return false
+                    if (normEmail && (s.email || '').toLowerCase().trim() === normEmail) return false
+                    if (normFullName && (s.name || '').toLowerCase().trim() === normFullName) return false
+                    return true
+                  })
+                  const updatedSubmissions = deduplicateCandidates([subObj, ...filteredSubs])
                   try {
                     localStorage.setItem(`smarthire_potential_candidates_${cleanReqId}`, JSON.stringify(updatedSubmissions))
                     localStorage.setItem(`smarthire_potential_candidates_${resolvedCleanId}`, JSON.stringify(updatedSubmissions))
@@ -10579,9 +10591,16 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                 } catch (err) {}
 
                 const dateStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                const targetCandId = assignTargetCandidate.id || assignTargetCandidate.canId || assignTargetCandidate.candidateId || `CAND-${Date.now().toString().slice(-5)}`
                 const newSubObj = {
-                  id: `CAND-${Date.now().toString().slice(-5)}`,
+                  ...assignTargetCandidate,
+                  id: targetCandId,
+                  candidateId: targetCandId,
                   name: assignTargetCandidate.name,
+                  email: assignTargetCandidate.email || '',
+                  phone: assignTargetCandidate.phone || '',
+                  role: assignTargetCandidate.role || assignTargetCandidate.jobTitle || 'Candidate',
+                  jobTitle: assignTargetCandidate.jobTitle || assignTargetCandidate.role || 'Candidate',
                   payRate: `$${String(assignProposedRate).replace(/[^0-9]/g, '') || '75'}/hr`,
                   payRateType: assignRateType || 'C2C',
                   assignedBy: userName,
@@ -10595,10 +10614,24 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                   lastChangedOn: dateStr
                 }
 
-                const merged = [newSubObj, ...existingList]
+                const candNameNorm = (assignTargetCandidate.name || '').toLowerCase().trim()
+                const candEmailNorm = (assignTargetCandidate.email || '').toLowerCase().trim()
+                const filteredExisting = existingList.filter(c => {
+                  if (!c) return false
+                  const cId = String(c.id || c.canId || c.candidateId || '').trim()
+                  if (cId && cId === targetCandId) return false
+                  if (candEmailNorm && (c.email || '').toLowerCase().trim() === candEmailNorm) return false
+                  if (candNameNorm && (c.name || '').toLowerCase().trim() === candNameNorm) return false
+                  return true
+                })
+                const merged = deduplicateCandidates([newSubObj, ...filteredExisting])
                 try {
                   localStorage.setItem(`smarthire_potential_candidates_${cleanReqId}`, JSON.stringify(merged))
+                  localStorage.setItem(`smarthire_potential_candidates_J-${cleanReqId}`, JSON.stringify(merged))
                 } catch (err) {}
+
+                // Save to Firestore
+                saveRequisitionCandidates(cleanReqId, merged).catch(() => {})
 
                 pushActivityNotification({
                   title: 'Candidate Assigned to Requisition',
@@ -10609,7 +10642,7 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                   actorRole: isEmployee ? 'Employee' : 'Recruiter',
                   reqId: cleanReqId,
                   candidateName: assignTargetCandidate.name,
-                  candidateId: assignTargetCandidate.id
+                  candidateId: targetCandId
                 })
 
                 if (String(selectedReq?.id || '').replace('J-', '') === cleanReqId) {
@@ -10834,9 +10867,16 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
             onAssignCandidate={(cand, targetJob) => {
               const cleanReqId = String(targetJob?.id || '158938').replace('J-', '')
               const dateStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+              const candId = cand.id || cand.canId || cand.candidateId || `875${Math.floor(10 + Math.random() * 90)}`
               const newSubObj = {
-                id: cand.id || `875${Math.floor(10 + Math.random() * 90)}`,
+                ...cand,
+                id: candId,
+                candidateId: candId,
                 name: cand.name,
+                email: cand.email || '',
+                phone: cand.phone || '',
+                role: cand.role || cand.jobTitle || targetJob.title || 'Candidate',
+                jobTitle: targetJob.title || cand.jobTitle || cand.role || 'Candidate',
                 payRate: cand.payRate || targetJob.budget || '74/hr',
                 payRateType: cand.rateType || 'C2C',
                 assignedBy: userName,
@@ -10850,13 +10890,23 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                 lastChangedOn: dateStr
               }
 
-              // Save to requisition potential candidates
+              // Save to requisition potential candidates with deduplication
               const existingRaw = localStorage.getItem(`smarthire_potential_candidates_${cleanReqId}`)
               let existingList = []
               if (existingRaw) {
                 try { existingList = JSON.parse(existingRaw) } catch (e) {}
               }
-              const merged = [newSubObj, ...existingList.filter(c => c.name !== cand.name)]
+              const candNameNorm = (cand.name || '').toLowerCase().trim()
+              const candEmailNorm = (cand.email || '').toLowerCase().trim()
+              const filteredExisting = existingList.filter(c => {
+                if (!c) return false
+                const cId = String(c.id || c.canId || c.candidateId || '').trim()
+                if (cId && cId === candId) return false
+                if (candEmailNorm && (c.email || '').toLowerCase().trim() === candEmailNorm) return false
+                if (candNameNorm && (c.name || '').toLowerCase().trim() === candNameNorm) return false
+                return true
+              })
+              const merged = deduplicateCandidates([newSubObj, ...filteredExisting])
               try {
                 localStorage.setItem(`smarthire_potential_candidates_${cleanReqId}`, JSON.stringify(merged))
                 localStorage.setItem(`smarthire_potential_candidates_J-${cleanReqId}`, JSON.stringify(merged))
@@ -10864,11 +10914,11 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
 
               // Save to Firestore
               saveRequisitionCandidates(cleanReqId, merged).catch(() => {})
-              saveCandidate(newSubObj.id, {
+              saveCandidate(candId, {
                 ...cand,
                 ...newSubObj,
-                canId: newSubObj.id,
-                id: newSubObj.id,
+                canId: candId,
+                id: candId,
                 reqId: cleanReqId,
                 job_id: `J-${cleanReqId}`,
                 recruiter: userName,

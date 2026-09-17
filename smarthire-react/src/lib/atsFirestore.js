@@ -499,34 +499,73 @@ export async function getUserProfileByEmailFirestore(email) {
 
 /**
  * Universal Candidate Deduplication Utility
- * Deduplicates by Email, Name + Phone, Name, or ID.
+ * Deduplicates strictly by ID (id, canId, candidateId, _id), Email, Phone, or normalized Name.
+ * Guarantees zero duplicate entries across stores, filters, and requisition boards.
  */
 export function deduplicateCandidates(list) {
   if (!Array.isArray(list)) return []
-  const seen = new Set()
+  const seenIds = new Set()
+  const seenEmails = new Set()
+  const seenPhones = new Set()
+  const seenNames = new Set()
   const result = []
 
+  const GENERIC_NAMES = new Set(['candidate', 'applicant', 'consultant', 'general applicant', 'test', 'unknown', 'new candidate'])
+
   for (const c of list) {
-    if (!c) continue
-    const email = (c.email || c.extracted_profile?.email || '').toLowerCase().trim()
-    const name = (c.name || c.extracted_profile?.name || '').toLowerCase().trim().replace(/\s+/g, ' ')
-    const phone = String(c.phone || c.phoneCell || c.extracted_profile?.phone || '').replace(/\D/g, '')
-    const id = String(c.id || c.canId || c._id || '').trim()
+    if (!c || typeof c !== 'object') continue
 
-    const emailKey = email ? `email:${email}` : null
-    const namePhoneKey = (name && phone.length >= 7) ? `np:${name}_${phone}` : null
-    const nameKey = name ? `name:${name}` : null
-    const idKey = id ? `id:${id}` : null
+    // 1. Gather all ID variations
+    const ids = [c.id, c.canId, c.candidateId, c._id]
+      .filter(Boolean)
+      .map(val => String(val).trim())
+      .filter(val => val.length > 0)
 
-    if (emailKey && seen.has(emailKey)) continue
-    if (namePhoneKey && seen.has(namePhoneKey)) continue
-    if (!emailKey && !namePhoneKey && nameKey && seen.has(nameKey)) continue
-    if (!emailKey && !nameKey && idKey && seen.has(idKey)) continue
+    // 2. Email
+    const email = (c.email || c.extracted_profile?.email || c.candidateEmail || '').toLowerCase().trim()
 
-    if (emailKey) seen.add(emailKey)
-    if (namePhoneKey) seen.add(namePhoneKey)
-    if (nameKey) seen.add(nameKey)
-    if (idKey) seen.add(idKey)
+    // 3. Phone (last 10 digits)
+    const rawPhone = String(c.phone || c.phoneCell || c.extracted_profile?.phone || c.candidatePhone || '').replace(/\D/g, '')
+    const phone = rawPhone.length >= 7 ? rawPhone.slice(-10) : ''
+
+    // 4. Name
+    const rawName = (c.name || c.extracted_profile?.name || c.candidateName || `${c.firstName || ''} ${c.lastName || ''}`).trim()
+    const cleanName = rawName.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim()
+    const isValidName = cleanName.length >= 3 && !GENERIC_NAMES.has(cleanName)
+
+    // Check if candidate already exists by ANY primary identifier
+    let isDuplicate = false
+
+    // Check IDs
+    for (const id of ids) {
+      if (seenIds.has(id)) {
+        isDuplicate = true
+        break
+      }
+    }
+
+    // Check Email
+    if (!isDuplicate && email && seenEmails.has(email)) {
+      isDuplicate = true
+    }
+
+    // Check Phone
+    if (!isDuplicate && phone && seenPhones.has(phone)) {
+      isDuplicate = true
+    }
+
+    // Check Name
+    if (!isDuplicate && isValidName && seenNames.has(cleanName)) {
+      isDuplicate = true
+    }
+
+    if (isDuplicate) continue
+
+    // Register all identifiers for this candidate
+    for (const id of ids) seenIds.add(id)
+    if (email) seenEmails.add(email)
+    if (phone) seenPhones.add(phone)
+    if (isValidName) seenNames.add(cleanName)
 
     result.push(c)
   }

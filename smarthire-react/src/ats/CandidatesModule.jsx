@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import CandidateMessengerWidget from '../components/CandidateMessengerWidget'
 import CandidateDetailViewModal from '../components/CandidateDetailViewModal'
-import { saveRequisitionCandidates, saveCandidate } from '../lib/atsFirestore'
+import { saveRequisitionCandidates, saveCandidate, deduplicateCandidates } from '../lib/atsFirestore'
 import { resolveReqId } from '../utils/formatJobDescription'
 
 // Helper to reliably extract timestamp from candidate for newest-first sorting
@@ -505,10 +505,17 @@ function CandidatesModule({
         const existingRaw = localStorage.getItem(`smarthire_potential_candidates_${tKey}`) ||
                             localStorage.getItem(`smarthire_potential_candidates_J-${tKey}`)
         let existingList = []
-        if (existingRaw) {
-          try { existingList = JSON.parse(existingRaw) } catch (e) {}
-        }
-        const merged = [newSubObj, ...existingList.filter(c => (c.name || '').toLowerCase() !== candName.toLowerCase() && c.id !== candidateId && c.candidateId !== candidateId)]
+        const candNameNorm = (candName || '').toLowerCase().trim()
+        const candEmailNorm = (candidate.email || candidate.extracted_profile?.email || '').toLowerCase().trim()
+        const filteredList = existingList.filter(c => {
+          if (!c) return false
+          const cId = String(c.id || c.canId || c.candidateId || '').trim()
+          if (cId && (cId === candidateId || cId === newSubObj.id)) return false
+          if (candEmailNorm && (c.email || '').toLowerCase().trim() === candEmailNorm) return false
+          if (candNameNorm && (c.name || '').toLowerCase().trim() === candNameNorm) return false
+          return true
+        })
+        const merged = deduplicateCandidates([newSubObj, ...filteredList])
         localStorage.setItem(`smarthire_potential_candidates_${tKey}`, JSON.stringify(merged))
         localStorage.setItem(`smarthire_potential_candidates_J-${tKey}`, JSON.stringify(merged))
       } catch (e) {}

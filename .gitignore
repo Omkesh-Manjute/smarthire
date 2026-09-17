@@ -23,6 +23,7 @@ logs/
 # Build outputs
 dist/
 dist-ssr/
+dist.tar.gz
 
 # IDE & Editor files
 .vscode/
