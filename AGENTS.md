@@ -31,6 +31,30 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-18 — Yahoo Sent Folder IMAP Append, Real Spam ("Bulk") Ingestion with Auto-Mark Read, 5-Min Cron & Domain-Aware AI Job Matching
+- **Yahoo Mail "Sent" Folder Sync (`appendEmailToSentFolder` in `email-imap-scraper.js`, `server/index.js`)**:
+  - Solved root issue where outbound emails dispatched via SMTP (`smtp.bizmail.yahoo.com:465`) never appeared in Yahoo webmail's "Sent" folder (`mail.yahoo.com/d/folders/2`).
+  - Added direct TLS IMAP `APPEND "Sent" (\Seen)` implementation appending raw RFC822 messages to the Yahoo Sent folder simultaneously upon SMTP dispatch.
+  - Wired into `/api/recruiter/send-email` and `/api/recruiter/send-direct-email`. Verified live with test email to `omkesh@coolsofttech.com` (confirmed in PM2 logs: `✅ Outbound email successfully appended to Yahoo IMAP "Sent" folder`).
+- **Real Yahoo Spam Ingestion & Auto-Mark as Read (`email-imap-scraper.js`)**:
+  - Identified correct IMAP server hostname `imap.mail.yahoo.com:993` (fixed NXDOMAIN on `imap.bizmail.yahoo.com`).
+  - Resolved Yahoo Mail mailbox technical naming: mapped `'SPAM'`, `'JUNK'`, `'BULK'` to Yahoo's technical folder name `"Bulk"`.
+  - Added multi-folder scraping scanning both `Inbox` and `Bulk` (Yahoo Spam).
+  - Implemented automatic read tagging via IMAP `UID STORE <uid> +FLAGS (\Seen)` on all ingested emails so scraped emails are marked as Read in Yahoo Mail.
+  - Successfully scraped 66 candidates (e.g., Abubakar Siddik, Chandana Inukollu, Stacy Hold, Satya L, Mathews Dasari, etc.) from Yahoo Spam and Inbox.
+- **5-Minute Continuous Background Auto-Sync (`server/index.js`, `RecruiterInbox.jsx`)**:
+  - Implemented an automated 5-minute background interval timer (`setInterval`) in the Express server to continuously poll both Yahoo Inbox and Spam ("Bulk") for new resume submissions, ingest candidates, and mark them as read.
+  - Added automated 5-minute UI polling in `RecruiterInbox.jsx` so the frontend inbox stays fresh without manual reloads.
+- **Domain-Aware Multi-Criteria AI Job Matchmaker (`evaluateCandidateJobMatch` in `server/index.js`)**:
+  - Replaced naive round-robin (`activeJobs[idx % activeJobs.length]`) and arbitrary keyword ratios that previously generated inaccurate matches (e.g. QA or Network candidates matched to Java or Lawyer requisitions).
+  - Introduced `DOMAIN_TAXONOMY` across 7 technical tracks (`SOFTWARE_ENGINEERING`, `QA_TESTING`, `DATA_AI`, `CLOUD_DEVOPS`, `SECURITY_NETWORK`, `PROJECT_MANAGEMENT`, `LEGAL_GOVERNANCE`).
+  - Applied cross-domain mismatch ceilings (max 45%) and mandatory core skills evaluation.
+  - Candidates with <65% fit are truthfully designated as `"Talent Pool (No active requisition match)"` under `"General Sourcing Pool"` rather than forcing artificial high match scores.
+  - Matches verified live: Abubakar Siddik -> `Java Developer III - Rebid` (71%), Chandana Inukollu -> `AWS / Java Developer` (68%), Satya L -> `Project Manager- Expert` (73%).
+- **Verification & Deployment**:
+  - Git committed and pushed to GitHub `origin/main` (`039d460`).
+  - Lightsail server updated, PM2 `smarthire-ats` online, candidate store active at 64 candidates.
+
 ### 2026-09-18 — Document Auto-Rotation, Auto-Generated Interaction Notes, Refined AI Match Engine & Square Form Inputs
 - **Document Viewer Auto-Rotation & Manual Control (`CandidateDetailViewModal.jsx`)**:
   - Added `imgRotation` per-document state with automatic reset when switching doc tabs.
@@ -59,6 +83,78 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
   - Git committed (`3864529`).
   - Uploaded `dist.tar.gz` to AWS Lightsail server (`34.194.119.199`), extracted to both `/home/ubuntu/smarthire/dist/` and `/home/ubuntu/smarthire/smarthire-react/dist/`, restarted PM2 `smarthire-ats`.
   - Verified HTTP 200 OK and active bundle `index-C51pgk62.js` on `https://smarthireus.com/jobs`.
+
+### 2026-09-18 — Candidate Legal Document Persistence, Live Preview & Cross-Requisition Sync
+- **Root Cause Fixed**: Previously only `resume` was saved; all other legal docs (visa, DL front/back, RTR, SSN, coversheet) were silently dropped because `handleSelectExistingCandidate` never loaded docs from localStorage, and `onUpdateCandidate` only updated `candidates` state (not `potentialCandidates`).
+- **`RecruiterDashboard.jsx` — 8 targeted fixes**:
+  - `handleSelectExistingCandidate`: Now loads `smarthire_candidate_docs_${id}` from localStorage across all candidate ID aliases (`id`, `canId`, `_id`, `candidateId`, `candId`). Passes `legalDocs`/`documents` into `setSubmissionCandidate` and `setSelectedViewCandidate`.
+  - Subtab 4 "Legal & Compliance" (resumeSubmission mode): Replaced static mock cards with fully interactive IIFE — reads real docs, renders green border for uploaded / amber for missing, shows filename + size, `View ↗` + `Upload/Replace` buttons, saves to localStorage across all ID keys, updates `setPotentialCandidates`/`setCandidates`, calls `saveRequisitionCandidates`.
+  - Right-panel document viewer: Real PDF/image preview (`<iframe>`/`<img>`), real download button, upload fallback that saves across localStorage/Firestore/state.
+  - `potentialCandidates` table: Shows green `📎 N Doc(s)` badge next to candidate name when docs exist.
+  - Candidate intake submit: Loads existing docs first, merges `candidateIntakeData.legalDocs`, adds resume, saves merged set to localStorage.
+  - `onUpdateCandidate` for `CandidateDetailViewModal`: Now updates both `candidates` AND `potentialCandidates`, persists to all localStorage key variants.
+  - `onAssignCandidate` in AI match modal: Resolves and attaches `legalDocs`/`documents` to `newSubObj`.
+  - `filteredJobs` useMemo: Fixed `const list` declaration replacing `return jobs.filter(...)` directly.
+  - **`handleSelectJob` undeclared identifier fix**: Replaced all 3 usages of `handleSelectJob(matchingJob)` (lines 5181, 5193, 5281) with `handleOpenReq(matchingJob)`.
+- **`CandidatesModule.jsx` — 3 fixes**:
+  - `executePushCandidate` newSubObj: Added `candLegalDocs` resolution + attachment.
+  - `executePushCandidate` updatedCand: Added `legalDocs`/`documents` fields.
+  - `onUpdateCandidate`: Now saves to `smarthire_all_candidates` in localStorage before `fetchCandidates`.
+- **`CandidateDetailViewModal.jsx`** (prior session): Multi-key document initialization, auto-sync on upload, live document preview.
+- **`atsFirestore.js`** (prior session): Strips base64 `fileData` from `legalDocs` before Firestore save (avoids 1MB limit).
+- **Pre-Deployment & Verification**:
+  - AST Scope Checker: 0 undeclared identifiers across all 5 components.
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings (built in 2.19s).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 2.09s).
+  - Git committed locally (`e97529e`). GitHub push blocked by network policy — deployed directly via SCP.
+  - Uploaded `dist.tar.gz` to AWS Lightsail server (`34.194.119.199`), extracted to `/home/ubuntu/smarthire/smarthire-react/dist/`, restarted PM2 `smarthire-ats`.
+  - Verified HTTP 200 OK and active bundle `index-CzRz2j0h.js` on `https://smarthireus.com/jobs`.
+
+
+- **Unpacked Inline Bullets & Real Line-by-Line Lists (`WellfoundCareersView.jsx`, `formatJobDescription.js`)**:
+  - Resolved the issue where raw descriptions with inline bullets (` • `) were collapsed into a single wall of text under "About the Role".
+  - Created automatic inline bullet detection and unpacking in `parseWellfoundJobDetails` and `formatJobDescription`:
+    - Summary text is cleanly separated from responsibilities (e.g. for `Custodial Worker 1`, extracts the clean 2-sentence intro and cleanly isolates all 9 individual duties into separate bullets).
+    - Unpacks any nested inline bullets inside `responsibilities` and `requiredSkills` into individual line-by-line bullet items.
+    - Stripped out boilerplate legal/EEO disclaimers (`Pursuant to the State of Tennessee policy of non-discrimination...`) from candidate bullet lists.
+- **Pixel-Perfect Wellfound Typography & Structure (`media_1789661181739.png`)**:
+  - Re-ordered and renamed sections to match the exact Wellfound screenshot:
+    1. **`About the Role`** (crisp 15px text, line-height 1.75, high-contrast dark charcoal `#1E293B`).
+    2. **`What You'll Do`** (standard indented bulleted list `<ul><li>` with disc bullets, line-height 1.65, gap 10px).
+    3. **`Who You Are (All Levels)`** (clean line-by-line requirements with automatic bolding before colons e.g. `• Performing General Physical Activities: Sweeps, mops...`).
+    4. **`Preferred Qualifications`** (if present in the req).
+    5. **`About the Company`** (clean enterprise intro).
+    6. **`Project & Engagement Specifications`** (clean key-value card matrix).
+  - High-contrast text color `#1E293B` (light mode) / `#E2E8F0` (dark mode) and `#0A0E1A` headings.
+- **Pre-Deployment & Verification**:
+  - AST Scope Checker: 0 undeclared variables across all components.
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings (built in 2.96s).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 2.11s).
+  - Git committed (`e6eda3e`) and pushed to GitHub `origin/main`.
+  - Uploaded `dist.tar.gz` to AWS Lightsail server (`34.194.119.199`), extracted, and restarted PM2 `smarthire-ats`.
+  - Verified HTTP 200 OK and active bundle `index-BvFx2pW1.js` on `https://smarthireus.com/jobs`.
+
+### 2026-09-17 — Unified Wellfound Job Description Formatting, Recruiter Contact Removal & Req Number Removal
+- **Seamless JD Section Unification (`WellfoundCareersView.jsx`)**:
+  - Completely eliminated the disjointed gray container box and raw `==============================` ASCII dividers previously rendered under "TECHNICAL SPECIFICATIONS & CLIENT DETAILS".
+  - Upgraded `parseWellfoundJobDetails` to parse the real requisition description dynamically:
+    - Extracts real project summary/objective as **`About the Role & Project Objective`**.
+    - Extracts real requisition bullet points as **`Key Roles & Responsibilities`** styled with coral bullet dots.
+    - Extracts real required technical skills as **`Required Technical Proficiencies & Skills`** styled with emerald checkmark icons.
+    - Extracts preferred domain skills as **`Preferred Qualifications & Domain Skills`** (if present) styled with indigo checkmark icons.
+    - Formats project specifications (Work Arrangement, Interview Format, Engagement Type) into clean, modern key-value spec cards in the exact same Wellfound typography.
+- **Hiring Contact Name Permanently Removed**:
+  - Completely eliminated `resolveRecruiterContact` and hardcoded recruiter name `Sarah J. Thorne`.
+  - Replaced the hiring contact card in the 2-column attribute matrix with a balanced **`CONTRACT ENGAGEMENT`** block (`Contract · Direct Client W2 / C2C`).
+- **Req Number Removal from Public Candidate View**:
+  - Removed `<span>•</span><span>Req #{resolveReqId(selectedJob)}</span>` from the subtitle metadata row under the job title. Requisition IDs are now 100% hidden from candidate view.
+- **Pre-Deployment & Verification**:
+  - AST Scope Checker: 0 undeclared variables across all components.
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings (built in 2.02s).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 1.93s).
+  - Git committed (`59a0f1b`) and pushed to GitHub `origin/main`.
+  - Uploaded `dist.tar.gz` to AWS Lightsail server (`34.194.119.199`), extracted, and restarted PM2 `smarthire-ats`.
+  - Verified HTTP 200 OK and active bundle `index-DlXd6Wkq.js` on `https://smarthireus.com/jobs`.
 
 ### 2026-09-17 — Wellfound Page 1 & Page 2 Separation, Technical Specs Scroll Removal, Multi-Column Footer & Full SEO Suite
 - **Page 1 vs Page 2 Separation (`WellfoundCareersView.jsx`, `PublicCareers.jsx`)**:
