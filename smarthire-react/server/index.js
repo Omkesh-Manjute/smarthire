@@ -387,6 +387,105 @@ const candidatesDbPath = path.resolve(__dirname, 'candidates.json')
 // ─── Candidates Store (persisted to MongoDB or disk) ──────────────────────────
 let candidatesStore = []
 
+function cleanMimeEmail(raw) {
+  let attachmentNames = [];
+  if (!raw) return { textBody: '', attachmentNames: [] };
+
+  // 1. Detect attachments
+  const attachMatches = raw.matchAll(/(?:filename|name)=["']?([^"'\r\n;]+)["']?/gi);
+  for (const m of attachMatches) {
+    const fn = m[1].trim();
+    if (fn.toLowerCase().endsWith('.pdf') || fn.toLowerCase().endsWith('.doc') || fn.toLowerCase().endsWith('.docx')) {
+      if (!attachmentNames.includes(fn)) attachmentNames.push(fn);
+    }
+  }
+
+  // 2. Separate parts by boundary if multipart
+  const boundaryMatch = raw.match(/boundary=["']?([^"'\r\n;]+)["']?/i);
+  let textBody = '';
+
+  if (boundaryMatch) {
+    const boundary = boundaryMatch[1].replace(/["']/g, '');
+    const escaped = boundary.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const parts = raw.split(new RegExp('--' + escaped));
+    
+    for (const part of parts) {
+      if (/Content-Type:\s*text\/plain/i.test(part)) {
+        const bodyStart = part.search(/\r?\n\r?\n/);
+        if (bodyStart !== -1) {
+          textBody = part.slice(bodyStart).trim();
+          break;
+        }
+      }
+    }
+    if (!textBody) {
+      for (const part of parts) {
+        if (/Content-Type:\s*text\/html/i.test(part)) {
+          const bodyStart = part.search(/\r?\n\r?\n/);
+          if (bodyStart !== -1) {
+            textBody = part.slice(bodyStart).trim();
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  if (!textBody) {
+    const headerEndMatch = raw.search(/\r?\n\r?\n/);
+    textBody = headerEndMatch !== -1 ? raw.slice(headerEndMatch).trim() : raw;
+  }
+
+  // 3. Clean Quoted-Printable
+  textBody = textBody
+    .replace(/=\r?\n/g, '')
+    .replace(/=C2=A0/gi, ' ')
+    .replace(/=E2=80=99/gi, "'")
+    .replace(/=E2=80=9C/gi, '"')
+    .replace(/=E2=80=9D/gi, '"')
+    .replace(/=E2=80=93/gi, '-')
+    .replace(/=3D/gi, '=')
+    .replace(/=([A-F0-9]{2})/gi, (_, hex) => {
+      try { return String.fromCharCode(parseInt(hex, 16)); } catch(e) { return ''; }
+    });
+
+  // 4. Strip HTML tags
+  textBody = textBody
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&#39;/gi, "'")
+    .replace(/&quot;/gi, '"');
+
+  // 5. Strip any base64 lines, MIME header remnants, or boundaries
+  const lines = textBody.split(/\r?\n/);
+  const cleanLines = lines.filter(line => {
+    const trimmed = line.trim();
+    if (!trimmed) return true;
+    if (trimmed.length > 30 && !trimmed.includes(' ') && /^[A-Za-z0-9+/=]+$/.test(trimmed)) {
+      return false;
+    }
+    if (/^(Content-Type|Content-Disposition|Content-Transfer-Encoding|Content-ID|X-Attachment-Id):/i.test(trimmed)) {
+      return false;
+    }
+    if (/^--[a-zA-Z0-9_-]+--?$/.test(trimmed)) {
+      return false;
+    }
+    if (/^BODY\[TEXT\]/i.test(trimmed)) {
+      return false;
+    }
+    return true;
+  });
+
+  textBody = cleanLines.join('\n').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+
+  return { textBody, attachmentNames };
+}
+
 function normalizeAndDeduplicateCandidates(list) {
   if (!Array.isArray(list)) return [];
   const seen = new Set();
@@ -411,13 +510,28 @@ function normalizeAndDeduplicateCandidates(list) {
       ? c.role 
       : (p.role || (skills.length > 0 ? `${skills[0]} Specialist` : 'Software Specialist'));
 
+    const rawCandPhone = c.phone || p.phone || '';
+    const cleanPhone = (rawCandPhone && !rawCandPhone.includes('555') && !rawCandPhone.includes('010-0000') && !rawCandPhone.includes('000-0000')) ? rawCandPhone : '';
+
+    const rawResume = c.resumeText || p.raw_text || c.email_context?.body || '';
+    let cleanResume = rawResume;
+    let detectedAttachment = c.attachmentName || null;
+    if (rawResume && (rawResume.includes('Content-Type:') || rawResume.includes('boundary=') || rawResume.includes('BODY[TEXT]') || rawResume.includes('base64') || rawResume.includes('Content-Disposition:'))) {
+      const cleaned = cleanMimeEmail(rawResume);
+      cleanResume = cleaned.textBody;
+      if (!detectedAttachment && cleaned.attachmentNames && cleaned.attachmentNames.length > 0) {
+        detectedAttachment = cleaned.attachmentNames[0];
+      }
+    }
+
     normalized.push({
       ...c,
       id: candId,
       candidate_id: candId,
       name: rawName || 'Candidate',
       email: rawEmail || '',
-      phone: c.phone || p.phone || '+1 (555) 010-0000',
+      phone: cleanPhone,
+      attachmentName: detectedAttachment,
       role: cleanRole,
       location: c.location || p.location || 'Remote / US',
       skills: skills.length > 0 ? skills : ['Java', 'SQL', 'Cloud Technologies'],
@@ -425,7 +539,7 @@ function normalizeAndDeduplicateCandidates(list) {
       visaStatus: c.visaStatus || c.visa_status || 'US Citizen',
       targetReqId: c.targetReqId || (c.job_id && c.job_id !== 'J-DEFAULT' ? String(c.job_id).replace(/^J-/, '') : null),
       matchScore: c.matchScore || c.jd_match?.match_score || 70,
-      resumeText: c.resumeText || p.raw_text || c.email_context?.body || ''
+      resumeText: cleanResume
     });
   }
 
@@ -8481,7 +8595,7 @@ async function syncEmailResumesInternal(recruiterEmail = 'omkesh@coolsofttech.co
           return {
             name: item.name || 'Candidate',
             email: item.email,
-            phone: item.phone || '+1 (555) 010-0000',
+            phone: (item.phone && !item.phone.includes('555') && !item.phone.includes('010-0000') && !item.phone.includes('000-0000')) ? item.phone : '',
             role: item.role || (hasReqFit ? bestJob.title : 'IT Specialist'),
             location: 'Remote / US',
             skills: (item.skills && item.skills.length > 0) ? item.skills : (hasReqFit ? bestJob.skills : ['Java', 'SQL', 'Cloud']),
@@ -8495,7 +8609,8 @@ async function syncEmailResumesInternal(recruiterEmail = 'omkesh@coolsofttech.co
             matchedJobTitle: hasReqFit ? bestJob.title : 'Talent Pool (No active requisition match)',
             matchedJobClient: hasReqFit ? (bestJob.client || bestJob.customer || 'Direct Client') : 'General Sourcing Pool',
             matchedJobRate: hasReqFit ? (bestJob.budget || bestJob.rate || '$75/hr') : '$70/hr',
-            resumeText: item.resumeText || ''
+            resumeText: item.resumeText || '',
+            attachmentName: item.attachmentName || null
           };
         });
       }
@@ -8547,7 +8662,8 @@ async function syncEmailResumesInternal(recruiterEmail = 'omkesh@coolsofttech.co
         matchedJobTitle: item.matchedJobTitle,
         matchedJobClient: item.matchedJobClient,
         matchedJobRate: item.matchedJobRate,
-        resumeText: item.resumeText || ''
+        resumeText: item.resumeText || '',
+        attachmentName: item.attachmentName || null
       };
 
       candidatesStore.unshift(newCand);

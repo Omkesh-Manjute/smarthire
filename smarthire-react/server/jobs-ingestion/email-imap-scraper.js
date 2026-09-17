@@ -2,6 +2,7 @@ import tls from 'tls';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { cleanMimeEmail } from './clean-mime.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -342,9 +343,18 @@ export async function scrapeResumesFromIMAP({
         const dateMatch = msgChunk.match(/Date:\s*([^\r\n]+)/i);
         const date = dateMatch ? dateMatch[1].trim() : new Date().toISOString();
 
-        // Extract Phone Number if present in body
-        const phoneMatch = msgChunk.match(/(?:\+?1[-.\s]?)?\(?[2-9]\d{2}\)?[-.\s]?\d{3}[-.\s]?\d{4}/);
-        const phone = phoneMatch ? phoneMatch[0].trim() : '+1 (555) 010-0000';
+        // Extract Phone Number if present in body (ignore MIME boundary zeros like 000000000000)
+        let phone = '';
+        const cleanForPhone = msgChunk.replace(/--0+[a-z0-9_-]+/gi, '').replace(/BODY\[TEXT\][^\n]*/gi, '');
+        const phoneMatch = cleanForPhone.match(/(?:(?:\+?1\s*(?:[.-]\s*)?)?(?:\(\s*([2-9]\d{2})\s*\)|([2-9]\d{2}))\s*(?:[.-]\s*)?([2-9]\d{2})\s*(?:[.-]\s*)?(\d{4}))/);
+        if (phoneMatch) {
+          const area = phoneMatch[1] || phoneMatch[2];
+          const mid = phoneMatch[3];
+          const last = phoneMatch[4];
+          if (area !== '555' && mid !== '010' && last !== '0000') {
+            phone = `+1 (${area}) ${mid}-${last}`;
+          }
+        }
 
         // Detect technical skills from Subject and Body
         const lowerChunk = msgChunk.toLowerCase();
@@ -392,33 +402,13 @@ export async function scrapeResumesFromIMAP({
             });
           }
 
-          // Extract and clean email body text to use as real candidate resume text
-          let cleanBody = '';
-          const headerEndMatch = msgChunk.search(/\r?\n\r?\n/);
-          if (headerEndMatch !== -1) {
-            cleanBody = msgChunk.slice(headerEndMatch).trim();
-          } else {
-            cleanBody = msgChunk;
-          }
-          // Clean HTML tags & MIME artifacts
-          cleanBody = cleanBody
-            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-            .replace(/<[^>]+>/g, ' ')
-            .replace(/&nbsp;/gi, ' ')
-            .replace(/&amp;/gi, '&')
-            .replace(/&lt;/gi, '<')
-            .replace(/&gt;/gi, '>')
-            .replace(/=\r?\n/g, '')
-            .replace(/\r\n/g, '\n')
-            .replace(/[ \t]+/g, ' ')
-            .replace(/\n{3,}/g, '\n\n')
-            .trim();
+          // Extract and clean email body text and attachment names (stripping base64 & MIME boundaries)
+          const { textBody: cleanBody, attachmentNames } = cleanMimeEmail(msgChunk);
 
           results.push({
             name: senderName,
             email: senderEmail,
-            phone,
+            phone: phone || '',
             subject,
             role: candidateRole || 'IT Specialist',
             skills: detectedSkills.length > 0 ? detectedSkills : ['Java', 'SQL', 'Cloud Technologies'],
@@ -426,8 +416,10 @@ export async function scrapeResumesFromIMAP({
             folder: folder === 'Bulk' ? 'SPAM' : folder,
             uid,
             isSpamRecovery: folder === 'Bulk',
-            rawPreview: msgChunk.slice(0, 500),
-            resumeText: cleanBody && cleanBody.length > 60 ? cleanBody : ''
+            rawPreview: (cleanBody || msgChunk).slice(0, 500),
+            resumeText: cleanBody && cleanBody.length > 30 ? cleanBody : '',
+            attachmentName: attachmentNames.length > 0 ? attachmentNames[0] : null,
+            attachments: attachmentNames
           });
         }
       }

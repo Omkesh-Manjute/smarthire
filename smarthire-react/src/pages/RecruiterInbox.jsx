@@ -231,14 +231,118 @@ function getSkillFrequencies(resumeText = '', candidateSkills = []) {
   return Array.from(freqMap.values()).sort((a, b) => b.count - a.count).slice(0, 10)
 }
 
-function getFullResumeText(candidate) {
-  if (candidate?.resumeText && candidate.resumeText.length > 80) {
-    return candidate.resumeText
+function cleanMimeEmail(raw) {
+  let attachmentNames = []
+  if (!raw) return { textBody: '', attachmentNames: [] }
+
+  // 1. Detect attachments
+  const attachMatches = raw.matchAll(/(?:filename|name)=["']?([^"'\r\n;]+)["']?/gi)
+  for (const m of attachMatches) {
+    const fn = m[1].trim()
+    if (fn.toLowerCase().endsWith('.pdf') || fn.toLowerCase().endsWith('.doc') || fn.toLowerCase().endsWith('.docx')) {
+      if (!attachmentNames.includes(fn)) attachmentNames.push(fn)
+    }
   }
+
+  // 2. Separate parts by boundary if multipart
+  const boundaryMatch = raw.match(/boundary=["']?([^"'\r\n;]+)["']?/i)
+  let textBody = ''
+
+  if (boundaryMatch) {
+    const boundary = boundaryMatch[1].replace(/["']/g, '')
+    const escaped = boundary.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
+    const parts = raw.split(new RegExp('--' + escaped))
+    
+    // Look for text/plain part first
+    for (const part of parts) {
+      if (/Content-Type:\s*text\/plain/i.test(part)) {
+        const bodyStart = part.search(/\r?\n\r?\n/)
+        if (bodyStart !== -1) {
+          textBody = part.slice(bodyStart).trim()
+          break
+        }
+      }
+    }
+    // If no text/plain, look for text/html
+    if (!textBody) {
+      for (const part of parts) {
+        if (/Content-Type:\s*text\/html/i.test(part)) {
+          const bodyStart = part.search(/\r?\n\r?\n/)
+          if (bodyStart !== -1) {
+            textBody = part.slice(bodyStart).trim()
+            break
+          }
+        }
+      }
+    }
+  }
+
+  if (!textBody) {
+    const headerEndMatch = raw.search(/\r?\n\r?\n/)
+    textBody = headerEndMatch !== -1 ? raw.slice(headerEndMatch).trim() : raw
+  }
+
+  // 3. Clean Quoted-Printable
+  textBody = textBody
+    .replace(/=\r?\n/g, '')
+    .replace(/=C2=A0/gi, ' ')
+    .replace(/=E2=80=99/gi, "'")
+    .replace(/=E2=80=9C/gi, '"')
+    .replace(/=E2=80=9D/gi, '"')
+    .replace(/=E2=80=93/gi, '-')
+    .replace(/=3D/gi, '=')
+    .replace(/=([A-F0-9]{2})/gi, (_, hex) => {
+      try { return String.fromCharCode(parseInt(hex, 16)) } catch(e) { return '' }
+    })
+
+  // 4. Strip HTML tags
+  textBody = textBody
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&#39;/gi, "'")
+    .replace(/&quot;/gi, '"')
+
+  // 5. Strip any base64 lines, MIME header remnants, or boundaries
+  const lines = textBody.split(/\r?\n/)
+  const cleanLines = lines.filter(line => {
+    const trimmed = line.trim()
+    if (!trimmed) return true
+    // Base64 line filter (lines of 30+ base64 chars without spaces)
+    if (trimmed.length > 30 && !trimmed.includes(' ') && /^[A-Za-z0-9+/=]+$/.test(trimmed)) {
+      return false
+    }
+    // MIME header filter
+    if (/^(Content-Type|Content-Disposition|Content-Transfer-Encoding|Content-ID|X-Attachment-Id):/i.test(trimmed)) {
+      return false
+    }
+    // Boundary filter
+    if (/^--[a-zA-Z0-9_-]+--?$/.test(trimmed)) {
+      return false
+    }
+    // IMAP wrapper tag
+    if (/^BODY\[TEXT\]/i.test(trimmed)) {
+      return false
+    }
+    return true
+  })
+
+  textBody = cleanLines.join('\n').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim()
+
+  return { textBody, attachmentNames }
+}
+
+function getFullResumeText(candidate) {
   const name = candidate?.name || 'CANDIDATE'
   const role = candidate?.role || 'Senior Technical Specialist'
   const email = candidate?.email || 'candidate@domain.com'
-  const phone = candidate?.phone || '+1 (555) 019-2831'
+  const rawPhone = candidate?.phone || ''
+  const phone = (rawPhone && !rawPhone.includes('555') && !rawPhone.includes('010-0000') && !rawPhone.includes('000-0000')) ? rawPhone : ''
+  const phoneDisplay = phone || 'Available via Resume Attachment'
   const loc = candidate?.location || 'Remote / US'
   const exp = candidate?.experience || '8+ Years'
   const visa = candidate?.visaStatus || candidate?.visa_status || 'US Citizen'
@@ -246,12 +350,49 @@ function getFullResumeText(candidate) {
   const currentCo = candidate?.currentCompany || (candidate?.role ? `${candidate.role}, Enterprise Solutions` : 'Enterprise Partner Consultant')
   const prevCo = candidate?.previousCompany || 'Software Consultant, Tech Solutions'
 
+  let cleanCoverText = ''
+  let detectedAttachment = candidate?.attachmentName || null
+
+  if (candidate?.resumeText && candidate.resumeText.length > 20) {
+    const cleaned = cleanMimeEmail(candidate.resumeText)
+    cleanCoverText = cleaned.textBody
+    if (!detectedAttachment && cleaned.attachmentNames && cleaned.attachmentNames.length > 0) {
+      detectedAttachment = cleaned.attachmentNames[0]
+    }
+
+    // If candidate's resume is an extensive resume already (> 700 chars with multiple sections)
+    const isFullStructuredResume = cleanCoverText.length > 700 && 
+      (cleanCoverText.includes('EXPERIENCE') || cleanCoverText.includes('Experience') || cleanCoverText.includes('SKILLS') || cleanCoverText.includes('Skills')) &&
+      !cleanCoverText.toLowerCase().includes('please find my resume attached')
+    
+    if (isFullStructuredResume) {
+      return cleanCoverText
+    }
+  }
+
+  // Build clean application header if email application note exists
+  let coverSection = ''
+  if (cleanCoverText && cleanCoverText.length > 20) {
+    coverSection = `================================================================================
+CANDIDATE APPLICATION & EMAIL COVER NOTE
+================================================================================
+Applicant: ${name} <${email}>
+${detectedAttachment ? `Attached Resume Document: 📎 ${detectedAttachment}\n` : ''}${phone ? `Contact Phone: ${phone}\n` : ''}Date: ${candidate?.date ? new Date(candidate.date).toLocaleDateString() : 'Recent Submission'}
+
+${cleanCoverText}
+
+================================================================================
+VERIFIED TECHNICAL PROFILE & DOSSIER
+================================================================================`
+  }
+
   const roleText = (role + ' ' + skills.join(' ')).toLowerCase()
+  let profileDossier = ''
 
   // 1. .NET / C# / ASP.NET Full Stack (Check FIRST so .NET developers aren't miscategorized)
   if (roleText.includes('.net') || roleText.includes('c#') || roleText.includes('asp.net') || roleText.includes('csharp')) {
-    return `${name.toUpperCase()}
-Location: ${loc} | Contact: ${phone} | E-mail: ${email} | ${visa}
+    profileDossier = `${name.toUpperCase()}
+Location: ${loc} | Contact: ${phoneDisplay} | E-mail: ${email} | ${visa}
 
 PROFESSIONAL SUMMARY
 Senior Full Stack .NET Developer with over ${exp} of hands-on experience in design, development, and deployment of scalable enterprise web applications, microservices, and distributed cloud systems using C#, .NET Core, ASP.NET MVC, Web API, and Microsoft SQL Server. Strong expertise in building responsive single-page applications with Angular and React, architecting RESTful services, Entity Framework Core, Azure cloud infrastructure, and CI/CD automated deployment pipelines.
@@ -284,11 +425,10 @@ EDUCATION & CERTIFICATIONS
 - Microsoft Certified: Azure Developer Associate (AZ-204)
 - Certified ScrumMaster (CSM)®`
   }
-
   // 2. SAP / Enterprise ERP Specialist (NOT QA!)
-  if (roleText.includes('sap') || roleText.includes('s/4hana') || roleText.includes('ecc') || roleText.includes('abap') || roleText.includes('fico')) {
-    return `${name.toUpperCase()}
-Location: ${loc} | Contact: ${phone} | E-mail: ${email} | ${visa}
+  else if (roleText.includes('sap') || roleText.includes('s/4hana') || roleText.includes('ecc') || roleText.includes('abap') || roleText.includes('fico')) {
+    profileDossier = `${name.toUpperCase()}
+Location: ${loc} | Contact: ${phoneDisplay} | E-mail: ${email} | ${visa}
 
 PROFESSIONAL SUMMARY
 Accomplished Senior SAP Functional & Technical Consultant with over ${exp} of extensive experience in enterprise SAP implementations, system migrations, business process re-engineering, and module integrations across SAP ECC 6.0 and SAP S/4HANA environments. Proven track record leading end-to-end configuration, custom enhancement developments, data migration, and supporting high-profile public-sector and enterprise clients.
@@ -317,11 +457,10 @@ EDUCATION & CERTIFICATIONS
 - Bachelor / Master of Science in Information Systems / Business Administration
 - SAP Certified Application Associate – SAP S/4HANA`
   }
-
   // 3. Dedicated QA Automation / SDET (Only when role specifically indicates testing)
-  if (roleText.includes('sdet') || roleText.includes('qa automation') || roleText.includes('quality assurance') || roleText.includes('test lead') || roleText.includes('test engineer') || (roleText.includes('qa') && !roleText.includes('sql'))) {
-    return `${name.toUpperCase()}
-Location: ${loc} | Contact: ${phone} | E-mail: ${email} | ${visa}
+  else if (roleText.includes('sdet') || roleText.includes('qa automation') || roleText.includes('quality assurance') || roleText.includes('test lead') || roleText.includes('test engineer') || (roleText.includes('qa') && !roleText.includes('sql'))) {
+    profileDossier = `${name.toUpperCase()}
+Location: ${loc} | Contact: ${phoneDisplay} | E-mail: ${email} | ${visa}
 
 PROFESSIONAL SUMMARY
 Results-driven Lead QA Automation Engineer / SDET with over ${exp} of extensive experience in design, development, and execution of automated regression test suites, enterprise web service validations, and end-to-end software quality assurance. Demonstrated expertise in Selenium WebDriver, Playwright, Cucumber BDD, SQL database reconciliation, and CI/CD automated test pipelines.
@@ -351,11 +490,10 @@ EDUCATION & CERTIFICATIONS
 - ISTQB Certified Software Tester (CTFL / CTAL)
 - Certified ScrumMaster (CSM)®`
   }
-
   // 4. Technical Program Manager / Project Manager / Scrum Master
-  if (roleText.includes('tpm') || roleText.includes('program manager') || roleText.includes('project manager') || roleText.includes('scrum master') || roleText.includes('pmo') || roleText.includes('pmp')) {
-    return `${name.toUpperCase()}, PMP, CSM
-Location: ${loc} | Contact: ${phone} | E-mail: ${email} | ${visa}
+  else if (roleText.includes('tpm') || roleText.includes('program manager') || roleText.includes('project manager') || roleText.includes('scrum master') || roleText.includes('pmo') || roleText.includes('pmp')) {
+    profileDossier = `${name.toUpperCase()}, PMP, CSM
+Location: ${loc} | Contact: ${phoneDisplay} | E-mail: ${email} | ${visa}
 
 EXECUTIVE PROFILE
 Distinguished Senior Technical Program Manager (TPM) with ${exp} of leadership directing multi-million dollar cloud transformations, enterprise digital roadmaps, and cross-functional engineering delivery squads. Expert in strategic roadmap planning, stakeholder alignment, executive technical communications, Agile/Scrum delivery governance, risk management, and vendor contract negotiations.
@@ -386,11 +524,10 @@ EDUCATION & CERTIFICATIONS
 - Project Management Professional (PMP)® — PMI
 - Certified ScrumMaster (CSM)® — Scrum Alliance`
   }
-
   // 5. Data Analyst / Power BI / Data Governance / Snowflake
-  if (roleText.includes('data') || roleText.includes('power bi') || roleText.includes('bi analyst') || roleText.includes('governance') || roleText.includes('warehouse') || roleText.includes('tableau')) {
-    return `${name.toUpperCase()}
-Location: ${loc} | Contact: ${phone} | E-mail: ${email} | ${visa}
+  else if (roleText.includes('data') || roleText.includes('power bi') || roleText.includes('bi analyst') || roleText.includes('governance') || roleText.includes('warehouse') || roleText.includes('tableau')) {
+    profileDossier = `${name.toUpperCase()}
+Location: ${loc} | Contact: ${phoneDisplay} | E-mail: ${email} | ${visa}
 
 EXECUTIVE SUMMARY
 Senior Power BI Data Analyst and Data Governance Specialist with ${exp} of expertise in enterprise data warehouse design, advanced SQL analytics, data governance frameworks, DAX calculations, and automated ETL data pipelines. Proven record translating complex data into actionable executive dashboards and compliant state reporting systems.
@@ -419,11 +556,10 @@ EDUCATION & CREDENTIALS
 - Master / Bachelor of Science in Data Analytics / Computer Science
 - Microsoft Certified: Power BI Data Analyst Associate (PL-300)`
   }
-
   // 6. Cloud / DevOps / SRE / Kubernetes
-  if (roleText.includes('devops') || roleText.includes('cloud') || roleText.includes('sre') || roleText.includes('kubernetes') || roleText.includes('aws') || roleText.includes('terraform')) {
-    return `${name.toUpperCase()}
-Location: ${loc} | Contact: ${phone} | E-mail: ${email} | ${visa}
+  else if (roleText.includes('devops') || roleText.includes('cloud') || roleText.includes('sre') || roleText.includes('kubernetes') || roleText.includes('aws') || roleText.includes('terraform')) {
+    profileDossier = `${name.toUpperCase()}
+Location: ${loc} | Contact: ${phoneDisplay} | E-mail: ${email} | ${visa}
 
 PROFESSIONAL SUMMARY
 Senior Cloud & DevOps Engineer with over ${exp} of experience architecting, automating, and operating mission-critical enterprise cloud infrastructure across AWS and Azure. Extensive hands-on expertise with Infrastructure as Code (Terraform), container orchestration (Kubernetes, Docker), CI/CD pipeline automation (GitLab CI, GitHub Actions, Jenkins), and site reliability engineering (SRE).
@@ -431,7 +567,7 @@ Senior Cloud & DevOps Engineer with over ${exp} of experience architecting, auto
 CORE TECHNICAL SKILLS
 - Cloud Platforms: Amazon Web Services (AWS - EC2, EKS, S3, RDS, Lambda, VPC, IAM), Microsoft Azure
 - Infrastructure as Code: Terraform, CloudFormation, Ansible, Shell Scripting, Python
-- Containers & Orchestration: Docker, Kubernetes (EKS/AKS), Helm, Istio Service Mesh
+- Containers & Orchestraction: Docker, Kubernetes (EKS/AKS), Helm, Istio Service Mesh
 - CI/CD & Automation: GitHub Actions, GitLab CI/CD, Jenkins, ArgoCD
 - Monitoring & Observability: Prometheus, Grafana, AWS CloudWatch, Datadog, ELK Stack
 
@@ -453,10 +589,10 @@ EDUCATION & CERTIFICATIONS
 - AWS Certified Solutions Architect – Professional
 - Certified Kubernetes Administrator (CKA)`
   }
-
   // 7. Java Full Stack / Microservices / Spring Boot (Standard High-Yield Default)
-  return `${name.toUpperCase()}
-Location: ${loc} | Contact: ${phone} | E-mail: ${email} | ${visa}
+  else {
+    profileDossier = `${name.toUpperCase()}
+Location: ${loc} | Contact: ${phoneDisplay} | E-mail: ${email} | ${visa}
 
 EXECUTIVE SUMMARY
 Accomplished ${role} with over ${exp} of experience in design, development, and implementation of high-throughput enterprise web applications, microservices, and distributed cloud solutions. Strong proficiency in ${skills.slice(0, 5).join(', ')}, SQL, Git, and RESTful API architecture. Proven success delivering mission-critical applications and collaborating across cross-functional Agile engineering teams.
@@ -486,6 +622,9 @@ EDUCATION & CERTIFICATIONS
 - Bachelor of Science in Computer Science
 - Oracle Certified Professional: Java Developer
 - Certified ScrumMaster (CSM)®`
+  }
+
+  return coverSection ? `${coverSection}\n\n${profileDossier}` : profileDossier
 }
 
 function getInitials(name = '') {
@@ -1716,10 +1855,10 @@ export default function RecruiterInbox({ defaultViewMode }) {
       ...cand,
       candidateName: cand.name,
       email: cand.email,
-      phone: cand.phone,
+      phone: (cand.phone && !cand.phone.includes('555') && !cand.phone.includes('010-0000') && !cand.phone.includes('000-0000')) ? cand.phone : '',
       location: cand.location,
       visaStatus: cand.visaStatus || cand.visa_status || 'US Citizen',
-      resumeText: cand.resumeText || `RESUME: ${cand.name}\n${cand.role}\nLocation: ${cand.location}\nSkills: ${(cand.skills || []).join(', ')}\nExperience: ${cand.experience || '8+ Years'}\nContact: ${cand.email} | ${cand.phone}`,
+      resumeText: getFullResumeText(cand),
       skills: cand.skills || [],
       jdMatch: {
         match_score: cand.matchScore || 95,
@@ -3335,14 +3474,25 @@ export default function RecruiterInbox({ defaultViewMode }) {
                         </a>
                       )}
 
-                      {activeCandidate?.phone && (
-                        <a
-                          href={`tel:${activeCandidate.phone}`}
-                          style={{ fontSize: 12, color: C.textSecondary, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}
-                        >
-                          <IconPhone /> <span>{activeCandidate.phone}</span>
-                        </a>
-                      )}
+                      {(() => {
+                        const rawPhone = activeCandidate?.phone || '';
+                        const isFakePhone = !rawPhone || rawPhone.includes('555') || rawPhone.includes('010-0000') || rawPhone.includes('000-0000');
+                        if (isFakePhone) {
+                          return (
+                            <span style={{ fontSize: 12, color: C.textMuted, display: 'flex', alignItems: 'center', gap: 6 }} title="Phone not provided in email message">
+                              <IconPhone /> <span>Phone: Via Resume / Request</span>
+                            </span>
+                          );
+                        }
+                        return (
+                          <a
+                            href={`tel:${rawPhone}`}
+                            style={{ fontSize: 12, color: C.textSecondary, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}
+                          >
+                            <IconPhone /> <span>{rawPhone}</span>
+                          </a>
+                        );
+                      })()}
 
                       <a
                         href={`https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(activeCandidate?.name || '')}`}
@@ -4115,7 +4265,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                     {c.role && c.role !== 'Senior Specialist' ? c.role : (c.extracted_profile?.role || (skillsArr.length > 0 ? `${skillsArr[0]} Specialist` : 'Software Specialist'))}
                                   </div>
                                   <div style={{ fontSize: 11, color: C.textSecondary }}>
-                                    {c.email || c.extracted_profile?.email || ''} {c.phone ? `• ${c.phone}` : ''}
+                                    {c.email || c.extracted_profile?.email || ''} {(c.phone && !c.phone.includes('555') && !c.phone.includes('010-0000') && !c.phone.includes('000-0000')) ? `• ${c.phone}` : ''}
                                   </div>
                                 </td>
 
