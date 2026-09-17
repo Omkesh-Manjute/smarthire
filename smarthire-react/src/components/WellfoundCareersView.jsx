@@ -150,17 +150,6 @@ export const resolveLocalRequirement = (job) => {
   return { label: 'Nationwide (No Local Need)', isLocalNeeded: false, urgency: 'none' }
 }
 
-// ─── Hiring Contact Resolver (Matches Screenshot 1 Avatar Block) ────────────
-export const resolveRecruiterContact = (job, location) => {
-  const locStr = String(location || '')
-  return {
-    name: 'Sarah J. Thorne',
-    role: 'Employee / Talent Partner',
-    location: locStr && !locStr.includes('Remote') ? locStr : 'South San Francisco, CA',
-    initials: 'ST'
-  }
-}
-
 // ─── Dynamic Company Logo Colors ───────────────────────────────────────────
 const LOGO_PALETTES = [
   { bg: 'linear-gradient(135deg, #E11D48 0%, #BE123C 100%)', fg: '#FFFFFF' },
@@ -203,51 +192,128 @@ function CompanyLogo({ job, size = 42 }) {
   )
 }
 
-// ─── Parse Job Content for Spacious Wellfound Dossier Layout ────────────────
-function parseWellfoundJobDetails(job, cleanTitle, domainName, location, workMode, localReq) {
-  const rawSkills = Array.isArray(job.skills) && job.skills.length > 0
+// ─── Parse Real Requisition Content for Unified Wellfound Dossier Layout ──────
+function parseWellfoundJobDetails(job, cleanTitle, domainName, location, workMode, localReq, getFullDescriptionText) {
+  const fullText = (typeof getFullDescriptionText === 'function' ? getFullDescriptionText(job) : (job?.description || job?.rawDescription || ''))
+  const rawSkills = Array.isArray(job?.skills) && job.skills.length > 0
     ? job.skills
     : ['Cloud Architecture', 'Microservices', 'REST APIs', 'Agile / Scrum', 'CI/CD']
 
+  const text = String(fullText || '').trim()
+
   const aboutCompany = `${domainName} is delivering mission-critical modern technological platforms to enhance operational efficiency, security, and public sector services. We value engineers and leaders who take bold ownership, thrive in collaborative teams, and design scalable architectures built for enterprise longevity.`
 
-  const aboutRole = `We are seeking a talented and detail-oriented ${cleanTitle} to spearhead key engineering initiatives. In this high-impact engagement, you will collaborate closely with enterprise systems architects, product owners, and engineering leaders to design, build, and optimize resilient distributed workflows.`
+  let summary = ''
+  let responsibilities = []
+  let requiredSkills = []
+  let preferredSkills = []
+  let engagementDetails = []
 
-  const s1 = rawSkills[0] || 'Core Architecture'
-  const s2 = rawSkills[1] || 'API & Microservices'
-  const s3 = rawSkills[2] || 'Automated CI/CD'
-  const s4 = rawSkills[3] || 'Scalability & Performance'
-
-  const whatYouWillDo = [
-    {
-      title: `${s1}:`,
-      description: `Drive hands-on implementation and technical governance across modern enterprise cloud environments, ensuring clean code standards and scalable design.`
-    },
-    {
-      title: `${s2}:`,
-      description: `Integrate secure REST/GraphQL APIs, microservice endpoints, and reliable data pipelines without sacrificing latency or system reliability.`
-    },
-    {
-      title: `${s3}:`,
-      description: `Champion automated CI/CD deployment pipelines, unit test coverage, and code reviews using modern version control and DevOps practices.`
-    },
-    {
-      title: `${s4}:`,
-      description: `Ensure all interactive elements, queries, and background processes run at a buttery 60fps and sub-second response times across modern platforms.`
+  if (text.includes('KEY ROLES & RESPONSIBILITIES') || text.includes('PROJECT SUMMARY & OBJECTIVE') || text.includes('POSITION & CLIENT OVERVIEW')) {
+    // Requisition formatted by formatJobDescription
+    const summaryMatch = text.match(/(?:🎯\s*PROJECT SUMMARY & OBJECTIVE[^\n]*\n={5,}\n)([\s\S]*?)(?=\n={5,}|\n📋|\n🛠️|\n🌟|$)/i)
+    if (summaryMatch && summaryMatch[1].trim()) {
+      summary = summaryMatch[1].trim()
     }
-  ]
 
-  const whatYouNeed = [
-    `Demonstrated hands-on expertise as a ${cleanTitle} in high-visibility enterprise or direct-client environments.`,
-    `Deep practical proficiency in ${rawSkills.slice(0, 5).join(', ')}.`,
-    `Solid understanding of scalable architecture patterns, automated build pipelines, and system security fundamentals.`,
-    `Strong communication and cross-functional coordination skills with the ability to ship independently.`,
-    localReq.isLocalNeeded 
-      ? `Local candidate or commutable to ${location} to support the client's ${workMode} requirements.`
-      : `Ability to operate autonomously in a remote-first setup with high discipline and ownership.`
-  ]
+    const respMatch = text.match(/(?:📋\s*KEY ROLES & RESPONSIBILITIES[^\n]*\n={5,}\n)([\s\S]*?)(?=\n={5,}|\n🛠️|\n🌟|$)/i)
+    if (respMatch && respMatch[1].trim()) {
+      responsibilities = respMatch[1]
+        .split('\n')
+        .map(l => l.replace(/^[•\-\*\s]+/, '').trim())
+        .filter(l => l.length > 5)
+    }
 
-  return { aboutCompany, aboutRole, whatYouWillDo, whatYouNeed, rawSkills }
+    const skillsMatch = text.match(/(?:🛠️\s*REQUIRED TECHNICAL PROFICIENCIES[^\n]*\n={5,}\n)([\s\S]*?)(?=\n={5,}|\n🌟|$)/i)
+    if (skillsMatch && skillsMatch[1].trim()) {
+      requiredSkills = skillsMatch[1]
+        .split('\n')
+        .map(l => l.replace(/^[•\-\*\s]+/, '').trim())
+        .filter(l => l.length > 3)
+    }
+
+    const prefMatch = text.match(/(?:🌟\s*PREFERRED QUALIFICATIONS[^\n]*\n={5,}\n)([\s\S]*?)(?=\n={5,}|$)/i)
+    if (prefMatch && prefMatch[1].trim()) {
+      preferredSkills = prefMatch[1]
+        .split('\n')
+        .map(l => l.replace(/^[•\-\*\s]+/, '').trim())
+        .filter(l => l.length > 3)
+    }
+
+    const overviewMatch = text.match(/(?:📌\s*POSITION & CLIENT OVERVIEW[^\n]*\n={5,}\n)([\s\S]*?)(?=\n={5,}|\n🎯|\n📋|$)/i)
+    if (overviewMatch && overviewMatch[1].trim()) {
+      engagementDetails = overviewMatch[1]
+        .split('\n')
+        .map(l => l.replace(/^[•\-\*\s]+/, '').trim())
+        .filter(l => l.length > 3 && !l.toLowerCase().includes('position title'))
+    }
+  } else if (text.length > 30) {
+    // Unformatted raw requisition body
+    const cleaned = text
+      .replace(/={5,}/g, '')
+      .replace(/Description\s*:\s*/i, '')
+      .trim()
+
+    const lines = cleaned.split('\n').map(l => l.trim()).filter(Boolean)
+    const bullets = lines.filter(l => /^[•\-\*\d\.]\s+/.test(l)).map(l => l.replace(/^[•\-\*\d\.]\s+/, '').trim())
+
+    if (bullets.length >= 3) {
+      responsibilities = bullets.slice(0, Math.ceil(bullets.length / 2))
+      requiredSkills = bullets.slice(Math.ceil(bullets.length / 2))
+      summary = lines.filter(l => !/^[•\-\*\d\.]\s+/.test(l)).slice(0, 3).join(' ')
+    } else {
+      summary = cleaned.slice(0, 450)
+    }
+  }
+
+  // Graceful high-quality fallbacks if requisition data is sparse
+  if (!summary) {
+    summary = `We are seeking a talented and detail-oriented ${cleanTitle} to spearhead key engineering initiatives. In this high-impact engagement, you will collaborate closely with enterprise systems architects, product owners, and engineering leaders to design, build, and optimize resilient distributed workflows.`
+  }
+
+  if (responsibilities.length === 0) {
+    const s1 = rawSkills[0] || 'Core Architecture'
+    const s2 = rawSkills[1] || 'API & Microservices'
+    const s3 = rawSkills[2] || 'Automated CI/CD'
+    const s4 = rawSkills[3] || 'Scalability & Performance'
+    responsibilities = [
+      `Drive hands-on implementation and technical governance across modern enterprise cloud environments, ensuring clean code standards and scalable design (${s1}).`,
+      `Integrate secure REST/GraphQL APIs, microservice endpoints, and reliable data pipelines without sacrificing latency or system reliability (${s2}).`,
+      `Champion automated CI/CD deployment pipelines, unit test coverage, and code reviews using modern version control and DevOps practices (${s3}).`,
+      `Ensure all interactive elements, queries, and background processes run at a buttery 60fps and sub-second response times across modern platforms (${s4}).`
+    ]
+  }
+
+  if (requiredSkills.length === 0) {
+    requiredSkills = [
+      `Demonstrated hands-on expertise as a ${cleanTitle} in high-visibility enterprise or direct-client environments.`,
+      `Deep practical proficiency in ${rawSkills.slice(0, 5).join(', ')}.`,
+      `Solid understanding of scalable architecture patterns, automated build pipelines, and system security fundamentals.`,
+      `Strong communication and cross-functional coordination skills with the ability to ship independently.`,
+      localReq.isLocalNeeded 
+        ? `Local candidate or commutable to ${location} to support the client's ${workMode} requirements.`
+        : `Ability to operate autonomously in a remote-first setup with high discipline and ownership.`
+    ]
+  }
+
+  if (engagementDetails.length === 0) {
+    engagementDetails = [
+      `Client / Agency: Direct Client`,
+      `Work Arrangement: ${workMode || 'Remote / Hybrid'}`,
+      `Interview Type: Webcam / In-Person`,
+      `Engagement: Long-Term Contract (C2C / W2)`
+    ]
+  }
+
+  return {
+    aboutCompany,
+    summary,
+    responsibilities,
+    requiredSkills,
+    preferredSkills,
+    engagementDetails,
+    rawSkills
+  }
 }
 
 export default function WellfoundCareersView({
@@ -450,8 +516,7 @@ export default function WellfoundCareersView({
   const selLoc = selectedJob ? (resolveJobLocation ? resolveJobLocation(selectedJob) : (selectedJob.work_mode || 'Remote, US')) : ''
   const selWorkMode = selectedJob ? resolveWorkArrangement(selectedJob) : 'Hybrid'
   const selLocalReq = selectedJob ? resolveLocalRequirement(selectedJob) : { label: 'Nationwide', isLocalNeeded: false, urgency: 'none' }
-  const selRecruiter = selectedJob ? resolveRecruiterContact(selectedJob, selLoc) : null
-  const selDetails = selectedJob ? parseWellfoundJobDetails(selectedJob, selCleanTitle, selDomain, selLoc, selWorkMode, selLocalReq) : null
+  const selDetails = selectedJob ? parseWellfoundJobDetails(selectedJob, selCleanTitle, selDomain, selLoc, selWorkMode, selLocalReq, getFullDescriptionText) : null
   const isSaved = Boolean(
     selectedJob && (
       Array.isArray(savedJobs)
@@ -2204,8 +2269,6 @@ export default function WellfoundCareersView({
                     <span>{formatExperience ? formatExperience(selectedJob) : '5+ Years Experience'}</span>
                     <span>•</span>
                     <span>{formatContractType ? formatContractType(selectedJob) : 'Contract (C2C / W2)'}</span>
-                    <span>•</span>
-                    <span>Req #{resolveReqId(selectedJob)}</span>
 
                     {/* Timezone Indicator */}
                     {getJobPostTimezones && (
@@ -2262,39 +2325,15 @@ export default function WellfoundCareersView({
 
                   {/* Right Column of Matrix */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                    {/* Hiring Contact Card */}
-                    {selRecruiter && (
-                      <div>
-                        <div style={{ fontSize: 11.5, fontWeight: 700, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 }}>
-                          HIRING CONTACT
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <div style={{
-                            width: 38,
-                            height: 38,
-                            borderRadius: '50%',
-                            backgroundColor: isLight ? '#F3F4F6' : '#1E293B',
-                            color: colors.textPrimary,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: 13,
-                            fontWeight: 800,
-                            border: `1px solid ${colors.border}`
-                          }}>
-                            {selRecruiter.initials}
-                          </div>
-                          <div>
-                            <div style={{ fontSize: 13.5, fontWeight: 700, color: colors.textPrimary }}>
-                              {selRecruiter.name}
-                            </div>
-                            <div style={{ fontSize: 12, color: colors.textSecondary }}>
-                              {selRecruiter.role} · {selRecruiter.location}
-                            </div>
-                          </div>
-                        </div>
+                    {/* Contract Engagement Details */}
+                    <div>
+                      <div style={{ fontSize: 11.5, fontWeight: 700, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
+                        CONTRACT ENGAGEMENT
                       </div>
-                    )}
+                      <div style={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary }}>
+                        {formatContractType ? formatContractType(selectedJob) : 'Contract'} · Direct Client W2 / C2C
+                      </div>
+                    </div>
 
                     <div>
                       <div style={{ fontSize: 11.5, fontWeight: 700, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
@@ -2341,55 +2380,55 @@ export default function WellfoundCareersView({
                   </div>
                 </div>
 
-                {/* ── 4. STRUCTURED ABOUT THE JOB SECTIONS ── */}
+                {/* ── 4. STRUCTURED ABOUT THE JOB SECTIONS (UNIFIED WELLFOUND DOSSIER) ── */}
                 <div style={{ marginBottom: 36, lineHeight: 1.85, fontSize: 15, color: colors.textPrimary }}>
                   {/* About the Company */}
                   <div style={{ marginBottom: 28 }}>
                     <h3 style={{ fontSize: 18, fontWeight: 800, color: colors.textPrimary, margin: '0 0 10px', letterSpacing: '-0.02em' }}>
                       About the Company
                     </h3>
-                    <p style={{ margin: 0, color: colors.textSecondary, fontSize: 14.5 }}>
+                    <p style={{ margin: 0, color: colors.textSecondary, fontSize: 14.5, lineHeight: 1.85 }}>
                       {selDetails?.aboutCompany}
                     </p>
                   </div>
 
-                  {/* About the Role */}
+                  {/* About the Role & Project Objective */}
                   <div style={{ marginBottom: 28 }}>
                     <h3 style={{ fontSize: 18, fontWeight: 800, color: colors.textPrimary, margin: '0 0 10px', letterSpacing: '-0.02em' }}>
-                      About the Role
+                      About the Role & Project Objective
                     </h3>
-                    <p style={{ margin: 0, color: colors.textSecondary, fontSize: 14.5 }}>
-                      {selDetails?.aboutRole}
+                    <p style={{ margin: 0, color: colors.textSecondary, fontSize: 14.5, lineHeight: 1.85 }}>
+                      {selDetails?.summary}
                     </p>
                   </div>
 
-                  {/* What You Will Do */}
+                  {/* Key Roles & Responsibilities */}
                   <div style={{ marginBottom: 28 }}>
                     <h3 style={{ fontSize: 18, fontWeight: 800, color: colors.textPrimary, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
-                      What You Will Do
+                      Key Roles & Responsibilities
                     </h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                      {selDetails?.whatYouWillDo.map((item, idx) => (
+                      {selDetails?.responsibilities?.map((item, idx) => (
                         <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                          <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: colors.accentCoral, marginTop: 10, flexShrink: 0 }} />
-                          <div style={{ fontSize: 14.5, color: colors.textSecondary }}>
-                            <strong style={{ color: colors.textPrimary }}>{item.title}</strong> {item.description}
+                          <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: colors.accentCoral, marginTop: 9, flexShrink: 0 }} />
+                          <div style={{ fontSize: 14.5, color: colors.textSecondary, lineHeight: 1.75 }}>
+                            {item}
                           </div>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* What You'll Need */}
+                  {/* Required Technical Proficiencies & Skills */}
                   <div style={{ marginBottom: 28 }}>
                     <h3 style={{ fontSize: 18, fontWeight: 800, color: colors.textPrimary, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
-                      What You'll Need
+                      Required Technical Proficiencies & Skills
                     </h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                      {selDetails?.whatYouNeed.map((req, idx) => (
+                      {selDetails?.requiredSkills?.map((req, idx) => (
                         <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                          <CheckCircleIcon size={16} color="#10B981" />
-                          <div style={{ fontSize: 14.5, color: colors.textSecondary }}>
+                          <CheckCircleIcon size={16} color="#10B981" style={{ flexShrink: 0, marginTop: 3 }} />
+                          <div style={{ fontSize: 14.5, color: colors.textSecondary, lineHeight: 1.75 }}>
                             {req}
                           </div>
                         </div>
@@ -2397,25 +2436,55 @@ export default function WellfoundCareersView({
                     </div>
                   </div>
 
-                  {/* ── 5. TECHNICAL SPECIFICATIONS & CLIENT DETAILS (NO SCROLL TRAP!) ── */}
-                  {((getFullDescriptionText && getFullDescriptionText(selectedJob)) || selectedJob.description) && (
-                    <div style={{
-                      backgroundColor: colors.subtleBg,
-                      border: `1px solid ${colors.border}`,
-                      borderRadius: 10,
-                      padding: '20px 24px',
-                      marginBottom: 28
-                    }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: colors.textSecondary, marginBottom: 12, letterSpacing: '0.04em' }}>
-                        TECHNICAL SPECIFICATIONS & CLIENT DETAILS
+                  {/* Preferred Qualifications & Domain Skills (if present) */}
+                  {selDetails?.preferredSkills && selDetails.preferredSkills.length > 0 && (
+                    <div style={{ marginBottom: 28 }}>
+                      <h3 style={{ fontSize: 18, fontWeight: 800, color: colors.textPrimary, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
+                        Preferred Qualifications & Domain Skills
+                      </h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        {selDetails.preferredSkills.map((req, idx) => (
+                          <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                            <CheckCircleIcon size={16} color="#6366F1" style={{ flexShrink: 0, marginTop: 3 }} />
+                            <div style={{ fontSize: 14.5, color: colors.textSecondary, lineHeight: 1.75 }}>
+                              {req}
+                            </div>
+                          </div>
+                        ))}
                       </div>
+                    </div>
+                  )}
+
+                  {/* Project & Engagement Specifications */}
+                  {selDetails?.engagementDetails && selDetails.engagementDetails.length > 0 && (
+                    <div style={{ marginBottom: 28 }}>
+                      <h3 style={{ fontSize: 18, fontWeight: 800, color: colors.textPrimary, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
+                        Project & Engagement Specifications
+                      </h3>
                       <div style={{
-                        fontSize: 14,
-                        lineHeight: 1.75,
-                        color: colors.textSecondary,
-                        whiteSpace: 'pre-wrap'
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                        gap: 12,
+                        padding: '18px 20px',
+                        borderRadius: 8,
+                        border: `1px solid ${colors.border}`,
+                        backgroundColor: colors.subtleBg
                       }}>
-                        {getFullDescriptionText ? getFullDescriptionText(selectedJob) : selectedJob.description}
+                        {selDetails.engagementDetails.map((detail, idx) => {
+                          const parts = detail.split(':')
+                          const label = parts[0]?.trim() || ''
+                          const val = parts.slice(1).join(':').trim() || label
+                          return (
+                            <div key={idx}>
+                              <div style={{ fontSize: 11.5, fontWeight: 700, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>
+                                {label}
+                              </div>
+                              <div style={{ fontSize: 13.5, fontWeight: 600, color: colors.textPrimary }}>
+                                {val}
+                              </div>
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
                   )}
