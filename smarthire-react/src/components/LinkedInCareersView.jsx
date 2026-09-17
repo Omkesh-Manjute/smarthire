@@ -324,6 +324,22 @@ export default function LinkedInCareersView({
               border: `1px solid ${themeTokens.cardBorder}`
             }}>
               <button
+                onClick={() => handleSetLayoutView('wellfound')}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: 18,
+                  border: 'none',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  backgroundColor: layoutView === 'wellfound' ? themeTokens.brandBlue : 'transparent',
+                  color: layoutView === 'wellfound' ? '#FFFFFF' : themeTokens.textSecondary,
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                Wellfound
+              </button>
+              <button
                 onClick={() => handleSetLayoutView('split')}
                 style={{
                   padding: '5px 12px',

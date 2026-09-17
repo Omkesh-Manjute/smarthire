@@ -8,6 +8,7 @@ import { formatJobDescription, resolveJobLocation, cleanJobTitleWithPositionNumb
 import ClassicCareersView from '../components/ClassicCareersView'
 import ZoneCareersView from '../components/ZoneCareersView'
 import LinkedInCareersView from '../components/LinkedInCareersView'
+import WellfoundCareersView from '../components/WellfoundCareersView'
 import {
   CategoryFinanceIcon,
   CategoryMarketingIcon,
@@ -177,12 +178,45 @@ export default function PublicCareers() {
     try { localStorage.setItem('smarthire_theme', next) } catch(e) {}
   }
 
-  // ─── TRI-VIEW LAYOUT PREFERENCE (SPLIT LINKEDIN VS ZONE VS CLASSIC) ───────
+  // ─── SIMILAR JOBS ALGORITHMIC MATCHER ────────────────────────────────────
+  const getSimilarJobs = (targetJob, allJobs = [], limit = 3) => {
+    if (!targetJob || !Array.isArray(allJobs)) return []
+    const titleWords = (targetJob.title || '')
+      .toLowerCase()
+      .split(/[\s,/-]+/)
+      .filter(w => w.length > 2 && !['and', 'for', 'the', 'with', 'senior', 'lead', 'junior'].includes(w))
+    const targetSkills = (targetJob.skills || []).map(s => String(s).toLowerCase())
+
+    return allJobs
+      .filter(j => j.id !== targetJob.id)
+      .map(j => {
+        let score = 0
+        const jTitle = (j.title || '').toLowerCase()
+        const jSkills = (j.skills || []).map(s => String(s).toLowerCase())
+
+        titleWords.forEach(w => {
+          if (jTitle.includes(w)) score += 3
+        })
+        targetSkills.forEach(s => {
+          if (jSkills.some(js => js.includes(s) || s.includes(js))) score += 2
+        })
+        if (j.work_mode && targetJob.work_mode && j.work_mode === targetJob.work_mode) score += 1
+
+        return { job: j, score }
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map(item => item.job)
+  }
+
+  // ─── QUAD-VIEW LAYOUT PREFERENCE (WELLFOUND VS SPLIT VS ZONE VS CLASSIC) ──
   const [layoutView, setLayoutView] = useState(() => {
     try {
-      return localStorage.getItem('smarthire_career_layout_view') || 'split'
+      const v2 = localStorage.getItem('smarthire_career_layout_view_v2')
+      if (v2) return v2
+      return 'wellfound'
     } catch (e) {
-      return 'split'
+      return 'wellfound'
     }
   })
 
@@ -190,6 +224,7 @@ export default function PublicCareers() {
     setLayoutView(view)
     try {
       localStorage.setItem('smarthire_career_layout_view', view)
+      localStorage.setItem('smarthire_career_layout_view_v2', view)
     } catch (e) {}
   }
 
@@ -939,12 +974,49 @@ export default function PublicCareers() {
     <div style={{
       position: 'relative',
       minHeight: '100vh',
-      backgroundColor: layoutView === 'split' ? (isLight ? '#F3F2F0' : '#0B0F19') : layoutView === 'classic' ? (isLight ? '#FAFBFD' : '#080C14') : (isLight ? '#FFFFFF' : '#141A21'),
+      backgroundColor: layoutView === 'wellfound' ? (isLight ? '#FFFFFF' : '#0B0F19') : layoutView === 'split' ? (isLight ? '#F3F2F0' : '#0B0F19') : layoutView === 'classic' ? (isLight ? '#FAFBFD' : '#080C14') : (isLight ? '#FFFFFF' : '#141A21'),
       color: isLight ? '#0F172A' : '#F8FAFC',
       transition: 'background-color 0.2s, color 0.2s'
     }}>
-      {/* ─── 1-CLICK TRI LAYOUT TOGGLE: SPLIT (LINKEDIN) VS ZONE VS CLASSIC ─── */}
-      {layoutView === 'split' ? (
+      {/* ─── 1-CLICK QUAD LAYOUT TOGGLE: WELLFOUND VS SPLIT VS ZONE VS CLASSIC ─── */}
+      {layoutView === 'wellfound' ? (
+        <WellfoundCareersView
+          jobs={jobs}
+          filteredJobs={filteredJobs}
+          loading={loading}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          selectedLocation={selectedLocation}
+          setSelectedLocation={setSelectedLocation}
+          deadlineFilter={deadlineFilter}
+          setDeadlineFilter={setDeadlineFilter}
+          appliedJobs={appliedJobs}
+          savedJobs={savedJobs}
+          handleToggleSaveJob={handleToggleSaveJob}
+          candidateUser={candidateUser}
+          handleCandidateSignOut={handleCandidateSignOut}
+          setShowLoginModal={setShowLoginModal}
+          handleApplyClick={handleApplyClick}
+          setFullJdModalJob={setFullJdModalJob}
+          setActiveChatCandidate={setActiveChatCandidate}
+          setShowCvUploadModal={setShowCvUploadModal}
+          clocksExpanded={clocksExpanded}
+          setClocksExpanded={setClocksExpanded}
+          formatLiveTime={formatLiveTime}
+          themeMode={themeMode}
+          toggleTheme={toggleTheme}
+          isLight={isLight}
+          layoutView={layoutView}
+          handleSetLayoutView={handleSetLayoutView}
+          cleanJobTitleWithPositionNumber={cleanJobTitleWithPositionNumber}
+          resolveJobLocation={resolveJobLocation}
+          formatExperience={formatExperience}
+          formatRateOrSalary={formatRateOrSalary}
+          formatContractType={formatContractType}
+          isJobExpired={isJobExpired}
+          getFullDescriptionText={getFullDescriptionText}
+        />
+      ) : layoutView === 'split' ? (
         <LinkedInCareersView
           jobs={jobs}
           filteredJobs={filteredJobs}
@@ -1182,43 +1254,161 @@ export default function PublicCareers() {
               </div>
             )}
 
-            {/* Modal Actions */}
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', borderTop: `1px solid ${theme.border}`, paddingTop: 18 }}>
-              <button
-                onClick={() => setFullJdModalJob(null)}
-                style={{
-                  background: 'none',
-                  border: `1px solid ${theme.border}`,
-                  color: theme.textPrimary,
-                  borderRadius: 8,
-                  padding: '10px 18px',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-              >
-                Close
-              </button>
-              <button
-                onClick={() => {
-                  const jobToApply = fullJdModalJob
-                  setFullJdModalJob(null)
-                  handleApplyClick(jobToApply)
-                }}
-                style={{
-                  backgroundColor: theme.primary,
-                  color: '#FFFFFF',
-                  border: 'none',
-                  borderRadius: 8,
-                  padding: '10px 24px',
-                  fontSize: 14,
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 14px rgba(250, 84, 28, 0.4)'
-                }}
-              >
-                Apply for this position
-              </button>
+            {/* Modal Actions — Prominent Bottom Apply Bar */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 16,
+              borderTop: `1px solid ${theme.border}`,
+              paddingTop: 20,
+              marginBottom: 20
+            }}>
+              <div>
+                <div style={{ fontSize: 12.5, color: theme.textSecondary, fontWeight: 500 }}>
+                  Direct Client Opportunity · Verified Rate
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: theme.textPrimary }}>
+                  Ready to submit your profile?
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  onClick={() => setFullJdModalJob(null)}
+                  style={{
+                    background: 'none',
+                    border: `1px solid ${theme.border}`,
+                    color: theme.textPrimary,
+                    borderRadius: 8,
+                    padding: '10px 18px',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => {
+                    const jobToApply = fullJdModalJob
+                    setFullJdModalJob(null)
+                    handleApplyClick(jobToApply)
+                  }}
+                  style={{
+                    backgroundColor: '#0A0E1A',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '11px 26px',
+                    fontSize: 14.5,
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(10, 14, 26, 0.25)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8
+                  }}
+                >
+                  <span>Apply for this position</span>
+                  <span>→</span>
+                </button>
+              </div>
             </div>
+
+            {/* Similar Jobs Footer */}
+            {(() => {
+              const similarJobs = getSimilarJobs(fullJdModalJob, jobs, 3)
+              if (!similarJobs || similarJobs.length === 0) return null
+              return (
+                <div style={{
+                  borderTop: `1px solid ${theme.border}`,
+                  paddingTop: 22,
+                  marginTop: 10
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: 14
+                  }}>
+                    <h4 style={{
+                      margin: 0,
+                      fontSize: 15.5,
+                      fontWeight: 800,
+                      color: theme.textPrimary,
+                      letterSpacing: '-0.01em'
+                    }}>
+                      Similar jobs you may be interested in
+                    </h4>
+                    <span style={{ fontSize: 12, color: theme.textSecondary }}>
+                      Matched by title & skills
+                    </span>
+                  </div>
+
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+                    gap: 12
+                  }}>
+                    {similarJobs.map(simJob => (
+                      <div
+                        key={simJob.id}
+                        onClick={() => {
+                          setFullJdModalJob(simJob)
+                          const modalScroll = document.getElementById('full-jd-modal-scroll')
+                          if (modalScroll) modalScroll.scrollTop = 0
+                        }}
+                        style={{
+                          border: `1px solid ${theme.border}`,
+                          borderRadius: 10,
+                          padding: 14,
+                          backgroundColor: theme.surface,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = '#2065D1'
+                          e.currentTarget.style.transform = 'translateY(-2px)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = theme.border
+                          e.currentTarget.style.transform = 'translateY(0)'
+                        }}
+                      >
+                        <div style={{ fontSize: 11, fontWeight: 700, color: '#00A76F', textTransform: 'uppercase', marginBottom: 4 }}>
+                          Direct Client
+                        </div>
+                        <div style={{
+                          fontSize: 13.5,
+                          fontWeight: 700,
+                          color: theme.textPrimary,
+                          marginBottom: 6,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        }}>
+                          {cleanJobTitleWithPositionNumber(simJob.title)}
+                        </div>
+                        <div style={{ fontSize: 12, color: theme.textSecondary, marginBottom: 10 }}>
+                          {resolveJobLocation(simJob) || 'Remote, US'} • {formatRateOrSalary(simJob)}
+                        </div>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'flex-end',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          color: '#2065D1'
+                        }}>
+                          View Job →
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })()}
           </div>
         </div>
       )}

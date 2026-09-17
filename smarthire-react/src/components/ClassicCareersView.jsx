@@ -562,6 +562,25 @@ export default function ClassicCareersView({
           }}>
             <button
               type="button"
+              onClick={() => handleSetLayoutView('wellfound')}
+              style={{
+                background: layoutView === 'wellfound' ? (isLight ? '#0A0E1A' : '#374151') : 'transparent',
+                color: layoutView === 'wellfound' ? '#FFFFFF' : theme.textSecondary,
+                border: 'none',
+                borderRadius: 16,
+                padding: '4px 10px',
+                fontSize: 11.5,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4
+              }}
+            >
+              <span>Wellfound</span>
+            </button>
+            <button
+              type="button"
               onClick={() => handleSetLayoutView('classic')}
               style={{
                 background: layoutView === 'classic' ? (isLight ? '#1E293B' : '#2563EB') : 'transparent',
