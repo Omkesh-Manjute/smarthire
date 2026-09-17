@@ -117,10 +117,11 @@ export const resolveLocalRequirement = (job) => {
 
 // ─── Hiring Contact Resolver (Matches Screenshot 1 Avatar Block) ────────────
 export const resolveRecruiterContact = (job, location) => {
+  const locStr = String(location || '')
   return {
     name: 'Sarah J. Thorne',
     role: 'Employee / Talent Partner',
-    location: location && !location.includes('Remote') ? location : 'South San Francisco, CA',
+    location: locStr && !locStr.includes('Remote') ? locStr : 'South San Francisco, CA',
     initials: 'ST'
   }
 }
@@ -379,7 +380,15 @@ export default function WellfoundCareersView({
   const selLocalReq = selectedJob ? resolveLocalRequirement(selectedJob) : { label: 'Nationwide', isLocalNeeded: false, urgency: 'none' }
   const selRecruiter = selectedJob ? resolveRecruiterContact(selectedJob, selLoc) : null
   const selDetails = selectedJob ? parseWellfoundJobDetails(selectedJob, selCleanTitle, selDomain, selLoc, selWorkMode, selLocalReq) : null
-  const isSaved = selectedJob ? savedJobs.includes(selectedJob.id) : false
+  const isSaved = Boolean(
+    selectedJob && (
+      Array.isArray(savedJobs)
+        ? savedJobs.includes(selectedJob.id)
+        : savedJobs && typeof savedJobs === 'object'
+        ? Boolean(savedJobs[selectedJob.id])
+        : false
+    )
+  )
 
   return (
     <div style={{

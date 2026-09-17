@@ -249,9 +249,11 @@ export default function PublicCareers() {
     } catch(e) { return {} }
   })
 
-  const handleToggleSaveJob = (jobId) => {
+  const handleToggleSaveJob = (jobOrId) => {
+    const id = (jobOrId && typeof jobOrId === 'object') ? (jobOrId.id || jobOrId.jobId) : jobOrId
+    if (!id) return
     setSavedJobs(prev => {
-      const next = { ...prev, [jobId]: !prev[jobId] }
+      const next = { ...(prev || {}), [id]: !prev?.[id] }
       try { localStorage.setItem('smarthire_saved_jobs', JSON.stringify(next)) } catch(e) {}
       return next
     })
@@ -441,22 +443,29 @@ export default function PublicCareers() {
     return formatJobDescription('', job)
   }
 
-  const formatExperience = (val) => {
-    if (!val || val === 'TBD' || val === 'Any') return '5+ Years Exp'
-    if (/\d+/.test(val)) return val.includes('exp') ? val : `${val} Exp`
-    return val
+  const formatExperience = (valOrJob) => {
+    const raw = (valOrJob && typeof valOrJob === 'object')
+      ? (valOrJob.experience || valOrJob.exp || '')
+      : valOrJob
+    const str = String(raw || '').trim()
+    if (!str || str === 'TBD' || str === 'Any') return '5+ Years Exp'
+    if (/\d+/.test(str)) return str.toLowerCase().includes('exp') ? str : `${str} Exp`
+    return str
   }
 
   const formatRateOrSalary = (job) => {
+    if (!job || typeof job !== 'object') return 'Competitive'
     const rate = job.payRate || job.hourlyRate || job.rate || job.salary
     if (rate && rate !== 'TBD' && rate !== 'Competitive') {
-      return rate.includes('$') ? rate : `$${rate}/hr`
+      const rateStr = String(rate)
+      return rateStr.includes('$') ? rateStr : `$${rateStr}/hr`
     }
     return 'Competitive'
   }
 
   const formatContractType = (job) => {
-    const ct = (job.contractType || job.jobType || job.type || '').toUpperCase()
+    if (!job || typeof job !== 'object') return 'Contract'
+    const ct = String(job.contractType || job.jobType || job.type || '').toUpperCase()
     if (ct.includes('C2C') || ct.includes('CORP')) return 'C2C'
     if (ct.includes('W2')) return 'W2'
     if (ct.includes('1099')) return '1099'
