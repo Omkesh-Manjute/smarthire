@@ -2040,24 +2040,46 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       (c.name && c.name.toLowerCase() === candName)
     )
 
+    const masterId = String(matchedMaster?.id || '')
+    const masterCanId = String(matchedMaster?.canId || '')
+
     let detailsOverride = {}
-    try {
-      const saved = localStorage.getItem(`smarthire_candidate_details_${cleanId}`) ||
-                    localStorage.getItem(`smarthire_candidate_details_${candId}`)
-      if (saved) detailsOverride = JSON.parse(saved)
-    } catch (e) {}
+    const detailKeys = [cleanId, candId, masterId, masterCanId].filter(Boolean)
+    for (const k of detailKeys) {
+      try {
+        const saved = localStorage.getItem(`smarthire_candidate_details_${k}`)
+        if (saved) {
+          detailsOverride = { ...detailsOverride, ...JSON.parse(saved) }
+        }
+      } catch (e) {}
+    }
 
     let docsOverride = {}
-    try {
-      const saved = localStorage.getItem(`smarthire_candidate_docs_${cleanId}`) ||
-                    localStorage.getItem(`smarthire_candidate_docs_${candId}`)
-      if (saved) docsOverride = JSON.parse(saved)
-    } catch (e) {}
+    const docKeys = [cleanId, candId, masterId, masterCanId].filter(Boolean)
+    for (const k of docKeys) {
+      try {
+        const saved = localStorage.getItem(`smarthire_candidate_docs_${k}`)
+        if (saved) {
+          docsOverride = { ...docsOverride, ...JSON.parse(saved) }
+        }
+      } catch (e) {}
+    }
+    if (candObj.legalDocs && typeof candObj.legalDocs === 'object') {
+      docsOverride = { ...docsOverride, ...candObj.legalDocs }
+    }
+    if (candObj.documents && typeof candObj.documents === 'object') {
+      docsOverride = { ...docsOverride, ...candObj.documents }
+    }
+    if (matchedMaster?.legalDocs && typeof matchedMaster.legalDocs === 'object') {
+      docsOverride = { ...docsOverride, ...matchedMaster.legalDocs }
+    }
 
     const mergedCand = {
       ...candObj,
       ...(matchedMaster || {}),
       ...detailsOverride,
+      id: candId || masterId || cleanId,
+      canId: candObj.canId || masterCanId || cleanId,
       jobId: selectedReq?.id || candObj.jobId || matchedMaster?.jobId,
       reqId: selectedReq?.id || candObj.reqId || matchedMaster?.reqId,
       jobTitle: detailsOverride.jobTitle || matchedMaster?.jobTitle || candObj.jobTitle || matchedMaster?.fullRole || candObj.fullRole || selectedReq?.title || 'Lead Business Analyst',
@@ -2067,7 +2089,9 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       skills: matchedMaster?.skills || candObj.skills || detailsOverride.skills || [],
       resumeName: docsOverride.resume?.fileName || matchedMaster?.resumeName || candObj.resumeName || `${candObj.name || 'Candidate'}_Resume.pdf`,
       resumeData: docsOverride.resume?.fileData || matchedMaster?.resumeData || candObj.resumeData || null,
-      resumeText: docsOverride.resume?.resumeText || matchedMaster?.resumeText || candObj.resumeText || ''
+      resumeText: docsOverride.resume?.resumeText || matchedMaster?.resumeText || candObj.resumeText || '',
+      legalDocs: docsOverride,
+      documents: docsOverride
     }
 
     setSelectedViewCandidate(mergedCand)
@@ -2363,6 +2387,21 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     const ln = fullCand.lastName || parts.slice(1).join(' ') || ''
     const candId = String(fullCand.id ? String(fullCand.id).replace(/\D/g, '').slice(-5) || '87534' : '87534')
 
+    const candKeys = [candId, fullCand.id, fullCand.canId, fullCand._id, fullCand.candidateId, fullCand.candId, c.id, c.canId].filter(Boolean)
+    let loadedCandidateDocs = fullCand.legalDocs || fullCand.documents || c.legalDocs || c.documents || {}
+    for (const k of candKeys) {
+      try {
+        const stored = localStorage.getItem(`smarthire_candidate_docs_${k}`)
+        if (stored) {
+          const parsed = JSON.parse(stored)
+          if (parsed && typeof parsed === 'object') {
+            loadedCandidateDocs = { ...parsed, ...loadedCandidateDocs }
+            break
+          }
+        }
+      } catch (e) {}
+    }
+
     setSubmissionCandidate(prev => ({
       ...prev,
       ...fullCand,
@@ -2376,7 +2415,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       state: fullCand.state || (fullCand.location && fullCand.location.split(',')[1] ? fullCand.location.split(',')[1].trim().slice(0, 2) : 'VA'),
       experienceYears: fullCand.exp || (fullCand.experience ? String(fullCand.experience).replace(/\D/g, '') || '8' : '8'),
       jobTitle: fullCand.fullRole || fullCand.role || editingFields.title || 'Consultant',
-      resumeName: fullCand.resumeName || `${fullCand.name || 'Candidate'}_Resume.docx`,
+      resumeName: loadedCandidateDocs.resume?.fileName || fullCand.resumeName || `${fullCand.name || 'Candidate'}_Resume.docx`,
       resumeText: fullCand.resumeText || fullCand.parsedResumeText || '',
       resumeUrl: fullCand.resumeUrl || '',
       skills: Array.isArray(fullCand.skills) ? fullCand.skills : (fullCand.skills ? String(fullCand.skills).split(',').map(s => s.trim()) : []),
@@ -2384,13 +2423,15 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       interactionNotes: Array.isArray(fullCand.interactionNotes) ? fullCand.interactionNotes : (Array.isArray(fullCand.notes) ? fullCand.notes : prev.interactionNotes),
       submissionHistory: Array.isArray(fullCand.submissionHistory) ? fullCand.submissionHistory : (Array.isArray(fullCand.submissions) ? fullCand.submissions : prev.submissionHistory),
       legal: fullCand.legal || {},
+      legalDocs: loadedCandidateDocs,
+      documents: loadedCandidateDocs,
       workAuth: fullCand.workAuth || 'US Citizen',
       proposedPayRate: fullCand.payRate ? String(fullCand.payRate).replace(/[^0-9]/g, '') : (editingFields.payRate || '74'),
       proposedRateType: fullCand.rateType || fullCand.payRateType || editingFields.rateType || 'C2C'
     }))
 
     if (mode === 'view') {
-      setSelectedViewCandidate(fullCand)
+      setSelectedViewCandidate({ ...fullCand, legalDocs: loadedCandidateDocs, documents: loadedCandidateDocs })
       setShowDetailViewModal(true)
     } else {
       setViewMode('resumeSubmission')
@@ -2423,6 +2464,15 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     const payRateVal = candidateToAssign.payRate ? (String(candidateToAssign.payRate).includes('/hr') ? candidateToAssign.payRate : `${candidateToAssign.payRate}/hr`) : `${editingFields.payRate || '75'}/hr`
     const rateTypeVal = candidateToAssign.rateType || candidateToAssign.payRateType || editingFields.rateType || 'C2C'
 
+    let candidateDocs = candidateToAssign.legalDocs || candidateToAssign.documents || {}
+    if (!candidateDocs || Object.keys(candidateDocs).length === 0) {
+      try {
+        const saved = localStorage.getItem(`smarthire_candidate_docs_${candId}`) ||
+                      (candidateToAssign.canId ? localStorage.getItem(`smarthire_candidate_docs_${candidateToAssign.canId}`) : null)
+        if (saved) candidateDocs = JSON.parse(saved)
+      } catch (e) {}
+    }
+
     const newSubObj = {
       id: candId,
       name: fullName,
@@ -2445,7 +2495,11 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       addedByRole: isEmployee ? 'employee' : isRecruiter ? 'recruiter' : 'admin',
       lastChangedBy: userName || currentUser?.name || 'Recruiter',
       lastChangedRole: isAdmin ? 'superadmin' : (isRecruiter ? 'Recruiter' : 'Employee'),
-      lastChangedOn: dateStr
+      lastChangedOn: dateStr,
+      legalDocs: candidateDocs,
+      documents: candidateDocs,
+      resumeName: candidateDocs.resume?.fileName || candidateToAssign.resumeName || '',
+      resumeData: candidateDocs.resume?.fileData || candidateToAssign.resumeData || null
     }
 
     const updated = [newSubObj, ...potentialCandidates.filter(p => p.id !== candId && p.name !== fullName)]
@@ -2457,6 +2511,9 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       localStorage.setItem(`smarthire_potential_candidates_${resolvedId}`, JSON.stringify(updated))
       localStorage.setItem(`smarthire_potential_candidates_${rawId}`, JSON.stringify(updated))
       localStorage.setItem(`smarthire_potential_candidates_${fullId}`, JSON.stringify(updated))
+      if (candidateDocs && Object.keys(candidateDocs).length > 0) {
+        localStorage.setItem(`smarthire_candidate_docs_${candId}`, JSON.stringify(candidateDocs))
+      }
     } catch (e) {}
 
     // Update master candidate list
@@ -2466,7 +2523,11 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       canId: candId,
       name: fullName,
       reqId: cleanId,
-      status: 'Int-SubmittedToManager'
+      status: 'Int-SubmittedToManager',
+      legalDocs: candidateDocs,
+      documents: candidateDocs,
+      resumeName: candidateDocs.resume?.fileName || candidateToAssign.resumeName || '',
+      resumeData: candidateDocs.resume?.fileData || candidateToAssign.resumeData || null
     }
 
     setCandidates(prev => {
@@ -2515,6 +2576,15 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
     const payRateVal = submissionCandidate.proposedPayRate ? (String(submissionCandidate.proposedPayRate).includes('/hr') ? submissionCandidate.proposedPayRate : `${submissionCandidate.proposedPayRate}/hr`) : `${editingFields.payRate || '74'}/hr`
 
+    let candidateDocs = submissionCandidate.legalDocs || submissionCandidate.documents || {}
+    if (!candidateDocs || Object.keys(candidateDocs).length === 0) {
+      try {
+        const saved = localStorage.getItem(`smarthire_candidate_docs_${candId}`) ||
+                      (submissionCandidate.canId ? localStorage.getItem(`smarthire_candidate_docs_${submissionCandidate.canId}`) : null)
+        if (saved) candidateDocs = JSON.parse(saved)
+      } catch (e) {}
+    }
+
     const newSubObj = {
       id: candId,
       name: fullName,
@@ -2537,7 +2607,11 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       addedByRole: isEmployee ? 'employee' : isRecruiter ? 'recruiter' : 'admin',
       lastChangedBy: userName || currentUser?.name || 'Recruiter',
       lastChangedRole: isAdmin ? 'superadmin' : (isRecruiter ? 'Recruiter' : 'Employee'),
-      lastChangedOn: dateStr
+      lastChangedOn: dateStr,
+      legalDocs: candidateDocs,
+      documents: candidateDocs,
+      resumeName: candidateDocs.resume?.fileName || submissionCandidate.resumeName || '',
+      resumeData: candidateDocs.resume?.fileData || submissionCandidate.resumeData || null
     }
 
     const updated = [newSubObj, ...potentialCandidates.filter(p => p.id !== candId && p.name !== fullName)]
@@ -2549,6 +2623,9 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       localStorage.setItem(`smarthire_potential_candidates_${resolvedId}`, JSON.stringify(updated))
       localStorage.setItem(`smarthire_potential_candidates_${rawId}`, JSON.stringify(updated))
       localStorage.setItem(`smarthire_potential_candidates_${fullId}`, JSON.stringify(updated))
+      if (candidateDocs && Object.keys(candidateDocs).length > 0) {
+        localStorage.setItem(`smarthire_candidate_docs_${candId}`, JSON.stringify(candidateDocs))
+      }
     } catch (e) {}
 
     const masterCandObj = {
@@ -2581,7 +2658,11 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       workAuth: submissionCandidate.workAuth || 'US Citizen',
       screened: 'Yes',
       reqId: cleanId,
-      status: 'Int-SubmittedToManager'
+      status: 'Int-SubmittedToManager',
+      legalDocs: candidateDocs,
+      documents: candidateDocs,
+      resumeName: candidateDocs.resume?.fileName || submissionCandidate.resumeName || '',
+      resumeData: candidateDocs.resume?.fileData || submissionCandidate.resumeData || null
     }
 
     setCandidates(prev => {
@@ -2614,7 +2695,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
   // ─── FILTER REQUISITIONS LIST (STRICT MULTI-LEVEL RBAC + SEARCH FILTERS) ───
   const filteredJobs = useMemo(() => {
-    return jobs.filter(j => {
+    const list = jobs.filter(j => {
       if (!j) return false
 
       // ─── STRICT ROLE-BASED ACCESS CONTROL (RBAC) FOR EMPLOYEE ───
@@ -5097,7 +5178,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                                       <span
                                         className="tf-req-pill"
                                         onClick={() => {
-                                          if (matchingJob) handleSelectJob(matchingJob)
+                                          if (matchingJob) handleOpenReq(matchingJob)
                                           else setActiveMainTab('requisitions')
                                         }}
                                         title="Click to view requisition details"
@@ -5109,7 +5190,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                                       className="tf-pos-title"
                                       style={{ marginTop: '2px' }}
                                       onClick={() => {
-                                        if (matchingJob) handleSelectJob(matchingJob)
+                                        if (matchingJob) handleOpenReq(matchingJob)
                                         else setActiveMainTab('requisitions')
                                       }}
                                       title={sub.jobTitle}
@@ -5197,7 +5278,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                                     className="tf-btn-action-viewreq"
                                     onClick={() => {
                                       if (matchingJob) {
-                                        handleSelectJob(matchingJob)
+                                        handleOpenReq(matchingJob)
                                       } else {
                                         setActiveMainTab('requisitions')
                                       }
@@ -6039,40 +6120,149 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                   )}
 
                   {/* SUBTAB 4: LEGAL & COMPLIANCE */}
-                  {activeSubTab === 'legal' && (
-                    <div>
-                      <h4 style={{ margin: '0 0 10px', fontSize: '13px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                        ⚖️ Legal & Compliance Documentation
-                      </h4>
+                  {activeSubTab === 'legal' && (() => {
+                    const subCandDocs = submissionCandidate.legalDocs || submissionCandidate.documents || (() => {
+                      try {
+                        const s = localStorage.getItem(`smarthire_candidate_docs_${submissionCandidate.id}`) ||
+                                  (submissionCandidate.canId ? localStorage.getItem(`smarthire_candidate_docs_${submissionCandidate.canId}`) : null)
+                        return s ? JSON.parse(s) : {}
+                      } catch (e) { return {} }
+                    })() || {}
 
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
-                        {[
-                          { title: 'Visa / Form I-797 / Work Auth', status: `✅ Verified (${submissionCandidate.workAuth || 'US Citizen'})`, file: 'Work_Authorization_Doc.pdf', color: '#16a34a' },
-                          { title: "Driver's License (Front Page)", status: '✅ Verified (State DL Front)', file: 'State_DL_Front.pdf', color: '#16a34a' },
-                          { title: "Driver's License (Back Page)", status: '✅ Verified (State DL Back)', file: 'State_DL_Back.pdf', color: '#16a34a' },
-                          { title: 'Right To Represent (RTR)', status: '✅ Signed & Executed', file: 'Signed_RTR_Form.pdf', color: '#16a34a' },
-                          { title: 'SSN Card Verification', status: `✅ Verified (***-**-${submissionCandidate.ssnLast4 || '8492'})`, file: 'SSN_Verification.pdf', color: '#16a34a' },
-                          { title: 'SmartWorks Profile Cover Sheet', status: '✅ Ready for Submission', file: 'Profile_Coversheet.pdf', color: '#0284c7' }
-                        ].map((doc, idx) => (
-                          <div key={idx} style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '10px 12px' }}>
-                            <div style={{ fontWeight: 'bold', color: '#1e3a8a', fontSize: '11.5px', marginBottom: '4px' }}>{doc.title}</div>
-                            <div style={{ color: doc.color, fontWeight: 'bold', fontSize: '11px', marginBottom: '6px' }}>{doc.status}</div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontSize: '10.5px', color: '#64748b' }}>📄 {doc.file}</span>
-                              <span
-                                onClick={() => {
-                                  alert(`Opening ${doc.title} in preview...`)
-                                }}
-                                style={{ color: '#0066cc', textDecoration: 'underline', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
-                              >
-                                View ↗
-                              </span>
-                            </div>
-                          </div>
-                        ))}
+                    const handleSubDocUpload = (docKey, file) => {
+                      if (!file) return
+                      const reader = new FileReader()
+                      reader.onload = (e) => {
+                        const base64 = e.target.result
+                        const dateStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        const docData = {
+                          title: file.name,
+                          fileName: file.name,
+                          uploadedOn: dateStr,
+                          status: 'Uploaded',
+                          size: `${(file.size / 1024).toFixed(1)} KB`,
+                          fileData: base64,
+                          storageUrl: base64
+                        }
+
+                        const nextDocs = { ...subCandDocs, [docKey]: docData }
+                        setSubmissionCandidate(prev => ({
+                          ...prev,
+                          legalDocs: nextDocs,
+                          documents: nextDocs
+                        }))
+
+                        const candIdKeys = [submissionCandidate.id, submissionCandidate.canId, submissionCandidate._id].filter(Boolean)
+                        candIdKeys.forEach(k => {
+                          try { localStorage.setItem(`smarthire_candidate_docs_${k}`, JSON.stringify(nextDocs)) } catch(err) {}
+                        })
+
+                        setPotentialCandidates(prev => {
+                          const updated = prev.map(c => {
+                            if (c.id === submissionCandidate.id || c.canId === submissionCandidate.id || (c.name && c.name.toLowerCase() === (submissionCandidate.name || '').toLowerCase())) {
+                              return { ...c, legalDocs: nextDocs, documents: nextDocs }
+                            }
+                            return c
+                          })
+                          if (selectedReq?.id) {
+                            const cleanReqId = String(selectedReq.id).replace('J-', '').replace('REQ-', '').trim()
+                            try { localStorage.setItem(`smarthire_potential_candidates_${cleanReqId}`, JSON.stringify(updated)) } catch(err) {}
+                            saveRequisitionCandidates(cleanReqId, updated).catch(() => {})
+                          }
+                          return updated
+                        })
+
+                        setCandidates(prev => {
+                          const merged = prev.map(c => {
+                            if (c.id === submissionCandidate.id || c.canId === submissionCandidate.id || (c.name && c.name.toLowerCase() === (submissionCandidate.name || '').toLowerCase())) {
+                              return { ...c, legalDocs: nextDocs, documents: nextDocs }
+                            }
+                            return c
+                          })
+                          try { localStorage.setItem('smarthire_all_candidates', JSON.stringify(merged)) } catch(err) {}
+                          return merged
+                        })
+
+                        saveCandidate(submissionCandidate.id, {
+                          ...submissionCandidate,
+                          legalDocs: nextDocs,
+                          documents: nextDocs
+                        }).catch(() => {})
+
+                        setSubmissionDocType(docKey)
+                      }
+                      reader.readAsDataURL(file)
+                    }
+
+                    const complianceCards = [
+                      { key: 'visa', title: 'Visa / Form I-797 / Work Auth', fallback: submissionCandidate.workAuth || 'US Citizen' },
+                      { key: 'dlFront', title: "Driver's License (Front Page)", fallback: `State DL Front (${submissionCandidate.state || 'VA'})` },
+                      { key: 'dlBack', title: "Driver's License (Back Page)", fallback: 'State DL Back (Barcode Scan)' },
+                      { key: 'rtr', title: 'Right To Represent (RTR)', fallback: 'Signed & Executed RTR' },
+                      { key: 'ssn', title: 'SSN Card Verification', fallback: `Verified (***-**-${submissionCandidate.ssnLast4 || '8492'})` },
+                      { key: 'coversheet', title: 'SmartWorks Profile Cover Sheet', fallback: 'Submission Ready Form' }
+                    ]
+
+                    return (
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                          <h4 style={{ margin: 0, fontSize: '13px', color: '#1e3a8a', fontWeight: 'bold' }}>
+                            ⚖️ Legal & Compliance Documentation
+                          </h4>
+                          <span style={{ fontSize: '11px', color: '#64748b' }}>
+                            Total Documents: {Object.keys(subCandDocs).filter(k => subCandDocs[k]?.fileData || subCandDocs[k]?.fileName).length} of {complianceCards.length}
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
+                          {complianceCards.map((doc, idx) => {
+                            const item = subCandDocs[doc.key] || ((doc.key === 'dlFront' || doc.key === 'dl') ? (subCandDocs.dlFront || subCandDocs.dl) : null)
+                            const isUploaded = !!(item?.fileData || item?.fileName)
+
+                            return (
+                              <div key={idx} style={{ background: isUploaded ? '#f0fdf4' : '#f8fafc', border: isUploaded ? '1px solid #86efac' : '1px solid #cbd5e1', borderRadius: '4px', padding: '10px 12px' }}>
+                                <div style={{ fontWeight: 'bold', color: '#1e3a8a', fontSize: '11.5px', marginBottom: '4px' }}>{doc.title}</div>
+                                <div style={{ color: isUploaded ? '#16a34a' : '#d97706', fontWeight: 'bold', fontSize: '11px', marginBottom: '6px' }}>
+                                  {isUploaded ? `✅ Verified & Uploaded (${item.size || 'On File'})` : `⚠️ ${doc.fallback}`}
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
+                                  <span style={{ fontSize: '10.5px', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '110px' }}>
+                                    {isUploaded ? `📄 ${item.fileName || 'document.pdf'}` : 'Not uploaded'}
+                                  </span>
+                                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                    {isUploaded && (
+                                      <span
+                                        onClick={() => setSubmissionDocType(doc.key)}
+                                        style={{ color: '#0066cc', textDecoration: 'underline', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                                      >
+                                        View ↗
+                                      </span>
+                                    )}
+                                    <label style={{
+                                      background: isUploaded ? '#e2e8f0' : '#0066cc',
+                                      color: isUploaded ? '#334155' : '#ffffff',
+                                      padding: '2px 8px',
+                                      fontSize: '10.5px',
+                                      borderRadius: '3px',
+                                      cursor: 'pointer',
+                                      fontWeight: 'bold'
+                                    }}>
+                                      {isUploaded ? 'Replace' : 'Upload'}
+                                      <input
+                                        type="file"
+                                        style={{ display: 'none' }}
+                                        onChange={e => e.target.files?.[0] && handleSubDocUpload(doc.key, e.target.files[0])}
+                                      />
+                                    </label>
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )
+                  })()}
 
                   {/* SUBTAB 5: INTERACTION NOTES */}
                   {activeSubTab === 'notes' && (
@@ -6237,11 +6427,12 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                         style={{ padding: '2px 4px', fontSize: '11px', background: '#ffffff', color: '#0f172a', border: 'none', borderRadius: '2px' }}
                       >
                         <option value="resume">Resume ({submissionCandidate.resumeName || 'Resume.docx'})</option>
-                        <option value="visa">Visa Copy (I-797)</option>
+                        <option value="visa">Visa Copy (I-797 / Work Auth)</option>
                         <option value="dlFront">Driver's License (Front Page)</option>
                         <option value="dlBack">Driver's License (Back Page)</option>
                         <option value="rtr">Right To Represent (RTR)</option>
-                        <option value="ssn">SSN Card</option>
+                        <option value="ssn">SSN Card Verification</option>
+                        <option value="coversheet">Profile Cover Sheet</option>
                       </select>
                     </div>
 
@@ -6263,7 +6454,21 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                       </button>
                       <button
                         type="button"
-                        onClick={() => alert(`Downloading ${submissionCandidate.resumeName || 'Candidate_Resume.docx'}...`)}
+                        onClick={() => {
+                          const currentDoc = submissionDocType === 'resume'
+                            ? { fileName: submissionCandidate.resumeName || `${submissionCandidate.name || 'Candidate'}_Resume.docx`, fileData: submissionCandidate.resumeData }
+                            : ((submissionCandidate.legalDocs && submissionCandidate.legalDocs[submissionDocType]) || (submissionCandidate.documents && submissionCandidate.documents[submissionDocType]))
+                          if (currentDoc?.fileData) {
+                            const a = document.createElement('a')
+                            a.href = currentDoc.fileData
+                            a.download = currentDoc.fileName || `${submissionCandidate.name || 'Candidate'}_${submissionDocType}.pdf`
+                            document.body.appendChild(a)
+                            a.click()
+                            document.body.removeChild(a)
+                          } else {
+                            alert(`No file data available to download for ${submissionDocType}. Please upload a document file first.`)
+                          }
+                        }}
                         style={{ background: '#16a34a', color: '#ffffff', border: 'none', padding: '2px 8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '2px', marginLeft: '4px' }}
                       >
                         ⬇️ Download
@@ -6283,61 +6488,49 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                           <div>
                             <div style={{ textAlign: 'center', borderBottom: '2px solid #1e3a8a', paddingBottom: '8px', marginBottom: '12px' }}>
                               <h3 style={{ margin: '0 0 4px', fontSize: '16px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                                {submissionCandidate.firstName} {submissionCandidate.lastName}
+                                {submissionCandidate.name || `${submissionCandidate.firstName || ''} ${submissionCandidate.lastName || ''}`.trim() || 'Candidate Name'}
                               </h3>
-                              <div style={{ fontSize: '12px', color: '#475569', fontWeight: 'bold' }}>
-                                {submissionCandidate.jobTitle || 'Lead Software / Cloud Engineer'}
+                              <div style={{ color: '#475569', fontSize: '11px' }}>
+                                {submissionCandidate.city || 'Richmond'}, {submissionCandidate.state || 'VA'} | {submissionCandidate.phoneCell || '571-660-5778'} | {submissionCandidate.email || 'candidate@example.com'}
                               </div>
-                              <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
-                                📍 {submissionCandidate.city || 'Richmond'}, {submissionCandidate.state || 'VA'} | ✉️ {submissionCandidate.email} | 📞 {submissionCandidate.phoneCell || '571-660-5778'}
+                              <div style={{ color: '#0284c7', fontWeight: 'bold', fontSize: '11.5px', marginTop: '2px' }}>
+                                {submissionCandidate.jobTitle || editingFields.title || 'Technical Specialist'} ({submissionCandidate.experienceYears || '5+'} Years Exp) — {submissionCandidate.workAuth || 'US Citizen'}
                               </div>
                             </div>
 
-                            <div style={{ marginBottom: '10px' }}>
+                            <div style={{ marginBottom: '12px' }}>
                               <div style={{ fontWeight: 'bold', color: '#1e3a8a', borderBottom: '1px solid #cbd5e1', paddingBottom: '2px', marginBottom: '4px', textTransform: 'uppercase', fontSize: '11.5px' }}>
                                 📌 Professional Summary
                               </div>
                               <p style={{ margin: 0, color: '#334155' }}>
-                                Results-driven and seasoned IT professional with {submissionCandidate.experienceYears || '8'}+ years of experience in architecting, designing, and delivering high-concurrency cloud and enterprise software systems. Expert in microservices architecture, scalable cloud systems, RESTful API design, database performance tuning, and automated CI/CD pipelines.
+                                Experienced and results-oriented professional with over {submissionCandidate.experienceYears || '5'} years of hands-on expertise delivering robust technical solutions for enterprise and state-level projects. Adept at agile methodologies, cross-functional collaboration, technical requirement analysis, and delivering client-focused results on schedule.
                               </p>
                             </div>
 
-                            <div style={{ marginBottom: '10px' }}>
+                            <div style={{ marginBottom: '12px' }}>
                               <div style={{ fontWeight: 'bold', color: '#1e3a8a', borderBottom: '1px solid #cbd5e1', paddingBottom: '2px', marginBottom: '4px', textTransform: 'uppercase', fontSize: '11.5px' }}>
-                                🛠️ Core Technical Competencies
+                                🛠️ Technical Competencies & Skills
                               </div>
-                              <div style={{ color: '#334155' }}>
-                                <strong>Languages & Frameworks:</strong> Java, Spring Boot, Spring Cloud, Hibernate, React, TypeScript, Python, Node.js<br />
-                                <strong>Cloud & DevOps:</strong> AWS (ECS, Lambda, S3, RDS, CloudWatch), Docker, Kubernetes, Terraform, Jenkins, GitHub Actions<br />
-                                <strong>Databases & Messaging:</strong> PostgreSQL, Oracle, MySQL, Redis, Apache Kafka, RabbitMQ<br />
-                                <strong>Testing & Practices:</strong> JUnit, Mockito, TOSCA, TDD, Agile/Scrum, JIRA
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                {(Array.isArray(submissionCandidate.skills) ? submissionCandidate.skills : ['Project Management', 'Technical Analysis', 'System Architecture']).map((s, idx) => (
+                                  <span key={idx} style={{ background: '#e0f2fe', color: '#0369a1', padding: '1px 6px', borderRadius: '3px', fontSize: '10.5px' }}>
+                                    {typeof s === 'string' ? s : s.name || 'Skill'}
+                                  </span>
+                                ))}
                               </div>
                             </div>
 
-                            <div style={{ marginBottom: '10px' }}>
+                            <div style={{ marginBottom: '12px' }}>
                               <div style={{ fontWeight: 'bold', color: '#1e3a8a', borderBottom: '1px solid #cbd5e1', paddingBottom: '2px', marginBottom: '4px', textTransform: 'uppercase', fontSize: '11.5px' }}>
-                                💼 Professional Experience
+                                💼 Experience & Core Projects
                               </div>
-                              <div style={{ marginBottom: '8px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: '#0f172a' }}>
-                                  <span>Lead Software Engineer — Virginia Dept of Transportation</span>
-                                  <span>2022 - Present</span>
-                                </div>
-                                <ul style={{ margin: '4px 0 0 16px', padding: 0, color: '#334155' }}>
-                                  <li>Led the architectural modernization of state transportation portals to AWS cloud microservices.</li>
-                                  <li>Optimized distributed query performance resulting in 45% lower database latency.</li>
-                                  <li>Implemented automated CI/CD deployment pipelines using GitHub Actions and Docker.</li>
-                                </ul>
-                              </div>
-
-                              <div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: '#0f172a' }}>
-                                  <span>Senior Developer — North Carolina DHHS</span>
-                                  <span>2019 - 2022</span>
-                                </div>
-                                <ul style={{ margin: '4px 0 0 16px', padding: 0, color: '#334155' }}>
-                                  <li>Developed secure RESTful API integrations for statewide health data exchange.</li>
-                                  <li>Implemented role-based access control (RBAC) and compliance auditing for sensitive health records.</li>
+                              <div style={{ color: '#334155' }}>
+                                <div style={{ fontWeight: 'bold', color: '#0f172a' }}>Lead Specialist — Enterprise Project Delivery</div>
+                                <div style={{ fontSize: '10.5px', color: '#64748b', marginBottom: '4px' }}>2021 – Present | Richmond, VA</div>
+                                <ul style={{ margin: '0 0 8px 16px', padding: 0 }}>
+                                  <li>Spearheaded implementation and maintenance of key enterprise applications meeting strict client compliance.</li>
+                                  <li>Collaborated directly with client project managers, technical leads, and stakeholders to define deliverables.</li>
+                                  <li>Participated in regular code reviews, quality assurance audits, and performance tuning.</li>
                                 </ul>
                               </div>
                             </div>
@@ -6356,70 +6549,133 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                       </div>
                     )}
 
-                    {submissionDocType === 'visa' && (
-                      <div style={{ textAlign: 'center', padding: '30px 10px', color: '#1e3a8a' }}>
-                        <div style={{ fontSize: '36px', marginBottom: '10px' }}>🪪</div>
-                        <h4 style={{ margin: '0 0 6px', fontSize: '14px', fontWeight: 'bold' }}>Work Authorization / Visa Copy</h4>
-                        <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: 'bold', marginBottom: '8px' }}>
-                          Status: Verified ({submissionCandidate.workAuth || 'US Citizen'})
-                        </div>
-                        <div style={{ fontSize: '11px', color: '#64748b' }}>
-                          Document validated against official government records. Form I-797 / EAD / Passport on file.
-                        </div>
-                      </div>
-                    )}
+                    {submissionDocType !== 'resume' && (() => {
+                      const subDocs = submissionCandidate.legalDocs || submissionCandidate.documents || (() => {
+                        try {
+                          const s = localStorage.getItem(`smarthire_candidate_docs_${submissionCandidate.id}`) ||
+                                    (submissionCandidate.canId ? localStorage.getItem(`smarthire_candidate_docs_${submissionCandidate.canId}`) : null)
+                          return s ? JSON.parse(s) : {}
+                        } catch (e) { return {} }
+                      })() || {}
 
-                    {(submissionDocType === 'dlFront' || submissionDocType === 'dl') && (
-                      <div style={{ textAlign: 'center', padding: '30px 10px', color: '#1e3a8a' }}>
-                        <div style={{ fontSize: '36px', marginBottom: '10px' }}>🪪</div>
-                        <h4 style={{ margin: '0 0 6px', fontSize: '14px', fontWeight: 'bold' }}>State Driver's License (Front Page)</h4>
-                        <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: 'bold', marginBottom: '8px' }}>
-                          Status: Verified Front Side (State of {submissionCandidate.state || 'VA'})
-                        </div>
-                        <div style={{ fontSize: '11px', color: '#64748b' }}>
-                          Official State Photo ID front page verified with candidate portrait, address, and expiration date.
-                        </div>
-                      </div>
-                    )}
+                      const activeDoc = subDocs[submissionDocType] || ((submissionDocType === 'dlFront' || submissionDocType === 'dl') ? (subDocs.dlFront || subDocs.dl) : null)
+                      const docLabels = {
+                        visa: { title: 'Work Authorization / Visa Copy (I-797)', icon: '🪪', verifiedDesc: `Verified (${submissionCandidate.workAuth || 'US Citizen'})` },
+                        dlFront: { title: "State Driver's License (Front Page)", icon: '🪪', verifiedDesc: `Verified Front Side (State of ${submissionCandidate.state || 'VA'})` },
+                        dl: { title: "State Driver's License (Front Page)", icon: '🪪', verifiedDesc: `Verified Front Side (State of ${submissionCandidate.state || 'VA'})` },
+                        dlBack: { title: "State Driver's License (Back Page)", icon: '🔄', verifiedDesc: 'Verified Back Side (PDF417 Barcode Scan OK)' },
+                        rtr: { title: 'Right To Represent (RTR)', icon: '✍️', verifiedDesc: `Signed & Active for Requisition #${resolveReqId(selectedReq?.id, selectedReq)}` },
+                        ssn: { title: 'Social Security Verification', icon: '🔒', verifiedDesc: `Verified (SSN: ***-**-${submissionCandidate.ssnLast4 || '8492'})` },
+                        coversheet: { title: 'SmartWorks Profile Cover Sheet', icon: '📋', verifiedDesc: 'Ready for Requisition Submission' }
+                      }
+                      const meta = docLabels[submissionDocType] || { title: 'Document Preview', icon: '📄', verifiedDesc: 'Compliance Document' }
 
-                    {submissionDocType === 'dlBack' && (
-                      <div style={{ textAlign: 'center', padding: '30px 10px', color: '#1e3a8a' }}>
-                        <div style={{ fontSize: '36px', marginBottom: '10px' }}>🔄</div>
-                        <h4 style={{ margin: '0 0 6px', fontSize: '14px', fontWeight: 'bold' }}>State Driver's License (Back Page)</h4>
-                        <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: 'bold', marginBottom: '8px' }}>
-                          Status: Verified Back Side (PDF417 Barcode Scan OK)
-                        </div>
-                        <div style={{ fontSize: '11px', color: '#64748b' }}>
-                          Official State Photo ID back side verified with machine-readable 2D barcode and security watermarks.
-                        </div>
-                      </div>
-                    )}
+                      if (activeDoc?.fileData) {
+                        const isPdf = activeDoc.fileData.startsWith('data:application/pdf') || (activeDoc.fileName && activeDoc.fileName.toLowerCase().endsWith('.pdf'))
+                        const isImg = activeDoc.fileData.startsWith('data:image') || (activeDoc.fileName && (activeDoc.fileName.toLowerCase().endsWith('.jpg') || activeDoc.fileName.toLowerCase().endsWith('.png') || activeDoc.fileName.toLowerCase().endsWith('.jpeg') || activeDoc.fileName.toLowerCase().endsWith('.webp')))
 
-                    {submissionDocType === 'rtr' && (
-                      <div style={{ textAlign: 'center', padding: '30px 10px', color: '#1e3a8a' }}>
-                        <div style={{ fontSize: '36px', marginBottom: '10px' }}>✍️</div>
-                        <h4 style={{ margin: '0 0 6px', fontSize: '14px', fontWeight: 'bold' }}>Right To Represent (RTR)</h4>
-                        <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: 'bold', marginBottom: '8px' }}>
-                          Status: Signed & Active for Requisition #{resolveReqId(selectedReq?.id, selectedReq)}
-                        </div>
-                        <div style={{ fontSize: '11px', color: '#64748b' }}>
-                          Candidate has granted exclusive right of representation to SmartWorks / SmartHire for this client requirement.
-                        </div>
-                      </div>
-                    )}
+                        return (
+                          <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '10px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px' }}>
+                              <div>
+                                <span style={{ fontWeight: 'bold', color: '#1e3a8a', fontSize: '13px' }}>{meta.icon} {meta.title}</span>
+                                <div style={{ fontSize: '11px', color: '#16a34a', fontWeight: 'bold' }}>✅ {meta.verifiedDesc}</div>
+                              </div>
+                              <span style={{ fontSize: '11px', color: '#64748b' }}>{activeDoc.fileName || 'Attached'} ({activeDoc.size || 'On file'})</span>
+                            </div>
 
-                    {submissionDocType === 'ssn' && (
-                      <div style={{ textAlign: 'center', padding: '30px 10px', color: '#1e3a8a' }}>
-                        <div style={{ fontSize: '36px', marginBottom: '10px' }}>🔒</div>
-                        <h4 style={{ margin: '0 0 6px', fontSize: '14px', fontWeight: 'bold' }}>Social Security Verification</h4>
-                        <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: 'bold', marginBottom: '8px' }}>
-                          Status: Verified (SSN: ***-**-{submissionCandidate.ssnLast4 || '8492'})
+                            {isPdf ? (
+                              <iframe
+                                src={activeDoc.fileData}
+                                title={meta.title}
+                                style={{ width: '100%', height: '420px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                              />
+                            ) : isImg ? (
+                              <div style={{ textAlign: 'center', background: '#f8fafc', padding: '10px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                                <img
+                                  src={activeDoc.fileData}
+                                  alt={meta.title}
+                                  style={{ maxWidth: '100%', maxHeight: '420px', objectFit: 'contain', borderRadius: '4px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+                                />
+                              </div>
+                            ) : (
+                              <div style={{ padding: '30px 16px', textAlign: 'center', background: '#f8fafc', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                                <div style={{ fontSize: '36px', marginBottom: '8px' }}>📄</div>
+                                <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '13px' }}>{activeDoc.fileName || meta.title}</div>
+                                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>Document file attached ({activeDoc.size || 'Verified'})</div>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      }
+
+                      return (
+                        <div style={{ textAlign: 'center', padding: '30px 14px', color: '#1e3a8a' }}>
+                          <div style={{ fontSize: '36px', marginBottom: '10px' }}>{meta.icon}</div>
+                          <h4 style={{ margin: '0 0 6px', fontSize: '14px', fontWeight: 'bold' }}>{meta.title}</h4>
+                          <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>
+                            No uploaded file copy attached for {submissionCandidate.name || 'this candidate'} yet.
+                          </div>
+                          <label style={{
+                            display: 'inline-block',
+                            background: '#0066cc',
+                            color: '#ffffff',
+                            padding: '6px 14px',
+                            fontSize: '11px',
+                            fontWeight: 'bold',
+                            borderRadius: '4px',
+                            cursor: 'pointer'
+                          }}>
+                            📁 Upload {meta.title}
+                            <input
+                              type="file"
+                              style={{ display: 'none' }}
+                              onChange={e => {
+                                if (e.target.files && e.target.files[0]) {
+                                  const file = e.target.files[0]
+                                  const reader = new FileReader()
+                                  reader.onload = (ev) => {
+                                    const base64 = ev.target.result
+                                    const dateStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                    const docObj = {
+                                      title: file.name,
+                                      fileName: file.name,
+                                      uploadedOn: dateStr,
+                                      status: 'Uploaded',
+                                      size: `${(file.size / 1024).toFixed(1)} KB`,
+                                      fileData: base64,
+                                      storageUrl: base64
+                                    }
+                                    const updatedDocs = { ...subDocs, [submissionDocType]: docObj }
+                                    setSubmissionCandidate(prev => ({ ...prev, legalDocs: updatedDocs, documents: updatedDocs }))
+                                    const candIdKeys = [submissionCandidate.id, submissionCandidate.canId, submissionCandidate._id].filter(Boolean)
+                                    candIdKeys.forEach(k => {
+                                      try { localStorage.setItem(`smarthire_candidate_docs_${k}`, JSON.stringify(updatedDocs)) } catch(err) {}
+                                    })
+                                    setPotentialCandidates(prev => {
+                                      const updated = prev.map(c => (c.id === submissionCandidate.id || c.canId === submissionCandidate.id) ? { ...c, legalDocs: updatedDocs, documents: updatedDocs } : c)
+                                      if (selectedReq?.id) {
+                                        const cleanReqId = String(selectedReq.id).replace('J-', '').replace('REQ-', '').trim()
+                                        try { localStorage.setItem(`smarthire_potential_candidates_${cleanReqId}`, JSON.stringify(updated)) } catch(err) {}
+                                        saveRequisitionCandidates(cleanReqId, updated).catch(() => {})
+                                      }
+                                      return updated
+                                    })
+                                    setCandidates(prev => {
+                                      const merged = prev.map(c => (c.id === submissionCandidate.id || c.canId === submissionCandidate.id) ? { ...c, legalDocs: updatedDocs, documents: updatedDocs } : c)
+                                      try { localStorage.setItem('smarthire_all_candidates', JSON.stringify(merged)) } catch(err) {}
+                                      return merged
+                                    })
+                                    saveCandidate(submissionCandidate.id, { ...submissionCandidate, legalDocs: updatedDocs, documents: updatedDocs }).catch(() => {})
+                                  }
+                                  reader.readAsDataURL(file)
+                                }
+                              }}
+                            />
+                          </label>
                         </div>
-                        <div style={{ fontSize: '11px', color: '#64748b' }}>
-                          E-Verify background check verified and confirmed.
-                        </div>
-                      </div>
-                    )}
+                      )
+                    })()}
                   </div>
                 </div>
 
@@ -7434,15 +7690,45 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                               </td>
                             </tr>
                           ) : (
-                            getScopedPotentialCandidates(potentialCandidates).map((pc, idx) => (
+                            getScopedPotentialCandidates(potentialCandidates).map((pc, idx) => {
+                              const pcDocs = pc.legalDocs || pc.documents || (() => {
+                                try {
+                                  const s = localStorage.getItem(`smarthire_candidate_docs_${pc.id}`) ||
+                                            (pc.canId ? localStorage.getItem(`smarthire_candidate_docs_${pc.canId}`) : null)
+                                  return s ? JSON.parse(s) : null
+                                } catch(e) { return null }
+                              })() || {}
+                              const docCount = Object.keys(pcDocs).filter(k => pcDocs[k]?.fileData || pcDocs[k]?.fileName || pcDocs[k]?.url).length
+
+                              return (
                               <tr key={pc.id} style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
                                 <td style={{ padding: '4px 6px' }}>
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                                    <span onClick={() => handleOpenCandidateView(pc)} style={{ color: '#0033cc', cursor: 'pointer', textDecoration: 'none', fontWeight: 'normal' }}
-                                    onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
-                                    onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}>
-                                      {pc.name}
-                                    </span>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                      <span onClick={() => handleOpenCandidateView(pc)} style={{ color: '#0033cc', cursor: 'pointer', textDecoration: 'none', fontWeight: 'bold' }}
+                                      onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+                                      onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}>
+                                        {pc.name}
+                                      </span>
+                                      {docCount > 0 && (
+                                        <span
+                                          onClick={() => handleOpenCandidateView(pc)}
+                                          title={`${docCount} verified compliance documents attached`}
+                                          style={{
+                                            fontSize: '9px',
+                                            background: '#dcfce7',
+                                            color: '#166534',
+                                            border: '1px solid #bbf7d0',
+                                            padding: '0 4px',
+                                            borderRadius: '3px',
+                                            fontWeight: 'bold',
+                                            cursor: 'pointer'
+                                          }}
+                                        >
+                                          📎 {docCount} Doc{docCount > 1 ? 's' : ''}
+                                        </span>
+                                      )}
+                                    </div>
                                     <span
                                       onClick={() => handleOpenCandidateView(pc)}
                                       style={{ fontSize: '9.5px', color: '#0033cc', cursor: 'pointer' }}
@@ -7543,7 +7829,8 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                                   </select>
                                 </td>
                               </tr>
-                            ))
+                            )
+                          })
                           )}
                         </tbody>
                       </table>
@@ -10148,22 +10435,34 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                   }))
                 } catch (e) {}
 
-                // 3. Persist documents mapping with real uploaded resume
-                if (candidateIntakeData.resumeData || candidateIntakeData.resumeName) {
-                  try {
-                    const currentDocs = JSON.parse(localStorage.getItem(`smarthire_candidate_docs_${candId}`) || '{}')
-                    currentDocs.resume = {
-                      title: candidateIntakeData.resumeName || `${fullName}_Resume.pdf`,
-                      fileName: candidateIntakeData.resumeName || `${fullName}_Resume.pdf`,
-                      uploadedOn: dateStr,
-                      status: 'Uploaded',
-                      size: '210 KB',
-                      fileData: candidateIntakeData.resumeData || null,
-                      resumeText: candidateIntakeData.resumeText || ''
-                    }
-                    localStorage.setItem(`smarthire_candidate_docs_${candId}`, JSON.stringify(currentDocs))
-                  } catch (e) {}
+                // 3. Persist documents mapping with real uploaded resume & any legal docs
+                let currentDocs = {}
+                try {
+                  const stored = localStorage.getItem(`smarthire_candidate_docs_${candId}`)
+                  if (stored) currentDocs = JSON.parse(stored)
+                } catch (e) {}
+
+                if (candidateIntakeData.legalDocs || candidateIntakeData.documents) {
+                  currentDocs = { ...(candidateIntakeData.legalDocs || candidateIntakeData.documents), ...currentDocs }
                 }
+
+                if (candidateIntakeData.resumeData || candidateIntakeData.resumeName) {
+                  currentDocs.resume = {
+                    title: candidateIntakeData.resumeName || `${fullName}_Resume.pdf`,
+                    fileName: candidateIntakeData.resumeName || `${fullName}_Resume.pdf`,
+                    uploadedOn: dateStr,
+                    status: 'Uploaded',
+                    size: '210 KB',
+                    fileData: candidateIntakeData.resumeData || null,
+                    resumeText: candidateIntakeData.resumeText || ''
+                  }
+                }
+                try {
+                  localStorage.setItem(`smarthire_candidate_docs_${candId}`, JSON.stringify(currentDocs))
+                } catch (e) {}
+
+                updatedCandObj.legalDocs = currentDocs
+                updatedCandObj.documents = currentDocs
 
                 // 4. Save to Firestore & Backend Database API
                 saveCandidate(candId, updatedCandObj).catch(err => console.warn('Firestore candidate save notice:', err))
@@ -10211,7 +10510,9 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                     addedByRole: isEmployee ? 'employee' : isRecruiter ? 'recruiter' : 'admin',
                     lastChangedBy: userName,
                     lastChangedRole: isEmployee ? 'Employee' : 'Recruiter',
-                    lastChangedOn: new Date().toLocaleDateString()
+                    lastChangedOn: new Date().toLocaleDateString(),
+                    legalDocs: currentDocs,
+                    documents: currentDocs
                   }
 
                   const normFullName = fullName.toLowerCase().trim()
@@ -10837,13 +11138,45 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
             currentUser={currentUser}
             reqContext={selectedReq || (selectedViewCandidate ? (jobs.find(j => String(j.id).replace('J-', '') === String(selectedViewCandidate.reqId || '')) || null) : null)}
             onUpdateCandidate={(updatedCand) => {
+              const candId = updatedCand.id || updatedCand.canId
+
+              // 1. Update candidates master pool
               setCandidates(prev => {
-                const merged = prev.map(c => c.id === updatedCand.id ? updatedCand : c)
+                const merged = prev.map(c => (c.id === candId || c.canId === candId || (c.name && c.name.toLowerCase() === (updatedCand.name || '').toLowerCase())) ? { ...c, ...updatedCand } : c)
                 try {
                   localStorage.setItem('smarthire_all_candidates', JSON.stringify(merged))
                 } catch (e) {}
                 return merged
               })
+
+              // 2. Update potentialCandidates in active requisition
+              setPotentialCandidates(prev => {
+                const updated = prev.map(c => {
+                  const isMatch = c.id === candId || c.canId === candId || (c.name && c.name.toLowerCase() === (updatedCand.name || '').toLowerCase())
+                  if (isMatch) {
+                    return {
+                      ...c,
+                      ...updatedCand,
+                      legalDocs: updatedCand.legalDocs || updatedCand.documents || c.legalDocs || c.documents,
+                      documents: updatedCand.documents || updatedCand.legalDocs || c.documents || c.legalDocs
+                    }
+                  }
+                  return c
+                })
+
+                if (selectedReq?.id) {
+                  const cleanReqId = String(selectedReq.id).replace('J-', '').replace('REQ-', '').trim()
+                  const resolvedCleanId = resolveReqId(cleanReqId)
+                  try {
+                    localStorage.setItem(`smarthire_potential_candidates_${cleanReqId}`, JSON.stringify(updated))
+                    localStorage.setItem(`smarthire_potential_candidates_${resolvedCleanId}`, JSON.stringify(updated))
+                    localStorage.setItem(`smarthire_potential_candidates_J-${cleanReqId}`, JSON.stringify(updated))
+                  } catch (e) {}
+                  saveRequisitionCandidates(cleanReqId, updated).catch(() => {})
+                }
+                return updated
+              })
+
               setSelectedViewCandidate(updatedCand)
             }}
           />
@@ -10867,6 +11200,15 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
               const cleanReqId = String(targetJob?.id || '158938').replace('J-', '')
               const dateStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
               const candId = cand.id || cand.canId || cand.candidateId || `875${Math.floor(10 + Math.random() * 90)}`
+              let candDocs = cand.legalDocs || cand.documents || {}
+              if (!candDocs || Object.keys(candDocs).length === 0) {
+                try {
+                  const saved = localStorage.getItem(`smarthire_candidate_docs_${candId}`) ||
+                                (cand.canId ? localStorage.getItem(`smarthire_candidate_docs_${cand.canId}`) : null)
+                  if (saved) candDocs = JSON.parse(saved)
+                } catch (e) {}
+              }
+
               const newSubObj = {
                 ...cand,
                 id: candId,
@@ -10886,7 +11228,9 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                 rejectedReason: '',
                 lastChangedBy: userName,
                 lastChangedRole: isEmployee ? 'Employee' : 'Recruiter',
-                lastChangedOn: dateStr
+                lastChangedOn: dateStr,
+                legalDocs: candDocs,
+                documents: candDocs
               }
 
               // Save to requisition potential candidates with deduplication

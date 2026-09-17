@@ -400,9 +400,41 @@ export async function saveRequisitionCandidates(reqId, candidatesList) {
   if (!reqId) return
   const cleanId = String(reqId).replace('J-', '').replace('REQ-', '').trim()
   try {
+    // Strip large base64 fileData to strictly respect Firestore's 1MB document size limit
+    const cleanedCandidates = (Array.isArray(candidatesList) ? candidatesList : []).map(cand => {
+      if (!cand) return cand
+      const cleaned = { ...cand }
+      if (cleaned.legalDocs && typeof cleaned.legalDocs === 'object') {
+        const cleanedDocs = {}
+        for (const [k, d] of Object.entries(cleaned.legalDocs)) {
+          if (d && typeof d === 'object') {
+            const { fileData: _fd, ...restDoc } = d
+            cleanedDocs[k] = { ...restDoc, hasFile: !!(_fd || d.hasFile || d.storageUrl) }
+          } else {
+            cleanedDocs[k] = d
+          }
+        }
+        cleaned.legalDocs = cleanedDocs
+      }
+      if (cleaned.documents && typeof cleaned.documents === 'object') {
+        const cleanedDocs = {}
+        for (const [k, d] of Object.entries(cleaned.documents)) {
+          if (d && typeof d === 'object') {
+            const { fileData: _fd, ...restDoc } = d
+            cleanedDocs[k] = { ...restDoc, hasFile: !!(_fd || d.hasFile || d.storageUrl) }
+          } else {
+            cleanedDocs[k] = d
+          }
+        }
+        cleaned.documents = cleanedDocs
+      }
+      delete cleaned.resumeData
+      return cleaned
+    })
+
     const payload = {
       reqId: cleanId,
-      candidates: Array.isArray(candidatesList) ? candidatesList : [],
+      candidates: cleanedCandidates,
       updatedAt: serverTimestamp()
     }
     await setDoc(doc(db, REQUISITIONS_COLLECTION, cleanId), payload, { merge: true })

@@ -212,11 +212,34 @@ export default function CandidateDetailViewModal({
   // Legal / Compliance Documents
   const [documents, setDocuments] = useState(() => {
     let parsedDocs = {}
-    try {
-      const saved = localStorage.getItem(`smarthire_candidate_docs_${cleanCandId}`) ||
-                    localStorage.getItem(`smarthire_candidate_docs_${candidate.id}`)
-      if (saved) parsedDocs = JSON.parse(saved)
-    } catch(e) {}
+    const candidateIdVariants = [
+      cleanCandId,
+      candidate?.id,
+      candidate?.canId,
+      candidate?._id,
+      candidate?.candidateId,
+      candidate?.candId
+    ].filter(Boolean).map(String)
+
+    for (const vId of candidateIdVariants) {
+      try {
+        const saved = localStorage.getItem(`smarthire_candidate_docs_${vId}`)
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          if (parsed && typeof parsed === 'object') {
+            parsedDocs = { ...parsedDocs, ...parsed }
+          }
+        }
+      } catch (e) {}
+    }
+
+    // Also merge any legalDocs or documents directly attached to candidate object
+    if (candidate?.legalDocs && typeof candidate.legalDocs === 'object') {
+      parsedDocs = { ...parsedDocs, ...candidate.legalDocs }
+    }
+    if (candidate?.documents && typeof candidate.documents === 'object') {
+      parsedDocs = { ...parsedDocs, ...candidate.documents }
+    }
 
     const fullName = `${formData.firstName} ${formData.lastName}`.trim() || candidate.name || 'Candidate'
     const resumeFileName = candidate.resumeName || candidate.resumeFile?.name || parsedDocs.resume?.fileName || `${fullName.replace(/\s+/g, '_')}_Resume.pdf`
@@ -228,11 +251,12 @@ export default function CandidateDetailViewModal({
         title: resumeFileName,
         fileName: resumeFileName,
         uploadedOn: candidate.dateAdded || candidate.appliedDate || 'Today',
-        status: (resumeData || candidate.resumeName || resumeText) ? 'Uploaded' : 'Uploaded',
+        status: (resumeData || candidate.resumeName || resumeText || parsedDocs.resume?.status === 'Uploaded') ? 'Uploaded' : 'Uploaded',
         size: parsedDocs.resume?.size || '245 KB',
         fileData: resumeData,
         fileType: resumeData ? (resumeData.startsWith('data:application/pdf') ? 'application/pdf' : 'application/octet-stream') : (resumeFileName.endsWith('.pdf') ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'),
-        resumeText: resumeText
+        resumeText: resumeText,
+        hasFile: !!(resumeData || parsedDocs.resume?.hasFile || parsedDocs.resume?.storageUrl)
       },
       visa: parsedDocs.visa || {
         title: 'Visa Copy / Form I-797',
@@ -241,7 +265,8 @@ export default function CandidateDetailViewModal({
         status: 'Pending',
         size: '-',
         validity: '',
-        fileData: null
+        fileData: null,
+        hasFile: false
       },
       dl: parsedDocs.dl || parsedDocs.dlFront || {
         title: "Driver's License (Front Page)",
@@ -249,7 +274,8 @@ export default function CandidateDetailViewModal({
         uploadedOn: '-',
         status: 'Pending',
         size: '-',
-        fileData: null
+        fileData: null,
+        hasFile: false
       },
       dlFront: parsedDocs.dlFront || parsedDocs.dl || {
         title: "Driver's License (Front Page)",
@@ -257,7 +283,8 @@ export default function CandidateDetailViewModal({
         uploadedOn: '-',
         status: 'Pending',
         size: '-',
-        fileData: null
+        fileData: null,
+        hasFile: false
       },
       dlBack: parsedDocs.dlBack || {
         title: "Driver's License (Back Page)",
@@ -265,7 +292,8 @@ export default function CandidateDetailViewModal({
         uploadedOn: '-',
         status: 'Pending',
         size: '-',
-        fileData: null
+        fileData: null,
+        hasFile: false
       },
       rtr: parsedDocs.rtr || {
         title: 'Right to Represent (RTR Form)',
@@ -273,7 +301,8 @@ export default function CandidateDetailViewModal({
         uploadedOn: '-',
         status: 'Pending',
         size: '-',
-        fileData: null
+        fileData: null,
+        hasFile: false
       },
       ssn: parsedDocs.ssn || {
         title: 'SSN Verification',
@@ -281,7 +310,8 @@ export default function CandidateDetailViewModal({
         uploadedOn: '-',
         status: 'Pending',
         size: '-',
-        fileData: null
+        fileData: null,
+        hasFile: false
       },
       coversheet: parsedDocs.coversheet || {
         title: 'Candidate Submission Cover Sheet',
@@ -289,7 +319,8 @@ export default function CandidateDetailViewModal({
         uploadedOn: '-',
         status: 'Pending',
         size: '-',
-        fileData: null
+        fileData: null,
+        hasFile: false
       }
     }
   })
@@ -342,11 +373,35 @@ export default function CandidateDetailViewModal({
     setSkillsList(extractCandidateSkills())
 
     try {
-      const savedDocs = localStorage.getItem(`smarthire_candidate_docs_${cleanCandId}`) ||
-                        localStorage.getItem(`smarthire_candidate_docs_${candidate.id}`)
-      if (savedDocs) {
-        const parsed = JSON.parse(savedDocs)
-        setDocuments(prev => ({ ...prev, ...parsed }))
+      let savedDocsObj = {}
+      const candidateIdVariants = [
+        cleanCandId,
+        candidate?.id,
+        candidate?.canId,
+        candidate?._id,
+        candidate?.candidateId,
+        candidate?.candId
+      ].filter(Boolean).map(String)
+
+      for (const vId of candidateIdVariants) {
+        const saved = localStorage.getItem(`smarthire_candidate_docs_${vId}`)
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved)
+            if (parsed && typeof parsed === 'object') {
+              savedDocsObj = { ...savedDocsObj, ...parsed }
+            }
+          } catch (e) {}
+        }
+      }
+      if (candidate?.legalDocs && typeof candidate.legalDocs === 'object') {
+        savedDocsObj = { ...savedDocsObj, ...candidate.legalDocs }
+      }
+      if (candidate?.documents && typeof candidate.documents === 'object') {
+        savedDocsObj = { ...savedDocsObj, ...candidate.documents }
+      }
+      if (Object.keys(savedDocsObj).length > 0) {
+        setDocuments(prev => ({ ...prev, ...savedDocsObj }))
       }
     } catch(e) {}
 
@@ -358,24 +413,34 @@ export default function CandidateDetailViewModal({
 
     try {
       const savedNotes = localStorage.getItem(`smarthire_candidate_notes_${cleanCandId}`) ||
-                         localStorage.getItem(`smarthire_candidate_notes_${candidate.id}`)
+                          localStorage.getItem(`smarthire_candidate_notes_${candidate.id}`)
       if (savedNotes) setInteractionNotes(JSON.parse(savedNotes))
     } catch(e) {}
 
     try {
       const savedProjs = localStorage.getItem(`smarthire_candidate_projects_${cleanCandId}`) ||
-                         localStorage.getItem(`smarthire_candidate_projects_${candidate.id}`)
+                          localStorage.getItem(`smarthire_candidate_projects_${candidate.id}`)
       if (savedProjs) setProjectsList(JSON.parse(savedProjs))
     } catch(e) {}
 
     // 2. Fetch live data from Firebase Firestore (Cloud Source of Truth)
     getCandidate(cleanCandId).then(cloudCand => {
+      if (!cloudCand && candidate?.id && String(candidate.id) !== String(cleanCandId)) {
+        return getCandidate(String(candidate.id))
+      }
+      return cloudCand
+    }).then(cloudCand => {
       if (!cloudCand) return
       if (cloudCand.legalDocs && Object.keys(cloudCand.legalDocs).length > 0) {
         setDocuments(prev => {
           const merged = { ...prev }
           for (const [k, v] of Object.entries(cloudCand.legalDocs)) {
-            merged[k] = { ...merged[k], ...v, status: v.hasFile || v.storageUrl ? 'Uploaded' : (v.status || 'Pending') }
+            merged[k] = {
+              ...merged[k],
+              ...v,
+              fileData: prev[k]?.fileData || v.fileData || null,
+              status: v.hasFile || v.storageUrl || prev[k]?.fileData ? 'Uploaded' : (v.status || 'Pending')
+            }
           }
           return merged
         })
@@ -495,21 +560,53 @@ export default function CandidateDetailViewModal({
       setDocuments(prev => {
         const nextDocs = { ...prev, [docKey]: { ...prev[docKey], ...updatedDoc, resumeText: parsedText || prev[docKey]?.resumeText || '' } }
         latestDocs = nextDocs
-        try {
-          localStorage.setItem(`smarthire_candidate_docs_${cleanCandId}`, JSON.stringify(nextDocs))
-          localStorage.setItem(`smarthire_candidate_docs_${candidate.id}`, JSON.stringify(nextDocs))
-        } catch(e) {}
+
+        const candidateIdVariants = [
+          cleanCandId,
+          candidate?.id,
+          candidate?.canId,
+          candidate?._id,
+          candidate?.candidateId,
+          candidate?.candId
+        ].filter(Boolean).map(String)
+
+        for (const vId of candidateIdVariants) {
+          try {
+            localStorage.setItem(`smarthire_candidate_docs_${vId}`, JSON.stringify(nextDocs))
+          } catch(e) {}
+        }
+
+        // CRITICAL: Immediately notify parent so requisition candidate state is in sync
+        if (onUpdateCandidate) {
+          onUpdateCandidate({
+            ...candidate,
+            legalDocs: nextDocs,
+            documents: nextDocs,
+            ...(docKey === 'resume' ? {
+              resumeName: file.name,
+              resumeData: dataUrl,
+              resumeText: parsedText || candidate?.resumeText || ''
+            } : {})
+          })
+        }
+
         return nextDocs
       })
       setActiveDocType(docKey)
-      setToastMsg(`✅ ${file.name} attached! Syncing to database...`)
+      setToastMsg(`✅ ${file.name} attached & synced to candidate profile!`)
 
-      // 1. Save metadata directly to Firestore
+      // 1. Save metadata directly to Firestore across candidate ID variations
       try {
         await saveLegalDocs(cleanCandId, latestDocs || { [docKey]: updatedDoc }, {
           email: formData.email || candidate.email || '',
           candidateName: `${formData.firstName} ${formData.lastName}`.trim() || candidate.name || ''
         })
+        if (candidate?.id && String(candidate.id) !== String(cleanCandId)) {
+          await saveLegalDocs(String(candidate.id), latestDocs || { [docKey]: updatedDoc }, {
+            email: formData.email || candidate.email || '',
+            candidateName: `${formData.firstName} ${formData.lastName}`.trim() || candidate.name || ''
+          })
+        }
       } catch (fErr) {
         console.warn('Firestore saveLegalDocs note:', fErr)
       }
@@ -522,9 +619,28 @@ export default function CandidateDetailViewModal({
             ...prev,
             [docKey]: { ...prev[docKey], storageUrl: downloadUrl, storagePath }
           }
-          try {
-            localStorage.setItem(`smarthire_candidate_docs_${cleanCandId}`, JSON.stringify(withStorage))
-          } catch(e) {}
+          const candidateIdVariants = [
+            cleanCandId,
+            candidate?.id,
+            candidate?.canId,
+            candidate?._id,
+            candidate?.candidateId,
+            candidate?.candId
+          ].filter(Boolean).map(String)
+
+          for (const vId of candidateIdVariants) {
+            try {
+              localStorage.setItem(`smarthire_candidate_docs_${vId}`, JSON.stringify(withStorage))
+            } catch(e) {}
+          }
+
+          if (onUpdateCandidate) {
+            onUpdateCandidate({
+              ...candidate,
+              legalDocs: withStorage,
+              documents: withStorage
+            })
+          }
           return withStorage
         })
         setToastMsg(`✅ ${file.name} uploaded & saved to database!`)
@@ -569,14 +685,27 @@ export default function CandidateDetailViewModal({
       skills: skillsList.map(s => s.name),
       resumeName: documents.resume?.fileName || candidate.resumeName,
       resumeData: documents.resume?.fileData || candidate.resumeData,
-      resumeText: documents.resume?.resumeText || candidate.resumeText
+      resumeText: documents.resume?.resumeText || candidate.resumeText,
+      legalDocs: documents,
+      documents: documents
     }
+
+    const candidateIdVariants = [
+      cleanCandId,
+      candidate?.id,
+      candidate?.canId,
+      candidate?._id,
+      candidate?.candidateId,
+      candidate?.candId
+    ].filter(Boolean).map(String)
 
     try {
       localStorage.setItem(`smarthire_candidate_details_${cleanCandId}`, JSON.stringify(formData))
       localStorage.setItem(`smarthire_candidate_skills_${cleanCandId}`, JSON.stringify(skillsList))
       localStorage.setItem(`smarthire_candidate_refs_${cleanCandId}`, JSON.stringify(references))
-      localStorage.setItem(`smarthire_candidate_docs_${cleanCandId}`, JSON.stringify(documents))
+      for (const vId of candidateIdVariants) {
+        localStorage.setItem(`smarthire_candidate_docs_${vId}`, JSON.stringify(documents))
+      }
       localStorage.setItem(`smarthire_candidate_notes_${cleanCandId}`, JSON.stringify(interactionNotes))
       localStorage.setItem(`smarthire_candidate_projects_${cleanCandId}`, JSON.stringify(projectsList))
     } catch(e) {}
@@ -592,12 +721,23 @@ export default function CandidateDetailViewModal({
         projects: projectsList,
         resumeUrl: documents.resume?.storageUrl || ''
       })
+      if (candidate?.id && String(candidate.id) !== String(cleanCandId)) {
+        await saveCandidate(String(candidate.id), {
+          ...updatedObj,
+          legalDocs: documents,
+          skills: skillsList,
+          references,
+          notes: interactionNotes,
+          projects: projectsList,
+          resumeUrl: documents.resume?.storageUrl || ''
+        })
+      }
     } catch(fErr) {
       console.warn('Firebase saveCandidate note:', fErr)
     }
 
     if (onUpdateCandidate) {
-      onUpdateCandidate({ ...updatedObj, legalDocs: documents, skills: skillsList, references, notes: interactionNotes, projects: projectsList })
+      onUpdateCandidate({ ...updatedObj, legalDocs: documents, documents: documents, skills: skillsList, references, notes: interactionNotes, projects: projectsList })
     }
 
     setToastMsg('💾 Candidate profile, verified skills & resume saved to database!')
@@ -611,10 +751,20 @@ export default function CandidateDetailViewModal({
     setIsSavingDocs(true)
     setToastMsg('⏳ Saving documents to Firebase Database...')
 
+    const candidateIdVariants = [
+      cleanCandId,
+      candidate?.id,
+      candidate?.canId,
+      candidate?._id,
+      candidate?.candidateId,
+      candidate?.candId
+    ].filter(Boolean).map(String)
+
     // Always save to localStorage first as a guaranteed local backup
     try {
-      localStorage.setItem(`smarthire_candidate_docs_${cleanCandId}`, JSON.stringify(documents))
-      localStorage.setItem(`smarthire_candidate_docs_${candidate.id}`, JSON.stringify(documents))
+      for (const vId of candidateIdVariants) {
+        localStorage.setItem(`smarthire_candidate_docs_${vId}`, JSON.stringify(documents))
+      }
     } catch(e) {}
 
     try {
@@ -623,12 +773,21 @@ export default function CandidateDetailViewModal({
         email: formData.email || candidate.email || '',
         candidateName: `${formData.firstName} ${formData.lastName}`.trim() || candidate.name || ''
       })
+      if (candidate?.id && String(candidate.id) !== String(cleanCandId)) {
+        await saveLegalDocs(String(candidate.id), documents, {
+          email: formData.email || candidate.email || '',
+          candidateName: `${formData.firstName} ${formData.lastName}`.trim() || candidate.name || ''
+        })
+      }
       if (onUpdateCandidate) {
-        onUpdateCandidate({ ...candidate, legalDocs: documents })
+        onUpdateCandidate({ ...candidate, legalDocs: documents, documents: documents })
       }
       setToastMsg('✅ Legal documents saved to database successfully!')
     } catch(err) {
       console.error('Firebase saveLegalDocs error:', err)
+      if (onUpdateCandidate) {
+        onUpdateCandidate({ ...candidate, legalDocs: documents, documents: documents })
+      }
       setToastMsg('✅ Documents saved locally!')
     } finally {
       setIsSavingDocs(false)
@@ -2389,32 +2548,163 @@ export default function CandidateDetailViewModal({
 
                   {/* ─── OTHER DOCUMENTS (VISA, DL, RTR, SSN, COVER SHEET) ─── */}
                   {activeDocType !== 'resume' && (
-                    <div style={{ padding: '30px 20px', textAlign: 'center', background: '#f8fafc', border: '2px dashed #cbd5e1', borderRadius: '6px' }}>
-                      <div style={{ fontSize: '36px', marginBottom: '8px' }}>📁</div>
-                      <div style={{ fontWeight: 'bold', color: '#1e3a8a', fontSize: '14px', marginBottom: '4px' }}>
-                        {currentDoc.title || 'Document'}
-                      </div>
-                      <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '16px' }}>
-                        {currentDoc.fileData || currentDoc.storageUrl || currentDoc.hasFile ? '✅ File attached and verified in database.' : 'No file uploaded for this candidate yet. Select a file to attach and view live.'}
-                      </div>
-                      <label style={{
-                        background: '#0033cc',
-                        color: '#ffffff',
-                        padding: '6px 18px',
-                        fontSize: '11.5px',
-                        fontWeight: 'bold',
-                        borderRadius: '3px',
-                        cursor: 'pointer',
-                        display: 'inline-block'
-                      }}>
-                        📎 Select & Upload File
-                        <input
-                          type="file"
-                          accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
-                          onChange={e => handleFileUpload(activeDocType, e)}
-                          style={{ display: 'none' }}
-                        />
-                      </label>
+                    <div style={{ width: '100%' }}>
+                      {currentDoc?.fileData || currentDoc?.storageUrl ? (
+                        <div>
+                          {/* Document Metadata Header & Action Bar */}
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            background: '#f8fafc',
+                            border: '1px solid #cbd5e1',
+                            borderRadius: '4px',
+                            padding: '10px 14px',
+                            marginBottom: '14px',
+                            flexWrap: 'wrap',
+                            gap: '8px'
+                          }}>
+                            <div>
+                              <div style={{ fontWeight: 'bold', color: '#1e3a8a', fontSize: '13px' }}>
+                                {currentDoc.title || activeDocType.toUpperCase()}
+                              </div>
+                              <div style={{ fontSize: '11px', color: '#16a34a', fontWeight: 'bold', marginTop: '2px' }}>
+                                ✅ Attached &amp; Verified: <span style={{ color: '#0f172a', fontWeight: 'normal' }}>{currentDoc.fileName || `${activeDocType}_Document`} ({currentDoc.size || 'Attached'})</span>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                              <a
+                                href={currentDoc.fileData || currentDoc.storageUrl}
+                                download={currentDoc.fileName || `${activeDocType}_Document.pdf`}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{
+                                  background: '#1e3a8a',
+                                  color: '#ffffff',
+                                  padding: '5px 12px',
+                                  fontSize: '11px',
+                                  fontWeight: 'bold',
+                                  borderRadius: '3px',
+                                  textDecoration: 'none',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}
+                              >
+                                ⬇️ Download / Open
+                              </a>
+                              <label style={{
+                                background: '#f1f5f9',
+                                border: '1px solid #94a3b8',
+                                color: '#0f172a',
+                                padding: '4px 10px',
+                                fontSize: '11px',
+                                fontWeight: 'bold',
+                                borderRadius: '3px',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}>
+                                📁 Replace
+                                <input
+                                  type="file"
+                                  accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+                                  onChange={e => handleFileUpload(activeDocType, e)}
+                                  style={{ display: 'none' }}
+                                />
+                              </label>
+                            </div>
+                          </div>
+
+                          {/* Render based on document MIME type */}
+                          {(currentDoc.fileType?.startsWith('image/') ||
+                            currentDoc.fileName?.match(/\.(png|jpe?g|gif|webp|svg)$/i) ||
+                            (typeof currentDoc.fileData === 'string' && currentDoc.fileData.startsWith('data:image/'))) ? (
+                            <div style={{ textAlign: 'center', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '12px', overflow: 'auto', maxHeight: '520px' }}>
+                              <img
+                                src={currentDoc.fileData || currentDoc.storageUrl}
+                                alt={currentDoc.title}
+                                style={{
+                                  maxWidth: '100%',
+                                  width: `${zoomLevel}%`,
+                                  maxHeight: '480px',
+                                  objectFit: 'contain',
+                                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                                  borderRadius: '3px',
+                                  background: '#ffffff'
+                                }}
+                              />
+                            </div>
+                          ) : (currentDoc.fileType === 'application/pdf' ||
+                               currentDoc.fileName?.endsWith('.pdf') ||
+                               (typeof currentDoc.fileData === 'string' && currentDoc.fileData.startsWith('data:application/pdf'))) ? (
+                            <div style={{ width: '100%', height: '540px', border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden' }}>
+                              <iframe
+                                src={currentDoc.fileData || currentDoc.storageUrl}
+                                title={currentDoc.title}
+                                style={{ width: '100%', height: '100%', border: 'none' }}
+                              />
+                            </div>
+                          ) : (
+                            <div style={{ padding: '36px 20px', textAlign: 'center', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
+                              <div style={{ fontSize: '42px', marginBottom: '8px' }}>📄</div>
+                              <div style={{ fontWeight: 'bold', color: '#1e3a8a', fontSize: '14px', marginBottom: '6px' }}>
+                                {currentDoc.fileName || currentDoc.title}
+                              </div>
+                              <div style={{ fontSize: '11px', color: '#475569', marginBottom: '16px' }}>
+                                Uploaded on: {currentDoc.uploadedOn || 'Today'} | Size: {currentDoc.size || 'Attached'}
+                              </div>
+                              <a
+                                href={currentDoc.fileData || currentDoc.storageUrl}
+                                download={currentDoc.fileName || `${activeDocType}_doc`}
+                                style={{
+                                  background: '#16a34a',
+                                  color: '#ffffff',
+                                  padding: '7px 18px',
+                                  fontSize: '12px',
+                                  fontWeight: 'bold',
+                                  borderRadius: '3px',
+                                  textDecoration: 'none',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px'
+                                }}
+                              >
+                                ⬇️ Download Document
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div style={{ padding: '36px 20px', textAlign: 'center', background: '#f8fafc', border: '2px dashed #cbd5e1', borderRadius: '6px' }}>
+                          <div style={{ fontSize: '38px', marginBottom: '8px' }}>📁</div>
+                          <div style={{ fontWeight: 'bold', color: '#1e3a8a', fontSize: '14px', marginBottom: '4px' }}>
+                            {currentDoc.title || 'Document'}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '16px' }}>
+                            No file attached yet for this candidate. Select a file (*.pdf, *.png, *.jpg, *.docx) to upload:
+                          </div>
+                          <label style={{
+                            background: '#0033cc',
+                            color: '#ffffff',
+                            padding: '7px 20px',
+                            fontSize: '11.5px',
+                            fontWeight: 'bold',
+                            borderRadius: '3px',
+                            cursor: 'pointer',
+                            display: 'inline-block'
+                          }}>
+                            📎 Select &amp; Upload File
+                            <input
+                              type="file"
+                              accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+                              onChange={e => handleFileUpload(activeDocType, e)}
+                              style={{ display: 'none' }}
+                            />
+                          </label>
+                        </div>
+                      )}
                     </div>
                   )}
 

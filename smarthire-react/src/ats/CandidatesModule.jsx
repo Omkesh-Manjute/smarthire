@@ -462,6 +462,15 @@ function CandidatesModule({
     const effectiveParentRecruiterId = currentUser?.parentRecruiterId || ''
     const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
 
+    let candLegalDocs = candidate.legalDocs || candidate.documents || {}
+    if (!candLegalDocs || Object.keys(candLegalDocs).length === 0) {
+      try {
+        const stored = localStorage.getItem(`smarthire_candidate_docs_${candidateId}`) ||
+                       (candidate.canId ? localStorage.getItem(`smarthire_candidate_docs_${candidate.canId}`) : null)
+        if (stored) candLegalDocs = JSON.parse(stored)
+      } catch (e) {}
+    }
+
     const newSubObj = {
       id: candidateId || `SUB-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
       candidateId: candidateId,
@@ -496,7 +505,9 @@ function CandidatesModule({
       addedByRole: currentUser?.role || 'recruiter',
       lastChangedBy: currentUserName || 'Recruiter',
       lastChangedRole: currentUser?.role || 'Recruiter',
-      lastChangedOn: dateStr
+      lastChangedOn: dateStr,
+      legalDocs: candLegalDocs,
+      documents: candLegalDocs
     }
 
     // 1. Save to local storage for all keys and their J- prefixes
@@ -543,7 +554,9 @@ function CandidatesModule({
       status: status,
       assignedBy: currentUserName || 'Omkesh',
       recruiter: currentUserName || 'Omkesh',
-      recruiterEmail: currentUser?.email || ''
+      recruiterEmail: currentUser?.email || '',
+      legalDocs: candLegalDocs,
+      documents: candLegalDocs
     }
 
     try {
@@ -2272,6 +2285,14 @@ function CandidatesModule({
           reqContext={safeJobs.find(j => j.id === selectedCandidate.job_id || String(j.id).replace('J-', '') === selectedCandidate.reqId) || null}
           onUpdateCandidate={(updated) => {
             setSelectedCandidate(updated)
+            try {
+              const allCandsRaw = localStorage.getItem('smarthire_all_candidates')
+              if (allCandsRaw) {
+                const allCands = JSON.parse(allCandsRaw)
+                const merged = allCands.map(c => (c.id === updated.id || c.canId === updated.id) ? { ...c, ...updated } : c)
+                localStorage.setItem('smarthire_all_candidates', JSON.stringify(merged))
+              }
+            } catch (e) {}
             if (fetchCandidates) fetchCandidates()
           }}
         />
