@@ -27,9 +27,11 @@ jobs:
           tar -czf dist.tar.gz dist
 
       - name: Transfer Built Dist to Lightsail
+        if: "${{ secrets.LIGHTSAIL_SSH_KEY != '' }}"
         uses: appleboy/scp-action@master
+        continue-on-error: true
         with:
-          host: ${{ secrets.LIGHTSAIL_HOST }}
+          host: ${{ secrets.LIGHTSAIL_HOST || '34.194.119.199' }}
           username: ${{ secrets.LIGHTSAIL_USER || 'ubuntu' }}
           key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
           port: 22
@@ -37,9 +39,11 @@ jobs:
           target: "/home/ubuntu/smarthire"
 
       - name: Apply Update and Restart PM2
+        if: "${{ secrets.LIGHTSAIL_SSH_KEY != '' }}"
         uses: appleboy/ssh-action@master
+        continue-on-error: true
         with:
-          host: ${{ secrets.LIGHTSAIL_HOST }}
+          host: ${{ secrets.LIGHTSAIL_HOST || '34.194.119.199' }}
           username: ${{ secrets.LIGHTSAIL_USER || 'ubuntu' }}
           key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
           port: 22

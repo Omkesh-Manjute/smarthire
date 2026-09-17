@@ -7208,7 +7208,7 @@ function saveEmailConfigs() {
 
 // Auto-seed from environment variables if present (e.g. Render / AWS .env)
 const envEmailUser = process.env.EMAIL_USER || process.env.SMTP_USER || process.env.IMAP_USER || 'omkesh@coolsofttech.com';
-const envEmailPass = process.env.EMAIL_PASS || process.env.SMTP_PASS || process.env.EMAIL_PASSWORD || process.env.SMTP_PASSWORD || process.env.APP_PASSWORD || process.env.COOLSOFT_PASS || 'ykbmemlfgywcjrbo';
+const envEmailPass = process.env.EMAIL_PASS || process.env.SMTP_PASS || process.env.EMAIL_PASSWORD || process.env.SMTP_PASSWORD || process.env.APP_PASSWORD || process.env.COOLSOFT_PASS || '';
 const envEmailHost = process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.bizmail.yahoo.com';
 const envEmailPort = parseInt(process.env.EMAIL_PORT || process.env.SMTP_PORT || '465');
 const envEmailFrom = process.env.EMAIL_FROM || `Omkesh Manjute <${envEmailUser}>`;
@@ -7269,7 +7269,7 @@ app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
 
   const cfg = emailConfigsStore[recruiterEmail] || emailConfigsStore['omkesh@coolsofttech.com'] || {};
   const fromEmail = cfg.fromEmail || recruiterEmail || 'omkesh@coolsofttech.com';
-  const cleanedPass = (cfg.appPassword || process.env.EMAIL_PASS || 'ykbmemlfgywcjrbo').replace(/\s+/g, '');
+  const cleanedPass = (cfg.appPassword || process.env.EMAIL_PASS || process.env.SMTP_PASS || '').replace(/\s+/g, '');
   const smtpHost = cfg.smtpHost || process.env.EMAIL_HOST || 'smtp.bizmail.yahoo.com';
   const port = parseInt(cfg.smtpPort || process.env.EMAIL_PORT || '465');
   const isSecure = cfg.security === 'SSL' || port === 465;
@@ -8238,7 +8238,7 @@ app.post('/api/recruiter/sync-email-resumes', express.json(), async (req, res) =
     const imapHost = cfg.imapHost || process.env.IMAP_HOST || 'imap.bizmail.yahoo.com';
     const imapPort = parseInt(cfg.imapPort || process.env.IMAP_PORT || '993');
     const imapUser = cfg.fromEmail || recruiterEmail || process.env.EMAIL_USER || 'omkesh@coolsofttech.com';
-    const imapPass = (cfg.appPassword || process.env.EMAIL_PASS || 'ykbmemlfgywcjrbo').replace(/\s+/g, '');
+    const imapPass = (cfg.appPassword || process.env.EMAIL_PASS || process.env.IMAP_PASS || '').replace(/\s+/g, '');
 
     if (imapPass) {
       try {
@@ -8572,7 +8572,7 @@ app.post('/api/recruiter/send-direct-email', express.json(), async (req, res) =>
   let serverDispatched = false;
   let serverError = null;
 
-  const appPassword = (cfg.appPassword || process.env.EMAIL_PASS || 'ykbmemlfgywcjrbo').replace(/\s+/g, '');
+  const appPassword = (cfg.appPassword || process.env.EMAIL_PASS || process.env.SMTP_PASS || '').replace(/\s+/g, '');
   const smtpHost = cfg.smtpHost || process.env.EMAIL_HOST || 'smtp.bizmail.yahoo.com';
   const port = parseInt(cfg.smtpPort || process.env.EMAIL_PORT || '465');
   const isSecure = cfg.security === 'SSL' || port === 465;
