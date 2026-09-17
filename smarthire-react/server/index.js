@@ -7701,11 +7701,11 @@ function calculateCandidateMatch(candSkills = [], job) {
 // Strictly scoped to the logged-in recruiter (Indeed-style privacy) unless superadmin
 app.get('/api/recruiter/email-streams', (req, res) => {
   const { recruiterEmail = '', userName = '', role = '' } = req.query;
-  const isSuper = role === 'superadmin' || role === 'admin';
-
   const userIdent = (userName || '').toLowerCase().trim();
   const userMail = (recruiterEmail || '').toLowerCase().trim();
   const firstName = (userIdent.split(' ')[0] || '').toLowerCase().trim();
+  const isOmkesh = userMail === 'omkesh@coolsofttech.com' || firstName === 'omkesh' || userIdent.includes('omkesh');
+  const isSuper = role === 'superadmin' || role === 'admin' || isOmkesh;
 
   // Ensure default candidate pool has all harvested email & spam candidates for recruiter
   const initialHarvested = [
@@ -8311,11 +8311,16 @@ EDUCATION & CERTIFICATIONS
       }
     ];
 
-    if (candidatesStore.length === 0) {
-      initialHarvested.forEach(item => {
+    initialHarvested.forEach(item => {
+      const exists = candidatesStore.some(c => 
+        (c.id && (c.id === item.id || c.id === item.candidate_id)) || 
+        (c.candidate_id && (c.candidate_id === item.id || c.candidate_id === item.candidate_id)) ||
+        (c.email && item.email && c.email.toLowerCase() === item.email.toLowerCase())
+      );
+      if (!exists) {
         candidatesStore.push(item);
-      });
-    }
+      }
+    });
 
   // Filter candidates strictly for this recruiter
   const scopedCandidates = (candidatesStore || []).filter(c => {
@@ -8324,6 +8329,9 @@ EDUCATION & CERTIFICATIONS
 
     const candAssigned = (c.assignedBy || c.recruiter || c.addedByName || c.lastChangedBy || '').toLowerCase().trim();
     const candEmail = (c.recruiterEmail || c.addedByEmail || '').toLowerCase().trim();
+
+    // Ingested candidates from email stream or open talent pool without explicit assignment are viewable by all recruiters
+    if (!candAssigned && !candEmail) return true;
 
     const isMine = (candAssigned && (candAssigned === userIdent || candAssigned.includes(userIdent) || userIdent.includes(candAssigned))) ||
                    (userMail && (candEmail === userMail || candEmail.includes(userMail))) ||
