@@ -342,62 +342,54 @@ export default function PublicCareers() {
   const [cvParsing, setCvParsing] = useState(false)
   const [cvSuccess, setCvSuccess] = useState(false)
 
-  // ─── HOT CATEGORIES DEFINITIONS (SCREENSHOT 3) ────────────────────────────
+  // ─── HOT CATEGORIES DEFINITIONS ───────────────────────────────────────────
   const HOT_CATEGORIES = [
     {
       id: 'accounting',
       name: 'Accounting / Finance',
       count: '497 jobs',
-      icon: CategoryFinanceIcon,
       keywords: ['accounting', 'finance', 'financial', 'audit', 'tax', 'payroll', 'controller']
     },
     {
       id: 'marketing',
       name: 'Marketing',
       count: '763 jobs',
-      icon: CategoryMarketingIcon,
       keywords: ['marketing', 'seo', 'growth', 'brand', 'content', 'social media', 'campaign']
     },
     {
       id: 'design',
       name: 'Design',
       count: '684 jobs',
-      icon: CategoryDesignIcon,
       keywords: ['design', 'ui', 'ux', 'product design', 'graphic', 'figma', 'creative']
     },
     {
       id: 'development',
       name: 'Development',
       count: '451 jobs',
-      icon: CategoryDevIcon,
       keywords: ['developer', 'engineer', 'full stack', 'react', 'java', 'node', 'software', 'frontend', 'backend', 'python', 'c#', '.net']
     },
     {
       id: 'hardware',
       name: 'IT - Hardware',
       count: '433 jobs',
-      icon: CategoryHardwareIcon,
       keywords: ['hardware', 'network', 'cloud', 'aws', 'infrastructure', 'devops', 'sysadmin', 'azure', 'cisco', 'security']
     },
     {
       id: 'support',
       name: 'Customer Service',
       count: '462 jobs',
-      icon: CategoryCustomerServiceIcon,
       keywords: ['support', 'customer', 'service', 'helpdesk', 'operations', 'tier', 'coordinator']
     },
     {
       id: 'healthcare',
       name: 'Health and Care',
       count: '951 jobs',
-      icon: CategoryHealthcareIcon,
       keywords: ['health', 'healthcare', 'medical', 'clinical', 'epic', 'cerner', 'hipaa', 'biomedical']
     },
     {
       id: 'banking',
       name: 'Banking',
       count: '194 jobs',
-      icon: CategoryBankingIcon,
       keywords: ['bank', 'banking', 'fintech', 'treasury', 'capital', 'risk', 'compliance', 'wealth']
     }
   ]
