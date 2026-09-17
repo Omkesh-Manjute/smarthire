@@ -31,6 +31,23 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-18 — Sanitize MIME & Base64 Resume Dump, Fix Dummy "000" Phone Numbers & Attachment Display
+- **Root Cause**:
+  - In `email-imap-scraper.js`, raw RFC822/MIME fetch (`BODY.PEEK[TEXT]<0.25000>`) was dumped directly into `resumeText`, causing base64 PDF chunks (`JVBERi0...`), padding blocks (`AAAAAAAA...`), MIME headers (`Content-Type:`, `Content-Disposition:`), and MIME boundaries (`--000000000000...`) to display directly in the candidate resume view.
+  - Furthermore, when emails lacked an explicit phone number, the scraper and server defaulted to `+1 (555) 010-0000`, causing 22 candidates to display `000` numbers (`+1(555) 010-0000`).
+- **Resolution**:
+  - Created `cleanMimeEmail` utility in `clean-mime.js`, `RecruiterInbox.jsx`, and `server/index.js` to parse multipart MIME structures:
+    - Extracts clean plain text and strips HTML tags, scripts, styles, and quoted-printable encoding (`=C2=A0`, `=E2=80=99`, etc.).
+    - Detects and isolates attachment names (e.g., `Siva Y.pdf`) without dumping binary base64 payloads into text.
+    - Filters out lines with raw base64 data, MIME headers, and boundary lines (`--0000...`).
+  - Completely eradicated default fake phone `+1 (555) 010-0000`:
+    - Cleaned candidate intake and store normalization to reject `555`, `010-0000`, and `000-0000`.
+    - In `RecruiterInbox.jsx`, candidates without a phone cleanly render `Phone: Via Resume / Request` rather than fake dummy numbers.
+  - Rewrote `getFullResumeText(candidate)`:
+    - Displays clean email application cover note at the top (`Applicant: ... | Attached Resume: 📎 ...`), followed by the structured technical role dossier.
+  - Cleaned all existing candidate records on Lightsail disk and restarted PM2 `smarthire-ats`.
+  - Frontend built (`dist/assets/index-DvazUCqq.js`), committed (`0963c28`), pushed to GitHub `origin/main`, deployed to Lightsail, verified HTTP 200 OK.
+
 ### 2026-09-18 — Fix `useMemo is not defined` ReferenceError in `RecruiterInbox.jsx`
 - **Root Cause**: `calculatedFitScore` was rewritten using `useMemo(...)` to compute candidate fit scores without artificial clamping. Line 1 of `RecruiterInbox.jsx` had imported `{ useState, useEffect, useRef, useCallback }` but omitted `useMemo`.
 - **Resolution**:
