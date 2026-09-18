@@ -12,7 +12,8 @@
     <meta name="description" content="SmartHire: Browse 100+ direct-client IT contract jobs across State, Healthcare &amp; Enterprise. Remote, Hybrid, Onsite. Powered by SmartHire ATS." />
     <meta name="keywords" content="IT jobs, direct client contracts, IT staffing, SmartHire, remote IT jobs, C2C, W2, 1099, government contracts, healthcare IT, cloud engineering" />
     <meta name="author" content="SmartHire" />
-    <meta name="robots" content="index, follow" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta name="google-site-verification" content="google4a01c40210eb7042" />
     <!-- OpenGraph -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="SmartHire — Direct-Client IT Jobs &amp; ATS" />
@@ -27,8 +28,37 @@
     <meta name="twitter:image" content="https://smarthireus.com/career-hero-slide1.jpg" />
     <!-- Canonical -->
     <link rel="canonical" href="https://smarthireus.com" />
-    <!-- Google AdSense: Add your publisher ID below after approval -->
-    <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script> -->
+    <!-- Structured Data for Google Search Console & Rich Snippets -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://smarthireus.com/#organization",
+          "name": "SmartHire ATS",
+          "url": "https://smarthireus.com",
+          "logo": "https://smarthireus.com/favicon.svg",
+          "sameAs": [
+            "https://www.linkedin.com/company/coolsoft-llc/"
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://smarthireus.com/#website",
+          "url": "https://smarthireus.com",
+          "name": "SmartHire ATS & Direct-Client Careers",
+          "description": "Direct-client IT contract jobs across State, Healthcare & Enterprise.",
+          "publisher": { "@id": "https://smarthireus.com/#organization" },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://smarthireus.com/jobs?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>

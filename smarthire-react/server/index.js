@@ -976,6 +976,12 @@ if (fs.existsSync(distPath)) {
   app.use(express.static(distPath))
 }
 
+// Google Search Console HTML verification handler
+app.get('/google:hash.html', (req, res) => {
+  const hash = req.params.hash || ''
+  res.type('text/html').send(`google-site-verification: google${hash}.html`)
+})
+
 // ─── Multer Setup ─────────────────────────────────────────────────────────────
 const storage = multer.diskStorage({
   destination: (_req, _file, callback) => callback(null, uploadDir),

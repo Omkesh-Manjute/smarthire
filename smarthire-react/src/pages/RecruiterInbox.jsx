@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { saveMessageFirestore, getMessagesFirestore, saveRequisitionCandidates, saveCandidate } from '../lib/atsFirestore'
+import { saveMessageFirestore, getMessagesFirestore, saveRequisitionCandidates, saveCandidate, deduplicateCandidates } from '../lib/atsFirestore'
 import { autoSendJobDescriptionToCandidate } from '../utils/autoSendJdHelper'
 
 const POLL_INTERVAL = 3000
@@ -337,6 +337,143 @@ function cleanMimeEmail(raw) {
   return { textBody, attachmentNames }
 }
 
+const AVATAR_COLORS = [
+  { bg: '#DBEAFE', text: '#1E40AF' }, // Blue (AG)
+  { bg: '#D1FAE5', text: '#065F46' }, // Emerald (MZ)
+  { bg: '#EDE9FE', text: '#5B21B6' }, // Purple (AP)
+  { bg: '#FEF3C7', text: '#92400E' }, // Amber (MK)
+  { bg: '#CCFBF1', text: '#115E59' }, // Teal (RS)
+  { bg: '#E0E7FF', text: '#3730A3' }, // Indigo (UR)
+  { bg: '#FFE4E6', text: '#9F1239' }, // Rose (SK)
+  { bg: '#CFFAFE', text: '#155E75' }  // Cyan (PT)
+]
+
+const getCandidateAvatarColor = (name = '') => {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  const index = Math.abs(hash) % AVATAR_COLORS.length
+  return AVATAR_COLORS[index]
+}
+
+const getInitials = (name = '') => {
+  const parts = (name || '').trim().split(/\s+/)
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  }
+  return (name || 'CA').slice(0, 2).toUpperCase()
+}
+
+const renderMatchBadge = (score = 85) => {
+  let label = 'Low'
+  let bg = '#FEF2F2'
+  let text = '#B91C1C'
+  let border = '#FECACA'
+
+  if (score >= 85) {
+    label = 'Excellent'
+    bg = '#ECFDF5'
+    text = '#047857'
+    border = '#A7F3D0'
+  } else if (score >= 70) {
+    label = 'Good'
+    bg = '#F0FDF4'
+    text = '#15803D'
+    border = '#BBF7D0'
+  } else if (score >= 50) {
+    label = 'Average'
+    bg = '#FFFBEB'
+    text = '#B45309'
+    border = '#FDE68A'
+  }
+
+  return (
+    <div style={{
+      display: 'inline-flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: bg,
+      border: `1px solid ${border}`,
+      color: text,
+      padding: '3px 10px',
+      borderRadius: 6,
+      minWidth: 70,
+      textAlign: 'center',
+      lineHeight: 1.15
+    }}>
+      <span style={{ fontSize: 13.5, fontWeight: 800 }}>{score}%</span>
+      <span style={{ fontSize: 9.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>{label}</span>
+    </div>
+  )
+}
+
+const renderSourceBadge = (c) => {
+  if (c.isSpamRecovery || c.sourceCategory === 'email_spam') {
+    return (
+      <span style={{
+        fontSize: 11,
+        fontWeight: 700,
+        color: '#4F46E5',
+        backgroundColor: '#EEF2FF',
+        border: '1px solid #C7D2FE',
+        padding: '2px 8px',
+        borderRadius: 6,
+        whiteSpace: 'nowrap'
+      }}>
+        Recovered
+      </span>
+    )
+  }
+  if (c.sourceCategory === 'careers_portal') {
+    return (
+      <span style={{
+        fontSize: 11,
+        fontWeight: 700,
+        color: '#059669',
+        backgroundColor: '#ECFDF5',
+        border: '1px solid #A7F3D0',
+        padding: '2px 8px',
+        borderRadius: 6,
+        whiteSpace: 'nowrap'
+      }}>
+        Careers Portal
+      </span>
+    )
+  }
+  if (c.sourceCategory === 'vendor_bench') {
+    return (
+      <span style={{
+        fontSize: 11,
+        fontWeight: 700,
+        color: '#D97706',
+        backgroundColor: '#FFFBEB',
+        border: '1px solid #FDE68A',
+        padding: '2px 8px',
+        borderRadius: 6,
+        whiteSpace: 'nowrap'
+      }}>
+        Vendor Bench
+      </span>
+    )
+  }
+  return (
+    <span style={{
+      fontSize: 11,
+      fontWeight: 700,
+      color: '#2563EB',
+      backgroundColor: '#EFF6FF',
+      border: '1px solid #BFDBFE',
+      padding: '2px 8px',
+      borderRadius: 6,
+      whiteSpace: 'nowrap'
+    }}>
+      Resume Inbox
+    </span>
+  )
+}
+
 function getFullResumeText(candidate) {
   const name = candidate?.name || 'CANDIDATE'
   const role = candidate?.role || 'Senior Technical Specialist'
@@ -626,12 +763,6 @@ EDUCATION & CERTIFICATIONS
   }
 
   return coverSection ? `${coverSection}\n\n${profileDossier}` : profileDossier
-}
-
-function getInitials(name = '') {
-  const parts = name.trim().split(' ')
-  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-  return (name[0] || '?').toUpperCase()
 }
 
 function getAvatarColor(name = '') {
@@ -1050,13 +1181,245 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
   const DEFAULT_STREAM_CANDIDATES = [
     {
+      id: 'cand-anmol-garg',
+      candidate_id: 'cand-anmol-garg',
+      name: 'Anmol Garg',
+      email: 'anmolgarg@graycelltech.com',
+      phone: '+1 (415) 890-2134',
+      role: 'Senior .NET Developer',
+      location: 'Remote, US',
+      currentCompany: 'Senior .NET Developer, Cloud Solutions',
+      previousCompany: 'Full Stack Engineer, Enterprise Systems',
+      experience: '9+ Years',
+      education: 'B.S. in Computer Science',
+      visaStatus: 'US Citizen',
+      gender: 'Male',
+      status: 'Active',
+      matchScore: 95,
+      targetReqId: '159116',
+      matchedJobTitle: 'Senior .NET/SQL Full-Stack Developer',
+      matchedJobClient: 'Iowa HHS',
+      matchedJobRate: '$75/hr',
+      summary: 'Distinguished Senior .NET / C# Engineer with 9+ years developing mission-critical microservices, ASP.NET Core web APIs, and SQL Server databases.',
+      skills: ['C#', '.NET', 'ASP.NET', 'Microservices', 'SQL Server', 'Angular', 'Azure'],
+      resumeFile: 'Anmol_Garg_Resume.pdf',
+      resumeUploadDate: '18 Sept 2026',
+      createdAt: '2026-09-18T10:00:00.000Z',
+      source: 'Recovered',
+      sourceCategory: 'email_spam',
+      isSpamRecovery: true
+    },
+    {
+      id: 'cand-muhammad-zahid',
+      candidate_id: 'cand-muhammad-zahid',
+      name: 'Muhammad Zahid',
+      email: 'zahidforuonly@gmail.com',
+      phone: '+1 (312) 674-8892',
+      role: 'Senior Full Stack .NET',
+      location: 'Remote, US',
+      currentCompany: 'Lead .NET Architect, Tech Innovators',
+      previousCompany: 'Senior Software Engineer, FinTech Systems',
+      experience: '10+ Years',
+      education: 'M.S. in Software Engineering',
+      visaStatus: 'US Citizen',
+      gender: 'Male',
+      status: 'Active',
+      matchScore: 95,
+      targetReqId: '159116',
+      matchedJobTitle: 'Senior .NET/SQL Full-Stack Developer',
+      matchedJobClient: 'Iowa HHS',
+      matchedJobRate: '$75/hr',
+      summary: 'Senior Full Stack .NET and Cloud Developer with 10+ years architecting scalable web applications, REST services, and high-performance SQL databases.',
+      skills: ['Java', 'Angular', 'Vue', 'Spring Boot', 'SQL', 'C#', '.NET Core'],
+      resumeFile: 'Muhammad_Zahid_Resume.pdf',
+      resumeUploadDate: '18 Sept 2026',
+      createdAt: '2026-09-18T09:45:00.000Z',
+      source: 'Recovered',
+      sourceCategory: 'email_spam',
+      isSpamRecovery: true
+    },
+    {
+      id: 'cand-abhay-panchal',
+      candidate_id: 'cand-abhay-panchal',
+      name: 'Abhay Panchal',
+      email: 'abhay.dev280204@gmail.com',
+      phone: '+1 (608) 321-4478',
+      role: 'Sr. .NET Full Stack',
+      location: 'Madison, WI, US',
+      currentCompany: 'Sr. Full Stack Engineer, CloudTech',
+      previousCompany: 'Software Engineer, Digital Services',
+      experience: '8+ Years',
+      education: 'B.Tech in Computer Engineering',
+      visaStatus: 'US Citizen',
+      gender: 'Male',
+      status: 'Active',
+      matchScore: 86,
+      targetReqId: '159079',
+      matchedJobTitle: 'Java Developer III - 165504',
+      matchedJobClient: 'State of Wisconsin (ETF)',
+      matchedJobRate: '$75/hr',
+      summary: 'Senior .NET and Java Full Stack Engineer with 8+ years developing state agency enterprise systems and microservices.',
+      skills: ['Java', 'React', 'Angular', 'SQL', 'Git', 'Spring Boot'],
+      resumeFile: 'Abhay_Panchal_Resume.pdf',
+      resumeUploadDate: '18 Sept 2026',
+      createdAt: '2026-09-18T09:15:00.000Z',
+      source: 'Recovered',
+      sourceCategory: 'email_spam',
+      isSpamRecovery: true
+    },
+    {
+      id: 'cand-mokim-khan',
+      candidate_id: 'cand-mokim-khan',
+      name: 'Mokim Khan',
+      email: 'mokimkhan@gmail.com',
+      phone: '+1 (206) 441-9981',
+      role: 'Dot Net FullStack',
+      location: 'Remote, US',
+      currentCompany: 'Full Stack Engineer, Enterprise Corp',
+      previousCompany: 'Software Developer, WebSolutions',
+      experience: '6+ Years',
+      education: 'B.S. in Information Systems',
+      visaStatus: 'US Citizen',
+      gender: 'Male',
+      status: 'In Review',
+      matchScore: 64,
+      targetReqId: '159116',
+      matchedJobTitle: 'Senior .NET/SQL Full-Stack Developer',
+      matchedJobClient: 'Iowa HHS',
+      matchedJobRate: '$75/hr',
+      summary: 'Dot Net FullStack Developer with experience in C#, SQL Server, cloud microservices, and React.',
+      skills: ['Java', 'SQL', 'Cloud', 'Git', 'C#', '.NET'],
+      resumeFile: 'Mokim_Khan_Resume.pdf',
+      resumeUploadDate: '18 Sept 2026',
+      createdAt: '2026-09-18T08:30:00.000Z',
+      source: 'Careers Portal',
+      sourceCategory: 'careers_portal',
+      isSpamRecovery: false
+    },
+    {
+      id: 'cand-rashi-sharma',
+      candidate_id: 'cand-rashi-sharma',
+      name: 'Rashi Sharma',
+      email: 'rashi21891@gmail.com',
+      phone: '+1 (414) 772-9102',
+      role: 'Immediate Joiner',
+      location: 'Remote, US',
+      currentCompany: 'Full Stack Developer, Software Solutions',
+      previousCompany: 'Frontend Engineer, Interactive Media',
+      experience: '5+ Years',
+      education: 'B.S. in Computer Science',
+      visaStatus: 'US Citizen',
+      gender: 'Female',
+      status: 'Active',
+      matchScore: 53,
+      targetReqId: '159077',
+      matchedJobTitle: 'Java Developer III - 165503',
+      matchedJobClient: 'State of Wisconsin (ETF)',
+      matchedJobRate: '$75/hr',
+      summary: 'Full Stack developer with strong experience in Vue, SQL, AWS, and Spring Boot.',
+      skills: ['Vue', 'SQL', 'AWS', 'Spring Boot', 'Java'],
+      resumeFile: 'Rashi_Sharma_Resume.pdf',
+      resumeUploadDate: '18 Sept 2026',
+      createdAt: '2026-09-18T08:00:00.000Z',
+      source: 'Careers Portal',
+      sourceCategory: 'careers_portal',
+      isSpamRecovery: false
+    },
+    {
+      id: 'cand-jeyhun-rahimov',
+      candidate_id: 'cand-jeyhun-rahimov',
+      name: 'Jeyhun Rahimov',
+      email: 'r.ceyhun2011@gmail.com',
+      phone: '+1 (919) 883-2019',
+      role: 'Senior .NET Engineer',
+      location: 'Remote, US',
+      currentCompany: 'Senior Software Engineer, Tech Cloud',
+      previousCompany: '.NET Developer, Enterprise Apps',
+      experience: '7+ Years',
+      education: 'B.S. in Computer Science',
+      visaStatus: 'US Citizen',
+      gender: 'Male',
+      status: 'Active',
+      matchScore: 44,
+      targetReqId: '158997',
+      matchedJobTitle: 'NC DHHS - AWS Senior Developer (808496)',
+      matchedJobClient: 'NC DHHS',
+      matchedJobRate: '$85/hr',
+      summary: 'Senior .NET and Cloud Engineer with hands-on experience in Vue, GCP, Docker, and C#.',
+      skills: ['Vue', '.NET', 'GCP', 'Docker', 'C#'],
+      resumeFile: 'Jeyhun_Rahimov_Resume.pdf',
+      resumeUploadDate: '18 Sept 2026',
+      createdAt: '2026-09-18T07:30:00.000Z',
+      source: 'Recovered',
+      sourceCategory: 'email_spam',
+      isSpamRecovery: true
+    },
+    {
+      id: 'cand-suresh-kumar',
+      candidate_id: 'cand-suresh-kumar',
+      name: 'Suresh Kumar',
+      email: 'suresh.kumar@gmail.com',
+      phone: '+1 (984) 220-4911',
+      role: 'Full Stack Developer',
+      location: 'Remote, US',
+      currentCompany: 'Lead Full Stack Engineer, Cloud Platforms',
+      previousCompany: 'Python Developer, DataWorks',
+      experience: '8+ Years',
+      education: 'B.Tech in IT',
+      visaStatus: 'Green Card (GC)',
+      gender: 'Male',
+      status: 'Active',
+      matchScore: 42,
+      targetReqId: '158997',
+      matchedJobTitle: 'NC DHHS - AWS Senior Developer (808496)',
+      matchedJobClient: 'NC DHHS',
+      matchedJobRate: '$85/hr',
+      summary: 'Full Stack Developer specializing in Python, React, AWS, Node.js, and PostgreSQL.',
+      skills: ['Python', 'React', 'AWS', 'Node.js', 'PostgreSQL'],
+      resumeFile: 'Suresh_Kumar_Resume.pdf',
+      resumeUploadDate: '18 Sept 2026',
+      createdAt: '2026-09-18T07:00:00.000Z',
+      source: 'Resume Inbox',
+      sourceCategory: 'email_inbox',
+      isSpamRecovery: false
+    },
+    {
+      id: 'cand-priya-thakur',
+      candidate_id: 'cand-priya-thakur',
+      name: 'Priya Thakur',
+      email: 'priya.thakur@gmail.com',
+      phone: '+1 (615) 902-8419',
+      role: 'QA Automation Engineer',
+      location: 'Nashville, TN, US',
+      currentCompany: 'Lead QA Engineer, HealthTech Solutions',
+      previousCompany: 'QA Analyst, Quality First',
+      experience: '6+ Years',
+      education: 'B.E. in Computer Science',
+      visaStatus: 'US Citizen',
+      gender: 'Female',
+      status: 'In Review',
+      matchScore: 38,
+      targetReqId: '159078',
+      matchedJobTitle: 'Public Health Program Director 1 (66312)',
+      matchedJobClient: 'Tennessee Department of Health (TN DOH)',
+      matchedJobRate: '$75/hr',
+      summary: 'QA Automation Engineer with extensive experience in Selenium WebDriver, Java, SQL, TestNG, and CI/CD testing pipelines.',
+      skills: ['Selenium', 'Java', 'SQL', 'TestNG', 'Postman'],
+      resumeFile: 'Priya_Thakur_Resume.pdf',
+      resumeUploadDate: '18 Sept 2026',
+      createdAt: '2026-09-18T06:30:00.000Z',
+      source: 'Resume Inbox',
+      sourceCategory: 'email_inbox',
+      isSpamRecovery: false
+    },
+    {
       id: 'cand-pranitha-bantu',
       candidate_id: 'cand-pranitha-bantu',
       name: 'Pranitha Bantu',
       email: 'pranitha.bantu@gmail.com',
       phone: '+1 (919) 555-0143',
       role: 'Lead Generative AI & Machine Learning Engineer',
-      location: 'Raleigh, NC',
+      location: 'Raleigh, NC, US',
       currentCompany: 'Lead Generative AI Engineer, Cognitive AI Labs',
       previousCompany: 'Machine Learning Engineer, DataVision Tech',
       experience: '8+ Years',
@@ -1073,7 +1436,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
       skills: ['Generative AI', 'Large Language Models (LLMs)', 'Python', 'PyTorch', 'LangChain', 'Hugging Face', 'AWS', 'RAG', 'Pinecone', 'FAISS', 'Docker'],
       resumeFile: 'Pranitha_Bantu_Resume.pdf',
       resumeUploadDate: '10 Sept 2026, 02:00 AM',
-      source: 'Careers Job Site (/jobs)',
+      createdAt: '2026-09-10T02:00:00.000Z',
+      source: 'Careers Portal',
       sourceCategory: 'careers_portal',
       isSpamRecovery: false
     },
@@ -1084,7 +1448,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
       email: 'damodhar.k@coolsofttech.com',
       phone: '+1 (414) 293-8472',
       role: 'Lead QA Automation / SDET / SAP Testing',
-      location: 'Madison, WI',
+      location: 'Madison, WI, US',
       currentCompany: 'Lead SDET & SAP Validation, Enterprise Cloud',
       previousCompany: 'Senior Automation Engineer, State Systems',
       experience: '16+ Years',
@@ -1101,7 +1465,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
       skills: ['Selenium', 'SAP Testing', 'SQL Server', 'NIEM', 'XML Validation', 'Java', 'GitHub', 'CI/CD', 'TestNG'],
       resumeFile: 'Damodhar_Kammara_Resume.pdf',
       resumeUploadDate: '10 Sept 2026, 01:15 AM',
-      source: 'Recruiter Email Inbox',
+      createdAt: '2026-09-10T01:15:00.000Z',
+      source: 'Resume Inbox',
       sourceCategory: 'email_inbox',
       isSpamRecovery: false
     },
@@ -1112,7 +1477,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
       email: 'sanjay.javangula@coolsofttech.com',
       phone: '+1 (615) 398-1029',
       role: 'Senior Technical Program Manager / Scrum Master',
-      location: 'Nashville, TN',
+      location: 'Nashville, TN, US',
       currentCompany: 'Senior TPM & Agile Transformation, HealthTech Solutions',
       previousCompany: 'Technical Project Manager, Enterprise Systems',
       experience: '14+ Years',
@@ -1129,7 +1494,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
       skills: ['Program Management', 'Strategic Planning', 'Agile / Scrum', 'Technical Writing', 'JIRA', 'Confluence', 'Risk Mitigation'],
       resumeFile: 'Sanjay_Javangula_Resume.pdf',
       resumeUploadDate: '09 Sept 2026, 11:30 PM',
-      source: 'Recruiter Email Inbox',
+      createdAt: '2026-09-09T23:30:00.000Z',
+      source: 'Resume Inbox',
       sourceCategory: 'email_inbox',
       isSpamRecovery: false
     },
@@ -1140,7 +1506,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
       email: 'jacob.holbrook@coolsofttech.com',
       phone: '+1 (608) 492-1830',
       role: 'Senior Full Stack Java Developer',
-      location: 'Madison, WI',
+      location: 'Madison, WI, US',
       currentCompany: 'Senior Java Consultant, Enterprise Cloud Solutions',
       previousCompany: 'Senior Java Engineer, State Technology Services',
       experience: '12+ Years',
@@ -1157,7 +1523,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
       skills: ['Java', 'Spring Boot', 'React', 'Vue', 'SQL', 'Git', 'Kafka', 'Docker', 'PostgreSQL', 'Microservices'],
       resumeFile: 'Jacob_Holbrook_Resume.pdf',
       resumeUploadDate: '09 Sept 2026, 08:45 PM',
-      source: 'Recruiter Email Inbox',
+      createdAt: '2026-09-09T20:45:00.000Z',
+      source: 'Resume Inbox',
       sourceCategory: 'email_inbox',
       isSpamRecovery: false
     },
@@ -1168,7 +1535,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
       email: 'sharath.netsec@coolsofttech.com',
       phone: '+1 (919) 441-2893',
       role: 'Network Security Engineer',
-      location: 'Raleigh, NC',
+      location: 'Raleigh, NC, US',
       currentCompany: 'Senior Network Security Specialist, CyberSecure Systems',
       previousCompany: 'Security Infrastructure Engineer, Enterprise Telecom',
       experience: '11+ Years',
@@ -1185,23 +1552,24 @@ export default function RecruiterInbox({ defaultViewMode }) {
       skills: ['Network Security', 'Firewalls', 'AWS VPC', 'Cisco', 'Palo Alto', 'VPN', 'Cybersecurity', 'Python'],
       resumeFile: 'Sharath_S_Resume.pdf',
       resumeUploadDate: '09 Sept 2026, 04:20 PM',
-      source: 'Recovered from Spam Folder',
+      createdAt: '2026-09-09T16:20:00.000Z',
+      source: 'Recovered',
       sourceCategory: 'email_spam',
       isSpamRecovery: true
     }
   ]
 
   // View switcher: 'chat' (Live Messages), 'dashboard' (KPI Overview), or 'stream' (Candidate Dossier / Table)
-  const initialInboxMode = defaultViewMode || searchParams.get('view') || searchParams.get('tab') || 'chat'
+  const initialInboxMode = defaultViewMode || searchParams.get('view') || searchParams.get('tab') || 'stream'
   const [inboxViewMode, setInboxViewMode] = useState(initialInboxMode)
   const [minimalsSidebarOpen, setMinimalsSidebarOpen] = useState(true)
   const [streamFilter, setStreamFilter] = useState('all') // 'all', 'email_inbox', 'email_spam', 'careers_portal', 'vendor_bench'
   const [streamCandidates, setStreamCandidates] = useState(DEFAULT_STREAM_CANDIDATES)
   const [streamCounts, setStreamCounts] = useState({
-    candidatesTotal: 5,
-    inboxResumes: 3,
-    spamResumes: 1,
-    careersResumes: 1,
+    candidatesTotal: 126,
+    inboxResumes: 22,
+    spamResumes: 6,
+    careersResumes: 14,
     vendorResumes: 0
   })
   const [loadingStream, setLoadingStream] = useState(false)
@@ -1211,15 +1579,27 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const [selectedCandidate, setSelectedCandidate] = useState(DEFAULT_STREAM_CANDIDATES[0])
   const [candidateSubTab, setCandidateSubTab] = useState('matches') // 'matches', 'favorites', 'spam'
   const [activeRightTab, setActiveRightTab] = useState('resume') // 'resume' or 'profile'
-  const [viewedCandidateIds, setViewedCandidateIds] = useState(() => new Set(['cand-pranitha-bantu', 'cand-monster-jacob']))
+  const [viewedCandidateIds, setViewedCandidateIds] = useState(() => new Set(['cand-anmol-garg', 'cand-muhammad-zahid']))
   const [favoriteCandidateIds, setFavoriteCandidateIds] = useState(() => new Set())
   const [selectedCardIds, setSelectedCardIds] = useState(() => new Set())
 
+  // Candidates View Mode: 'card' (Candidate Card / Split View) or 'table' (Database Table View)
+  const [inboxSubMode, setInboxSubMode] = useState('table')
+  const [activeTobuTab, setActiveTobuTab] = useState('overview')
+  const [tableCategory, setTableCategory] = useState('all')
+  const [tablePage, setTablePage] = useState(1)
+  const [tablePageSize, setTablePageSize] = useState(25)
+  const [filterLocation, setFilterLocation] = useState('all')
+  const [filterSkill, setFilterSkill] = useState('all')
+  const [filterMatch, setFilterMatch] = useState('all')
+  const [sortOption, setSortOption] = useState('match_desc')
+  const [activeActionMenuId, setActiveActionMenuId] = useState(null)
+
   // Open Requisitions for Multi-Position AI Matcher
   const DEFAULT_OPEN_JOBS = [
+    { id: '159116', title: 'Senior .NET/SQL Full-Stack Developer', client: 'Iowa HHS', rate: '$75/hr', location: 'Remote / US', skills: ['C#', '.NET', 'ASP.NET', 'Microservices', 'SQL Server', 'Angular', 'Azure', 'Entity Framework'] },
     { id: '159079', title: 'Java Developer III - 165504', client: 'State of Wisconsin (ETF)', rate: '$75/hr', location: 'Madison, WI (Remote)', skills: ['Java', 'Spring Boot', 'React', 'Vue', 'SQL', 'Git', 'AWS'] },
     { id: '159078', title: 'Public Health Program Director 1 (66312)', client: 'Tennessee Department of Health (TN DOH)', rate: '$75/hr', location: 'Nashville, TN (Hybrid)', skills: ['Strategic Planning', 'Technical Writing', 'Program Management', 'Healthcare', 'Project Management', 'Agile'] },
-    { id: '159116', title: 'Senior .NET/SQL Full-Stack Developer', client: 'Iowa Department of Health and Human Services (HHS)', rate: '$75/hr', location: 'Remote / US', skills: ['C#', '.NET', 'ASP.NET', 'Microservices', 'SQL Server', 'Angular', 'Azure', 'Entity Framework'] },
     { id: '159077', title: 'Java Developer III - 165503', client: 'State of Wisconsin (ETF)', rate: '$75/hr', location: 'Madison, WI (Remote)', skills: ['Java', 'Angular', 'Vue', 'SQL', 'Git', 'Spring Boot'] },
     { id: '159074', title: 'Attorney - 66316', client: 'Tennessee Department of Health (TN DOH)', rate: '$75/hr', location: 'Nashville, TN (Hybrid)', skills: ['Legal Writing', 'Regulatory Compliance', 'Health Policy', 'Communications'] },
     { id: '159073', title: 'DBHDS - Data Governance Analyst (CDC Funded) (807900)', client: 'Virginia DBHDS', rate: '$75/hr', location: 'Richmond, VA (Hybrid)', skills: ['Data Governance', 'SQL', 'Data Warehouse', 'Python', 'Tableau', 'CDC', 'Power BI'] },
@@ -1244,13 +1624,6 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const [showReqChangeDropdown, setShowReqChangeDropdown] = useState(false)
   const [aiGeneratingSummary, setAiGeneratingSummary] = useState(false)
   const [aiInsightToast, setAiInsightToast] = useState('')
-
-  // Tobu.ai Mode & Tabs: 'card' (Candidate Card / Split View) or 'table' (Database Table View)
-  const [inboxSubMode, setInboxSubMode] = useState('card')
-  const [activeTobuTab, setActiveTobuTab] = useState('overview')
-  const [tableCategory, setTableCategory] = useState('all')
-  const [tablePage, setTablePage] = useState(1)
-  const [tablePageSize, setTablePageSize] = useState(25)
 
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
@@ -2069,11 +2442,13 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const candidateJob = activeThread?.jobTitle || 'Vacancy'
   const profile = candidateDetails?.extracted_profile || candidateDetails
 
-  const filteredCandidates = streamCandidates.filter(c => {
-    if (!c) return false
+  const filteredCandidates = useMemo(() => {
+    const rawFiltered = streamCandidates.filter(c => {
+      if (!c) return false
 
-    // Table Category filtering
-    if (inboxSubMode === 'table') {
+      // Table Category filtering (KPI cards / Mailbox)
+      if (tableCategory === 'active' && c.status !== 'Active') return false
+      if (tableCategory === 'review' && c.status !== 'In Review' && c.status !== 'Review') return false
       if (tableCategory === 'inbox' && c.sourceCategory !== 'email_inbox') return false
       if (tableCategory === 'spam' && c.sourceCategory !== 'email_spam' && !c.isSpamRecovery) return false
       if (tableCategory === 'careers' && c.sourceCategory !== 'careers_portal') return false
@@ -2082,40 +2457,75 @@ export default function RecruiterInbox({ defaultViewMode }) {
         const candId = c.id || c.email
         if (!favoriteCandidateIds.has(candId)) return false
       }
-    } else {
-      // Monster+ Sub-Tabs (Matches / Favorites / Spam)
-      if (candidateSubTab === 'favorites') {
-        const candId = c.id || c.email
-        if (!favoriteCandidateIds.has(candId)) return false
-      } else if (candidateSubTab === 'spam') {
-        if (c.sourceCategory !== 'email_spam' && !c.isSpamRecovery) return false
+
+      // Requisition filter
+      if (streamReqFilter !== 'all' && String(c.targetReqId).replace(/^J-/, '') !== String(streamReqFilter).replace(/^J-/, '')) {
+        return false
       }
 
-      // 1. Source filter
-      if (streamFilter === 'email_inbox' && c.sourceCategory !== 'email_inbox') return false
-      if (streamFilter === 'email_spam' && c.sourceCategory !== 'email_spam' && !c.isSpamRecovery) return false
-      if (streamFilter === 'careers_portal' && c.sourceCategory !== 'careers_portal') return false
-      if (streamFilter === 'vendor_bench' && c.sourceCategory !== 'vendor_bench') return false
-    }
+      // Location filter
+      if (filterLocation !== 'all') {
+        const loc = (c.location || '').toLowerCase()
+        if (!loc.includes(filterLocation.toLowerCase())) return false
+      }
 
-    // 2. Requisition filter
-    if (streamReqFilter !== 'all' && String(c.targetReqId) !== String(streamReqFilter)) return false
+      // Skills filter
+      if (filterSkill !== 'all') {
+        const sFilter = filterSkill.toLowerCase()
+        const skillsArr = Array.isArray(c.skills) ? c.skills : (c.skills ? String(c.skills).split(',').map(s => s.trim()) : [])
+        const roleStr = (c.role || '').toLowerCase()
+        const matchFound = skillsArr.some(s => s.toLowerCase().includes(sFilter)) || roleStr.includes(sFilter)
+        if (!matchFound) return false
+      }
 
-    // 3. Search query
-    if (streamSearch.trim()) {
-      const q = streamSearch.toLowerCase()
-      const n = (c.name || '').toLowerCase()
-      const e = (c.email || '').toLowerCase()
-      const r = (c.role || '').toLowerCase()
-      const loc = (c.location || '').toLowerCase()
-      const req = String(c.targetReqId || '').toLowerCase()
-      const jTitle = (c.matchedJobTitle || '').toLowerCase()
-      const sMatch = Array.isArray(c.skills) ? c.skills.some(s => String(s).toLowerCase().includes(q)) : String(c.skills || '').toLowerCase().includes(q)
-      return n.includes(q) || e.includes(q) || r.includes(q) || loc.includes(q) || req.includes(q) || jTitle.includes(q) || sMatch
-    }
+      // Match % filter
+      if (filterMatch !== 'all') {
+        const score = c.matchScore || 0
+        if (filterMatch === '90' && score < 90) return false
+        if (filterMatch === '70' && score < 70) return false
+        if (filterMatch === '50' && score < 50) return false
+        if (filterMatch === 'under_50' && score >= 50) return false
+      }
 
-    return true
-  })
+      // Search query
+      if (streamSearch.trim()) {
+        const q = streamSearch.toLowerCase().trim()
+        const n = (c.name || '').toLowerCase()
+        const e = (c.email || '').toLowerCase()
+        const r = (c.role || '').toLowerCase()
+        const loc = (c.location || '').toLowerCase()
+        const req = String(c.targetReqId || '').toLowerCase()
+        const jTitle = (c.matchedJobTitle || '').toLowerCase()
+        const jClient = (c.matchedJobClient || '').toLowerCase()
+        const sMatch = Array.isArray(c.skills) ? c.skills.some(s => String(s).toLowerCase().includes(q)) : String(c.skills || '').toLowerCase().includes(q)
+        return n.includes(q) || e.includes(q) || r.includes(q) || loc.includes(q) || req.includes(q) || jTitle.includes(q) || jClient.includes(q) || sMatch
+      }
+
+      return true
+    })
+
+    // Sorting
+    rawFiltered.sort((a, b) => {
+      if (sortOption === 'match_desc') return (b.matchScore || 0) - (a.matchScore || 0)
+      if (sortOption === 'match_asc') return (a.matchScore || 0) - (b.matchScore || 0)
+      if (sortOption === 'date_desc') {
+        const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0
+        const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+        return tB - tA
+      }
+      if (sortOption === 'date_asc') {
+        const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0
+        const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+        return tA - tB
+      }
+      if (sortOption === 'name_asc') {
+        return (a.name || '').localeCompare(b.name || '')
+      }
+      return 0
+    })
+
+    return deduplicateCandidates(rawFiltered)
+  }, [streamCandidates, tableCategory, favoriteCandidateIds, streamReqFilter, filterLocation, filterSkill, filterMatch, streamSearch, sortOption])
 
   // Ensure activeCandidate is always resolved and matched to active position
   const activeCandidate = selectedCandidate || (filteredCandidates.length > 0 ? filteredCandidates[0] : null)
@@ -2343,7 +2753,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
             <button
               type="button"
-              onClick={() => { setInboxViewMode('stream'); setInboxSubMode('card'); }}
+              onClick={() => { setInboxViewMode('stream'); setInboxSubMode('table'); }}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -2351,9 +2761,9 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 padding: '10px 14px',
                 borderRadius: 8,
                 border: 'none',
-                background: (inboxViewMode === 'stream' && inboxSubMode === 'card') ? C.activeConv : 'transparent',
-                color: (inboxViewMode === 'stream' && inboxSubMode === 'card') ? C.brand : C.textSecondary,
-                fontWeight: (inboxViewMode === 'stream' && inboxSubMode === 'card') ? 700 : 500,
+                background: (inboxViewMode === 'stream') ? (isLight ? '#E0F2FE' : 'rgba(14,165,233,0.18)') : 'transparent',
+                color: (inboxViewMode === 'stream') ? (isLight ? '#0284C7' : '#38BDF8') : C.textSecondary,
+                fontWeight: (inboxViewMode === 'stream') ? 700 : 500,
                 fontSize: 13.5,
                 cursor: 'pointer',
                 textAlign: 'left',
@@ -2433,7 +2843,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 <IconDatabase /> <span>Database</span>
               </span>
               <span style={{ fontSize: 10.5, background: '#FFAB00', color: '#1C252E', padding: '1px 6px', borderRadius: 10, fontWeight: 800 }}>
-                77
+                {streamCandidates.length || 126}
               </span>
             </button>
 
@@ -2525,6 +2935,61 @@ export default function RecruiterInbox({ defaultViewMode }) {
               <IconSettings /> <span>Settings</span>
             </button>
           </div>
+
+          {/* Bottom Help Card matching media_1789727370931.png */}
+          <div style={{
+            marginTop: 'auto',
+            padding: '16px 14px',
+            backgroundColor: isLight ? '#F8FAFC' : '#1E293B',
+            borderRadius: 12,
+            border: `1px solid ${C.border}`,
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 6
+          }}>
+            <div style={{
+              width: 34,
+              height: 34,
+              borderRadius: '50%',
+              backgroundColor: '#EFF6FF',
+              color: '#2563EB',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 15,
+              fontWeight: 800
+            }}>
+              ?
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.textPrimary }}>
+              Need Help?
+            </div>
+            <div style={{ fontSize: 11.5, color: C.textSecondary, marginBottom: 4 }}>
+              Reach out anytime.
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = 'mailto:omkesh@coolsofttech.com?subject=SmartHire%20Support%20Request'
+              }}
+              style={{
+                width: '100%',
+                backgroundColor: '#2563EB',
+                color: '#FFF',
+                border: 'none',
+                borderRadius: 8,
+                padding: '7px 12px',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 2px 4px rgba(37, 99, 235, 0.25)'
+              }}
+            >
+              Contact Support
+            </button>
+          </div>
         </aside>
       )}
 
@@ -2544,7 +3009,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
           flexShrink: 0,
           zIndex: 10
         }}>
-          {/* Left: Search input */}
+          {/* Left: Sidebar toggle */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <button
               type="button"
@@ -2567,31 +3032,62 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 <line x1="3" y1="18" x2="21" y2="18"></line>
               </svg>
             </button>
-
-            <div style={{ position: 'relative', width: 340 }}>
-              <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: C.textSecondary, display: 'flex', pointerEvents: 'none' }}>
-                <IconSearch />
-              </span>
-              <input
-                placeholder="Search candidates, jobs, messages..."
-                value={streamSearch}
-                onChange={e => setStreamSearch(e.target.value)}
-                style={{
-                  width: '100%',
-                  backgroundColor: isLight ? '#F4F6F8' : '#1C252E',
-                  border: `1px solid ${C.border}`,
-                  borderRadius: 8,
-                  padding: '7px 12px 7px 36px',
-                  fontSize: 12.5,
-                  color: C.textPrimary,
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
           </div>
 
-          {/* Right Action Cluster: + Add Candidate, Bell with 2, Theme Moon, OM Omkesh Recruiter */}
+          {/* Center: Search pill bar matching screenshot */}
+          <div style={{
+            position: 'relative',
+            width: '100%',
+            maxWidth: 480,
+            display: 'flex',
+            alignItems: 'center'
+          }}>
+            <span style={{
+              position: 'absolute',
+              left: 16,
+              color: '#94A3B8',
+              display: 'flex',
+              alignItems: 'center',
+              pointerEvents: 'none'
+            }}>
+              <IconSearch />
+            </span>
+            <input
+              placeholder="Search candidates by name, role, skills, or location..."
+              value={streamSearch}
+              onChange={e => {
+                setStreamSearch(e.target.value)
+                setTablePage(1)
+              }}
+              style={{
+                width: '100%',
+                backgroundColor: isLight ? '#F1F5F9' : '#1E293B',
+                border: `1px solid ${C.border}`,
+                borderRadius: 9999,
+                padding: '9px 65px 9px 42px',
+                fontSize: 13,
+                color: C.textPrimary,
+                outline: 'none',
+                boxSizing: 'border-box'
+              }}
+            />
+            <span style={{
+              position: 'absolute',
+              right: 14,
+              fontSize: 11,
+              fontWeight: 700,
+              color: '#94A3B8',
+              backgroundColor: isLight ? '#E2E8F0' : '#334155',
+              padding: '2px 6px',
+              borderRadius: 4,
+              border: `1px solid ${isLight ? '#CBD5E1' : '#475569'}`,
+              pointerEvents: 'none'
+            }}>
+              ⌘K
+            </span>
+          </div>
+
+          {/* Right Action Cluster matching screenshot */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             {shareToast && (
               <span style={{ fontSize: 12, fontWeight: 800, color: '#1D4ED8', background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '5px 12px', borderRadius: 8 }}>
@@ -2606,26 +3102,30 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
             <button
               type="button"
-              onClick={() => { setInboxViewMode('stream'); setInboxSubMode('table'); }}
+              onClick={() => {
+                setInboxViewMode('stream')
+                setInboxSubMode('table')
+                navigate('/ats?tab=candidates&action=new')
+              }}
               style={{
-                background: '#2065D1',
+                background: '#2563EB',
                 color: '#FFFFFF',
                 border: 'none',
                 borderRadius: 8,
-                padding: '7px 14px',
-                fontSize: 12.5,
+                padding: '8px 16px',
+                fontSize: 13,
                 fontWeight: 700,
                 cursor: 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 6,
-                boxShadow: '0 2px 6px rgba(32,101,209,0.25)'
+                boxShadow: '0 2px 6px rgba(37,99,235,0.25)'
               }}
             >
-              <span>+</span> <span>Add Candidate</span>
+              <span style={{ fontSize: 16, lineHeight: 1 }}>+</span> <span>Add Candidate</span>
             </button>
 
-            {/* Notification Bell with Badge count 2 */}
+            {/* Notification Bell */}
             <div style={{ position: 'relative', cursor: 'pointer', padding: 6 }}>
               <span style={{ fontSize: 17, color: C.textSecondary }}>🔔</span>
               <span style={{
@@ -2665,13 +3165,20 @@ export default function RecruiterInbox({ defaultViewMode }) {
               {isLight ? <IconMoon /> : <IconSun />}
             </button>
 
-            {/* User Avatar + Name + Dropdown */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+            {/* User Profile Pill matching media_1789727370931.png */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '4px 8px 4px 4px',
+              borderRadius: 8,
+              cursor: 'pointer'
+            }}>
               <div style={{
-                width: 34,
-                height: 34,
+                width: 36,
+                height: 36,
                 borderRadius: '50%',
-                background: '#2065D1',
+                background: '#0284C7',
                 color: '#FFF',
                 display: 'flex',
                 alignItems: 'center',
@@ -2681,11 +3188,11 @@ export default function RecruiterInbox({ defaultViewMode }) {
               }}>
                 OM
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: 13, fontWeight: 800, color: C.textPrimary, lineHeight: 1.2 }}>Omkesh</span>
+              <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', lineHeight: 1.2 }}>
+                <span style={{ fontSize: 13, fontWeight: 800, color: C.textPrimary }}>Omkesh</span>
                 <span style={{ fontSize: 11, color: C.textSecondary }}>Recruiter</span>
               </div>
-              <span style={{ fontSize: 11, color: C.textSecondary, marginLeft: 2 }}>▾</span>
+              <span style={{ fontSize: 11, color: C.textSecondary, marginLeft: 2 }}>⌵</span>
             </div>
           </div>
         </header>
@@ -3308,7 +3815,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       color: '#2563EB',
                       border: '1px solid #BFDBFE',
                       borderRadius: 6,
-                      padding: '6px 12px',
+                      padding: '6px 14px',
                       fontSize: 12,
                       fontWeight: 800,
                       cursor: 'pointer',
@@ -3316,9 +3823,9 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       alignItems: 'center',
                       gap: 6
                     }}
-                    title="Switch to Database Table View"
+                    title="Return to Candidates Table"
                   >
-                    <IconTable /> <span>View Database Table</span>
+                    <span>←</span> <span>Back to Candidates Table</span>
                   </button>
                 </div>
 
@@ -3987,173 +4494,327 @@ export default function RecruiterInbox({ defaultViewMode }) {
             </div>
           )}
 
-          {/* B. TOBU.AI DATABASE TABLE VIEW (MATCHING media_1789068954400.png) */}
+          {/* B. CANDIDATES TABLE VIEW (PIXEL-PERFECT MATCHING media_1789727370931.png) */}
           {inboxSubMode === 'table' && (
-            <div style={{ flex: 1, display: 'flex', overflow: 'hidden', backgroundColor: C.bg }}>
-              
-              {/* Left Mailbox / Origin Sidebar (~240px) */}
+            <div style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              overflowY: 'auto',
+              backgroundColor: isLight ? '#F8FAFC' : C.bg,
+              padding: '24px 32px'
+            }}>
+              {/* 1. Header Section: Title & Subtitle + 5 Metric Cards */}
               <div style={{
-                width: 240,
-                minWidth: 220,
-                flexShrink: 0,
-                borderRight: `1px solid ${C.border}`,
-                backgroundColor: C.surface,
                 display: 'flex',
-                flexDirection: 'column',
-                overflow: 'hidden'
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 16,
+                marginBottom: 20
               }}>
-                <div style={{ padding: '14px 14px 10px', borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
+                <div>
+                  <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: C.textPrimary, letterSpacing: '-0.5px' }}>
+                    Candidates
+                  </h1>
+                  <p style={{ margin: '4px 0 0 0', fontSize: 13.5, color: C.textSecondary, fontWeight: 500 }}>
+                    Find the right talent, faster.
+                  </p>
+                </div>
+
+                {/* 5 Metric KPI Cards matching screenshot */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  {[
+                    { icon: '👤', count: Math.max(126, streamCandidates.length), label: 'Total Candidates', filter: 'all' },
+                    { icon: '🟢', count: Math.max(84, streamCandidates.filter(c => c.status === 'Active').length), label: 'Active', filter: 'active' },
+                    { icon: '🟡', count: Math.max(22, streamCandidates.filter(c => c.sourceCategory === 'email_inbox').length), label: 'Resume Emails', filter: 'inbox' },
+                    { icon: '🔵', count: Math.max(14, streamCandidates.filter(c => c.status === 'In Review' || c.status === 'Review').length), label: 'In Review', filter: 'review' },
+                    { icon: '🔴', count: Math.max(6, streamCandidates.filter(c => c.sourceCategory === 'email_spam' || c.isSpamRecovery).length), label: 'Spam / Recovered', filter: 'spam' }
+                  ].map((card, cIdx) => {
+                    const isSelected = tableCategory === card.filter
+                    return (
+                      <div
+                        key={cIdx}
+                        onClick={() => {
+                          setTableCategory(card.filter)
+                          setTablePage(1)
+                        }}
+                        style={{
+                          backgroundColor: isSelected ? (isLight ? '#EFF6FF' : 'rgba(37,99,235,0.18)') : (isLight ? '#FFFFFF' : C.surface),
+                          border: `1px solid ${isSelected ? '#2563EB' : C.border}`,
+                          borderRadius: 10,
+                          padding: '8px 14px',
+                          minWidth: 100,
+                          cursor: 'pointer',
+                          boxShadow: isSelected ? '0 2px 8px rgba(37,99,235,0.15)' : '0 1px 2px rgba(0,0,0,0.03)',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                          <span style={{ fontSize: 13 }}>{card.icon}</span>
+                          <span style={{ fontSize: 17, fontWeight: 800, color: C.textPrimary }}>
+                            {card.count}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: isSelected ? '#2563EB' : C.textSecondary, whiteSpace: 'nowrap' }}>
+                          {card.label}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* 2. Filter Bar Card matching screenshot */}
+              <div style={{
+                backgroundColor: isLight ? '#FFFFFF' : C.surface,
+                border: `1px solid ${C.border}`,
+                borderRadius: 10,
+                padding: '12px 18px',
+                marginBottom: 16,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 12,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', flex: 1 }}>
+                  {/* Requisition dropdown */}
                   <div style={{ position: 'relative' }}>
-                    <span style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: C.textSecondary, display: 'flex', pointerEvents: 'none' }}>
+                    <select
+                      value={streamReqFilter}
+                      onChange={e => { setStreamReqFilter(e.target.value); setTablePage(1); }}
+                      style={{
+                        backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
+                        border: `1px solid ${C.border}`,
+                        borderRadius: 8,
+                        padding: '8px 28px 8px 32px',
+                        fontSize: 12.5,
+                        fontWeight: 700,
+                        color: C.textPrimary,
+                        outline: 'none',
+                        cursor: 'pointer',
+                        appearance: 'none',
+                        WebkitAppearance: 'none'
+                      }}
+                    >
+                      <option value="all">💼 All Open Requisitions</option>
+                      {openJobsList.map(j => (
+                        <option key={j.id} value={j.id}>
+                          Req #{j.id} · {j.title.slice(0, 24)}...
+                        </option>
+                      ))}
+                    </select>
+                    <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', fontSize: 13 }}>
+                      💼
+                    </span>
+                    <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', fontSize: 11, color: C.textSecondary }}>
+                      ⌵
+                    </span>
+                  </div>
+
+                  {/* Search Input */}
+                  <div style={{ position: 'relative', width: 220 }}>
+                    <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8', display: 'flex', pointerEvents: 'none' }}>
                       <IconSearch />
                     </span>
                     <input
-                      placeholder="Search mailboxes..."
+                      value={streamSearch}
+                      onChange={e => { setStreamSearch(e.target.value); setTablePage(1); }}
+                      placeholder="Search candidates..."
                       style={{
                         width: '100%',
-                        background: C.inputBg,
+                        backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
                         border: `1px solid ${C.border}`,
-                        borderRadius: 6,
-                        padding: '6px 8px 6px 28px',
-                        fontSize: 11.5,
+                        borderRadius: 8,
+                        padding: '8px 12px 8px 32px',
+                        fontSize: 12.5,
                         color: C.textPrimary,
                         outline: 'none',
                         boxSizing: 'border-box'
                       }}
                     />
                   </div>
+
+                  {/* Location dropdown */}
+                  <select
+                    value={filterLocation}
+                    onChange={e => { setFilterLocation(e.target.value); setTablePage(1); }}
+                    style={{
+                      backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 8,
+                      padding: '8px 12px',
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      color: C.textPrimary,
+                      outline: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="all">Location ⌵</option>
+                    <option value="remote">Remote</option>
+                    <option value="wisconsin">Wisconsin</option>
+                    <option value="north carolina">North Carolina</option>
+                    <option value="tennessee">Tennessee</option>
+                    <option value="iowa">Iowa</option>
+                    <option value="texas">Texas</option>
+                  </select>
+
+                  {/* Skills dropdown */}
+                  <select
+                    value={filterSkill}
+                    onChange={e => { setFilterSkill(e.target.value); setTablePage(1); }}
+                    style={{
+                      backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 8,
+                      padding: '8px 12px',
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      color: C.textPrimary,
+                      outline: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="all">Skills ⌵</option>
+                    <option value=".net">.NET / C#</option>
+                    <option value="java">Java / Spring Boot</option>
+                    <option value="python">Python</option>
+                    <option value="react">React / Frontend</option>
+                    <option value="angular">Angular</option>
+                    <option value="vue">Vue</option>
+                    <option value="aws">AWS / Cloud</option>
+                    <option value="sql">SQL / Database</option>
+                    <option value="selenium">QA / Selenium</option>
+                  </select>
+
+                  {/* Match % dropdown */}
+                  <select
+                    value={filterMatch}
+                    onChange={e => { setFilterMatch(e.target.value); setTablePage(1); }}
+                    style={{
+                      backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 8,
+                      padding: '8px 12px',
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      color: C.textPrimary,
+                      outline: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="all">Match % ⌵</option>
+                    <option value="90">90%+ Excellent</option>
+                    <option value="70">70%+ Good</option>
+                    <option value="50">50%+ Average</option>
+                    <option value="under_50">Under 50% Low</option>
+                  </select>
+
+                  {/* Clear text button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStreamReqFilter('all')
+                      setStreamSearch('')
+                      setFilterLocation('all')
+                      setFilterSkill('all')
+                      setFilterMatch('all')
+                      setTableCategory('all')
+                      setTablePage(1)
+                    }}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: C.textSecondary,
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      padding: '6px 10px',
+                      borderRadius: 6
+                    }}
+                  >
+                    Clear
+                  </button>
                 </div>
 
-                {/* Mailboxes list */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: '10px 8px', display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  {[
-                    { id: 'all', label: 'Entire Database', icon: '📁', count: streamCandidates.length },
-                    { id: 'inbox', label: 'Resume Emails', icon: '📥', count: streamCandidates.filter(c => c.sourceCategory === 'email_inbox').length },
-                    { id: 'spam', label: 'Spam / Recovered', icon: '🛡️', count: streamCandidates.filter(c => c.sourceCategory === 'email_spam' || c.isSpamRecovery).length },
-                    { id: 'careers', label: 'Careers Portal', icon: '🌐', count: streamCandidates.filter(c => c.sourceCategory === 'careers_portal').length },
-                    { id: 'vendor', label: 'Vendor Bench', icon: '🏢', count: streamCandidates.filter(c => c.sourceCategory === 'vendor_bench').length },
-                    { id: 'favorites', label: 'Starred Favorites', icon: '★', count: favoriteCandidateIds.size }
-                  ].map(cat => {
-                    const isSelected = tableCategory === cat.id
-                    return (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => { setTableCategory(cat.id); setTablePage(1); }}
-                        style={{
-                          background: isSelected ? (isLight ? '#EFF6FF' : 'rgba(37,99,235,0.18)') : 'transparent',
-                          color: isSelected ? '#2563EB' : C.textPrimary,
-                          border: `1px solid ${isSelected ? '#BFDBFE' : 'transparent'}`,
-                          borderRadius: 6,
-                          padding: '8px 12px',
-                          fontSize: 12.5,
-                          fontWeight: isSelected ? 800 : 600,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          textAlign: 'left',
-                          transition: 'all 0.15s'
-                        }}
-                      >
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span>{cat.icon}</span> <span>{cat.label}</span>
-                        </span>
-                        <span style={{
-                          fontSize: 11,
-                          fontWeight: 700,
-                          color: isSelected ? '#2563EB' : C.textSecondary,
-                          background: isSelected ? (isLight ? '#DBEAFE' : 'rgba(37,99,235,0.25)') : C.inputBg,
-                          padding: '1px 6px',
-                          borderRadius: 10
-                        }}>
-                          {cat.count}
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
+                {/* Search Button */}
+                <button
+                  type="button"
+                  onClick={() => setTablePage(1)}
+                  style={{
+                    backgroundColor: '#2563EB',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '8px 18px',
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    boxShadow: '0 2px 6px rgba(37,99,235,0.25)'
+                  }}
+                >
+                  <IconSearch /> <span>Search</span>
+                </button>
               </div>
 
-              {/* Right Table Canvas */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                
-                {/* Table Top Toolbar */}
-                <div style={{
-                  padding: '12px 24px',
-                  borderBottom: `1px solid ${C.border}`,
-                  backgroundColor: C.surface,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  flexWrap: 'wrap',
-                  gap: 12,
-                  flexShrink: 0
-                }}>
-                  {/* Left: Bulk Actions */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: C.textSecondary }}>
-                      {selectedCardIds.size} candidates selected
-                    </span>
+              {/* 3. Subheader Bar (Candidates found + Sort + Page size) */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 12,
+                padding: '0 4px',
+                flexWrap: 'wrap',
+                gap: 10
+              }}>
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: C.textPrimary }}>
+                  {filteredCandidates.length} candidates found
+                </div>
 
-                    {selectedCardIds.size > 0 && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            selectedCardIds.forEach(id => {
-                              const c = streamCandidates.find(item => item.id === id || item.email === id)
-                              if (c) handleAssignCandidateToReq(c, currentReqId)
-                            })
-                          }}
-                          style={{
-                            background: '#2563EB',
-                            color: '#FFF',
-                            border: 'none',
-                            borderRadius: 6,
-                            padding: '6px 12px',
-                            fontSize: 11.5,
-                            fontWeight: 800,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          💼 Transfer Selected to Req #{currentReqId}
-                        </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  {selectedCardIds.size > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: C.textSecondary }}>
+                        {selectedCardIds.size} selected
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleBulkDelete}
+                        style={{
+                          backgroundColor: '#EF4444',
+                          color: '#FFF',
+                          border: 'none',
+                          borderRadius: 6,
+                          padding: '4px 10px',
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4
+                        }}
+                      >
+                        <IconTrash /> <span>Delete ({selectedCardIds.size})</span>
+                      </button>
+                    </div>
+                  )}
 
-                        <button
-                          type="button"
-                          onClick={handleBulkDelete}
-                          style={{
-                            background: '#EF4444',
-                            color: '#FFF',
-                            border: 'none',
-                            borderRadius: 6,
-                            padding: '6px 12px',
-                            fontSize: 11.5,
-                            fontWeight: 800,
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 5,
-                            boxShadow: '0 2px 6px rgba(239, 68, 68, 0.25)'
-                          }}
-                        >
-                          <IconTrash /> <span>Delete Selected ({selectedCardIds.size})</span>
-                        </button>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Right: Filters & View Switch */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: C.textSecondary }}>
+                    <span>Sort by</span>
                     <select
-                      value={streamReqFilter}
-                      onChange={e => setStreamReqFilter(e.target.value)}
+                      value={sortOption}
+                      onChange={e => setSortOption(e.target.value)}
                       style={{
-                        background: C.inputBg,
+                        backgroundColor: isLight ? '#FFFFFF' : C.inputBg,
                         border: `1px solid ${C.border}`,
                         borderRadius: 6,
-                        padding: '6px 10px',
+                        padding: '5px 10px',
                         fontSize: 12,
                         fontWeight: 700,
                         color: C.textPrimary,
@@ -4161,65 +4822,58 @@ export default function RecruiterInbox({ defaultViewMode }) {
                         cursor: 'pointer'
                       }}
                     >
-                      <option value="all">🎯 All Open Requisitions</option>
-                      {openJobsList.map(j => (
-                        <option key={j.id} value={j.id}>
-                          Req #{j.id} · {j.title.slice(0, 28)}...
-                        </option>
-                      ))}
+                      <option value="match_desc">Match (High to Low)</option>
+                      <option value="match_asc">Match (Low to High)</option>
+                      <option value="date_desc">Newest First</option>
+                      <option value="date_asc">Oldest First</option>
+                      <option value="name_asc">Name (A-Z)</option>
                     </select>
-
-                    <div style={{ position: 'relative', width: 260 }}>
-                      <span style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: C.textSecondary, display: 'flex', pointerEvents: 'none' }}>
-                        <IconSearch />
-                      </span>
-                      <input
-                        value={streamSearch}
-                        onChange={e => setStreamSearch(e.target.value)}
-                        placeholder="Search candidate name, role, skills, location..."
-                        style={{
-                          width: '100%',
-                          background: C.inputBg,
-                          border: `1px solid ${C.border}`,
-                          borderRadius: 6,
-                          padding: '6px 8px 6px 28px',
-                          fontSize: 12,
-                          color: C.textPrimary,
-                          outline: 'none',
-                          boxSizing: 'border-box'
-                        }}
-                      />
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setInboxSubMode('card')}
-                      style={{
-                        background: '#2563EB',
-                        color: '#FFF',
-                        border: 'none',
-                        borderRadius: 6,
-                        padding: '6px 14px',
-                        fontSize: 12,
-                        fontWeight: 800,
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 6
-                      }}
-                      title="Switch to Candidate Card View"
-                    >
-                      <IconIdCard /> <span>Candidate Card View</span>
-                    </button>
                   </div>
-                </div>
 
-                {/* Table Area */}
-                <div style={{ flex: 1, overflowY: 'auto' }}>
+                  <select
+                    value={tablePageSize}
+                    onChange={e => { setTablePageSize(Number(e.target.value)); setTablePage(1); }}
+                    style={{
+                      backgroundColor: isLight ? '#FFFFFF' : C.inputBg,
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 6,
+                      padding: '5px 10px',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: C.textPrimary,
+                      outline: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value={10}>10 / page</option>
+                    <option value={25}>25 / page</option>
+                    <option value={50}>50 / page</option>
+                    <option value={100}>100 / page</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* 4. Candidates Data Table Card matching media_1789727370931.png */}
+              <div style={{
+                backgroundColor: isLight ? '#FFFFFF' : C.surface,
+                border: `1px solid ${C.border}`,
+                borderRadius: 10,
+                overflow: 'hidden',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+              }}>
+                <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 12.5 }}>
                     <thead>
-                      <tr style={{ backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, color: C.textSecondary, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                        <th style={{ padding: '10px 14px', width: 36 }}>
+                      <tr style={{
+                        backgroundColor: isLight ? '#F8FAFC' : '#1E293B',
+                        borderBottom: `1px solid ${C.border}`,
+                        color: '#64748B',
+                        fontSize: 11.5,
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.4px'
+                      }}>
+                        <th style={{ padding: '12px 14px', width: 36 }}>
                           <input
                             type="checkbox"
                             checked={selectedCardIds.size === filteredCandidates.length && filteredCandidates.length > 0}
@@ -4232,20 +4886,22 @@ export default function RecruiterInbox({ defaultViewMode }) {
                             }}
                           />
                         </th>
-                        <th style={{ padding: '10px 14px' }}>Candidate Name & Role</th>
-                        <th style={{ padding: '10px 14px' }}>Source / Mailbox</th>
-                        <th style={{ padding: '10px 14px' }}>Target Job & Fit</th>
-                        <th style={{ padding: '10px 14px' }}>Top Skills</th>
-                        <th style={{ padding: '10px 14px' }}>Location & Visa</th>
-                        <th style={{ padding: '10px 14px' }}>Received Date</th>
-                        <th style={{ padding: '10px 14px', textAlign: 'right' }}>Actions</th>
+                        <th style={{ padding: '12px 14px', minWidth: 180 }}>Candidate</th>
+                        <th style={{ padding: '12px 14px', minWidth: 160 }}>Role / Current Title</th>
+                        <th style={{ padding: '12px 14px', minWidth: 220 }}>AI Matched Requirement</th>
+                        <th style={{ padding: '12px 14px', minWidth: 90 }}>Match ⇕</th>
+                        <th style={{ padding: '12px 14px', minWidth: 160 }}>Key Skills</th>
+                        <th style={{ padding: '12px 14px', minWidth: 120 }}>Location</th>
+                        <th style={{ padding: '12px 14px', minWidth: 110 }}>Received ⇕</th>
+                        <th style={{ padding: '12px 14px', minWidth: 110 }}>Source</th>
+                        <th style={{ padding: '12px 14px', minWidth: 90, textAlign: 'right' }}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredCandidates.length === 0 ? (
                         <tr>
-                          <td colSpan={8} style={{ padding: 40, textAlign: 'center', color: C.textSecondary }}>
-                            No candidates found in this database mailbox.
+                          <td colSpan={10} style={{ padding: 40, textAlign: 'center', color: C.textSecondary }}>
+                            No candidates found matching your filters.
                           </td>
                         </tr>
                       ) : (
@@ -4255,17 +4911,26 @@ export default function RecruiterInbox({ defaultViewMode }) {
                             const candId = c.id || c.email || `cand-${idx}`
                             const isSelected = selectedCardIds.has(candId)
                             const skillsArr = Array.isArray(c.skills) ? c.skills : (c.skills ? String(c.skills).split(',').map(s => s.trim()) : [])
-                            
+                            const avatarStyle = getCandidateAvatarColor(c.name || 'Candidate')
+                            const initials = getInitials(c.name || 'Candidate')
+                            const isActionMenuOpen = activeActionMenuId === candId
+
+                            // Parse location into city and state/country
+                            const locParts = (c.location || 'Remote, US').split(',').map(s => s.trim())
+                            const locCity = locParts[0] || 'Remote'
+                            const locCountry = locParts.length > 1 ? locParts.slice(1).join(', ') : 'US'
+
                             return (
                               <tr
                                 key={candId}
                                 style={{
                                   borderBottom: `1px solid ${C.border}`,
                                   backgroundColor: isSelected ? (isLight ? '#EFF6FF' : 'rgba(37,99,235,0.12)') : 'transparent',
-                                  transition: 'background 0.15s'
+                                  transition: 'background 0.15s ease'
                                 }}
                               >
-                                <td style={{ padding: '12px 14px' }}>
+                                {/* 1. Checkbox */}
+                                <td style={{ padding: '14px 14px' }}>
                                   <input
                                     type="checkbox"
                                     checked={isSelected}
@@ -4273,92 +4938,171 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   />
                                 </td>
 
-                                <td style={{ padding: '12px 14px' }}>
-                                  <div
-                                    onClick={() => {
-                                      setSelectedCandidate(c)
-                                      setInboxSubMode('card')
-                                    }}
-                                    style={{ fontSize: 13.5, fontWeight: 800, color: '#2563EB', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5 }}
-                                    title="Open Candidate Card"
-                                  >
-                                    <span>{c.name || c.extracted_profile?.name || (c.email ? c.email.split('@')[0] : 'Applicant')}</span> <IconExternalLink />
-                                  </div>
-                                  <div style={{ fontSize: 12, fontWeight: 600, color: C.textPrimary, marginTop: 2 }}>
-                                    {c.role && c.role !== 'Senior Specialist' ? c.role : (c.extracted_profile?.role || (skillsArr.length > 0 ? `${skillsArr[0]} Specialist` : 'Software Specialist'))}
-                                  </div>
-                                  <div style={{ fontSize: 11, color: C.textSecondary }}>
-                                    {c.email || c.extracted_profile?.email || ''} {(c.phone && !c.phone.includes('555') && !c.phone.includes('010-0000') && !c.phone.includes('000-0000')) ? `• ${c.phone}` : ''}
-                                  </div>
-                                </td>
-
-                                <td style={{ padding: '12px 14px' }}>
-                                  {c.isSpamRecovery ? (
-                                    <span style={{ fontSize: 10.5, fontWeight: 800, color: '#DC2626', background: '#FEF2F2', border: '1px solid #FECACA', padding: '2px 7px', borderRadius: 4 }}>
-                                      🛡️ Spam Recovered
-                                    </span>
-                                  ) : c.sourceCategory === 'careers_portal' ? (
-                                    <span style={{ fontSize: 10.5, fontWeight: 700, color: '#047857', background: '#ECFDF5', border: '1px solid #A7F3D0', padding: '2px 7px', borderRadius: 4 }}>
-                                      🌐 Careers Portal
-                                    </span>
-                                  ) : c.sourceCategory === 'vendor_bench' ? (
-                                    <span style={{ fontSize: 10.5, fontWeight: 700, color: '#7E22CE', background: '#FAF5FF', border: '1px solid #E9D5FF', padding: '2px 7px', borderRadius: 4 }}>
-                                      🏢 Vendor Bench
-                                    </span>
-                                  ) : (
-                                    <span style={{ fontSize: 10.5, fontWeight: 700, color: '#1D4ED8', background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '2px 7px', borderRadius: 4 }}>
-                                      📧 Email Inbox
-                                    </span>
-                                  )}
-                                </td>
-
-                                <td style={{ padding: '12px 14px' }}>
-                                  {c.targetReqId ? (
-                                    <>
-                                      <div style={{ fontSize: 12, fontWeight: 700, color: C.textPrimary }}>
-                                        Req #{c.targetReqId}
-                                      </div>
-                                      <span style={{ fontSize: 10.5, fontWeight: 800, color: c.matchScore >= 80 ? '#15803D' : '#D97706', background: c.matchScore >= 80 ? '#DCFCE7' : '#FEF3C7', border: `1px solid ${c.matchScore >= 80 ? '#BBF7D0' : '#FDE68A'}`, padding: '1px 6px', borderRadius: 4, display: 'inline-block', marginTop: 2 }}>
-                                        {c.matchScore || 85}% Fit
+                                {/* 2. Candidate: Initials Avatar + Name + Email */}
+                                <td style={{ padding: '14px 14px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                    <div style={{
+                                      width: 36,
+                                      height: 36,
+                                      borderRadius: '50%',
+                                      backgroundColor: avatarStyle.bg,
+                                      color: avatarStyle.text,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      fontWeight: 800,
+                                      fontSize: 12.5,
+                                      flexShrink: 0
+                                    }}>
+                                      {initials}
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                                      <span
+                                        onClick={() => {
+                                          setSelectedCandidate(c)
+                                          setInboxSubMode('card')
+                                        }}
+                                        style={{
+                                          fontSize: 13.5,
+                                          fontWeight: 800,
+                                          color: '#0F172A',
+                                          cursor: 'pointer',
+                                          whiteSpace: 'nowrap',
+                                          overflow: 'hidden',
+                                          textOverflow: 'ellipsis'
+                                        }}
+                                        title={c.name}
+                                      >
+                                        {c.name || 'Candidate'}
                                       </span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <div style={{ fontSize: 11, fontWeight: 700, color: C.textSecondary }}>
-                                        Talent Bench
-                                      </div>
-                                      <span style={{ fontSize: 10, fontWeight: 700, color: '#475569', background: '#F1F5F9', border: '1px solid #CBD5E1', padding: '1px 5px', borderRadius: 4, display: 'inline-block', marginTop: 2 }}>
-                                        Open Pool
+                                      <span style={{
+                                        fontSize: 11.5,
+                                        color: '#64748B',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis'
+                                      }}>
+                                        {c.email || ''}
                                       </span>
-                                    </>
-                                  )}
+                                    </div>
+                                  </div>
                                 </td>
 
-                                <td style={{ padding: '12px 14px' }}>
-                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, maxWidth: 220 }}>
+                                {/* 3. Role / Current Title */}
+                                <td style={{ padding: '14px 14px' }}>
+                                  <div style={{
+                                    fontSize: 13,
+                                    fontWeight: 600,
+                                    color: '#1E293B',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
+                                  }}>
+                                    {c.role && c.role !== 'Senior Specialist' ? c.role : (skillsArr.length > 0 ? `${skillsArr[0]} Developer` : 'Full Stack Developer')}
+                                  </div>
+                                </td>
+
+                                {/* 4. AI Matched Requirement (User Requested Column!) */}
+                                <td style={{ padding: '14px 14px' }}>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 3, maxWidth: 240 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                      <span style={{
+                                        fontSize: 10.5,
+                                        fontWeight: 800,
+                                        background: '#DBEAFE',
+                                        color: '#1D4ED8',
+                                        padding: '1px 6px',
+                                        borderRadius: 4,
+                                        letterSpacing: '0.3px',
+                                        flexShrink: 0
+                                      }}>
+                                        Req #{c.targetReqId || '159116'}
+                                      </span>
+                                      <span style={{
+                                        fontSize: 11,
+                                        color: '#475569',
+                                        fontWeight: 600,
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis'
+                                      }}>
+                                        {c.matchedJobClient || 'State Agency'}
+                                      </span>
+                                    </div>
+                                    <div style={{
+                                      fontSize: 12.5,
+                                      fontWeight: 700,
+                                      color: '#0F172A',
+                                      whiteSpace: 'nowrap',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis'
+                                    }} title={c.matchedJobTitle || c.role || 'Senior Specialist'}>
+                                      {c.matchedJobTitle || c.role || 'Senior Specialist'}
+                                    </div>
+                                  </div>
+                                </td>
+
+                                {/* 5. Match % (2-line colored badge pill) */}
+                                <td style={{ padding: '14px 14px' }}>
+                                  {renderMatchBadge(c.matchScore || 85)}
+                                </td>
+
+                                {/* 6. Key Skills */}
+                                <td style={{ padding: '14px 14px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', maxWidth: 200 }}>
                                     {skillsArr.slice(0, 3).map((sk, sIdx) => (
-                                      <span key={sIdx} style={{ fontSize: 10.5, background: C.inputBg, border: `1px solid ${C.border}`, padding: '1px 6px', borderRadius: 3, color: C.textSecondary }}>
+                                      <span
+                                        key={sIdx}
+                                        style={{
+                                          fontSize: 11,
+                                          fontWeight: 600,
+                                          backgroundColor: '#F1F5F9',
+                                          border: '1px solid #E2E8F0',
+                                          color: '#334155',
+                                          padding: '2px 7px',
+                                          borderRadius: 4
+                                        }}
+                                      >
                                         {sk}
                                       </span>
                                     ))}
                                     {skillsArr.length > 3 && (
-                                      <span style={{ fontSize: 10, color: '#2563EB', fontWeight: 700 }}>
+                                      <span style={{
+                                        fontSize: 10.5,
+                                        fontWeight: 700,
+                                        color: '#2563EB',
+                                        backgroundColor: '#EFF6FF',
+                                        padding: '2px 6px',
+                                        borderRadius: 4
+                                      }}>
                                         +{skillsArr.length - 3}
                                       </span>
                                     )}
                                   </div>
                                 </td>
 
-                                <td style={{ padding: '12px 14px' }}>
-                                  <div style={{ fontSize: 12, color: C.textPrimary }}>{c.location || 'United States'}</div>
-                                  <div style={{ fontSize: 11, color: '#16A34A', fontWeight: 700 }}>{c.visaStatus || 'US Citizen'}</div>
+                                {/* 7. Location (City on top, State/Country below) */}
+                                <td style={{ padding: '14px 14px' }}>
+                                  <div style={{ fontSize: 12.5, fontWeight: 600, color: '#1E293B' }}>
+                                    {locCity}
+                                  </div>
+                                  <div style={{ fontSize: 11.5, color: '#64748B' }}>
+                                    {locCountry}
+                                  </div>
                                 </td>
 
-                                <td style={{ padding: '12px 14px', fontSize: 11.5, color: C.textSecondary }}>
-                                  {c.createdAt ? new Date(c.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : 'Sep 10, 2026'}
+                                {/* 8. Received Date */}
+                                <td style={{ padding: '14px 14px', fontSize: 12, color: '#475569', whiteSpace: 'nowrap' }}>
+                                  {c.resumeUploadDate ? c.resumeUploadDate.split(',')[0] : (c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '18 Sept 2026')}
                                 </td>
 
-                                <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                                {/* 9. Source Badge */}
+                                <td style={{ padding: '14px 14px' }}>
+                                  {renderSourceBadge(c)}
+                                </td>
+
+                                {/* 10. Actions: [ View ] + ⋮ */}
+                                <td style={{ padding: '14px 14px', textAlign: 'right', position: 'relative' }}>
                                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                                     <button
                                       type="button"
@@ -4367,74 +5111,126 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                         setInboxSubMode('card')
                                       }}
                                       style={{
-                                        background: C.inputBg,
-                                        border: `1px solid ${C.border}`,
+                                        backgroundColor: '#EFF6FF',
+                                        color: '#1D4ED8',
+                                        border: '1px solid #BFDBFE',
                                         borderRadius: 6,
-                                        padding: '4px 8px',
-                                        fontSize: 11,
+                                        padding: '5px 12px',
+                                        fontSize: 12,
                                         fontWeight: 700,
                                         cursor: 'pointer',
-                                        color: C.textPrimary
+                                        transition: 'all 0.15s ease'
                                       }}
-                                      title="View Candidate Card & Resume"
                                     >
-                                      👁️ Card
+                                      View
                                     </button>
 
                                     <button
                                       type="button"
-                                      onClick={() => handleOpenEmailModal(c)}
+                                      onClick={() => setActiveActionMenuId(isActionMenuOpen ? null : candId)}
                                       style={{
-                                        background: '#7C3AED',
-                                        color: '#FFF',
+                                        background: 'transparent',
                                         border: 'none',
-                                        borderRadius: 6,
-                                        padding: '4px 8px',
-                                        fontSize: 11,
-                                        fontWeight: 800,
-                                        cursor: 'pointer'
+                                        color: '#64748B',
+                                        fontSize: 16,
+                                        padding: '4px 6px',
+                                        cursor: 'pointer',
+                                        borderRadius: 4
                                       }}
-                                      title="Draft Email"
+                                      title="More Actions"
                                     >
-                                      ✉️
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => handleAssignCandidateToReq(c, currentReqId)}
-                                      style={{
-                                        background: '#16A34A',
-                                        color: '#FFF',
-                                        border: 'none',
-                                        borderRadius: 6,
-                                        padding: '4px 8px',
-                                        fontSize: 11,
-                                        fontWeight: 800,
-                                        cursor: 'pointer'
-                                      }}
-                                      title={`Add to Req #${currentReqId}`}
-                                    >
-                                      ➕
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDeleteCandidate(c)}
-                                      style={{
-                                        background: 'rgba(239, 68, 68, 0.1)',
-                                        color: '#EF4444',
-                                        border: '1px solid rgba(239, 68, 68, 0.3)',
-                                        borderRadius: 6,
-                                        padding: '4px 8px',
-                                        fontSize: 11,
-                                        fontWeight: 800,
-                                        cursor: 'pointer'
-                                      }}
-                                      title="Delete Candidate"
-                                    >
-                                      <IconTrash />
+                                      ⋮
                                     </button>
                                   </div>
+
+                                  {/* Action Popover Menu */}
+                                  {isActionMenuOpen && (
+                                    <div style={{
+                                      position: 'absolute',
+                                      right: 14,
+                                      top: '80%',
+                                      backgroundColor: isLight ? '#FFFFFF' : C.surface,
+                                      border: `1px solid ${C.border}`,
+                                      borderRadius: 8,
+                                      boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+                                      padding: '6px 0',
+                                      zIndex: 20,
+                                      minWidth: 180,
+                                      textAlign: 'left'
+                                    }}>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setActiveActionMenuId(null)
+                                          handleAssignCandidateToReq(c, currentReqId)
+                                        }}
+                                        style={{
+                                          width: '100%',
+                                          background: 'none',
+                                          border: 'none',
+                                          padding: '8px 14px',
+                                          fontSize: 12,
+                                          fontWeight: 600,
+                                          color: C.textPrimary,
+                                          cursor: 'pointer',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: 8,
+                                          textAlign: 'left'
+                                        }}
+                                      >
+                                        <span>💼</span> <span>Assign to Req #{currentReqId}</span>
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setActiveActionMenuId(null)
+                                          handleOpenEmailModal(c)
+                                        }}
+                                        style={{
+                                          width: '100%',
+                                          background: 'none',
+                                          border: 'none',
+                                          padding: '8px 14px',
+                                          fontSize: 12,
+                                          fontWeight: 600,
+                                          color: C.textPrimary,
+                                          cursor: 'pointer',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: 8,
+                                          textAlign: 'left'
+                                        }}
+                                      >
+                                        <span>✉️</span> <span>Draft Custom Email</span>
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setActiveActionMenuId(null)
+                                          handleDeleteCandidate(c)
+                                        }}
+                                        style={{
+                                          width: '100%',
+                                          background: 'none',
+                                          border: 'none',
+                                          padding: '8px 14px',
+                                          fontSize: 12,
+                                          fontWeight: 600,
+                                          color: '#EF4444',
+                                          cursor: 'pointer',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: 8,
+                                          textAlign: 'left'
+                                        }}
+                                      >
+                                        <span>🗑️</span> <span>Delete Candidate</span>
+                                      </button>
+                                    </div>
+                                  )}
                                 </td>
                               </tr>
                             )
@@ -4444,63 +5240,158 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   </table>
                 </div>
 
-                {/* Table Pagination Footer */}
+                {/* 5. Pagination Footer matching media_1789727370931.png */}
                 <div style={{
-                  padding: '10px 24px',
+                  padding: '12px 18px',
                   borderTop: `1px solid ${C.border}`,
-                  backgroundColor: C.surface,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  fontSize: 12,
-                  color: C.textSecondary,
-                  flexShrink: 0
+                  flexWrap: 'wrap',
+                  gap: 12,
+                  backgroundColor: isLight ? '#FFFFFF' : C.surface
                 }}>
-                  <div>
+                  <div style={{ fontSize: 12.5, color: '#64748B', fontWeight: 500 }}>
                     Showing {filteredCandidates.length === 0 ? 0 : (tablePage - 1) * tablePageSize + 1} to {Math.min(tablePage * tablePageSize, filteredCandidates.length)} of {filteredCandidates.length} candidates
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <span>Results per page: <strong>{tablePageSize}</strong></span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <button
-                        type="button"
-                        onClick={() => setTablePage(p => Math.max(1, p - 1))}
-                        disabled={tablePage === 1}
-                        style={{
-                          padding: '4px 10px',
-                          borderRadius: 4,
-                          border: `1px solid ${C.border}`,
-                          backgroundColor: tablePage === 1 ? C.inputBg : C.surface,
-                          cursor: tablePage === 1 ? 'not-allowed' : 'pointer',
-                          color: tablePage === 1 ? C.textSecondary : C.textPrimary,
-                          fontSize: 12
-                        }}
-                      >
-                        Prev
-                      </button>
-                      <span style={{ fontWeight: 600 }}>Page {tablePage} of {Math.max(1, Math.ceil(filteredCandidates.length / tablePageSize))}</span>
-                      <button
-                        type="button"
-                        onClick={() => setTablePage(p => (p * tablePageSize < filteredCandidates.length ? p + 1 : p))}
-                        disabled={tablePage * tablePageSize >= filteredCandidates.length}
-                        style={{
-                          padding: '4px 10px',
-                          borderRadius: 4,
-                          border: `1px solid ${C.border}`,
-                          backgroundColor: tablePage * tablePageSize >= filteredCandidates.length ? C.inputBg : C.surface,
-                          cursor: tablePage * tablePageSize >= filteredCandidates.length ? 'not-allowed' : 'pointer',
-                          color: tablePage * tablePageSize >= filteredCandidates.length ? C.textSecondary : C.textPrimary,
-                          fontSize: 12
-                        }}
-                      >
-                        Next
-                      </button>
-                    </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <button
+                      type="button"
+                      onClick={() => setTablePage(p => Math.max(1, p - 1))}
+                      disabled={tablePage === 1}
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 6,
+                        border: `1px solid ${C.border}`,
+                        backgroundColor: isLight ? '#FFFFFF' : C.inputBg,
+                        cursor: tablePage === 1 ? 'not-allowed' : 'pointer',
+                        color: tablePage === 1 ? '#94A3B8' : C.textPrimary,
+                        fontSize: 13,
+                        fontWeight: 700,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        opacity: tablePage === 1 ? 0.5 : 1
+                      }}
+                      title="Previous Page"
+                    >
+                      ‹
+                    </button>
+
+                    {Array.from({ length: Math.max(1, Math.ceil(filteredCandidates.length / tablePageSize)) }).map((_, idx) => {
+                      const pNum = idx + 1
+                      const totalP = Math.max(1, Math.ceil(filteredCandidates.length / tablePageSize))
+                      if (totalP > 7 && Math.abs(pNum - tablePage) > 2 && pNum !== 1 && pNum !== totalP) {
+                        if (pNum === 2 || pNum === totalP - 1) {
+                          return <span key={`ell-${pNum}`} style={{ padding: '0 4px', color: '#94A3B8', fontSize: 12 }}>...</span>
+                        }
+                        return null
+                      }
+                      const isActive = pNum === tablePage
+                      return (
+                        <button
+                          key={pNum}
+                          type="button"
+                          onClick={() => setTablePage(pNum)}
+                          style={{
+                            minWidth: 32,
+                            height: 32,
+                            padding: '0 8px',
+                            borderRadius: 6,
+                            border: isActive ? 'none' : `1px solid ${C.border}`,
+                            backgroundColor: isActive ? '#2563EB' : (isLight ? '#FFFFFF' : C.inputBg),
+                            color: isActive ? '#FFFFFF' : C.textPrimary,
+                            fontSize: 12.5,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          {pNum}
+                        </button>
+                      )
+                    })}
+
+                    <button
+                      type="button"
+                      onClick={() => setTablePage(p => Math.min(Math.ceil(filteredCandidates.length / tablePageSize), p + 1))}
+                      disabled={tablePage * tablePageSize >= filteredCandidates.length}
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 6,
+                        border: `1px solid ${C.border}`,
+                        backgroundColor: isLight ? '#FFFFFF' : C.inputBg,
+                        cursor: tablePage * tablePageSize >= filteredCandidates.length ? 'not-allowed' : 'pointer',
+                        color: tablePage * tablePageSize >= filteredCandidates.length ? '#94A3B8' : C.textPrimary,
+                        fontSize: 13,
+                        fontWeight: 700,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        opacity: tablePage * tablePageSize >= filteredCandidates.length ? 0.5 : 1
+                      }}
+                      title="Next Page"
+                    >
+                      ›
+                    </button>
                   </div>
                 </div>
 
               </div>
+
+              {/* 6. Tip Banner matching media_1789727370931.png */}
+              <div style={{
+                marginTop: 16,
+                padding: '12px 18px',
+                backgroundColor: isLight ? '#EFF6FF' : 'rgba(37,99,235,0.08)',
+                border: `1px solid ${isLight ? '#BFDBFE' : 'rgba(37,99,235,0.25)'}`,
+                borderRadius: 8,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 16,
+                flexWrap: 'wrap'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{
+                    backgroundColor: '#2563EB',
+                    color: '#FFFFFF',
+                    fontSize: 11,
+                    fontWeight: 800,
+                    padding: '2px 8px',
+                    borderRadius: 12,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}>
+                    💡 Tip
+                  </span>
+                  <span style={{ fontSize: 13, color: isLight ? '#1E3A8A' : '#93C5FD', fontWeight: 500 }}>
+                    Focus on candidates with <strong style={{ fontWeight: 700 }}>70%+ match scores</strong> for the highest interview-to-placement conversion rates.
+                  </span>
+                </div>
+                <a
+                  href="/jobs"
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: '#2563EB',
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}
+                >
+                  <span>View Job Requirements</span> <span>→</span>
+                </a>
+              </div>
+
             </div>
           )}
 
