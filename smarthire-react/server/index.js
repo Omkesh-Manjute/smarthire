@@ -7441,10 +7441,28 @@ app.post('/api/recruiter/email-config', express.json(), (req, res) => {
   res.json({ success: true, message: 'Email configuration saved!' });
 });
 
+// In-memory 15-second email deduplication cache to prevent duplicate dispatch
+const recentEmailSendsMap = new Map();
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, timestamp] of recentEmailSendsMap.entries()) {
+    if (now - timestamp > 30000) recentEmailSendsMap.delete(key);
+  }
+}, 30000);
+
 // POST send email via recruiter's configured SMTP
 app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
   const { recruiterEmail, to, subject, body, html, replyTo } = req.body;
   if (!recruiterEmail || !to || !subject) return res.json({ success: false, message: 'recruiterEmail, to, and subject required' });
+
+  const toKey = Array.isArray(to) ? to.map(x => String(x).toLowerCase().trim()).sort().join(',') : String(to).toLowerCase().trim();
+  const dedupKey = `${String(recruiterEmail).toLowerCase().trim()}__${toKey}__${String(subject).trim()}`;
+  const now = Date.now();
+  if (recentEmailSendsMap.has(dedupKey) && (now - recentEmailSendsMap.get(dedupKey) < 15000)) {
+    console.log(`ℹ️ [Email Deduplication] Suppressed duplicate email dispatch for "${subject}" to ${toKey} within 15s window.`);
+    return res.json({ success: true, message: 'Email already sent (duplicate suppressed)', deduplicated: true });
+  }
+  recentEmailSendsMap.set(dedupKey, now);
 
   const cfg = emailConfigsStore[recruiterEmail] || emailConfigsStore['omkesh@coolsofttech.com'] || {};
   const fromEmail = cfg.fromEmail || recruiterEmail || 'omkesh@coolsofttech.com';
@@ -7454,6 +7472,7 @@ app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
   const isSecure = cfg.security === 'SSL' || port === 465;
 
   if (!cleanedPass) {
+    recentEmailSendsMap.delete(dedupKey);
     return res.json({ success: false, message: 'No email configuration found. Please configure your SMTP settings first.' });
   }
 

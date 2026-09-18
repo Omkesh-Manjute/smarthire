@@ -23,6 +23,55 @@ import {
 } from '../lib/atsFirestore'
 import { autoSendJobDescriptionToCandidate } from '../utils/autoSendJdHelper'
 
+// Detect if an attachment item is a legacy hardcoded dummy placeholder
+function isLegacyDummyAttachment(a) {
+  if (!a) return true
+  const title = String(a.title || '').toLowerCase()
+  const fn = String(a.filename || a.fileName || a.name || '').toLowerCase()
+  return title.includes('13285 - admin') ||
+         fn.includes('13285 - admin') ||
+         title.includes('scmsp_candidate_cover_sheet') ||
+         fn.includes('scmsp_candidate_cover_sheet') ||
+         title.includes('ssn references') ||
+         fn.includes('ssn references') ||
+         title.includes('right_to_represent_sosc') ||
+         fn.includes('right_to_represent_sosc')
+}
+
+// Resolve requisition state code and default State Client name (e.g., 'TN' -> 'State of TN')
+function resolveRequisitionStateInfo(job = {}, savedReq = {}) {
+  let state = String(savedReq.state || job.state || '').trim().toUpperCase()
+  const rawLoc = String(savedReq.location || job.location || savedReq.address || job.address || '')
+  if (!state || state.length !== 2) {
+    const m = rawLoc.match(/,\s*([A-Za-z]{2})\b/)
+    if (m) state = m[1].toUpperCase()
+  }
+  if (!state || state.length !== 2) {
+    const full = `${job.title || ''} ${job.description || ''} ${rawLoc} ${job.client || ''}`.toLowerCase()
+    if (full.includes('tennessee') || full.includes('nashville') || full.includes('tn doh')) state = 'TN'
+    else if (full.includes('north carolina') || full.includes('raleigh') || full.includes('ncdhhs')) state = 'NC'
+    else if (full.includes('south carolina') || full.includes('columbia') || full.includes('scmsp')) state = 'SC'
+    else if (full.includes('georgia') || full.includes('atlanta') || full.includes('gdot')) state = 'GA'
+    else if (full.includes('virginia') || full.includes('richmond') || full.includes('vdot')) state = 'VA'
+    else if (full.includes('texas') || full.includes('austin')) state = 'TX'
+    else if (full.includes('ohio') || full.includes('columbus')) state = 'OH'
+    else if (full.includes('florida') || full.includes('tallahassee')) state = 'FL'
+    else if (full.includes('mississippi') || full.includes('jackson')) state = 'MS'
+    else state = 'TN'
+  }
+  const stateClient = `State of ${state}`
+  return { state, stateClient }
+}
+
+function isLegacyDummyClient(val, curState) {
+  if (!val) return true
+  const v = String(val).toLowerCase().trim()
+  if (v === 'ncdhhs-ncfast' && curState !== 'NC') return true
+  if ((v === 'state of sc' || v === 'scmsp' || v === 'sc') && curState !== 'SC') return true
+  if (v === 'direct client' || v === 'general client') return true
+  return false
+}
+
 function getFullDescriptionText(job) {
   if (!job) return ''
   const raw = job.rawDescription || job.fullDescription || job.rawText || job.details || job.rawJd || job.description
@@ -646,7 +695,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
   const [selectedAvailable, setSelectedAvailable] = useState([])
   const [selectedAssigned, setSelectedAssigned] = useState([])
 
-  // Attachments List (Dynamically initialized from active requisition storage)
+  // Attachments List (Dynamically initialized from active requisition storage, empty by default)
   const [attachments, setAttachments] = useState(() => {
     try {
       const activeReq = localStorage.getItem('smarthire_active_selected_req')
@@ -657,22 +706,24 @@ We are currently reviewing candidate profiles and scheduling immediate interview
         const saved = localStorage.getItem(`smarthire_req_attachments_${cleanId}`) ||
                       localStorage.getItem(`smarthire_req_attachments_${rawId}`) ||
                       localStorage.getItem(`smarthire_req_attachments_J-${cleanId}`)
-        if (saved !== null && saved !== undefined) return JSON.parse(saved)
-        if (parsed.attachments && Array.isArray(parsed.attachments)) return parsed.attachments
+        if (saved !== null && saved !== undefined) {
+          const parsedSaved = JSON.parse(saved)
+          return Array.isArray(parsedSaved) ? parsedSaved.filter(a => !isLegacyDummyAttachment(a)) : []
+        }
+        if (parsed.attachments && Array.isArray(parsed.attachments)) {
+          return parsed.attachments.filter(a => !isLegacyDummyAttachment(a))
+        }
       }
-      const saved158 = localStorage.getItem('smarthire_req_attachments_158938')
-      if (saved158 !== null && saved158 !== undefined) return JSON.parse(saved158)
     } catch (e) {}
-    return [
-      { id: 1, title: '13285 - Admin - 158938', filename: '13285 - Admin - 158938.docx' },
-      { id: 2, title: 'SCMSP_Candidate_Cover_Sheet - 158938', filename: 'SCMSP_Candidate_Cover_Sheet - 158938.docx' },
-      { id: 3, title: 'SSN References - 158938', filename: 'SSN References - 158938.doc' },
-      { id: 4, title: 'Right_to_Represent_SOSC - 158938', filename: 'Right_to_Represent_SOSC - 158938.pdf' },
-    ]
+    return []
   })
   const [showAddAttachment, setShowAddAttachment] = useState(false)
   const [newAttachmentTitle, setNewAttachmentTitle] = useState('')
   const [newAttachmentFile, setNewAttachmentFile] = useState(null)
+
+  // In-flight locks to guarantee zero duplicate email dispatch
+  const inFlightEmailRef = useRef(new Set())
+  const isBatchSendingRef = useRef(false)
 
   // Potential Candidates Attached to Requisition (Dynamically initialized from Firestore & real data)
   const [potentialCandidates, setPotentialCandidates] = useState(() => {
@@ -1760,6 +1811,12 @@ ${myCompany}
 Email: ${myEmail}
 `
 
+    const emailKey = recEmail.toLowerCase().trim()
+    if (inFlightEmailRef.current.has(emailKey)) {
+      return { success: true, duplicate: true }
+    }
+    inFlightEmailRef.current.add(emailKey)
+
     setSendingJdRecruiterId(recEmail)
     try {
       const res = await fetch('/api/recruiter/send-email', {
@@ -1794,26 +1851,43 @@ Email: ${myEmail}
       return { success: false, message: err.message }
     } finally {
       setSendingJdRecruiterId(null)
+      setTimeout(() => {
+        inFlightEmailRef.current.delete(emailKey)
+      }, 3000)
     }
   }
 
-  // Batch dispatches Job Description email to all currently assigned recruiters
+  // Batch dispatches Job Description email to all currently assigned recruiters (Strictly deduplicated)
   const handleSendJdToAssignedRecruiters = async () => {
+    if (isBatchSendingRef.current) return
+    isBatchSendingRef.current = true
+
     const assignedNames = editingFields.assignedRecruiters || []
     if (assignedNames.length === 0) {
+      isBatchSendingRef.current = false
       setJdEmailToast({ type: 'error', message: '⚠️ No recruiters are assigned to this requisition yet. Please assign at least one recruiter first.' })
       setTimeout(() => setJdEmailToast(null), 4000)
       return
     }
 
-    const targets = allRecruitersList.filter(rec => {
-      return assignedNames.some(r =>
+    // Deduplicate target recruiters by email so no one ever receives multiple copies
+    const seenEmails = new Set()
+    const targets = []
+    allRecruitersList.forEach(rec => {
+      if (!rec || !rec.email) return
+      const emailLower = rec.email.toLowerCase().trim()
+      const isAssigned = assignedNames.some(r =>
         String(r || '').toLowerCase().trim() === String(rec.name || '').toLowerCase().trim() ||
-        (rec.email && String(r || '').toLowerCase().trim() === String(rec.email || '').toLowerCase().trim())
+        String(r || '').toLowerCase().trim() === emailLower
       )
+      if (isAssigned && !seenEmails.has(emailLower)) {
+        seenEmails.add(emailLower)
+        targets.push(rec)
+      }
     })
 
     if (targets.length === 0) {
+      isBatchSendingRef.current = false
       setJdEmailToast({ type: 'error', message: '⚠️ Could not find email profiles for the assigned recruiters.' })
       setTimeout(() => setJdEmailToast(null), 4000)
       return
@@ -1827,12 +1901,16 @@ Email: ${myEmail}
       const res = await handleSendJdToRecruiter(rec)
       if (res && res.success) {
         successCount++
-      } else {
+      } else if (res && !res.duplicate) {
         failedNames.push(rec.name)
       }
     }
 
     setIsSendingBatchJd(false)
+    setTimeout(() => {
+      isBatchSendingRef.current = false
+    }, 2000)
+
     if (successCount > 0) {
       const msg = `✅ Job Description successfully sent to ${successCount} assigned recruiter(s)!` + (failedNames.length > 0 ? ` (Failed: ${failedNames.join(', ')})` : '')
       setJdEmailToast({ type: 'success', message: msg })
@@ -1984,9 +2062,18 @@ Email: ${myEmail}
         if (savedAtt) break
       }
       if (savedAtt) {
-        setAttachments(JSON.parse(savedAtt))
+        const parsedAtt = JSON.parse(savedAtt)
+        if (Array.isArray(parsedAtt)) {
+          setAttachments(parsedAtt.filter(a => !isLegacyDummyAttachment(a)))
+        } else {
+          setAttachments([])
+        }
+      } else {
+        setAttachments([])
       }
-    } catch (e) {}
+    } catch (e) {
+      setAttachments([])
+    }
 
     // Find any candidates in memory or global state matching this req
     const matchingGlobal = (candidates || []).filter(c => {
@@ -2232,23 +2319,38 @@ Email: ${myEmail}
     }
     fetchCloud()
 
-    // Load attachments specifically for this requisition
+    // Load attachments specifically for this requisition (Empty by default, filter out legacy mock templates)
     try {
       const savedAtt = localStorage.getItem(`smarthire_req_attachments_${cleanId}`) ||
                        localStorage.getItem(`smarthire_req_attachments_${rawId}`) ||
                        localStorage.getItem(`smarthire_req_attachments_${fullId}`)
       if (savedAtt !== null && savedAtt !== undefined) {
-        setAttachments(JSON.parse(savedAtt))
+        const parsedAtts = JSON.parse(savedAtt)
+        const realAtts = Array.isArray(parsedAtts) ? parsedAtts.filter(a => !isLegacyDummyAttachment(a)) : []
+        setAttachments(realAtts)
       } else if (job.attachments && Array.isArray(job.attachments)) {
-        setAttachments(job.attachments)
+        const realAtts = job.attachments.filter(a => !isLegacyDummyAttachment(a))
+        setAttachments(realAtts)
       } else {
-        setAttachments([
-          { id: 1, title: `13285 - Admin - ${cleanId}`, filename: `13285 - Admin - ${cleanId}.docx` },
-          { id: 2, title: `SCMSP_Candidate_Cover_Sheet - ${cleanId}`, filename: `SCMSP_Candidate_Cover_Sheet - ${cleanId}.docx` },
-          { id: 3, title: `SSN References - ${cleanId}`, filename: `SSN References - ${cleanId}.doc` },
-        ])
+        setAttachments([])
       }
-    } catch (e) {}
+    } catch (e) {
+      setAttachments([])
+    }
+
+    const { state: resolvedState, stateClient: resolvedStateClient } = resolveRequisitionStateInfo(job, savedReq)
+    const rawCustomer = savedReq.customer || job.customer || job.client || ''
+    const effectiveCustomer = (!rawCustomer || isLegacyDummyClient(rawCustomer, resolvedState))
+      ? resolvedStateClient
+      : rawCustomer
+
+    const rawEndClient = savedReq.endClient || job.endClient || ''
+    const effectiveEndClient = (!rawEndClient || isLegacyDummyClient(rawEndClient, resolvedState))
+      ? effectiveCustomer
+      : rawEndClient
+
+    const rawContact = savedReq.contact !== undefined ? savedReq.contact : (job.contact !== undefined ? job.contact : '')
+    const effectiveContact = (rawContact && rawContact !== 'Hustedt Lexi') ? rawContact : ''
 
     const formattedTitle = cleanJobTitleWithPositionNumber(savedReq.title || job.title || 'Lead Business Analyst')
     const formattedDesc = formatJobDescription(fullDesc, { ...job, ...savedReq, title: formattedTitle })
@@ -2256,22 +2358,22 @@ Email: ${myEmail}
     setEditingFields({
       id: rawId || fullId,
       title: formattedTitle,
-      startDate: savedReq.startDate || job.creationDate || job.startDate || '10/23/2026',
+      startDate: savedReq.startDate || job.creationDate || job.startDate || '2026-09-18',
       duration: savedReq.duration || job.duration || '12',
       durationUnit: 'months',
-      customer: savedReq.customer || job.client || job.customer || 'NCDHHS-NCFAST',
-      endClient: savedReq.endClient || job.client || job.customer || 'NCDHHS-NCFAST',
-      contact: savedReq.contact || job.contact || 'Hustedt Lexi',
+      customer: effectiveCustomer,
+      endClient: effectiveEndClient,
+      contact: effectiveContact,
       numPositions: savedReq.numPositions || job.numPositions || '1',
-      deadline: savedReq.deadline || job.deadline || '2026-09-04',
+      deadline: savedReq.deadline || job.deadline || '2026-09-30',
       maxSubmissions: savedReq.maxSubmissions || job.maxSubmissions || '2',
       category: savedReq.category || job.category || 'SP',
       type: savedReq.type || job.type || 'Contract',
       address: savedReq.address || job.address || '4430 Broad Rd.',
-      city: savedReq.city || job.city || (job.location ? job.location.split(',')[0].trim() : 'Raleigh'),
-      state: savedReq.state || job.state || (job.location && job.location.includes(',') ? job.location.split(',')[1].trim().slice(0, 2) : 'NC'),
-      zip: savedReq.zip || job.zip || '27601',
-      location: savedReq.location || job.location || 'Raleigh, NC',
+      city: savedReq.city || job.city || (job.location ? job.location.split(',')[0].trim() : (resolvedState === 'TN' ? 'Nashville' : 'Raleigh')),
+      state: resolvedState,
+      zip: savedReq.zip || job.zip || (resolvedState === 'TN' ? '37243' : '27601'),
+      location: savedReq.location || job.location || (resolvedState === 'TN' ? 'Nashville, TN' : 'Raleigh, NC'),
       billRate: savedReq.billRate || job.billRate || '90',
       payRate: savedReq.payRate || (job.budget ? String(job.budget).replace(/[^0-9]/g, '').slice(0, 3) : '75') || '75',
       interview: savedReq.interview || 'Webcam Interview Only',
@@ -2289,9 +2391,9 @@ Email: ${myEmail}
       hotReq: savedReq.hotReq || false,
       incumbentVendor: savedReq.incumbentVendor || false,
       createdBy: savedReq.createdBy || job.createdBy || 'admin',
-      createdOn: savedReq.createdOn || job.createdOn || (job.creationDate ? `${job.creationDate} 11:40:14 AM` : '2026-08-26 11:40:14 AM'),
+      createdOn: savedReq.createdOn || job.createdOn || (job.creationDate ? `${job.creationDate} 11:40:14 AM` : '2026-09-18 11:40:14 AM'),
       lastUpdatedBy: savedReq.lastUpdatedBy || job.lastUpdatedBy || userName,
-      lastUpdatedOn: savedReq.lastUpdatedOn || job.lastUpdatedOn || '8/26/2026 11:43:52 AM'
+      lastUpdatedOn: savedReq.lastUpdatedOn || job.lastUpdatedOn || '2026-09-18 11:43:52 AM'
     })
   }
 
@@ -7178,7 +7280,7 @@ Email: ${myEmail}
 
                   <label style={{ fontWeight: 'bold', color: '#000080', textAlign: 'right' }}>Customer:</label>
                   <select
-                    value={editingFields.customer || 'State Of SC'}
+                    value={editingFields.customer || (`State of ${editingFields.state || 'TN'}`)}
                     disabled={isEmployee}
                     onChange={e => !isEmployee && setEditingFields({ ...editingFields, customer: e.target.value })}
                     style={{
@@ -7186,16 +7288,39 @@ Email: ${myEmail}
                       background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                     }}
                   >
-                    <option>State Of SC</option>
-                    <option>DFA</option>
-                    <option>DBHDS</option>
-                    <option>VDOT</option>
-                    <option>Texas Health and Human Services Commission</option>
+                    {editingFields.customer && ![
+                      'State of TN', 'State of NC', 'State of SC', 'State of GA', 'State of TX',
+                      'State of VA', 'State of OH', 'State of FL', 'State of MS', 'State of PA',
+                      'State of CA', 'State of IL', 'State of MD', 'State of NY', 'TN DOH',
+                      'NCDHHS', 'DFA', 'DBHDS', 'VDOT', 'Texas Health and Human Services Commission'
+                    ].includes(editingFields.customer) && (
+                      <option value={editingFields.customer}>{editingFields.customer}</option>
+                    )}
+                    <option value="State of TN">State of TN</option>
+                    <option value="State of NC">State of NC</option>
+                    <option value="State of SC">State of SC</option>
+                    <option value="State of GA">State of GA</option>
+                    <option value="State of TX">State of TX</option>
+                    <option value="State of VA">State of VA</option>
+                    <option value="State of OH">State of OH</option>
+                    <option value="State of FL">State of FL</option>
+                    <option value="State of MS">State of MS</option>
+                    <option value="State of PA">State of PA</option>
+                    <option value="State of CA">State of CA</option>
+                    <option value="State of IL">State of IL</option>
+                    <option value="State of MD">State of MD</option>
+                    <option value="State of NY">State of NY</option>
+                    <option value="TN DOH">TN DOH</option>
+                    <option value="NCDHHS">NCDHHS</option>
+                    <option value="DFA">DFA</option>
+                    <option value="DBHDS">DBHDS</option>
+                    <option value="VDOT">VDOT</option>
+                    <option value="Texas Health and Human Services Commission">Texas Health and Human Services Commission</option>
                   </select>
 
                   <label style={{ fontWeight: 'bold', color: '#000080', textAlign: 'right' }}>Contact:</label>
                   <select
-                    value={editingFields.contact || 'Hustedt Lexi'}
+                    value={editingFields.contact || ''}
                     disabled={isEmployee}
                     onChange={e => !isEmployee && setEditingFields({ ...editingFields, contact: e.target.value })}
                     style={{
@@ -7203,10 +7328,11 @@ Email: ${myEmail}
                       background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                     }}
                   >
-                    <option>Hustedt Lexi</option>
-                    <option>Miller Sarah</option>
-                    <option>David Wilson</option>
-                    <option>Jessica Taylor</option>
+                    <option value="">-- Select Contact --</option>
+                    <option value="Hustedt Lexi">Hustedt Lexi</option>
+                    <option value="Miller Sarah">Miller Sarah</option>
+                    <option value="David Wilson">David Wilson</option>
+                    <option value="Jessica Taylor">Jessica Taylor</option>
                   </select>
 
                   <label style={{ fontWeight: 'bold', color: '#000080', textAlign: 'right' }}>Submission Deadline:*</label>
@@ -7259,7 +7385,7 @@ Email: ${myEmail}
 
                   <label style={{ fontWeight: 'bold', color: '#000080', textAlign: 'right' }}>End Client:</label>
                   <select
-                    value={editingFields.endClient || 'State Of SC'}
+                    value={editingFields.endClient || editingFields.customer || (`State of ${editingFields.state || 'TN'}`)}
                     disabled={isEmployee}
                     onChange={e => !isEmployee && setEditingFields({ ...editingFields, endClient: e.target.value })}
                     style={{
@@ -7267,15 +7393,39 @@ Email: ${myEmail}
                       background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                     }}
                   >
-                    <option>State Of SC</option>
-                    <option>DFA</option>
-                    <option>DBHDS</option>
-                    <option>Texas Health and Human Services Commission</option>
+                    {editingFields.endClient && ![
+                      'State of TN', 'State of NC', 'State of SC', 'State of GA', 'State of TX',
+                      'State of VA', 'State of OH', 'State of FL', 'State of MS', 'State of PA',
+                      'State of CA', 'State of IL', 'State of MD', 'State of NY', 'TN DOH',
+                      'NCDHHS', 'DFA', 'DBHDS', 'VDOT', 'Texas Health and Human Services Commission'
+                    ].includes(editingFields.endClient) && (
+                      <option value={editingFields.endClient}>{editingFields.endClient}</option>
+                    )}
+                    <option value="State of TN">State of TN</option>
+                    <option value="State of NC">State of NC</option>
+                    <option value="State of SC">State of SC</option>
+                    <option value="State of GA">State of GA</option>
+                    <option value="State of TX">State of TX</option>
+                    <option value="State of VA">State of VA</option>
+                    <option value="State of OH">State of OH</option>
+                    <option value="State of FL">State of FL</option>
+                    <option value="State of MS">State of MS</option>
+                    <option value="State of PA">State of PA</option>
+                    <option value="State of CA">State of CA</option>
+                    <option value="State of IL">State of IL</option>
+                    <option value="State of MD">State of MD</option>
+                    <option value="State of NY">State of NY</option>
+                    <option value="TN DOH">TN DOH</option>
+                    <option value="NCDHHS">NCDHHS</option>
+                    <option value="DFA">DFA</option>
+                    <option value="DBHDS">DBHDS</option>
+                    <option value="VDOT">VDOT</option>
+                    <option value="Texas Health and Human Services Commission">Texas Health and Human Services Commission</option>
                   </select>
 
                   <label style={{ fontWeight: 'bold', color: '#000080', textAlign: 'right' }}>Contact:</label>
                   <select
-                    value={editingFields.contact || 'Hustedt Lexi'}
+                    value={editingFields.contact || ''}
                     disabled={isEmployee}
                     onChange={e => !isEmployee && setEditingFields({ ...editingFields, contact: e.target.value })}
                     style={{
@@ -7283,10 +7433,11 @@ Email: ${myEmail}
                       background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
                     }}
                   >
-                    <option>Hustedt Lexi</option>
-                    <option>Miller Sarah</option>
-                    <option>David Wilson</option>
-                    <option>Jessica Taylor</option>
+                    <option value="">-- Select Contact --</option>
+                    <option value="Hustedt Lexi">Hustedt Lexi</option>
+                    <option value="Miller Sarah">Miller Sarah</option>
+                    <option value="David Wilson">David Wilson</option>
+                    <option value="Jessica Taylor">Jessica Taylor</option>
                   </select>
 
                   <div style={{ gridColumn: 'span 2', display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '2px' }}>
@@ -7407,7 +7558,7 @@ Email: ${myEmail}
                         <div style={{ display: 'flex', gap: '4px' }}>
                           <input
                             type="text"
-                            value={editingFields.city || 'Columbia'}
+                            value={editingFields.city || (editingFields.state === 'TN' ? 'Nashville' : 'Raleigh')}
                             disabled={isEmployee}
                             onChange={e => !isEmployee && setEditingFields({ ...editingFields, city: e.target.value })}
                             style={{
@@ -7416,9 +7567,24 @@ Email: ${myEmail}
                             }}
                           />
                           <select
-                            value={editingFields.state || 'SC'}
+                            value={editingFields.state || 'TN'}
                             disabled={isEmployee}
-                            onChange={e => !isEmployee && setEditingFields({ ...editingFields, state: e.target.value })}
+                            onChange={e => {
+                              if (isEmployee) return
+                              const newState = e.target.value
+                              setEditingFields(prev => {
+                                const oldStateClient = `State of ${prev.state || 'TN'}`
+                                const newStateClient = `State of ${newState}`
+                                const updateCust = !prev.customer || prev.customer === oldStateClient || prev.customer === 'State Of SC'
+                                const updateEnd = !prev.endClient || prev.endClient === oldStateClient || prev.endClient === 'State Of SC'
+                                return {
+                                  ...prev,
+                                  state: newState,
+                                  customer: updateCust ? newStateClient : prev.customer,
+                                  endClient: updateEnd ? newStateClient : prev.endClient
+                                }
+                              })
+                            }}
                             style={{
                               flex: 1, padding: '2px 4px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: 0,
                               background: isEmployee ? '#f1f5f9' : '#ffffff', color: '#0f172a', outline: 'none'
@@ -8438,26 +8604,34 @@ Email: ${myEmail}
                     <div style={{ border: '1px solid #7f9db9', borderRadius: 0, marginBottom: '10px' }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
                         <tbody>
-                          {attachments.map((att, idx) => (
-                            <tr key={att.id || idx} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                              <td style={{ padding: '5px 8px', color: '#0f172a', width: '40%' }}>
-                                {att.title}
-                              </td>
-                              <td style={{ padding: '5px 8px', color: '#000080', fontWeight: 'bold', cursor: 'pointer' }}>
-                                {att.filename}
-                              </td>
-                              <td style={{ padding: '5px 8px', textAlign: 'right', width: '70px' }}>
-                                <span style={{ cursor: 'pointer', marginRight: '8px' }} title="Edit">✏️</span>
-                                <span
-                                  onClick={() => handleDeleteAttachment(att.id)}
-                                  style={{ cursor: 'pointer', color: '#dc2626', fontWeight: 'bold' }}
-                                  title="Delete"
-                                >
-                                  ❌
-                                </span>
+                          {attachments.length === 0 ? (
+                            <tr>
+                              <td colSpan={3} style={{ padding: '20px 14px', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
+                                No attachments uploaded for this requisition. Click "Add New Attachment" above to attach documents.
                               </td>
                             </tr>
-                          ))}
+                          ) : (
+                            attachments.map((att, idx) => (
+                              <tr key={att.id || idx} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                                <td style={{ padding: '5px 8px', color: '#0f172a', width: '40%' }}>
+                                  {att.title}
+                                </td>
+                                <td style={{ padding: '5px 8px', color: '#000080', fontWeight: 'bold', cursor: 'pointer' }}>
+                                  {att.filename}
+                                </td>
+                                <td style={{ padding: '5px 8px', textAlign: 'right', width: '70px' }}>
+                                  <span style={{ cursor: 'pointer', marginRight: '8px' }} title="Edit">✏️</span>
+                                  <span
+                                    onClick={() => handleDeleteAttachment(att.id)}
+                                    style={{ cursor: 'pointer', color: '#dc2626', fontWeight: 'bold' }}
+                                    title="Delete"
+                                  >
+                                    ❌
+                                  </span>
+                                </td>
+                              </tr>
+                            ))
+                          )}
                         </tbody>
                       </table>
                     </div>

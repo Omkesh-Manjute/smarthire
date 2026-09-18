@@ -11,6 +11,53 @@ function getFullDescriptionText(job) {
   return formatJobDescription('', job)
 }
 
+function isLegacyDummyAttachment(a) {
+  if (!a) return false
+  const title = String(a.title || '').toLowerCase()
+  const fn = String(a.filename || a.fileName || a.name || '').toLowerCase()
+  return title.includes('13285 - admin') ||
+         fn.includes('13285 - admin') ||
+         title.includes('scmsp_candidate_cover_sheet') ||
+         fn.includes('scmsp_candidate_cover_sheet') ||
+         title.includes('ssn references') ||
+         fn.includes('ssn references') ||
+         title.includes('right_to_represent_sosc') ||
+         fn.includes('right_to_represent_sosc')
+}
+
+function resolveRequisitionStateInfo(job = {}) {
+  let state = String(job.state || '').trim().toUpperCase()
+  const rawLoc = String(job.location || job.address || '')
+  if (!state || state.length !== 2) {
+    const m = rawLoc.match(/,\s*([A-Za-z]{2})\b/)
+    if (m) state = m[1].toUpperCase()
+  }
+  if (!state || state.length !== 2) {
+    const full = `${job.title || ''} ${job.description || ''} ${rawLoc} ${job.client || ''}`.toLowerCase()
+    if (full.includes('tennessee') || full.includes('nashville') || full.includes('tn doh')) state = 'TN'
+    else if (full.includes('north carolina') || full.includes('raleigh') || full.includes('ncdhhs')) state = 'NC'
+    else if (full.includes('south carolina') || full.includes('columbia') || full.includes('scmsp')) state = 'SC'
+    else if (full.includes('georgia') || full.includes('atlanta') || full.includes('gdot')) state = 'GA'
+    else if (full.includes('virginia') || full.includes('richmond') || full.includes('vdot')) state = 'VA'
+    else if (full.includes('texas') || full.includes('austin')) state = 'TX'
+    else if (full.includes('ohio') || full.includes('columbus')) state = 'OH'
+    else if (full.includes('florida') || full.includes('tallahassee')) state = 'FL'
+    else if (full.includes('mississippi') || full.includes('jackson')) state = 'MS'
+    else state = 'TN'
+  }
+  const stateClient = `State of ${state}`
+  return { state, stateClient }
+}
+
+function isLegacyDummyClient(val, curState) {
+  if (!val) return true
+  const v = String(val).toLowerCase().trim()
+  if (v === 'ncdhhs-ncfast' && curState !== 'NC') return true
+  if ((v === 'state of sc' || v === 'scmsp' || v === 'sc') && curState !== 'SC') return true
+  if (v === 'direct client' || v === 'general client') return true
+  return false
+}
+
 function DashboardModule({
   totalCandidates = 0, liveCount = 0, activeJobs = 0, qualified = 0, newCandidates = 0, pendingRtr = 0,
   allCandidates = [], liveCandidates = [], jobsList = [], apiOnline = false, submissions = [], isSuperAdmin = true
@@ -30,13 +77,8 @@ function DashboardModule({
   const [selectedAssigned, setSelectedAssigned] = useState([])
   const [emailOption, setEmailOption] = useState('none')
 
-  // Attachments State
-  const [attachments, setAttachments] = useState([
-    { id: 1, title: '13285 - Admin - 158938', filename: '13285 - Admin - 158938.docx' },
-    { id: 2, title: 'SCMSP_Candidate_Cover_Sheet - 158938', filename: 'SCMSP_Candidate_Cover_Sheet - 158938.docx' },
-    { id: 3, title: 'SSN References - 158938', filename: 'SSN References - 158938.doc' },
-    { id: 4, title: 'Right_to_Represent_SOSC - 158938', filename: 'Right_to_Represent_SOSC - 158938.pdf' },
-  ])
+  // Attachments State (Empty by default)
+  const [attachments, setAttachments] = useState([])
   const [showAddAttachment, setShowAddAttachment] = useState(false)
   const [newAttachmentTitle, setNewAttachmentTitle] = useState('')
   const [newAttachmentFile, setNewAttachmentFile] = useState(null)
@@ -190,24 +232,44 @@ function DashboardModule({
       setPotentialCandidates(deduplicated)
     }
 
+    const { state: resolvedState, stateClient: resolvedStateClient } = resolveRequisitionStateInfo(job)
+
+    const rawCustomer = job.client || job.customer || ''
+    const effectiveCustomer = isLegacyDummyClient(rawCustomer, resolvedState) ? resolvedStateClient : (rawCustomer || resolvedStateClient)
+
+    const rawEndClient = job.client || job.endClient || ''
+    const effectiveEndClient = isLegacyDummyClient(rawEndClient, resolvedState) ? resolvedStateClient : (rawEndClient || resolvedStateClient)
+
+    const rawContact = job.contact || ''
+    const effectiveContact = (rawContact && rawContact !== 'Hustedt Lexi') ? rawContact : ''
+
+    const effectiveCity = job.city || (job.location ? job.location.split(',')[0].trim() : (resolvedState === 'TN' ? 'Nashville' : 'Columbia'))
+    const effectiveState = job.state || resolvedState || 'TN'
+
+    if (job.attachments && Array.isArray(job.attachments)) {
+      setAttachments(job.attachments.filter(a => !isLegacyDummyAttachment(a)))
+    } else {
+      setAttachments([])
+    }
+
     setEditingFields({
       title: job.title || '',
       startDate: job.creationDate || '10/23/2026',
       duration: job.duration || '12',
       durationUnit: 'months',
-      customer: job.client || 'State Of SC',
-      endClient: job.client || 'State Of SC',
-      contact: job.contact || 'Hustedt Lexi',
+      customer: effectiveCustomer,
+      endClient: effectiveEndClient,
+      contact: effectiveContact,
       numPositions: job.numPositions || '1',
       deadline: job.deadline || '8/28/2026',
       maxSubmissions: job.maxSubmissions || '2',
       category: job.category || 'SP',
       type: job.type || 'Contract',
-      address: job.address || '4430 Broad Rd.',
-      city: job.city || 'Columbia',
-      state: job.state || 'SC',
-      zip: job.zip || '29210',
-      location: job.location || 'Columbia, SC 29210',
+      address: job.address || (resolvedState === 'TN' ? '710 James Robertson Pkwy' : '4430 Broad Rd.'),
+      city: effectiveCity,
+      state: effectiveState,
+      zip: job.zip || (resolvedState === 'TN' ? '37243' : '29210'),
+      location: job.location || `${effectiveCity}, ${effectiveState}`,
       billRate: job.billRate || '90',
       payRate: job.budget ? job.budget.replace(/[^0-9]/g, '').slice(0, 3) || '75' : '75',
       interview: 'Select',
@@ -354,18 +416,35 @@ function DashboardModule({
 
               <label style={{ fontWeight: 'bold', color: '#0066cc', textAlign: 'right', textDecoration: 'underline', cursor: 'pointer' }}>Customer:</label>
               <select value={editingFields.customer || ''} onChange={e => setEditingFields({ ...editingFields, customer: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
-                <option>State Of SC</option>
-                <option>DFA</option>
-                <option>DBHDS</option>
-                <option>VDOT</option>
-                <option>Acme Corp</option>
+                {editingFields.customer && ![
+                  'State of TN', 'State of NC', 'State of SC', 'State of GA', 'State of VA', 'State of TX', 'State of OH', 'State of FL', 'State of MS',
+                  'DFA', 'DBHDS', 'VDOT', 'Texas Health and Human Services Commission'
+                ].includes(editingFields.customer) && (
+                  <option value={editingFields.customer}>{editingFields.customer}</option>
+                )}
+                <option value="State of TN">State of TN</option>
+                <option value="State of NC">State of NC</option>
+                <option value="State of SC">State of SC</option>
+                <option value="State of GA">State of GA</option>
+                <option value="State of VA">State of VA</option>
+                <option value="State of TX">State of TX</option>
+                <option value="State of OH">State of OH</option>
+                <option value="State of FL">State of FL</option>
+                <option value="State of MS">State of MS</option>
+                <option value="DFA">DFA</option>
+                <option value="DBHDS">DBHDS</option>
+                <option value="VDOT">VDOT</option>
+                <option value="Texas Health and Human Services Commission">Texas Health and Human Services Commission</option>
               </select>
 
               <label style={{ fontWeight: 'bold', color: '#0066cc', textAlign: 'right', textDecoration: 'underline', cursor: 'pointer' }}>Contact:</label>
               <select value={editingFields.contact || ''} onChange={e => setEditingFields({ ...editingFields, contact: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
-                <option>Hustedt Lexi</option>
-                <option>Miller Sarah</option>
-                <option>Johnson Dave</option>
+                <option value="">-- Select Contact --</option>
+                {editingFields.contact && !['Miller Sarah', 'Johnson Dave'].includes(editingFields.contact) && (
+                  <option value={editingFields.contact}>{editingFields.contact}</option>
+                )}
+                <option value="Miller Sarah">Miller Sarah</option>
+                <option value="Johnson Dave">Johnson Dave</option>
               </select>
 
               <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right' }}>Submission Deadline:*</label>
@@ -390,14 +469,35 @@ function DashboardModule({
 
               <label style={{ fontWeight: 'bold', color: '#0066cc', textAlign: 'right', textDecoration: 'underline', cursor: 'pointer' }}>End Client:</label>
               <select value={editingFields.endClient || ''} onChange={e => setEditingFields({ ...editingFields, endClient: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
-                <option>State Of SC</option>
-                <option>DFA</option>
-                <option>DBHDS</option>
+                {editingFields.endClient && ![
+                  'State of TN', 'State of NC', 'State of SC', 'State of GA', 'State of VA', 'State of TX', 'State of OH', 'State of FL', 'State of MS',
+                  'DFA', 'DBHDS', 'VDOT', 'Texas Health and Human Services Commission'
+                ].includes(editingFields.endClient) && (
+                  <option value={editingFields.endClient}>{editingFields.endClient}</option>
+                )}
+                <option value="State of TN">State of TN</option>
+                <option value="State of NC">State of NC</option>
+                <option value="State of SC">State of SC</option>
+                <option value="State of GA">State of GA</option>
+                <option value="State of VA">State of VA</option>
+                <option value="State of TX">State of TX</option>
+                <option value="State of OH">State of OH</option>
+                <option value="State of FL">State of FL</option>
+                <option value="State of MS">State of MS</option>
+                <option value="DFA">DFA</option>
+                <option value="DBHDS">DBHDS</option>
+                <option value="VDOT">VDOT</option>
+                <option value="Texas Health and Human Services Commission">Texas Health and Human Services Commission</option>
               </select>
 
               <label style={{ fontWeight: 'bold', color: '#0066cc', textAlign: 'right', textDecoration: 'underline', cursor: 'pointer' }}>Contact:</label>
               <select value={editingFields.contact || ''} onChange={e => setEditingFields({ ...editingFields, contact: e.target.value })} style={{ padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
-                <option>Hustedt Lexi</option>
+                <option value="">-- Select Contact --</option>
+                {editingFields.contact && !['Miller Sarah', 'Johnson Dave'].includes(editingFields.contact) && (
+                  <option value={editingFields.contact}>{editingFields.contact}</option>
+                )}
+                <option value="Miller Sarah">Miller Sarah</option>
+                <option value="Johnson Dave">Johnson Dave</option>
               </select>
 
               <div style={{ gridColumn: 'span 2', display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '4px' }}>
@@ -465,13 +565,33 @@ function DashboardModule({
                   <label style={{ fontWeight: 'bold', color: '#1e3a8a', textAlign: 'right', alignSelf: 'center' }}>City*, State*, Zip*:</label>
                   <div style={{ display: 'flex', gap: '4px' }}>
                     <input type="text" value={editingFields.city || 'Columbia'} onChange={e => setEditingFields({ ...editingFields, city: e.target.value })} style={{ flex: 2, padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
-                    <select value={editingFields.state || 'SC'} onChange={e => setEditingFields({ ...editingFields, state: e.target.value })} style={{ flex: 1, padding: '3px 4px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}>
-                      <option>SC</option>
-                      <option>VA</option>
-                      <option>TX</option>
-                      <option>NC</option>
-                      <option>GA</option>
-                      <option>FL</option>
+                    <select
+                      value={editingFields.state || 'TN'}
+                      onChange={e => {
+                        const nextSt = e.target.value
+                        const stateClient = `State of ${nextSt}`
+                        const curCust = editingFields.customer || ''
+                        const curEnd = editingFields.endClient || ''
+                        const shouldUpdateCust = !curCust || curCust.startsWith('State of ') || isLegacyDummyClient(curCust, nextSt)
+                        const shouldUpdateEnd = !curEnd || curEnd.startsWith('State of ') || isLegacyDummyClient(curEnd, nextSt)
+                        setEditingFields({
+                          ...editingFields,
+                          state: nextSt,
+                          ...(shouldUpdateCust ? { customer: stateClient } : {}),
+                          ...(shouldUpdateEnd ? { endClient: stateClient } : {})
+                        })
+                      }}
+                      style={{ flex: 1, padding: '3px 4px', fontSize: '11.5px', border: '1px solid #cbd5e1' }}
+                    >
+                      <option value="TN">TN</option>
+                      <option value="NC">NC</option>
+                      <option value="SC">SC</option>
+                      <option value="GA">GA</option>
+                      <option value="VA">VA</option>
+                      <option value="TX">TX</option>
+                      <option value="OH">OH</option>
+                      <option value="FL">FL</option>
+                      <option value="MS">MS</option>
                     </select>
                     <input type="text" value={editingFields.zip || '29210'} onChange={e => setEditingFields({ ...editingFields, zip: e.target.value })} style={{ width: '60px', padding: '3px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1' }} />
                   </div>
@@ -763,20 +883,28 @@ function DashboardModule({
                 <div style={{ maxWidth: '580px', marginBottom: '18px' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
                     <tbody>
-                      {attachments.map((att, idx) => (
-                        <tr key={att.id} style={{ background: idx % 2 === 0 ? '#f8fafc' : '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
-                          <td style={{ padding: '6px 10px', color: '#1e293b' }}>{att.title}</td>
-                          <td style={{ padding: '6px 10px' }}>
-                            <span style={{ color: '#0066cc', textDecoration: 'underline', cursor: 'pointer' }}>
-                              {att.filename}
-                            </span>
-                          </td>
-                          <td style={{ padding: '6px 10px', width: '50px', textAlign: 'right' }}>
-                            <span style={{ cursor: 'pointer', marginRight: '8px' }} title="Edit">✏️</span>
-                            <span onClick={() => handleDeleteAttachment(att.id)} style={{ color: '#dc2626', cursor: 'pointer', fontWeight: 'bold' }} title="Delete">❌</span>
+                      {attachments.length === 0 ? (
+                        <tr>
+                          <td colSpan={3} style={{ padding: '20px 14px', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
+                            No attachments uploaded for this requisition. Click "Add New Attachment" above to attach documents.
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        attachments.map((att, idx) => (
+                          <tr key={att.id} style={{ background: idx % 2 === 0 ? '#f8fafc' : '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={{ padding: '6px 10px', color: '#1e293b' }}>{att.title}</td>
+                            <td style={{ padding: '6px 10px' }}>
+                              <span style={{ color: '#0066cc', textDecoration: 'underline', cursor: 'pointer' }}>
+                                {att.filename}
+                              </span>
+                            </td>
+                            <td style={{ padding: '6px 10px', width: '50px', textAlign: 'right' }}>
+                              <span style={{ cursor: 'pointer', marginRight: '8px' }} title="Edit">✏️</span>
+                              <span onClick={() => handleDeleteAttachment(att.id)} style={{ color: '#dc2626', cursor: 'pointer', fontWeight: 'bold' }} title="Delete">❌</span>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
