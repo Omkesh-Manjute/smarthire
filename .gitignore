@@ -39,6 +39,7 @@ verifyhire-react/server/uploads/
 smarthire-react/server/uploads/
 
 # Local databases & sensitive stores (Never commit passwords or team stores to Git)
+smarthire-react/server/email_configs.json
 smarthire-react/server/recruiters.json
 smarthire-react/server/candidates.json
 smarthire-react/server/reports.json
