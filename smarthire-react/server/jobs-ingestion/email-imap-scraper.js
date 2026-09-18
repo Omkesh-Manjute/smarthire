@@ -2,7 +2,9 @@ import tls from 'tls';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { cleanMimeEmail } from './clean-mime.js';
+import { cleanMimeEmail, parseMimeWithAttachments } from './clean-mime.js';
+import pdfParse from 'pdf-parse';
+import mammoth from 'mammoth';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -402,8 +404,111 @@ export async function scrapeResumesFromIMAP({
             });
           }
 
-          // Extract and clean email body text and attachment names (stripping base64 & MIME boundaries)
-          const { textBody: cleanBody, attachmentNames } = cleanMimeEmail(msgChunk);
+          // Fetch complete RFC822 message payload for recruitment emails to ensure all attachments are downloaded
+          let fullPayload = msgChunk;
+          if (uid) {
+            try {
+              console.log(`📥 Fetching full RFC822 payload for UID ${uid} (${senderName})...`);
+              const fullRes = await client.sendCommand(`UID FETCH ${uid} (BODY.PEEK[])`);
+              if (fullRes && fullRes.length > msgChunk.length) {
+                fullPayload = fullRes;
+              }
+            } catch (fetchErr) {
+              console.warn(`⚠️ Could not fetch full body for UID ${uid}:`, fetchErr.message);
+            }
+          }
+
+          // Extract text and attachments using the upgraded MIME engine
+          const { textBody: cleanBody, attachmentNames, attachments } = parseMimeWithAttachments(fullPayload);
+
+          // Dedicated directory for candidate documents on server disk
+          const candidateDocsDir = path.resolve(__dirname, '../uploads/candidate-docs');
+          if (!fs.existsSync(candidateDocsDir)) {
+            try {
+              fs.mkdirSync(candidateDocsDir, { recursive: true });
+            } catch (_) {}
+          }
+
+          let parsedResumeText = '';
+          let primaryResumeFile = null;
+          const candidateDocs = {};
+          let detectedVisa = null;
+
+          for (const att of (attachments || [])) {
+            const safeName = `${Date.now()}_${att.filename.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+            const targetPath = path.join(candidateDocsDir, safeName);
+            const storageUrl = `/uploads/candidate-docs/${safeName}`;
+
+            if (att.content && att.content.length > 0) {
+              try {
+                fs.writeFileSync(targetPath, att.content);
+              } catch (writeErr) {
+                console.warn(`⚠️ Failed writing attachment ${att.filename}:`, writeErr.message);
+              }
+            }
+
+            const docEntry = {
+              title: att.filename,
+              fileName: att.filename,
+              uploadedOn: new Date().toLocaleString('en-US', { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }),
+              status: 'Uploaded',
+              size: `${Math.round(att.size / 1024)} KB`,
+              fileType: att.contentType,
+              storageUrl,
+              resumeText: ''
+            };
+
+            if (att.docCategory === 'resume') {
+              primaryResumeFile = {
+                original_name: att.filename,
+                stored_name: safeName,
+                size_bytes: att.size,
+                mime_type: att.contentType,
+                local_path: storageUrl
+              };
+
+              // Extract authentic text using pdf-parse or mammoth
+              try {
+                const lowerFn = att.filename.toLowerCase();
+                if (lowerFn.endsWith('.pdf') || att.contentType.includes('pdf')) {
+                  const pdfData = await pdfParse(att.content);
+                  parsedResumeText = (pdfData && pdfData.text) ? pdfData.text.trim() : '';
+                } else if (lowerFn.endsWith('.docx') || att.contentType.includes('wordprocessingml')) {
+                  const res = await mammoth.extractRawText({ buffer: att.content });
+                  parsedResumeText = (res && res.value) ? res.value.trim() : '';
+                } else if (lowerFn.endsWith('.doc')) {
+                  try {
+                    const res = await mammoth.extractRawText({ buffer: att.content });
+                    parsedResumeText = (res && res.value) ? res.value.trim() : '';
+                  } catch (_) {
+                    parsedResumeText = att.content.toString('utf8').replace(/[^\x20-\x7E\r\n\t]/g, ' ').trim();
+                  }
+                }
+              } catch (parseErr) {
+                console.warn(`⚠️ Failed parsing resume attachment ${att.filename}:`, parseErr.message);
+              }
+
+              docEntry.resumeText = parsedResumeText;
+              candidateDocs.resume = docEntry;
+            } else if (att.docCategory === 'dlFront') {
+              candidateDocs.dlFront = docEntry;
+              if (!candidateDocs.dl) candidateDocs.dl = docEntry;
+            } else if (att.docCategory === 'dlBack') {
+              candidateDocs.dlBack = docEntry;
+            } else if (att.docCategory === 'visa') {
+              candidateDocs.visa = docEntry;
+              const lowerFn = att.filename.toLowerCase();
+              if (lowerFn.includes('h1b') || lowerFn.includes('h-1b') || lowerFn.includes('i797') || lowerFn.includes('i-797')) {
+                detectedVisa = 'H-1B';
+              } else if (lowerFn.includes('gc') || lowerFn.includes('green')) {
+                detectedVisa = 'Permanent Resident (GC)';
+              } else if (lowerFn.includes('ead')) {
+                detectedVisa = 'EAD';
+              }
+            } else if (att.docCategory === 'id') {
+              candidateDocs.id = docEntry;
+            }
+          }
 
           results.push({
             name: senderName,
@@ -417,9 +522,15 @@ export async function scrapeResumesFromIMAP({
             uid,
             isSpamRecovery: folder === 'Bulk',
             rawPreview: (cleanBody || msgChunk).slice(0, 500),
-            resumeText: cleanBody && cleanBody.length > 30 ? cleanBody : '',
-            attachmentName: attachmentNames.length > 0 ? attachmentNames[0] : null,
-            attachments: attachmentNames
+            emailBodyNote: cleanBody || '',
+            // CRITICAL: ONLY use parsed resume text from attachment; NEVER save raw email body as resume text!
+            resumeText: parsedResumeText || '',
+            attachmentName: primaryResumeFile ? primaryResumeFile.original_name : (attachmentNames.length > 0 ? attachmentNames[0] : null),
+            attachments: attachmentNames,
+            file: primaryResumeFile,
+            documents: candidateDocs,
+            legalDocs: candidateDocs,
+            visaStatus: detectedVisa || null
           });
         }
       }

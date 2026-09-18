@@ -1181,6 +1181,28 @@ export default function WellfoundCareersView({
                 Remote
               </button>
               <Link
+                to="/blog"
+                style={{
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: colors.textSecondary,
+                  padding: '6px 12px',
+                  borderRadius: 6,
+                  textDecoration: 'none',
+                  transition: 'background-color 0.15s ease, color 0.15s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = isLight ? '#F3F4F6' : '#1F2937'
+                  e.currentTarget.style.color = colors.textPrimary
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent'
+                  e.currentTarget.style.color = colors.textSecondary
+                }}
+              >
+                Blog
+              </Link>
+              <Link
                 to="/ats"
                 style={{
                   fontSize: 13.5,

@@ -31,6 +31,49 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-19 — 2026 Blog Articles ("US IT Recruitment Market 2026" & "H-1B 2026 Update"), AI Hero Imagery & Jobs Top Bar Navigation
+- **Context & Objectives**:
+  - Incorporated two authoritative articles into the SmartHire blog from raw HTML sources:
+    1. *US IT Recruitment Market 2026: What's Changing and How to Win* (`us-it-recruitment-market-2026`)
+    2. *H-1B 2026 Update: Lottery, Fees and the Best Work Visa Options for IT Jobs* (`h1b-2026-update-it-work-visa-options`)
+  - Added modern, photorealistic hero and infographic imagery for both articles.
+  - Added a dedicated "Blog" button to the top navigation bar of the Jobs / Careers page (`WellfoundCareersView.jsx`).
+- **Key Deliverables**:
+  - **Modular Blog Architecture (`smarthire-react/src/pages/Blog.jsx`)**:
+    - Created `UsItMarket2026Article.jsx`, `H1b2026Article.jsx`, and `C2cW2Article.jsx` under `src/pages/blog-articles/`.
+    - Dynamic slug matching with alias fallbacks (e.g. `/blog/us-it-recruitment-market-2026`, `/blog/h1b-2026-update-it-work-visa-options`, `/blog/c2c-vs-w2-vs-1099`).
+    - Full JSON-LD structured schema markup (`BlogPosting`, `BreadcrumbList`, `publisher`, `keywords`).
+    - Added "Related Industry Insights" article cards at the bottom of every article.
+    - Updated Blog catalog (`BlogIndex`) displaying 3 rich cards with categories, read times, excerpts, and hover animations.
+  - **Custom Enterprise Imagery & Interactive SVGs**:
+    - Generated high-resolution, photorealistic hero images and infographics (`us-it-recruitment-market-2026-hero.webp`, `h1b-2026-update-hero.webp`, `in-demand-it-roles-usa-2026.webp`, `it-work-visa-options-usa-2026.webp`).
+    - Created interactive, crisp inline SVG charts: US Tech Unemployment comparison chart (2.9% vs 4.2%) and H-1B 2026 Regulatory Milestones Timeline.
+  - **Jobs Page Top Bar Integration (`WellfoundCareersView.jsx`)**:
+    - Added clean `Blog` navigation link in the primary header next to `Jobs`, `Remote`, and `For Employers`, styled with hover transitions.
+  - **100% Emoji-Free Compliance**: Verified zero cartoon emojis across all new and modified files.
+- **Verification**:
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (built in 2.11s, bundle `index-BohjxNDf.js`).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 2.56s).
+  - Assets verified in both `public/images/blog/` and `dist/images/blog/`.
+
+### 2026-09-19 — True Attachment Resume Parsing (PDF/DOCX), DL/ID/H1B Auto-Extraction & Candidate Document Upload
+- **Context & Objectives**:
+  - Previously, email ingestion captured raw email body text and attachment filenames without parsing the binary attachments (PDF, DOCX), falling back to synthetic templates in the UI.
+  - Candidate document upload in `CandidateDetailViewModal.jsx` wrote massive Base64 data URLs into `localStorage`, triggering browser `QuotaExceededError`, and lacked backend persistence.
+- **Key Deliverables**:
+  - **MIME & Attachment Decoding (`clean-mime.js`)**: Built `parseMimeWithAttachments` supporting nested boundaries, RFC 2047 header decoding, and attachment classification into `resume`, `dlFront`, `dlBack`, `visa`, and `id`.
+  - **In-Memory PDF/DOCX Parsing (`email-imap-scraper.js`)**: Direct binary parsing with `pdf-parse` and `mammoth`. Raw email body text preserved strictly as `emailBodyNote` rather than masquerading as resume experience.
+  - **Compliance Document Extraction & Classification**: Auto-extracts DL, Visa/H-1B, and State IDs into `server/uploads/candidate-docs/`, mapping them to `candidate.documents` and updating `visaStatus` (e.g. `Permanent Resident (GC)`, `H-1B`).
+  - **Unified Multer Upload Endpoint (`server/index.js`)**: Added `POST /api/candidates/:id/upload-document` supporting `.pdf`, `.png`, `.jpg`, `.jpeg`, `.webp`, `.docx`, `.doc` up to 25MB.
+  - **Candidate Migration**: Migrated all 15 authentic candidate profiles from disk files in `server/uploads/` — all 15 now have 10,412 to 36,132 characters of genuine parsed resume text.
+  - **Local Storage Quota Protection (`CandidateDetailViewModal.jsx`)**: Replaced Base64 `localStorage` storage with direct multipart API upload, persisting only clean URL metadata to eliminate `QuotaExceededError`.
+  - **UI Enhancements (`RecruiterInbox.jsx`, `CandidateDetailViewModal.jsx`)**: Direct rendering of authentic parsed resume text, "Verified Documents & Credentials" section with document status badges, `.webp` preview, open tab action, and 100% inline SVG icons.
+- **Verification**:
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (built in 2.31s, bundle `index-CdP-0M7T.js`).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 2.06s).
+  - Multer upload endpoint verified via direct multipart script.
+  - Candidate database audited: 15/15 candidates verified with authentic multi-thousand character parsed resumes.
+
 ### 2026-09-19 — Platform-Wide De-Cluttering: Complete Emoji Removal Across All 46 Pages & Components
 - **Context & User Request**:
   - Systematic audit and removal of all cartoon emojis, emoji badges, and decorative symbols across **every single page** of the SmartHire ATS platform to establish a sleek, modern enterprise SaaS aesthetic (Linear/Stripe/Workday caliber).

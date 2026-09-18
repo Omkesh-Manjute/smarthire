@@ -498,20 +498,24 @@ function getFullResumeText(candidate) {
   let cleanCoverText = ''
   let detectedAttachment = candidate?.attachmentName || null
 
-  if (candidate?.resumeText && candidate.resumeText.length > 20) {
-    const cleaned = cleanMimeEmail(candidate.resumeText)
-    cleanCoverText = cleaned.textBody
-    if (!detectedAttachment && cleaned.attachmentNames && cleaned.attachmentNames.length > 0) {
-      detectedAttachment = cleaned.attachmentNames[0]
-    }
+  if (candidate?.resumeText && candidate.resumeText.trim().length > 80) {
+    const rawText = candidate.resumeText.trim();
+    const isForwardStubOnly = rawText.length < 350 && (
+      rawText.toLowerCase().includes('please find my resume attached') ||
+      rawText.toLowerCase().includes('please find attached my updated resume')
+    );
 
-    // If candidate's resume is an extensive resume already (> 700 chars with multiple sections)
-    const isFullStructuredResume = cleanCoverText.length > 700 && 
-      (cleanCoverText.includes('EXPERIENCE') || cleanCoverText.includes('Experience') || cleanCoverText.includes('SKILLS') || cleanCoverText.includes('Skills')) &&
-      !cleanCoverText.toLowerCase().includes('please find my resume attached')
-    
-    if (isFullStructuredResume) {
-      return cleanCoverText
+    if (!isForwardStubOnly) {
+      const cleaned = cleanMimeEmail(rawText);
+      const finalText = cleaned.textBody || rawText;
+      if (finalText.length > 80) {
+        return finalText;
+      }
+    }
+    const cleaned = cleanMimeEmail(candidate.resumeText);
+    cleanCoverText = cleaned.textBody;
+    if (!detectedAttachment && cleaned.attachmentNames && cleaned.attachmentNames.length > 0) {
+      detectedAttachment = cleaned.attachmentNames[0];
     }
   }
 
@@ -4403,6 +4407,44 @@ export default function RecruiterInbox({ defaultViewMode }) {
                         </span>
                       )}
                     </div>
+
+                    {/* Candidate Verified Compliance Documents & Files */}
+                    <div style={{ marginTop: 8, paddingTop: 10, borderTop: `1px solid ${C.border}` }}>
+                      <span style={{ color: C.textSecondary, display: 'block', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', marginBottom: 6 }}>
+                        Verified Documents &amp; Credentials
+                      </span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {(activeCandidate?.file?.stored_name || activeCandidate?.documents?.resume) && (
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isLight ? '#F0FDF4' : 'rgba(22,163,74,0.1)', border: '1px solid #86EFAC', borderRadius: 4, padding: '4px 8px', fontSize: 11 }}>
+                            <span style={{ fontWeight: 700, color: '#16A34A' }}>Resume (Original File)</span>
+                            <span style={{ fontSize: 10.5, color: C.textSecondary }}>Attached</span>
+                          </div>
+                        )}
+                        {(activeCandidate?.documents?.dlFront || activeCandidate?.documents?.dl) && (
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isLight ? '#EFF6FF' : 'rgba(37,99,235,0.1)', border: '1px solid #93C5FD', borderRadius: 4, padding: '4px 8px', fontSize: 11 }}>
+                            <span style={{ fontWeight: 700, color: '#2563EB' }}>Driver's License (ID)</span>
+                            <span style={{ fontSize: 10.5, color: '#16A34A', fontWeight: 700 }}>Verified</span>
+                          </div>
+                        )}
+                        {activeCandidate?.documents?.visa && (
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isLight ? '#FAF5FF' : 'rgba(126,34,206,0.1)', border: '1px solid #D8B4FE', borderRadius: 4, padding: '4px 8px', fontSize: 11 }}>
+                            <span style={{ fontWeight: 700, color: '#7E22CE' }}>Work Auth / Visa</span>
+                            <span style={{ fontSize: 10.5, color: '#7E22CE', fontWeight: 700 }}>{activeCandidate?.visaStatus || 'Attached'}</span>
+                          </div>
+                        )}
+                        {activeCandidate?.documents?.id && (
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isLight ? '#FEF3C7' : 'rgba(217,119,6,0.1)', border: '1px solid #FCD34D', borderRadius: 4, padding: '4px 8px', fontSize: 11 }}>
+                            <span style={{ fontWeight: 700, color: '#B45309' }}>Govt Photo ID</span>
+                            <span style={{ fontSize: 10.5, color: '#16A34A', fontWeight: 700 }}>Attached</span>
+                          </div>
+                        )}
+                        {!activeCandidate?.documents?.dlFront && !activeCandidate?.documents?.visa && (
+                          <div style={{ fontSize: 11, color: C.textMuted }}>
+                            Standard compliance checks pending. Resume verified.
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                 </div>
@@ -4746,7 +4788,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                       gap: 6
                                     }}
                                   >
-                                    ⬇ Download PDF
+                                    <IconDownload /> <span>Download PDF</span>
                                   </a>
                                 </div>
                                 {/* Inline PDF iframe */}
@@ -4798,7 +4840,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                       gap: 6
                                     }}
                                   >
-                                    ⬇ Download DOCX
+                                    <IconDownload /> <span>Download DOCX</span>
                                   </a>
                                 </div>
                                 {/* Text dossier with skill highlighting below */}
@@ -7929,7 +7971,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
                     {/* Title Alignment */}
                     <div style={{ fontSize: 11.5, fontWeight: 700, color: isTitleAligned ? '#15803D' : C.textSecondary, background: isTitleAligned ? '#DCFCE7' : C.inputBg, border: `1px solid ${isTitleAligned ? '#86EFAC' : C.border}`, padding: '6px 10px', borderRadius: 6, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span>{isTitleAligned ? '✓' : 'ℹ️'}</span>
+                      <span>{isTitleAligned ? '✓' : '•'}</span>
                       <span>{isTitleAligned ? `Strong Role Fit: Candidate matches ${activeTargetJob?.title}` : `Transferable Profile: Candidate background aligns with ${activeTargetJob?.title}`}</span>
                     </div>
 

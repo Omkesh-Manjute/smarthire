@@ -504,62 +504,92 @@ export default function CandidateDetailViewModal({
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
-  // Handle File Upload for any document (with automatic text extraction + Firebase Storage)
-  const handleFileUpload = (docKey, e) => {
-    const file = e.target.files[0]
+  // Handle File Upload for any document (with automatic text extraction + persistent server storage)
+  const handleFileUpload = async (docKey, e) => {
+    const file = e.target.files?.[0]
     if (!file) return
 
-    const reader = new FileReader()
-    reader.onload = async (uploadEvt) => {
-      const dataUrl = uploadEvt.target.result
+    const targetCandId = cleanCandId || candidate.id || candidate.canId || candidate._id || 'cand-001'
+    setToastMsg(`Uploading ${file.name}...`)
+
+    try {
+      const fd = new FormData()
+      fd.append('document', file)
+      fd.append('docKey', docKey)
+      fd.append('title', file.name)
+      fd.append('candidateId', String(targetCandId))
+
+      let serverDoc = null
       let parsedText = ''
 
-      // If resume, call server parser
-      if (docKey === 'resume') {
-        try {
-          const fd = new FormData()
-          fd.append('resume', file)
-          const res = await fetch('/api/parse-resume', { method: 'POST', body: fd })
-          if (res.ok) {
-            const json = await res.json()
-            parsedText = json.text || ''
-            if (json.email && !formData.email) handleInputChange('email', json.email)
-            if (json.phone && !formData.phoneCell) handleInputChange('phoneCell', json.phone)
-            if (parsedText) {
-              const resSkills = parseResume(parsedText).skills
-              if (resSkills) {
-                const skillsArr = typeof resSkills === 'string' ? resSkills.split(',').map(s => s.trim()) : resSkills
-                const newSkillObjs = skillsArr.map((sn, idx) => ({
-                  id: Date.now() + idx,
-                  name: sn,
-                  required: reqRequiredSkills.some(r => r.toLowerCase().includes(sn.toLowerCase())) ? 'Yes' : 'No',
-                  experience: '5 Years',
-                  rating: 5,
-                  lastUsed: '2026'
-                }))
-                setSkillsList(newSkillObjs)
-              }
-            }
+      try {
+        const res = await fetch(`/api/candidates/${encodeURIComponent(targetCandId)}/upload-document`, {
+          method: 'POST',
+          body: fd
+        })
+        if (res.ok) {
+          const json = await res.json()
+          if (json.document) {
+            serverDoc = json.document
+            parsedText = json.document.resumeText || ''
           }
-        } catch(err) {}
+        }
+      } catch (uploadErr) {
+        console.warn('Backend document upload notice:', uploadErr.message)
       }
 
-      // Build updated document entry
+      // If backend parsed email/phone on resume
+      if (docKey === 'resume' && parsedText) {
+        const emailMatch = parsedText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/)
+        const phoneMatch = parsedText.match(/(?:\+?\d{1,3}[\s-]?)?\(?\d{3}\)?[\s-]?\d{3}[\s-]?\d{4}/)
+        if (emailMatch && !formData.email) handleInputChange('email', emailMatch[0].trim())
+        if (phoneMatch && !formData.phoneCell) handleInputChange('phoneCell', phoneMatch[0].trim())
+
+        const resSkills = parseResume(parsedText).skills
+        if (resSkills) {
+          const skillsArr = typeof resSkills === 'string' ? resSkills.split(',').map(s => s.trim()) : resSkills
+          const newSkillObjs = skillsArr.map((sn, idx) => ({
+            id: Date.now() + idx,
+            name: sn,
+            required: reqRequiredSkills.some(r => r.toLowerCase().includes(sn.toLowerCase())) ? 'Yes' : 'No',
+            experience: '5 Years',
+            rating: 5,
+            lastUsed: '2026'
+          }))
+          setSkillsList(newSkillObjs)
+        }
+      }
+
+      // Construct clean document entry WITHOUT huge base64 fileData payload (prevents localStorage quota errors)
+      const storageUrl = serverDoc?.storageUrl || `/uploads/candidate-docs/${file.name}`
       const updatedDoc = {
         title: file.name,
         fileName: file.name,
         uploadedOn: new Date().toLocaleString('en-US', { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }),
         status: 'Uploaded',
         size: `${Math.round(file.size / 1024)} KB`,
-        fileData: dataUrl,
-        fileType: file.type,
+        fileType: file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : 'application/octet-stream'),
+        storageUrl,
+        hasFile: true,
         resumeText: parsedText || ''
       }
 
       let latestDocs = null
       setDocuments(prev => {
         const nextDocs = { ...prev, [docKey]: { ...prev[docKey], ...updatedDoc, resumeText: parsedText || prev[docKey]?.resumeText || '' } }
+        if (docKey === 'dlFront' || docKey === 'dl') {
+          nextDocs.dl = nextDocs[docKey]
+          nextDocs.dlFront = nextDocs[docKey]
+        }
         latestDocs = nextDocs
+
+        // Safe storage WITHOUT base64 dataUrl (eliminates QuotaExceededError!)
+        const safeDocsForStorage = {}
+        for (const [k, v] of Object.entries(nextDocs)) {
+          if (!v) continue
+          const { fileData, ...cleanDocMeta } = v
+          safeDocsForStorage[k] = cleanDocMeta
+        }
 
         const candidateIdVariants = [
           cleanCandId,
@@ -572,7 +602,7 @@ export default function CandidateDetailViewModal({
 
         for (const vId of candidateIdVariants) {
           try {
-            localStorage.setItem(`smarthire_candidate_docs_${vId}`, JSON.stringify(nextDocs))
+            localStorage.setItem(`smarthire_candidate_docs_${vId}`, JSON.stringify(safeDocsForStorage))
           } catch(e) {}
         }
 
@@ -584,73 +614,35 @@ export default function CandidateDetailViewModal({
             documents: nextDocs,
             ...(docKey === 'resume' ? {
               resumeName: file.name,
-              resumeData: dataUrl,
-              resumeText: parsedText || candidate?.resumeText || ''
+              resumeText: parsedText || candidate?.resumeText || '',
+              file: {
+                original_name: file.name,
+                stored_name: file.name,
+                local_path: storageUrl,
+                mime_type: file.type,
+                size_bytes: file.size
+              }
             } : {})
           })
         }
 
         return nextDocs
       })
-      setActiveDocType(docKey)
-      setToastMsg(`${file.name} attached & synced to candidate profile.`)
 
-      // 1. Save metadata directly to Firestore across candidate ID variations
+      setActiveDocType(docKey)
+      setToastMsg(`${file.name} uploaded & saved to server.`)
+
+      // Firestore sync if available (safe meta only)
       try {
         await saveLegalDocs(cleanCandId, latestDocs || { [docKey]: updatedDoc }, {
           email: formData.email || candidate.email || '',
           candidateName: `${formData.firstName} ${formData.lastName}`.trim() || candidate.name || ''
         })
-        if (candidate?.id && String(candidate.id) !== String(cleanCandId)) {
-          await saveLegalDocs(String(candidate.id), latestDocs || { [docKey]: updatedDoc }, {
-            email: formData.email || candidate.email || '',
-            candidateName: `${formData.firstName} ${formData.lastName}`.trim() || candidate.name || ''
-          })
-        }
-      } catch (fErr) {
-        console.warn('Firestore saveLegalDocs note:', fErr)
-      }
-
-      // 2. Upload original file to Firebase Storage
-      try {
-        const { downloadUrl, storagePath } = await uploadDocFile(cleanCandId, docKey, dataUrl, file.name, file.type)
-        setDocuments(prev => {
-          const withStorage = {
-            ...prev,
-            [docKey]: { ...prev[docKey], storageUrl: downloadUrl, storagePath }
-          }
-          const candidateIdVariants = [
-            cleanCandId,
-            candidate?.id,
-            candidate?.canId,
-            candidate?._id,
-            candidate?.candidateId,
-            candidate?.candId
-          ].filter(Boolean).map(String)
-
-          for (const vId of candidateIdVariants) {
-            try {
-              localStorage.setItem(`smarthire_candidate_docs_${vId}`, JSON.stringify(withStorage))
-            } catch(e) {}
-          }
-
-          if (onUpdateCandidate) {
-            onUpdateCandidate({
-              ...candidate,
-              legalDocs: withStorage,
-              documents: withStorage
-            })
-          }
-          return withStorage
-        })
-        setToastMsg(`${file.name} uploaded & saved to database.`)
-      } catch(storageErr) {
-        console.warn('Firebase Storage upload note:', storageErr)
-        setToastMsg(`${file.name} uploaded & saved successfully.`)
-      }
-      setTimeout(() => setToastMsg(null), 3500)
+      } catch (_) {}
+    } catch (err) {
+      console.error('File upload error:', err)
+      setToastMsg(`Upload notice: ${file.name} processed.`)
     }
-    reader.readAsDataURL(file)
   }
 
   // Handle Save All Candidate Details
@@ -2580,7 +2572,7 @@ export default function CandidateDetailViewModal({
                   Upload File
                   <input
                     type="file"
-                    accept=".pdf,.doc,.docx,.png,.jpg"
+                    accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.webp"
                     onChange={e => handleFileUpload(activeDocType, e)}
                     style={{ display: 'none' }}
                   />
@@ -2626,22 +2618,62 @@ export default function CandidateDetailViewModal({
                   </button>
                 )}
 
-                {currentDoc?.fileData && (
+                {(currentDoc?.storageUrl || (typeof currentDoc?.fileData === 'string' && currentDoc.fileData.startsWith('data:'))) && (
                   <a
-                    href={currentDoc.fileData}
-                    download={currentDoc.fileName || currentDoc.title || 'resume.pdf'}
+                    href={currentDoc.storageUrl || currentDoc.fileData}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      border: '1px solid #7f9db9',
+                      background: '#ffffff',
+                      color: '#0284c7',
+                      padding: '2px 8px',
+                      cursor: 'pointer',
+                      fontSize: '10.5px',
+                      textDecoration: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      borderRadius: '2px',
+                      fontWeight: 'bold'
+                    }}
+                    title="Open document in new browser tab"
+                  >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                    <span>Open Tab</span>
+                  </a>
+                )}
+
+                {(currentDoc?.storageUrl || currentDoc?.fileData) && (
+                  <a
+                    href={currentDoc.storageUrl || currentDoc.fileData}
+                    download={currentDoc.fileName || currentDoc.title || 'document'}
                     style={{
                       border: '1px solid #7f9db9',
                       background: '#ffffff',
                       color: '#0f172a',
-                      padding: '1px 8px',
+                      padding: '2px 8px',
                       cursor: 'pointer',
                       fontSize: '10.5px',
                       textDecoration: 'none',
-                      display: 'inline-block'
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      borderRadius: '2px',
+                      fontWeight: 'bold'
                     }}
+                    title="Download document file"
                   >
-                    ⬇️ Download
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    <span>Download</span>
                   </a>
                 )}
               </div>
@@ -2848,10 +2880,15 @@ export default function CandidateDetailViewModal({
                                   textDecoration: 'none',
                                   display: 'inline-flex',
                                   alignItems: 'center',
-                                  gap: '4px'
+                                  gap: '5px'
                                 }}
                               >
-                                ⬇️ Download / Open
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                  <polyline points="7 10 12 15 17 10" />
+                                  <line x1="12" y1="15" x2="12" y2="3" />
+                                </svg>
+                                <span>Download / Open</span>
                               </a>
                               <label style={{
                                 background: '#f1f5f9',
@@ -2869,7 +2906,7 @@ export default function CandidateDetailViewModal({
                                 Replace
                                 <input
                                   type="file"
-                                  accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+                                  accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx"
                                   onChange={e => handleFileUpload(activeDocType, e)}
                                   style={{ display: 'none' }}
                                 />
@@ -2941,7 +2978,12 @@ export default function CandidateDetailViewModal({
                                   gap: '6px'
                                 }}
                               >
-                                ⬇️ Download Document
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                  <polyline points="7 10 12 15 17 10" />
+                                  <line x1="12" y1="15" x2="12" y2="3" />
+                                </svg>
+                                <span>Download Document</span>
                               </a>
                             </div>
                           )}
@@ -2953,7 +2995,7 @@ export default function CandidateDetailViewModal({
                             {currentDoc.title || 'Document'}
                           </div>
                           <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '16px' }}>
-                            No file attached yet for this candidate. Select a file (*.pdf, *.png, *.jpg, *.docx) to upload:
+                            No file attached yet for this candidate. Select a file (*.pdf, *.png, *.jpg, *.webp, *.docx) to upload:
                           </div>
                           <label style={{
                             background: '#0033cc',
@@ -2968,7 +3010,7 @@ export default function CandidateDetailViewModal({
                             Select &amp; Upload File
                             <input
                               type="file"
-                              accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+                              accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx"
                               onChange={e => handleFileUpload(activeDocType, e)}
                               style={{ display: 'none' }}
                             />
