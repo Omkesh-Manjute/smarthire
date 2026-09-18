@@ -31,6 +31,24 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-18 — Fix Duplicate Email Dispatch, Dynamic State Client Defaults, Empty Contact & Remove Mock Attachments
+- **Context & User Requirements**:
+  - **Duplicate Email Dispatch Fix**: Outbound emails sent via recruiter SMTP were firing twice. Added both client-side in-flight ref locks (`inFlightEmailRef`, `isBatchSendingRef`) in `RecruiterDashboard.jsx` and a server-side in-memory 15-second deduplication cache (`recentEmailSendsMap`) in `server/index.js` keyed by `${recruiterEmail}__${toKey}__${subject}`. Duplicate requests within 15 seconds are safely suppressed (`{ success: true, deduplicated: true }`).
+  - **Requisition Dynamic State Defaults (`RecruiterDashboard.jsx`, `DashboardModule.jsx`)**:
+    - **Customer & End Client**: Replaced hardcoded `State Of SC` fallbacks. Added `resolveRequisitionStateInfo` helper that resolves the requisition's state code from location/description (e.g. TN for Req #159148) and defaults `Customer` and `End Client` to `State of {state}` (e.g. `State of TN`). Expanded `<select>` dropdowns to include all US state options (`State of TN`, `NC`, `SC`, `GA`, `VA`, `TX`, `OH`, `FL`, `MS`, etc.) and automatically syncs Customer/End Client when State changes.
+    - **Empty Contact Field**: Contact defaults to empty (`""` / `-- Select Contact --`) rather than hardcoding `Hustedt Lexi`.
+  - **Empty Attachments by Default**:
+    - Removed hardcoded legacy mock attachments (`13285 - Admin - {id}.docx`, `SCMSP_Candidate_Cover_Sheet - {id}.docx`, `SSN References - {id}.doc`) across `RecruiterDashboard.jsx` and `DashboardModule.jsx`.
+    - Added `isLegacyDummyAttachment` filter to clean existing stored attachments in `localStorage`.
+    - Attachments tab renders clean empty-state placeholder when `attachments.length === 0`: `No attachments uploaded for this requisition. Click "Add New Attachment" above to attach documents.`
+- **Verification & Deployment**:
+  - Local Vite production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-pm_zVTPQ.js`).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 1.98s).
+  - Git committed (`494a9d4`) and pushed to GitHub `origin/main`.
+  - Deployed `dist.tar.gz` and `smarthire-react/server/index.js` to AWS Lightsail server (`34.194.119.199`).
+  - PM2 process `smarthire-ats` restarted online (PID 66815).
+  - Live verified: `https://smarthireus.com/assets/index-pm_zVTPQ.js` → HTTP 200 OK (1,741,025 bytes).
+
 ### 2026-09-18 — Clean Recruiter Email Format, Scoped Candidate KPI Cards & Dynamic Profile Name
 - **Context & User Requirements**:
   - **Clean Recruiter JD Email Format & Subject**:
