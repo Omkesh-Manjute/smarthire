@@ -5,10 +5,10 @@ const BACKEND_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api
 const API_BASE = `${BACKEND_BASE}/api/linkedin-posts`
 
 const STATUS_CONFIG = {
-  pending: { label: 'Awaiting Approval', color: '#db7f35', bg: 'rgba(219, 127, 53, 0.12)', icon: '⏳' },
-  approved: { label: 'Approved — Scheduling', color: '#126a5a', bg: 'rgba(18, 106, 90, 0.12)', icon: '✅' },
-  cancelled: { label: 'Cancelled', color: '#b5474f', bg: 'rgba(181, 71, 79, 0.12)', icon: '❌' },
-  posted: { label: 'Posted on LinkedIn', color: '#2a68b5', bg: 'rgba(42, 104, 181, 0.12)', icon: '🚀' },
+  pending: { label: 'Awaiting Approval', color: '#db7f35', bg: 'rgba(219, 127, 53, 0.12)' },
+  approved: { label: 'Approved — Scheduling', color: '#126a5a', bg: 'rgba(18, 106, 90, 0.12)' },
+  cancelled: { label: 'Cancelled', color: '#b5474f', bg: 'rgba(181, 71, 79, 0.12)' },
+  posted: { label: 'Posted on LinkedIn', color: '#2a68b5', bg: 'rgba(42, 104, 181, 0.12)' },
 }
 
 function CarouselViewer({ slides }) {
@@ -121,7 +121,7 @@ function PostCard({ title, icon, content, type, assets }) {
                 textDecoration: 'none', transition: 'all 0.2s', width: '100%', justifyContent: 'center',
               }}
             >
-              📄 Download PDF Document
+              Download PDF Document
             </a>
           )}
         </div>
@@ -215,7 +215,7 @@ function LinkedInPosts() {
       const res = await fetch(`${API_BASE}/approve`, { method: 'POST' })
       const json = await res.json()
       if (json.success) {
-        showToast('✅ Approved! Telegram notified. Queueing LinkedIn schedule...', 'success')
+        showToast('Approved! Telegram notified. Queueing LinkedIn schedule...', 'success')
         setData(d => d ? { ...d, approvalStatus: 'approved' } : d)
       } else {
         showToast('Something went wrong. Try again.', 'error')
@@ -234,7 +234,7 @@ function LinkedInPosts() {
       const res = await fetch(`${API_BASE}/cancel`, { method: 'POST' })
       const json = await res.json()
       if (json.success) {
-        showToast('❌ Cancelled! Telegram notified.', 'error')
+        showToast('Cancelled! Telegram notified.', 'error')
         setData(d => d ? { ...d, approvalStatus: 'cancelled' } : d)
       }
     } catch (e) {
@@ -302,7 +302,7 @@ function LinkedInPosts() {
               border: '1px solid var(--line)', boxShadow: 'var(--shadow)',
               background: 'var(--surface)', maxWidth: 600, margin: '0 auto'
             }}>
-              <div style={{ fontSize: 48, marginBottom: 16 }}>📝</div>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--ink-soft)" strokeWidth="1.5" style={{ margin: '0 auto 16px', display: 'block' }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
               <h3 style={{ color: 'var(--ink)', marginBottom: 12, fontSize: 20 }}>No Posts Found</h3>
               <p style={{ color: 'var(--ink-soft)', marginBottom: 24, fontSize: 15 }}>{error}</p>
               <button
@@ -313,7 +313,7 @@ function LinkedInPosts() {
                   fontWeight: 700, borderRadius: 10, cursor: 'pointer', fontSize: 14,
                 }}
               >
-                🔄 Retry Fetching
+                Retry Fetching
               </button>
             </div>
           )}
@@ -323,22 +323,18 @@ function LinkedInPosts() {
             <div>
               {/* Status bar + actions row */}
               <div className="card" style={{
+                background: 'var(--surface)', border: '1px solid var(--line)',
+                borderRadius: 16, padding: '24px 28px', marginBottom: 28,
                 display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'center',
-                justifyContent: 'space-between', marginBottom: 36,
-                background: 'var(--surface)', borderRadius: 14,
-                padding: '24px 30px', border: '1px solid var(--line)',
-                boxShadow: 'var(--shadow)'
+                justifyContent: 'space-between', boxShadow: 'var(--shadow)'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                   <span style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 8,
-                    background: statusCfg.bg, color: statusCfg.color,
-                    border: `1px solid ${statusCfg.color}40`,
-                    borderRadius: 20, padding: '8px 18px', fontSize: 13.5, fontWeight: 700,
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 700,
+                    background: statusCfg.bg, color: statusCfg.color, border: `1px solid ${statusCfg.color}40`
                   }}>
-                    <span style={{ animation: data.approvalStatus === 'pending' ? 'pulse 2s infinite' : 'none' }}>
-                      {statusCfg.icon}
-                    </span>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: statusCfg.color, display: 'inline-block' }} />
                     {statusCfg.label}
                   </span>
                   <span style={{ color: 'var(--ink-soft)', fontSize: 14, fontWeight: 600 }}>
@@ -355,7 +351,7 @@ function LinkedInPosts() {
                       borderRadius: 10, padding: '11px 20px', cursor: 'pointer', fontSize: 14, fontWeight: 700,
                     }}
                   >
-                    🔄 Refresh
+                    Refresh
                   </button>
 
                   {data.approvalStatus === 'pending' && (
@@ -370,7 +366,7 @@ function LinkedInPosts() {
                           fontSize: 14, fontWeight: 700,
                         }}
                       >
-                        ❌ Cancel
+                        Cancel
                       </button>
                       <button
                         onClick={handleApprove}
@@ -383,7 +379,7 @@ function LinkedInPosts() {
                           fontSize: 14, fontWeight: 700, boxShadow: '0 4px 12px rgba(18, 106, 90, 0.18)',
                         }}
                       >
-                        {actionLoading ? '⏳ Processing...' : '✅ Approve & Schedule'}
+                        {actionLoading ? 'Processing...' : 'Approve & Schedule'}
                       </button>
                     </>
                   )}
@@ -394,7 +390,7 @@ function LinkedInPosts() {
                       border: '1px solid rgba(18, 106, 90, 0.25)', borderRadius: 10,
                       padding: '11px 20px', fontSize: 14, fontWeight: 700,
                     }}>
-                      ✅ Approved — Posts Scheduling on LinkedIn
+                      Approved — Posts Scheduling on LinkedIn
                     </div>
                   )}
 
@@ -404,25 +400,41 @@ function LinkedInPosts() {
                       border: '1px solid rgba(181, 71, 79, 0.25)', borderRadius: 10,
                       padding: '11px 20px', fontSize: 14, fontWeight: 700,
                     }}>
-                      ❌ Cancelled — No posts scheduled today
+                      Cancelled — No posts scheduled today
                     </div>
                   )}
                 </div>
               </div>
 
               {/* Stats row */}
+              {/* Stats row */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 18, marginBottom: 36 }}>
                 {[
-                  { label: 'Generated Posts', value: '3 Posts', icon: '📝', color: 'var(--brand)' },
-                  { label: 'Carousel slides', value: `${data.assets?.carouselSlides?.length || 0} Slides`, icon: '🖼️', color: 'var(--brand-2)' },
-                  { label: 'Infographic ready', value: data.assets?.infographicUrl ? 'Ready' : 'Not generated', icon: '📊', color: '#2a68b5' },
+                  {
+                    label: 'Generated Posts',
+                    value: '3 Posts',
+                    icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
+                    color: 'var(--brand)'
+                  },
+                  {
+                    label: 'Carousel slides',
+                    value: `${data.assets?.carouselSlides?.length || 0} Slides`,
+                    icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
+                    color: 'var(--brand-2)'
+                  },
+                  {
+                    label: 'Infographic ready',
+                    value: data.assets?.infographicUrl ? 'Ready' : 'Not generated',
+                    icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+                    color: '#2a68b5'
+                  },
                 ].map((stat) => (
                   <div key={stat.label} className="card" style={{
                     background: 'var(--surface)', border: '1px solid var(--line)',
                     borderRadius: 14, padding: '22px 24px', boxShadow: 'var(--shadow)',
                     display: 'flex', alignItems: 'center', gap: 18
                   }}>
-                    <div style={{ fontSize: 28 }}>{stat.icon}</div>
+                    <div style={{ color: stat.color, display: 'flex', alignItems: 'center' }}>{stat.icon}</div>
                     <div>
                       <div style={{ color: stat.color, fontSize: 22, fontWeight: 800, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{stat.value}</div>
                       <div style={{ color: 'var(--ink-soft)', fontSize: 13, fontWeight: 600 }}>{stat.label}</div>
@@ -435,21 +447,21 @@ function LinkedInPosts() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%,480px),1fr))', gap: 24 }}>
                 <PostCard
                   title="Collaborative Article"
-                  icon="📝"
+                  icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>}
                   type="COLLABORATIVE ARTICLE"
                   content={data.posts.collaborativeArticle}
                   assets={data.assets}
                 />
                 <PostCard
                   title="Carousel Post"
-                  icon="🖼️"
+                  icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>}
                   type="CAROUSEL"
                   content={data.posts.carousel}
                   assets={data.assets}
                 />
                 <PostCard
                   title="Infographic Post"
-                  icon="📊"
+                  icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>}
                   type="INFOGRAPHIC"
                   content={data.posts.infographic}
                   assets={data.assets}
@@ -463,7 +475,9 @@ function LinkedInPosts() {
                 display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'center',
                 boxShadow: 'var(--shadow)'
               }}>
-                <div style={{ fontSize: 24 }}>🌐</div>
+                <div style={{ color: 'var(--brand)', display: 'flex', alignItems: 'center' }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                </div>
                 <div style={{ flex: 1, minWidth: 260 }}>
                   <div style={{ color: 'var(--brand)', fontWeight: 800, fontSize: 14, marginBottom: 4, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
                     Automated Ingestion Source

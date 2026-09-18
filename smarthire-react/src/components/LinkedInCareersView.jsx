@@ -268,10 +268,11 @@ export default function LinkedInCareersView({
                 position: 'absolute',
                 left: 14,
                 color: themeTokens.textSecondary,
-                fontSize: 16,
+                display: 'flex',
+                alignItems: 'center',
                 pointerEvents: 'none'
               }}>
-                🔍
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               </span>
               <input
                 type="text"
@@ -403,11 +404,15 @@ export default function LinkedInCareersView({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: 16
+                color: themeTokens.textPrimary
               }}
               title="Toggle Theme"
             >
-              {isLight ? '🌙' : '☀️'}
+              {isLight ? (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+              ) : (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+              )}
             </button>
 
             {/* Candidate Auth */}
@@ -876,7 +881,7 @@ export default function LinkedInCareersView({
         }}>
           {!selectedJob ? (
             <div style={{ padding: '60px 20px', textAlign: 'center', color: themeTokens.textSecondary }}>
-              <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ margin: '0 auto 12px', display: 'block', opacity: 0.7 }}><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg>
               <h3 style={{ margin: 0, color: themeTokens.textPrimary }}>Select a job to view details</h3>
               <p style={{ margin: '8px 0 0', fontSize: 14 }}>
                 Choose any open requisition from the left list to read the complete description and apply.
@@ -941,7 +946,11 @@ export default function LinkedInCareersView({
                     }}
                     title="Share job link"
                   >
-                    {copiedLink ? '✓' : '➦'}
+                    {copiedLink ? (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    ) : (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                    )}
                   </button>
 
                   <button

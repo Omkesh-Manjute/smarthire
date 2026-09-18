@@ -35,20 +35,144 @@ const formatTitleCase = (str) => {
     .join(' ')
 }
 
+const renderAtsIcon = (id, size = 16, color = 'currentColor') => {
+  switch (id) {
+    case 'home':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
+      )
+    case 'candidates':
+    case 'users':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+      )
+    case 'pipeline':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <line x1="18" y1="20" x2="18" y2="10" />
+          <line x1="12" y1="20" x2="12" y2="4" />
+          <line x1="6" y1="20" x2="6" y2="14" />
+        </svg>
+      )
+    case 'screening':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <circle cx="12" cy="12" r="10" />
+          <polygon points="12 8 8 12 12 16 16 12 12 8" />
+        </svg>
+      )
+    case 'submissions':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <line x1="22" y1="2" x2="11" y2="13" />
+          <polygon points="22 2 15 22 11 13 2 9 22 2" />
+        </svg>
+      )
+    case 'reports':
+    case 'audit':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+        </svg>
+      )
+    case 'analytics':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <line x1="18" y1="20" x2="18" y2="10" />
+          <line x1="12" y1="20" x2="12" y2="4" />
+          <line x1="6" y1="20" x2="6" y2="14" />
+        </svg>
+      )
+    case 'inquiries':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+          <polyline points="22,6 12,13 2,6" />
+        </svg>
+      )
+    case 'automation':
+    case 'settings':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </svg>
+      )
+    case 'inbox':
+    case 'chat':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+      )
+    case 'search':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+      )
+    case 'building':
+    case 'portal':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
+          <line x1="9" y1="22" x2="9" y2="22.01" />
+          <line x1="15" y1="22" x2="15" y2="22.01" />
+          <line x1="8" y1="6" x2="8" y2="6.01" />
+          <line x1="12" y1="6" x2="12" y2="6.01" />
+          <line x1="16" y1="6" x2="16" y2="6.01" />
+          <line x1="8" y1="10" x2="8" y2="10.01" />
+          <line x1="12" y1="10" x2="12" y2="10.01" />
+          <line x1="16" y1="10" x2="16" y2="10.01" />
+        </svg>
+      )
+    case 'globe':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <circle cx="12" cy="12" r="10" />
+          <line x1="2" y1="12" x2="22" y2="12" />
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+        </svg>
+      )
+    case 'help':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <circle cx="12" cy="12" r="10" />
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+          <line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+      )
+    default:
+      return null
+  }
+}
+
 const ALL_MODULES = [
-  { id: 'home',        label: 'Home',            icon: '🏠', category: 'main' },
-  { id: 'candidates',  label: 'Candidates',      icon: '👤', category: 'talent', countKey: 'candidates' },
-  { id: 'pipeline',    label: 'Pipeline',        icon: '📈', category: 'talent', adminOnly: true },
-  { id: 'screening',   label: 'AI Screening',    icon: '🤖', category: 'talent' },
-  { id: 'submissions', label: 'Submissions',     icon: '📤', category: 'talent', adminOnly: true },
-  { id: 'reports',     label: 'Reports',         icon: '📑', category: 'main', adminOnly: true },
-  { id: 'analytics',   label: 'Analytics',       icon: '📊', category: 'main' },
-  { id: 'inquiries',   label: 'Client Inquiries',icon: '📩', category: 'admin', adminOnly: true },
-  { id: 'audit',       label: 'Audit Logs',      icon: '📜', category: 'admin' },
-  { id: 'automation',  label: 'Automation',      icon: '⚙️', category: 'admin', adminOnly: true },
-  { id: 'inbox',       label: 'Recruiter Inbox', icon: '💬', category: 'admin', isLink: '/inbox' },
-  { id: 'settings',    label: 'Settings',        icon: '🛠️', category: 'admin', adminOnly: true },
-  { id: 'users',       label: 'Manage Users',    icon: '👥', category: 'admin', adminOnly: true },
+  { id: 'home',        label: 'Home',            category: 'main' },
+  { id: 'candidates',  label: 'Candidates',      category: 'talent', countKey: 'candidates' },
+  { id: 'pipeline',    label: 'Pipeline',        category: 'talent', adminOnly: true },
+  { id: 'screening',   label: 'AI Screening',    category: 'talent' },
+  { id: 'submissions', label: 'Submissions',     category: 'talent', adminOnly: true },
+  { id: 'reports',     label: 'Reports',         category: 'main', adminOnly: true },
+  { id: 'analytics',   label: 'Analytics',       category: 'main' },
+  { id: 'inquiries',   label: 'Client Inquiries',category: 'admin', adminOnly: true },
+  { id: 'audit',       label: 'Audit Logs',      category: 'admin' },
+  { id: 'automation',  label: 'Automation',      category: 'admin', adminOnly: true },
+  { id: 'inbox',       label: 'Recruiter Inbox', category: 'admin', isLink: '/inbox' },
+  { id: 'settings',    label: 'Settings',        category: 'admin', adminOnly: true },
+  { id: 'users',       label: 'Manage Users',    category: 'admin', adminOnly: true },
 ]
 
 export default function AtsPlatform() {
@@ -263,7 +387,7 @@ export default function AtsPlatform() {
           if (newlyAdded.length > 0) {
             setJobsList(list)
             pushActivityNotification({
-              title: `💼 ${newlyAdded.length} New Requisition${newlyAdded.length > 1 ? 's' : ''} Ingested!`,
+              title: `${newlyAdded.length} New Requisition${newlyAdded.length > 1 ? 's' : ''} Ingested!`,
               message: newlyAdded.length === 1
                 ? `${newlyAdded[0].title} (Req #${newlyAdded[0].reqId || newlyAdded[0].id}) is now active in ATS.`
                 : `${newlyAdded[0].title} (Req #${newlyAdded[0].reqId}) and ${newlyAdded.length - 1} more requisitions synced from JobsInHand.`,
@@ -453,7 +577,7 @@ export default function AtsPlatform() {
           return Array.from(map.values())
         })
         pushActivityNotification({
-          title: `💼 ${newlyAdded.length} New Requisition${newlyAdded.length > 1 ? 's' : ''} Synced!`,
+          title: `${newlyAdded.length} New Requisition${newlyAdded.length > 1 ? 's' : ''} Synced!`,
           message: newlyAdded.length === 1
             ? `${newlyAdded[0].title} (Req #${newlyAdded[0].reqId || newlyAdded[0].id}) is now active in ATS.`
             : `${newlyAdded[0].title} and ${newlyAdded.length - 1} more requisitions live in ATS.`,
@@ -675,10 +799,10 @@ export default function AtsPlatform() {
         {/* Primary Upper Navigation (Home, Pipeline, Reports, Analytics, Agents) */}
         <div style={{ padding: '8px 8px 4px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
           {[
-            { id: 'home', label: 'Home', icon: '🏠' },
-            { id: 'pipeline', label: 'Workqueue', icon: '📥' },
-            { id: 'reports', label: 'Reports', icon: '📑' },
-            { id: 'screening', label: 'AI Agents', icon: '🤖' }
+            { id: 'home', label: 'Home' },
+            { id: 'pipeline', label: 'Workqueue' },
+            { id: 'reports', label: 'Reports' },
+            { id: 'screening', label: 'AI Agents' }
           ].map(item => {
             const isActive = activeTab === item.id
             return (
@@ -703,7 +827,7 @@ export default function AtsPlatform() {
                 onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#ffffff' } }}
                 onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94a3b8' } }}
               >
-                <span style={{ fontSize: '15px' }}>{item.icon}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon(item.id, 15, isActive ? '#ffffff' : '#94a3b8')}</span>
                 {!sidebarCollapsed && <span>{item.label}</span>}
               </div>
             )
@@ -755,7 +879,9 @@ export default function AtsPlatform() {
                     boxSizing: 'border-box'
                   }}
                 />
-                <span style={{ position: 'absolute', left: '8px', top: '6px', fontSize: '11px', color: '#64748b' }}>🔍</span>
+                <span style={{ position: 'absolute', left: '8px', top: '8px', color: '#64748b', display: 'flex', alignItems: 'center' }}>
+                  {renderAtsIcon('search', 12, '#64748b')}
+                </span>
               </div>
             )}
           </div>
@@ -766,15 +892,15 @@ export default function AtsPlatform() {
           {/* Section: Talent Acquisition */}
           {!sidebarCollapsed && (
             <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', padding: '8px 10px 4px' }}>
-              📁 Talent Acquisition
+              Talent Acquisition
             </div>
           )}
 
           {[
-            { id: 'candidates', label: 'Candidates', icon: '👤', count: safeCandidates.length },
-            { id: 'pipeline', label: 'Pipeline', icon: '📈' },
-            { id: 'screening', label: 'Screening', icon: '🔍' },
-            { id: 'submissions', label: 'Submissions', icon: '📤' },
+            { id: 'candidates', label: 'Candidates', count: safeCandidates.length },
+            { id: 'pipeline', label: 'Pipeline' },
+            { id: 'screening', label: 'Screening' },
+            { id: 'submissions', label: 'Submissions' },
           ]
             .filter(m => !sidebarSearch || m.label.toLowerCase().includes(sidebarSearch.toLowerCase()))
             .map(m => {
@@ -801,7 +927,7 @@ export default function AtsPlatform() {
                   onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94a3b8' } }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', width: sidebarCollapsed ? '100%' : 'auto' }}>
-                    <span style={{ fontSize: '14px' }}>{m.icon}</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon(m.id, 14, isActive ? '#ffffff' : '#94a3b8')}</span>
                     {!sidebarCollapsed && <span>{m.label}</span>}
                   </div>
                   {!sidebarCollapsed && m.count != null && (
@@ -823,17 +949,17 @@ export default function AtsPlatform() {
           {/* Section: Operations & Admin */}
           {!sidebarCollapsed && (
             <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', padding: '12px 10px 4px' }}>
-              📁 Operations & Admin
+              Operations & Admin
             </div>
           )}
 
           {[
-            { id: 'inquiries', label: 'Client Inquiries', icon: '📩', count: inquiriesCount || undefined },
-            { id: 'audit', label: 'Audit Logs', icon: '📜' },
-            { id: 'automation', label: 'Automation', icon: '⚙️' },
-            { id: 'inbox', label: 'Recruiter Inbox', icon: '💬', isLink: '/inbox' },
-            { id: 'settings', label: 'Settings', icon: '🛠️' },
-            { id: 'users', label: 'Manage Users', icon: '👥' },
+            { id: 'inquiries', label: 'Client Inquiries', count: inquiriesCount || undefined },
+            { id: 'audit', label: 'Audit Logs' },
+            { id: 'automation', label: 'Automation' },
+            { id: 'inbox', label: 'Recruiter Inbox', isLink: '/inbox' },
+            { id: 'settings', label: 'Settings' },
+            { id: 'users', label: 'Manage Users' },
           ]
             .filter(m => !sidebarSearch || m.label.toLowerCase().includes(sidebarSearch.toLowerCase()))
             .map(m => {
@@ -860,7 +986,7 @@ export default function AtsPlatform() {
                   onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94a3b8' } }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '14px' }}>{m.icon}</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon(m.id, 14, isActive ? '#ffffff' : '#94a3b8')}</span>
                     {!sidebarCollapsed && <span>{m.label}</span>}
                   </div>
                   {!sidebarCollapsed && m.count != null && m.count > 0 && (
@@ -882,7 +1008,7 @@ export default function AtsPlatform() {
           {/* Quick Portals */}
           {!sidebarCollapsed && (
             <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', padding: '12px 10px 4px' }}>
-              📁 Quick Portals
+              Quick Portals
             </div>
           )}
 
@@ -904,7 +1030,7 @@ export default function AtsPlatform() {
             onMouseEnter={e => e.currentTarget.style.background = 'rgba(56,189,248,0.1)'}
             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
           >
-            <span style={{ fontSize: '14px' }}>🏢</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('building', 14, '#38bdf8')}</span>
             {!sidebarCollapsed && <span>Requisitions Portal ↗</span>}
           </div>
 
@@ -926,7 +1052,7 @@ export default function AtsPlatform() {
             onMouseEnter={e => e.currentTarget.style.background = 'rgba(52,211,153,0.1)'}
             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
           >
-            <span style={{ fontSize: '14px' }}>🌐</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('globe', 14, '#34d399')}</span>
             {!sidebarCollapsed && <span>Public Careers (/jobs) ↗</span>}
           </div>
         </div>
@@ -944,36 +1070,37 @@ export default function AtsPlatform() {
           {!sidebarCollapsed ? (
             <>
               <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }} title="Pinned Records">
-                <span>📌</span>
                 <span style={{ fontSize: '11px' }}>Pins</span>
               </div>
               <div
                 onClick={() => setShowCandidatePicker(true)}
-                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
                 title="Open Candidate Chat"
               >
-                <span>💬</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('chat', 13, '#94a3b8')}</span>
                 <span style={{ fontSize: '11px' }}>Chats</span>
               </div>
               <div
                 onClick={() => setActiveTab('users')}
-                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
                 title="Team Members"
               >
-                <span>👥</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('users', 13, '#94a3b8')}</span>
                 <span style={{ fontSize: '11px' }}>Team</span>
               </div>
               <div
                 onClick={() => window.open('https://help.zoho.com', '_blank')}
-                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
                 title="Help & Documentation"
               >
-                <span>❓</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('help', 13, '#94a3b8')}</span>
                 <span style={{ fontSize: '11px' }}>Help</span>
               </div>
             </>
           ) : (
-            <div onClick={() => setShowCandidatePicker(true)} style={{ cursor: 'pointer' }} title="Chat">💬</div>
+            <div onClick={() => setShowCandidatePicker(true)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }} title="Chat">
+              {renderAtsIcon('chat', 15, '#94a3b8')}
+            </div>
           )}
         </div>
       </div>
@@ -1027,7 +1154,9 @@ export default function AtsPlatform() {
                 boxSizing: 'border-box'
               }}
             />
-            <span style={{ position: 'absolute', left: '10px', top: '7px', fontSize: '13px', color: '#94a3b8' }}>🔍</span>
+            <span style={{ position: 'absolute', left: '10px', top: '8px', color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
+              {renderAtsIcon('search', 13, '#94a3b8')}
+            </span>
           </div>
 
           {/* Right Utility Cluster: Create +, Chat, Notification, Settings, Avatar */}
@@ -1051,14 +1180,14 @@ export default function AtsPlatform() {
               onClick={() => setShowCandidatePicker(true)}
               title="Real-time Candidate Chat"
               style={{
-                display: 'flex', alignItems: 'center', gap: '5px',
+                display: 'flex', alignItems: 'center', gap: '6px',
                 padding: '5px 10px', borderRadius: '6px',
                 background: '#ffffff', border: '1px solid #e2e8f0',
                 fontSize: '12px', fontWeight: '600', color: '#334155',
                 cursor: 'pointer'
               }}
             >
-              <span>💬</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('chat', 13, '#334155')}</span>
               <span>Chat</span>
             </button>
 
@@ -1076,14 +1205,14 @@ export default function AtsPlatform() {
               onClick={() => navigate('/dashboard')}
               title="Switch to Requisitions Dashboard"
               style={{
-                display: 'flex', alignItems: 'center', gap: '5px',
+                display: 'flex', alignItems: 'center', gap: '6px',
                 padding: '5px 10px', borderRadius: '6px',
                 background: '#f0fdf4', border: '1px solid #bbf7d0',
                 fontSize: '12px', fontWeight: '700', color: '#15803d',
                 cursor: 'pointer'
               }}
             >
-              <span>🏢</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('building', 13, '#15803d')}</span>
               <span>Requisitions</span>
             </button>
 
@@ -1136,13 +1265,13 @@ export default function AtsPlatform() {
                     onClick={() => { setActiveTab('users'); setShowUserDropdown(false) }}
                     style={{ padding: '8px 14px', fontSize: '12.5px', color: '#334155', cursor: 'pointer' }}
                   >
-                    👥 Team Management
+                    Team Management
                   </div>
                   <div
                     onClick={() => { setActiveTab('settings'); setShowUserDropdown(false) }}
                     style={{ padding: '8px 14px', fontSize: '12.5px', color: '#334155', cursor: 'pointer' }}
                   >
-                    ⚙️ ATS Settings
+                    ATS Settings
                   </div>
                   <div
                     onClick={() => {
@@ -1151,7 +1280,7 @@ export default function AtsPlatform() {
                     }}
                     style={{ padding: '8px 14px', fontSize: '12.5px', color: '#ef4444', fontWeight: '600', cursor: 'pointer', borderTop: '1px solid #f1f5f9' }}
                   >
-                    🚪 Sign Out
+                    Sign Out
                   </div>
                 </div>
               )}
@@ -1187,10 +1316,9 @@ export default function AtsPlatform() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <div style={{
                     width: '38px', height: '38px', borderRadius: '8px',
-                    background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '18px'
+                    background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center'
                   }}>
-                    🏢
+                    {renderAtsIcon('building', 20, '#475569')}
                   </div>
                   <div>
                     <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>
@@ -1331,10 +1459,10 @@ export default function AtsPlatform() {
                   boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
                 }}>
                   {[
-                    { title: 'Invite your recruiting team', icon: '👥', tab: 'users' },
-                    { title: 'Configure candidate pipeline stages', icon: '📈', tab: 'pipeline' },
-                    { title: 'AI Resume Screening & Matchmaker', icon: '🤖', tab: 'screening' },
-                    { title: 'Connect email & recruiter inbox', icon: '💬', link: '/inbox' }
+                    { title: 'Invite your recruiting team', iconId: 'users', tab: 'users' },
+                    { title: 'Configure candidate pipeline stages', iconId: 'pipeline', tab: 'pipeline' },
+                    { title: 'AI Resume Screening & Matchmaker', iconId: 'screening', tab: 'screening' },
+                    { title: 'Connect email & recruiter inbox', iconId: 'inbox', link: '/inbox' }
                   ].map((step, sIdx) => (
                     <div
                       key={sIdx}
@@ -1357,7 +1485,7 @@ export default function AtsPlatform() {
                       onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#f1f5f9' }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span>{step.icon}</span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon(step.iconId, 16, '#2563eb')}</span>
                         <span style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>{step.title}</span>
                       </div>
                       <span style={{ fontSize: '13px', color: '#2563eb', fontWeight: 'bold' }}>›</span>
@@ -1631,7 +1759,7 @@ export default function AtsPlatform() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>
-                  💬 Select Candidate to Chat
+                  Select Candidate to Chat
                 </h3>
                 <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#64748b' }}>
                   Open real-time messaging thread with applicant
@@ -1680,7 +1808,7 @@ export default function AtsPlatform() {
           onClose={() => setActiveChatCandidate(null)}
           onScheduleInterview={(c) => {
             updateStatus(c.id, 'Interview Scheduled')
-            alert(`🗓️ Interview invite sent to ${c.extracted_profile?.name || c.name || 'Candidate'}!`)
+            alert(`Interview invite sent to ${c.extracted_profile?.name || c.name || 'Candidate'}!`)
           }}
         />
       )}

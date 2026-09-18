@@ -348,9 +348,9 @@ export function ZoneHeroOrbitalIllustration() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: 18
+          color: '#FFFFFF'
         }}>
-          🧮
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
         </div>
         <div style={{ fontWeight: 800, fontSize: 15, fontFamily: "'Barlow', sans-serif" }}>
           Accounting
@@ -381,9 +381,9 @@ export function ZoneHeroOrbitalIllustration() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: 18
+          color: '#FFFFFF'
         }}>
-          ❤️
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         </div>
         <div style={{ fontWeight: 800, fontSize: 15, fontFamily: "'Barlow', sans-serif" }}>
           Health care
@@ -414,9 +414,9 @@ export function ZoneHeroOrbitalIllustration() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: 18
+          color: '#FFFFFF'
         }}>
-          ⚙️
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
         </div>
         <div style={{ fontWeight: 800, fontSize: 15, fontFamily: "'Barlow', sans-serif" }}>
           Software
@@ -447,9 +447,9 @@ export function ZoneHeroOrbitalIllustration() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: 18
+          color: '#FFFFFF'
         }}>
-          🏛️
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="21" x2="21" y2="21"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="3 10 12 3 21 10"/><line x1="5" y1="10" x2="5" y2="21"/><line x1="19" y1="10" x2="19" y2="21"/><line x1="9.5" y1="10" x2="9.5" y2="21"/><line x1="14.5" y1="10" x2="14.5" y2="21"/></svg>
         </div>
         <div style={{ fontWeight: 800, fontSize: 15, fontFamily: "'Barlow', sans-serif" }}>
           Banking

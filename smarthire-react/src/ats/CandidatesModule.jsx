@@ -43,6 +43,62 @@ const getCandidateTimestamp = (c) => {
   return 0
 }
 
+// Clean and accurate Candidate Source resolver (Dice, Monster, Careers, Email, or Recruiter)
+const getCandidateSourceDisplay = (c) => {
+  if (!c) return 'Direct Applicant'
+  
+  // 1. Check explicit intake source tags first
+  const src = String(c.source || c.sourceCategory || c.origin || '').toLowerCase().trim()
+  const emailSender = String(c.email_context?.sender_email || '').toLowerCase()
+  
+  if (src.includes('dice') || emailSender.includes('dice')) return 'Dice'
+  if (src.includes('monster') || emailSender.includes('monster')) return 'Monster'
+  if (src.includes('career') || src.includes('auto-apply')) return 'Careers Portal'
+  if (src.includes('spam') || src.includes('bulk') || src.includes('inbox') || src.includes('email') || src.includes('yahoo')) return 'Inbound Email'
+  if (src.includes('linkedin')) return 'LinkedIn'
+  if (src.includes('bench') || src.includes('vendor')) return 'Vendor Bench'
+  if (src.includes('referral')) return 'Referral'
+
+  // 2. If it is a manual entry by a dedicated team recruiter
+  const rec = String(c.recruiter || c.addedByName || c.referredByRecruiterName || '').trim()
+  const recNorm = rec.toLowerCase()
+  
+  // Avoid generic or system fallbacks
+  if (rec && recNorm !== 'admin' && recNorm !== 'recruiter' && !recNorm.includes('default') && !recNorm.includes('smarthire')) {
+    if (recNorm === 'omkesh' && !c.isManualEntry) {
+      if (c.email_context || c.message_id) return 'Inbound Email'
+      return 'Direct Applicant'
+    }
+    return rec
+  }
+
+  const assignedBy = String(c.assignedBy || '').trim()
+  const assignedNorm = assignedBy.toLowerCase()
+  if (assignedBy && assignedNorm !== 'admin' && assignedNorm !== 'recruiter' && !assignedNorm.includes('default')) {
+    if (assignedNorm === 'omkesh' && !c.isManualEntry) {
+      if (c.email_context || c.message_id) return 'Inbound Email'
+      return 'Direct Applicant'
+    }
+    return assignedBy
+  }
+
+  // 3. Clean up any raw source text
+  if (c.source && typeof c.source === 'string' && c.source.trim()) {
+    const cleaned = c.source
+      .replace(/^Referred by\s+/i, '')
+      .replace(/^Email Spam Folder\s*\([^)]*\)/i, 'Inbound Email')
+      .replace(/^yahoo_n8n/i, 'Inbound Email')
+      .trim()
+    if (cleaned && cleaned.toLowerCase() !== 'recruiter' && cleaned.toLowerCase() !== 'admin') {
+      return cleaned
+    }
+  }
+
+  if (c.email_context || c.message_id) return 'Inbound Email'
+
+  return 'Direct Applicant'
+}
+
 function CandidatesModule({
   allCandidates = [],
   candidatesList = [],
@@ -92,6 +148,7 @@ function CandidatesModule({
     try { return userStr ? JSON.parse(userStr) : null } catch(e) { return null }
   }, [userStr])
   const currentUserName = currentUser?.name || (currentUser?.role === 'superadmin' ? 'Omkesh' : 'Recruiter')
+  const isSuperAdmin = currentUser?.role === 'superadmin' || currentUser?.role === 'admin'
 
   // Push to Requisition Modal State
   const [pushModalCandidate, setPushModalCandidate] = useState(null)
@@ -303,6 +360,37 @@ function CandidatesModule({
     return safeCandidates.filter(c => {
       if (!c) return false
 
+      // 0. Requisition-specific Candidate Privacy Scoping:
+      // If candidate is attached / pushed to a specific requisition, unassigned non-admin recruiters must NOT see them
+      const cReqId = String(c.reqId || c.job_id || c.targetJobId || c.pushedReqId || '').replace(/^J-/, '').trim()
+      const isReqSpecific = Boolean(cReqId && (c.pushedToJobsInHand || c.isRequisitionSpecific || c.status === 'Int-SubmittedToManager'))
+      if (isReqSpecific && !isSuperAdmin) {
+        const userIdent = (currentUserName || '').toLowerCase().trim()
+        const userEmail = (currentUser?.email || '').toLowerCase().trim()
+        const firstName = (userIdent.split(' ')[0] || '').toLowerCase().trim()
+        const userId = String(currentUser?.id || currentUser?._id || '').toLowerCase().trim()
+
+        const targetReq = safeJobs.find(j => {
+          const jClean = String(resolveReqId ? resolveReqId(j.id, j) : j.id).replace(/^J-/, '').trim()
+          return jClean === cReqId || String(j.id).replace(/^J-/, '').trim() === cReqId
+        })
+        const isAssignedToThisReq = targetReq && Array.isArray(targetReq.assignedRecruiters) && targetReq.assignedRecruiters.some(r => {
+          const rNorm = String(r || '').toLowerCase().trim()
+          return rNorm === userIdent || (userIdent.length >= 3 && rNorm.includes(userIdent)) || (userEmail && rNorm.includes(userEmail)) || (firstName.length >= 3 && rNorm.includes(firstName))
+        })
+        const candRecruiter = (c.recruiter || c.assignedTo || c.assignedBy || c.addedByName || c.submittedBy || c.pushedBy || '').toLowerCase().trim()
+        const candEmail = (c.recruiterEmail || c.addedByEmail || '').toLowerCase().trim()
+        const candCreator = String(c.createdBy || '').toLowerCase().trim()
+
+        const isAuthor = candRecruiter === userIdent ||
+                         (userIdent.length >= 3 && (candRecruiter.includes(userIdent) || userIdent.includes(candRecruiter))) ||
+                         (userEmail && (candRecruiter.includes(userEmail) || candEmail.includes(userEmail))) ||
+                         (userId && candCreator === userId) ||
+                         (firstName.length >= 3 && candRecruiter.includes(firstName))
+
+        if (!isAssignedToThisReq && !isAuthor) return false
+      }
+
       // 1. Vacancy / Requisition Filter
       const matchJob = selectedJob === 'All' || c.job_id === selectedJob || c.reqId === String(selectedJob).replace('J-', '')
       if (!matchJob) return false
@@ -478,14 +566,14 @@ function CandidatesModule({
       name: candName,
       payRate: rate,
       payRateType: rate.includes('C2C') ? 'C2C' : 'W2',
-      assignedBy: currentUserName || 'Omkesh',
+      assignedBy: candidate.assignedBy || currentUserName || '',
       assignedOn: dateStr,
       status: status,
       statusComments: comments,
       interview: 'Select',
       email: candidate.email || candidate.extracted_profile?.email || '',
       phone: candidate.phone || candidate.extracted_profile?.phone || '',
-      source: candidate.recruiter ? `Referred by ${candidate.recruiter}` : 'SmartHire Careers',
+      source: candidate.source || (candidate.recruiter ? `Referred by ${candidate.recruiter}` : 'SmartHire Careers'),
       role: candidate.role || candidate.jobTitle || matchedJob?.title || 'Applicant',
       jobTitle: matchedJob?.title || candidate.jobTitle || candidate.role || 'Applicant',
       skills: candidate.skills || candidate.extracted_profile?.skills || [],
@@ -495,15 +583,17 @@ function CandidatesModule({
       pushedToJobsInHand: true,
       timestamp: Date.now(),
       createdAt: new Date().toISOString(),
-      recruiter: currentUserName || 'Omkesh',
-      recruiterEmail: currentUser?.email || '',
-      recruiterRefCode: currentUser?.refCode || '',
+      recruiter: candidate.recruiter || currentUserName || '',
+      recruiterEmail: candidate.recruiterEmail || currentUser?.email || '',
+      recruiterRefCode: candidate.recruiterRefCode || currentUser?.refCode || '',
       parentRecruiterName: effectiveParentRecruiterName,
       parentRecruiterEmail: effectiveParentRecruiterEmail,
       parentRecruiterId: effectiveParentRecruiterId,
-      addedByName: currentUserName || 'Omkesh',
-      addedByEmail: currentUser?.email || '',
-      addedByRole: currentUser?.role || 'recruiter',
+      pushedBy: currentUserName,
+      pushedByEmail: currentUser?.email || '',
+      addedByName: candidate.addedByName || currentUserName || '',
+      addedByEmail: candidate.addedByEmail || currentUser?.email || '',
+      addedByRole: candidate.addedByRole || currentUser?.role || 'recruiter',
       lastChangedBy: currentUserName || 'Recruiter',
       lastChangedRole: currentUser?.role || 'Recruiter',
       lastChangedOn: dateStr,
@@ -553,9 +643,11 @@ function CandidatesModule({
       pushedReqId: cleanReqId,
       finalRate: rate,
       status: status,
-      assignedBy: currentUserName || 'Omkesh',
-      recruiter: currentUserName || 'Omkesh',
-      recruiterEmail: currentUser?.email || '',
+      pushedBy: currentUserName,
+      pushedByEmail: currentUser?.email || '',
+      assignedBy: candidate.assignedBy || currentUserName || '',
+      recruiter: candidate.recruiter || currentUserName || '',
+      recruiterEmail: candidate.recruiterEmail || currentUser?.email || '',
       legalDocs: candLegalDocs,
       documents: candLegalDocs
     }
@@ -657,8 +749,8 @@ function CandidatesModule({
     setPushIsSubmitting(false)
     setPushModalCandidate(null)
     if (!suppressAlert) {
-      const botNote = botResult?.message ? `\n\n🤖 JobsInHand Bot Result:\n${botResult.message}` : ''
-      alert(`🎉 Candidate ${candName} successfully submitted to JobsInHand Requisition #${resolvedFinalReqId} & Job Description sent to ${candEmail || 'candidate'}!${botNote}`)
+      const botNote = botResult?.message ? `\n\nJobsInHand Bot Result:\n${botResult.message}` : ''
+      alert(`Candidate ${candName} successfully submitted to JobsInHand Requisition #${resolvedFinalReqId} & Job Description sent to ${candEmail || 'candidate'}!${botNote}`)
     }
   }
 
@@ -825,7 +917,7 @@ function CandidatesModule({
     setNewCandRole('')
     setNewCandSkills('')
     if (fetchCandidates) fetchCandidates()
-    alert(`✅ Candidate ${newCand.name} added successfully!`)
+    alert(`Candidate ${newCand.name} added successfully!`)
   }
 
   const scoreColor = (score) => {
@@ -1255,7 +1347,6 @@ function CandidatesModule({
                     onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
-                    <span>👤</span>
                     <span>Add Single Candidate</span>
                   </div>
                   <div
@@ -1264,7 +1355,6 @@ function CandidatesModule({
                     onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
-                    <span>📄</span>
                     <span>Upload Resume File</span>
                   </div>
                   {selectedIds.length > 0 && (
@@ -1277,13 +1367,12 @@ function CandidatesModule({
                           await executePushCandidate(c, tReq, r, 'Int-SubmittedToManager', 'Bulk pushed via SmartHire ATS', true)
                         }
                         setShowCreateDropdown(false)
-                        alert(`🎉 Successfully pushed ${targets.length} candidate(s) to requisition pipeline!`)
+                        alert(`Successfully pushed ${targets.length} candidate(s) to requisition pipeline!`)
                       }}
                       style={{ padding: '9px 14px', fontSize: '13px', color: '#047857', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', borderTop: '1px solid #f1f5f9' }}
                       onMouseEnter={e => e.currentTarget.style.background = '#f0fdf4'}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     >
-                      <span>🚀</span>
                       <span>Push Selected ({selectedIds.length}) to Req</span>
                     </div>
                   )}
@@ -1363,7 +1452,9 @@ function CandidatesModule({
                   boxSizing: 'border-box'
                 }}
               />
-              <span style={{ position: 'absolute', left: '8px', top: '7px', fontSize: '12px', color: '#94a3b8' }}>🔍</span>
+              <svg style={{ position: 'absolute', left: '8px', top: '8px', width: '13px', height: '13px', color: '#94a3b8' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
               {query && (
                 <button
                   onClick={() => setQuery('')}
@@ -1573,7 +1664,7 @@ function CandidatesModule({
                       const r = finalRates[c.id] || c.finalRate || '75/hr'
                       await executePushCandidate(c, tReq, r, 'Int-SubmittedToManager', 'Bulk pushed via SmartHire ATS', true)
                     }
-                    alert(`🎉 Successfully pushed ${targets.length} candidate(s) to requisition pipeline!`)
+                    alert(`Successfully pushed ${targets.length} candidate(s) to requisition pipeline!`)
                   }}
                   style={{
                     background: '#2563eb',
@@ -1586,7 +1677,7 @@ function CandidatesModule({
                     cursor: 'pointer'
                   }}
                 >
-                  🚀 Push {selectedIds.length} to Requisition
+                  Push {selectedIds.length} to Requisition
                 </button>
               </div>
             </div>
@@ -1690,7 +1781,11 @@ function CandidatesModule({
                   {paginatedCandidates.length === 0 ? (
                     <tr>
                       <td colSpan="10" style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
-                        <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔍</div>
+                        <div style={{ display: 'inline-flex', padding: '12px', borderRadius: '50%', background: '#f1f5f9', color: '#94a3b8', marginBottom: '10px' }}>
+                          <svg style={{ width: '24px', height: '24px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                        </div>
                         <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>No candidates found</div>
                         <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
                           Try clearing filter options or searching for different keywords
@@ -1727,7 +1822,7 @@ function CandidatesModule({
                       const displayReqId = resolveTargetReqId(candidate)
 
                       const reqJobTitle = candidateJob?.title || candidate.jobTitle || role
-                      const recruiterSource = candidate.recruiter || candidate.recruiterRef || candidate.referredBy || (candidate.source ? candidate.source.replace('Referred by ', '') : '') || 'Careers Portal'
+                      const recruiterSource = getCandidateSourceDisplay(candidate)
 
                       return (
                         <tr
@@ -1808,7 +1903,7 @@ function CandidatesModule({
                             </div>
                           </td>
 
-                          {/* Contact Info (Direct Call 📞 & Email ✉️) */}
+                          {/* Contact Info */}
                           <td style={{ padding: '9px 12px' }}>
                             <div style={{
                               display: 'flex',
@@ -1821,7 +1916,7 @@ function CandidatesModule({
                               textOverflow: 'ellipsis',
                               whiteSpace: 'nowrap'
                             }} title={emailDisplay}>
-                              <span style={{ fontSize: '11px', color: '#64748b' }}>✉</span>
+                              <span style={{ fontSize: '10.5px', color: '#64748b', fontWeight: '600' }}>Email:</span>
                               <span>{emailDisplay}</span>
                             </div>
 
@@ -1832,7 +1927,7 @@ function CandidatesModule({
                                   style={{ textDecoration: 'none', color: '#2563eb', display: 'flex', alignItems: 'center', gap: '3px' }}
                                   title={`Call ${phoneDisplay}`}
                                 >
-                                  <span>📞</span>
+                                  <span style={{ fontSize: '10.5px', color: '#64748b', fontWeight: '600' }}>Tel:</span>
                                   <span>{phoneDisplay}</span>
                                 </a>
                               </div>
@@ -1848,16 +1943,16 @@ function CandidatesModule({
                               fontWeight: '600',
                               padding: '2px 8px',
                               borderRadius: '4px',
-                              background: recruiterSource.includes('Careers') ? '#f8fafc' : '#eff6ff',
-                              color: recruiterSource.includes('Careers') ? '#475569' : '#1d4ed8',
-                              border: `1px solid ${recruiterSource.includes('Careers') ? '#e2e8f0' : '#bfdbfe'}`,
+                              background: recruiterSource === 'Careers Portal' || recruiterSource === 'Direct Applicant' ? '#f8fafc' : '#eff6ff',
+                              color: recruiterSource === 'Careers Portal' || recruiterSource === 'Direct Applicant' ? '#475569' : '#1d4ed8',
+                              border: `1px solid ${recruiterSource === 'Careers Portal' || recruiterSource === 'Direct Applicant' ? '#e2e8f0' : '#bfdbfe'}`,
                               display: 'inline-block',
                               maxWidth: '130px',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
                               whiteSpace: 'nowrap'
                             }}>
-                              {recruiterSource.includes('Careers') ? '🌐 Direct Careers' : `👤 ${recruiterSource}`}
+                              {recruiterSource}
                             </span>
                           </td>
 
@@ -1880,32 +1975,60 @@ function CandidatesModule({
                                       whiteSpace: 'nowrap'
                                     }}
                                   >
-                                    {s}{badge.suffix}
+                                    {s}
                                   </span>
                                 )
                               })}
                               {skillList.length > 2 && (
-                                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', alignSelf: 'center' }}>
+                                <span style={{ fontSize: '10.5px', color: '#64748b', alignSelf: 'center' }}>
                                   +{skillList.length - 2}
                                 </span>
                               )}
                               {skillList.length === 0 && (
-                                <span style={{ fontSize: '10.5px', color: '#94a3b8' }}>—</span>
+                                <span style={{ fontSize: '11px', color: '#94a3b8' }}>—</span>
                               )}
                             </div>
                           </td>
 
-                          {/* AI Match Score */}
+                          {/* Final Pay Rate */}
+                          <td style={{ padding: '9px 12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <input
+                                type="text"
+                                defaultValue={existingRate}
+                                onBlur={e => handleUpdateRate(candidate.id, e.target.value)}
+                                onKeyDown={e => {
+                                  if (e.key === 'Enter') handleUpdateRate(candidate.id, e.target.value)
+                                }}
+                                style={{
+                                  width: '68px',
+                                  fontSize: '11.5px',
+                                  padding: '3px 6px',
+                                  border: '1px solid #cbd5e1',
+                                  borderRadius: '4px',
+                                  fontWeight: '600',
+                                  color: '#0f172a',
+                                  background: '#ffffff',
+                                  outline: 'none'
+                                }}
+                              />
+                              <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 'bold' }}>
+                                {savingRate === candidate.id ? '...' : '✓'}
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* Match Score */}
                           <td style={{ padding: '9px 12px', textAlign: 'center' }}>
-                            {matchScore != null ? (
+                            {matchScore !== null ? (
                               <span style={{
-                                fontSize: '11px',
+                                fontSize: '11.5px',
                                 fontWeight: '800',
                                 color: scoreColor(matchScore),
-                                background: matchScore >= 80 ? '#ecfdf5' : matchScore >= 60 ? '#fef3c7' : '#fee2e2',
-                                border: `1px solid ${matchScore >= 80 ? '#a7f3d0' : matchScore >= 60 ? '#fde68a' : '#fca5a5'}`,
-                                padding: '2px 6px',
-                                borderRadius: '4px',
+                                background: matchScore >= 80 ? '#ecfdf5' : matchScore >= 60 ? '#fffbeb' : '#fef2f2',
+                                border: `1px solid ${matchScore >= 80 ? '#a7f3d0' : matchScore >= 60 ? '#fde68a' : '#fecaca'}`,
+                                padding: '2px 8px',
+                                borderRadius: '12px',
                                 display: 'inline-block'
                               }}>
                                 {matchScore}%
@@ -1913,41 +2036,6 @@ function CandidatesModule({
                             ) : (
                               <span style={{ fontSize: '11px', color: '#94a3b8' }}>—</span>
                             )}
-                          </td>
-
-                          {/* Rate */}
-                          <td style={{ padding: '9px 12px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <input
-                                type="text"
-                                value={finalRates[candidate.id] ?? existingRate}
-                                onChange={e => setFinalRates(prev => ({ ...prev, [candidate.id]: e.target.value }))}
-                                style={{
-                                  width: '56px',
-                                  padding: '2px 4px',
-                                  borderRadius: '4px',
-                                  border: '1px solid #cbd5e1',
-                                  fontSize: '11px',
-                                  fontWeight: '600',
-                                  color: '#0f172a'
-                                }}
-                              />
-                              <button
-                                onClick={() => handleSaveFinalRate(candidate.id)}
-                                disabled={savingRate === candidate.id}
-                                style={{
-                                  background: '#f1f5f9',
-                                  border: '1px solid #cbd5e1',
-                                  borderRadius: '3px',
-                                  padding: '2px 5px',
-                                  fontSize: '9.5px',
-                                  cursor: 'pointer'
-                                }}
-                                title="Save Rate"
-                              >
-                                {savingRate === candidate.id ? '...' : '✓'}
-                              </button>
-                            </div>
                           </td>
 
                           {/* ATS Status */}
@@ -2008,7 +2096,7 @@ function CandidatesModule({
                                   onMouseEnter={e => { e.currentTarget.style.background = '#dbeafe'; e.currentTarget.style.borderColor = '#93c5fd' }}
                                   onMouseLeave={e => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.borderColor = '#bfdbfe' }}
                                 >
-                                  🔁 Push Again
+                                  Push Again
                                 </button>
                               </div>
                             ) : (
@@ -2031,7 +2119,7 @@ function CandidatesModule({
                                   boxShadow: '0 1px 2px rgba(37,99,235,0.2)'
                                 }}
                               >
-                                {pushingId === candidate.id ? '⏳' : '🚀'} Push to Req
+                                {pushingId === candidate.id ? 'Pushing...' : 'Push to Req'}
                               </button>
                             )}
                           </td>
@@ -2286,7 +2374,7 @@ function CandidatesModule({
           onClose={() => setActiveChatCandidate(null)}
           onScheduleInterview={(c) => {
             handleUpdateStatus(c.id, 'Interview Scheduled')
-            alert(`🗓️ Interview invite sent to ${c.extracted_profile?.name || c.name || 'Candidate'}! Candidate status updated to 'Interview Scheduled'.`)
+            alert(`Interview invite sent to ${c.extracted_profile?.name || c.name || 'Candidate'}! Candidate status updated to 'Interview Scheduled'.`)
           }}
         />
       )}
@@ -2350,7 +2438,6 @@ function CandidatesModule({
               background: 'linear-gradient(to right, #f8fafc, #ffffff)'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '22px' }}>🚀</span>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '800', color: '#0f172a' }}>
                     Push Candidate to Requisition
@@ -2438,7 +2525,7 @@ function CandidatesModule({
                       </option>
                     )
                   })}
-                  <option value="custom">➕ Enter Custom Requisition ID...</option>
+                  <option value="custom">Enter Custom Requisition ID...</option>
                 </select>
 
                 {pushTargetReqId === 'custom' && (
@@ -2572,7 +2659,7 @@ function CandidatesModule({
                     boxShadow: '0 2px 6px rgba(37,99,235,0.25)'
                   }}
                 >
-                  {pushIsSubmitting ? '⏳ Submitting to JobsInHand Bot...' : '🚀 Confirm & Auto-Submit to JobsInHand'}
+                  {pushIsSubmitting ? 'Submitting to JobsInHand Bot...' : 'Confirm & Auto-Submit to JobsInHand'}
                 </button>
               </div>
             </form>

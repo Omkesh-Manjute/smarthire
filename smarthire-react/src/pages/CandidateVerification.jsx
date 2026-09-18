@@ -150,7 +150,7 @@ function CandidateVerification() {
 
           {isSubmitted ? (
             <div className="card success-card-verif">
-              <div className="success-icon-wrap">🎉</div>
+              <div className="success-icon-wrap" style={{ width: 48, height: 48, borderRadius: '50%', background: '#DCFCE7', color: '#16A34A', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 24, fontWeight: 'bold' }}>✓</div>
               <h2>Verification Dossier Submitted</h2>
               <p className="success-text">
                 Your geolocation profile, biometric matching records, and uploaded ID document have been compiled and sent to the recruitment dashboard.
@@ -188,14 +188,14 @@ function CandidateVerification() {
                   type="button"
                   onClick={() => { setMode('simulation'); setVerifyResult(null); }}
                 >
-                  ⚙️ Simulation Flow
+                  Simulation Flow
                 </button>
                 <button 
                   className={`mode-btn ${mode === 'manual' ? 'active' : ''}`}
                   type="button"
                   onClick={() => setMode('manual')}
                 >
-                  🛡️ Manual AI Verification (Pro)
+                  Manual AI Verification (Pro)
                 </button>
               </div>
 
@@ -227,7 +227,7 @@ function CandidateVerification() {
                 {stepIndex === 0 && (
                   <div className="verification-step-layout">
                     <div className="step-headline">
-                      <h2>📍 Step 1: Geolocation Verification</h2>
+                      <h2>Step 1: Geolocation Verification</h2>
                       <p>Claimed Work City: <strong>{cityClaimed}</strong></p>
                     </div>
 
@@ -245,7 +245,9 @@ function CandidateVerification() {
                     <div className="simulated-device-pane">
                       {gpsState === 'idle' && (
                         <div className="gps-prompt-view">
-                          <span className="view-icon">📍</span>
+                          <span className="view-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                          </span>
                           <p>To verify compliance, we must match your claimed city against device GPS telemetry.</p>
                           <button className="btn" onClick={handleSimulateGps}>Simulate Device GPS Check</button>
                         </div>
@@ -278,7 +280,7 @@ function CandidateVerification() {
                 {stepIndex === 1 && (
                   <div className="verification-step-layout">
                     <div className="step-headline">
-                      <h2>👤 Step 2: Biometric Liveness Scan</h2>
+                      <h2>Step 2: Biometric Liveness Scan</h2>
                       <p>Perform face-fit scanning to prevent deepfake spoofing.</p>
                     </div>
 
@@ -294,7 +296,9 @@ function CandidateVerification() {
                         
                         {livenessState === 'idle' && (
                           <div className="camera-placeholder">
-                            <span className="cam-icon">📷</span>
+                            <span className="cam-icon">
+                              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                            </span>
                             <p>Fit your face within the guide oval to start screen liveness detection.</p>
                           </div>
                         )}
@@ -307,7 +311,9 @@ function CandidateVerification() {
 
                         {livenessState === 'success' && (
                           <div className="camera-placeholder success-alert">
-                            <span className="success-checkmark">🛡️</span>
+                            <span className="success-checkmark">
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            </span>
                             <p>BIOMETRICS VALIDATED</p>
                             <small>Liveness Confidence: 99.2%</small>
                           </div>
@@ -333,7 +339,7 @@ function CandidateVerification() {
                 {stepIndex === 2 && (
                   <div className="verification-step-layout">
                     <div className="step-headline">
-                      <h2>📄 Step 3: Identity Document Upload</h2>
+                      <h2>Step 3: Identity Document Upload</h2>
                       <p>Upload a matching government-issued photo identity document.</p>
                     </div>
 
@@ -344,7 +350,7 @@ function CandidateVerification() {
                           <button 
                             key={type} 
                             type="button" 
-                            className={`doc-toggle-btn ${docType === type ? 'active' : ''}`}
+                            className={`toggle-btn ${docType === type ? 'active' : ''}`}
                             onClick={() => setDocType(type)}
                           >
                             {type}
@@ -356,7 +362,9 @@ function CandidateVerification() {
                     <div className="simulated-upload-zone">
                       {docState === 'idle' && (
                         <div className="upload-prompt">
-                          <span className="upload-icon">📤</span>
+                          <span className="upload-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                          </span>
                           <p>Drag & Drop your document image or PDF here</p>
                           <label className="btn btn-ghost upload-file-trigger">
                             Select File
@@ -399,7 +407,7 @@ function CandidateVerification() {
                 {stepIndex === 3 && (
                   <div className="verification-step-layout">
                     <div className="step-headline">
-                      <h2>🔍 Step 4: Verification Review</h2>
+                      <h2>Step 4: Verification Review</h2>
                       <p>Confirm the credentials package details before publishing.</p>
                     </div>
 
@@ -434,8 +442,8 @@ function CandidateVerification() {
                       </div>
                       <p className="trust-rating-description">
                         {score >= 80 
-                          ? '🛡️ TRUSTED RATING: Complete compliance data acquired. Ready to shortlist.' 
-                          : '⚠️ CONDITIONAL RATING: Complete missing verification checks to maximize score.'}
+                          ? 'TRUSTED RATING: Complete compliance data acquired. Ready to shortlist.' 
+                          : 'CONDITIONAL RATING: Complete missing verification checks to maximize score.'}
                       </p>
                     </div>
 
@@ -477,7 +485,7 @@ function CandidateVerification() {
             <article className="card verify-main-card manual-verif-card no-print">
               <div className="verification-step-layout">
                 <div className="step-headline">
-                  <h2>🛡️ Pro AI Document & Fraud Verification</h2>
+                  <h2>Pro AI Document & Fraud Verification</h2>
                   <p>Upload a candidate US Driver's License and Work Visa copy. The vision model will perform high-IQ checks on layouts, state rules, and immigration rules.</p>
                 </div>
 
@@ -490,7 +498,9 @@ function CandidateVerification() {
                       <div className="slot-upload-area">
                         {dlFile ? (
                           <div className="uploaded-file-preview">
-                            <span className="file-icon">🪪</span>
+                            <span className="file-icon">
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><line x1="15" y1="8" x2="17" y2="8"/><line x1="15" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="17" y2="16"/></svg>
+                            </span>
                             <div className="file-meta">
                               <strong>{dlFile.name}</strong>
                               <span>{(dlFile.size / 1024).toFixed(1)} KB</span>
@@ -499,7 +509,9 @@ function CandidateVerification() {
                           </div>
                         ) : (
                           <label className="upload-dropzone">
-                            <span className="cloud-icon">📤</span>
+                            <span className="cloud-icon">
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            </span>
                             <strong>Upload US Driver's License</strong>
                             <span className="subtext">PNG, JPG, WEBP, or PDF</span>
                             <input type="file" accept="image/*,.pdf" onChange={handleDlChange} style={{ display: 'none' }} />
@@ -513,7 +525,9 @@ function CandidateVerification() {
                       <div className="slot-upload-area">
                         {visaFile ? (
                           <div className="uploaded-file-preview">
-                            <span className="file-icon">📄</span>
+                            <span className="file-icon">
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                            </span>
                             <div className="file-meta">
                               <strong>{visaFile.name}</strong>
                               <span>{(visaFile.size / 1024).toFixed(1)} KB</span>
@@ -522,7 +536,9 @@ function CandidateVerification() {
                           </div>
                         ) : (
                           <label className="upload-dropzone">
-                            <span className="cloud-icon">📤</span>
+                            <span className="cloud-icon">
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            </span>
                             <strong>Upload Visa Document</strong>
                             <span className="subtext">PNG, JPG, WEBP, or PDF</span>
                             <input type="file" accept="image/*,.pdf" onChange={handleVisaChange} style={{ display: 'none' }} />
@@ -541,7 +557,7 @@ function CandidateVerification() {
                     onClick={handleRunVerification}
                     disabled={verifyLoading || (!dlFile && !visaFile)}
                   >
-                    {verifyLoading ? 'Running AI Scan...' : '🛡️ Run AI Verification Scan'}
+                    {verifyLoading ? 'Running AI Scan...' : 'Run AI Verification Scan'}
                   </button>
                 </div>
 
@@ -576,7 +592,7 @@ function CandidateVerification() {
                 {/* Error state */}
                 {verifyError && (
                   <div className="error-alert-banner">
-                    <strong>⚠️ Verification Failed</strong>
+                    <strong>Verification Failed</strong>
                     <p>{verifyError}</p>
                     <button className="btn btn-sm btn-ghost" type="button" onClick={() => setVerifyError(null)}>Dismiss</button>
                   </div>
@@ -587,7 +603,7 @@ function CandidateVerification() {
                   <div className="verification-results-dashboard">
                     <div className="results-actions-bar no-print" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
                       <button className="btn" style={{ background: 'var(--brand)', color: 'white', fontWeight: 'bold' }} onClick={() => window.print()}>
-                        📋 Download / Print PDF Report
+                        Download / Print PDF Report
                       </button>
                     </div>
 
@@ -600,8 +616,8 @@ function CandidateVerification() {
                         <div className="verdict-title-group">
                           <span className="verdict-label">AI VERIFICATION STATUS</span>
                           <h3>{
-                            verifyResult.verdict === 'LEGITIMATE' ? '🛡️ LEGITIMATE - PASS' : 
-                            verifyResult.verdict === 'SUSPICIOUS' ? '⚠️ SUSPICIOUS - ACTION REQUIRED' : '🚨 SUSPECTED FRAUD - FAIL'
+                            verifyResult.verdict === 'LEGITIMATE' ? 'LEGITIMATE - PASS' : 
+                            verifyResult.verdict === 'SUSPICIOUS' ? 'SUSPICIOUS - ACTION REQUIRED' : 'SUSPECTED FRAUD - FAIL'
                           }</h3>
                         </div>
                         <div className="verdict-score-gauge">
@@ -616,14 +632,14 @@ function CandidateVerification() {
                     <div className="compliance-cards-grid">
                       {/* Driver's License Card */}
                       <div className="compliance-card">
-                        <div className="card-header-icon">🪪 Driver's License Audit</div>
+                        <div className="card-header-icon">Driver's License Audit</div>
                         <div className="card-checks-list">
                           <div className="extracted-header">Detected State: {verifyResult.state_rules_validation.detected_state || 'Not Found'}</div>
                           <div className="applied-rules-text">{verifyResult.state_rules_validation.state_rules_applied}</div>
                           {verifyResult.state_rules_validation.checks.map((chk, idx) => (
                             <div key={idx} className="check-item-row">
                               <span className={`status-icon ${chk.status === 'PASS' ? 'pass' : chk.status === 'WARN' ? 'warn' : 'fail'}`}>
-                                {chk.status === 'PASS' ? '✓' : chk.status === 'WARN' ? '⚠' : '✗'}
+                                {chk.status === 'PASS' ? '✓' : chk.status === 'WARN' ? '!' : '✗'}
                               </span>
                               <div className="check-item-desc">
                                 <strong>{chk.name}</strong>
@@ -636,14 +652,14 @@ function CandidateVerification() {
 
                       {/* Visa Card */}
                       <div className="compliance-card">
-                        <div className="card-header-icon">📄 Immigration Visa Audit</div>
+                        <div className="card-header-icon">Immigration Visa Audit</div>
                         <div className="card-checks-list">
                           <div className="extracted-header">Detected Visa Type: {verifyResult.visa_validation.detected_visa_type || 'Not Found'}</div>
                           <div className="applied-rules-text">Federal Visa compliance checks: cross-references date sequences, beneficiary names, and employer petition sponsors.</div>
                           {verifyResult.visa_validation.checks.map((chk, idx) => (
                             <div key={idx} className="check-item-row">
                               <span className={`status-icon ${chk.status === 'PASS' ? 'pass' : chk.status === 'WARN' ? 'warn' : 'fail'}`}>
-                                {chk.status === 'PASS' ? '✓' : chk.status === 'WARN' ? '⚠' : '✗'}
+                                {chk.status === 'PASS' ? '✓' : chk.status === 'WARN' ? '!' : '✗'}
                               </span>
                               <div className="check-item-desc">
                                 <strong>{chk.name}</strong>
@@ -657,7 +673,7 @@ function CandidateVerification() {
 
                     {/* Extracted Metadata Comparison Table */}
                     <div className="extracted-metadata-table-card">
-                      <h4>📋 Extracted Document Metadata Comparison</h4>
+                      <h4>Extracted Document Metadata Comparison</h4>
                       <div className="table-wrapper">
                         <table className="comparison-table">
                           <thead>
@@ -731,7 +747,7 @@ function CandidateVerification() {
 
                     {/* Fraud Risk Assessment Indicators */}
                     <div className="fraud-indicators-card">
-                      <h4>🛡️ Forensic Integrity Indicators</h4>
+                      <h4>Forensic Integrity Indicators</h4>
                       <div className="indicators-list">
                         {verifyResult.fraud_indicators.map((ind, idx) => (
                           <div key={idx} className="indicator-row">

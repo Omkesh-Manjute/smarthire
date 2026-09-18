@@ -205,22 +205,22 @@ function Navigation() {
   }
 
   const atsSubModules = [
-    { id: 'jobs', label: 'Jobs Hub', desc: 'Manage vacancies & scrape JDs', icon: '💼' },
-    { id: 'candidates', label: 'Candidates Directory', desc: 'Profiles, resumes & filters', icon: '👤' },
-    { id: 'pipeline', label: 'Visual Pipeline', desc: 'Kanban board & hiring stages', icon: '📈' },
-    { id: 'screening', label: 'Video & Audio Screening', desc: 'PeekHire 1-way video & voice screening', icon: '🎥' },
-    { id: 'submissions', label: 'Submissions & RTR', desc: 'Client submissions & tracking', icon: '📤' },
+    { id: 'jobs', label: 'Jobs Hub', desc: 'Manage vacancies & scrape JDs' },
+    { id: 'candidates', label: 'Candidates Directory', desc: 'Profiles, resumes & filters' },
+    { id: 'pipeline', label: 'Visual Pipeline', desc: 'Kanban board & hiring stages' },
+    { id: 'screening', label: 'Video & Audio Screening', desc: 'PeekHire 1-way video & voice screening' },
+    { id: 'submissions', label: 'Submissions & RTR', desc: 'Client submissions & tracking' },
   ]
 
   const appLauncherItems = [
-    { title: 'AI Recruiter ATS', desc: 'Core talent pipeline & screening suite', icon: '💼', path: '/ats', color: '#4f46e5' },
-    { title: 'Executive Console', desc: 'Command center & high-level stats', icon: '📊', path: '/dashboard', color: '#2563eb', adminOnly: true },
-    { title: 'Intelligence Reports', desc: 'Conversion charts & hiring velocity', icon: '📑', path: '/reports', color: '#059669', adminOnly: true },
-    { title: 'LinkedIn Automation', desc: 'Auto-post openings & talent outreach', icon: '🌐', path: '/linkedin-posts', color: '#0284c7', adminOnly: true },
-    { title: 'AI Branding Studio', desc: 'Social flyers, banners & marketing', icon: '🎨', path: '/branding', color: '#7c3aed', adminOnly: true },
-    { title: 'Recruiter Inbox', desc: 'Direct 1-on-1 candidate messaging', icon: '💬', path: '/inbox', color: '#ea580c' },
-    { title: 'Public Job Board', desc: 'Candidate-facing career portal', icon: '🚀', path: '/jobs', color: '#16a34a' },
-    { title: 'Pricing & Plans', desc: 'Enterprise billing & upgrades', icon: '💳', path: '/pricing', color: '#475569', adminOnly: true },
+    { title: 'AI Recruiter ATS', desc: 'Core talent pipeline & screening suite', path: '/ats', color: '#4f46e5' },
+    { title: 'Executive Console', desc: 'Command center & high-level stats', path: '/dashboard', color: '#2563eb', adminOnly: true },
+    { title: 'Intelligence Reports', desc: 'Conversion charts & hiring velocity', path: '/reports', color: '#059669', adminOnly: true },
+    { title: 'LinkedIn Automation', desc: 'Auto-post openings & talent outreach', path: '/linkedin-posts', color: '#0284c7', adminOnly: true },
+    { title: 'AI Branding Studio', desc: 'Social flyers, banners & marketing', path: '/branding', color: '#7c3aed', adminOnly: true },
+    { title: 'Recruiter Inbox', desc: 'Direct 1-on-1 candidate messaging', path: '/inbox', color: '#ea580c' },
+    { title: 'Public Job Board', desc: 'Candidate-facing career portal', path: '/jobs', color: '#16a34a' },
+    { title: 'Pricing & Plans', desc: 'Enterprise billing & upgrades', path: '/pricing', color: '#475569', adminOnly: true },
   ]
 
   return (
@@ -280,8 +280,8 @@ function Navigation() {
                               navigate(app.path)
                             }}
                           >
-                            <div className="launcher-icon-box" style={{ background: `${app.color}15`, color: app.color }}>
-                              {app.icon}
+                            <div className="launcher-icon-box" style={{ background: `${app.color}15`, color: app.color, fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              {app.title.charAt(0)}
                             </div>
                             <div className="launcher-item-text">
                               <span className="launcher-item-name">{app.title}</span>
@@ -330,7 +330,6 @@ function Navigation() {
                     to="/dashboard"
                     className={`nav-tab-item ${location.pathname === '/dashboard' ? 'active' : ''}`}
                   >
-                    <span className="nav-tab-icon">📊</span>
                     <span>{isEmployee ? 'My Workspace' : 'Dashboard'}</span>
                   </Link>
                 )}
@@ -352,7 +351,6 @@ function Navigation() {
                       onClick={() => setAtsMenuOpen(false)}
                       style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                     >
-                      <span className="nav-tab-icon">💼</span>
                       <span>ATS Workspace</span>
                       <span
                         onClick={(e) => {
@@ -378,7 +376,6 @@ function Navigation() {
                             className="dropdown-item-btn"
                             onClick={() => navigateToAtsTab(sub.id)}
                           >
-                            <span className="dropdown-item-icon">{sub.icon}</span>
                             <div className="dropdown-item-content">
                               <span className="dropdown-item-label">{sub.label}</span>
                               <span className="dropdown-item-sub">{sub.desc}</span>
@@ -407,7 +404,6 @@ function Navigation() {
                     to="/reports"
                     className={`nav-tab-item ${location.pathname === '/reports' ? 'active' : ''}`}
                   >
-                    <span className="nav-tab-icon">📑</span>
                     <span>Reports</span>
                   </Link>
                 )}
@@ -417,7 +413,6 @@ function Navigation() {
                     to="/jobs"
                     className={`nav-tab-item ${location.pathname === '/jobs' ? 'active' : ''}`}
                   >
-                    <span className="nav-tab-icon">🚀</span>
                     <span>Careers</span>
                   </Link>
                 )}
@@ -452,11 +447,9 @@ function Navigation() {
                   <button
                     className={`nav-role-switcher-pill ${isSuperAdmin ? 'admin-theme' : 'recruiter-theme'}`}
                     onClick={toggleRoleMode}
-                    title="Click to toggle workspace view mode (Admin ⇄ Recruiter)"
+                    title="Click to toggle workspace view mode (Admin / Recruiter)"
                   >
-                    <span className="role-icon">{isSuperAdmin ? '👑' : '💼'}</span>
                     <span className="role-label">{isSuperAdmin ? 'Admin' : 'Recruiter'}</span>
-                    <span className="role-switch-badge">⇄</span>
                   </button>
                 )}
 
@@ -503,7 +496,7 @@ function Navigation() {
                             {effectiveDisplayEmail}
                           </div>
                           <div className="profile-role-tag" style={{ background: isEmployee ? '#dcfce7' : undefined, color: isEmployee ? '#166534' : undefined }}>
-                            {isEmployee ? `🔒 Employee (${user?.parentRecruiterName ? 'reports to ' + user.parentRecruiterName : 'Team Member'})` : isManager ? '👔 Manager Console' : isSuperAdmin ? '👑 Super Admin Console' : '💼 Lead Recruiter Portal'}
+                            {isEmployee ? `Employee (${user?.parentRecruiterName ? 'reports to ' + user.parentRecruiterName : 'Team Member'})` : isManager ? 'Manager Console' : isSuperAdmin ? 'Super Admin Console' : 'Lead Recruiter Portal'}
                           </div>
                         </div>
                       </div>
@@ -521,7 +514,6 @@ function Navigation() {
                               navigate('/linkedin-posts')
                             }}
                           >
-                            <span className="menu-link-icon">🌐</span>
                             <div className="menu-link-text-wrap">
                               <span className="menu-link-title">LinkedIn Automation Studio</span>
                               <span className="menu-link-desc">Auto-post openings & outreach</span>
@@ -538,7 +530,6 @@ function Navigation() {
                               setSearchModalOpen(true)
                             }}
                           >
-                            <span className="menu-link-icon">🔍</span>
                             <div className="menu-link-text-wrap">
                               <span className="menu-link-title">Spotlight Search</span>
                               <span className="menu-link-desc">Search candidates & requisitions</span>
@@ -556,7 +547,6 @@ function Navigation() {
                               navigateToAtsTab('jobs')
                             }}
                           >
-                            <span className="menu-link-icon">💼</span>
                             <div className="menu-link-text-wrap">
                               <span className="menu-link-title">Post New Vacancy</span>
                               <span className="menu-link-desc">Add requisition or scrape JD</span>
@@ -572,7 +562,6 @@ function Navigation() {
                             navigateToAtsTab('candidates')
                           }}
                         >
-                          <span className="menu-link-icon">👤</span>
                           <div className="menu-link-text-wrap">
                             <span className="menu-link-title">Add / Parse Candidate</span>
                             <span className="menu-link-desc">Upload resume docx/pdf</span>
@@ -587,7 +576,6 @@ function Navigation() {
                             navigateToAtsTab('screening')
                           }}
                         >
-                          <span className="menu-link-icon">🎥</span>
                           <div className="menu-link-text-wrap">
                             <span className="menu-link-title">Video & Voice Screening</span>
                             <span className="menu-link-desc">PeekHire async video & voice interviews</span>
@@ -602,7 +590,6 @@ function Navigation() {
                             navigate('/inbox')
                           }}
                         >
-                          <span className="menu-link-icon">💬</span>
                           <div className="menu-link-text-wrap">
                             <span className="menu-link-title">Candidate Inbox & Messages</span>
                             <span className="menu-link-desc">{isReportee ? `Direct chat with ${effectiveParentRecruiterName}` : '1-on-1 recruiter messaging'}</span>
@@ -620,7 +607,6 @@ function Navigation() {
                               toggleRoleMode()
                             }}
                           >
-                            <span className="menu-link-icon">⇄</span>
                             <div className="menu-link-text-wrap">
                               <span className="menu-link-title">Switch View Mode</span>
                               <span className="menu-link-desc">Active: {isSuperAdmin ? 'Super Admin Mode' : 'Recruiter Mode'}</span>
@@ -636,7 +622,6 @@ function Navigation() {
                               navigateToAtsTab('settings')
                             }}
                           >
-                            <span className="menu-link-icon">⚙️</span>
                             <div className="menu-link-text-wrap">
                               <span className="menu-link-title">Workspace Settings</span>
                               <span className="menu-link-desc">API keys, compliance & preferences</span>
@@ -652,7 +637,6 @@ function Navigation() {
                               navigate('/dashboard')
                             }}
                           >
-                            <span className="menu-link-icon">👥</span>
                             <div className="menu-link-text-wrap">
                               <span className="menu-link-title">Manage Team & Hierarchy</span>
                               <span className="menu-link-desc">Recruiter assignments & access</span>
@@ -668,7 +652,6 @@ function Navigation() {
                               navigate('/branding')
                             }}
                           >
-                            <span className="menu-link-icon">🎨</span>
                             <div className="menu-link-text-wrap">
                               <span className="menu-link-title">AI Branding Studio</span>
                               <span className="menu-link-desc">Social flyers & banners generator</span>
@@ -684,7 +667,6 @@ function Navigation() {
                               navigate('/pricing')
                             }}
                           >
-                            <span className="menu-link-icon">💳</span>
                             <div className="menu-link-text-wrap">
                               <span className="menu-link-title">Enterprise Plans & Billing</span>
                               <span className="menu-link-desc">Subscription & placement quotas</span>
@@ -696,7 +678,6 @@ function Navigation() {
                       <div className="profile-dropdown-footer">
                         <button className="profile-signout-btn" onClick={handleSignOut}>
                           <span>Sign Out of SmartHire</span>
-                          <span style={{ fontSize: '14px' }}>⎋</span>
                         </button>
                       </div>
                     </div>
@@ -740,42 +721,42 @@ function Navigation() {
                 <div className="mobile-section-label">Navigation</div>
                 {isPageAllowed('dashboard') && (
                   <Link to="/dashboard" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
-                    <span>📊 {isEmployee ? 'My Workspace' : 'Executive Dashboard'}</span>
+                    <span>{isEmployee ? 'My Workspace' : 'Executive Dashboard'}</span>
                   </Link>
                 )}
                 {!isEmployee && isPageAllowed('ats') && (
                   <Link to="/ats" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
-                    <span>💼 ATS Workspace</span>
+                    <span>ATS Workspace</span>
                   </Link>
                 )}
                 {isPageAllowed('reports') && (
                   <Link to="/reports" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
-                    <span>📑 Intelligence & Reports</span>
+                    <span>Intelligence & Reports</span>
                   </Link>
                 )}
                 {isSuperAdmin && isPageAllowed('linkedin') && (
                   <Link to="/linkedin-posts" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
-                    <span>🌐 LinkedIn Automation</span>
+                    <span>LinkedIn Automation</span>
                   </Link>
                 )}
                 {isSuperAdmin && isPageAllowed('branding') && (
                   <Link to="/branding" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
-                    <span>🎨 AI Branding Center</span>
+                    <span>AI Branding Center</span>
                   </Link>
                 )}
                 {!isEmployee && (
                   <Link to="/inbox" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
-                    <span>💬 Recruiter Inbox</span>
+                    <span>Recruiter Inbox</span>
                   </Link>
                 )}
                 {!isEmployee && isPageAllowed('jobs') && (
                   <Link to="/jobs" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
-                    <span>🚀 Public Careers</span>
+                    <span>Public Careers</span>
                   </Link>
                 )}
                 {isSuperAdmin && (
                   <Link to="/pricing" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
-                    <span>💳 Pricing Plans</span>
+                    <span>Pricing Plans</span>
                   </Link>
                 )}
 
@@ -783,15 +764,15 @@ function Navigation() {
                   <>
                     <div className="mobile-section-label">Role Switcher</div>
                     <button className="mobile-role-btn" onClick={toggleRoleMode}>
-                      <span>Current: {isSuperAdmin ? '👑 Super Admin' : '💼 Recruiter'}</span>
-                      <span>(Switch Mode ⇄)</span>
+                      <span>Current: {isSuperAdmin ? 'Super Admin' : 'Recruiter'}</span>
+                      <span style={{ fontSize: 12, opacity: 0.8 }}>(Switch Mode)</span>
                     </button>
                   </>
                 )}
 
                 <div className="mobile-drawer-footer">
                   <button className="btn btn-danger-mobile" onClick={handleSignOut}>
-                    Sign Out ⎋
+                    Sign Out
                   </button>
                 </div>
               </div>

@@ -372,28 +372,28 @@ function Terms() {
             {/* 4 Quick Highlights */}
             <div className="tf-trust-cards-grid">
               <div className="tf-trust-card">
-                <span className="tf-trust-icon">💼</span>
+                <span className="tf-trust-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
                 <div>
                   <div className="tf-trust-title">Enterprise VMS & ATS</div>
                   <div className="tf-trust-desc">Multi-role recruiter staffing workflow & fast submission command.</div>
                 </div>
               </div>
               <div className="tf-trust-card">
-                <span className="tf-trust-icon">🛡️</span>
+                <span className="tf-trust-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
                 <div>
                   <div className="tf-trust-title">99.9% Uptime SLA</div>
                   <div className="tf-trust-desc">High availability enterprise cloud infrastructure with sub-second sync.</div>
                 </div>
               </div>
               <div className="tf-trust-card">
-                <span className="tf-trust-icon">⚖️</span>
+                <span className="tf-trust-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
                 <div>
                   <div className="tf-trust-title">EEOC & Fair Staffing</div>
                   <div className="tf-trust-desc">Strict non-discrimination algorithms and compliance audit trails.</div>
                 </div>
               </div>
               <div className="tf-trust-card">
-                <span className="tf-trust-icon">🔐</span>
+                <span className="tf-trust-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
                 <div>
                   <div className="tf-trust-title">100% Talent Ownership</div>
                   <div className="tf-trust-desc">Your candidate records, resumes, and notes remain 100% yours.</div>
@@ -471,19 +471,19 @@ function Terms() {
                 
                 <div className="tf-roles-grid">
                   <div className="tf-role-card">
-                    <div className="tf-role-title" style={{ color: '#0284c7' }}>👑 Super Admin / Admin</div>
+                    <div className="tf-role-title" style={{ color: '#0284c7' }}>Super Admin / Admin</div>
                     <p className="tf-role-desc">Full organization governance, user provisioning, rate corridor controls, and master billing administration.</p>
                   </div>
                   <div className="tf-role-card">
-                    <div className="tf-role-title" style={{ color: '#d97706' }}>🛡️ Lead Manager / Approver</div>
+                    <div className="tf-role-title" style={{ color: '#d97706' }}>Lead Manager / Approver</div>
                     <p className="tf-role-desc">Team requisition assignment, candidate review, client submission approvals, and recruiter performance oversight.</p>
                   </div>
                   <div className="tf-role-card">
-                    <div className="tf-role-title" style={{ color: '#ea580c' }}>💼 Lead Recruiter</div>
+                    <div className="tf-role-title" style={{ color: '#ea580c' }}>Lead Recruiter</div>
                     <p className="tf-role-desc">Candidate intake, requisition sourcing, submission staging, rate negotiation, and client interview coordination.</p>
                   </div>
                   <div className="tf-role-card">
-                    <div className="tf-role-title" style={{ color: '#16a34a' }}>👤 Sourcing Specialist</div>
+                    <div className="tf-role-title" style={{ color: '#16a34a' }}>Sourcing Specialist</div>
                     <p className="tf-role-desc">Candidate profile building, resume parsing, and private candidate directory enrichment under supervision.</p>
                   </div>
                 </div>
@@ -510,7 +510,7 @@ function Terms() {
               <section id="eeoc-compliance" className="tf-legal-section">
                 <h2 className="tf-section-heading">5. Non-Discrimination & Equal Employment Opportunity (EEOC)</h2>
                 <div className="tf-callout-card tf-callout-blue">
-                  <div className="tf-callout-title">⚖️ Equal Opportunity Mandate</div>
+                  <div className="tf-callout-title">Equal Opportunity Mandate</div>
                   <p style={{ margin: 0, fontSize: '13.5px', color: '#1e3a8a', lineHeight: 1.6 }}>
                     Customers and users agree to use SmartHire in full compliance with federal, state, and international employment regulations, including Title VII of the Civil Rights Act, the Americans with Disabilities Act (ADA), and the Age Discrimination in Employment Act (ADEA).
                   </p>

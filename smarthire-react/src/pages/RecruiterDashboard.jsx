@@ -199,6 +199,76 @@ const getAvatarGradient = (str) => {
   return AVATAR_PALETTES[Math.abs(hash) % AVATAR_PALETTES.length]
 }
 
+// Clean candidate job title from Mojibake and UTF-8 encoding corruptions
+const cleanCandidateTitle = (title) => {
+  if (!title) return ''
+  return String(title)
+    .replace(/â€¦/g, '...')
+    .replace(/â€™/g, "'")
+    .replace(/â€œ/g, '"')
+    .replace(/â€/g, '"')
+    .replace(/Â/g, '')
+    .replace(/\u00a0/g, ' ')
+    .trim()
+}
+
+// Clean and accurate Candidate Source resolver (Dice, Monster, Careers, Email, or Recruiter)
+const getCandidateSourceDisplay = (c) => {
+  if (!c) return 'Direct Applicant'
+  
+  // 1. Check explicit intake source tags first
+  const src = String(c.source || c.sourceCategory || c.origin || '').toLowerCase().trim()
+  const emailSender = String(c.email_context?.sender_email || '').toLowerCase()
+  
+  if (src.includes('dice') || emailSender.includes('dice')) return 'Dice'
+  if (src.includes('monster') || emailSender.includes('monster')) return 'Monster'
+  if (src.includes('career') || src.includes('auto-apply')) return 'Careers Portal'
+  if (src.includes('spam') || src.includes('bulk') || src.includes('inbox') || src.includes('email') || src.includes('yahoo')) return 'Inbound Email'
+  if (src.includes('linkedin')) return 'LinkedIn'
+  if (src.includes('bench') || src.includes('vendor')) return 'Vendor Bench'
+  if (src.includes('referral')) return 'Referral'
+
+  // 2. If it is a manual entry by a dedicated team recruiter
+  const rec = String(c.recruiter || c.addedByName || c.referredByRecruiterName || '').trim()
+  const recNorm = rec.toLowerCase()
+  
+  // Avoid generic or system fallbacks
+  if (rec && recNorm !== 'admin' && recNorm !== 'recruiter' && !recNorm.includes('default') && !recNorm.includes('smarthire')) {
+    // If it says 'omkesh' or 'admin', unless it was an explicit manual entry by Omkesh, default to Inbound Email or Direct Applicant
+    if (recNorm === 'omkesh' && !c.isManualEntry) {
+      if (c.email_context || c.message_id) return 'Inbound Email'
+      return 'Direct Applicant'
+    }
+    return rec
+  }
+
+  const assignedBy = String(c.assignedBy || '').trim()
+  const assignedNorm = assignedBy.toLowerCase()
+  if (assignedBy && assignedNorm !== 'admin' && assignedNorm !== 'recruiter' && !assignedNorm.includes('default')) {
+    if (assignedNorm === 'omkesh' && !c.isManualEntry) {
+      if (c.email_context || c.message_id) return 'Inbound Email'
+      return 'Direct Applicant'
+    }
+    return assignedBy
+  }
+
+  // 3. Clean up any raw source text
+  if (c.source && typeof c.source === 'string' && c.source.trim()) {
+    const cleaned = c.source
+      .replace(/^Referred by\s+/i, '')
+      .replace(/^Email Spam Folder\s*\([^)]*\)/i, 'Inbound Email')
+      .replace(/^yahoo_n8n/i, 'Inbound Email')
+      .trim()
+    if (cleaned && cleaned.toLowerCase() !== 'recruiter' && cleaned.toLowerCase() !== 'admin') {
+      return cleaned
+    }
+  }
+
+  if (c.email_context || c.message_id) return 'Inbound Email'
+
+  return 'Direct Applicant'
+}
+
 function RecruiterDashboard() {
   const [jobs, setJobs] = useState([])
   const knownJobIdsRef = useRef(new Set())
@@ -269,7 +339,7 @@ function RecruiterDashboard() {
     if (!userToDelete) return
     const uEmail = (userToDelete.email || '').toLowerCase().trim()
     if (uEmail === 'omkesh@coolsofttech.com') {
-      alert('⚠️ Master Superadmin cannot be deleted.')
+      alert('Master Superadmin cannot be deleted.')
       return
     }
     const confirmDelete = window.confirm(
@@ -321,7 +391,7 @@ function RecruiterDashboard() {
       console.warn('Backend user delete sync notice:', err)
     }
 
-    setSaveToastMessage(`🗑️ User "${userToDelete.name}" deleted successfully!`)
+    setSaveToastMessage(`User "${userToDelete.name}" deleted successfully!`)
     setTimeout(() => setSaveToastMessage(null), 3500)
   }
 
@@ -485,17 +555,17 @@ function RecruiterDashboard() {
     const rawId = String(job.id || '').replace('J-', '')
     const applyUrl = `${window.location.origin}/jobs`
 
-    const postContent = `🚀 WE ARE ACTIVELY HIRING: ${title}
+    const postContent = `WE ARE ACTIVELY HIRING: ${title}
 
-📍 Location: ${location}
-🏢 Client: ${client}
-💼 Job Type: ${reqType}
-💰 Target Rate: ${payRate}
-🎯 Key Required Skills: ${skills}
+Location: ${location}
+Client: ${client}
+Job Type: ${reqType}
+Target Rate: ${payRate}
+Key Required Skills: ${skills}
 
 We are currently reviewing candidate profiles and scheduling immediate interviews. If you or someone in your network is looking for their next high-impact opportunity, apply directly below:
 
-🔗 Apply / Submit Profile: ${applyUrl}
+Apply / Submit Profile: ${applyUrl}
 
 #Hiring #SmartHire #CareerOpportunity #TechJobs #${skills.split(',')[0]?.replace(/[^a-zA-Z0-9]/g, '') || 'Tech'} #Staffing`
 
@@ -514,13 +584,13 @@ We are currently reviewing candidate profiles and scheduling immediate interview
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ customContent: linkedinPostText })
       })
-      setLinkedinSuccessMsg('🎉 Successfully published hiring post to LinkedIn!')
+      setLinkedinSuccessMsg('Successfully published hiring post to LinkedIn!')
       setTimeout(() => {
         setLinkedinModalJob(null)
         setLinkedinSuccessMsg('')
       }, 2500)
     } catch (err) {
-      setLinkedinSuccessMsg('✅ LinkedIn post text copied to clipboard!')
+      setLinkedinSuccessMsg('LinkedIn post text copied to clipboard.')
     } finally {
       setPostingLinkedIn(false)
     }
@@ -540,9 +610,9 @@ We are currently reviewing candidate profiles and scheduling immediate interview
         setJobs(list)
         const importedCount = scrapeData.imported ?? scrapeData.jobs?.length ?? 0
         if (importedCount > 0) {
-          setSaveToastMessage(`🎉 Successfully synced ${importedCount} new live requisitions into your portal!`)
+          setSaveToastMessage(`Successfully synced ${importedCount} new live requisitions into your portal!`)
         } else {
-          setSaveToastMessage(`🎉 Requisitions up to date! (${list.length} total active)`)
+          setSaveToastMessage(`Requisitions up to date! (${list.length} total active)`)
         }
         setTimeout(() => setSaveToastMessage(null), 4000)
 
@@ -550,7 +620,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
         if (Array.isArray(scrapeData.jobs) && scrapeData.jobs.length > 0) {
           scrapeData.jobs.slice(0, 5).forEach(job => {
             pushActivityNotification({
-              title: `💼 New Requisition: ${job.title}`,
+              title: `New Requisition: ${job.title}`,
               message: `Req #${job.reqId || job.id} · ${job.client || 'Client'} (${job.location || 'Location'}) · ${job.budget || '$75/hr'} is now open for candidate submissions.`,
               type: 'requisition',
               category: 'team',
@@ -560,7 +630,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
           })
         } else if (importedCount > 0) {
           pushActivityNotification({
-            title: `💼 ${importedCount} New Requisitions Synced!`,
+            title: `${importedCount} New Requisitions Synced!`,
             message: `Latest live job requisitions imported from JobsInHand.`,
             type: 'requisition',
             category: 'team',
@@ -791,8 +861,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                        (userEmail && (candAssigned.includes(userEmail) || candEmail.includes(userEmail))) ||
                        (userRef && candRef.includes(userRef)) ||
                        (userId && candCreator === userId) ||
-                       (firstName.length >= 3 && (candAssigned.includes(firstName) || candEmail.includes(firstName))) ||
-                       (c.pushedToJobsInHand && (!candAssigned || candAssigned === 'recruiter' || candAssigned.includes(firstName)))
+                       (firstName.length >= 3 && (candAssigned.includes(firstName) || candEmail.includes(firstName)))
 
         const isMyParentChild = (candParent && (candParent === userIdent || candParent.includes(userIdent) || userIdent.includes(candParent) || (firstName.length >= 3 && candParent.includes(firstName)))) ||
                                (candParentEmail && candParentEmail === userEmail) ||
@@ -815,12 +884,13 @@ We are currently reviewing candidate profiles and scheduling immediate interview
         const candAssigned = (c.assignedBy || c.recruiter || c.addedByName || c.submittedBy || c.lastChangedBy || '').toLowerCase().trim()
         const candEmail = (c.recruiterEmail || c.addedByEmail || '').toLowerCase().trim()
         const candRef = (c.recruiterRefCode || c.recruiterRef || '').toLowerCase().trim()
+        const candCreator = String(c.createdBy || '').toLowerCase().trim()
         return candAssigned === userIdent ||
                (userIdent.length >= 3 && (candAssigned.includes(userIdent) || userIdent.includes(candAssigned))) ||
                (userEmail && (candAssigned.includes(userEmail) || candEmail.includes(userEmail))) ||
                (userRef && candRef.includes(userRef)) ||
-               (firstName.length >= 3 && candAssigned.includes(firstName)) ||
-               (c.pushedToJobsInHand && (!candAssigned || candAssigned === 'recruiter' || candAssigned.includes(firstName)))
+               (userId && candCreator === userId) ||
+               (firstName.length >= 3 && candAssigned.includes(firstName))
       })
       return deduplicateCandidates(filtered)
     }
@@ -1284,7 +1354,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
               if (newlyAdded.length > 0) {
                 setJobs(processed)
                 pushActivityNotification({
-                  title: `💼 ${newlyAdded.length} New Requisition${newlyAdded.length > 1 ? 's' : ''} Synced!`,
+                  title: `${newlyAdded.length} New Requisition${newlyAdded.length > 1 ? 's' : ''} Synced!`,
                   message: newlyAdded.length === 1
                     ? `${newlyAdded[0].title} (Req #${newlyAdded[0].reqId || newlyAdded[0].id}) is now live.`
                     : `${newlyAdded[0].title} (Req #${newlyAdded[0].reqId}) and ${newlyAdded.length - 1} more jobs ingested from JobsInHand.`,
@@ -1352,7 +1422,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       if (newlyAdded.length > 0) {
         setJobs(prev => processJobsList([...newlyAdded, ...prev]))
         pushActivityNotification({
-          title: `💼 ${newlyAdded.length} New Requisition${newlyAdded.length > 1 ? 's' : ''} Synced!`,
+          title: `${newlyAdded.length} New Requisition${newlyAdded.length > 1 ? 's' : ''} Synced!`,
           message: newlyAdded.length === 1
             ? `${newlyAdded[0].title} (Req #${newlyAdded[0].reqId || newlyAdded[0].id}) is now live.`
             : `${newlyAdded[0].title} and ${newlyAdded.length - 1} more jobs added to ATS.`,
@@ -1482,7 +1552,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       }))
     } catch (e) {}
 
-    setSaveToastMessage('🗑️ Attachment deleted and removed from storage!')
+    setSaveToastMessage('Attachment deleted and removed from storage!')
     setTimeout(() => setSaveToastMessage(null), 3000)
   }
 
@@ -1501,7 +1571,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       if (rawId) localStorage.setItem(`smarthire_potential_candidates_${rawId}`, JSON.stringify(nextCands))
     } catch (e) {}
 
-    setSaveToastMessage('🗑️ Candidate removed from requisition list!')
+    setSaveToastMessage('Candidate removed from requisition list!')
     setTimeout(() => setSaveToastMessage(null), 3000)
   }
 
@@ -1623,7 +1693,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       return j
     }))
 
-    setSaveToastMessage(`✅ Requisition #${cleanId} saved successfully! (${assignedList.length} recruiter(s)/employee(s) assigned)`)
+    setSaveToastMessage(`Requisition #${cleanId} saved successfully. (${assignedList.length} recruiter(s)/employee(s) assigned)`)
     setTimeout(() => setSaveToastMessage(null), 4500)
   }
 
@@ -1633,7 +1703,7 @@ We are currently reviewing candidate profiles and scheduling immediate interview
   // Dispatches complete, executive-grade HTML Job Description to assigned recruiter
   const handleSendJdToRecruiter = async (targetRecruiter) => {
     if (!targetRecruiter || !targetRecruiter.email) {
-      setJdEmailToast({ type: 'error', message: `⚠️ Recruiter "${targetRecruiter?.name || 'Recruiter'}" does not have an email address configured.` })
+      setJdEmailToast({ type: 'error', message: `Recruiter "${targetRecruiter?.name || 'Recruiter'}" does not have an email address configured.` })
       setTimeout(() => setJdEmailToast(null), 5000)
       return { success: false }
     }
@@ -1833,20 +1903,20 @@ Email: ${myEmail}
       })
       const data = await res.json()
       if (data.success) {
-        setJdEmailToast({ type: 'success', message: `✅ Job Description successfully sent to ${recName} (${recEmail}) from ${myEmail}!` })
-        setSaveToastMessage(`✅ JD sent to ${recName} (${recEmail})!`)
+        setJdEmailToast({ type: 'success', message: `Job Description successfully sent to ${recName} (${recEmail}) from ${myEmail}!` })
+        setSaveToastMessage(`JD sent to ${recName} (${recEmail})!`)
         setTimeout(() => {
           setJdEmailToast(null)
           setSaveToastMessage(null)
         }, 5000)
         return { success: true }
       } else {
-        setJdEmailToast({ type: 'error', message: `❌ Failed to send JD to ${recName}: ${data.message || 'Error'}` })
+        setJdEmailToast({ type: 'error', message: `Failed to send JD to ${recName}: ${data.message || 'Error'}` })
         setTimeout(() => setJdEmailToast(null), 6000)
         return { success: false, message: data.message }
       }
     } catch (err) {
-      setJdEmailToast({ type: 'error', message: `❌ Error sending JD email: ${err.message}` })
+      setJdEmailToast({ type: 'error', message: `Error sending JD email: ${err.message}` })
       setTimeout(() => setJdEmailToast(null), 6000)
       return { success: false, message: err.message }
     } finally {
@@ -1865,7 +1935,7 @@ Email: ${myEmail}
     const assignedNames = editingFields.assignedRecruiters || []
     if (assignedNames.length === 0) {
       isBatchSendingRef.current = false
-      setJdEmailToast({ type: 'error', message: '⚠️ No recruiters are assigned to this requisition yet. Please assign at least one recruiter first.' })
+      setJdEmailToast({ type: 'error', message: 'No recruiters are assigned to this requisition yet. Please assign at least one recruiter first.' })
       setTimeout(() => setJdEmailToast(null), 4000)
       return
     }
@@ -1888,7 +1958,7 @@ Email: ${myEmail}
 
     if (targets.length === 0) {
       isBatchSendingRef.current = false
-      setJdEmailToast({ type: 'error', message: '⚠️ Could not find email profiles for the assigned recruiters.' })
+      setJdEmailToast({ type: 'error', message: 'Could not find email profiles for the assigned recruiters.' })
       setTimeout(() => setJdEmailToast(null), 4000)
       return
     }
@@ -1912,7 +1982,7 @@ Email: ${myEmail}
     }, 2000)
 
     if (successCount > 0) {
-      const msg = `✅ Job Description successfully sent to ${successCount} assigned recruiter(s)!` + (failedNames.length > 0 ? ` (Failed: ${failedNames.join(', ')})` : '')
+      const msg = `Job Description successfully sent to ${successCount} assigned recruiter(s)!` + (failedNames.length > 0 ? ` (Failed: ${failedNames.join(', ')})` : '')
       setJdEmailToast({ type: 'success', message: msg })
       setSaveToastMessage(msg)
       setTimeout(() => {
@@ -2091,13 +2161,13 @@ Email: ${myEmail}
       phone: c.phone || '',
       payRate: c.payRate || '74/hr',
       payRateType: c.rateType || c.payRateType || 'C2C',
-      assignedBy: c.assignedBy || c.recruiter || userName,
+      assignedBy: c.assignedBy || c.recruiter || (c.source ? c.source : 'Direct Applicant'),
       assignedOn: c.dateAdded || c.appliedDate || 'Aug 20, 2026 04:40 PM',
       status: c.status || 'Int-SubmittedToManager',
       statusComments: c.statusComments || 'Submitted',
       interview: c.interview || 'Select',
       rejectedReason: c.rejectedReason || 'Select',
-      lastChangedBy: c.lastChangedBy || c.recruiter || userName,
+      lastChangedBy: c.lastChangedBy || c.recruiter || 'Recruiter',
       lastChangedRole: c.lastChangedRole || 'Recruiter',
       lastChangedOn: c.lastChangedOn || 'Aug 20, 2026 04:40 PM',
       source: c.source || 'Direct',
@@ -2263,13 +2333,13 @@ Email: ${myEmail}
       name: c.name,
       payRate: c.payRate || '74/hr',
       payRateType: c.rateType || c.payRateType || 'C2C',
-      assignedBy: c.assignedBy || c.recruiter || userName,
+      assignedBy: c.assignedBy || c.recruiter || (c.source ? c.source : 'Direct Applicant'),
       assignedOn: c.dateAdded || 'Aug 20, 2026 04:40 PM',
       status: c.status || 'Int-SubmittedToManager',
       statusComments: c.statusComments || 'Submitted',
       interview: 'Select',
       rejectedReason: 'Select',
-      lastChangedBy: c.lastChangedBy || c.recruiter || userName,
+      lastChangedBy: c.lastChangedBy || c.recruiter || 'Recruiter',
       lastChangedRole: c.lastChangedRole || 'Recruiter',
       lastChangedOn: c.lastChangedOn || 'Aug 20, 2026 04:40 PM'
     }))
@@ -2597,7 +2667,7 @@ Email: ${myEmail}
         const topNames = list.slice(0, 3).map(c => c.name).join(', ')
         const bestScore = list[0]?.matchScore || 92
         pushActivityNotification({
-          title: `🎯 ${list.length} Candidate${list.length > 1 ? 's' : ''} Matched for Req #${jCleanId}`,
+          title: `${list.length} Candidate${list.length > 1 ? 's' : ''} Matched for Req #${jCleanId}`,
           message: `Hey ${recName}! ${list.length} of your sourced candidate(s) (${topNames}) are a ${bestScore}% Match for Req #${jCleanId} "${jobObj.title}". Check availability & submit!`,
           type: 'ai_match',
           category: 'ai',
@@ -2649,7 +2719,7 @@ Email: ${myEmail}
 
     // Trigger instant in-app activity notification and requisition sound chime
     pushActivityNotification({
-      title: '💼 New Requisition Created!',
+      title: 'New Requisition Created!',
       message: `${newJobObj.title} (Req #${newReqId}) is ready for sourcing.`,
       type: 'requisition',
       category: 'team',
@@ -2996,7 +3066,7 @@ Email: ${myEmail}
       }).catch(e => console.warn('Auto-send JD notice:', e))
     }
 
-    alert(`✅ Candidate ${fullName} (ID: ${candId}) has been successfully assigned to Requisition #${resolvedId || cleanId}!`)
+    alert(`Candidate ${fullName} (ID: ${candId}) has been successfully assigned to Requisition #${resolvedId || cleanId}!`)
     setViewMode('requisition')
     setActiveReqTab('potential')
   }
@@ -3139,7 +3209,7 @@ Email: ${myEmail}
       }).catch(e => console.warn('Auto-send JD notice:', e))
     }
 
-    alert(`✅ Candidate ${fullName} (ID: ${candId}) has been successfully assigned to Requisition #${resolvedId || cleanId}!`)
+    alert(`Candidate ${fullName} (ID: ${candId}) has been successfully assigned to Requisition #${resolvedId || cleanId}!`)
     setViewMode('requisition')
     setActiveReqTab('potential')
   }
@@ -3334,6 +3404,37 @@ Email: ${myEmail}
                                   subIds.some(sid => sid && candCreator === sid)
 
         if (!isMine && !isMyParentChild && !isSubordinateCand) return false
+      }
+
+      // ─── REQUISITION-SPECIFIC CANDIDATE PRIVACY SCOPING ───
+      // If candidate is attached / pushed to a specific requisition, unassigned recruiters must NOT see them
+      const cReqId = String(c.reqId || c.job_id || c.targetJobId || c.pushedReqId || '').replace(/^J-/, '').trim()
+      const isReqSpecific = Boolean(cReqId && (c.pushedToJobsInHand || c.isRequisitionSpecific || c.status === 'Int-SubmittedToManager'))
+      if (isReqSpecific && !isSuperAdmin) {
+        const userIdent = userName.toLowerCase().trim()
+        const userEmail = (currentUser?.email || '').toLowerCase().trim()
+        const firstName = (userName.split(' ')[0] || '').toLowerCase().trim()
+        const userId = String(currentUser?.id || currentUser?._id || '').toLowerCase().trim()
+
+        const targetReq = jobs.find(j => {
+          const jClean = String(resolveReqId ? resolveReqId(j.id, j) : j.id).replace(/^J-/, '').trim()
+          return jClean === cReqId || String(j.id).replace(/^J-/, '').trim() === cReqId
+        })
+        const isAssignedToThisReq = targetReq && Array.isArray(targetReq.assignedRecruiters) && targetReq.assignedRecruiters.some(r => {
+          const rNorm = String(r || '').toLowerCase().trim()
+          return rNorm === userIdent || (userIdent.length >= 3 && rNorm.includes(userIdent)) || (userEmail && rNorm.includes(userEmail)) || (firstName.length >= 3 && rNorm.includes(firstName))
+        })
+        const candRecruiter = (c.recruiter || c.assignedTo || c.assignedBy || c.addedByName || c.submittedBy || c.pushedBy || '').toLowerCase().trim()
+        const candEmail = (c.recruiterEmail || c.addedByEmail || '').toLowerCase().trim()
+        const candCreator = String(c.createdBy || '').toLowerCase().trim()
+
+        const isAuthor = candRecruiter === userIdent ||
+                         (userIdent.length >= 3 && (candRecruiter.includes(userIdent) || userIdent.includes(candRecruiter))) ||
+                         (userEmail && (candRecruiter.includes(userEmail) || candEmail.includes(userEmail))) ||
+                         (userId && candCreator === userId) ||
+                         (firstName.length >= 3 && candRecruiter.includes(firstName))
+
+        if (!isAssignedToThisReq && !isAuthor) return false
       }
 
       // Recruiter Name Filter (Assigned To)
@@ -4759,7 +4860,7 @@ Email: ${myEmail}
             <div className="tf-subbar-nav-right">
               {/* User Identity Pill */}
               <div className="tf-subbar-user-badge">
-                <span className="tf-subbar-user-avatar">👤</span>
+                <span className="tf-subbar-user-avatar" style={{ fontWeight: 'bold' }}>{userName.charAt(0)}</span>
                 <span className="tf-subbar-user-name">{userName}</span>
                 <span className="tf-subbar-user-role">
                   {isSuperAdmin ? 'Super Admin' : (isAdmin ? 'Admin' : (isManager ? 'Manager' : (isRecruiter ? 'Recruiter' : 'Employee')))}
@@ -4768,7 +4869,6 @@ Email: ${myEmail}
 
               {/* Quick Search Form */}
               <form onSubmit={handleQuickSearch} className="tf-quick-search-form">
-                <span className="tf-search-icon">🔍</span>
                 <input
                   type="text"
                   value={quickSearchId}
@@ -4831,7 +4931,7 @@ Email: ${myEmail}
                     title="Click to expand/collapse search filter criteria"
                   >
                     <h2 style={{ margin: 0, fontSize: '15px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                      {isEmployee ? `🔒 My Sourced Candidates Pool (${filteredCandidates.length})` : 'Search Candidate'}
+                      {isEmployee ? `My Sourced Candidates Pool (${filteredCandidates.length})` : 'Search Candidate'}
                     </h2>
 
                     <span style={{
@@ -4894,7 +4994,7 @@ Email: ${myEmail}
                         boxShadow: '0 1px 3px rgba(234, 88, 12, 0.3)'
                       }}
                     >
-                      <span>➕ Add / Parse Candidate & Resume</span>
+                      <span>Add / Parse Candidate & Resume</span>
                     </button>
                   </div>
                 </div>
@@ -4917,7 +5017,6 @@ Email: ${myEmail}
                       <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>Skills:</label>
                       <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                         <input type="text" value={candFilters.skills} onChange={e => setCandFilters({ ...candFilters, skills: e.target.value })} style={{ flex: 1, padding: '3px 6px', fontSize: '11px', border: '1px solid #cbd5e1' }} />
-                        <span style={{ fontSize: '12px', cursor: 'pointer', color: '#0066cc' }}>❓</span>
                       </div>
 
                       <label style={{ color: '#1e3a8a', fontWeight: 'bold' }}>City:</label>
@@ -5123,7 +5222,7 @@ Email: ${myEmail}
                         <tr>
                           <td colSpan="11" style={{ padding: '36px', textAlign: 'center', color: '#64748b' }}>
                             <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#0f172a', marginBottom: '4px' }}>
-                              {isEmployee ? '📁 Your Candidate Pool is Empty' : 'No candidates found matching search criteria.'}
+                              {isEmployee ? 'Your Candidate Pool is Empty' : 'No candidates found matching search criteria.'}
                             </div>
                             <div style={{ fontSize: '11.5px', color: '#64748b', marginBottom: '12px' }}>
                               {isEmployee
@@ -5160,7 +5259,7 @@ Email: ${myEmail}
                                 }}
                                 style={{ background: '#ea580c', color: '#ffffff', border: 'none', padding: '6px 18px', fontSize: '12px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer' }}
                               >
-                                ➕ Add First Candidate to Pool
+                                Add First Candidate to Pool
                               </button>
                             )}
                           </td>
@@ -5173,7 +5272,7 @@ Email: ${myEmail}
                           }}>
                             {/* Scr? Checkmark */}
                             <td style={{ padding: '4px 6px', textAlign: 'center' }}>
-                              <span style={{ color: '#16a34a', fontSize: '12px' }} title="Screened">🟢</span>
+                              <span style={{ color: '#16a34a', fontWeight: 'bold', fontSize: '12px' }} title="Screened">✓</span>
                             </td>
 
                             {/* Name Link */}
@@ -5186,8 +5285,8 @@ Email: ${myEmail}
                             </td>
 
                             {/* Job Title */}
-                            <td style={{ padding: '4px 8px', color: '#000000' }} title={c.fullRole || c.role}>
-                              {c.fullRole || c.role}
+                            <td style={{ padding: '4px 8px', color: '#000000' }} title={cleanCandidateTitle(c.fullRole || c.role)}>
+                              {cleanCandidateTitle(c.fullRole || c.role)}
                             </td>
 
                             {/* Exp */}
@@ -5215,15 +5314,15 @@ Email: ${myEmail}
                               {c.workAuth || 'US Citizen'}
                             </td>
 
-                            {/* Recruiter / Added By */}
+                            {/* Sourced By */}
                             <td style={{ padding: '4px 8px', color: '#000000' }}>
-                              {c.recruiter || c.assignedTo || c.addedByName || userName}
+                              {getCandidateSourceDisplay(c)}
                             </td>
 
                             {/* Resume Icon */}
                             <td style={{ padding: '4px 6px', textAlign: 'center' }}>
-                              <span onClick={() => handleOpenCandidateView(c)} style={{ cursor: 'pointer', fontSize: '13px' }} title="View Details, Submission & Resume History">
-                                📄
+                              <span onClick={() => handleOpenCandidateView(c)} style={{ color: '#0033cc', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold', textDecoration: 'underline' }} title="View Details, Submission & Resume History">
+                                View
                               </span>
                             </td>
 
@@ -5248,7 +5347,7 @@ Email: ${myEmail}
                                   }}
                                   title="View candidate details, submission history, and resume versions"
                                 >
-                                  👁️ View
+                                  View
                                 </button>
                               </div>
                             </td>
@@ -5310,7 +5409,7 @@ Email: ${myEmail}
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <h2 style={{ margin: 0, fontSize: '16px', color: '#0f172a', fontWeight: '800', letterSpacing: '-0.01em', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-                        {isEmployee ? `📊 My Submission & Activity Report — ${userName}` : `📊 SmartWorks Recruitment & Activity Reports`}
+                        {isEmployee ? `My Submission & Activity Report — ${userName}` : `SmartWorks Recruitment & Activity Reports`}
                       </h2>
                       <span className="tf-live-telemetry-badge">
                         <span className="tf-telemetry-dot" /> LIVE SYNC ACTIVE
@@ -5351,7 +5450,7 @@ Email: ${myEmail}
                       className="tf-btn-export-csv"
                       title="Download Full Report in CSV Format"
                     >
-                      <span>📥 Export CSV</span>
+                      <span>Export CSV</span>
                     </button>
                   </div>
                 </div>
@@ -5363,7 +5462,6 @@ Email: ${myEmail}
                     <div className="tf-report-kpi-card" style={{ borderLeft: '4px solid #2563eb', background: 'linear-gradient(180deg, #f8fafc 0%, #eff6ff 100%)' }}>
                       <div className="tf-report-kpi-top">
                         <span className="tf-report-kpi-label" style={{ color: '#1d4ed8' }}>SOURCED TALENT</span>
-                        <span className="tf-report-kpi-icon">🎯</span>
                       </div>
                       <div className="tf-report-kpi-val" style={{ color: '#1e3a8a' }}>
                         {reportMetrics.totalSourced}
@@ -5375,7 +5473,6 @@ Email: ${myEmail}
                     <div className="tf-report-kpi-card" style={{ borderLeft: '4px solid #475569', background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)' }}>
                       <div className="tf-report-kpi-top">
                         <span className="tf-report-kpi-label" style={{ color: '#475569' }}>TOTAL SUBMISSIONS</span>
-                        <span className="tf-report-kpi-icon">📑</span>
                       </div>
                       <div className="tf-report-kpi-val" style={{ color: '#0f172a' }}>
                         {reportMetrics.totalSubmissions}
@@ -5387,7 +5484,6 @@ Email: ${myEmail}
                     <div className="tf-report-kpi-card" style={{ borderLeft: '4px solid #d97706', background: 'linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%)' }}>
                       <div className="tf-report-kpi-top">
                         <span className="tf-report-kpi-label" style={{ color: '#b45309' }}>UNDER REVIEW</span>
-                        <span className="tf-report-kpi-icon">⏳</span>
                       </div>
                       <div className="tf-report-kpi-val" style={{ color: '#78350f' }}>
                         {reportMetrics.inReview}
@@ -5399,7 +5495,6 @@ Email: ${myEmail}
                     <div className="tf-report-kpi-card" style={{ borderLeft: '4px solid #0284c7', background: 'linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 100%)' }}>
                       <div className="tf-report-kpi-top">
                         <span className="tf-report-kpi-label" style={{ color: '#0369a1' }}>CLIENT INTERVIEWS</span>
-                        <span className="tf-report-kpi-icon">🎙️</span>
                       </div>
                       <div className="tf-report-kpi-val" style={{ color: '#0c4a6e' }}>
                         {reportMetrics.interviews}
@@ -5411,7 +5506,6 @@ Email: ${myEmail}
                     <div className="tf-report-kpi-card" style={{ borderLeft: '4px solid #059669', background: 'linear-gradient(180deg, #f0fdf4 0%, #ecfdf5 100%)' }}>
                       <div className="tf-report-kpi-top">
                         <span className="tf-report-kpi-label" style={{ color: '#047857' }}>SELECTED / HIRED</span>
-                        <span className="tf-report-kpi-icon">🏆</span>
                       </div>
                       <div className="tf-report-kpi-val" style={{ color: '#065f46' }}>
                         {reportMetrics.selected}
@@ -5423,7 +5517,6 @@ Email: ${myEmail}
                     <div className="tf-report-kpi-card" style={{ borderLeft: '4px solid #dc2626', background: 'linear-gradient(180deg, #fef2f2 0%, #fee2e2 100%)' }}>
                       <div className="tf-report-kpi-top">
                         <span className="tf-report-kpi-label" style={{ color: '#b91c1c' }}>REJECTED</span>
-                        <span className="tf-report-kpi-icon">🚫</span>
                       </div>
                       <div className="tf-report-kpi-val" style={{ color: '#991b1b' }}>
                         {reportMetrics.rejected}
@@ -5437,7 +5530,6 @@ Email: ${myEmail}
                     <div className="tf-report-filter-controls">
                       {/* Search */}
                       <div className="tf-report-search-wrap">
-                        <span className="tf-report-search-icon">🔍</span>
                         <input
                           type="text"
                           placeholder="Search candidate, req ID, client, job..."
@@ -5539,7 +5631,7 @@ Email: ${myEmail}
                           <tr>
                             <td colSpan="9" className="tf-empty-table-cell">
                               <div className="tf-empty-box">
-                                <span className="tf-empty-icon">📝</span>
+                                
                                 <strong>No Submissions Found</strong>
                                 <p>
                                   {isEmployee
@@ -5654,7 +5746,7 @@ Email: ${myEmail}
                                 {/* 3. Customer / Client */}
                                 <td className="td-cell">
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                    <span style={{ fontSize: '12px' }}>🏢</span>
+                                    
                                     <span className="tf-customer-name">{sub.customer || 'Enterprise Client'}</span>
                                   </div>
                                 </td>
@@ -5672,7 +5764,7 @@ Email: ${myEmail}
                                 {/* 5. Submission Date */}
                                 <td className="td-cell">
                                   <span className="tf-date-sub" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                    <span>📅</span> {sub.assignedOn || sub.lastChangedOn || 'Today'}
+                                    {sub.assignedOn || sub.lastChangedOn || 'Today'}
                                   </span>
                                 </td>
 
@@ -5718,7 +5810,7 @@ Email: ${myEmail}
                                 {/* 8. Submitted By */}
                                 <td className="td-cell">
                                   <span className="tf-recruiter-tag">
-                                    👤 {sub.assignedBy || sub.recruiter || userName}
+                                    {sub.assignedBy || sub.recruiter || userName}
                                   </span>
                                 </td>
 
@@ -5954,14 +6046,14 @@ Email: ${myEmail}
                       }}
                       style={{ background: '#1e3a8a', color: '#ffffff', border: 'none', padding: '4px 16px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '3px' }}
                     >
-                      🔍 Search ({resumeSearchMatchedCandidates.length} Matches)
+                      Search ({resumeSearchMatchedCandidates.length} Matches)
                     </button>
                   </div>
 
                   <div style={{ marginTop: '14px', borderTop: '1px solid #e2e8f0', paddingTop: '10px' }}>
                     <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>{isEmployee ? `📁 Sourced Candidates (${resumeSearchMatchedCandidates.length}):` : `Candidate Pool Results (${resumeSearchMatchedCandidates.length}):`}</span>
-                      {isEmployee && <span style={{ fontSize: '9.5px', color: '#16a34a', fontWeight: 'bold' }}>🔒 Private to you</span>}
+                      <span>{isEmployee ? `Sourced Candidates (${resumeSearchMatchedCandidates.length}):` : `Candidate Pool Results (${resumeSearchMatchedCandidates.length}):`}</span>
+                      {isEmployee && <span style={{ fontSize: '9.5px', color: '#16a34a', fontWeight: 'bold' }}>Private to you</span>}
                     </div>
 
                     <div style={{ maxHeight: '250px', overflowY: 'auto', fontSize: '11px', border: '1px solid #e2e8f0', borderRadius: '4px', background: '#ffffff' }}>
@@ -5991,9 +6083,9 @@ Email: ${myEmail}
                                 {c.workAuth && <span style={{ background: '#e0f2fe', color: '#0369a1', fontSize: '9.5px', padding: '1px 5px', borderRadius: '3px', fontWeight: 'bold' }}>{c.workAuth}</span>}
                               </div>
                               <div style={{ fontSize: '10.5px', color: '#64748b', marginTop: '2px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                                <span>📍 {c.city || c.location || 'Location on file'}</span>
-                                {c.email && <span>✉️ {c.email}</span>}
-                                {c.payRate && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>💵 {c.payRate}</span>}
+                                <span>{c.city || c.location || 'Location on file'}</span>
+                                {c.email && <span>{c.email}</span>}
+                                {c.payRate && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>{c.payRate}</span>}
                               </div>
                             </div>
 
@@ -6018,7 +6110,7 @@ Email: ${myEmail}
                                   boxShadow: '0 1px 2px rgba(234, 88, 12, 0.25)'
                                 }}
                               >
-                                ➕ Add to this Position
+                                Add to this Position
                               </button>
 
                               {/* Edit details & rates before submission */}
@@ -6055,7 +6147,7 @@ Email: ${myEmail}
                                   padding: '3px 6px'
                                 }}
                               >
-                                👁️ Profile
+                                Profile
                               </button>
                             </div>
                           </div>
@@ -6086,12 +6178,12 @@ Email: ${myEmail}
                     />
                     {newCandForm.isParsing && (
                       <div style={{ fontSize: '11px', color: '#d97706', fontWeight: 'bold', marginTop: '4px' }}>
-                        ⏳ Extracting candidate information from resume...
+                        Extracting candidate information from resume...
                       </div>
                     )}
                     {newCandForm.parseSuccess && (
                       <div style={{ fontSize: '11px', color: '#16a34a', fontWeight: 'bold', marginTop: '4px' }}>
-                        ✅ Resume parsed successfully! Details populated below (you can edit them).
+                        Resume parsed successfully! Details populated below (you can edit them).
                       </div>
                     )}
                   </div>
@@ -6190,7 +6282,7 @@ Email: ${myEmail}
                       gap: '5px'
                     }}
                   >
-                    👁️ Open Full Profile Modal
+                    Open Full Profile Modal
                   </button>
                 </div>
               </div>
@@ -6364,7 +6456,7 @@ Email: ${myEmail}
                             <span style={{ color: '#0066cc', textDecoration: 'underline', cursor: 'pointer', fontWeight: 'bold' }}>
                               {submissionCandidate.resumeName || `${submissionCandidate.firstName || 'Candidate'}_Resume.docx`}
                             </span>
-                            <span style={{ cursor: 'pointer' }}>✏️</span>
+                            <span style={{ cursor: 'pointer' }}>Edit</span>
                           </div>
 
                           <label style={{ color: '#1e3a8a', textAlign: 'right' }}>Preferences for Placement:</label>
@@ -6429,7 +6521,7 @@ Email: ${myEmail}
                             onClick={handleAssignCandidateToReq}
                             style={{ background: '#0033cc', color: '#ffffff', border: 'none', padding: '4px 18px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '2px' }}
                           >
-                            💾 Save &amp; Add to Position
+                            Save &amp; Add to Position
                           </button>
                           <button type="button" onClick={() => { setViewMode('requisition'); setActiveReqTab('potential'); }} style={{ background: '#f1f5f9', border: '1px solid #94a3b8', padding: '4px 14px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer' }}>
                             Cancel
@@ -6447,7 +6539,7 @@ Email: ${myEmail}
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                         <h4 style={{ margin: 0, fontSize: '13px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                          🛠️ Technical Skills & Competency Matrix
+                          Technical Skills & Competency Matrix
                         </h4>
                         <span style={{ fontSize: '11px', color: '#64748b' }}>Total Skills: {(submissionCandidate.skills?.length || 6)}</span>
                       </div>
@@ -6507,7 +6599,7 @@ Email: ${myEmail}
                               <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', background: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
                                 <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0f172a' }}>{skillName}</td>
                                 <td style={{ padding: '6px 8px', color: '#475569' }}>{expYears} Years</td>
-                                <td style={{ padding: '6px 8px', color: '#eab308' }}>★★★★★</td>
+                                <td style={{ padding: '6px 8px', color: '#2563eb', fontWeight: '600' }}>Proficient</td>
                                 <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold' }}>2026 (Current)</td>
                                 <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                   <span
@@ -6518,10 +6610,10 @@ Email: ${myEmail}
                                         skills: currentSkills.filter((_, i) => i !== idx)
                                       }))
                                     }}
-                                    style={{ color: '#dc2626', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}
+                                    style={{ color: '#dc2626', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px' }}
                                     title="Remove Skill"
                                   >
-                                    🗑️
+                                    Remove
                                   </span>
                                 </td>
                               </tr>
@@ -6537,9 +6629,9 @@ Email: ${myEmail}
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                         <h4 style={{ margin: 0, fontSize: '13px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                          📋 Professional References & Verification
+                          Professional References & Verification
                         </h4>
-                        <span style={{ fontSize: '11px', color: '#16a34a', fontWeight: 'bold' }}>✅ References Verified</span>
+                        <span style={{ fontSize: '11px', color: '#16a34a', fontWeight: 'bold' }}>References Verified</span>
                       </div>
 
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', marginBottom: '16px' }}>
@@ -6554,14 +6646,14 @@ Email: ${myEmail}
                         </thead>
                         <tbody>
                           {[
-                            { name: 'Michael Jenkins', company: 'State of Virginia (VDOT)', role: 'Lead Architect / Supervisor', phone: '804-555-0192', email: 'm.jenkins@vdot.gov', status: '✅ Verified (Positive)' },
-                            { name: 'Sarah Montgomery', company: 'CapTech Ventures', role: 'Delivery Manager', phone: '804-555-0847', email: 'smontgomery@captech.com', status: '✅ Verified (Positive)' }
+                            { name: 'Michael Jenkins', company: 'State of Virginia (VDOT)', role: 'Lead Architect / Supervisor', phone: '804-555-0192', email: 'm.jenkins@vdot.gov', status: 'Verified (Positive)' },
+                            { name: 'Sarah Montgomery', company: 'CapTech Ventures', role: 'Delivery Manager', phone: '804-555-0847', email: 'smontgomery@captech.com', status: 'Verified (Positive)' }
                           ].map((ref, idx) => (
                             <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', background: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
                               <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#0f172a' }}>{ref.name}</td>
-                              <td style={{ padding: '6px 8px', color: '#334155' }}>{ref.company}</td>
+                              <td style={{ padding: '6px 8px', color: '#475569' }}>{ref.company}</td>
                               <td style={{ padding: '6px 8px', color: '#475569' }}>{ref.role}</td>
-                              <td style={{ padding: '6px 8px', color: '#0066cc' }}>{ref.phone}<br />{ref.email}</td>
+                              <td style={{ padding: '6px 8px', color: '#0066cc' }}>{ref.phone} | {ref.email}</td>
                               <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 'bold' }}>{ref.status}</td>
                             </tr>
                           ))}
@@ -6658,7 +6750,7 @@ Email: ${myEmail}
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                           <h4 style={{ margin: 0, fontSize: '13px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                            ⚖️ Legal & Compliance Documentation
+                            Legal & Compliance Documentation
                           </h4>
                           <span style={{ fontSize: '11px', color: '#64748b' }}>
                             Total Documents: {Object.keys(subCandDocs).filter(k => subCandDocs[k]?.fileData || subCandDocs[k]?.fileName).length} of {complianceCards.length}
@@ -6674,11 +6766,11 @@ Email: ${myEmail}
                               <div key={idx} style={{ background: isUploaded ? '#f0fdf4' : '#f8fafc', border: isUploaded ? '1px solid #86efac' : '1px solid #cbd5e1', borderRadius: '4px', padding: '10px 12px' }}>
                                 <div style={{ fontWeight: 'bold', color: '#1e3a8a', fontSize: '11.5px', marginBottom: '4px' }}>{doc.title}</div>
                                 <div style={{ color: isUploaded ? '#16a34a' : '#d97706', fontWeight: 'bold', fontSize: '11px', marginBottom: '6px' }}>
-                                  {isUploaded ? `✅ Verified & Uploaded (${item.size || 'On File'})` : `⚠️ ${doc.fallback}`}
+                                  {isUploaded ? `Verified & Uploaded (${item.size || 'On File'})` : `${doc.fallback}`}
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
                                   <span style={{ fontSize: '10.5px', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '110px' }}>
-                                    {isUploaded ? `📄 ${item.fileName || 'document.pdf'}` : 'Not uploaded'}
+                                    {isUploaded ? (item.fileName || 'document.pdf') : 'Not uploaded'}
                                   </span>
                                   <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                                     {isUploaded && (
@@ -6720,7 +6812,7 @@ Email: ${myEmail}
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                         <h4 style={{ margin: 0, fontSize: '13px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                          💬 Recruiter Interaction Notes & Activity Log
+                          Recruiter Interaction Notes & Activity Log
                         </h4>
                         <span style={{ fontSize: '11px', color: '#64748b' }}>Total Notes: {submissionCandidate.interactionNotes?.length || 3}</span>
                       </div>
@@ -6772,8 +6864,8 @@ Email: ${myEmail}
                         ).map((n, idx) => (
                           <div key={n.id || idx} style={{ background: '#f8fafc', borderLeft: '3px solid #1e3a8a', padding: '8px 12px', borderRadius: '0 4px 4px 0', fontSize: '11.5px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                              <span style={{ fontWeight: 'bold', color: '#1e3a8a' }}>👤 {n.author || 'Recruiter'}</span>
-                              <span style={{ fontSize: '10.5px', color: '#64748b' }}>🕒 {n.date || 'Recent'}</span>
+                              <span style={{ fontWeight: 'bold', color: '#1e3a8a' }}>{n.author || 'Recruiter'}</span>
+                              <span style={{ fontSize: '10.5px', color: '#64748b' }}>{n.date || 'Recent'}</span>
                             </div>
                             <div style={{ color: '#334155', lineHeight: '1.4' }}>{n.note}</div>
                           </div>
@@ -6786,7 +6878,7 @@ Email: ${myEmail}
                   {activeSubTab === 'history' && (
                     <div>
                       <h4 style={{ margin: '0 0 10px', fontSize: '13px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                        📊 Submission History Across Requisitions
+                        Submission History Across Requisitions
                       </h4>
 
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
@@ -6826,7 +6918,7 @@ Email: ${myEmail}
                   {activeSubTab === 'projects' && (
                     <div>
                       <h4 style={{ margin: '0 0 10px', fontSize: '13px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                        💼 Candidate Projects & Career History
+                        Candidate Projects & Career History
                       </h4>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -6871,7 +6963,7 @@ Email: ${myEmail}
                   {/* Viewer Toolbar */}
                   <div style={{ background: '#1e3a8a', color: '#ffffff', padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11.5px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold' }}>
-                      <span>📄 Document:</span>
+                      <span>Document:</span>
                       <select
                         value={submissionDocType}
                         onChange={e => setSubmissionDocType(e.target.value)}
@@ -6922,7 +7014,7 @@ Email: ${myEmail}
                         }}
                         style={{ background: '#16a34a', color: '#ffffff', border: 'none', padding: '2px 8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '2px', marginLeft: '4px' }}
                       >
-                        ⬇️ Download
+                        Download
                       </button>
                     </div>
                   </div>
@@ -6951,7 +7043,7 @@ Email: ${myEmail}
 
                             <div style={{ marginBottom: '12px' }}>
                               <div style={{ fontWeight: 'bold', color: '#1e3a8a', borderBottom: '1px solid #cbd5e1', paddingBottom: '2px', marginBottom: '4px', textTransform: 'uppercase', fontSize: '11.5px' }}>
-                                📌 Professional Summary
+                                Professional Summary
                               </div>
                               <p style={{ margin: 0, color: '#334155' }}>
                                 Experienced and results-oriented professional with over {submissionCandidate.experienceYears || '5'} years of hands-on expertise delivering robust technical solutions for enterprise and state-level projects. Adept at agile methodologies, cross-functional collaboration, technical requirement analysis, and delivering client-focused results on schedule.
@@ -6960,7 +7052,7 @@ Email: ${myEmail}
 
                             <div style={{ marginBottom: '12px' }}>
                               <div style={{ fontWeight: 'bold', color: '#1e3a8a', borderBottom: '1px solid #cbd5e1', paddingBottom: '2px', marginBottom: '4px', textTransform: 'uppercase', fontSize: '11.5px' }}>
-                                🛠️ Technical Competencies & Skills
+                                Technical Competencies & Skills
                               </div>
                               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                                 {(Array.isArray(submissionCandidate.skills) ? submissionCandidate.skills : ['Project Management', 'Technical Analysis', 'System Architecture']).map((s, idx) => (
@@ -6973,7 +7065,7 @@ Email: ${myEmail}
 
                             <div style={{ marginBottom: '12px' }}>
                               <div style={{ fontWeight: 'bold', color: '#1e3a8a', borderBottom: '1px solid #cbd5e1', paddingBottom: '2px', marginBottom: '4px', textTransform: 'uppercase', fontSize: '11.5px' }}>
-                                💼 Experience & Core Projects
+                                Experience & Core Projects
                               </div>
                               <div style={{ color: '#334155' }}>
                                 <div style={{ fontWeight: 'bold', color: '#0f172a' }}>Lead Specialist — Enterprise Project Delivery</div>
@@ -6988,7 +7080,7 @@ Email: ${myEmail}
 
                             <div>
                               <div style={{ fontWeight: 'bold', color: '#1e3a8a', borderBottom: '1px solid #cbd5e1', paddingBottom: '2px', marginBottom: '4px', textTransform: 'uppercase', fontSize: '11.5px' }}>
-                                🎓 Education & Certifications
+                                Education & Certifications
                               </div>
                               <div style={{ color: '#334155' }}>
                                 • Bachelor of Science in Computer Science & Engineering<br />
@@ -7011,15 +7103,15 @@ Email: ${myEmail}
 
                       const activeDoc = subDocs[submissionDocType] || ((submissionDocType === 'dlFront' || submissionDocType === 'dl') ? (subDocs.dlFront || subDocs.dl) : null)
                       const docLabels = {
-                        visa: { title: 'Work Authorization / Visa Copy (I-797)', icon: '🪪', verifiedDesc: `Verified (${submissionCandidate.workAuth || 'US Citizen'})` },
-                        dlFront: { title: "State Driver's License (Front Page)", icon: '🪪', verifiedDesc: `Verified Front Side (State of ${submissionCandidate.state || 'VA'})` },
-                        dl: { title: "State Driver's License (Front Page)", icon: '🪪', verifiedDesc: `Verified Front Side (State of ${submissionCandidate.state || 'VA'})` },
-                        dlBack: { title: "State Driver's License (Back Page)", icon: '🔄', verifiedDesc: 'Verified Back Side (PDF417 Barcode Scan OK)' },
-                        rtr: { title: 'Right To Represent (RTR)', icon: '✍️', verifiedDesc: `Signed & Active for Requisition #${resolveReqId(selectedReq?.id, selectedReq)}` },
-                        ssn: { title: 'Social Security Verification', icon: '🔒', verifiedDesc: `Verified (SSN: ***-**-${submissionCandidate.ssnLast4 || '8492'})` },
-                        coversheet: { title: 'SmartWorks Profile Cover Sheet', icon: '📋', verifiedDesc: 'Ready for Requisition Submission' }
+                        visa: { title: 'Work Authorization / Visa Copy (I-797)', verifiedDesc: `Verified (${submissionCandidate.workAuth || 'US Citizen'})` },
+                        dlFront: { title: "State Driver's License (Front Page)", verifiedDesc: `Verified Front Side (State of ${submissionCandidate.state || 'VA'})` },
+                        dl: { title: "State Driver's License (Front Page)", verifiedDesc: `Verified Front Side (State of ${submissionCandidate.state || 'VA'})` },
+                        dlBack: { title: "State Driver's License (Back Page)", verifiedDesc: 'Verified Back Side (PDF417 Barcode Scan OK)' },
+                        rtr: { title: 'Right To Represent (RTR)', verifiedDesc: `Signed & Active for Requisition #${resolveReqId(selectedReq?.id, selectedReq)}` },
+                        ssn: { title: 'Social Security Verification', verifiedDesc: `Verified (SSN: ***-**-${submissionCandidate.ssnLast4 || '8492'})` },
+                        coversheet: { title: 'SmartWorks Profile Cover Sheet', verifiedDesc: 'Ready for Requisition Submission' }
                       }
-                      const meta = docLabels[submissionDocType] || { title: 'Document Preview', icon: '📄', verifiedDesc: 'Compliance Document' }
+                      const meta = docLabels[submissionDocType] || { title: 'Document Preview', verifiedDesc: 'Compliance Document' }
 
                       if (activeDoc?.fileData) {
                         const isPdf = activeDoc.fileData.startsWith('data:application/pdf') || (activeDoc.fileName && activeDoc.fileName.toLowerCase().endsWith('.pdf'))
@@ -7029,8 +7121,8 @@ Email: ${myEmail}
                           <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '10px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px' }}>
                               <div>
-                                <span style={{ fontWeight: 'bold', color: '#1e3a8a', fontSize: '13px' }}>{meta.icon} {meta.title}</span>
-                                <div style={{ fontSize: '11px', color: '#16a34a', fontWeight: 'bold' }}>✅ {meta.verifiedDesc}</div>
+                                <span style={{ fontWeight: 'bold', color: '#1e3a8a', fontSize: '13px' }}>{meta.title}</span>
+                                <div style={{ fontSize: '11px', color: '#16a34a', fontWeight: 'bold' }}>{meta.verifiedDesc}</div>
                               </div>
                               <span style={{ fontSize: '11px', color: '#64748b' }}>{activeDoc.fileName || 'Attached'} ({activeDoc.size || 'On file'})</span>
                             </div>
@@ -7051,7 +7143,6 @@ Email: ${myEmail}
                               </div>
                             ) : (
                               <div style={{ padding: '30px 16px', textAlign: 'center', background: '#f8fafc', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-                                <div style={{ fontSize: '36px', marginBottom: '8px' }}>📄</div>
                                 <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '13px' }}>{activeDoc.fileName || meta.title}</div>
                                 <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>Document file attached ({activeDoc.size || 'Verified'})</div>
                               </div>
@@ -7077,7 +7168,7 @@ Email: ${myEmail}
                             borderRadius: '4px',
                             cursor: 'pointer'
                           }}>
-                            📁 Upload {meta.title}
+                            Upload {meta.title}
                             <input
                               type="file"
                               style={{ display: 'none' }}
@@ -7169,7 +7260,7 @@ Email: ${myEmail}
                       }}
                       title="Generate and Publish LinkedIn Post for this Requisition"
                     >
-                      <span>🌐 Post to LinkedIn</span>
+                      <span>Post to LinkedIn</span>
                     </button>
                   )}
                   <span style={{ color: '#0066cc', cursor: 'pointer' }} onClick={() => alert('Job posted to JobsInHand successfully!')}>
@@ -7530,7 +7621,7 @@ Email: ${myEmail}
                   }}
                   title="Scan candidate database, calculate match scores, and alert sourcing recruiters"
                 >
-                  <span>🎯 AI Match Finder</span>
+                  <span>AI Match Finder</span>
                 </button>
               </div>
 
@@ -7722,10 +7813,7 @@ Email: ${myEmail}
                       <div style={{ flex: '1 1 480px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#000080' }}>Description:*</label>
-                              <span style={{ fontSize: '12px', cursor: 'pointer' }} title="Print / Format JD">🖨️</span>
-                            </div>
+                            <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#000080' }}>Description:*</label>
                             <button
                               type="button"
                               onClick={() => {
@@ -7736,7 +7824,7 @@ Email: ${myEmail}
                                   client: editingFields.customer || selectedReq?.client
                                 })
                                 setEditingFields(prev => ({ ...prev, description: formatted }))
-                                setSaveToastMessage('✨ JD automatically reformatted and structured!')
+                                setSaveToastMessage('JD automatically reformatted and structured!')
                                 setTimeout(() => setSaveToastMessage(null), 3000)
                               }}
                               style={{
@@ -7755,7 +7843,7 @@ Email: ${myEmail}
                               }}
                               title="Clean and structure raw JD into professional sections with bullet points"
                             >
-                              <span>✨ Auto-Format Structure</span>
+                              <span>Auto-Format Structure</span>
                             </button>
                           </div>
                           <textarea
@@ -7903,7 +7991,7 @@ Email: ${myEmail}
                           }}
                           title="Send full Job Description to all assigned recruiters via your configured email"
                         >
-                          {isSendingBatchJd ? '⏳ Sending JDs...' : `📧 Send JD to Assigned (${(editingFields.assignedRecruiters || []).length})`}
+                          {isSendingBatchJd ? 'Sending JDs...' : `Send JD to Assigned (${(editingFields.assignedRecruiters || []).length})`}
                         </button>
                       </div>
                     </div>
@@ -7991,9 +8079,9 @@ Email: ${myEmail}
                                 </td>
                                 <td style={{ padding: '3px 6px', whiteSpace: 'nowrap' }}>
                                   {isAssigned ? (
-                                    <span style={{ color: '#16a34a', fontWeight: 'bold' }}>🟢 Assigned</span>
+                                    <span style={{ color: '#16a34a', fontWeight: 'bold' }}>Assigned</span>
                                   ) : (
-                                    <span style={{ color: '#94a3b8' }}>⚪ Not Assigned</span>
+                                    <span style={{ color: '#94a3b8' }}>Not Assigned</span>
                                   )}
                                 </td>
                                 <td style={{ padding: '3px 6px', textAlign: 'center', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
@@ -8020,7 +8108,7 @@ Email: ${myEmail}
                                     }}
                                     title={`Send full JD email to ${rec.email || rec.name}`}
                                   >
-                                    {sendingJdRecruiterId === (rec.email?.trim()) ? '⏳ Sending...' : '✉️ Send JD'}
+                                    {sendingJdRecruiterId === (rec.email?.trim()) ? 'Sending...' : 'Send JD'}
                                   </button>
                                   {(isAdmin || isManager) && rec.email !== 'omkesh@coolsofttech.com' && (
                                     <button
@@ -8041,7 +8129,7 @@ Email: ${myEmail}
                                       }}
                                       title="Permanently delete user"
                                     >
-                                      🗑️ Delete
+                                      Delete
                                     </button>
                                   )}
                                 </td>
@@ -8141,7 +8229,7 @@ Email: ${myEmail}
                           }}
                           title="Upload/Parse resume and add candidate directly to this requisition and your candidate pool"
                         >
-                          <span>➕ Add / Parse Candidate</span>
+                          <span>Add / Parse Candidate</span>
                         </button>
 
                         <button
@@ -8161,7 +8249,7 @@ Email: ${myEmail}
                             gap: '4px'
                           }}
                         >
-                          <span>🔍 Search Talent Directory &gt;&gt;</span>
+                          <span>Search Talent Directory &gt;&gt;</span>
                         </button>
                       </div>
 
@@ -8179,7 +8267,7 @@ Email: ${myEmail}
                           color: '#000080'
                         }}
                       >
-                        📜 Status Audit History
+                        Status Audit History
                       </button>
                     </div>
 
@@ -8245,7 +8333,7 @@ Email: ${myEmail}
                                       boxShadow: '0 1px 2px rgba(234, 88, 12, 0.25)'
                                     }}
                                   >
-                                    ➕ Add / Parse Candidate
+                                    Add / Parse Candidate
                                   </button>
                                   <span style={{ color: '#94a3b8' }}>or</span>
                                   <button
@@ -8262,7 +8350,7 @@ Email: ${myEmail}
                                       cursor: 'pointer'
                                     }}
                                   >
-                                    🔍 Search Talent Directory &gt;&gt;
+                                    Search Talent Directory &gt;&gt;
                                   </button>
                                 </div>
                               </td>
@@ -8303,7 +8391,7 @@ Email: ${myEmail}
                                             cursor: 'pointer'
                                           }}
                                         >
-                                          📎 {docCount} Doc{docCount > 1 ? 's' : ''}
+                                          {docCount} Doc{docCount > 1 ? 's' : ''}
                                         </span>
                                       )}
                                     </div>
@@ -8311,7 +8399,7 @@ Email: ${myEmail}
                                       onClick={() => handleOpenCandidateView(pc)}
                                       style={{ fontSize: '9.5px', color: '#0033cc', cursor: 'pointer' }}
                                     >
-                                      📄 View Details & History
+                                      View Details & History
                                     </span>
                                   </div>
                                 </td>
@@ -8461,7 +8549,7 @@ Email: ${myEmail}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                       <div>
                         <div style={{ fontWeight: 'bold', color: '#000080', fontSize: '12px' }}>
-                          🧠 AI Candidate Match & Fit Review for Requisition #{resolveReqId(selectedReq?.id, selectedReq)}
+                          AI Candidate Match & Fit Review for Requisition #{resolveReqId(selectedReq?.id, selectedReq)}
                         </div>
                         <div style={{ color: '#64748b', fontSize: '10.5px', marginTop: '2px' }}>
                           Instant match evaluation against <strong>{editingFields.title || selectedReq?.title}</strong> ({editingFields.customer || 'State Client'}).
@@ -8495,7 +8583,7 @@ Email: ${myEmail}
                                   {pc.name}
                                 </span>
                                 <span style={{ background: '#dcfce7', color: '#166534', padding: '2px 6px', fontSize: '10px', fontWeight: 'bold', borderRadius: 0, border: '1px solid #bbf7d0' }}>
-                                  {pc.aiAnalysis ? `🎯 ${pc.aiAnalysis.fitScore}% Match` : '🎯 92% Match (Strong)'}
+                                  {pc.aiAnalysis ? `${pc.aiAnalysis.fitScore}% Match` : '92% Match (Strong)'}
                                 </span>
                                 <span style={{ color: '#64748b', fontSize: '10.5px' }}>
                                   Rate: <strong>{pc.payRate} ({pc.payRateType || 'C2C'})</strong> | Sourced By: <strong>{pc.assignedBy}</strong>
@@ -8517,14 +8605,14 @@ Email: ${myEmail}
                                     cursor: 'pointer'
                                   }}
                                 >
-                                  🪄 Deep AI Analysis
+                                  Deep AI Analysis
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleManagerUpdateStatus(pc.id, 'Int-ApprovedByManager')}
                                   style={{ background: '#16a34a', color: '#ffffff', border: '1px solid #15803d', padding: '3px 8px', fontSize: '10.5px', fontWeight: 'bold', borderRadius: 0, cursor: 'pointer' }}
                                 >
-                                  ✅ Approve
+                                  Approve
                                 </button>
                               </div>
                             </div>
@@ -8620,13 +8708,13 @@ Email: ${myEmail}
                                   {att.filename}
                                 </td>
                                 <td style={{ padding: '5px 8px', textAlign: 'right', width: '70px' }}>
-                                  <span style={{ cursor: 'pointer', marginRight: '8px' }} title="Edit">✏️</span>
+                                  <span style={{ cursor: 'pointer', marginRight: '8px' }} title="Edit">Edit</span>
                                   <span
                                     onClick={() => handleDeleteAttachment(att.id)}
                                     style={{ cursor: 'pointer', color: '#dc2626', fontWeight: 'bold' }}
                                     title="Delete"
                                   >
-                                    ❌
+                                    ✕
                                   </span>
                                 </td>
                               </tr>
@@ -8738,7 +8826,7 @@ Email: ${myEmail}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                         <span style={{ fontWeight: 'bold', color: '#000080', fontSize: '12px' }}>
-                          📋 New Candidates &amp; Applications ({newCandidatesList.length})
+                          New Candidates &amp; Applications ({newCandidatesList.length})
                         </span>
                         <span style={{ background: '#dbeafe', color: '#1e40af', padding: '1px 6px', fontSize: '10px', fontWeight: 'bold', border: '1px solid #bfdbfe' }}>
                           Req #{resolveReqId(selectedReq?.id, selectedReq)}
@@ -8780,7 +8868,7 @@ Email: ${myEmail}
                             cursor: 'pointer'
                           }}
                         >
-                          ➕ Add / Submit Candidate
+                          Add / Submit Candidate
                         </button>
                       </div>
                     </div>
@@ -8863,7 +8951,7 @@ Email: ${myEmail}
                                       onClick={() => handleOpenCandidateView(pc)}
                                       style={{ fontSize: '9.5px', color: '#0033cc', cursor: 'pointer' }}
                                     >
-                                      📄 View Details &amp; History
+                                      View Details &amp; History
                                     </span>
                                   </div>
                                 </td>
@@ -9145,10 +9233,10 @@ Email: ${myEmail}
                         style={{ padding: '4px 6px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '2px', fontWeight: 'bold' }}
                       >
                         <option value="All">All Roles</option>
-                        <option value="manager">🛡️ Managers (Account Leads)</option>
-                        <option value="superadmin">👑 Super Admin</option>
-                        <option value="recruiter">💼 Lead Recruiters</option>
-                        <option value="employee">👤 Employees (Sub-Recruiters)</option>
+                        <option value="manager">Managers (Account Leads)</option>
+                        <option value="superadmin">Super Admin</option>
+                        <option value="recruiter">Lead Recruiters</option>
+                        <option value="employee">Employees (Sub-Recruiters)</option>
                       </select>
                     )}
                   </div>
@@ -9216,7 +9304,7 @@ Email: ${myEmail}
                                   borderColor: u.role === 'superadmin' || u.role === 'admin' ? '#bae6fd' : u.role === 'manager' ? '#fde68a' : u.role === 'recruiter' ? '#fed7aa' : '#bbf7d0',
                                   borderRadius: '2px', padding: '2px 6px', fontSize: '10px', fontWeight: 'bold'
                                 }}>
-                                  {u.role === 'superadmin' || u.role === 'admin' ? '👑 Super Admin' : u.role === 'manager' ? '🛡️ Manager / Lead' : u.role === 'recruiter' ? '💼 Lead Recruiter' : '👤 Employee (Sourcing)'}
+                                  {u.role === 'superadmin' || u.role === 'admin' ? 'Super Admin' : u.role === 'manager' ? 'Manager / Lead' : u.role === 'recruiter' ? 'Lead Recruiter' : 'Employee (Sourcing)'}
                                 </span>
                               </td>
 
@@ -9255,7 +9343,7 @@ Email: ${myEmail}
                                   color: u.isActive !== false ? '#16a34a' : '#dc2626',
                                   fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px'
                                 }}>
-                                  {u.isActive !== false ? '🟢 Active' : '🔴 Inactive'}
+                                  {u.isActive !== false ? 'Active' : 'Inactive'}
                                 </span>
                               </td>
 
@@ -9313,7 +9401,7 @@ Email: ${myEmail}
                                       }}
                                       title="Permanently Delete User"
                                     >
-                                      🗑️ Delete
+                                      Delete
                                     </button>
                                   )}
                                 </div>
@@ -9336,7 +9424,7 @@ Email: ${myEmail}
               {/* Breadcrumbs */}
               <div className="tf-portal-breadcrumbs">
                 <span onClick={() => { setActiveMainTab('requisitions'); setViewMode('portal'); }} className="crumb-link">
-                  🏠 Home
+                  Home
                 </span>
                 <span className="crumb-sep">/</span>
                 <span className="crumb-current">Requisitions</span>
@@ -9376,7 +9464,6 @@ Email: ${myEmail}
                     className="toggle-left"
                     style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
                   >
-                    <span className="toggle-icon">🔍</span>
                     <span>Advanced Requisition Filters</span>
                     <span className="toggle-count-pill">{filteredJobs.length} matches</span>
                     {isReqFilterActive && (
@@ -9573,9 +9660,9 @@ Email: ${myEmail}
                     <div className="tf-table-header-title-row">
                       <h2 className="tf-table-main-title">
                         {isEmployee
-                          ? '🔒 Employee Workspace — Assigned Requisitions'
+                          ? 'Employee Workspace — Assigned Requisitions'
                           : isRecruiter
-                          ? `💼 SmartWorks Talent Workspace — ${userName}`
+                          ? `SmartWorks Talent Workspace — ${userName}`
                           : 'SmartHire Recruitment Portal'}
                       </h2>
                       <span className="tf-live-telemetry-badge">
@@ -9608,7 +9695,7 @@ Email: ${myEmail}
                           className="tf-btn-action-linkedin"
                           title="Open LinkedIn Auto-Poster Studio"
                         >
-                          <span>🌐 LinkedIn Auto Hub</span>
+                          <span>LinkedIn Auto Hub</span>
                         </button>
                       </>
                     )}
@@ -9646,13 +9733,13 @@ Email: ${myEmail}
                           <td colSpan="15" className="tf-empty-table-cell">
                             {isEmployee ? (
                               <div className="tf-empty-box">
-                                <span className="tf-empty-icon">🔒</span>
+                                
                                 <strong>No Requisitions Assigned Yet</strong>
                                 <p>You are in Employee restricted mode. When your lead recruiter assigns a requisition to you, it will appear here.</p>
                               </div>
                             ) : (
                               <div className="tf-empty-box">
-                                <span className="tf-empty-icon">🔍</span>
+                                
                                 <strong>No open requisitions found</strong>
                                 <p style={{ margin: '6px 0 14px' }}>
                                   {isReqFilterActive
@@ -9679,7 +9766,7 @@ Email: ${myEmail}
                                       transition: 'all 0.15s ease'
                                     }}
                                   >
-                                    <span>🔄</span>
+                                    <span>Refresh</span>
                                     <span>Clear Filter & Show All {jobs.length} Requisitions</span>
                                   </button>
                                 )}
@@ -9806,7 +9893,7 @@ Email: ${myEmail}
                               {/* 5. Location */}
                               <td className="td-cell td-loc">
                                 <span className="tf-loc-tag" title={`Location:\n${locName}`}>
-                                  📍 {locName}
+                                  {locName}
                                 </span>
                               </td>
 
@@ -9829,7 +9916,7 @@ Email: ${myEmail}
                               {/* 8. Recruiter */}
                               <td className="td-cell td-rec">
                                 <span className="tf-recruiter-tag" title={`Assigned Recruiters:\n${recList || 'None Assigned'}`}>
-                                  👤 {truncatedRec || 'Team'}
+                                  {truncatedRec || 'Team'}
                                 </span>
                               </td>
 
@@ -9979,7 +10066,7 @@ Email: ${myEmail}
               {/* Modal Header */}
               <div style={{ background: '#ea580c', color: '#ffffff', padding: '12px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold' }}>
-                  {editingUser ? '✏️ Edit Team Member' : (isAdmin ? '➕ Add New Recruiter / Employee' : '➕ Add Employee Under My Account')}
+                  {editingUser ? 'Edit Team Member' : (isAdmin ? 'Add New Recruiter / Employee' : 'Add Employee Under My Account')}
                 </h3>
                 <span
                   onClick={() => setShowUserModal(false)}
@@ -10019,7 +10106,7 @@ Email: ${myEmail}
                     }
                     return u
                   })
-                  setSaveToastMessage(`✅ Updated profile for ${userFormData.name}!`)
+                  setSaveToastMessage(`Updated profile for ${userFormData.name}.`)
                 } else {
                   const newUserId = userFormData.role === 'employee' ? `emp-${Date.now().toString().slice(-4)}` : `rec-${Date.now().toString().slice(-4)}`
                   targetUser = {
@@ -10033,7 +10120,7 @@ Email: ${myEmail}
                     isActive: userFormData.isActive !== false
                   }
                   updatedList = [...teamUsers, targetUser]
-                  setSaveToastMessage(`🎉 User ${targetUser.name} created successfully as ${targetUser.role}!`)
+                  setSaveToastMessage(`User ${targetUser.name} created successfully as ${targetUser.role}!`)
                 }
 
                 saveTeamUsers(updatedList, targetUser)
@@ -10174,7 +10261,7 @@ Email: ${myEmail}
                           gap: '4px'
                         }}
                       >
-                        🗑️ Delete User
+                        Delete User
                       </button>
                     )}
                   </div>
@@ -10217,7 +10304,7 @@ Email: ${myEmail}
               <div style={{ background: '#ea580c', color: '#ffffff', padding: '12px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold' }}>
-                    ➕ Add Candidate to Requisition #{resolveReqId(selectedReq?.id, selectedReq)}
+                    Add Candidate to Requisition #{resolveReqId(selectedReq?.id, selectedReq)}
                   </h3>
                   <div style={{ fontSize: '11px', color: '#ffedd5', marginTop: '2px' }}>
                     {selectedReq?.title || 'Senior Software Engineer'}
@@ -10377,7 +10464,7 @@ Email: ${myEmail}
                 })
 
                 setShowAddCandidateModal(false)
-                setSaveToastMessage(`🎉 Candidate ${fullName} successfully added to Requisition #${cleanId}!`)
+                setSaveToastMessage(`Candidate ${fullName} successfully added to Requisition #${cleanId}!`)
                 setTimeout(() => setSaveToastMessage(null), 4000)
               }} style={{ padding: '18px 20px', fontSize: '12px' }}>
                 
@@ -10510,7 +10597,7 @@ Email: ${myEmail}
                 </div>
 
                 <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '4px', border: '1px solid #e2e8f0', marginBottom: '14px', fontSize: '11px', color: '#475569' }}>
-                  👤 Submitting as: <strong style={{ color: '#0284c7' }}>{userName}</strong> ({isAdmin ? 'Administrator' : (isRecruiter ? 'Lead Recruiter' : 'Employee')})
+                  Submitting as: <strong style={{ color: '#0284c7' }}>{userName}</strong> ({isAdmin ? 'Administrator' : (isRecruiter ? 'Lead Recruiter' : 'Employee')})
                 </div>
 
                 {/* Action Buttons */}
@@ -10552,12 +10639,12 @@ Email: ${myEmail}
               <div style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', color: '#ffffff', padding: '12px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '18px' }}>🧠</span>
+                    
                     <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold' }}>
                       AI Candidate Job-Fit Analysis & Smart Resume Viewer
                     </h3>
                     <span style={{ background: isManager ? '#fef3c7' : 'rgba(255,255,255,0.2)', color: isManager ? '#92400e' : '#ffffff', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 'bold' }}>
-                      {isAdmin ? '👑 ADMIN ACCESS' : '🛡️ MANAGER ACCESS'}
+                      {isAdmin ? 'ADMIN ACCESS' : 'MANAGER ACCESS'}
                     </span>
                   </div>
                   <div style={{ fontSize: '11px', color: '#e0f2fe', marginTop: '3px' }}>
@@ -10619,13 +10706,13 @@ Email: ${myEmail}
                         boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
                       }}
                     >
-                      {isAnalyzingAi ? '⏳ Analyzing Resume Fit...' : '🪄 Run AI Fit Analysis'}
+                      {isAnalyzingAi ? 'Analyzing Resume Fit...' : 'Run AI Fit Analysis'}
                     </button>
                   </div>
 
                   {isAnalyzingAi ? (
                     <div style={{ textAlign: 'center', padding: '20px', color: '#0369a1' }}>
-                      <div style={{ fontSize: '26px', marginBottom: '6px' }}>🤖 ⚙️</div>
+                      
                       <div style={{ fontWeight: 'bold', fontSize: '12.5px' }}>AI is analyzing candidate skills against requisition requirements...</div>
                       <div style={{ fontSize: '11px', color: '#64748b', marginTop: '3px' }}>Evaluating technical proficiencies, rate margin, and interview suitability</div>
                     </div>
@@ -10662,7 +10749,7 @@ Email: ${myEmail}
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
                         <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '10px 12px' }}>
                           <div style={{ fontWeight: 'bold', color: '#166534', fontSize: '11.5px', marginBottom: '6px' }}>
-                            ✅ Matched Technical Skills
+                            Matched Technical Skills
                           </div>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                             {Array.isArray(aiAnalysisResult.matchedSkills) && aiAnalysisResult.matchedSkills.length > 0 ? (
@@ -10679,7 +10766,7 @@ Email: ${myEmail}
 
                         <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '6px', padding: '10px 12px' }}>
                           <div style={{ fontWeight: 'bold', color: '#c2410c', fontSize: '11.5px', marginBottom: '6px' }}>
-                            ⚠️ Skill Gaps / Areas to Probe
+                            Skill Gaps / Areas to Probe
                           </div>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                             {Array.isArray(aiAnalysisResult.missingSkills) && aiAnalysisResult.missingSkills.length > 0 ? (
@@ -10737,7 +10824,7 @@ Email: ${myEmail}
                   {/* Skills Legend Bar */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px' }}>
                     <div style={{ fontWeight: 'bold', color: '#1e3a8a', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span>📄 In-Place Resume Viewer & Skills Highlighter</span>
+                      <span>In-Place Resume Viewer & Skills Highlighter</span>
                     </div>
                     <div style={{ display: 'flex', gap: '10px', fontSize: '10.5px' }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
@@ -10755,12 +10842,12 @@ Email: ${myEmail}
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' }}>
                     {(Array.isArray(editingFields.skills) ? editingFields.skills : ['Java', 'SQL', 'Project Management']).map((s, i) => (
                       <span key={i} style={{ background: '#dcfce7', color: '#15803d', border: '1px solid #86efac', padding: '1px 6px', borderRadius: '3px', fontSize: '10px', fontWeight: 'bold' }}>
-                        🟢 Required: {s}
+                        Required: {s}
                       </span>
                     ))}
                     {(Array.isArray(editingFields.desiredSkills) ? editingFields.desiredSkills : ['Cloud Security', 'Public Sector']).map((s, i) => (
                       <span key={i} style={{ background: '#fef9c3', color: '#854d0e', border: '1px solid #fde047', padding: '1px 6px', borderRadius: '3px', fontSize: '10px', fontWeight: 'bold' }}>
-                        🟡 Preferred: {s}
+                        Preferred: {s}
                       </span>
                     ))}
                   </div>
@@ -10857,7 +10944,7 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                     }}
                     style={{ background: '#16a34a', color: '#ffffff', border: 'none', padding: '6px 14px', fontSize: '11.5px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                   >
-                    <span>✅ Approve (Manager Review)</span>
+                    <span>Approve (Manager Review)</span>
                   </button>
                   <button
                     type="button"
@@ -10867,7 +10954,7 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                     }}
                     style={{ background: '#0284c7', color: '#ffffff', border: 'none', padding: '6px 14px', fontSize: '11.5px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                   >
-                    <span>📅 Schedule Client Interview</span>
+                    <span>Schedule Client Interview</span>
                   </button>
                   <button
                     type="button"
@@ -10877,13 +10964,13 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                         handleUpdatePotentialCandidate(aiCandidate.id, 'status', 'Int-RejectedByManager')
                         handleUpdatePotentialCandidate(aiCandidate.id, 'rejectedReason', reason || 'Skill Gap')
                         setShowAiFitModal(false)
-                        setSaveToastMessage(`❌ Candidate marked as Int-RejectedByManager (${reason || 'Skill Gap'})`)
+                        setSaveToastMessage(`Candidate marked as Int-RejectedByManager (${reason || 'Skill Gap'})`)
                         setTimeout(() => setSaveToastMessage(null), 4000)
                       }
                     }}
                     style={{ background: '#dc2626', color: '#ffffff', border: 'none', padding: '6px 14px', fontSize: '11.5px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                   >
-                    <span>❌ Reject Candidate</span>
+                    <span>Reject Candidate</span>
                   </button>
                 </div>
 
@@ -10917,7 +11004,7 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
               <div style={{ background: '#ea580c', color: '#ffffff', padding: '12px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold' }}>
-                    {candidateIntakeData.id ? '✏️ Edit Candidate & Update Resume' : '➕ Add Sourced Candidate to Pool'}
+                    {candidateIntakeData.id ? 'Edit Candidate & Update Resume' : 'Add Sourced Candidate to Pool'}
                   </h3>
                   <div style={{ fontSize: '11px', color: '#ffedd5', marginTop: '2px' }}>
                     Sourced by: <strong>{userName}</strong> ({isEmployee ? 'Employee' : 'Recruiter'})
@@ -11132,14 +11219,14 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                 }
 
                 setShowCandidateIntakeModal(false)
-                setSaveToastMessage(`🎉 Candidate ${fullName} successfully ${candidateIntakeData.id ? 'updated' : 'saved to your candidate pool'}!`)
+                setSaveToastMessage(`Candidate ${fullName} successfully ${candidateIntakeData.id ? 'updated' : 'saved to your candidate pool'}!`)
                 setTimeout(() => setSaveToastMessage(null), 4000)
               }} style={{ padding: '16px 20px', fontSize: '12px' }}>
 
                 {/* Resume Upload Box */}
                 <div style={{ background: '#f0fdf4', border: '1px dashed #22c55e', borderRadius: '4px', padding: '12px 14px', marginBottom: '14px' }}>
                   <div style={{ fontWeight: 'bold', color: '#166534', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span>📄 Smart Resume Upload (*.pdf, *.docx, *.doc)</span>
+                    <span>Smart Resume Upload (*.pdf, *.docx, *.doc)</span>
                   </div>
                   <div style={{ fontSize: '11px', color: '#475569', marginBottom: '8px' }}>
                     Upload or replace candidate resume to auto-fill candidate name, skills, email, and contact number:
@@ -11239,7 +11326,7 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                   />
                   {candidateIntakeData.resumeName && (
                     <div style={{ marginTop: '6px', fontSize: '11.5px', color: '#166534', fontWeight: 'bold' }}>
-                      Attached File: 📎 {candidateIntakeData.resumeName}
+                      Attached File: {candidateIntakeData.resumeName}
                     </div>
                   )}
                 </div>
@@ -11390,7 +11477,7 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                 {/* Optional Requisition Direct Assignment */}
                 <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '10px 12px', marginBottom: '14px' }}>
                   <label style={{ display: 'block', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '4px' }}>
-                    🎯 Assign Directly to Requisition (Optional)
+                    Assign Directly to Requisition (Optional)
                   </label>
                   <select
                     value={candidateIntakeData.targetJobId}
@@ -11422,7 +11509,7 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                     type="submit"
                     style={{ background: '#ea580c', color: '#ffffff', border: 'none', padding: '6px 22px', fontSize: '12px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer', boxShadow: '0 1px 3px rgba(234, 88, 12, 0.4)' }}
                   >
-                    {candidateIntakeData.targetJobId ? '💾 Save & Submit to Req' : '💾 Save to My Candidate Pool'}
+                    {candidateIntakeData.targetJobId ? 'Save & Submit to Req' : 'Save to My Candidate Pool'}
                   </button>
                 </div>
 
@@ -11447,7 +11534,7 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
               <div style={{ background: '#ea580c', color: '#ffffff', padding: '12px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold' }}>
-                    ➕ Assign Candidate to Requisition
+                    Assign Candidate to Requisition
                   </h3>
                   <div style={{ fontSize: '11px', color: '#ffedd5', marginTop: '2px' }}>
                     Candidate: <strong>{assignTargetCandidate.name}</strong> ({assignTargetCandidate.fullRole || assignTargetCandidate.role})
@@ -11536,7 +11623,7 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                 }
 
                 setShowAssignReqModal(false)
-                setSaveToastMessage(`🎉 Candidate ${assignTargetCandidate.name} successfully submitted to Requisition #${cleanReqId}!`)
+                setSaveToastMessage(`Candidate ${assignTargetCandidate.name} successfully submitted to Requisition #${cleanReqId}!`)
                 setTimeout(() => setSaveToastMessage(null), 4000)
               }} style={{ padding: '16px 20px', fontSize: '12px' }}>
 
@@ -11624,7 +11711,7 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                     type="submit"
                     style={{ background: '#ea580c', color: '#ffffff', border: 'none', padding: '6px 20px', fontSize: '12px', fontWeight: 'bold', borderRadius: '3px', cursor: 'pointer', boxShadow: '0 1px 3px rgba(234, 88, 12, 0.4)' }}
                   >
-                    🚀 Submit Candidate to Requisition
+                    Submit Candidate to Requisition
                   </button>
                 </div>
 
@@ -11675,7 +11762,7 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
               }}>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span>📜 Candidate Status Audit History & Timeline</span>
+                    <span>Candidate Status Audit History & Timeline</span>
                   </h3>
                   <p style={{ margin: '2px 0 0', fontSize: '11.5px', color: '#bfdbfe' }}>
                     Complete audit trail showing which recruiter/manager changed candidate status, approvals, and reasons.
@@ -11879,7 +11966,7 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                 }).catch(e => console.warn('Auto-send JD notice:', e))
               }
 
-              setSaveToastMessage(`🎉 Candidate ${cand.name} assigned to Requisition #${cleanReqId} & Job Description sent!`)
+              setSaveToastMessage(`Candidate ${cand.name} assigned to Requisition #${cleanReqId} & Job Description sent!`)
               setTimeout(() => setSaveToastMessage(null), 5000)
             }}
           />
@@ -11927,7 +12014,7 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
               }}>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span>🌐 LinkedIn Auto-Poster — Requisition #{String(linkedinModalJob.id || '').replace('J-', '')}</span>
+                    <span>LinkedIn Auto-Poster — Requisition #{String(linkedinModalJob.id || '').replace('J-', '')}</span>
                   </h3>
                   <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#e0f2fe' }}>
                     Generate, edit, and post directly to LinkedIn with candidate apply link and tags.
@@ -11994,7 +12081,7 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                 </div>
 
                 <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '10px 14px', marginBottom: '14px', fontSize: '11.5px', color: '#475569' }}>
-                  💡 <strong>Tip:</strong> Candidates who apply through this post will automatically appear in your Candidate Pool & Notifications.
+                  <strong>Tip:</strong> Candidates who apply through this post will automatically appear in your Candidate Pool & Notifications.
                 </div>
 
                 {/* Actions */}
@@ -12013,7 +12100,7 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                       cursor: 'pointer'
                     }}
                   >
-                    🌐 Open Bulk LinkedIn Studio &gt;&gt;
+                    Open Bulk LinkedIn Studio &gt;&gt;
                   </button>
 
                   <div style={{ display: 'flex', gap: '8px' }}>
@@ -12021,7 +12108,7 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                       type="button"
                       onClick={() => {
                         navigator.clipboard.writeText(linkedinPostText)
-                        setLinkedinSuccessMsg('📋 Post text copied to clipboard!')
+                        setLinkedinSuccessMsg('Post text copied to clipboard!')
                         setTimeout(() => setLinkedinSuccessMsg(''), 3000)
                       }}
                       style={{
@@ -12035,7 +12122,7 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                         cursor: 'pointer'
                       }}
                     >
-                      📋 Copy Text
+                      Copy Text
                     </button>
                     <button
                       type="button"
@@ -12053,7 +12140,7 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                         boxShadow: '0 2px 4px rgba(10,102,194,0.3)'
                       }}
                     >
-                      {postingLinkedIn ? '⏳ Posting to LinkedIn...' : '🚀 Post to LinkedIn (API)'}
+                      {postingLinkedIn ? 'Posting to LinkedIn...' : 'Post to LinkedIn (API)'}
                     </button>
                   </div>
                 </div>

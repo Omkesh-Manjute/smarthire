@@ -100,7 +100,7 @@ export default function AiMatchingCandidatesModal({
           alignItems: 'center'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '18px' }}>🎯</span>
+            
             <div>
               <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#ffffff' }}>
                 AI Proactive Candidate Matcher
@@ -142,7 +142,7 @@ export default function AiMatchingCandidatesModal({
           alignItems: 'center'
         }}>
           <div>
-            🤖 <strong>AI Matchmaker Found {matchingCandidates.length} Candidates</strong> from your sourcing pool matching skills & requirements. Check availability and submit with 1-Click!
+            <strong>AI Matchmaker Found {matchingCandidates.length} Candidates</strong> from your sourcing pool matching skills & requirements. Check availability and submit with 1-Click!
           </div>
           <div style={{ fontWeight: 'bold', color: '#0369a1' }}>
             Target Budget: {job.budget || '$75/hr'}
@@ -157,7 +157,7 @@ export default function AiMatchingCandidatesModal({
             <div style={{ border: '1px solid #7f9db9', background: '#f8fafc', padding: '14px', borderRadius: 0 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                 <div style={{ fontWeight: 'bold', color: '#000080', fontSize: '12px' }}>
-                  ✉️ Quick Availability Outreach to {selectedOutreachCand.name} ({selectedOutreachCand.email || 'N/A'})
+                  Quick Availability Outreach to {selectedOutreachCand.name} ({selectedOutreachCand.email || 'N/A'})
                 </div>
                 <button
                   type="button"
@@ -170,7 +170,7 @@ export default function AiMatchingCandidatesModal({
 
               {outreachSent ? (
                 <div style={{ background: '#dcfce7', color: '#166534', padding: '16px', textAlign: 'center', fontWeight: 'bold', fontSize: '12px' }}>
-                  ✅ Availability email sent successfully to {selectedOutreachCand.name}!
+                  Availability email sent to {selectedOutreachCand.name}.
                 </div>
               ) : (
                 <form onSubmit={handleSendOutreach} style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '11px' }}>
@@ -336,7 +336,7 @@ export default function AiMatchingCandidatesModal({
                             style={{ fontWeight: 'bold', fontSize: '12.5px', color: '#000080', cursor: 'pointer' }}
                             title="Click to view full profile & resume"
                           >
-                            👤 {cand.name}
+                            {cand.name}
                           </span>
 
                           <span style={{
@@ -356,12 +356,12 @@ export default function AiMatchingCandidatesModal({
                           </span>
 
                           <span style={{ color: '#0284c7', fontSize: '10.5px', fontWeight: 'bold' }}>
-                            📅 Avbl: {cand.avblDate || 'Immediate'}
+                            Avbl: {cand.avblDate || 'Immediate'}
                           </span>
 
                           {govtPts > 0 && (
                             <span style={{ background: '#f3e8ff', color: '#7c3aed', fontSize: '9.5px', padding: '1px 6px', border: '1px solid #d8b4fe', fontWeight: 'bold' }}>
-                              🏛️ Govt Exp
+                              Govt Exp
                             </span>
                           )}
                         </div>
@@ -382,7 +382,7 @@ export default function AiMatchingCandidatesModal({
                               borderRadius: 0
                             }}
                           >
-                            ✉️ Check Availability
+                            Check Availability
                           </button>
 
                           <button
@@ -424,7 +424,7 @@ export default function AiMatchingCandidatesModal({
                           <span style={{ color: '#64748b', fontWeight: 'bold' }}>Why match:</span>
                           {whyReasons.map((wr, wi) => (
                             <span key={wi} style={{ background: wr.t === 'good' ? '#dcfce7' : '#e0f2fe', color: wr.t === 'good' ? '#15803d' : '#0369a1', border: `1px solid ${wr.t === 'good' ? '#86efac' : '#bae6fd'}`, padding: '1px 6px' }}>
-                              {wr.t === 'good' ? '✅' : 'ℹ️'} {wr.r}
+                              {wr.t === 'good' ? '✓' : '•'} {wr.r}
                             </span>
                           ))}
                         </div>

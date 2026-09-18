@@ -149,7 +149,7 @@ function BlogPostContent({ post }) {
 
         {/* TOC */}
         <nav aria-label="Table of Contents" style={{ background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 10, padding: '18px 22px', margin: '32px 0', fontSize: 14 }}>
-          <strong style={{ color: '#0F172A', fontSize: 15, display: 'block', marginBottom: 10 }}>📋 Table of Contents</strong>
+          <strong style={{ color: '#0F172A', fontSize: 15, display: 'block', marginBottom: 10 }}>Table of Contents</strong>
           <ol style={{ margin: 0, paddingLeft: 20, lineHeight: 2, color: '#2563EB' }}>
             <li><a href="#what-is-w2" style={{ color: '#2563EB', textDecoration: 'none' }}>What Is W2 Employment?</a></li>
             <li><a href="#what-is-1099" style={{ color: '#2563EB', textDecoration: 'none' }}>What Is 1099 Independent Contracting?</a></li>
@@ -202,7 +202,7 @@ function BlogPostContent({ post }) {
         <p>This is the preferred model for experienced IT consultants because it typically offers the <strong>highest hourly rates</strong>, maximum tax efficiency through an S-Corp election, and maximum professional independence.</p>
 
         <div style={{ background: 'linear-gradient(135deg, #FFF7ED, #FFFBEB)', border: '1px solid #FED7AA', borderRadius: 10, padding: '18px 22px', margin: '20px 0', display: 'flex', gap: 12 }}>
-          <span style={{ fontSize: 20 }}>💡</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center' }}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"></path></svg></span>
           <div>
             <strong style={{ color: '#92400E', display: 'block', marginBottom: 4 }}>Pro Tip: S-Corp Election</strong>
             <p style={{ margin: 0, color: '#78350F', fontSize: 14.5, lineHeight: 1.7 }}>Most experienced IT contractors structure their C2C as an LLC that has elected S-Corp tax treatment. This allows you to split your income into a "reasonable salary" and "distributions," potentially saving thousands in self-employment taxes annually. Consult a CPA who specializes in contractor taxes.</p>
@@ -231,12 +231,12 @@ function BlogPostContent({ post }) {
             </thead>
             <tbody>
               {[
-                ['Business entity needed', '❌ No', '❌ No', '✅ Yes (LLC/Corp)'],
-                ['Tax withholding', '✅ Employer handles', '❌ You pay quarterly', '❌ You pay quarterly'],
-                ['Self-employment tax', '❌ Employer pays half', '✅ 15.3% (full)', '✅ Can optimize via S-Corp'],
+                ['Business entity needed', 'No', 'No', 'Yes (LLC/Corp)'],
+                ['Tax withholding', 'Employer handles', 'You pay quarterly', 'You pay quarterly'],
+                ['Self-employment tax', 'Employer pays half', '15.3% (full)', 'Can optimize via S-Corp'],
                 ['Typical hourly rate', 'Lower', 'Medium', 'Highest'],
-                ['Benefits available', 'Sometimes', '❌ No', '❌ No (buy own)'],
-                ['Tax filing complexity', '🟢 Simple', '🟡 Moderate', '🔴 Complex (need CPA)'],
+                ['Benefits available', 'Sometimes', 'No', 'No (self-funded)'],
+                ['Tax filing complexity', 'Simple', 'Moderate', 'Complex (CPA advised)'],
                 ['Employer liability risk', 'Low', 'Medium (misclassification)', 'Low (you\'re a vendor)'],
                 ['Flexibility', 'Low', 'High', 'Highest'],
                 ['Best for', 'Beginners / risk-averse', 'Short-term projects', 'Experienced consultants'],
@@ -307,12 +307,12 @@ function BlogPostContent({ post }) {
         <h2 id="which-to-choose" style={{ fontSize: 24, fontWeight: 800, color: '#0F172A', margin: '36px 0 14px', letterSpacing: '-0.02em' }}>7. Which Contract Type Should You Choose?</h2>
 
         {[
-          { emoji: '👋', title: 'Choose W2 if…', color: '#EFF6FF', border: '#BFDBFE', items: ['You\'re new to IT contracting and want simplicity', 'You need employer-sponsored health insurance', 'You\'re risk-averse and don\'t want to manage business finances', 'Your contract is short-term (< 3 months)'] },
-          { emoji: '🧾', title: 'Choose 1099 if…', color: '#FFFBEB', border: '#FDE68A', items: ['You have multiple short-term clients simultaneously', 'You\'re transitioning to consulting and testing the waters', 'The client explicitly requires 1099', 'You already have business expenses to write off'] },
-          { emoji: '🏢', title: 'Choose C2C if…', color: '#F0FDF4', border: '#BBF7D0', items: ['You\'re an experienced IT professional (3+ years)', 'You want maximum income and tax optimization', 'You plan to contract long-term (6+ months projects)', 'You\'re comfortable working with a CPA and handling business admin', 'You want the credibility of a business entity for enterprise clients'] },
+          { emoji: '', title: 'Choose W2 if…', color: '#EFF6FF', border: '#BFDBFE', items: ['You\'re new to IT contracting and want simplicity', 'You need employer-sponsored health insurance', 'You\'re risk-averse and don\'t want to manage business finances', 'Your contract is short-term (< 3 months)'] },
+          { emoji: '', title: 'Choose 1099 if…', color: '#FFFBEB', border: '#FDE68A', items: ['You have multiple short-term clients simultaneously', 'You\'re transitioning to consulting and testing the waters', 'The client explicitly requires 1099', 'You already have business expenses to write off'] },
+          { emoji: '', title: 'Choose C2C if…', color: '#F0FDF4', border: '#BBF7D0', items: ['You\'re an experienced IT professional (3+ years)', 'You want maximum income and tax optimization', 'You plan to contract long-term (6+ months projects)', 'You\'re comfortable working with a CPA and handling business admin', 'You want the credibility of a business entity for enterprise clients'] },
         ].map(box => (
           <div key={box.title} style={{ background: box.color, border: `1px solid ${box.border}`, borderRadius: 10, padding: '18px 22px', marginBottom: 14 }}>
-            <strong style={{ display: 'block', fontSize: 16, marginBottom: 10, color: '#0F172A' }}>{box.emoji} {box.title}</strong>
+            <strong style={{ display: 'block', fontSize: 16, marginBottom: 10, color: '#0F172A' }}>{box.title}</strong>
             <ul style={{ margin: 0, paddingLeft: 20, lineHeight: 1.85, fontSize: 14.5, color: '#334155' }}>
               {box.items.map((item, i) => <li key={i}>{item}</li>)}
             </ul>
@@ -321,7 +321,7 @@ function BlogPostContent({ post }) {
 
         {/* ── CTA ── */}
         <div style={{ background: 'linear-gradient(135deg, #0B0F19, #161E31)', borderRadius: 14, padding: '28px 32px', margin: '36px 0', textAlign: 'center' }}>
-          <h3 style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', margin: '0 0 10px' }}>🚀 Ready to Find Your Next IT Contract?</h3>
+          <h3 style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', margin: '0 0 10px' }}>Ready to Find Your Next IT Contract?</h3>
           <p style={{ color: '#94A3B8', margin: '0 0 20px', fontSize: 15, lineHeight: 1.6 }}>Browse 60+ active direct-client IT requisitions — State, Healthcare & Enterprise. C2C, W2, and 1099 roles available. No intermediary layers.</p>
           <a href="/jobs" style={{ display: 'inline-block', background: 'linear-gradient(135deg, #FF6B00, #FFA040)', color: '#FFFFFF', fontWeight: 800, fontSize: 15, padding: '12px 30px', borderRadius: 8, textDecoration: 'none', letterSpacing: '-0.01em' }}>
             Browse Open IT Roles →
@@ -430,7 +430,7 @@ function BlogIndex() {
           ))}
           {/* Coming soon placeholder */}
           <div style={{ background: '#F8FAFC', border: '2px dashed #E2E8F0', borderRadius: 14, padding: '40px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', minHeight: 280 }}>
-            <span style={{ fontSize: 32, marginBottom: 14 }}>✍️</span>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 14 }}><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg>
             <h3 style={{ fontSize: 16, fontWeight: 700, color: '#475569', margin: '0 0 8px' }}>More Articles Coming Soon</h3>
             <p style={{ fontSize: 13.5, color: '#94A3B8', lineHeight: 1.6, maxWidth: 220, margin: 0 }}>We publish expert IT staffing guides weekly. Bookmark this page!</p>
           </div>

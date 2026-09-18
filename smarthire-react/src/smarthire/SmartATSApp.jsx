@@ -139,7 +139,7 @@ function generateEmail(type, candidateName, candidateTitle, companyName, recruit
   const role = jdTitle || candidateTitle || 'the open position';
   if (type === 'shortlist') {
     const subject = `Exciting Opportunity - ${role} at ${company}`;
-    let body = `Dear ${candidateName},\n\nI hope you're doing well!\n\nI came across your profile and found it very relevant to an exciting opportunity we have for ${role} at ${company}.\n\nIf this opportunity aligns with your expertise, please share your updated resume and feedback. If not, I'd appreciate it if you could refer someone in your network who might be a great fit.\n\nLooking forward to hearing from you!\n\nBest regards,\n\n${recruiter}\n${company}\n\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📋 JOB DESCRIPTION - ${role}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n${jdText || 'Job description will be shared separately.'}`;
+    let body = `Dear ${candidateName},\n\nI hope you're doing well!\n\nI came across your profile and found it very relevant to an exciting opportunity we have for ${role} at ${company}.\n\nIf this opportunity aligns with your expertise, please share your updated resume and feedback. If not, I'd appreciate it if you could refer someone in your network who might be a great fit.\n\nLooking forward to hearing from you!\n\nBest regards,\n\n${recruiter}\n${company}\n\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n JOB DESCRIPTION - ${role}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n${jdText || 'Job description will be shared separately.'}`;
     return { subject, body };
   } else {
     const subject = `Update on Your Application - ${company}`;
@@ -308,7 +308,7 @@ export function SmartATSApp() {
         }
       }
       if (parsed.length > 0) {
-        setToast(`📤 Saving ${parsed.length} candidates to cloud...`);
+        setToast(` Saving ${parsed.length} candidates to cloud...`);
         const result = await saveBulkCandidates(parsed, (done, total, errors) => {
           setUploadProgress({ current: done, total });
         });
@@ -317,13 +317,13 @@ export function SmartATSApp() {
         setCloudCount(cloudCountVal);
         const msg = [];
         if (result.errors.length > 0) msg.push(`First error: ${result.errors[0]}`);
-        if (result.success > 0) msg.push(`✅ ${result.success} uploaded`);
-        if (result.failed > 0) msg.push(`⚠️ ${result.failed} cloud errors`);
-        if (parseFailCount > 0) msg.push(`❌ ${parseFailCount} parse failed`);
-        msg.push(`☁️ ${cloudCountVal} total in cloud`);
+        if (result.success > 0) msg.push(` ${result.success} uploaded`);
+        if (result.failed > 0) msg.push(`️ ${result.failed} cloud errors`);
+        if (parseFailCount > 0) msg.push(` ${parseFailCount} parse failed`);
+        msg.push(`️ ${cloudCountVal} total in cloud`);
         setToast(msg.join(' | '));
       } else {
-        setToast('❌ No resumes could be parsed');
+        setToast(' No resumes could be parsed');
       }
       setUploading(false);
       setUploadProgress({ current: 0, total: 0 });
@@ -340,7 +340,7 @@ export function SmartATSApp() {
       next.delete(id);
       return next;
     });
-    setToast('🗑️ Candidate deleted');
+    setToast('️ Candidate deleted');
   }, []);
   const handleBulkDelete = useCallback(() => {
     if (selectedIds.size === 0) return;
@@ -349,11 +349,11 @@ export function SmartATSApp() {
     setCandidates(getAllCandidates());
     setSelectedIds(new Set());
     setSelectedId(null);
-    setToast(`🗑️ ${count} candidates deleted`);
+    setToast(`️ ${count} candidates deleted`);
   }, [selectedIds]);
   const applyJDMatching = useCallback(() => {
     if (!jdText.trim()) {
-      setToast('⚠️ Paste a JD first');
+      setToast('️ Paste a JD first');
       return;
     }
     const allCandidates = getAllCandidates();
@@ -373,7 +373,7 @@ export function SmartATSApp() {
     setCandidates(updated);
     setJdApplied(true);
     setActiveTab('candidates');
-    setToast(`🎯 JD matching applied! ${updated.length} candidates ranked`);
+    setToast(` JD matching applied! ${updated.length} candidates ranked`);
   }, [jdText]);
   const clearJD = useCallback(() => {
     const allCandidates = getAllCandidates().map((c) => ({
@@ -394,17 +394,17 @@ export function SmartATSApp() {
     setJdText('');
     setJdApplied(false);
     setAiRankResult(null);
-    setToast('🧹 JD matching cleared');
+    setToast(' JD matching cleared');
   }, []);
   const handleAiMatch = useCallback(
     async (candidate) => {
       if (!isGroqApiConfigured()) {
-        setToast('⚠️ Add Groq API key in Settings > AI Configuration');
+        setToast('️ Add Groq API key in Settings > AI Configuration');
         setShowSettings(true);
         return;
       }
       if (!jdText.trim()) {
-        setToast('⚠️ Paste a JD first in Job Description tab');
+        setToast('️ Paste a JD first in Job Description tab');
         return;
       }
       setAiLoading(true);
@@ -426,11 +426,11 @@ export function SmartATSApp() {
         );
         saveAllCandidates(updated);
         setCandidates(updated);
-        setToast(`🤖 AI analyzed ${candidate.name}: ${result.score}% match`);
+        setToast(` AI analyzed ${candidate.name}: ${result.score}% match`);
       } catch (err) {
         console.error('AI Match Error:', err);
         const msg = err instanceof Error ? err.message : 'Unknown error';
-        setToast(`❌ ${msg.split('\n')[0]}`);
+        setToast(` ${msg.split('\n')[0]}`);
       }
       setAiLoading(false);
       setAiLoadingId(null);
@@ -439,16 +439,16 @@ export function SmartATSApp() {
   );
   const handleAiRankAll = useCallback(async () => {
     if (!isGroqApiConfigured()) {
-      setToast('⚠️ Add Groq API key in Settings > AI Configuration');
+      setToast('️ Add Groq API key in Settings > AI Configuration');
       setShowSettings(true);
       return;
     }
     if (!jdText.trim()) {
-      setToast('⚠️ Paste a JD first');
+      setToast('️ Paste a JD first');
       return;
     }
     if (candidates.length === 0) {
-      setToast('⚠️ Upload candidates first');
+      setToast('️ Upload candidates first');
       return;
     }
     setAiRankLoading(true);
@@ -483,11 +483,11 @@ export function SmartATSApp() {
       saveAllCandidates(updated);
       setCandidates(updated);
       setShowAiRankModal(true);
-      setToast(`🏆 AI ranked ${result.rankings.length} candidates!`);
+      setToast(` AI ranked ${result.rankings.length} candidates!`);
     } catch (err) {
       console.error('AI Rank Error:', err);
       const msg = err instanceof Error ? err.message : 'Unknown error';
-      setToast(`❌ ${msg.split('\n')[0]}`);
+      setToast(` ${msg.split('\n')[0]}`);
     }
     setAiRankLoading(false);
   }, [jdText, candidates]);
@@ -506,7 +506,7 @@ export function SmartATSApp() {
   }, []);
   const openBulkEmail = useCallback(() => {
     if (selectedIds.size === 0) {
-      setToast('⚠️ Select candidates first');
+      setToast('️ Select candidates first');
       return;
     }
     setEmailMode('bulk');
@@ -583,11 +583,11 @@ export function SmartATSApp() {
       .map((c) => c.email)
       .join(', ');
     if (!emails) {
-      setToast('⚠️ No emails found');
+      setToast('️ No emails found');
       return;
     }
     navigator.clipboard.writeText(emails).then(() => {
-      setToast(`📧 ${ext.filter((c) => c.email).length} emails copied!`);
+      setToast(` ${ext.filter((c) => c.email).length} emails copied!`);
       setShowExtractModal(false);
     });
   }, [getExtractCandidates]);
@@ -598,18 +598,18 @@ export function SmartATSApp() {
       .map((c) => c.phone)
       .join(', ');
     if (!phones) {
-      setToast('⚠️ No phones found');
+      setToast('️ No phones found');
       return;
     }
     navigator.clipboard.writeText(phones).then(() => {
-      setToast(`📱 ${ext.filter((c) => c.phone).length} phones copied!`);
+      setToast(` ${ext.filter((c) => c.phone).length} phones copied!`);
       setShowExtractModal(false);
     });
   }, [getExtractCandidates]);
   const copyExtractedToClipboard = useCallback(() => {
     const ext = getExtractCandidates();
     if (ext.length === 0) {
-      setToast('⚠️ No candidates');
+      setToast('️ No candidates');
       return;
     }
     let text = 'Name\tTitle\tEmail\tPhone\tLocation\tExperience\tSkills';
@@ -623,7 +623,7 @@ export function SmartATSApp() {
     navigator.clipboard
       .writeText(text)
       .then(() => {
-        setToast(`📋 ${ext.length} candidates copied!`);
+        setToast(` ${ext.length} candidates copied!`);
         setShowExtractModal(false);
       })
       .catch(() => downloadExtracted());
@@ -631,7 +631,7 @@ export function SmartATSApp() {
   const downloadExtracted = useCallback(() => {
     const ext = getExtractCandidates();
     if (ext.length === 0) {
-      setToast('⚠️ No candidates');
+      setToast('️ No candidates');
       return;
     }
     let csv = 'Name,Title,Email,Phone,Location,Experience,Skills';
@@ -649,7 +649,7 @@ export function SmartATSApp() {
     a.download = `candidates_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    setToast('📥 CSV downloaded!');
+    setToast(' CSV downloaded!');
     setShowExtractModal(false);
   }, [getExtractCandidates, jdApplied]);
   const getScoreColor = (score) => {
@@ -713,7 +713,7 @@ export function SmartATSApp() {
               <div className="flex items-center justify-between mb-5 border-b border-gray-800 pb-3">
                 {' '}
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <span>📖</span> SmartHire AI - User Guide
+                  <span></span> SmartHire AI - User Guide
                 </h3>{' '}
                 <button
                   onClick={() => setShowGuide(false)}
@@ -728,31 +728,31 @@ export function SmartATSApp() {
                   {
                     num: '1',
                     color: 'orange',
-                    title: '📤 Upload Candidates',
+                    title: ' Upload Candidates',
                     desc: 'Click the <strong>Upload</strong> button in the top-right corner to upload resumes. We support <strong>.pdf</strong>, <strong>.docx</strong>, and <strong>.txt</strong> formats.',
                   },
                   {
                     num: '2',
                     color: 'blue',
-                    title: '🔍 Advanced Search & Boolean Logic',
+                    title: ' Advanced Search & Boolean Logic',
                     desc: 'Use the sidebar filters. For complex queries, use <strong>Boolean Search</strong> (e.g., <code style={{background:"rgba(0,0,0,0.2)",padding:"2px 4px",borderRadius:4,fontFamily:"monospace"}}>(React OR Vue) AND Node.js NOT Java</code>).',
                   },
                   {
                     num: '3',
                     color: 'purple',
-                    title: '🎯 Job Description Matching',
+                    title: ' Job Description Matching',
                     desc: 'Go to the <strong>JD Tab</strong> and paste a Job Description. Click <strong>Skills Match</strong> to perform skill ranking.',
                   },
                   {
                     num: '4',
                     color: 'cyan',
-                    title: '🤖 AI Match Analysis',
+                    title: ' AI Match Analysis',
                     desc: 'Select a candidate and click <strong>AI Match</strong> for in-depth profile analysis with match score and hiring recommendation.',
                   },
                   {
                     num: '5',
                     color: 'green',
-                    title: '☁️ Database Sync & Bulk Actions',
+                    title: '️ Database Sync & Bulk Actions',
                     desc: 'Connect <strong>Supabase</strong> in settings. Select candidates for bulk email or delete.',
                   },
                 ].map((step) => (
@@ -823,7 +823,7 @@ export function SmartATSApp() {
               <div className="flex items-center justify-between mb-5">
                 {' '}
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <span>📤</span> Extract Data
+                  <span></span> Extract Data
                 </h3>{' '}
                 <button
                   onClick={() => setShowExtractModal(false)}
@@ -849,7 +849,7 @@ export function SmartATSApp() {
                     className="w-full accent-orange-500"
                   />{' '}
                   <p className="text-xs text-gray-400 mt-2">
-                    🎯 <span className="text-white font-medium">{extractCandidatesCount}</span> candidates (≥
+                     <span className="text-white font-medium">{extractCandidatesCount}</span> candidates (≥
                     {extractMinScore}%)
                   </p>{' '}
                 </div>
@@ -861,28 +861,28 @@ export function SmartATSApp() {
                   className="extract-btn"
                   style={{ background: 'var(--blue-600)', color: '#fff' }}
                 >
-                  📧 Copy Emails
+                   Copy Emails
                 </button>{' '}
                 <button
                   onClick={copyPhonesOnly}
                   className="extract-btn"
                   style={{ background: 'var(--purple-600)', color: '#fff' }}
                 >
-                  📱 Copy Phones
+                   Copy Phones
                 </button>{' '}
                 <button
                   onClick={copyExtractedToClipboard}
                   className="extract-btn"
                   style={{ background: 'var(--green-600)', color: '#fff' }}
                 >
-                  📋 Copy All
+                   Copy All
                 </button>{' '}
                 <button
                   onClick={downloadExtracted}
                   className="extract-btn"
                   style={{ background: 'var(--orange-600)', color: '#fff' }}
                 >
-                  📥 Download CSV
+                   Download CSV
                 </button>{' '}
               </div>{' '}
             </div>{' '}
@@ -918,7 +918,7 @@ export function SmartATSApp() {
                   <div className="flex items-center justify-between mb-5">
                     {' '}
                     <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                      ✉️{' '}
+                      ️{' '}
                       {emailMode === 'bulk' ? `Bulk Email (${emailCandidates.length} candidates)` : 'Email Candidate'}
                     </h3>{' '}
                     <button
@@ -960,7 +960,7 @@ export function SmartATSApp() {
                     <div className="mb-4 p-3 bg-gray-800 rounded-xl border border-gray-700">
                       {' '}
                       <p className="text-sm text-gray-300">
-                        📧 Email for: <strong className="text-white">{previewCandidate.name}</strong>
+                         Email for: <strong className="text-white">{previewCandidate.name}</strong>
                       </p>{' '}
                       <p className="text-xs text-gray-500 mt-1">
                         {previewCandidate.email || 'No email'} • {previewCandidate.title || 'No title'}
@@ -1009,7 +1009,7 @@ export function SmartATSApp() {
                         cursor: 'pointer',
                       }}
                     >
-                      ✅ Shortlist Email
+                       Shortlist Email
                     </button>{' '}
                     <button
                       onClick={() => setEmailType('reject')}
@@ -1026,7 +1026,7 @@ export function SmartATSApp() {
                         cursor: 'pointer',
                       }}
                     >
-                      ❌ Rejection Email
+                       Rejection Email
                     </button>{' '}
                   </div>{' '}
                   {previewEmail && (
@@ -1070,12 +1070,12 @@ export function SmartATSApp() {
                               .join('\n\n' + '═'.repeat(50) + '\n\n');
                             navigator.clipboard
                               .writeText(allEmails)
-                              .then(() => setToast(`📋 ${emailCandidates.length} email(s) copied!`));
+                              .then(() => setToast(` ${emailCandidates.length} email(s) copied!`));
                           }}
                           className="email-action-btn"
                           style={{ background: 'var(--blue-600)' }}
                         >
-                          📋 Copy {emailMode === 'bulk' ? 'All Emails' : 'Email'}
+                           Copy {emailMode === 'bulk' ? 'All Emails' : 'Email'}
                         </button>{' '}
                         {emailMode === 'single' && previewCandidate?.email ? (
                           <a
@@ -1083,7 +1083,7 @@ export function SmartATSApp() {
                             className="email-action-btn"
                             style={{ background: 'var(--green-600)', textDecoration: 'none', textAlign: 'center' }}
                           >
-                            ✉️ Open in Mail
+                            ️ Open in Mail
                           </a>
                         ) : (
                           <button
@@ -1106,12 +1106,12 @@ export function SmartATSApp() {
                                   );
                                 }, i * 500);
                               });
-                              setToast(`✉️ Opening ${emailCandidates.filter((c) => c.email).length} emails...`);
+                              setToast(`️ Opening ${emailCandidates.filter((c) => c.email).length} emails...`);
                             }}
                             className="email-action-btn"
                             style={{ background: 'var(--green-600)' }}
                           >
-                            ✉️ Open All in Mail
+                            ️ Open All in Mail
                           </button>
                         )}{' '}
                       </div>{' '}
@@ -1126,19 +1126,19 @@ export function SmartATSApp() {
                               .writeText(emails)
                               .then(() =>
                                 setToast(
-                                  `📧 ${emailCandidates.filter((c) => c.email).length} email addresses copied (for BCC)!`,
+                                  ` ${emailCandidates.filter((c) => c.email).length} email addresses copied (for BCC)!`,
                                 ),
                               );
                           }}
                           className="w-full rounded-xl text-sm font-bold bg-purple-600 hover-bg-purple-700 text-white transition flex items-center justify-center gap-2"
                         >
-                          📧 Copy Email Addresses (for BCC)
+                           Copy Email Addresses (for BCC)
                         </button>
                       )}{' '}
                     </div>
                   )}{' '}
                   {emailCandidates.length === 0 && (
-                    <p className="text-center text-gray-500 py-6">⚠️ No candidates selected</p>
+                    <p className="text-center text-gray-500 py-6">️ No candidates selected</p>
                   )}{' '}
                 </div>{' '}
               </div>
@@ -1159,7 +1159,7 @@ export function SmartATSApp() {
               <div className="flex items-center justify-between mb-5">
                 {' '}
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <span>🏆</span> AI Ranking Results
+                  <span></span> AI Ranking Results
                 </h3>{' '}
                 <button
                   onClick={() => setShowAiRankModal(false)}
@@ -1179,7 +1179,7 @@ export function SmartATSApp() {
               >
                 {' '}
                 <p className="text-xs text-purple-400 font-bold uppercase tracking-wide mb-1">
-                  🤖 AI Analysis Summary
+                   AI Analysis Summary
                 </p>{' '}
                 <p className="text-sm text-gray-300 leading-relaxed">{aiRankResult.summary}</p>{' '}
               </div>{' '}
@@ -1201,7 +1201,7 @@ export function SmartATSApp() {
                     {' '}
                     <div className="text-xl font-bold text-gray-600 w-8 text-center">
                       {' '}
-                      {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}{' '}
+                      {idx === 0 ? '' : idx === 1 ? '' : idx === 2 ? '' : `#${idx + 1}`}{' '}
                     </div>{' '}
                     <div className="flex-1 min-w-0">
                       {' '}
@@ -1251,7 +1251,7 @@ export function SmartATSApp() {
               <div className="flex items-center justify-between mb-5">
                 {' '}
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <span>☁️</span> Cloud Database Settings
+                  <span>️</span> Cloud Database Settings
                 </h3>{' '}
                 <button
                   onClick={() => setShowSettings(false)}
@@ -1277,7 +1277,7 @@ export function SmartATSApp() {
                   />{' '}
                   <span className={`text-sm font-semibold ${cloudConnected ? 'text-green-400' : 'text-yellow-400'}`}>
                     {' '}
-                    {cloudConnected ? '☁️ Cloud Connected' : '💾 Local Storage Only (5MB limit)'}{' '}
+                    {cloudConnected ? '️ Cloud Connected' : ' Local Storage Only (5MB limit)'}{' '}
                   </span>{' '}
                 </div>{' '}
                 <p className="text-xs text-gray-400 mt-1">
@@ -1341,7 +1341,7 @@ export function SmartATSApp() {
               <div className="bg-gray-800 rounded-xl p-5 border border-gray-700 mb-5">
                 {' '}
                 <h4 className="text-sm font-bold text-purple-400 mb-4 flex items-center gap-2">
-                  <span>🤖</span> AI Configuration
+                  <span></span> AI Configuration
                 </h4>{' '}
                 <div className="space-y-3">
                   {' '}
@@ -1366,14 +1366,14 @@ export function SmartATSApp() {
                       setGroqConfigured(configured);
                       if (configured) {
                         setGroqKey(getGroqApiKey());
-                        setToast('✅ Groq API key saved');
+                        setToast(' Groq API key saved');
                       } else {
-                        setToast('⚠️ Enter valid Groq API key');
+                        setToast('️ Enter valid Groq API key');
                       }
                     }}
                     className="px-4 py-2 bg-purple-600 hover-bg-purple-700 rounded-lg text-xs font-bold text-white transition"
                   >
-                    💾 Save AI Key
+                     Save AI Key
                   </button>{' '}
                   {groqConfigured && (
                     <button
@@ -1381,7 +1381,7 @@ export function SmartATSApp() {
                         clearGroqApiKey();
                         setGroqKey('');
                         setGroqConfigured(false);
-                        setToast('🔌 Groq key cleared');
+                        setToast(' Groq key cleared');
                       }}
                       className="px-4 py-2"
                       style={{
@@ -1393,7 +1393,7 @@ export function SmartATSApp() {
                         color: 'var(--red-400)',
                       }}
                     >
-                      ❌ Clear Key
+                       Clear Key
                     </button>
                   )}{' '}
                 </div>{' '}
@@ -1406,7 +1406,7 @@ export function SmartATSApp() {
               <div className="bg-gray-800 rounded-xl p-5 border border-gray-700 mb-5">
                 {' '}
                 <h4 className="text-sm font-bold text-orange-400 mb-4 flex items-center gap-2">
-                  <span>🔧</span> Supabase Configuration
+                  <span></span> Supabase Configuration
                 </h4>{' '}
                 <div className="space-y-3">
                   {' '}
@@ -1463,7 +1463,7 @@ export function SmartATSApp() {
                     disabled={dbTesting}
                     className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 rounded-lg text-xs font-bold text-white transition disabled-opacity-50"
                   >
-                    {dbTesting ? 'Testing...' : '💾 Save & Connect'}
+                    {dbTesting ? 'Testing...' : ' Save & Connect'}
                   </button>{' '}
                   <button
                     onClick={async () => {
@@ -1485,12 +1485,12 @@ export function SmartATSApp() {
                     disabled={dbTesting}
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-xs font-bold text-white transition disabled-opacity-50"
                   >
-                    {dbTesting ? '⏳ Testing...' : '🔌 Test Connection'}
+                    {dbTesting ? '⏳ Testing...' : ' Test Connection'}
                   </button>{' '}
                   <button
                     onClick={async () => {
                       if (!cloudConnected) {
-                        setToast('⚠️ Connect first');
+                        setToast('️ Connect first');
                         return;
                       }
                       setDbSyncing(true);
@@ -1498,13 +1498,13 @@ export function SmartATSApp() {
                       setDbSyncing(false);
                       if (result.success) {
                         await refreshCloudCount();
-                        setToast(`☁️ Synced ${result.count} candidates to cloud!`);
-                      } else setToast('❌ Sync failed');
+                        setToast(`️ Synced ${result.count} candidates to cloud!`);
+                      } else setToast(' Sync failed');
                     }}
                     disabled={dbSyncing || !cloudConnected}
                     className="px-4 py-2 bg-purple-600 hover-bg-purple-700 rounded-lg text-xs font-bold text-white transition disabled-opacity-50"
                   >
-                    {dbSyncing ? '⏳ Syncing...' : '🔄 Sync All to Cloud'}
+                    {dbSyncing ? '⏳ Syncing...' : ' Sync All to Cloud'}
                   </button>{' '}
                   {cloudConnected && (
                     <button
@@ -1515,7 +1515,7 @@ export function SmartATSApp() {
                         setSbUrl('');
                         setSbKey('');
                         setDbStatus(null);
-                        setToast('🔌 Disconnected from cloud');
+                        setToast(' Disconnected from cloud');
                       }}
                       className="px-4 py-2"
                       style={{
@@ -1527,7 +1527,7 @@ export function SmartATSApp() {
                         color: 'var(--red-400)',
                       }}
                     >
-                      ❌ Disconnect
+                       Disconnect
                     </button>
                   )}{' '}
                 </div>{' '}
@@ -1538,7 +1538,7 @@ export function SmartATSApp() {
                     {' '}
                     <p className={`text-sm font-medium ${dbStatus.connected ? 'text-green-400' : 'text-red-400'}`}>
                       {' '}
-                      {dbStatus.connected ? '✅' : '❌'} {dbStatus.message}{' '}
+                      {dbStatus.connected ? '' : ''} {dbStatus.message}{' '}
                     </p>{' '}
                   </div>
                 )}{' '}
@@ -1546,7 +1546,7 @@ export function SmartATSApp() {
               <div className="bg-gray-800 rounded-xl p-5 border border-gray-700 mb-5">
                 {' '}
                 <h4 className="text-sm font-bold text-orange-400 mb-3 flex items-center gap-2">
-                  <span>📋</span> Setup Instructions
+                  <span></span> Setup Instructions
                 </h4>{' '}
                 <ol className="text-xs text-gray-400 space-y-2 list-decimal list-inside">
                   {' '}
@@ -1582,15 +1582,15 @@ export function SmartATSApp() {
                 <div className="flex items-center justify-between mb-3">
                   {' '}
                   <h4 className="text-sm font-bold text-orange-400 flex items-center gap-2">
-                    <span>🗄️</span> Create Table SQL
+                    <span>️</span> Create Table SQL
                   </h4>{' '}
                   <button
                     onClick={() => {
-                      navigator.clipboard.writeText(CREATE_TABLE_SQL).then(() => setToast('📋 SQL copied!'));
+                      navigator.clipboard.writeText(CREATE_TABLE_SQL).then(() => setToast(' SQL copied!'));
                     }}
                     className="px-3 bg-orange-500 hover-bg-orange-600 rounded-lg text-xs font-bold text-white transition"
                   >
-                    📋 Copy SQL
+                     Copy SQL
                   </button>{' '}
                 </div>{' '}
                 <pre className="text-xs text-green-400 bg-gray-900 rounded-lg p-4 overflow-x-auto font-mono whitespace-pre max-h-48 overflow-y-auto border border-gray-700">
@@ -1627,7 +1627,7 @@ export function SmartATSApp() {
                 {' '}
                 <label className="block text-xs text-gray-400 mb-2 font-medium uppercase tracking-wide flex items-center gap-2">
                   {' '}
-                  🔍 Boolean Search <span className=" bg-orange-500-20 text-orange-400 rounded">Advanced</span>{' '}
+                   Boolean Search <span className=" bg-orange-500-20 text-orange-400 rounded">Advanced</span>{' '}
                 </label>{' '}
                 <input
                   type="text"
@@ -1661,13 +1661,13 @@ export function SmartATSApp() {
                 { label: 'Email', value: emailFilter, set: setEmailFilter, placeholder: 'Search by email...' },
                 { label: 'Skills', value: skillFilter, set: setSkillFilter, placeholder: 'e.g. python, react...' },
                 {
-                  label: '📍 Location',
+                  label: ' Location',
                   value: locationFilter,
                   set: setLocationFilter,
                   placeholder: 'e.g. San Francisco...',
                 },
                 {
-                  label: '💼 Job Title',
+                  label: ' Job Title',
                   value: titleFilter,
                   set: setTitleFilter,
                   placeholder: 'e.g. Data Engineer...',
@@ -1721,7 +1721,7 @@ export function SmartATSApp() {
                 <div className="mt-4 p-3 bg-green-500-10 border border-green-500-20 rounded-lg">
                   {' '}
                   <div className="flex items-center gap-2 text-green-400 text-sm font-medium">
-                    <span>🎯</span> JD Matching Active
+                    <span></span> JD Matching Active
                   </div>{' '}
                   <button onClick={clearJD} className="mt-2 text-xs text-red-400 hover-text-red-300 underline">
                     Clear JD
@@ -1756,7 +1756,7 @@ export function SmartATSApp() {
             </button>{' '}
             <div className="flex items-center gap-2">
               {' '}
-              <span className="text-2xl">🚀</span>{' '}
+              <span className="text-2xl"></span>{' '}
               <h1 className="text-lg sm-text-xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
                 SmartHire AI
               </h1>{' '}
@@ -1770,20 +1770,20 @@ export function SmartATSApp() {
                 <div className="flex items-center gap-2">
                   {' '}
                   <span className="text-xs bg-orange-500-20 text-orange-400 rounded-lg font-bold border border-orange-500-30">
-                    ☑️ {selectedIds.size} Selected
+                    ️ {selectedIds.size} Selected
                   </span>{' '}
                   <button
                     onClick={openBulkEmail}
                     className="flex items-center px-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 rounded-lg text-xs font-bold text-white transition shadow-lg"
                   >
-                    📧 Bulk Email ({selectedIds.size})
+                     Bulk Email ({selectedIds.size})
                   </button>{' '}
                   {deleteMode && (
                     <button
                       onClick={handleBulkDelete}
                       className="flex items-center px-3 bg-red-600 hover:bg-red-700 rounded-lg text-xs font-bold text-white transition"
                     >
-                      🗑️ Delete ({selectedIds.size})
+                      ️ Delete ({selectedIds.size})
                     </button>
                   )}{' '}
                   <button
@@ -1803,13 +1803,13 @@ export function SmartATSApp() {
                   }}
                   className={`px-3 rounded-md text-xs font-medium transition ${activeTab === 'candidates' ? 'bg-orange-500 text-white' : 'text-gray-400 hover-text-white'}`}
                 >
-                  👥 Candidates
+                   Candidates
                 </button>{' '}
                 <button
                   onClick={() => setActiveTab('jd')}
                   className={`px-3 rounded-md text-xs font-medium transition ${activeTab === 'jd' ? 'bg-orange-500 text-white' : 'text-gray-400 hover-text-white'}`}
                 >
-                  📋 JD
+                   JD
                 </button>{' '}
               </div>{' '}
               {sortedFiltered.length > 0 && (
@@ -1817,7 +1817,7 @@ export function SmartATSApp() {
                   onClick={() => setShowExtractModal(true)}
                   className="inline-flex items-center gap-2 px-3 py-2 rounded-xl font-semibold text-xs bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg transition-all"
                 >
-                  <span>📤</span> Extract
+                  <span></span> Extract
                 </button>
               )}{' '}
               <label
@@ -1855,7 +1855,7 @@ export function SmartATSApp() {
                 className={`relative inline-flex items-center px-3 py-2 rounded-xl font-semibold text-xs transition-all border ${cloudConnected ? 'bg-green-500-10 border-green-500-30 text-green-400 hover-bg-green-500-20' : 'bg-gray-800 border-gray-700 text-gray-400 hover-text-white hover-bg-gray-700'}`}
               >
                 {' '}
-                <span>{cloudConnected ? '☁️' : '⚙️'}</span> {cloudConnected ? `Cloud (${cloudCount})` : 'Settings'}{' '}
+                <span>{cloudConnected ? '️' : '️'}</span> {cloudConnected ? `Cloud (${cloudCount})` : 'Settings'}{' '}
                 {cloudConnected && <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />}{' '}
               </button>{' '}
               <button
@@ -1863,7 +1863,7 @@ export function SmartATSApp() {
                 className="inline-flex items-center px-3 py-2 rounded-xl font-semibold text-xs transition-all border bg-gray-800 border-gray-700 text-gray-400 hover-text-white hover-bg-gray-700"
                 title="How to Use Guide"
               >
-                <span>📖</span>
+                <span></span>
                 <span>How to Use</span>
               </button>{' '}
             </div>{' '}
@@ -1896,7 +1896,7 @@ export function SmartATSApp() {
                   <div className="mb-6">
                     {' '}
                     <h2 className="text-2xl font-bold text-white mb-1 flex items-center gap-3">
-                      <span>📋</span> Job Description
+                      <span></span> Job Description
                     </h2>{' '}
                     <p className="text-gray-400 text-sm mt-2">
                       Paste your JD below. We'll match & rank candidates using AI + skills analysis.
@@ -1919,7 +1919,7 @@ export function SmartATSApp() {
                     <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 mb-5">
                       {' '}
                       <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-                        <span>🔍</span> JD Analysis
+                        <span></span> JD Analysis
                       </h3>{' '}
                       {jdAnalysis.jdTitle && (
                         <div className="mb-3">
@@ -1934,7 +1934,7 @@ export function SmartATSApp() {
                         <div className="mb-3">
                           {' '}
                           <p className="text-xs text-gray-500 font-medium uppercase mb-2">
-                            📋 Required ({jdAnalysis.requiredSkills.length})
+                             Required ({jdAnalysis.requiredSkills.length})
                           </p>{' '}
                           <div className="flex flex-wrap">
                             {jdAnalysis.requiredSkills.map((s, i) => (
@@ -2007,7 +2007,7 @@ export function SmartATSApp() {
                         opacity: !jdText.trim() || candidates.length === 0 ? 0.5 : 1,
                       }}
                     >
-                      🎯 Skills Match ({candidates.length})
+                       Skills Match ({candidates.length})
                     </button>{' '}
                     <button
                       onClick={handleAiRankAll}
@@ -2051,7 +2051,7 @@ export function SmartATSApp() {
                           AI Ranking...
                         </>
                       ) : (
-                        <>🤖 AI Rank All</>
+                        <> AI Rank All</>
                       )}{' '}
                     </button>{' '}
                     {jdApplied && (
@@ -2059,18 +2059,18 @@ export function SmartATSApp() {
                         onClick={clearJD}
                         className="px-5 py-3 rounded-xl font-bold text-sm bg-gray-800 hover-bg-gray-700 text-gray-300 border border-gray-700 transition flex items-center gap-2"
                       >
-                        🧹 Clear
+                         Clear
                       </button>
                     )}{' '}
                   </div>{' '}
                   {candidates.length === 0 && (
-                    <p className="text-yellow-500-70 text-sm mt-4">⚠️ Upload resumes first</p>
+                    <p className="text-yellow-500-70 text-sm mt-4">️ Upload resumes first</p>
                   )}{' '}
                   {jdApplied && (
                     <div className="mt-8">
                       {' '}
                       <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-4">
-                        <span>🏆</span> Top Ranked
+                        <span></span> Top Ranked
                       </h3>{' '}
                       <div className="space-y-2">
                         {' '}
@@ -2088,7 +2088,7 @@ export function SmartATSApp() {
                             >
                               {' '}
                               <div className="text-lg font-bold text-gray-600 w-8 text-center">
-                                {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
+                                {idx === 0 ? '' : idx === 1 ? '' : idx === 2 ? '' : `#${idx + 1}`}
                               </div>{' '}
                               <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                                 {c.name.charAt(0).toUpperCase()}
@@ -2155,8 +2155,8 @@ export function SmartATSApp() {
                     </div>{' '}
                     <div className="flex items-center gap-2">
                       {' '}
-                      {jdApplied && <span className="text-xs text-green-400 font-medium">🎯 Ranked</span>}{' '}
-                      {booleanQuery && <span className="text-xs text-blue-400 font-medium">🔍 Boolean</span>}{' '}
+                      {jdApplied && <span className="text-xs text-green-400 font-medium"> Ranked</span>}{' '}
+                      {booleanQuery && <span className="text-xs text-blue-400 font-medium"> Boolean</span>}{' '}
                     </div>{' '}
                   </div>{' '}
                   <div className="flex-1 overflow-y-auto min-h-0">
@@ -2165,7 +2165,7 @@ export function SmartATSApp() {
                       <div className="flex flex-col items-center justify-center h-full text-gray-500 px-6">
                         {' '}
                         <div className="text-5xl mb-4" style={{ opacity: 0.3 }}>
-                          📂
+                          
                         </div>{' '}
                         <p className="text-sm text-center">
                           No candidates found.
@@ -2194,7 +2194,7 @@ export function SmartATSApp() {
                           </label>{' '}
                           {(jdApplied || booleanQuery) && (
                             <div className="text-xs font-bold text-gray-600 w-5 text-center flex-shrink-0">
-                              {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}`}
+                              {idx === 0 ? '' : idx === 1 ? '' : idx === 2 ? '' : `${idx + 1}`}
                             </div>
                           )}{' '}
                           <div
@@ -2226,7 +2226,7 @@ export function SmartATSApp() {
                               )}{' '}
                               {c.location && (
                                 <span className=" bg-blue-500-20 text-blue-400 rounded-full font-medium">
-                                  📍{c.location}
+                                  {c.location}
                                 </span>
                               )}{' '}
                             </div>{' '}
@@ -2242,12 +2242,12 @@ export function SmartATSApp() {
                             )}{' '}
                             {c.aiScore !== undefined && (
                               <span className=" bg-purple-500-20 text-purple-400 rounded border border-purple-500-30 font-bold">
-                                🤖{c.aiScore}%
+                                {c.aiScore}%
                               </span>
                             )}{' '}
                             {booleanQuery && c.enhancedMatchScore !== undefined && (
                               <span className=" bg-blue-500-20 text-blue-400 rounded border border-blue-500-30 font-bold">
-                                🔍{c.enhancedMatchScore}%
+                                {c.enhancedMatchScore}%
                               </span>
                             )}{' '}
                           </div>{' '}
@@ -2259,7 +2259,7 @@ export function SmartATSApp() {
                               }}
                               className=" hover-bg-red-600-20 rounded-lg text-red-400 hover-text-red-300 transition flex-shrink-0"
                             >
-                              🗑️
+                              ️
                             </button>
                           )}{' '}
                         </div>
@@ -2293,7 +2293,7 @@ export function SmartATSApp() {
                               onClick={() => openSingleEmail(selected)}
                               className="flex items-center px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 rounded-xl text-xs font-bold transition text-white shadow-lg"
                             >
-                              ✉️ Email
+                              ️ Email
                             </button>{' '}
                             {jdText.trim() && (
                               <button
@@ -2322,18 +2322,18 @@ export function SmartATSApp() {
                                     Analyzing...
                                   </>
                                 ) : (
-                                  <>🤖 AI Match</>
+                                  <> AI Match</>
                                 )}{' '}
                               </button>
                             )}{' '}
                             <button
                               onClick={() => {
                                 const data = `Name: ${selected.name}\nTitle: ${selected.title || 'N/A'}\nEmail: ${selected.email || 'N/A'}\nPhone: ${selected.phone || 'N/A'}\nLocation: ${selected.location || 'N/A'}\nExperience: ${selected.experience || 'N/A'}\nSkills: ${selected.skills || 'N/A'}`;
-                                navigator.clipboard.writeText(data).then(() => setToast('📋 Copied!'));
+                                navigator.clipboard.writeText(data).then(() => setToast(' Copied!'));
                               }}
                               className="flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded-xl text-xs font-bold transition"
                             >
-                              📋 Copy
+                               Copy
                             </button>{' '}
                           </div>{' '}
                         </div>{' '}
@@ -2352,7 +2352,7 @@ export function SmartATSApp() {
                               {' '}
                               <div className="flex items-center gap-2">
                                 {' '}
-                                <span className="text-lg">🤖</span>{' '}
+                                <span className="text-lg"></span>{' '}
                                 <h3 className="text-sm font-bold text-purple-400 uppercase tracking-wide">
                                   AI Analysis
                                 </h3>{' '}
@@ -2396,7 +2396,7 @@ export function SmartATSApp() {
                                 >
                                   {' '}
                                   <p className=" font-bold uppercase tracking-wide mb-2 text-green-400">
-                                    💪 Strengths
+                                     Strengths
                                   </p>{' '}
                                   {selected.aiStrengths.map((s, i) => (
                                     <p
@@ -2428,7 +2428,7 @@ export function SmartATSApp() {
                                   }}
                                 >
                                   {' '}
-                                  <p className=" font-bold uppercase tracking-wide mb-2 text-red-400">⚠️ Gaps</p>{' '}
+                                  <p className=" font-bold uppercase tracking-wide mb-2 text-red-400">️ Gaps</p>{' '}
                                   {selected.aiGaps.map((g, i) => (
                                     <p
                                       key={i}
@@ -2486,7 +2486,7 @@ export function SmartATSApp() {
                             <div className="mb-3">
                               {' '}
                               <p className="text-xs font-bold uppercase tracking-wide mb-2 text-gray-300">
-                                📋 Required Skills
+                                 Required Skills
                               </p>{' '}
                               <div className="grid grid-cols-1 sm-grid-cols-2 gap-3">
                                 {' '}
@@ -2501,7 +2501,7 @@ export function SmartATSApp() {
                                   >
                                     {' '}
                                     <p className=" font-bold uppercase mb-2 text-green-400">
-                                      ✅ Matched ({selected.matchedSkills.length})
+                                       Matched ({selected.matchedSkills.length})
                                     </p>{' '}
                                     <div className="flex flex-wrap gap-1">
                                       {selected.matchedSkills.map((s, i) => (
@@ -2533,7 +2533,7 @@ export function SmartATSApp() {
                                   >
                                     {' '}
                                     <p className=" font-bold uppercase mb-2 text-red-400">
-                                      ❌ Missing ({selected.missingSkills.length})
+                                       Missing ({selected.missingSkills.length})
                                     </p>{' '}
                                     <div className="flex flex-wrap gap-1">
                                       {selected.missingSkills.map((s, i) => (
@@ -2576,7 +2576,7 @@ export function SmartATSApp() {
                                     >
                                       {' '}
                                       <p className=" font-bold uppercase mb-2 text-blue-400">
-                                        ✅ Has ({selected.matchedPreferred.length})
+                                         Has ({selected.matchedPreferred.length})
                                       </p>{' '}
                                       <div className="flex flex-wrap gap-1">
                                         {selected.matchedPreferred.map((s, i) => (
@@ -2608,7 +2608,7 @@ export function SmartATSApp() {
                                     >
                                       {' '}
                                       <p className=" font-bold uppercase mb-2 text-yellow-400">
-                                        ⚠️ Missing ({selected.missingPreferred.length})
+                                        ️ Missing ({selected.missingPreferred.length})
                                       </p>{' '}
                                       <div className="flex flex-wrap gap-1">
                                         {selected.missingPreferred.map((s, i) => (
@@ -2640,7 +2640,7 @@ export function SmartATSApp() {
                                   <button
                                     onClick={() => {
                                       navigator.clipboard.writeText(selected.email);
-                                      setToast('📧 Email copied!');
+                                      setToast(' Email copied!');
                                     }}
                                     className="flex items-center gap-2 px-3 py-2"
                                     style={{
@@ -2651,7 +2651,7 @@ export function SmartATSApp() {
                                       fontWeight: 500,
                                     }}
                                   >
-                                    <span>📧</span>
+                                    <span></span>
                                     <span className="truncate">{selected.email}</span>
                                   </button>
                                 )}{' '}
@@ -2659,7 +2659,7 @@ export function SmartATSApp() {
                                   <button
                                     onClick={() => {
                                       navigator.clipboard.writeText(selected.phone);
-                                      setToast('📱 Phone copied!');
+                                      setToast(' Phone copied!');
                                     }}
                                     className="flex items-center gap-2 px-3 py-2"
                                     style={{
@@ -2670,7 +2670,7 @@ export function SmartATSApp() {
                                       fontWeight: 500,
                                     }}
                                   >
-                                    <span>📱</span>
+                                    <span></span>
                                     <span className="truncate">{selected.phone}</span>
                                   </button>
                                 )}{' '}
@@ -2687,7 +2687,7 @@ export function SmartATSApp() {
                                       textDecoration: 'none',
                                     }}
                                   >
-                                    ✉️ Send Email
+                                    ️ Send Email
                                   </a>
                                 )}{' '}
                               </div>{' '}
@@ -2697,30 +2697,30 @@ export function SmartATSApp() {
                         <div className="grid grid-cols-1 sm-grid-cols-2 gap-4 mb-6">
                           {' '}
                           {[
-                            { icon: '👤', label: 'Name', value: selected.name },
-                            { icon: '💼', label: 'Job Title', value: selected.title || 'Not detected' },
+                            { icon: '', label: 'Name', value: selected.name },
+                            { icon: '', label: 'Job Title', value: selected.title || 'Not detected' },
                             {
-                              icon: '📧',
+                              icon: '',
                               label: 'Email',
                               value: selected.email || 'N/A',
                               copyable: !!selected.email,
                               onCopy: () => {
                                 navigator.clipboard.writeText(selected.email);
-                                setToast('📧 Copied!');
+                                setToast(' Copied!');
                               },
                             },
                             {
-                              icon: '📱',
+                              icon: '',
                               label: 'Phone',
                               value: selected.phone || 'N/A',
                               copyable: !!selected.phone,
                               onCopy: () => {
                                 navigator.clipboard.writeText(selected.phone);
-                                setToast('📱 Copied!');
+                                setToast(' Copied!');
                               },
                             },
-                            { icon: '🏢', label: 'Experience', value: selected.experience || 'N/A' },
-                            { icon: '📍', label: 'Location', value: selected.location || 'N/A' },
+                            { icon: '', label: 'Experience', value: selected.experience || 'N/A' },
+                            { icon: '', label: 'Location', value: selected.location || 'N/A' },
                           ].map((card) => (
                             <div
                               key={card.label}
@@ -2765,7 +2765,7 @@ export function SmartATSApp() {
                         <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 mb-6">
                           {' '}
                           <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-2">
-                            <span>🛠️</span> Skills
+                            <span>️</span> Skills
                           </h3>{' '}
                           {selected.skills ? (
                             <div className="flex flex-wrap gap-2">
@@ -2778,7 +2778,7 @@ export function SmartATSApp() {
                                     key={i}
                                     className={`px-3 rounded-lg text-sm font-medium border ${isMatched ? 'matched-skill' : 'unmatched-skill'}`}
                                   >
-                                    {isMatched && '✅ '}
+                                    {isMatched && ' '}
                                     {s.trim()}
                                   </span>
                                 );
@@ -2795,7 +2795,7 @@ export function SmartATSApp() {
                             {' '}
                             <h3 className="text-lg font-bold text-white flex items-center gap-2">
                               {' '}
-                              <span>📄</span> Resume Preview{' '}
+                              <span></span> Resume Preview{' '}
                               {loadingContent && (
                                 <span className="text-xs text-orange-400 animate-pulse ml-2">
                                   Loading from cloud...
@@ -2821,12 +2821,12 @@ export function SmartATSApp() {
                                   cursor: 'pointer',
                                 }}
                               >
-                                {showRawResume ? '📝 Formatted' : '📃 Raw'}
+                                {showRawResume ? ' Formatted' : ' Raw'}
                               </button>{' '}
                               <button
                                 onClick={() => {
                                   navigator.clipboard.writeText(selectedResumeText);
-                                  setToast('📄 Copied!');
+                                  setToast(' Copied!');
                                 }}
                                 style={{
                                   padding: '6px 12px',
@@ -2839,7 +2839,7 @@ export function SmartATSApp() {
                                   cursor: 'pointer',
                                 }}
                               >
-                                📋 Copy
+                                 Copy
                               </button>{' '}
                             </div>{' '}
                           </div>{' '}
@@ -2922,7 +2922,7 @@ export function SmartATSApp() {
                                               display: 'inline-block',
                                             }}
                                           />
-                                          📍 {selected.location}
+                                           {selected.location}
                                         </span>
                                       )}{' '}
                                     </div>{' '}
@@ -2995,7 +2995,7 @@ export function SmartATSApp() {
                     <div className="flex flex-col items-center justify-center h-full text-gray-500">
                       {' '}
                       <div className="text-6xl mb-4" style={{ opacity: 0.3 }}>
-                        📋
+                        
                       </div>{' '}
                       <p className="text-lg font-medium">Select a candidate</p>{' '}
                       <p className="text-sm mt-1">Click on a candidate to view details</p>{' '}

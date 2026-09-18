@@ -56,22 +56,30 @@ function Pricing() {
 
   const usps = [
     {
-      icon: '🤖',
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>
+      ),
       title: 'AI-Driven Candidate Pre-Screening',
       description: 'Conduct interactive, custom AI interviews per candidate. Rates responses and matches requirements automatically.'
     },
     {
-      icon: '🔍',
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
+      ),
       title: 'Vision-based Document Verification',
       description: 'Scan Driver\'s Licenses and work Visas for validity, checking expiration and anti-tampering using Groq Vision.'
     },
     {
-      icon: '🌐',
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      ),
       title: 'Integrated Job & Content Pipeline',
       description: 'Ingest active vacancies from the web, and auto-generate premium B2B LinkedIn posts to attract candidate traffic.'
     },
     {
-      icon: '💾',
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+      ),
       title: 'Stateless-Proof Cloud Persistence',
       description: 'All candidates, verification reports, and screening session data are stored securely on MongoDB Atlas.'
     }

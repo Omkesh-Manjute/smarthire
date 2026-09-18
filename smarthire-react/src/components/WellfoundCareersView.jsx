@@ -218,12 +218,12 @@ function parseWellfoundJobDetails(job, cleanTitle, domainName, location, workMod
 
   if (text.includes('KEY ROLES & RESPONSIBILITIES') || text.includes('PROJECT SUMMARY & OBJECTIVE') || text.includes('POSITION & CLIENT OVERVIEW')) {
     // Requisition formatted by formatJobDescription
-    const summaryMatch = text.match(/(?:🎯\s*PROJECT SUMMARY & OBJECTIVE[^\n]*\n={5,}\n)([\s\S]*?)(?=\n={5,}|\n📋|\n🛠️|\n🌟|$)/i)
+    const summaryMatch = text.match(/(?:PROJECT SUMMARY & OBJECTIVE[^\n]*\n={5,}\n)([\s\S]*?)(?=\n={5,}|\nKEY ROLES|\nREQUIRED TECHNICAL|\nPREFERRED|$)/i)
     if (summaryMatch && summaryMatch[1].trim()) {
       summary = summaryMatch[1].trim()
     }
 
-    const respMatch = text.match(/(?:📋\s*KEY ROLES & RESPONSIBILITIES[^\n]*\n={5,}\n)([\s\S]*?)(?=\n={5,}|\n🛠️|\n🌟|$)/i)
+    const respMatch = text.match(/(?:KEY ROLES & RESPONSIBILITIES[^\n]*\n={5,}\n)([\s\S]*?)(?=\n={5,}|\nREQUIRED TECHNICAL|\nPREFERRED|$)/i)
     if (respMatch && respMatch[1].trim()) {
       responsibilities = respMatch[1]
         .split('\n')
@@ -231,7 +231,7 @@ function parseWellfoundJobDetails(job, cleanTitle, domainName, location, workMod
         .filter(l => l.length > 5)
     }
 
-    const skillsMatch = text.match(/(?:🛠️\s*REQUIRED TECHNICAL PROFICIENCIES[^\n]*\n={5,}\n)([\s\S]*?)(?=\n={5,}|\n🌟|$)/i)
+    const skillsMatch = text.match(/(?:REQUIRED TECHNICAL PROFICIENCIES[^\n]*\n={5,}\n)([\s\S]*?)(?=\n={5,}|\nPREFERRED|$)/i)
     if (skillsMatch && skillsMatch[1].trim()) {
       requiredSkills = skillsMatch[1]
         .split('\n')
@@ -239,7 +239,7 @@ function parseWellfoundJobDetails(job, cleanTitle, domainName, location, workMod
         .filter(l => l.length > 3)
     }
 
-    const prefMatch = text.match(/(?:🌟\s*PREFERRED QUALIFICATIONS[^\n]*\n={5,}\n)([\s\S]*?)(?=\n={5,}|$)/i)
+    const prefMatch = text.match(/(?:PREFERRED QUALIFICATIONS[^\n]*\n={5,}\n)([\s\S]*?)(?=\n={5,}|$)/i)
     if (prefMatch && prefMatch[1].trim()) {
       preferredSkills = prefMatch[1]
         .split('\n')
@@ -247,7 +247,7 @@ function parseWellfoundJobDetails(job, cleanTitle, domainName, location, workMod
         .filter(l => l.length > 3)
     }
 
-    const overviewMatch = text.match(/(?:📌\s*POSITION & CLIENT OVERVIEW[^\n]*\n={5,}\n)([\s\S]*?)(?=\n={5,}|\n🎯|\n📋|$)/i)
+    const overviewMatch = text.match(/(?:POSITION & CLIENT OVERVIEW[^\n]*\n={5,}\n)([\s\S]*?)(?=\n={5,}|\nPROJECT SUMMARY|\nKEY ROLES|$)/i)
     if (overviewMatch && overviewMatch[1].trim()) {
       engagementDetails = overviewMatch[1]
         .split('\n')
@@ -1815,7 +1815,7 @@ export default function WellfoundCareersView({
                     <div style={{ border: `1px solid ${colors.border}`, borderRadius: 12, overflow: 'hidden' }}>
                       {categoryFilteredJobs.length === 0 ? (
                         <div style={{ textAlign: 'center', padding: '48px 24px', color: colors.textSecondary }}>
-                          <div style={{ fontSize: 32, marginBottom: 8 }}>🔍</div>
+                          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></div>
                           <div style={{ fontSize: 16, fontWeight: 700, color: colors.textPrimary, marginBottom: 4 }}>
                             No open requisitions found
                           </div>

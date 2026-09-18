@@ -189,7 +189,7 @@ export default function CandidateMessengerWidget({ candidate, role = 'candidate'
               {candidateName}
             </div>
             <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              👤 Candidate
+              Candidate
             </div>
           </div>
         </div>
@@ -206,7 +206,7 @@ export default function CandidateMessengerWidget({ candidate, role = 'candidate'
               {recruiterName}
             </div>
             <div style={{ fontSize: 10, color: '#38BDF8', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              💼 {recruiterRole === 'superadmin' ? 'Admin' : 'Recruiter'}
+              {recruiterRole === 'superadmin' ? 'Admin' : 'Recruiter'}
             </div>
           </div>
           <div style={{
@@ -247,7 +247,7 @@ export default function CandidateMessengerWidget({ candidate, role = 'candidate'
           <button
             onClick={() => {
               if (onScheduleInterview) onScheduleInterview(candidate)
-              else handleSendMessage(`🗓️ I would like to schedule an interview with you for ${jobTitle}. Please let me know your available time slots.`)
+              else handleSendMessage(`I would like to schedule an interview with you for ${jobTitle}. Please let me know your available time slots.`)
             }}
             style={{
               flex: 1,
@@ -265,7 +265,7 @@ export default function CandidateMessengerWidget({ candidate, role = 'candidate'
               gap: 4
             }}
           >
-            🗓️ Schedule Interview
+            Schedule Interview
           </button>
 
           <button
@@ -281,7 +281,7 @@ export default function CandidateMessengerWidget({ candidate, role = 'candidate'
               cursor: 'pointer'
             }}
           >
-            📑 Templates
+            Templates
           </button>
         </div>
       )}
@@ -437,14 +437,14 @@ export default function CandidateMessengerWidget({ candidate, role = 'candidate'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: '#4F46E5', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                🤖 AI Recruiter Assistant
+                AI Recruiter Assistant
               </span>
               <button 
                 type="button"
                 onClick={() => setShowFullDetails(true)} 
                 style={{ background: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE', borderRadius: 6, padding: '4px 8px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
               >
-                Full Profile 📄
+                Full Profile
               </button>
             </div>
 
@@ -488,7 +488,7 @@ export default function CandidateMessengerWidget({ candidate, role = 'candidate'
             {/* Basic Candidate Info */}
             <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div style={{ fontSize: 11.5, fontWeight: 700, color: '#334155', borderBottom: '1px solid #F1F5F9', paddingBottom: 4 }}>
-                👤 Candidate Overview
+                Candidate Overview
               </div>
               <div style={{ fontSize: 12, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
                 <span style={{ color: '#64748B' }}>Email: </span>
@@ -523,7 +523,7 @@ export default function CandidateMessengerWidget({ candidate, role = 'candidate'
             {/* AI Summary */}
             <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', gap: 6 }}>
               <div style={{ fontSize: 11.5, fontWeight: 700, color: '#334155', borderBottom: '1px solid #F1F5F9', paddingBottom: 4 }}>
-                📝 AI Screening Notes
+                AI Screening Notes
               </div>
               <p style={{ fontSize: 12, color: '#475569', lineHeight: 1.5, margin: 0 }}>
                 {candidate.jd_match?.candidate_summary || candidate.summary || 'No pre-screening matching analysis found for this candidate.'}
@@ -654,7 +654,7 @@ export default function CandidateMessengerWidget({ candidate, role = 'candidate'
             {/* Document and Compliance verification info */}
             <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: 12, padding: 14, marginBottom: 18 }}>
               <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 800, color: '#0F766E', display: 'flex', alignItems: 'center', gap: 6 }}>
-                🛡️ Trust &amp; Document Audit
+                Trust &amp; Document Audit
               </h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
@@ -682,7 +682,7 @@ export default function CandidateMessengerWidget({ candidate, role = 'candidate'
 
             {/* Skills & Resume details */}
             <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: 12, padding: 14 }}>
-              <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 800, color: '#334155' }}>🛠 Candidate Skills</h4>
+              <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 800, color: '#334155' }}>Candidate Skills</h4>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                 {(candidate.extracted_profile?.skills || candidate.skills || []).map((s, idx) => (
                   <span key={idx} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, background: '#F1F5F9', color: '#475569', border: '1px solid #E2E8F0' }}>{s}</span>

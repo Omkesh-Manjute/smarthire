@@ -277,7 +277,8 @@ export function formatJobDescription(rawText = '', jobMeta = {}) {
   const text = typeof rawText === 'string' ? rawText.trim() : '';
 
   // If already cleanly formatted with our section dividers, return as-is
-  if (text.includes('📌 POSITION & CLIENT OVERVIEW') && text.includes('📋 KEY ROLES & RESPONSIBILITIES')) {
+  if (text.includes('POSITION & CLIENT OVERVIEW') && 
+      text.includes('KEY ROLES & RESPONSIBILITIES')) {
     return text;
   }
 
@@ -408,7 +409,7 @@ export function formatJobDescription(rawText = '', jobMeta = {}) {
 
   // Construct Final Beautiful Formatted JD
   const formattedJD = `===============================================================
-📌 POSITION & CLIENT OVERVIEW
+POSITION & CLIENT OVERVIEW
 ===============================================================
 • Position Title: ${title || jobMeta.title || 'Technical Specialist'}
 • Client / Agency: Direct Client
@@ -416,22 +417,22 @@ export function formatJobDescription(rawText = '', jobMeta = {}) {
 • Interview Type: ${interviewType || 'Webcam / In-Person'}
 ${startDate ? `• Target Start Date: ${startDate}\n` : ''}${endDate ? `• Target End Date: ${endDate}\n` : ''}${deadline ? `• Submission Deadline: ${deadline}\n` : ''}
 ===============================================================
-🎯 PROJECT SUMMARY & OBJECTIVE
+PROJECT SUMMARY & OBJECTIVE
 ===============================================================
 ${summaryText}
 
 ===============================================================
-📋 KEY ROLES & RESPONSIBILITIES
+KEY ROLES & RESPONSIBILITIES
 ===============================================================
 ${bulletedResp}
 
 ===============================================================
-🛠️ REQUIRED TECHNICAL PROFICIENCIES
+REQUIRED TECHNICAL PROFICIENCIES
 ===============================================================
 ${bulletedSkills}
 ${preferredSkills.length > 0 || prefSkillLines.length > 0 ? `
 ===============================================================
-🌟 PREFERRED QUALIFICATIONS & DOMAIN SKILLS
+PREFERRED QUALIFICATIONS & DOMAIN SKILLS
 ===============================================================
 ${preferredSkills.length > 0 ? preferredSkills.map(ps => `• ${ps}`).join('\n') : prefSkillLines.map(ps => `• ${ps}`).join('\n')}` : ''}
 `;

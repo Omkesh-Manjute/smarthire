@@ -42,7 +42,7 @@ export function clearGroqApiKey() {
 async function callAI(prompt, maxTokens = 1024) {
   const groqApiKey = getGroqApiKey();
   if (!groqApiKey) {
-    throw new Error("⚠️ GROQ_API_KEY not configured!\n\nSetup:\n1. Get key from https://console.groq.com\n2. Add VITE_GROQ_API_KEY to .env\n3. Restart dev server");
+    throw new Error("GROQ_API_KEY not configured!\n\nSetup:\n1. Get key from https://console.groq.com\n2. Add VITE_GROQ_API_KEY to .env\n3. Restart dev server");
   }
   let lastError = "";
   for (const model of MODELS) {
@@ -213,13 +213,13 @@ Use actual values provided - do not use placeholder brackets like [Name]. Keep m
       emailBody = emailBody.replace(/\n*---\s*Job Description\s*---[\s\S]*/gi, "");
       emailBody = emailBody.replace(/\n*Please find the job description[\s\S]*/gi, "");
       emailBody = emailBody.replace(/\n*Below is the job description[\s\S]*/gi, "");
-      emailBody += `\n\n────────────────────────────────\n📋 Job Description - ${jdTitle || "Open Position"}\n────────────────────────────────\n\n${jdFullText.trim()}`;
+      emailBody += `\n\n────────────────────────────────\nJob Description - ${jdTitle || "Open Position"}\n────────────────────────────────\n\n${jdFullText.trim()}`;
     }
     return { subject: parsed.subject || `${jdTitle || "Job"} Opportunity at ${company}`, body: emailBody };
   } catch {
     let fallbackBody = `Hi ${candidateName},\n\nI came across your profile and I believe your experience as ${candidateTitle || "a professional"} aligns well with our ${jdTitle || "open"} role at ${company}.\n\nPlease let me know if you would be interested in exploring this opportunity.\n\nBest regards,\n${recruiter}\n${company}`;
     if (emailType === "shortlist" && jdFullText) {
-      fallbackBody += `\n\n────────────────────────────────\n📋 Job Description - ${jdTitle || "Open Position"}\n────────────────────────────────\n\n${jdFullText.trim()}`;
+      fallbackBody += `\n\n────────────────────────────────\nJob Description - ${jdTitle || "Open Position"}\n────────────────────────────────\n\n${jdFullText.trim()}`;
     }
     return { subject: `${jdTitle || "Job"} Opportunity at ${company}`, body: fallbackBody };
   }

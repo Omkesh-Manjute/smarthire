@@ -142,10 +142,12 @@ export default function InquiriesModule() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '18px',
+            fontSize: '14px',
             fontWeight: '800'
           }}>
-            📩
+            <svg style={{ width: '18px', height: '18px', color: '#2563eb' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
           </div>
           <div>
             <h2 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>
@@ -180,7 +182,7 @@ export default function InquiriesModule() {
               cursor: 'pointer'
             }}
           >
-            🔄 Refresh
+            Refresh
           </button>
         </div>
       </div>
@@ -241,7 +243,9 @@ export default function InquiriesModule() {
               boxSizing: 'border-box'
             }}
           />
-          <span style={{ position: 'absolute', left: '9px', top: '7px', fontSize: '12px', color: '#94a3b8' }}>🔍</span>
+          <svg style={{ position: 'absolute', left: '9px', top: '8px', width: '13px', height: '13px', color: '#94a3b8' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
         </div>
 
         {/* Status Tabs */}
@@ -291,7 +295,11 @@ export default function InquiriesModule() {
             {filteredInquiries.length === 0 ? (
               <tr>
                 <td colSpan={7} style={{ padding: '40px 20px', textAlign: 'center', color: '#94a3b8' }}>
-                  <div style={{ fontSize: '24px', marginBottom: '6px' }}>📭</div>
+                  <div style={{ display: 'inline-flex', padding: '10px', borderRadius: '50%', background: '#f1f5f9', color: '#94a3b8', marginBottom: '8px' }}>
+                    <svg style={{ width: '22px', height: '22px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H4a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H4a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                    </svg>
+                  </div>
                   <div style={{ fontWeight: '600' }}>No inquiries found</div>
                   <div style={{ fontSize: '11px', marginTop: '2px' }}>
                     Inquiries submitted via the About or Support portal will appear here in real time.
@@ -323,8 +331,8 @@ export default function InquiriesModule() {
                     {/* Prospect & Company */}
                     <td style={{ padding: '12px 16px' }}>
                       <div style={{ fontWeight: '700', color: '#0f172a' }}>{inq.name}</div>
-                      <div style={{ fontSize: '11px', color: '#64748b' }}>🏢 {inq.company || 'Enterprise Partner'}</div>
-                      <div style={{ fontSize: '11px', color: '#0284c7' }}>✉️ {inq.email}</div>
+                      <div style={{ fontSize: '11px', color: '#64748b' }}>{inq.company || 'Enterprise Partner'}</div>
+                      <div style={{ fontSize: '11px', color: '#0284c7' }}>{inq.email}</div>
                     </td>
 
                     {/* Category & Topic */}
@@ -415,7 +423,7 @@ export default function InquiriesModule() {
                           }}
                           title="View Full Inquiry"
                         >
-                          👁️ View
+                          View
                         </button>
 
                         <a
@@ -435,8 +443,7 @@ export default function InquiriesModule() {
                             gap: '4px'
                           }}
                         >
-                          <span>✉️</span>
-                          <span>Reply</span>
+                          Reply
                         </a>
                       </div>
                     </td>
@@ -526,14 +533,14 @@ export default function InquiriesModule() {
 
                 <div>
                   <div style={{ color: '#64748b', fontSize: '10.5px', textTransform: 'uppercase', fontWeight: '700' }}>Company</div>
-                  <div style={{ fontWeight: '700', color: '#0f172a', fontSize: '13px' }}>🏢 {selectedInquiry.company || 'Enterprise Partner'}</div>
+                  <div style={{ fontWeight: '700', color: '#0f172a', fontSize: '13px' }}>{selectedInquiry.company || 'Enterprise Partner'}</div>
                 </div>
 
                 <div style={{ gridColumn: 'span 2' }}>
                   <div style={{ color: '#64748b', fontSize: '10.5px', textTransform: 'uppercase', fontWeight: '700' }}>Email Address</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <a href={'mailto:' + selectedInquiry.email} style={{ color: '#2563eb', fontWeight: '600', textDecoration: 'none' }}>
-                      ✉️ {selectedInquiry.email}
+                      {selectedInquiry.email}
                     </a>
                     <button
                       type="button"
@@ -643,7 +650,6 @@ export default function InquiriesModule() {
                     gap: '6px'
                   }}
                 >
-                  <span>✉️</span>
                   <span>Reply via Email</span>
                 </a>
               </div>

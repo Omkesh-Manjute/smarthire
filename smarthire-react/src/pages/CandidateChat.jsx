@@ -637,7 +637,7 @@ export default function CandidateChat() {
   if (error) {
     return (
       <div style={styles.loadingContainer}>
-        <div style={{ fontSize: '48px', marginBottom: '12px' }}>⚠️</div>
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" style={{ marginBottom: '12px' }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>Unable to Open Screening Link</h3>
         <p style={{ fontSize: '14px', color: '#64748b', maxWidth: '440px', marginTop: '8px', lineHeight: 1.5 }}>
           {error}
@@ -661,7 +661,7 @@ export default function CandidateChat() {
         <div style={styles.headerInner}>
           <div style={styles.logoSection}>
             <div style={styles.logoBadge}>
-              <span style={{ fontSize: '18px' }}>🎥</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
             </div>
             <div>
               <div style={styles.brandTitle}>SmartHire <span style={{ color: '#2563eb' }}>Screen</span></div>
@@ -670,14 +670,14 @@ export default function CandidateChat() {
           </div>
 
           <div style={styles.jobInfoBadge}>
-            <span style={{ fontSize: '14px' }}>💼</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
             <span style={{ fontWeight: '700', color: '#0f172a' }}>{jobTitle}</span>
             <span style={{ color: '#94a3b8' }}>•</span>
             <span style={{ color: '#64748b' }}>{jobClient}</span>
           </div>
 
           <div style={styles.headerRight}>
-            <span style={styles.timeTag}>⏱️ ~3 mins</span>
+            <span style={styles.timeTag}>~3 mins</span>
             <span style={styles.noLoginTag}>Zero Login Required</span>
           </div>
         </div>
@@ -805,7 +805,7 @@ export default function CandidateChat() {
 
             {deviceCheckError && (
               <div style={styles.errorBanner}>
-                <span>⚠️</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 <span>{deviceCheckError}</span>
               </div>
             )}
@@ -822,7 +822,7 @@ export default function CandidateChat() {
                 />
                 {!hasCameraPermission && (
                   <div style={styles.videoFallbackOverlay}>
-                    <span style={{ fontSize: '36px' }}>📷</span>
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                     <span style={{ marginTop: '8px', fontSize: '13px', color: '#94a3b8' }}>
                       Camera preview will appear here
                     </span>
@@ -837,7 +837,8 @@ export default function CandidateChat() {
               <div style={styles.micMeterBox}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    🎙️ Microphone Test
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                    Microphone Test
                   </span>
                   <span style={{ fontSize: '11px', color: micVolume > 5 ? '#16a34a' : '#94a3b8', fontWeight: '700' }}>
                     {micVolume > 5 ? '✓ Voice Detected' : 'Speak to test mic'}
@@ -911,7 +912,7 @@ export default function CandidateChat() {
             <div style={styles.questionBox}>
               <h2 style={styles.questionTitle}>{currentQ.text}</h2>
               {currentQ.description && (
-                <p style={styles.questionDesc}>💡 {currentQ.description}</p>
+                <p style={styles.questionDesc}>{currentQ.description}</p>
               )}
             </div>
 
@@ -930,9 +931,6 @@ export default function CandidateChat() {
                     ...(responseMode === mode ? styles.formatTabBtnActive : {})
                   }}
                 >
-                  <span style={{ fontSize: '16px' }}>
-                    {mode === 'video' ? '🎥' : mode === 'audio' ? '🎙️' : '✍️'}
-                  </span>
                   <span>{mode === 'video' ? 'Video Answer' : mode === 'audio' ? 'Voice Note' : 'Written Text'}</span>
                 </button>
               ))}
@@ -985,7 +983,7 @@ export default function CandidateChat() {
                         onClick={handleStartCountdown}
                         style={styles.recordStartButton}
                       >
-                        <span style={{ fontSize: '18px' }}>⏺️</span> Record Video Answer
+                        Record Video Answer
                       </button>
                     )}
 
@@ -995,7 +993,7 @@ export default function CandidateChat() {
                         onClick={handleStopRecording}
                         style={styles.recordStopButton}
                       >
-                        <span style={{ fontSize: '18px' }}>⏹️</span> Stop Recording
+                        Stop Recording
                       </button>
                     )}
 
@@ -1025,8 +1023,8 @@ export default function CandidateChat() {
               {responseMode === 'audio' && (
                 <div style={styles.audioContainer}>
                   <div style={styles.audioWaveBox}>
-                    <div style={{ fontSize: '48px', marginBottom: '12px' }}>
-                      {isRecording ? '🎙️' : recordedPreviewUrl ? '🎧' : '🎤'}
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px', color: '#2563eb' }}>
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
                     </div>
 
                     <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>
@@ -1068,7 +1066,7 @@ export default function CandidateChat() {
                         onClick={startActualRecording}
                         style={styles.recordStartButton}
                       >
-                        <span style={{ fontSize: '18px' }}>🎙️</span> Start Voice Recording
+                        Start Voice Recording
                       </button>
                     )}
 
@@ -1078,7 +1076,7 @@ export default function CandidateChat() {
                         onClick={handleStopRecording}
                         style={styles.recordStopButton}
                       >
-                        <span style={{ fontSize: '18px' }}>⏹️</span> Stop Voice Recording
+                        Stop Voice Recording
                       </button>
                     )}
 
@@ -1137,7 +1135,7 @@ export default function CandidateChat() {
             {liveTranscript && (
               <div style={styles.transcriptCard}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '700', color: '#4338ca' }}>
-                  <span>✨ Real-time Speech Transcript:</span>
+                  <span>Real-time Speech Transcript:</span>
                 </div>
                 <p style={{ fontSize: '13px', color: '#334155', marginTop: '4px', fontStyle: 'italic', lineHeight: 1.5 }}>
                   "{liveTranscript}"
@@ -1205,7 +1203,7 @@ export default function CandidateChat() {
                         <span style={styles.reviewQText}>{q.text}</span>
                       </div>
                       <span style={styles.reviewFormatBadge}>
-                        {ans?.format === 'video' ? '🎥 Video' : ans?.format === 'audio' ? '🎙️ Audio' : '✍️ Text'}
+                        {ans?.format === 'video' ? 'Video' : ans?.format === 'audio' ? 'Audio' : 'Text'}
                       </span>
                     </div>
 
@@ -1249,7 +1247,7 @@ export default function CandidateChat() {
                         }}
                         style={styles.editAnswerBtn}
                       >
-                        ✏️ Re-record / Edit
+                        Re-record / Edit
                       </button>
                     </div>
                   </div>
@@ -1282,7 +1280,7 @@ export default function CandidateChat() {
                 disabled={isSubmitting}
                 style={styles.primaryButtonLarge}
               >
-                {isSubmitting ? 'Uploading & Evaluating...' : '🚀 Submit Screening Application'}
+                {isSubmitting ? 'Uploading & Evaluating...' : 'Submit Screening Application'}
               </button>
             </div>
           </div>

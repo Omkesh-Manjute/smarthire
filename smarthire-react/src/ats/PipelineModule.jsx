@@ -1,15 +1,15 @@
 import React, { useState, useMemo } from 'react'
 
 const PIPELINE_STAGES = [
-  { id: 'New',                 label: 'New Applied',       icon: '🆕', color: '#3b82f6', bg: '#eff6ff',  border: '#bfdbfe', headerBg: '#dbeafe' },
-  { id: 'Reviewed',            label: 'Reviewed',          icon: '👁️', color: '#7c3aed', bg: '#f5f3ff',  border: '#ddd6fe', headerBg: '#ede9fe' },
-  { id: 'Shortlisted',         label: 'Shortlisted',       icon: '★', color: '#0284c7', bg: '#f0f9ff',  border: '#bae6fd', headerBg: '#e0f2fe' },
-  { id: 'RTR Requested',       label: 'RTR Sent',          icon: '📨', color: '#d97706', bg: '#fffbeb',  border: '#fef3c7', headerBg: '#fef3c7' },
-  { id: 'RTR Received',        label: 'RTR Signed',        icon: '📩', color: '#ea580c', bg: '#fff7ed',  border: '#ffedd5', headerBg: '#ffedd5' },
-  { id: 'Interview Scheduled', label: 'Interview',         icon: '🎙️', color: '#db2777', bg: '#fdf2f8',  border: '#fbcfe8', headerBg: '#fce7f3' },
-  { id: 'Selected',            label: 'Offer Selected',    icon: '✅', color: '#16a34a', bg: '#f0fdf4',  border: '#bbf7d0', headerBg: '#dcfce7' },
-  { id: 'Placed',              label: 'Placed & Hired',    icon: '🏆', color: '#15803d', bg: '#dcfce7',  border: '#86efac', headerBg: '#bbf7d0' },
-  { id: 'Rejected',            label: 'Archived / Reject', icon: '❌', color: '#dc2626', bg: '#fef2f2',  border: '#fca5a5', headerBg: '#fee2e2' },
+  { id: 'New',                 label: 'New Applied',       icon: '', color: '#3b82f6', bg: '#eff6ff',  border: '#bfdbfe', headerBg: '#dbeafe' },
+  { id: 'Reviewed',            label: 'Reviewed',          icon: '', color: '#7c3aed', bg: '#f5f3ff',  border: '#ddd6fe', headerBg: '#ede9fe' },
+  { id: 'Shortlisted',         label: 'Shortlisted',       icon: '', color: '#0284c7', bg: '#f0f9ff',  border: '#bae6fd', headerBg: '#e0f2fe' },
+  { id: 'RTR Requested',       label: 'RTR Sent',          icon: '', color: '#d97706', bg: '#fffbeb',  border: '#fef3c7', headerBg: '#fef3c7' },
+  { id: 'RTR Received',        label: 'RTR Signed',        icon: '', color: '#ea580c', bg: '#fff7ed',  border: '#ffedd5', headerBg: '#ffedd5' },
+  { id: 'Interview Scheduled', label: 'Interview',         icon: '', color: '#db2777', bg: '#fdf2f8',  border: '#fbcfe8', headerBg: '#fce7f3' },
+  { id: 'Selected',            label: 'Offer Selected',    icon: '', color: '#16a34a', bg: '#f0fdf4',  border: '#bbf7d0', headerBg: '#dcfce7' },
+  { id: 'Placed',              label: 'Placed & Hired',    icon: '', color: '#15803d', bg: '#dcfce7',  border: '#86efac', headerBg: '#bbf7d0' },
+  { id: 'Rejected',            label: 'Archived / Reject', icon: '', color: '#dc2626', bg: '#fef2f2',  border: '#fca5a5', headerBg: '#fee2e2' },
 ]
 
 function getInitials(name) {
@@ -137,7 +137,7 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#0f172a' }}>
-              📈 Visual Recruitment Pipeline
+              Visual Recruitment Pipeline
             </h2>
             <span style={{
               background: '#f1f5f9',
@@ -174,7 +174,7 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
               boxShadow: '0 2px 6px rgba(79, 70, 229, 0.25)'
             }}
           >
-            <span>➕ Add Candidate to Pipeline</span>
+            <span>Add Candidate to Pipeline</span>
           </button>
 
           {pipelineCandidates.length > 0 && (
@@ -192,7 +192,7 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
               }}
               title="Clear all candidate cards from the pipeline"
             >
-              🗑️ Clear Pipeline
+              Clear Pipeline
             </button>
           )}
 
@@ -211,7 +211,7 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
                 boxShadow: viewMode === 'table' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none'
               }}
             >
-              📝 Table List
+              Table List
             </button>
             <button
               onClick={() => setViewMode('kanban')}
@@ -227,7 +227,7 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
                 boxShadow: viewMode === 'kanban' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none'
               }}
             >
-              📋 Kanban
+              Kanban
             </button>
             <button
               onClick={() => setViewMode('funnel')}
@@ -243,7 +243,7 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
                 boxShadow: viewMode === 'funnel' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none'
               }}
             >
-              📊 Funnel
+              Funnel
             </button>
           </div>
         </div>
@@ -417,7 +417,7 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
                       alignItems: 'center',
                       gap: 6
                     }}>
-                      <span>📭 Empty Stage</span>
+                      <span>Empty Stage</span>
                       <button
                         onClick={() => { setTargetStageToAdd(stage.id); setShowAddModal(true); }}
                         style={{
@@ -529,7 +529,7 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
                               overflow: 'hidden',
                               textOverflow: 'ellipsis'
                             }} title={candidateJob.title}>
-                              💼 {candidateJob.title}
+                              {candidateJob.title}
                             </div>
                           )}
 
@@ -543,7 +543,7 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
                             marginTop: 2
                           }}>
                             <span style={{ fontSize: 10.5, color: '#94a3b8', fontWeight: 600 }}>
-                              ⏱️ {daysInStage === 0 ? 'Today' : `${daysInStage}d`}
+                              {daysInStage === 0 ? 'Today' : `${daysInStage}d`}
                             </span>
 
                             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -624,7 +624,11 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan="6" style={{ padding: '40px 18px', textAlign: 'center', color: '#64748b' }}>
-                    <div style={{ fontSize: 32, marginBottom: 8 }}>📭</div>
+                    <div style={{ display: 'inline-flex', padding: '10px', borderRadius: '50%', background: '#f1f5f9', color: '#94a3b8', marginBottom: '8px' }}>
+                      <svg style={{ width: '22px', height: '22px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H4a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H4a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                      </svg>
+                    </div>
                     <p style={{ margin: 0, fontWeight: 600 }}>No candidates in this pipeline.</p>
                     <p style={{ margin: '4px 0 0', fontSize: 12, color: '#94a3b8' }}>Add some candidates or clear search filters to view.</p>
                   </td>
@@ -783,7 +787,7 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
           gap: 14
         }}>
           <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#0f172a' }}>
-            📊 Recruitment Funnel & Conversion Rates
+            Recruitment Funnel & Conversion Rates
           </h3>
           <p style={{ margin: 0, fontSize: 12.5, color: '#64748b' }}>
             Track progression rates across pipeline milestones from New Application down to Final Placement.
@@ -797,7 +801,6 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
               return (
                 <div key={stage.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{ width: 130, display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 700, color: '#1e293b' }}>
-                    <span>{stage.icon}</span>
                     <span>{stage.label}</span>
                   </div>
 
@@ -856,7 +859,7 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
             <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafbfc' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#0f172a' }}>
-                  ➕ Add Candidate to Pipeline
+                  Add Candidate to Pipeline
                 </h3>
                 <p style={{ margin: '2px 0 0', fontSize: 12, color: '#64748b' }}>
                   Select talent to advance into stage: <strong>{targetStageToAdd}</strong>
@@ -897,7 +900,7 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
                       <div style={{ minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>{name}</div>
                         <div style={{ fontSize: 11.5, color: '#64748b' }}>
-                          {role} {candidateJob ? `• 💼 ${candidateJob.title}` : ''}
+                          {role} {candidateJob ? `• ${candidateJob.title}` : ''}
                         </div>
                       </div>
 

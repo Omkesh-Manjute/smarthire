@@ -2,23 +2,23 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 const SEARCH_ITEMS = [
-  { id: 'ats-dash', title: 'ATS Dashboard', category: 'ATS Suite', icon: '📊', path: '/ats?tab=dashboard', keywords: 'stats metrics overview candidates jobs' },
-  { id: 'ats-jobs', title: 'Jobs Hub & Management', category: 'ATS Suite', icon: '💼', path: '/ats?tab=jobs', keywords: 'jobs vacancies openings post jd parse' },
-  { id: 'ats-cand', title: 'Candidates Directory', category: 'ATS Suite', icon: '👤', path: '/ats?tab=candidates', keywords: 'candidates talent resumes applicants profiles' },
-  { id: 'ats-pipe', title: 'Visual Hiring Pipeline', category: 'ATS Suite', icon: '📈', path: '/ats?tab=pipeline', keywords: 'pipeline kanban stages status workflow' },
-  { id: 'ats-screen', title: 'Video & Audio Screening (PeekHire)', category: 'ATS Suite', icon: '🎥', path: '/ats?tab=screening', keywords: 'screening video voice audio peekhire interview async responses' },
-  { id: 'ats-sub', title: 'Client Submissions', category: 'ATS Suite', icon: '📤', path: '/ats?tab=submissions', keywords: 'submissions clients rtr client submission' },
-  { id: 'ats-rep', title: 'Intelligence & Reports', category: 'Analytics', icon: '📑', path: '/reports', keywords: 'reports analytics conversion charts metrics export' },
-  { id: 'ats-auto', title: 'ATS Automation & Rules', category: 'ATS Suite', icon: '⚙️', path: '/ats?tab=automation', keywords: 'automation webhooks integrations n8n rules' },
-  { id: 'ats-inbox', title: 'Recruiter Inbox & Chat', category: 'Communication', icon: '💬', path: '/inbox', keywords: 'inbox messages candidate chat direct real-time' },
-  { id: 'ats-set', title: 'ATS Workspace Settings', category: 'Administration', icon: '🛠️', path: '/ats?tab=settings', keywords: 'settings config email templates stages' },
-  { id: 'ats-users', title: 'Manage Team Users & Roles', category: 'Administration', icon: '👥', path: '/ats?tab=users', keywords: 'users team recruiters permissions access roles' },
+  { id: 'ats-dash', title: 'ATS Dashboard', category: 'ATS Suite', icon: '', path: '/ats?tab=dashboard', keywords: 'stats metrics overview candidates jobs' },
+  { id: 'ats-jobs', title: 'Jobs Hub & Management', category: 'ATS Suite', icon: '', path: '/ats?tab=jobs', keywords: 'jobs vacancies openings post jd parse' },
+  { id: 'ats-cand', title: 'Candidates Directory', category: 'ATS Suite', icon: '', path: '/ats?tab=candidates', keywords: 'candidates talent resumes applicants profiles' },
+  { id: 'ats-pipe', title: 'Visual Hiring Pipeline', category: 'ATS Suite', icon: '', path: '/ats?tab=pipeline', keywords: 'pipeline kanban stages status workflow' },
+  { id: 'ats-screen', title: 'Video & Audio Screening (PeekHire)', category: 'ATS Suite', icon: '', path: '/ats?tab=screening', keywords: 'screening video voice audio peekhire interview async responses' },
+  { id: 'ats-sub', title: 'Client Submissions', category: 'ATS Suite', icon: '', path: '/ats?tab=submissions', keywords: 'submissions clients rtr client submission' },
+  { id: 'ats-rep', title: 'Intelligence & Reports', category: 'Analytics', icon: '', path: '/reports', keywords: 'reports analytics conversion charts metrics export' },
+  { id: 'ats-auto', title: 'ATS Automation & Rules', category: 'ATS Suite', icon: '', path: '/ats?tab=automation', keywords: 'automation webhooks integrations n8n rules' },
+  { id: 'ats-inbox', title: 'Recruiter Inbox & Chat', category: 'Communication', icon: '', path: '/inbox', keywords: 'inbox messages candidate chat direct real-time' },
+  { id: 'ats-set', title: 'ATS Workspace Settings', category: 'Administration', icon: '', path: '/ats?tab=settings', keywords: 'settings config email templates stages' },
+  { id: 'ats-users', title: 'Manage Team Users & Roles', category: 'Administration', icon: '', path: '/ats?tab=users', keywords: 'users team recruiters permissions access roles' },
   
-  { id: 'pg-exec', title: 'Executive Command Console', category: 'Navigation', icon: '📊', path: '/dashboard', keywords: 'dashboard executive summary verify command' },
-  { id: 'pg-li', title: 'LinkedIn Automation Studio', category: 'Socials & Automation', icon: '🌐', path: '/linkedin-posts', keywords: 'linkedin social auto post scheduled campaigns' },
-  { id: 'pg-brand', title: 'AI Branding & Socials Center', category: 'Creative Tools', icon: '🎨', path: '/branding', keywords: 'branding social flyer banner canvas ai generator' },
-  { id: 'pg-careers', title: 'Public Careers Portal', category: 'Public', icon: '🚀', path: '/jobs', keywords: 'careers public job board applicants apply' },
-  { id: 'pg-pricing', title: 'Pricing & Enterprise Plans', category: 'Billing', icon: '💳', path: '/pricing', keywords: 'pricing billing subscription plans upgrade' },
+  { id: 'pg-exec', title: 'Executive Command Console', category: 'Navigation', icon: '', path: '/dashboard', keywords: 'dashboard executive summary verify command' },
+  { id: 'pg-li', title: 'LinkedIn Automation Studio', category: 'Socials & Automation', icon: '', path: '/linkedin-posts', keywords: 'linkedin social auto post scheduled campaigns' },
+  { id: 'pg-brand', title: 'AI Branding & Socials Center', category: 'Creative Tools', icon: '', path: '/branding', keywords: 'branding social flyer banner canvas ai generator' },
+  { id: 'pg-careers', title: 'Public Careers Portal', category: 'Public', icon: '', path: '/jobs', keywords: 'careers public job board applicants apply' },
+  { id: 'pg-pricing', title: 'Pricing & Enterprise Plans', category: 'Billing', icon: '', path: '/pricing', keywords: 'pricing billing subscription plans upgrade' },
 ]
 
 export default function QuickSearchModal({ isOpen, onClose }) {
@@ -191,7 +191,7 @@ export default function QuickSearchModal({ isOpen, onClose }) {
         >
           {filtered.length === 0 ? (
             <div style={{ padding: '32px 20px', textAlign: 'center', color: '#94a3b8' }}>
-              <div style={{ fontSize: '24px', marginBottom: '6px' }}>🔍</div>
+              
               <div style={{ fontSize: '14px', fontWeight: '600', color: '#64748b' }}>No matching commands found</div>
               <div style={{ fontSize: '12px' }}>Try searching for "jobs", "candidates", "pipeline", or "reports"</div>
             </div>

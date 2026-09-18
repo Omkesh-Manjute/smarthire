@@ -252,7 +252,6 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
       <div style={styles.topHeaderRow}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '24px' }}>🎥</span>
             <h1 style={styles.mainTitle}>Candidate Video & Audio Screening</h1>
             <span style={styles.peekHireBadge}>PeekHire Powered</span>
           </div>
@@ -269,7 +268,7 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
           }}
           style={styles.createCampaignBtn}
         >
-          <span>✨</span> + Create Screening Link
+          + Create Screening Link
         </button>
       </div>
 
@@ -278,7 +277,6 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
         <div style={styles.kpiCard}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <span style={styles.kpiLabel}>Total Campaigns</span>
-            <span style={styles.kpiIconBlue}>🔗</span>
           </div>
           <div style={styles.kpiValue}>{totalCampaigns}</div>
           <div style={styles.kpiSub}>Active screening links</div>
@@ -287,7 +285,6 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
         <div style={styles.kpiCard}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <span style={styles.kpiLabel}>Submissions Received</span>
-            <span style={styles.kpiIconTeal}>📥</span>
           </div>
           <div style={styles.kpiValue}>{totalSubmissions}</div>
           <div style={styles.kpiSub}>Completed candidate screens</div>
@@ -296,7 +293,6 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
         <div style={styles.kpiCard}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <span style={styles.kpiLabel}>Video Submissions</span>
-            <span style={styles.kpiIconPurple}>🎥</span>
           </div>
           <div style={styles.kpiValue}>{videoSubmissions}</div>
           <div style={styles.kpiSub}>Camera responses recorded</div>
@@ -315,7 +311,9 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
       {/* ─── TOOLBAR FILTERS ──────────────────────────────────────────────── */}
       <div style={styles.toolbarRow}>
         <div style={styles.searchBoxWrapper}>
-          <span style={{ fontSize: '15px', color: '#94a3b8' }}>🔍</span>
+          <svg style={{ width: '15px', height: '15px', color: '#94a3b8' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
           <input
             type="text"
             placeholder="Search candidate name, email, or requisition..."
@@ -361,9 +359,9 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
           <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '700', marginRight: '4px' }}>Format:</span>
           {[
             { id: 'all', label: 'All' },
-            { id: 'video', label: '🎥 Video' },
-            { id: 'audio', label: '🎙️ Audio' },
-            { id: 'text', label: '✍️ Text' }
+            { id: 'video', label: 'Video' },
+            { id: 'audio', label: 'Audio' },
+            { id: 'text', label: 'Text' }
           ].map(fmt => (
             <button
               key={fmt.id}
@@ -389,7 +387,12 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
           </div>
         ) : filteredSessions.length === 0 ? (
           <div style={styles.emptyTable}>
-            <span style={{ fontSize: '42px', marginBottom: '8px' }}>🎥</span>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', color: '#64748B' }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 10l5-3v10l-5-3v-4z"></path>
+                <rect x="2" y="6" width="13" height="12" rx="2"></rect>
+              </svg>
+            </div>
             <div style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>No screening sessions found</div>
             <p style={{ fontSize: '13px', color: '#64748b', maxWidth: '420px', margin: '6px auto 16px' }}>
               Create a new PeekHire screening link and send it to candidates to collect asynchronous video, voice, and text answers.
@@ -464,9 +467,9 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
                       {/* Formats */}
                       <td style={styles.td}>
                         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                          {hasVideo && <span style={styles.formatChipVideo}>🎥 Video</span>}
-                          {hasAudio && <span style={styles.formatChipAudio}>🎙️ Audio</span>}
-                          {hasText && <span style={styles.formatChipText}>✍️ Text</span>}
+                          {hasVideo && <span style={styles.formatChipVideo}>Video</span>}
+                          {hasAudio && <span style={styles.formatChipAudio}>Audio</span>}
+                          {hasText && <span style={styles.formatChipText}>Text</span>}
                           {!hasVideo && !hasAudio && !hasText && (
                             <span style={{ fontSize: '11px', color: '#94a3b8' }}>Link Active</span>
                           )}
@@ -511,10 +514,10 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
                               styles.statusPending)
                         }}>
                           {session.status === 'shortlisted' ? 'Shortlisted' :
-                           session.status === 'submitted' ? '📥 New Submitted' :
+                           session.status === 'submitted' ? 'New Submitted' :
                            session.status === 'reviewed' ? '✓ Reviewed' :
                            session.status === 'rejected' ? '✕ Rejected' :
-                           '⏳ In Progress'}
+                           'In Progress'}
                         </span>
                       </td>
 
@@ -535,7 +538,7 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
                           }}
                           style={styles.reviewButton}
                         >
-                          👁️ Review
+                          Review
                         </button>
                       </td>
                     </tr>
@@ -552,15 +555,12 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
         <div style={styles.modalOverlay} onClick={() => setShowCreateModal(false)}>
           <div style={styles.modalCard} onClick={e => e.stopPropagation()}>
             <div style={styles.modalHeader}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '20px' }}>✨</span>
-                <div>
-                  <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
-                    Create Screening Campaign & Sharable Link
-                  </h3>
-                  <div style={{ fontSize: '12px', color: '#64748b' }}>
-                    Generate a zero-friction video, voice, and text screening link for candidates.
-                  </div>
+              <div>
+                <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
+                  Create Screening Campaign & Sharable Link
+                </h3>
+                <div style={{ fontSize: '12px', color: '#64748b' }}>
+                  Generate a zero-friction video, voice, and text screening link for candidates.
                 </div>
               </div>
               <button
@@ -623,7 +623,7 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
                               }
                             }}
                           />
-                          <span>{fmt === 'video' ? '🎥 Video' : fmt === 'audio' ? '🎙️ Voice Note' : '✍️ Text'}</span>
+                          <span>{fmt === 'video' ? 'Video' : fmt === 'audio' ? 'Voice Note' : 'Text'}</span>
                         </label>
                       ))}
                     </div>
@@ -696,14 +696,19 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
                       disabled={isCreating}
                       style={styles.primaryButton}
                     >
-                      {isCreating ? 'Generating...' : '✨ Generate Sharable Link'}
+                      {isCreating ? 'Generating...' : 'Generate Sharable Link'}
                     </button>
                   </div>
                 </div>
               ) : (
                 /* Generated Link Result View */
                 <div style={{ textAlign: 'center', padding: '16px 0' }}>
-                  <div style={styles.linkCreatedSuccessIcon}>🔗</div>
+                  <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#EFF6FF', color: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                  </div>
                   <h4 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: '12px 0 6px' }}>
                     Screening Link Ready!
                   </h4>
@@ -736,7 +741,7 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
                       href={`mailto:?subject=${encodeURIComponent(`Interview Screening: ${createdLinkResult.jobTitle}`)}&body=${encodeURIComponent(`Hi,\n\nPlease complete your short asynchronous screening (takes ~2-3 mins) using the link below:\n\n${createdLinkResult.screeningUrl}\n\nBest regards,\nSmartHire Talent Team`)}`}
                       style={styles.emailCandidateBtn}
                     >
-                      ✉️ Email Candidate Now
+                      Email Candidate Now
                     </a>
                     <button
                       type="button"
@@ -808,7 +813,7 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
               <div style={styles.reviewLeftCol}>
                 {/* Candidate Overview Card */}
                 <div style={styles.reviewSideCard}>
-                  <div style={styles.sideCardHeading}>👤 Candidate Metadata</div>
+                  <div style={styles.sideCardHeading}>Candidate Metadata</div>
                   <div style={styles.sideInfoRow}>
                     <span style={{ color: '#64748b' }}>Email:</span>
                     <span>{reviewSession.candidateEmail || 'N/A'}</span>
@@ -837,7 +842,7 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
 
                 {/* AI Screening Assessment Card */}
                 <div style={styles.reviewSideCard}>
-                  <div style={styles.sideCardHeading}>✨ AI Match & Insights</div>
+                  <div style={styles.sideCardHeading}>AI Match & Insights</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '8px 0 12px' }}>
                     <div style={styles.aiMatchScoreCircle}>
                       {reviewSession.aiScore || 85}%
@@ -869,7 +874,7 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
 
                 {/* Recruiter Evaluation & Scorecard */}
                 <div style={styles.reviewSideCard}>
-                  <div style={styles.sideCardHeading}>📝 Recruiter Scorecard</div>
+                  <div style={styles.sideCardHeading}>Recruiter Scorecard</div>
                   
                   {/* 1-5 Stars */}
                   <div style={{ margin: '8px 0 12px' }}>
@@ -939,7 +944,7 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
                         ...(activeQuestionTab === idx ? styles.qTabBtnActive : {})
                       }}
                     >
-                      <span>Q{idx + 1}: {resp.format === 'video' ? '🎥 Video' : resp.format === 'audio' ? '🎙️ Audio' : '✍️ Text'}</span>
+                      <span>Q{idx + 1}: {resp.format === 'video' ? 'Video' : resp.format === 'audio' ? 'Audio' : 'Text'}</span>
                     </button>
                   ))}
                 </div>
@@ -996,7 +1001,14 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
 
                         {currentAns.format === 'audio' && currentAns.mediaUrl && (
                           <div style={styles.audioPlayerBox}>
-                            <div style={{ fontSize: '42px', marginBottom: '8px' }}>🎙️</div>
+                            <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#F1F5F9', color: '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+                              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <line x1="12" y1="19" x2="12" y2="23"></line>
+                                <line x1="8" y1="23" x2="16" y2="23"></line>
+                              </svg>
+                            </div>
                             <audio
                               src={currentAns.mediaUrl}
                               controls
@@ -1021,7 +1033,7 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
                           <div style={styles.transcriptBox}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                               <span style={{ fontSize: '12px', fontWeight: '800', color: '#4338ca', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                ✨ AI Speech-to-Text Transcript
+                                AI Speech-to-Text Transcript
                               </span>
                               <button
                                 type="button"

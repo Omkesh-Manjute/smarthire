@@ -185,9 +185,9 @@ export default function AuditActivityLogModule({ isCompact = false }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
           <div>
             <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>📜 Candidate Status Audit & Activity Log</span>
+              <span>Candidate Status Audit & Activity Log</span>
               <span style={{ fontSize: '11px', background: '#dcfce7', color: '#166534', padding: '2px 8px', borderRadius: '12px', fontWeight: 'bold' }}>
-                🟢 Real-Time Audit Trail
+                Real-Time Audit Trail
               </span>
             </h2>
             <p style={{ margin: 0, fontSize: '12.5px', color: '#64748b' }}>
@@ -207,7 +207,7 @@ export default function AuditActivityLogModule({ isCompact = false }) {
                   boxShadow: viewMode === 'timeline' ? '0 1px 2px rgba(0,0,0,0.1)' : 'none'
                 }}
               >
-                📅 Timeline View
+                Timeline View
               </button>
               <button
                 type="button"
@@ -219,7 +219,7 @@ export default function AuditActivityLogModule({ isCompact = false }) {
                   boxShadow: viewMode === 'table' ? '0 1px 2px rgba(0,0,0,0.1)' : 'none'
                 }}
               >
-                📋 Data Table View
+                Data Table View
               </button>
             </div>
 
@@ -232,7 +232,7 @@ export default function AuditActivityLogModule({ isCompact = false }) {
                 borderRadius: '4px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px'
               }}
             >
-              📥 Export CSV
+              Export CSV
             </button>
 
             {logs.length > 0 && (
@@ -252,7 +252,7 @@ export default function AuditActivityLogModule({ isCompact = false }) {
                   borderRadius: '4px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px'
                 }}
               >
-                🗑️ Clear Logs
+                Clear Logs
               </button>
             )}
           </div>
@@ -268,25 +268,25 @@ export default function AuditActivityLogModule({ isCompact = false }) {
         </div>
 
         <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '10px 12px' }}>
-          <div style={{ fontSize: '10.5px', fontWeight: 'bold', color: '#166534' }}>✅ MANAGER APPROVALS</div>
+          <div style={{ fontSize: '10.5px', fontWeight: 'bold', color: '#166534' }}>MANAGER APPROVALS</div>
           <div style={{ fontSize: '20px', fontWeight: '800', color: '#15803d', marginTop: '2px' }}>{approvalsCount}</div>
           <div style={{ fontSize: '10px', color: '#86efac' }}>Passed Manager Review</div>
         </div>
 
         <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '10px 12px' }}>
-          <div style={{ fontSize: '10.5px', fontWeight: 'bold', color: '#991b1b' }}>❌ REJECTIONS & GAPS</div>
+          <div style={{ fontSize: '10.5px', fontWeight: 'bold', color: '#991b1b' }}>REJECTIONS & GAPS</div>
           <div style={{ fontSize: '20px', fontWeight: '800', color: '#dc2626', marginTop: '2px' }}>{rejectionsCount}</div>
           <div style={{ fontSize: '10px', color: '#fca5a5' }}>With Stated Reasons</div>
         </div>
 
         <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '10px 12px' }}>
-          <div style={{ fontSize: '10.5px', fontWeight: 'bold', color: '#1d4ed8' }}>📅 CLIENT INTERVIEWS</div>
+          <div style={{ fontSize: '10.5px', fontWeight: 'bold', color: '#1d4ed8' }}>CLIENT INTERVIEWS</div>
           <div style={{ fontSize: '20px', fontWeight: '800', color: '#1e40af', marginTop: '2px' }}>{interviewsCount}</div>
           <div style={{ fontSize: '10px', color: '#93c5fd' }}>Panel Scheduled</div>
         </div>
 
         <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '8px', padding: '10px 12px' }}>
-          <div style={{ fontSize: '10.5px', fontWeight: 'bold', color: '#c2410c' }}>📥 SOURCED SUBMISSIONS</div>
+          <div style={{ fontSize: '10.5px', fontWeight: 'bold', color: '#c2410c' }}>SOURCED SUBMISSIONS</div>
           <div style={{ fontSize: '20px', fontWeight: '800', color: '#ea580c', marginTop: '2px' }}>{sourcedCount}</div>
           <div style={{ fontSize: '10px', color: '#fdba74' }}>Added to Pool</div>
         </div>
@@ -301,7 +301,7 @@ export default function AuditActivityLogModule({ isCompact = false }) {
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           <input
             type="text"
-            placeholder="🔍 Search candidate, job, user, notes..."
+            placeholder="Search candidate, job, user, notes..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             style={{ padding: '5px 10px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '220px' }}
@@ -326,10 +326,10 @@ export default function AuditActivityLogModule({ isCompact = false }) {
             style={{ padding: '5px 8px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#ffffff' }}
           >
             <option value="All">All Actions</option>
-            <option value="MANAGER_APPROVAL">✅ Manager Approvals</option>
-            <option value="MANAGER_REJECTION">❌ Manager Rejections</option>
-            <option value="INTERVIEW_SCHEDULED">📅 Client Interviews</option>
-            <option value="CANDIDATE_SOURCED">📥 Sourced Candidates</option>
+            <option value="MANAGER_APPROVAL">Manager Approvals</option>
+            <option value="MANAGER_REJECTION">Manager Rejections</option>
+            <option value="INTERVIEW_SCHEDULED">Client Interviews</option>
+            <option value="CANDIDATE_SOURCED">Sourced Candidates</option>
             <option value="STATUS_CHANGE">Status Updates</option>
           </select>
 
@@ -340,10 +340,10 @@ export default function AuditActivityLogModule({ isCompact = false }) {
             style={{ padding: '5px 8px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#ffffff' }}
           >
             <option value="All">All Roles</option>
-            <option value="superadmin">👑 Super Admins</option>
-            <option value="manager">🛡️ Managers</option>
-            <option value="recruiter">💼 Lead Recruiters</option>
-            <option value="employee">👤 Employees</option>
+            <option value="superadmin">Super Admins</option>
+            <option value="manager">Managers</option>
+            <option value="recruiter">Lead Recruiters</option>
+            <option value="employee">Employees</option>
           </select>
 
           {/* Client Filter */}
@@ -392,22 +392,18 @@ export default function AuditActivityLogModule({ isCompact = false }) {
               let roleBadgeBg = '#dbeafe'
               let roleBadgeColor = '#1e40af'
               let roleBorder = '#bfdbfe'
-              let roleIcon = '💼'
               if (item.userRole === 'superadmin' || item.userRole === 'admin') {
                 roleBadgeBg = '#e0f2fe'
                 roleBadgeColor = '#0369a1'
                 roleBorder = '#bae6fd'
-                roleIcon = '👑'
               } else if (item.userRole === 'manager') {
                 roleBadgeBg = '#fef3c7'
                 roleBadgeColor = '#92400e'
                 roleBorder = '#fde68a'
-                roleIcon = '🛡️'
               } else if (item.userRole === 'employee') {
                 roleBadgeBg = '#dcfce7'
                 roleBadgeColor = '#15803d'
                 roleBorder = '#bbf7d0'
-                roleIcon = '👤'
               }
 
               let actionBorderColor = '#cbd5e1'
@@ -476,7 +472,7 @@ export default function AuditActivityLogModule({ isCompact = false }) {
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11.5px', color: '#64748b' }}>
-                      <span>🕒 {item.dateString}</span>
+                      <span>{item.dateString}</span>
                       <span style={{ background: '#e2e8f0', color: '#475569', padding: '1px 6px', borderRadius: '3px', fontSize: '10.5px', fontWeight: 'bold' }}>
                         {getRelativeTime(item.timestamp)}
                       </span>
@@ -513,7 +509,7 @@ export default function AuditActivityLogModule({ isCompact = false }) {
                             {item.performedBy}
                           </div>
                           <span style={{ background: roleBadgeBg, color: roleBadgeColor, border: `1px solid ${roleBorder}`, padding: '1px 6px', borderRadius: '3px', fontSize: '10px', fontWeight: 'bold' }}>
-                            {roleIcon} {item.userRole}
+                            {item.userRole}
                           </span>
                         </div>
                       </div>
@@ -522,7 +518,7 @@ export default function AuditActivityLogModule({ isCompact = false }) {
                     {/* Comments / Audit Notes */}
                     {item.note && (
                       <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '8px 10px', fontSize: '11.5px', color: '#334155', marginTop: '6px' }}>
-                        <span style={{ fontWeight: 'bold', color: '#1e3a8a', marginRight: '6px' }}>📝 Audit Note:</span>
+                        <span style={{ fontWeight: 'bold', color: '#1e3a8a', marginRight: '6px' }}>Audit Note:</span>
                         {item.note}
                       </div>
                     )}
@@ -530,7 +526,7 @@ export default function AuditActivityLogModule({ isCompact = false }) {
                     {/* Rejection reason box */}
                     {item.rejectedReason && (
                       <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '4px', padding: '6px 10px', fontSize: '11.5px', color: '#991b1b', marginTop: '6px', fontWeight: 'bold' }}>
-                        ⚠️ Stated Rejection Reason: {item.rejectedReason}
+                        Stated Rejection Reason: {item.rejectedReason}
                       </div>
                     )}
                   </div>

@@ -72,13 +72,13 @@ function SubmissionModule({ allCandidates, jobsList, submissions, setSubmissions
       {/* Header */}
       <div className="submission-header">
         <div>
-          <h3 style={{ margin: 0, fontFamily: 'Plus Jakarta Sans' }}>📤 Candidate Submissions</h3>
+          <h3 style={{ margin: 0, fontFamily: 'Plus Jakarta Sans' }}>Candidate Submissions</h3>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--ink-soft)' }}>
             Track all candidate submissions to clients. Submit candidates with notes, rate, and vendor info.
           </p>
         </div>
         <button className="btn" onClick={() => setShowForm(true)} id="submit-candidate-btn">
-          ➕ Submit Candidate
+          Submit Candidate
         </button>
       </div>
 
@@ -157,7 +157,7 @@ function SubmissionModule({ allCandidates, jobsList, submissions, setSubmissions
         </div>
       ) : (
         <div className="card" style={{ padding: 40, textAlign: 'center' }}>
-          <h3>📋 No submissions {statusFilter !== 'All' ? `with status "${statusFilter}"` : 'yet'}</h3>
+          <h3>No submissions {statusFilter !== 'All' ? `with status "${statusFilter}"` : 'yet'}</h3>
           <p style={{ color: 'var(--ink-soft)' }}>
             Click "Submit Candidate" to create your first submission.
           </p>
@@ -169,7 +169,7 @@ function SubmissionModule({ allCandidates, jobsList, submissions, setSubmissions
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div className="modal-container" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 600 }}>
             <div className="modal-header">
-              <h3 className="modal-title">📤 Submit Candidate</h3>
+              <h3 className="modal-title">Submit Candidate</h3>
               <button className="modal-close" onClick={() => setShowForm(false)}>&times;</button>
             </div>
             <form onSubmit={handleSubmit}>
@@ -285,7 +285,7 @@ function SubmissionModule({ allCandidates, jobsList, submissions, setSubmissions
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-ghost" onClick={() => setShowForm(false)}>Cancel</button>
-                <button type="submit" className="btn">📤 Submit Candidate</button>
+                <button type="submit" className="btn">Submit Candidate</button>
               </div>
             </form>
           </div>

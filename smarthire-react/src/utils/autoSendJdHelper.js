@@ -4,7 +4,7 @@
  */
 export async function autoSendJobDescriptionToCandidate({ candidate, job, recruiterUser, customNote = '' }) {
   if (!candidate || !candidate.email) {
-    console.warn('⚠️ Cannot auto-send JD: Candidate email is missing');
+    console.warn('Cannot auto-send JD: Candidate email is missing');
     return { success: false, message: 'Candidate email is missing' };
   }
 

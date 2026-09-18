@@ -333,7 +333,7 @@ export default function ZoneCareersView({
                 transition: 'all 0.15s ease'
               }}
             >
-              <span>🕒</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               <span>US Clocks</span>
               <span style={{ fontSize: 9, opacity: 0.7 }}>{clocksExpanded ? '▲' : '▼'}</span>
             </button>
@@ -386,17 +386,24 @@ export default function ZoneCareersView({
               padding: '6px 10px',
               fontSize: 14,
               cursor: 'pointer',
-              color: theme.textPrimary
+              color: theme.textPrimary,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
           >
-            {isLight ? '🌙' : '☀️'}
+            {isLight ? (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            )}
           </button>
 
           {/* Candidate Profile / Sign In */}
           {candidateUser ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 13, fontWeight: 700, color: theme.primary }}>
-                👤 {candidateUser.name}
+                {candidateUser.name}
               </span>
               <button
                 onClick={handleCandidateSignOut}
@@ -510,7 +517,7 @@ export default function ZoneCareersView({
             {/* Floating Search Console (Screenshot 1) */}
             <div className="zone-search-box">
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-                <span style={{ color: '#919EAB', fontSize: 16 }}>🔍</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#919EAB" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <input
                   type="text"
                   placeholder="Job title, keywords..."
@@ -569,7 +576,6 @@ export default function ZoneCareersView({
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
-                  fontSize: 18,
                   boxShadow: '0 8px 16px rgba(250, 84, 28, 0.35)',
                   transition: 'background-color 0.15s'
                 }}
@@ -577,7 +583,7 @@ export default function ZoneCareersView({
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FA541C'}
                 title="Search Jobs"
               >
-                🔍
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               </button>
             </div>
 
@@ -747,7 +753,7 @@ export default function ZoneCareersView({
             e.currentTarget.style.transform = 'translateY(0)'
           }}
         >
-          <span>📄</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           <span>Upload your CV</span>
         </button>
       </section>
@@ -860,7 +866,7 @@ export default function ZoneCareersView({
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {[
               { id: 'All', label: 'All Roles' },
-              { id: 'Today', label: `⏰ Closing Today (${todayDeadlineCount})` },
+              { id: 'Today', label: `Closing Today (${todayDeadlineCount})` },
               { id: 'Remote', label: `Remote (${remoteCount})` },
               { id: 'Hybrid', label: `Hybrid (${hybridCount})` },
               { id: 'Onsite', label: `Onsite (${onsiteCount})` }
@@ -892,7 +898,7 @@ export default function ZoneCareersView({
         {/* Loading State */}
         {loading && (
           <div style={{ textAlign: 'center', padding: '60px 0' }}>
-            <div style={{ fontSize: 32, marginBottom: 12, animation: 'spin 1s linear infinite' }}>⏳</div>
+            <div style={{ width: 32, height: 32, border: `3px solid ${theme.border}`, borderTopColor: theme.primary, borderRadius: '50%', margin: '0 auto 12px', animation: 'spin 0.8s linear infinite' }} />
             <p style={{ color: theme.textSecondary, fontSize: 15 }}>Loading active client requisitions...</p>
           </div>
         )}
@@ -906,7 +912,7 @@ export default function ZoneCareersView({
             borderRadius: 16,
             border: `1px solid ${theme.border}`
           }}>
-            <div style={{ fontSize: 36, marginBottom: 10 }}>🔍</div>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#919EAB" strokeWidth="1.5" style={{ margin: '0 auto 10px', display: 'block' }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <h3 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 6px', color: theme.textPrimary }}>
               No vacancies match your current search
             </h3>
@@ -1061,7 +1067,7 @@ export default function ZoneCareersView({
                         e.currentTarget.style.color = theme.textPrimary
                       }}
                     >
-                      📋 Full JD
+                      Full JD
                     </button>
 
                     {isApplied ? (
@@ -1095,7 +1101,7 @@ export default function ZoneCareersView({
                           gap: 6
                         }}
                       >
-                        💬 Chat
+                        Chat
                       </button>
                     ) : (
                       <button
@@ -1217,7 +1223,7 @@ export default function ZoneCareersView({
                 e.currentTarget.style.transform = 'translateY(0)'
               }}
             >
-              <span>📄</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               <span>Post a job</span>
             </button>
           </div>

@@ -368,28 +368,28 @@ function PrivacyPolicy() {
             {/* 4 Quick Trust Badges */}
             <div className="tf-trust-cards-grid">
               <div className="tf-trust-card">
-                <span className="tf-trust-icon">🔒</span>
+                <span className="tf-trust-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
                 <div>
                   <div className="tf-trust-title">AES-256 & TLS 1.3</div>
                   <div className="tf-trust-desc">Full encryption at rest and in transit across all candidate pools.</div>
                 </div>
               </div>
               <div className="tf-trust-card">
-                <span className="tf-trust-icon">🚫</span>
+                <span className="tf-trust-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></span>
                 <div>
                   <div className="tf-trust-title">Zero Data Selling</div>
                   <div className="tf-trust-desc">We never sell, broker, or rent candidate contacts or resumes.</div>
                 </div>
               </div>
               <div className="tf-trust-card">
-                <span className="tf-trust-icon">🤖</span>
+                <span className="tf-trust-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg></span>
                 <div>
                   <div className="tf-trust-title">Explainable AI</div>
                   <div className="tf-trust-desc">Unbiased matching trained on placed resumes; no protected traits.</div>
                 </div>
               </div>
               <div className="tf-trust-card">
-                <span className="tf-trust-icon">⚖️</span>
+                <span className="tf-trust-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
                 <div>
                   <div className="tf-trust-title">GDPR & CCPA Ready</div>
                   <div className="tf-trust-desc">1-click candidate data export and right-to-be-forgotten deletion.</div>
@@ -450,7 +450,7 @@ function PrivacyPolicy() {
                 <p>We collect information categorized across three primary sources:</p>
 
                 <div className="tf-callout-card">
-                  <div className="tf-callout-title">💼 A. Candidate & Applicant Data</div>
+                  <div className="tf-callout-title">A. Candidate & Applicant Data</div>
                   <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '13.5px', color: '#334155' }}>
                     <li><strong>Identity & Contact Details:</strong> Full name, corporate/personal email address, telephone number, city, state, postal code, and country of residence.</li>
                     <li><strong>Professional Credentials:</strong> Employment work history, job titles, educational qualifications, certifications, technology skills, resume documents (.pdf, .docx), portfolio links, and LinkedIn profiles.</li>
@@ -459,7 +459,7 @@ function PrivacyPolicy() {
                 </div>
 
                 <div className="tf-callout-card">
-                  <div className="tf-callout-title">🛡️ B. Enterprise Recruiter & Employer Telemetry</div>
+                  <div className="tf-callout-title">B. Enterprise Recruiter & Employer Telemetry</div>
                   <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '13.5px', color: '#334155' }}>
                     <li>Corporate login credentials, corporate email addresses, user roles (Admin, Manager, Recruiter, Sourcing Specialist).</li>
                     <li>Requisition allocation records, candidate submission activity logs, interview scheduling timestamps, and hiring audit trails.</li>
@@ -467,7 +467,7 @@ function PrivacyPolicy() {
                 </div>
 
                 <div className="tf-callout-card">
-                  <div className="tf-callout-title">⚙️ C. Automated Device & Log Data</div>
+                  <div className="tf-callout-title">C. Automated Device & Log Data</div>
                   <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '13.5px', color: '#334155' }}>
                     <li>IP address, browser type and version, operating system, session duration, and page access timestamps.</li>
                   </ul>
@@ -490,7 +490,7 @@ function PrivacyPolicy() {
               <section id="ai-processing" className="tf-legal-section">
                 <h2 className="tf-section-heading">4. AI Matching & Screening Telemetry</h2>
                 <div className="tf-callout-card tf-callout-blue">
-                  <div className="tf-callout-title">🤖 Ethical AI Governance & Fair Staffing</div>
+                  <div className="tf-callout-title">Ethical AI Governance & Fair Staffing</div>
                   <p style={{ margin: 0, fontSize: '13.5px', color: '#1e3a8a', lineHeight: 1.6 }}>
                     SmartHire’s automated semantic matching algorithms evaluate candidates solely on verified job requirements, skill compatibility, and work history. Our AI models are strictly prohibited from using age, race, gender, ethnicity, disability, or religious data in hiring recommendations.
                   </p>
@@ -534,19 +534,19 @@ function PrivacyPolicy() {
                 
                 <div className="tf-grid-2">
                   <div className="tf-feature-pill">
-                    <strong>📋 Right to Access</strong>
+                    <strong>Right to Access</strong>
                     <p>Request an export copy of all stored profile data and submission logs.</p>
                   </div>
                   <div className="tf-feature-pill">
-                    <strong>✏️ Right to Rectification</strong>
+                    <strong>Right to Rectification</strong>
                     <p>Update incorrect contact info, skills, or resume documents anytime.</p>
                   </div>
                   <div className="tf-feature-pill">
-                    <strong>🗑️ Right to Erasure</strong>
+                    <strong>Right to Erasure</strong>
                     <p>Request permanent deletion of your candidate record from our talent pool.</p>
                   </div>
                   <div className="tf-feature-pill">
-                    <strong>🚫 Right to Opt-Out</strong>
+                    <strong>Right to Opt-Out</strong>
                     <p>Opt out of automated job matching alerts and notifications at any time.</p>
                   </div>
                 </div>

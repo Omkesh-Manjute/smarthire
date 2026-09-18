@@ -30,12 +30,12 @@ export default function CandidatePdfReportModal({ candidate, onClose }) {
         {/* Top Control Bar (Hidden on Print) */}
         <div className="pdf-control-bar no-print">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '18px' }}>📜</span>
+            
             <strong style={{ fontSize: '15px', color: '#0F172A' }}>Candidate Compliance Certificate Preview</strong>
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
             <button onClick={handlePrint} className="pdf-print-btn">
-              🖨️ Download / Save PDF
+              Download / Save PDF
             </button>
             <button onClick={onClose} className="pdf-close-btn">
               ✕ Close
@@ -48,7 +48,7 @@ export default function CandidatePdfReportModal({ candidate, onClose }) {
           {/* Header */}
           <div className="pdf-header">
             <div className="pdf-brand-mark">
-              <span className="pdf-logo-badge">🛡️ SmartHire Verified</span>
+              <span className="pdf-logo-badge">SmartHire Verified</span>
               <h1 className="pdf-title">CANDIDATE TRUST & COMPLIANCE REPORT</h1>
               <p className="pdf-subtitle">Official Identity Verification & Background Audit Certificate</p>
             </div>
@@ -64,7 +64,7 @@ export default function CandidatePdfReportModal({ candidate, onClose }) {
           {/* Candidate & Recruiter Information Grid */}
           <div className="pdf-grid-2col">
             <div className="pdf-info-card">
-              <h3 className="pdf-section-heading">👤 Candidate Profile</h3>
+              <h3 className="pdf-section-heading">Candidate Profile</h3>
               <table className="pdf-info-table">
                 <tbody>
                   <tr>
@@ -88,7 +88,7 @@ export default function CandidatePdfReportModal({ candidate, onClose }) {
             </div>
 
             <div className="pdf-info-card">
-              <h3 className="pdf-section-heading">🔗 Sourcing & Attribution Details</h3>
+              <h3 className="pdf-section-heading">Sourcing & Attribution Details</h3>
               <table className="pdf-info-table">
                 <tbody>
                   <tr>
@@ -130,7 +130,7 @@ export default function CandidatePdfReportModal({ candidate, onClose }) {
 
           {/* Detailed Verification Checks Breakdown */}
           <div style={{ marginTop: '24px' }}>
-            <h3 className="pdf-section-heading">🔍 Verification Checks Audit Breakdown</h3>
+            <h3 className="pdf-section-heading">Verification Checks Audit Breakdown</h3>
             <table className="pdf-audit-table">
               <thead>
                 <tr>
@@ -142,13 +142,13 @@ export default function CandidatePdfReportModal({ candidate, onClose }) {
               </thead>
               <tbody>
                 <tr>
-                  <td>🛰️ GPS Geolocation</td>
+                  <td>GPS Geolocation</td>
                   <td>Live Device Coordinates vs Work Location</td>
                   <td><strong>30 / 30</strong></td>
                   <td><span className="pdf-check-pass">✓ PASSED</span></td>
                 </tr>
                 <tr>
-                  <td>🌐 IP Geolocation & Proxy</td>
+                  <td>IP Geolocation & Proxy</td>
                   <td>ISP Detection & Anti-VPN Check</td>
                   <td><strong>20 / 20</strong></td>
                   <td><span className="pdf-check-pass">✓ PASSED</span></td>
@@ -160,19 +160,19 @@ export default function CandidatePdfReportModal({ candidate, onClose }) {
                   <td><span className="pdf-check-pass">✓ PASSED</span></td>
                 </tr>
                 <tr>
-                  <td>📸 Biometric Selfie Match</td>
+                  <td>Biometric Selfie Match</td>
                   <td>Facial Recognition & Liveness Check</td>
                   <td><strong>10 / 10</strong></td>
                   <td><span className="pdf-check-pass">✓ PASSED</span></td>
                 </tr>
                 <tr>
-                  <td>📹 Liveness Video Verification</td>
+                  <td>Liveness Video Verification</td>
                   <td>10-Second Candidate Video Greeting</td>
                   <td><strong>10 / 10</strong></td>
                   <td><span className="pdf-check-pass">✓ PASSED</span></td>
                 </tr>
                 <tr>
-                  <td>🔗 LinkedIn Profile Check</td>
+                  <td>LinkedIn Profile Check</td>
                   <td>Work Experience Cross-Validation</td>
                   <td><strong>{score >= 80 ? '10 / 10' : '5 / 10'}</strong></td>
                   <td><span className="pdf-check-pass">✓ VERIFIED</span></td>

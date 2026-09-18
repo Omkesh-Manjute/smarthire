@@ -191,7 +191,7 @@ function BrandingCenter() {
       })
       const data = await res.json()
       if (data.success) {
-        alert('🎉 LinkedIn Company Page ID saved successfully!')
+        alert('LinkedIn Company Page ID saved successfully.')
         await fetchLinkedinStatus()
       } else {
         alert(data.message || 'Failed to save settings.')
@@ -280,7 +280,7 @@ function BrandingCenter() {
     const state = params.get('state')
 
     if (error || errorDescription) {
-      alert(`❌ LinkedIn Connection Failed: ${errorDescription || error}`)
+      alert(`LinkedIn Connection Failed: ${errorDescription || error}`)
       window.history.replaceState({}, document.title, window.location.pathname)
     } else if (code && !codeProcessedRef.current) {
       codeProcessedRef.current = true
@@ -291,14 +291,14 @@ function BrandingCenter() {
           const data = await res.json()
           if (data.success) {
             const friendlyType = data.type === 'company' ? 'Company Page' : 'Personal Profile'
-            alert(`🎉 Successfully connected to LinkedIn (${friendlyType}) as: ${data.name || 'Member'}!`)
+            alert(`Successfully connected to LinkedIn (${friendlyType}) as: ${data.name || 'Member'}!`)
             fetchLinkedinStatus()
           } else {
-            alert(`❌ LinkedIn Connection Failed: ${data.message || 'Unknown Error'}`)
+            alert(`LinkedIn Connection Failed: ${data.message || 'Unknown Error'}`)
           }
         } catch (err) {
           console.error(err)
-          alert('❌ LinkedIn Connection Failed: Error communicating with server.')
+          alert('LinkedIn Connection Failed: Error communicating with server.')
         } finally {
           window.history.replaceState({}, document.title, window.location.pathname)
         }
@@ -407,11 +407,11 @@ function BrandingCenter() {
   const handleApproveAndSave = async (publishImmediately = false) => {
     if (publishImmediately && !linkedinStatus[postTarget].connected) {
       const friendlyName = postTarget === 'company' ? 'Company Page' : 'Personal Profile'
-      alert(`❌ LinkedIn ${friendlyName} not connected! Please connect it first in the "LinkedIn Integration Console" before publishing instantly.`)
+      alert(`LinkedIn ${friendlyName} not connected. Please connect it first in the "LinkedIn Integration Console" before publishing.`)
       return
     }
     if (publishImmediately && postTarget === 'company' && !organizationId) {
-      alert('❌ LinkedIn Company Page ID is not configured. Please enter and save your Company Page ID in settings.')
+      alert('LinkedIn Company Page ID is not configured. Please enter and save your Company Page ID in settings.')
       return
     }
     try {
@@ -457,11 +457,11 @@ function BrandingCenter() {
     const target = (post && post.target) || 'personal'
     const friendlyName = target === 'company' ? 'Company Page' : 'Personal Profile'
     if (!linkedinStatus[target].connected) {
-      alert(`❌ LinkedIn ${friendlyName} is not connected! Please connect it first in the "LinkedIn Integration Console" before publishing.`)
+      alert(`LinkedIn ${friendlyName} not connected. Please connect it first in the "LinkedIn Integration Console" before publishing.`)
       return
     }
     if (target === 'company' && !organizationId) {
-      alert('❌ LinkedIn Company Page ID is not configured. Please enter and save your Company Page ID in settings.')
+      alert('LinkedIn Company Page ID is not configured. Please enter and save your Company Page ID in settings.')
       return
     }
     try {
@@ -636,7 +636,7 @@ function BrandingCenter() {
                   {/* LinkedIn Account Connection Panel */}
                   <div className="card shadow-premium fade-in" style={{ marginBottom: '24px', borderLeft: '4px solid #0077b5' }}>
                     <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                      <span style={{ fontSize: '20px', color: '#0077b5' }}>🔗</span>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0077b5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
                       <span>LinkedIn Integration Console</span>
                     </h3>
                     <p className="section-subtitle" style={{ marginBottom: '20px' }}>
@@ -647,7 +647,7 @@ function BrandingCenter() {
                       {/* Personal Feed Column */}
                       <div style={{ padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
                         <h4 style={{ margin: '0 0 8px 0', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px', color: '#fff' }}>
-                          <span>👤</span> Personal Profile Feed
+                          Personal Profile Feed
                         </h4>
                         <p style={{ fontSize: '12px', color: 'var(--ink-soft)', margin: '0 0 16px 0', lineHeight: '1.4' }}>
                           Publish scheduled content directly to your personal LinkedIn timeline.
@@ -704,7 +704,7 @@ function BrandingCenter() {
                       {/* Company Page Column */}
                       <div style={{ padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
                         <h4 style={{ margin: '0 0 8px 0', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px', color: '#fff' }}>
-                          <span>🏢</span> Company Page Feed
+                          Company Page Feed
                         </h4>
                         <p style={{ fontSize: '12px', color: 'var(--ink-soft)', margin: '0 0 16px 0', lineHeight: '1.4' }}>
                           Publish scheduled updates to your business's LinkedIn Organization page.
@@ -791,7 +791,7 @@ function BrandingCenter() {
                   {/* AI Engine Settings */}
                   <div className="card shadow-premium fade-in" style={{ marginBottom: '24px' }}>
                     <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span>🤖</span> AI Content Engine Settings
+                      AI Content Engine Settings
                     </h3>
                     <p className="section-subtitle">
                       Select your preferred AI model provider and input your API key. If no key is provided, the engine will use the server's env keys before falling back to the Mock Generator.
@@ -846,7 +846,7 @@ function BrandingCenter() {
                                 padding: '0 8px'
                               }}
                             >
-                              {showApiKey ? '👁️' : '👁️‍🗨️'}
+                              {showApiKey ? 'Hide' : 'Show'}
                             </button>
                           </div>
                         </div>
@@ -871,7 +871,7 @@ function BrandingCenter() {
                           className="chip-btn"
                           onClick={() => handleSuggestionClick(sug)}
                         >
-                          💡 {sug.label}
+                          {sug.label}
                         </button>
                       ))}
                     </div>
@@ -956,8 +956,8 @@ function BrandingCenter() {
                           value={postTarget}
                           onChange={(e) => setPostTarget(e.target.value)}
                         >
-                          <option value="personal">👤 Personal Profile Feed</option>
-                          <option value="company">🏢 Company Page Feed</option>
+                          <option value="personal">Personal Profile Feed</option>
+                          <option value="company">Company Page Feed</option>
                         </select>
                       </div>
 
@@ -974,7 +974,7 @@ function BrandingCenter() {
                     </div>
 
                     <button type="submit" className="btn btn-primary-full-width">
-                      🤖 Generate LinkedIn Post Draft
+                      Generate LinkedIn Post Draft
                     </button>
                   </form>
                 </div>
@@ -1032,7 +1032,7 @@ function BrandingCenter() {
                           </span>
                         </div>
                         <span className="linkedin-company-details">Information Technology Services • 1,240 followers</span>
-                        <span className="linkedin-time-details">1m • Edited • 🌐</span>
+                        <span className="linkedin-time-details">1m • Edited • Public</span>
                       </div>
                       
                       {/* Copy to Clipboard Trigger */}
@@ -1049,7 +1049,7 @@ function BrandingCenter() {
                           </>
                         ) : (
                           <>
-                            <span className="copy-icon">📋</span>
+                            <span className="copy-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></span>
                             <span>Copy Post</span>
                           </>
                         )}
@@ -1081,9 +1081,9 @@ function BrandingCenter() {
                     {/* High-Fidelity Engagement Row */}
                     <div className="linkedin-card-engagement">
                       <div className="engagement-icons">
-                        <span className="like-icon-circle">👍</span>
-                        <span className="insightful-icon-circle">💡</span>
-                        <span className="celebrate-icon-circle">👏</span>
+                        <span className="like-icon-circle" style={{display: "inline-flex", alignItems: "center", justifyContent: "center" }}><svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg></span>
+                        <span className="insightful-icon-circle" style={{display: "inline-flex", alignItems: "center", justifyContent: "center" }}><svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"></path></svg></span>
+                        <span className="celebrate-icon-circle" style={{display: "inline-flex", alignItems: "center", justifyContent: "center" }}><svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M7 11V7a2 2 0 0 1 4 0v4M11 11V5a2 2 0 0 1 4 0v6M15 11V7a2 2 0 0 1 4 0v7a6 6 0 0 1-6 6H9a6 6 0 0 1-6-6v-2a2 2 0 0 1 4 0v3"></path></svg></span>
                         <span className="engagement-count">SmartHire and 42 others</span>
                       </div>
                       <div className="engagement-comments">
@@ -1094,16 +1094,16 @@ function BrandingCenter() {
                     {/* Mock LinkedIn Interaction Panel */}
                     <div className="linkedin-interaction-panel">
                       <div className="linkedin-interaction-item">
-                        <span className="act-icon">👍</span> Like
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg> <span>Like</span>
                       </div>
                       <div className="linkedin-interaction-item">
-                        <span className="act-icon">💬</span> Comment
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg> <span>Comment</span>
                       </div>
                       <div className="linkedin-interaction-item">
-                        <span className="act-icon">🔁</span> Repost
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg> <span>Repost</span>
                       </div>
                       <div className="linkedin-interaction-item">
-                        <span className="act-icon">📤</span> Send
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg> <span>Send</span>
                       </div>
                     </div>
                   </div>
@@ -1112,7 +1112,7 @@ function BrandingCenter() {
                   <div className="card shadow-premium" style={{ marginTop: '24px', padding: '20px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
                       <div>
-                        <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold' }}>🎨 AI Visual Post Banner</h4>
+                        <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold' }}>AI Visual Post Banner</h4>
                         <p style={{ margin: 0, fontSize: '13px', color: '#7f8c8d' }}>Generate a branded B2B social card matching this post's topic.</p>
                       </div>
                       <button
@@ -1127,7 +1127,7 @@ function BrandingCenter() {
                         }}
                         disabled={isGeneratingBanner}
                       >
-                        {isGeneratingBanner ? 'Generating...' : '🎨 Generate Social Card'}
+                        {isGeneratingBanner ? 'Generating...' : 'Generate Social Card'}
                       </button>
                     </div>
 
@@ -1186,7 +1186,7 @@ function BrandingCenter() {
                             target="_blank"
                             rel="noreferrer"
                           >
-                            📥 Download Image
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6 }}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>Download Image
                           </a>
                         </div>
                       </div>
@@ -1294,7 +1294,7 @@ WHERE status = 'scheduled'
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
                   <div>
                     <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-                      <span>💬</span> AI LinkedIn Auto-Responder
+                      AI LinkedIn Auto-Responder
                     </h3>
                     <p className="section-subtitle" style={{ margin: 0 }}>
                       Inspect comments on published posts and auto-generate B2B replies.
@@ -1306,7 +1306,7 @@ WHERE status = 'scheduled'
                     onClick={fetchComments}
                     title="Refresh comments feed"
                   >
-                    🔄 Refresh
+                    Refresh
                   </button>
                 </div>
 
@@ -1353,7 +1353,7 @@ WHERE status = 'scheduled'
                               disabled={replyingCommentId !== null}
                               style={{ padding: '4px 10px', fontSize: '12px', height: 'fit-content' }}
                             >
-                              {replyingCommentId === c.id ? '🤖 Replying...' : '🤖 AI Reply'}
+                              {replyingCommentId === c.id ? 'Replying...' : 'AI Reply'}
                             </button>
                           ) : (
                             <span className="pill trusted" style={{ fontSize: '11px', padding: '3px 8px' }}>✓ Replied</span>
@@ -1374,7 +1374,7 @@ WHERE status = 'scheduled'
                             fontSize: '13px',
                             color: '#114b43'
                           }}>
-                            <strong>🤖 SmartHire (AI):</strong> "{c.reply}"
+                            <strong>SmartHire AI:</strong> "{c.reply}"
                           </div>
                         )}
                       </div>
@@ -1424,7 +1424,7 @@ WHERE status = 'scheduled'
               </div>
             ) : filteredPosts.length === 0 ? (
               <div className="empty-queue-box">
-                <span className="empty-icon">📭</span>
+                <span className="empty-icon"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg></span>
                 <h4>No posts in this queue</h4>
                 <p>Use the campaign creator above to draft and schedule posts.</p>
               </div>
@@ -1456,16 +1456,16 @@ WHERE status = 'scheduled'
                         <td>{post.tone}</td>
                         <td>
                           {post.target === 'company' ? (
-                            <span className="category-badge" style={{ background: 'rgba(0, 119, 181, 0.2)', color: '#0077b5', border: '1px solid rgba(0, 119, 181, 0.3)' }}>🏢 Company</span>
+                            <span className="category-badge" style={{ background: 'rgba(0, 119, 181, 0.2)', color: '#0077b5', border: '1px solid rgba(0, 119, 181, 0.3)' }}>Company</span>
                           ) : (
-                            <span className="category-badge" style={{ background: 'rgba(235, 104, 76, 0.15)', color: '#eb684c', border: '1px solid rgba(235, 104, 76, 0.25)' }}>👤 Profile</span>
+                            <span className="category-badge" style={{ background: 'rgba(235, 104, 76, 0.15)', color: '#eb684c', border: '1px solid rgba(235, 104, 76, 0.25)' }}>Profile</span>
                           )}
                         </td>
                         <td>
                           {getStatusBadge(post.status)}
                           {post.status === 'failed' && post.error_message && (
                             <div style={{ fontSize: '11px', color: '#e74c3c', marginTop: '4px', maxWidth: '180px', wordBreak: 'break-word', lineHeight: '1.2' }} title={post.error_message}>
-                              ⚠️ {post.error_message.length > 55 ? post.error_message.slice(0, 55) + '...' : post.error_message}
+                              Error: {post.error_message.length > 55 ? post.error_message.slice(0, 55) + '...' : post.error_message}
                             </div>
                           )}
                         </td>
@@ -1573,8 +1573,8 @@ WHERE status = 'scheduled'
                     value={editingPost.target || 'personal'}
                     onChange={(e) => setEditingPost({ ...editingPost, target: e.target.value })}
                   >
-                    <option value="personal">👤 Personal Profile</option>
-                    <option value="company">🏢 Company Page</option>
+                    <option value="personal">Personal Profile</option>
+                    <option value="company">Company Page</option>
                   </select>
                 </div>
 

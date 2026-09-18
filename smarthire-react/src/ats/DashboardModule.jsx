@@ -290,7 +290,7 @@ function DashboardModule({
 
   const handleSaveRequisition = (e) => {
     e.preventDefault()
-    alert(`💾 Requisition #${selectedReq.id} saved successfully!`)
+    alert(`Requisition #${selectedReq.id} saved successfully!`)
     setSelectedReq(null)
   }
 
@@ -322,7 +322,7 @@ function DashboardModule({
     setNewAttachmentTitle('')
     setNewAttachmentFile(null)
     setShowAddAttachment(false)
-    alert('✅ Document attached successfully!')
+    alert('Document attached successfully!')
   }
 
   const handleDeleteAttachment = (id) => {
@@ -656,7 +656,6 @@ function DashboardModule({
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
                       <label style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#1e3a8a' }}>Description:*</label>
-                      <span style={{ fontSize: '13px', cursor: 'pointer' }} title="Formatted Description View">🖨️</span>
                     </div>
                     <textarea
                       rows={11}
@@ -898,9 +897,9 @@ function DashboardModule({
                                 {att.filename}
                               </span>
                             </td>
-                            <td style={{ padding: '6px 10px', width: '50px', textAlign: 'right' }}>
-                              <span style={{ cursor: 'pointer', marginRight: '8px' }} title="Edit">✏️</span>
-                              <span onClick={() => handleDeleteAttachment(att.id)} style={{ color: '#dc2626', cursor: 'pointer', fontWeight: 'bold' }} title="Delete">❌</span>
+                            <td style={{ padding: '6px 10px', width: '70px', textAlign: 'right' }}>
+                              <span style={{ color: '#2563eb', cursor: 'pointer', marginRight: '8px', fontSize: '11px', textDecoration: 'underline' }}>Edit</span>
+                              <span onClick={() => handleDeleteAttachment(att.id)} style={{ color: '#dc2626', cursor: 'pointer', fontSize: '11px', textDecoration: 'underline' }}>Delete</span>
                             </td>
                           </tr>
                         ))

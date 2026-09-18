@@ -593,7 +593,7 @@ export default function CandidateDetailViewModal({
         return nextDocs
       })
       setActiveDocType(docKey)
-      setToastMsg(`✅ ${file.name} attached & synced to candidate profile!`)
+      setToastMsg(`${file.name} attached & synced to candidate profile.`)
 
       // 1. Save metadata directly to Firestore across candidate ID variations
       try {
@@ -643,10 +643,10 @@ export default function CandidateDetailViewModal({
           }
           return withStorage
         })
-        setToastMsg(`✅ ${file.name} uploaded & saved to database!`)
+        setToastMsg(`${file.name} uploaded & saved to database.`)
       } catch(storageErr) {
         console.warn('Firebase Storage upload note:', storageErr)
-        setToastMsg(`✅ ${file.name} uploaded & saved successfully!`)
+        setToastMsg(`${file.name} uploaded & saved successfully.`)
       }
       setTimeout(() => setToastMsg(null), 3500)
     }
@@ -740,7 +740,7 @@ export default function CandidateDetailViewModal({
       onUpdateCandidate({ ...updatedObj, legalDocs: documents, documents: documents, skills: skillsList, references, notes: interactionNotes, projects: projectsList })
     }
 
-    setToastMsg('💾 Candidate profile, verified skills & resume saved to database!')
+    setToastMsg('Candidate profile, verified skills & resume saved to database!')
     setTimeout(() => setToastMsg(null), 3000)
   }
 
@@ -782,13 +782,13 @@ export default function CandidateDetailViewModal({
       if (onUpdateCandidate) {
         onUpdateCandidate({ ...candidate, legalDocs: documents, documents: documents })
       }
-      setToastMsg('✅ Legal documents saved to database successfully!')
+      setToastMsg('Legal documents saved to database successfully.')
     } catch(err) {
       console.error('Firebase saveLegalDocs error:', err)
       if (onUpdateCandidate) {
         onUpdateCandidate({ ...candidate, legalDocs: documents, documents: documents })
       }
-      setToastMsg('✅ Documents saved locally!')
+      setToastMsg('Documents saved locally.')
     } finally {
       setIsSavingDocs(false)
       setTimeout(() => setToastMsg(null), 4000)
@@ -814,7 +814,7 @@ export default function CandidateDetailViewModal({
       try {
         localStorage.setItem(`smarthire_candidate_skills_${cleanCandId}`, JSON.stringify(nextSkills))
       } catch(e) {}
-      setToastMsg(`✨ Added skill: ${skillName.trim()}`)
+      setToastMsg(`Added skill: ${skillName.trim()}`)
       setTimeout(() => setToastMsg(null), 2500)
     }
   }
@@ -854,7 +854,7 @@ export default function CandidateDetailViewModal({
       references: nextRefs
     }).catch(err => console.warn('Firestore save reference error:', err))
 
-    setToastMsg(editingRefId ? '✅ Reference updated & saved to database!' : '✅ Reference added & saved to database!')
+    setToastMsg(editingRefId ? 'Reference updated & saved to database.' : 'Reference added & saved to database.')
     setTimeout(() => setToastMsg(null), 3000)
   }
 
@@ -874,7 +874,7 @@ export default function CandidateDetailViewModal({
     try {
       localStorage.setItem(`smarthire_candidate_notes_${cleanCandId}`, JSON.stringify(nextNotes))
     } catch(e) {}
-    setToastMsg('📝 Note added successfully!')
+    setToastMsg('Note added successfully!')
     setTimeout(() => setToastMsg(null), 2500)
   }
 
@@ -1268,7 +1268,7 @@ export default function CandidateDetailViewModal({
                 { id: 'details', label: 'Details' },
                 { id: 'skill', label: `Skill (${skillsList.length})` },
                 { id: 'references', label: 'References' },
-                { id: 'legal_docs', label: '🗂️ Legal & Docs (Visa/DL)' },
+                { id: 'legal_docs', label: 'Legal & Docs (Visa/DL)' },
                 { id: 'notes', label: `Interaction Notes (${interactionNotes.length})` },
                 { id: 'submissions', label: 'Submission History' },
                 { id: 'projects', label: 'Projects' },
@@ -1467,10 +1467,10 @@ export default function CandidateDetailViewModal({
                           onClick={() => setActiveDocType('resume')}
                           style={{ color: '#0033cc', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline', maxWidth: '170px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                         >
-                          📄 {documents.resume?.fileName || `${formData.firstName}_Resume.docx`}
+                          {documents.resume?.fileName || `${formData.firstName}_Resume.docx`}
                         </span>
                         <label style={{ cursor: 'pointer', fontSize: '11px', background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '1px 6px', borderRadius: '3px' }} title="Upload new resume file">
-                          📁 Replace
+                          Replace
                           <input
                             type="file"
                             accept=".pdf,.doc,.docx"
@@ -1596,7 +1596,7 @@ export default function CandidateDetailViewModal({
                         onClick={handleSaveCandidateDetails}
                         style={{ background: '#0033cc', border: '1px solid #002299', color: '#ffffff', padding: '4px 18px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '3px' }}
                       >
-                        💾 Save Candidate Details
+                        Save Candidate Details
                       </button>
                       <button
                         type="button"
@@ -1645,7 +1645,7 @@ export default function CandidateDetailViewModal({
                             }}
                             title={hasSkill ? 'Candidate possesses this skill' : 'Click to add this required skill to candidate'}
                           >
-                            {hasSkill ? '✅' : '➕'} {rqSkill}
+                            {hasSkill ? '✓' : '+'} {rqSkill}
                           </span>
                         )
                       })}
@@ -1718,7 +1718,7 @@ export default function CandidateDetailViewModal({
                                   style={{ color: '#dc2626', cursor: 'pointer', fontWeight: 'bold' }}
                                   title="Delete Skill"
                                 >
-                                  ❌
+                                  ✕
                                 </span>
                               </td>
                             </tr>
@@ -1730,14 +1730,14 @@ export default function CandidateDetailViewModal({
 
                   <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '10.5px', color: '#166534', fontWeight: 'bold' }}>
-                      💡 Skills are automatically extracted from parsed resume and matched against the requirement.
+                      Skills are automatically extracted from parsed resume and matched against the requirement.
                     </span>
                     <button
                       type="button"
                       onClick={handleSaveCandidateDetails}
                       style={{ background: '#0033cc', border: '1px solid #002299', color: '#ffffff', padding: '4px 16px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '3px' }}
                     >
-                      💾 Update Skills
+                      Update Skills
                     </button>
                   </div>
                 </div>
@@ -1749,7 +1749,7 @@ export default function CandidateDetailViewModal({
                   <div style={{ background: '#f0fdf4', border: '1px solid #86efac', padding: '8px 12px', marginBottom: '12px', borderRadius: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                       <div style={{ fontWeight: 'bold', color: '#166534', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span>📋 Professional & Client References</span>
+                        <span>Professional & Client References</span>
                         <span style={{ background: '#16a34a', color: '#ffffff', fontSize: '10px', padding: '1px 8px', borderRadius: '10px' }}>
                           {references.length} Total
                         </span>
@@ -1798,7 +1798,7 @@ export default function CandidateDetailViewModal({
                   {showAddRefForm && (
                     <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px', marginBottom: '14px', boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
                       <div style={{ fontWeight: 'bold', color: '#000080', fontSize: '11.5px', marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
-                        <span>{editingRefId ? '✏️ Edit Reference Details' : '➕ Record New Professional Reference'}</span>
+                        <span>{editingRefId ? 'Edit Reference Details' : 'Record New Professional Reference'}</span>
                         <span style={{ fontSize: '10px', color: '#64748b' }}>* All fields saved to Cloud DB</span>
                       </div>
 
@@ -1879,11 +1879,11 @@ export default function CandidateDetailViewModal({
                             onChange={e => setRefForm(prev => ({ ...prev, verificationStatus: e.target.value }))}
                             style={{ width: '100%', padding: '4px 6px', fontSize: '11px', border: '1px solid #7f9db9', borderRadius: '2px', background: '#ffffff', fontWeight: 'bold' }}
                           >
-                            <option value="Verified (Positive)">✅ Verified (Positive)</option>
-                            <option value="Verified (Neutral)">👌 Verified (Neutral)</option>
+                            <option value="Verified (Positive)">Verified (Positive)</option>
+                            <option value="Verified (Neutral)">Verified (Neutral)</option>
                             <option value="Pending Verification">⏳ Pending Verification</option>
-                            <option value="Contact Attempted">📞 Contact Attempted</option>
-                            <option value="Do Not Contact">🚫 Do Not Contact</option>
+                            <option value="Contact Attempted">Contact Attempted</option>
+                            <option value="Do Not Contact">Do Not Contact</option>
                           </select>
                         </div>
                       </div>
@@ -1932,7 +1932,7 @@ export default function CandidateDetailViewModal({
                           onClick={handleSaveReferenceItem}
                           style={{ padding: '4px 16px', fontSize: '11px', fontWeight: 'bold', border: '1px solid #16a34a', background: '#16a34a', color: '#ffffff', borderRadius: '3px', cursor: 'pointer' }}
                         >
-                          {editingRefId ? '💾 Update Reference' : '➕ Add to Table'}
+                          {editingRefId ? 'Update Reference' : 'Add to Table'}
                         </button>
                       </div>
                     </div>
@@ -1956,7 +1956,7 @@ export default function CandidateDetailViewModal({
                         {references.length === 0 ? (
                           <tr>
                             <td colSpan="7" style={{ padding: '32px 16px', textAlign: 'center', background: '#f8fafc', color: '#64748b' }}>
-                              <div style={{ fontSize: '24px', marginBottom: '6px' }}>📇</div>
+                              
                               <div style={{ fontWeight: 'bold', color: '#334155', marginBottom: '4px' }}>
                                 No References Recorded Yet
                               </div>
@@ -1981,7 +1981,7 @@ export default function CandidateDetailViewModal({
                                   setReferences(updated)
                                   try { localStorage.setItem(`smarthire_candidate_refs_${cleanCandId}`, JSON.stringify(updated)) } catch(e) {}
                                   saveCandidate(cleanCandId, { ...candidate, references: updated }).catch(() => {})
-                                  setToastMsg('✨ Sample supervisor reference added & saved to database!')
+                                  setToastMsg('Sample supervisor reference added & saved to database!')
                                   setTimeout(() => setToastMsg(null), 3000)
                                 }}
                                 style={{
@@ -1995,7 +1995,7 @@ export default function CandidateDetailViewModal({
                                   cursor: 'pointer'
                                 }}
                               >
-                                ✨ Auto-Fill Sample Reference
+                                Auto-Fill Sample Reference
                               </button>
                             </td>
                           </tr>
@@ -2007,7 +2007,7 @@ export default function CandidateDetailViewModal({
                                 {rf.name}
                                 {rf.notes && (
                                   <div style={{ fontSize: '9.5px', color: '#64748b', fontWeight: 'normal', marginTop: '1px' }}>
-                                    💬 {rf.notes}
+                                    {rf.notes}
                                   </div>
                                 )}
                               </td>
@@ -2016,8 +2016,8 @@ export default function CandidateDetailViewModal({
                                 <div style={{ fontSize: '10px', color: '#64748b' }}>{rf.designation}</div>
                               </td>
                               <td style={{ padding: '6px 8px', fontSize: '10.5px' }}>
-                                {rf.phone && <div style={{ color: '#0f172a' }}>📞 {rf.phone}</div>}
-                                {rf.email && <div style={{ color: '#0284c7' }}>✉️ {rf.email}</div>}
+                                {rf.phone && <div style={{ color: '#0f172a' }}>{rf.phone}</div>}
+                                {rf.email && <div style={{ color: '#0284c7' }}>{rf.email}</div>}
                               </td>
                               <td style={{ padding: '6px 8px', color: '#475569', fontSize: '10.5px' }}>
                                 {rf.project || 'Target Requisition'}
@@ -2056,7 +2056,7 @@ export default function CandidateDetailViewModal({
                                     style={{ border: '1px solid #cbd5e1', background: '#ffffff', padding: '1px 6px', fontSize: '10px', borderRadius: '2px', cursor: 'pointer' }}
                                     title="Edit Reference"
                                   >
-                                    ✏️
+                                    Edit
                                   </button>
                                   <button
                                     type="button"
@@ -2066,7 +2066,7 @@ export default function CandidateDetailViewModal({
                                         setReferences(nextRefs)
                                         try { localStorage.setItem(`smarthire_candidate_refs_${cleanCandId}`, JSON.stringify(nextRefs)) } catch(e) {}
                                         saveCandidate(cleanCandId, { ...candidate, references: nextRefs }).catch(() => {})
-                                        setToastMsg('🗑️ Reference removed and updated in database.')
+                                        setToastMsg('Reference removed and updated in database.')
                                         setTimeout(() => setToastMsg(null), 2500)
                                       }
                                     }}
@@ -2087,7 +2087,7 @@ export default function CandidateDetailViewModal({
                   {/* Save References to Database Footer Action */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f1f5f9', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
                     <span style={{ fontSize: '10.5px', color: '#64748b' }}>
-                      💡 References are automatically linked with candidate profile #{cleanCandId} and synced across all recruiters.
+                      References are automatically linked with candidate profile #{cleanCandId} and synced across all recruiters.
                     </span>
                     <button
                       type="button"
@@ -2105,9 +2105,9 @@ export default function CandidateDetailViewModal({
                           if (onUpdateCandidate) {
                             onUpdateCandidate({ ...candidate, references })
                           }
-                          setToastMsg('✅ References saved to database successfully!')
+                          setToastMsg('References saved to database successfully.')
                         } catch(err) {
-                          setToastMsg('✅ References saved locally!')
+                          setToastMsg('References saved locally.')
                         }
                         setTimeout(() => setToastMsg(null), 3000)
                       }}
@@ -2125,7 +2125,7 @@ export default function CandidateDetailViewModal({
                         gap: '4px'
                       }}
                     >
-                      💾 Save References to Database
+                      Save References to Database
                     </button>
                   </div>
                 </div>
@@ -2136,7 +2136,7 @@ export default function CandidateDetailViewModal({
                 <div>
                   <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '8px 12px', marginBottom: '12px', borderRadius: '3px' }}>
                     <div style={{ fontWeight: 'bold', color: '#1e40af', marginBottom: '2px' }}>
-                      🛂 Legal, Work Authorization & Compliance Documents
+                      Legal, Work Authorization & Compliance Documents
                     </div>
                     <div style={{ fontSize: '10.5px', color: '#475569' }}>
                       Upload candidate Visa copy, Driver's License, Right to Represent (RTR), and SSN card. Click on any document to preview live in the right viewer panel.
@@ -2145,13 +2145,13 @@ export default function CandidateDetailViewModal({
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
                     {[
-                      { key: 'resume', icon: '📄', label: 'Latest Formatted Resume', desc: 'Current candidate original resume file' },
-                      { key: 'visa', icon: '🛂', label: 'Visa Copy / Work Auth (H1B/I-797/EAD/GC)', desc: 'Valid H1B Approval Notice, Green Card, or EAD Document' },
-                      { key: 'dlFront', icon: '🪪', label: "Driver's License (Front Page)", desc: 'State Government Photo ID / Driver License - Front Side' },
-                      { key: 'dlBack', icon: '🔄', label: "Driver's License (Back Page)", desc: 'State Government Photo ID / Driver License - Back Side & Barcode' },
-                      { key: 'rtr', icon: '📑', label: 'Right to Represent (RTR Form)', desc: 'Signed exclusive right to represent for target requisition' },
-                      { key: 'ssn', icon: '🛡️', label: 'SSN Verification Document', desc: 'Social Security Number card copy / background auth' },
-                      { key: 'coversheet', icon: '📋', label: 'Candidate Submission Cover Sheet', desc: 'Submission cover sheet' }
+                      { key: 'resume', icon: '', label: 'Latest Formatted Resume', desc: 'Current candidate original resume file' },
+                      { key: 'visa', icon: '', label: 'Visa Copy / Work Auth (H1B/I-797/EAD/GC)', desc: 'Valid H1B Approval Notice, Green Card, or EAD Document' },
+                      { key: 'dlFront', icon: '', label: "Driver's License (Front Page)", desc: 'State Government Photo ID / Driver License - Front Side' },
+                      { key: 'dlBack', icon: '', label: "Driver's License (Back Page)", desc: 'State Government Photo ID / Driver License - Back Side & Barcode' },
+                      { key: 'rtr', icon: '', label: 'Right to Represent (RTR Form)', desc: 'Signed exclusive right to represent for target requisition' },
+                      { key: 'ssn', icon: '', label: 'SSN Verification Document', desc: 'Social Security Number card copy / background auth' },
+                      { key: 'coversheet', icon: '', label: 'Candidate Submission Cover Sheet', desc: 'Submission cover sheet' }
                     ].map(item => {
                       const doc = documents[item.key]
                       const isSelected = activeDocType === item.key
@@ -2178,7 +2178,7 @@ export default function CandidateDetailViewModal({
                               </div>
                               <div style={{ fontSize: '10.5px', color: '#64748b' }}>
                                 Status: <strong style={{ color: isUploaded ? '#166534' : '#b45309' }}>
-                                  {isUploaded ? `✅ Uploaded (${doc?.fileName || doc?.title || 'Document Attached'})` : '⚠️ Not Uploaded Yet'}
+                                  {isUploaded ? `Uploaded (${doc?.fileName || doc?.title || 'Document Attached'})` : 'Not Uploaded Yet'}
                                 </strong>
                               </div>
                             </div>
@@ -2189,7 +2189,7 @@ export default function CandidateDetailViewModal({
                               type="button"
                               onClick={() => {
                                 setActiveDocType(item.key)
-                                setToastMsg(`👁️ Switched right viewer to: ${item.label}`)
+                                setToastMsg(`Switched right viewer to: ${item.label}`)
                                 setTimeout(() => setToastMsg(null), 2500)
                               }}
                               style={{
@@ -2202,7 +2202,7 @@ export default function CandidateDetailViewModal({
                                 cursor: 'pointer'
                               }}
                             >
-                              👁️ View in Right Panel
+                              View in Right Panel
                             </button>
 
                             <label
@@ -2216,7 +2216,7 @@ export default function CandidateDetailViewModal({
                                 display: 'inline-block'
                               }}
                             >
-                              📁 Upload / Replace
+                              Upload / Replace
                               <input
                                 type="file"
                                 accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
@@ -2264,7 +2264,7 @@ export default function CandidateDetailViewModal({
                         boxShadow: isSavingDocs ? 'none' : '0 2px 6px rgba(22,101,52,0.3)'
                       }}
                     >
-                      {isSavingDocs ? '⏳ Saving...' : '💾 Save Documents to Database'}
+                      {isSavingDocs ? 'Saving...' : 'Save Documents to Database'}
                     </button>
                   </div>
                 </div>
@@ -2277,7 +2277,7 @@ export default function CandidateDetailViewModal({
                     <span style={{ fontWeight: 'bold', color: '#000080' }}>
                       Candidate Recruiter Interaction Log ({interactionNotes.length} notes)
                     </span>
-                    <span style={{ fontSize: '10px', color: '#64748b' }}>🤖 = AI Auto-generated note</span>
+                    <span style={{ fontSize: '10px', color: '#64748b' }}>AI Auto-generated note</span>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
@@ -2294,7 +2294,7 @@ export default function CandidateDetailViewModal({
                               <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                                 <strong style={{ color: isAuto ? '#0369a1' : '#000080' }}>{note.author} ({note.role})</strong>
                                 {isAuto && (
-                                  <span style={{ background: '#0369a1', color: '#ffffff', fontSize: '9px', padding: '1px 5px', fontWeight: 'bold' }}>🤖 Auto</span>
+                                  <span style={{ background: '#0369a1', color: '#ffffff', fontSize: '9px', padding: '1px 5px', fontWeight: 'bold' }}>AI Auto</span>
                                 )}
                               </div>
                               <span style={{ color: '#64748b' }}>{note.date}</span>
@@ -2377,7 +2377,7 @@ export default function CandidateDetailViewModal({
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                     <span style={{ fontWeight: 'bold', color: '#000080' }}>
-                      💼 Candidate Project & Engagement History ({projectsList.length})
+                      Candidate Project & Engagement History ({projectsList.length})
                     </span>
                     <button
                       type="button"
@@ -2467,7 +2467,7 @@ export default function CandidateDetailViewModal({
                     </div>
                     <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
                       {aiMatch.reasons.map((r, ri) => {
-                        const icon = r.type === 'good' ? '✅' : r.type === 'warn' ? '⚠️' : r.type === 'neutral' ? 'ℹ️' : 'ℹ️'
+                        const icon = r.type === 'good' ? '✓' : r.type === 'warn' ? '!' : '•'
                         const col = r.type === 'good' ? '#15803d' : r.type === 'warn' ? '#92400e' : '#475569'
                         const bg = r.type === 'good' ? '#f0fdf4' : r.type === 'warn' ? '#fef3c7' : '#f8fafc'
                         return (
@@ -2483,7 +2483,7 @@ export default function CandidateDetailViewModal({
                   {/* Matched vs Missing Skills */}
                   {aiMatch.matchedReqSkills.length > 0 && (
                     <div style={{ border: '1px solid #86efac', background: '#f0fdf4', padding: '8px 10px', marginBottom: '8px' }}>
-                      <strong style={{ color: '#15803d', fontSize: '10.5px', display: 'block', marginBottom: '4px' }}>✅ Verified Required Skills ({aiMatch.matchedReqSkills.length}):</strong>
+                      <strong style={{ color: '#15803d', fontSize: '10.5px', display: 'block', marginBottom: '4px' }}>Verified Required Skills ({aiMatch.matchedReqSkills.length}):</strong>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                         {aiMatch.matchedReqSkills.map((sk, i) => (
                           <span key={i} style={{ background: '#dcfce7', color: '#15803d', border: '1px solid #86efac', padding: '1px 7px', fontSize: '10px', fontWeight: 'bold' }}>{sk}</span>
@@ -2493,7 +2493,7 @@ export default function CandidateDetailViewModal({
                   )}
                   {aiMatch.missingReqSkills.length > 0 && (
                     <div style={{ border: '1px solid #fde68a', background: '#fef3c7', padding: '8px 10px', marginBottom: '8px' }}>
-                      <strong style={{ color: '#92400e', fontSize: '10.5px', display: 'block', marginBottom: '4px' }}>⚠️ Missing Required Skills ({aiMatch.missingReqSkills.length}) — discuss in screening:</strong>
+                      <strong style={{ color: '#92400e', fontSize: '10.5px', display: 'block', marginBottom: '4px' }}>Missing Required Skills ({aiMatch.missingReqSkills.length}) — discuss in screening:</strong>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                         {aiMatch.missingReqSkills.map((sk, i) => (
                           <span key={i} style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', padding: '1px 7px', fontSize: '10px' }}>{sk}</span>
@@ -2549,13 +2549,13 @@ export default function CandidateDetailViewModal({
                     color: '#000080'
                   }}
                 >
-                  <option value="resume">📄 Original Resume</option>
-                  <option value="visa">🛂 Visa Copy / Work Auth</option>
-                  <option value="dlFront">🪪 Driver's License (Front Page)</option>
-                  <option value="dlBack">🔄 Driver's License (Back Page)</option>
-                  <option value="rtr">📑 Right To Represent (RTR)</option>
-                  <option value="ssn">🛡️ SSN Verification</option>
-                  <option value="coversheet">📋 Candidate Cover Sheet</option>
+                  <option value="resume">Original Resume</option>
+                  <option value="visa">Visa Copy / Work Auth</option>
+                  <option value="dlFront">Driver's License (Front Page)</option>
+                  <option value="dlBack">Driver's License (Back Page)</option>
+                  <option value="rtr">Right To Represent (RTR)</option>
+                  <option value="ssn">SSN Verification</option>
+                  <option value="coversheet">Candidate Cover Sheet</option>
                 </select>
               </div>
 
@@ -2577,7 +2577,7 @@ export default function CandidateDetailViewModal({
                   }}
                   title="Upload / Replace original resume file"
                 >
-                  📎 Upload File
+                  Upload File
                   <input
                     type="file"
                     accept=".pdf,.doc,.docx,.png,.jpg"
@@ -2829,7 +2829,7 @@ export default function CandidateDetailViewModal({
                                 {currentDoc.title || activeDocType.toUpperCase()}
                               </div>
                               <div style={{ fontSize: '11px', color: '#16a34a', fontWeight: 'bold', marginTop: '2px' }}>
-                                ✅ Attached &amp; Verified: <span style={{ color: '#0f172a', fontWeight: 'normal' }}>{currentDoc.fileName || `${activeDocType}_Document`} ({currentDoc.size || 'Attached'})</span>
+                                Attached &amp; Verified: <span style={{ color: '#0f172a', fontWeight: 'normal' }}>{currentDoc.fileName || `${activeDocType}_Document`} ({currentDoc.size || 'Attached'})</span>
                               </div>
                             </div>
                             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -2866,7 +2866,7 @@ export default function CandidateDetailViewModal({
                                 alignItems: 'center',
                                 gap: '4px'
                               }}>
-                                📁 Replace
+                                Replace
                                 <input
                                   type="file"
                                   accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
@@ -2918,7 +2918,7 @@ export default function CandidateDetailViewModal({
                             </div>
                           ) : (
                             <div style={{ padding: '36px 20px', textAlign: 'center', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
-                              <div style={{ fontSize: '42px', marginBottom: '8px' }}>📄</div>
+                              
                               <div style={{ fontWeight: 'bold', color: '#1e3a8a', fontSize: '14px', marginBottom: '6px' }}>
                                 {currentDoc.fileName || currentDoc.title}
                               </div>
@@ -2948,7 +2948,7 @@ export default function CandidateDetailViewModal({
                         </div>
                       ) : (
                         <div style={{ padding: '36px 20px', textAlign: 'center', background: '#f8fafc', border: '2px dashed #cbd5e1', borderRadius: '6px' }}>
-                          <div style={{ fontSize: '38px', marginBottom: '8px' }}>📁</div>
+                          
                           <div style={{ fontWeight: 'bold', color: '#1e3a8a', fontSize: '14px', marginBottom: '4px' }}>
                             {currentDoc.title || 'Document'}
                           </div>
@@ -2965,7 +2965,7 @@ export default function CandidateDetailViewModal({
                             cursor: 'pointer',
                             display: 'inline-block'
                           }}>
-                            📎 Select &amp; Upload File
+                            Select &amp; Upload File
                             <input
                               type="file"
                               accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"

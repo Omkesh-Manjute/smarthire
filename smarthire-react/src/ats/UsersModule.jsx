@@ -233,7 +233,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
     }
 
     const updated = [payload, ...recruiters]
-    saveRecruiters(updated, `🎉 User account created for "${payload.name}" (${payload.role})!`)
+    saveRecruiters(updated, `User account created for "${payload.name}" (${payload.role})!`)
     setShowAddModal(false)
 
     try {
@@ -283,7 +283,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
       return r
     })
 
-    saveRecruiters(updated, `✅ User "${editRecName}" updated successfully!`)
+    saveRecruiters(updated, `User "${editRecName}" updated successfully!`)
     setEditRecruiter(null)
 
     try {
@@ -383,13 +383,13 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
     <div className="users-module-container">
       {toastMessage && (
         <div className="toast-notification">
-          <span>🔔 {toastMessage}</span>
+          <span>{toastMessage}</span>
         </div>
       )}
 
       <div className="users-header">
         <div>
-          <h2 className="users-title">👥 Master User & Access Control Hub</h2>
+          <h2 className="users-title">Master User & Access Control Hub</h2>
           <p className="users-subtitle">
             Admin console to manage organizational hierarchy, assign managers and recruiter teams, and audit permissions.
           </p>
@@ -398,7 +398,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
         {subTab === 'recruiters' && (
           <div style={{ display: 'flex', gap: '8px' }}>
             <button className="btn" onClick={() => openAddModal('')} style={{ background: '#4f46e5', color: '#ffffff', fontWeight: 'bold' }}>
-              ➕ Add Team Member
+              + Add Team Member
             </button>
           </div>
         )}
@@ -409,25 +409,25 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
           className={`subtab-btn ${subTab === 'recruiters' ? 'active' : ''}`}
           onClick={() => setSubTab('recruiters')}
         >
-          💼 Team & Hierarchy ({recruiters.length})
+          Team & Hierarchy ({recruiters.length})
         </button>
         <button 
           className={`subtab-btn ${subTab === 'candidates' ? 'active' : ''}`}
           onClick={() => setSubTab('candidates')}
         >
-          🎓 Candidate Users ({allCandidates?.length || 0})
+          Candidate Users ({allCandidates?.length || 0})
         </button>
         <button 
           className={`subtab-btn ${subTab === 'audit' ? 'active' : ''}`}
           onClick={() => setSubTab('audit')}
         >
-          📜 Audit & Activity Log
+          Audit & Activity Log
         </button>
         <button 
           className={`subtab-btn ${subTab === 'permissions' ? 'active' : ''}`}
           onClick={() => setSubTab('permissions')}
         >
-          🔒 Access Control (Pages ON/OFF)
+          Access Control (Pages ON/OFF)
         </button>
       </div>
 
@@ -443,25 +443,25 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
               </div>
 
               <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px 16px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
-                <div style={{ fontSize: '11px', fontWeight: '600', color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>👑 SUPER ADMINS</div>
+                <div style={{ fontSize: '11px', fontWeight: '600', color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>SUPER ADMINS</div>
                 <div style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', marginTop: '4px' }}>{adminCount}</div>
                 <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Full Platform Control</div>
               </div>
 
               <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px 16px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
-                <div style={{ fontSize: '11px', fontWeight: '600', color: '#b45309', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🛡️ MANAGERS & LEADS</div>
+                <div style={{ fontSize: '11px', fontWeight: '600', color: '#b45309', textTransform: 'uppercase', letterSpacing: '0.05em' }}>MANAGERS & LEADS</div>
                 <div style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', marginTop: '4px' }}>{managerCount}</div>
                 <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Candidate Review & AI</div>
               </div>
 
               <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px 16px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
-                <div style={{ fontSize: '11px', fontWeight: '600', color: '#4338ca', textTransform: 'uppercase', letterSpacing: '0.05em' }}>💼 LEAD RECRUITERS</div>
+                <div style={{ fontSize: '11px', fontWeight: '600', color: '#4338ca', textTransform: 'uppercase', letterSpacing: '0.05em' }}>LEAD RECRUITERS</div>
                 <div style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', marginTop: '4px' }}>{leadRecruiterCount}</div>
                 <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Managing Requisitions</div>
               </div>
 
               <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px 16px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
-                <div style={{ fontSize: '11px', fontWeight: '600', color: '#047857', textTransform: 'uppercase', letterSpacing: '0.05em' }}>👤 SOURCING EMPLOYEES</div>
+                <div style={{ fontSize: '11px', fontWeight: '600', color: '#047857', textTransform: 'uppercase', letterSpacing: '0.05em' }}>SOURCING EMPLOYEES</div>
                 <div style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', marginTop: '4px' }}>{employeeCount}</div>
                 <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Assigned Sub-Recruiters</div>
               </div>
@@ -472,7 +472,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                 <div style={{ position: 'relative' }}>
                   <input
                     type="text"
-                    placeholder="🔍 Search name, email, ref code..."
+                    placeholder="Search name, email, ref code..."
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                     style={{ padding: '7px 12px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '6px', width: '230px', outline: 'none', background: '#f8fafc' }}
@@ -488,10 +488,10 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                   style={{ padding: '7px 10px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#ffffff', color: '#334155', fontWeight: '600', outline: 'none' }}
                 >
                   <option value="All">All Roles ({recruiters.length})</option>
-                  <option value="superadmin">👑 Super Admins ({adminCount})</option>
-                  <option value="manager">🛡️ Managers & Leads ({managerCount})</option>
-                  <option value="recruiter">💼 Lead Recruiters ({leadRecruiterCount})</option>
-                  <option value="employee">👤 Sourcing Employees ({employeeCount})</option>
+                  <option value="superadmin">Super Admins ({adminCount})</option>
+                  <option value="manager">Managers & Leads ({managerCount})</option>
+                  <option value="recruiter">Lead Recruiters ({leadRecruiterCount})</option>
+                  <option value="employee">Sourcing Employees ({employeeCount})</option>
                 </select>
 
                 <select
@@ -500,8 +500,8 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                   style={{ padding: '7px 10px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#ffffff', color: '#334155', outline: 'none' }}
                 >
                   <option value="All">All Status</option>
-                  <option value="Active">🟢 Active Accounts</option>
-                  <option value="Inactive">🔴 Inactive Accounts</option>
+                  <option value="Active">Active Accounts</option>
+                  <option value="Inactive">Inactive Accounts</option>
                 </select>
               </div>
 
@@ -547,23 +547,23 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                           let roleBadgeBg = '#eff6ff'
                           let roleBadgeColor = '#1d4ed8'
                           let roleBadgeBorder = '#bfdbfe'
-                          let roleLabel = '💼 Lead Recruiter'
+                          let roleLabel = 'Lead Recruiter'
 
                           if (rec.role === 'superadmin' || rec.role === 'admin') {
                             roleBadgeBg = '#eff6ff'
                             roleBadgeColor = '#1d4ed8'
                             roleBadgeBorder = '#bfdbfe'
-                            roleLabel = '👑 Super Admin'
+                            roleLabel = 'Super Admin'
                           } else if (rec.role === 'manager') {
                             roleBadgeBg = '#fef3c7'
                             roleBadgeColor = '#b45309'
                             roleBadgeBorder = '#fde68a'
-                            roleLabel = '🛡️ Manager / Lead'
+                            roleLabel = 'Manager / Lead'
                           } else if (rec.role === 'employee') {
                             roleBadgeBg = '#ecfdf5'
                             roleBadgeColor = '#047857'
                             roleBadgeBorder = '#a7f3d0'
-                            roleLabel = '👤 Employee (Sourcer)'
+                            roleLabel = 'Employee (Sourcer)'
                           }
 
                           return (
@@ -626,7 +626,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                                       }}
                                       title="Click to view employees reporting under this recruiter"
                                     >
-                                      <span>👥 {subordinates.length} Subordinate{subordinates.length === 1 ? '' : 's'}</span>
+                                      <span>{subordinates.length} Subordinate{subordinates.length === 1 ? '' : 's'}</span>
                                       <span style={{ fontSize: '10px' }}>{isExpanded ? '▲' : '▼'}</span>
                                     </button>
                                   ) : (
@@ -738,7 +738,6 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                                       
                                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                          <span style={{ fontSize: '14px' }}>👥</span>
                                           <strong style={{ color: '#0f172a', fontSize: '12px' }}>
                                             Direct Reporting Sub-Team for {rec.name} ({subordinates.length} Employee{subordinates.length === 1 ? '' : 's'})
                                           </strong>
@@ -775,7 +774,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                                                   <span style={{ color: '#64748b', fontSize: '11px', marginLeft: '6px' }}>({subEmp.email})</span>
                                                 </div>
                                                 <span style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', padding: '2px 7px', borderRadius: '4px', fontSize: '10.5px', fontWeight: '600' }}>
-                                                  👤 Sourcing Employee
+                                                  Sourcing Employee
                                                 </span>
                                                 <span style={{ color: subEmp.isActive !== false ? '#16a34a' : '#dc2626', fontSize: '11px', fontWeight: '600' }}>
                                                   {subEmp.isActive !== false ? '● Active' : '● Inactive'}
@@ -903,7 +902,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
         {/* ROLE PERMISSIONS SUB-TAB */}
         {subTab === 'permissions' && (
           <div className="card shadow-sm" style={{ padding: 24 }}>
-            <h4 style={{ margin: '0 0 10px', fontSize: 16, fontWeight: 800 }}>🔒 Role-Based Workspace Access (Pages ON/OFF)</h4>
+            <h4 style={{ margin: '0 0 10px', fontSize: 16, fontWeight: 800 }}>Role-Based Workspace Access (Pages ON/OFF)</h4>
             <p style={{ margin: '0 0 20px', fontSize: 13, color: 'var(--ink-soft)' }}>
               Configure which workspaces, portals, and ATS modules are accessible to Managers and Recruiters. Any change takes effect in real-time.
             </p>
@@ -912,26 +911,26 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                 <thead>
                   <tr>
                     <th>Page / Module / Workspace</th>
-                    <th style={{ textAlign: 'center' }}>👑 Super Admin Access</th>
-                    <th style={{ textAlign: 'center' }}>🛡️ Manager Access</th>
-                    <th style={{ textAlign: 'center' }}>💼 Recruiter Access</th>
+                    <th style={{ textAlign: 'center' }}>Super Admin Access</th>
+                    <th style={{ textAlign: 'center' }}>Manager Access</th>
+                    <th style={{ textAlign: 'center' }}>Recruiter Access</th>
                   </tr>
                 </thead>
                 <tbody>
                   {[
-                    { id: 'ats', label: '💼 ATS Workspace Platform (/ats)', desc: 'Core ATS Talent portal with candidate database, screening, and jobs.' },
-                    { id: 'dashboard', label: '📊 Executive Dashboard (/dashboard)', desc: 'Requisition allocation, candidate submissions, and VMS metrics.' },
-                    { id: 'reports', label: '📑 Intelligence & Reports (/reports)', desc: 'Recruitment analytics, conversion charts, and export tools.' },
-                    { id: 'audit', label: '📜 Audit & Activity Log (/ats?tab=audit)', desc: 'Chronological timeline of candidate status changes & reviews.' },
-                    { id: 'linkedin', label: '🌐 LinkedIn Automation (/linkedin-posts)', desc: 'Auto-post vacancies and social outreach studio.' },
-                    { id: 'branding', label: '🎨 AI Branding Studio (/branding)', desc: 'Marketing flyers, promotional banners, and social creatives.' },
-                    { id: 'jobs', label: '💼 Jobs Hub (ATS Module)', desc: 'Post new positions, scrape JDs, and link openings.' },
-                    { id: 'candidates', label: '👤 Candidate List (ATS Module)', desc: 'Review, search, filter, and modify candidate talent profiles.' },
-                    { id: 'pipeline', label: '📈 Visual Pipeline (ATS Module)', desc: 'Kanban board of candidates across hiring stages.' },
-                    { id: 'screening', label: '🎥 Video & Audio Screening (ATS Module)', desc: 'PeekHire asynchronous 1-way video, audio, and text candidate screening.' },
-                    { id: 'submissions', label: '📤 Client Submissions & RTR (ATS Module)', desc: 'Package and submit shortlisted candidate profiles to clients.' },
-                    { id: 'automation', label: '⚙️ Automation Rules (ATS Module)', desc: 'Configure background jobs, webhooks, and automation triggers.' },
-                    { id: 'inbox', label: '💬 Real-time Inbox (ATS Module)', desc: '1-on-1 direct candidate messaging platform.' }
+                    { id: 'ats', label: 'ATS Workspace Platform (/ats)', desc: 'Core ATS Talent portal with candidate database, screening, and jobs.' },
+                    { id: 'dashboard', label: 'Executive Dashboard (/dashboard)', desc: 'Requisition allocation, candidate submissions, and VMS metrics.' },
+                    { id: 'reports', label: 'Intelligence & Reports (/reports)', desc: 'Recruitment analytics, conversion charts, and export tools.' },
+                    { id: 'audit', label: 'Audit & Activity Log (/ats?tab=audit)', desc: 'Chronological timeline of candidate status changes & reviews.' },
+                    { id: 'linkedin', label: 'LinkedIn Automation (/linkedin-posts)', desc: 'Auto-post vacancies and social outreach studio.' },
+                    { id: 'branding', label: 'AI Branding Studio (/branding)', desc: 'Marketing flyers, promotional banners, and social creatives.' },
+                    { id: 'jobs', label: 'Jobs Hub (ATS Module)', desc: 'Post new positions, scrape JDs, and link openings.' },
+                    { id: 'candidates', label: 'Candidate List (ATS Module)', desc: 'Review, search, filter, and modify candidate talent profiles.' },
+                    { id: 'pipeline', label: 'Visual Pipeline (ATS Module)', desc: 'Kanban board of candidates across hiring stages.' },
+                    { id: 'screening', label: 'Video & Audio Screening (ATS Module)', desc: 'PeekHire asynchronous 1-way video, audio, and text candidate screening.' },
+                    { id: 'submissions', label: 'Client Submissions & RTR (ATS Module)', desc: 'Package and submit shortlisted candidate profiles to clients.' },
+                    { id: 'automation', label: 'Automation Rules (ATS Module)', desc: 'Configure background jobs, webhooks, and automation triggers.' },
+                    { id: 'inbox', label: 'Real-time Inbox (ATS Module)', desc: '1-on-1 direct candidate messaging platform.' }
                   ].map(page => {
                     return (
                       <tr key={page.id}>
@@ -981,7 +980,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
         <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
           <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '560px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>➕ Add New Team Member</h3>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Add New Team Member</h3>
               <button 
                 onClick={() => setShowAddModal(false)}
                 style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--ink-soft)' }}
@@ -1047,10 +1046,10 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
               <div className="form-group">
                 <label style={{ fontWeight: 'bold', color: '#1e3a8a' }}>User System Role *</label>
                 <select value={newRecRole} onChange={e => setNewRecRole(e.target.value)} style={{ fontWeight: 'bold' }}>
-                  <option value="superadmin">👑 Super Admin (Full Control)</option>
-                  <option value="manager">🛡️ Manager / Account Lead (Candidate & AI Reviewer)</option>
-                  <option value="recruiter">💼 Lead Recruiter (Client Submissions & Sourcing)</option>
-                  <option value="employee">👤 Employee / Sub-Recruiter (Reporting to Recruiter)</option>
+                  <option value="superadmin">Super Admin (Full Control)</option>
+                  <option value="manager">Manager / Account Lead (Candidate & AI Reviewer)</option>
+                  <option value="recruiter">Lead Recruiter (Client Submissions & Sourcing)</option>
+                  <option value="employee">Employee / Sub-Recruiter (Reporting to Recruiter)</option>
                 </select>
               </div>
 
@@ -1083,7 +1082,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                   Cancel
                 </button>
                 <button type="submit" className="btn" style={{ background: '#4f46e5', color: '#ffffff' }}>
-                  💾 Create Account
+                  Create Account
                 </button>
               </div>
             </form>
@@ -1095,7 +1094,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
         <div className="modal-overlay" onClick={() => setEditRecruiter(null)}>
           <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '560px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>✏️ Edit Team Member Details</h3>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Edit Team Member Details</h3>
               <button 
                 onClick={() => setEditRecruiter(null)}
                 style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--ink-soft)' }}
@@ -1164,10 +1163,10 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                   disabled={editRecruiter.email === 'omkesh@coolsofttech.com'}
                   style={{ fontWeight: 'bold' }}
                 >
-                  <option value="superadmin">👑 Super Admin (Full Control)</option>
-                  <option value="manager">🛡️ Manager / Account Lead (Candidate & AI Reviewer)</option>
-                  <option value="recruiter">💼 Lead Recruiter (Client Submissions & Sourcing)</option>
-                  <option value="employee">👤 Employee / Sub-Recruiter (Reporting to Recruiter)</option>
+                  <option value="superadmin">Super Admin (Full Control)</option>
+                  <option value="manager">Manager / Account Lead (Candidate & AI Reviewer)</option>
+                  <option value="recruiter">Lead Recruiter (Client Submissions & Sourcing)</option>
+                  <option value="employee">Employee / Sub-Recruiter (Reporting to Recruiter)</option>
                 </select>
               </div>
 
@@ -1196,7 +1195,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                   Cancel
                 </button>
                 <button type="submit" className="btn">
-                  💾 Update Details
+                  Update Details
                 </button>
               </div>
             </form>
@@ -1209,7 +1208,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
         <div className="modal-overlay" onClick={() => setSelectedCandidate(null)}>
           <div className="modal-card" style={{ maxWidth: 600 }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>👤 Candidate User Profile Audit</h3>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Candidate User Profile Audit</h3>
               <button 
                 onClick={() => setSelectedCandidate(null)}
                 style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--ink-soft)' }}

@@ -406,7 +406,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
       setPermissionStatus(res)
       if (res === 'granted') {
         pushActivityNotification({
-          title: '🎉 Push Notifications Enabled!',
+          title: 'Push Notifications Enabled!',
           message: 'You will receive desktop push alerts and sound when candidates or jobs update.',
           type: 'info',
           category: 'system',
@@ -472,7 +472,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
             const rateStr = j.budget || j.payRate ? `· ${j.budget || j.payRate}` : ''
 
             pushActivityNotification({
-              title: `💼 New Requisition: ${j.title || 'New Position'}`,
+              title: `New Requisition: ${j.title || 'New Position'}`,
               message: `Req #${cleanId} · ${clientName} (${locStr}) ${rateStr} is now open for candidate submissions.`,
               type: 'requisition',
               category: 'team',
@@ -540,7 +540,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
               const rateStr = nj.budget || nj.payRate ? `· ${nj.budget || nj.payRate}` : ''
 
               pushActivityNotification({
-                title: `💼 New Requisition: ${nj.title || 'New Position'}`,
+                title: `New Requisition: ${nj.title || 'New Position'}`,
                 message: `Req #${cleanId} · ${clientName} (${locStr}) ${rateStr} is now live in portal.`,
                 type: 'requisition',
                 category: 'team',
@@ -553,7 +553,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
             const sampleTitles = newlyIngested.slice(0, 2).map(j => j.title).join(', ')
             const firstId = String(newlyIngested[0].reqId || newlyIngested[0].id || '').replace(/^J-/, '')
             pushActivityNotification({
-              title: `💼 ${newlyIngested.length} New Requisitions Ingested!`,
+              title: `${newlyIngested.length} New Requisitions Ingested!`,
               message: `${sampleTitles} and ${newlyIngested.length - 2} more positions now open for candidate submissions.`,
               type: 'requisition',
               category: 'team',
@@ -673,20 +673,20 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
   const getTypeBadge = (type) => {
     switch (type) {
       case 'approval':
-        return { icon: '✅', label: 'Approved', bg: '#dcfce7', color: '#166534', border: '#bbf7d0' }
+        return { icon: '', label: 'Approved', bg: '#dcfce7', color: '#166534', border: '#bbf7d0' }
       case 'assignment':
-        return { icon: '📋', label: 'Assigned', bg: '#e0f2fe', color: '#0369a1', border: '#bae6fd' }
+        return { icon: '', label: 'Assigned', bg: '#e0f2fe', color: '#0369a1', border: '#bae6fd' }
       case 'interview':
-        return { icon: '📅', label: 'Interview', bg: '#fef3c7', color: '#92400e', border: '#fde68a' }
+        return { icon: '', label: 'Interview', bg: '#fef3c7', color: '#92400e', border: '#fde68a' }
       case 'ai':
       case 'ai_match':
-        return { icon: '🎯', label: 'AI Match', bg: '#ede9fe', color: '#6d28d9', border: '#ddd6fe' }
+        return { icon: '', label: 'AI Match', bg: '#ede9fe', color: '#6d28d9', border: '#ddd6fe' }
       case 'requisition':
-        return { icon: '💼', label: 'Requisition', bg: '#ffedd5', color: '#9a3412', border: '#fed7aa' }
+        return { icon: '', label: 'Requisition', bg: '#ffedd5', color: '#9a3412', border: '#fed7aa' }
       case 'inquiry':
-        return { icon: '📩', label: 'Inquiry', bg: '#eff6ff', color: '#1e40af', border: '#bfdbfe' }
+        return { icon: '', label: 'Inquiry', bg: '#eff6ff', color: '#1e40af', border: '#bfdbfe' }
       default:
-        return { icon: '🔔', label: 'Update', bg: '#f1f5f9', color: '#334155', border: '#e2e8f0' }
+        return { icon: '', label: 'Update', bg: '#f1f5f9', color: '#334155', border: '#e2e8f0' }
     }
   }
 
@@ -715,7 +715,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
           transition: 'all 0.15s ease'
         }}
       >
-        <span style={{ fontSize: '15px', lineHeight: 1 }}>🔔</span>
+        <span style={{ display: "flex", alignItems: "center" }}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></span>
 
         {/* Unread Counter Badge */}
         {unreadCount > 0 && (
@@ -763,7 +763,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
           fontFamily: 'Arial, sans-serif'
         }}>
           <span style={{ fontSize: '18px' }}>
-            {liveToast.type === 'requisition' ? '💼' : '🔔'}
+            ●
           </span>
           <div style={{ flex: 1 }}>
             <div style={{
@@ -836,7 +836,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
             flexWrap: 'wrap'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '14px' }}>🔔</span>
+              <span style={{ display: "inline-flex", alignItems: "center" }}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></span>
               <span style={{ fontWeight: 'bold', fontSize: '12.5px', color: '#0f172a' }}>
                 Activity & Alerts
               </span>
@@ -874,7 +874,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
                   gap: '3px'
                 }}
               >
-                <span>{isSoundEnabled ? '🔊' : '🔇'}</span>
+                <span>{isSoundEnabled ? 'Sound' : 'Muted'}</span>
                 <span>{isSoundEnabled ? 'Sound ON' : 'Muted'}</span>
               </button>
 
@@ -894,7 +894,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
                   cursor: 'pointer'
                 }}
               >
-                🔔 Test
+                Test
               </button>
 
               {/* Test JD Requisition Sound Button */}
@@ -916,7 +916,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
                   gap: '2px'
                 }}
               >
-                <span>💼</span>
+                
                 <span>JD Sound</span>
               </button>
 
@@ -950,7 +950,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
               gap: '8px'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '13px' }}>📢</span>
+                
                 <span style={{ fontSize: '11px', color: '#1e40af', fontWeight: '500' }}>
                   Enable desktop pop-up alerts with sound?
                 </span>
@@ -1015,7 +1015,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
           <div style={{ maxHeight: '340px', overflowY: 'auto', background: '#ffffff' }}>
             {filteredNotifs.length === 0 ? (
               <div style={{ padding: '30px 20px', textAlign: 'center', color: '#94a3b8', fontSize: '11.5px' }}>
-                <span style={{ fontSize: '24px', display: 'block', marginBottom: '6px' }}>🔕</span>
+                <span style={{ fontSize: '13px', display: 'block', marginBottom: '6px', fontWeight: 700 }}>No Notifications</span>
                 No notifications in this category
               </div>
             ) : (
@@ -1091,7 +1091,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
                             borderRadius: '3px',
                             fontWeight: 'bold'
                           }}>
-                            👤 {item.actor} ({item.actorRole || 'Recruiter'})
+                            {item.actor} ({item.actorRole || 'Recruiter'})
                           </span>
                         )}
                         {item.reqId && (
@@ -1137,10 +1137,10 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
               Live Team Activity
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b' }}>
-              <span>{isSoundEnabled ? '🔊 Sound ON' : '🔇 Muted'}</span>
+              <span>{isSoundEnabled ? 'Sound ON' : 'Muted'}</span>
               <span>•</span>
               <span style={{ color: permissionStatus === 'granted' ? '#16a34a' : '#ea580c', fontWeight: '500' }}>
-                {permissionStatus === 'granted' ? '🟢 Push Active' : '🟡 In-App'}
+                {permissionStatus === 'granted' ? 'Push Active' : 'In-App'}
               </span>
             </div>
           </div>
@@ -1188,7 +1188,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
               justifyContent: 'space-between'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '20px' }}>📩</span>
+                
                 <div>
                   <div style={{ fontSize: '15px', fontWeight: '800', letterSpacing: '-0.01em' }}>
                     Enterprise Client Inquiry
@@ -1233,7 +1233,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
                   padding: '3px 9px',
                   borderRadius: '12px'
                 }}>
-                  🏷️ {selectedInquiry.category || selectedInquiry.inquiryType || 'General Inquiry'}
+                  {selectedInquiry.category || selectedInquiry.inquiryType || 'General Inquiry'}
                 </span>
 
                 <span style={{
@@ -1287,7 +1287,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
                     Company / Organization
                   </div>
                   <div style={{ fontWeight: '700', color: '#0f172a', fontSize: '13.5px' }}>
-                    🏢 {selectedInquiry.company || 'Enterprise Partner'}
+                    {selectedInquiry.company || 'Enterprise Partner'}
                   </div>
                 </div>
 
@@ -1300,7 +1300,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
                       href={`mailto:${selectedInquiry.email}`}
                       style={{ color: '#2563eb', fontWeight: '600', textDecoration: 'none' }}
                     >
-                      ✉️ {selectedInquiry.email || 'No email provided'}
+                      {selectedInquiry.email || 'No email provided'}
                     </a>
                     {selectedInquiry.email && (
                       <button
@@ -1333,7 +1333,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
                       Phone
                     </div>
                     <div style={{ fontWeight: '600', color: '#0f172a' }}>
-                      📞 {selectedInquiry.phone}
+                      {selectedInquiry.phone}
                     </div>
                   </div>
                 )}
@@ -1447,7 +1447,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
                     gap: '6px'
                   }}
                 >
-                  <span>✉️</span>
+                  
                   <span>Reply via Email</span>
                 </a>
               </div>

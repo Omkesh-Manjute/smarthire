@@ -579,7 +579,7 @@ export default function PublicCareers() {
 
   const openApplicationModal = (job) => {
     if (isJobExpired(job)) {
-      alert(`⚠️ This job vacancy (${job.title}) has expired or been closed and is no longer accepting new applications.`)
+      alert(`This job vacancy (${job.title}) has expired or been closed and is no longer accepting new applications.`)
       return
     }
     setSelectedJob(job)
@@ -1020,7 +1020,7 @@ export default function PublicCareers() {
                   {cleanJobTitleWithPositionNumber(selectedJob.title)}
                 </h3>
                 <p style={{ fontSize: 13, color: '#00B8D9', margin: 0, fontWeight: 700 }}>
-                  📍 {resolveJobLocation(selectedJob) || 'Remote, US'} · {selectedJob.work_mode || 'Contract'}
+                  {resolveJobLocation(selectedJob) || 'Remote, US'} · {selectedJob.work_mode || 'Contract'}
                 </p>
               </div>
               <button
@@ -1049,7 +1049,7 @@ export default function PublicCareers() {
                   gap: 10
                 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: isLight ? '#15803D' : '#86EFAC' }}>
-                    👤 Sourcing Recruiter: <strong>{rec.name}</strong> ({rec.email})
+                    Sourcing Recruiter: <strong>{rec.name}</strong> ({rec.email})
                   </div>
                   <span style={{ fontSize: 10.5, background: isLight ? '#DCFCE7' : 'rgba(34, 197, 94, 0.25)', color: isLight ? '#166534' : '#BBF7D0', padding: '2px 8px', borderRadius: 12, fontWeight: 800 }}>
                     Direct Referral
@@ -1065,7 +1065,7 @@ export default function PublicCareers() {
                   ✓
                 </div>
                 <h4 style={{ fontSize: 22, fontWeight: 800, color: theme.textPrimary, margin: '0 0 8px', fontFamily: "'Barlow', sans-serif" }}>
-                  🎉 Application Submitted Successfully!
+                  Application Submitted Successfully!
                 </h4>
                 <p style={{ fontSize: 14, color: theme.textSecondary, maxWidth: 500, margin: '0 auto 24px', lineHeight: 1.6 }}>
                   Thank you <strong>{submitSuccess.candidateName || candidateName}</strong>! Your application for <strong>{submitSuccess.jobTitle}</strong> has been received by our recruiting team.
@@ -1096,10 +1096,13 @@ export default function PublicCareers() {
                       fontSize: 14,
                       fontWeight: 800,
                       cursor: 'pointer',
-                      boxShadow: '0 4px 16px rgba(250, 84, 28, 0.35)'
+                      boxShadow: '0 4px 16px rgba(250, 84, 28, 0.35)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6
                     }}
                   >
-                    💬 Message Recruiter Now
+                    <span>Message Recruiter Now</span>
                   </button>
                   <button
                     onClick={() => { setSelectedJob(null); setSubmitSuccess(null); }}
@@ -1123,7 +1126,7 @@ export default function PublicCareers() {
               <>
                 {submitError && (
                   <div style={{ backgroundColor: '#FEE2E2', border: '1px solid #FCA5A5', color: '#B91C1C', padding: '10px 14px', borderRadius: 8, fontSize: 13, marginBottom: 16 }}>
-                    ⚠️ {submitError}
+                    {submitError}
                   </div>
                 )}
 
@@ -1137,10 +1140,10 @@ export default function PublicCareers() {
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                     <span style={{ fontSize: 13, fontWeight: 800, color: theme.primary }}>
-                      📄 Step 1: Attach Resume (Auto-Fills Form)
+                      Step 1: Attach Resume (Auto-Fills Form)
                     </span>
                     {isParsingResume && (
-                      <span style={{ fontSize: 11, color: theme.primary, fontWeight: 700 }}>⏳ Extracting details...</span>
+                      <span style={{ fontSize: 11, color: theme.primary, fontWeight: 700 }}>Extracting details...</span>
                     )}
                   </div>
                   <p style={{ fontSize: 12, color: theme.textSecondary, margin: '0 0 10px 0' }}>
@@ -1164,7 +1167,7 @@ export default function PublicCareers() {
                     />
                     {resumeFile ? (
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, color: '#16A34A', fontWeight: 700, fontSize: 13 }}>
-                        <span>📄 {resumeFile.name} ({(resumeFile.size / 1024).toFixed(1)} KB)</span>
+                        <span>{resumeFile.name} ({(resumeFile.size / 1024).toFixed(1)} KB)</span>
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); setResumeFile(null); setResumeText(''); setCandidateName(''); setAutoFillSuccess(false); }}
@@ -1175,7 +1178,7 @@ export default function PublicCareers() {
                       </div>
                     ) : (
                       <div style={{ color: theme.textSecondary, fontSize: 13 }}>
-                        <span style={{ fontSize: 20, display: 'block', marginBottom: 2 }}>📎</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'block', margin: '0 auto 4px' }}><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                         <strong>Click or Drag Resume File Here</strong> (.pdf, .docx, .txt)
                       </div>
                     )}
@@ -1429,15 +1432,15 @@ export default function PublicCareers() {
                   />
                   {cvFile ? (
                     <div style={{ color: '#16A34A', fontWeight: 700, fontSize: 13 }}>
-                      📄 {cvFile.name} ({(cvFile.size / 1024).toFixed(1)} KB)
+                      {cvFile.name} ({(cvFile.size / 1024).toFixed(1)} KB)
                     </div>
                   ) : (
                     <div style={{ color: theme.textSecondary, fontSize: 13 }}>
-                      <span style={{ fontSize: 24, display: 'block', marginBottom: 4 }}>📎</span>
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'block', margin: '0 auto 4px' }}><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                       <strong>Click or Drag Your CV Here</strong> (.pdf, .docx, .txt)
                     </div>
                   )}
-                  {cvParsing && <div style={{ fontSize: 11, color: theme.primary, marginTop: 4, fontWeight: 700 }}>⏳ Extracting resume details...</div>}
+                  {cvParsing && <div style={{ fontSize: 11, color: theme.primary, marginTop: 4, fontWeight: 700 }}>Extracting resume details...</div>}
                 </div>
 
                 <div>
@@ -1581,7 +1584,7 @@ export default function PublicCareers() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 26, margin: '0 auto 16px'
             }}>
-              🔑
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 2l-2 2m-1.5 1.5L14 9m0 0l-2-2m2 2l-3 3m-2-2l-2 2m0 0a6 6 0 1 1-8.49 8.49 6 6 0 0 1 8.49-8.49z"/></svg>
             </div>
 
             <h3 style={{ fontSize: 20, fontWeight: 800, color: theme.textPrimary, margin: '0 0 6px', fontFamily: "'Barlow', sans-serif" }}>
@@ -1743,7 +1746,7 @@ export default function PublicCareers() {
               onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
               onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
-              <span style={{ fontSize: 16 }}>💬</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
               <span>Career Assistant</span>
             </button>
           )}

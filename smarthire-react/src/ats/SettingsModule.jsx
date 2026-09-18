@@ -148,8 +148,8 @@ function SettingsModule() {
       if (emailCfg.appPassword === '••••••••••••') delete payload.appPassword
       const res = await fetch('/api/recruiter/email-config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       const data = await res.json()
-      setEmailCfgMsg(data.success ? '✅ Email configuration saved!' : `❌ ${data.message}`)
-    } catch(e) { setEmailCfgMsg('❌ Network error') }
+      setEmailCfgMsg(data.success ? 'Email configuration saved!' : (data.message || 'Failed to save configuration'))
+    } catch(e) { setEmailCfgMsg('Network error saving configuration') }
     setEmailCfgSaving(false)
     setTimeout(() => setEmailCfgMsg(''), 5000)
   }
@@ -172,13 +172,13 @@ function SettingsModule() {
       })
       clearTimeout(timer)
       const data = await res.json()
-      setEmailCfgMsg(data.success ? `✅ ${data.message}` : `❌ ${data.message}`)
+      setEmailCfgMsg(data.message || (data.success ? 'Test email sent successfully!' : 'Test email failed'))
     } catch(e) {
       clearTimeout(timer)
       if (e.name === 'AbortError') {
-        setEmailCfgMsg('❌ Test timed out after 14s. Suggestion: For Yahoo, use Port 465 and SSL, and verify your 16-letter App Password.')
+        setEmailCfgMsg('Test timed out after 14s. Suggestion: For Yahoo, use Port 465 and SSL, and verify your 16-letter App Password.')
       } else {
-        setEmailCfgMsg('❌ Network error: ' + e.message)
+        setEmailCfgMsg('Network error: ' + e.message)
       }
     } finally {
       setTestingEmail(false)
@@ -199,9 +199,9 @@ function SettingsModule() {
         })
       })
       const data = await res.json()
-      setSyncResumesMsg(data.success ? `✅ ${data.message}` : `❌ ${data.message}`)
+      setSyncResumesMsg(data.message || (data.success ? 'Resumes synchronized successfully!' : 'Failed to sync resumes'))
     } catch(e) {
-      setSyncResumesMsg('❌ Network error scanning email resumes')
+      setSyncResumesMsg('Network error scanning email resumes')
     } finally {
       setSyncingResumes(false)
     }
@@ -253,10 +253,10 @@ function SettingsModule() {
   }
 
   const TAB_BTNS = [
-    { id: 'email', label: '📧 Email Config' },
-    { id: 'templates', label: '📝 Email Templates' },
-    { id: 'pipeline', label: '🔄 Pipeline' },
-    { id: 'export', label: '📥 Export' }
+    { id: 'email', label: 'Email Config' },
+    { id: 'templates', label: 'Email Templates' },
+    { id: 'pipeline', label: 'Pipeline' },
+    { id: 'export', label: 'Export' }
   ]
 
   const inputStyle = { width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 13, fontFamily: 'inherit', background: '#fff', color: '#0f172a', boxSizing: 'border-box', outline: 'none' }
@@ -266,12 +266,12 @@ function SettingsModule() {
     <div className="settings-module-layout">
       <div className="settings-header">
         <div>
-          <h3 style={{ margin: 0, fontFamily: 'Plus Jakarta Sans' }}>⚙️ ATS Settings</h3>
+          <h3 style={{ margin: 0, fontFamily: 'Plus Jakarta Sans' }}>ATS Settings</h3>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--ink-soft)' }}>
             Configure your email settings, email templates, pipeline stages, and data export.
           </p>
         </div>
-        {savedToast && <div className="settings-toast">✅ Settings saved successfully!</div>}
+        {savedToast && <div className="settings-toast">Settings saved successfully!</div>}
       </div>
 
       {/* Tab Navigation */}
@@ -292,7 +292,7 @@ function SettingsModule() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
               <div>
                 <h4 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  📖 Step-by-Step Setup Guide: How to Generate App Password
+                  Step-by-Step Setup Guide: How to Generate App Password
                 </h4>
                 <p style={{ margin: '4px 0 0', fontSize: 12.5, color: '#64748b' }}>
                   Select your email provider to see exact instructions for generating an App Password for SMTP sending.
@@ -301,10 +301,10 @@ function SettingsModule() {
               {/* Guide Tabs */}
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {[
-                  { id: 'gmail', label: '🔴 Gmail', color: '#ea4335' },
-                  { id: 'yahoo', label: '🟣 Yahoo Mail (SSL 465)', color: '#6001d2' },
-                  { id: 'yahooBiz', label: '🏢 Yahoo Biz / Turbify', color: '#4f46e5' },
-                  { id: 'outlook', label: '🔵 Outlook / Office 365', color: '#0078d4' }
+                  { id: 'gmail', label: 'Gmail', color: '#ea4335' },
+                  { id: 'yahoo', label: 'Yahoo Mail (SSL 465)', color: '#6001d2' },
+                  { id: 'yahooBiz', label: 'Yahoo Biz / Turbify', color: '#4f46e5' },
+                  { id: 'outlook', label: 'Outlook / Office 365', color: '#0078d4' }
                 ].map(g => (
                   <button
                     key={g.id}
@@ -335,7 +335,7 @@ function SettingsModule() {
             {guideProvider === 'gmail' && (
               <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: 14 }}>
                 <div style={{ fontWeight: 800, fontSize: 13, color: '#991b1b', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span>🔴</span> Gmail App Password Instructions (5 Steps)
+                  Gmail App Password Instructions (5 Steps)
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10, fontSize: 12, color: '#334155' }}>
                   <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #fca5a5' }}>
@@ -366,7 +366,7 @@ function SettingsModule() {
             {guideProvider === 'yahoo' && (
               <div style={{ background: '#faf5ff', border: '1px solid #e9d5ff', borderRadius: 10, padding: 14 }}>
                 <div style={{ fontWeight: 800, fontSize: 13, color: '#6b21a8', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span>🟣</span> Yahoo Mail & Yahoo Small Business / Turbify App Password Instructions
+                  Yahoo Mail & Yahoo Small Business / Turbify App Password Instructions
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10, fontSize: 12, color: '#334155' }}>
                   <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #d8b4fe' }}>
@@ -397,7 +397,7 @@ function SettingsModule() {
             {guideProvider === 'outlook' && (
               <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: 14 }}>
                 <div style={{ fontWeight: 800, fontSize: 13, color: '#1e40af', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span>🔵</span> Microsoft Outlook / Office 365 App Password Instructions
+                  Microsoft Outlook / Office 365 App Password Instructions
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10, fontSize: 12, color: '#334155' }}>
                   <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #93c5fd' }}>
@@ -499,11 +499,11 @@ function SettingsModule() {
               <label style={labelStyle}>App Password {emailCfg.provider === 'gmail' ? '(Gmail App Password — not your Gmail password!)' : '(App-specific password)'}</label>
               <div style={{ display: 'flex', gap: 8 }}>
                 <input type={showPassword ? 'text' : 'password'} value={emailCfg.appPassword} onChange={e => setEmailCfg(p => ({ ...p, appPassword: e.target.value }))} placeholder="xxxx xxxx xxxx xxxx" style={{ ...inputStyle, flex: 1, fontFamily: 'monospace' }} />
-                <button onClick={() => setShowPassword(p => !p)} style={{ padding: '8px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer' }}>{showPassword ? '🙈 Hide' : '👁 Show'}</button>
+                <button onClick={() => setShowPassword(p => !p)} style={{ padding: '8px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer' }}>{showPassword ? 'Hide' : 'Show'}</button>
               </div>
               {emailCfg.provider === 'gmail' && (
                 <p style={{ fontSize: 11, color: '#64748b', marginTop: 6 }}>
-                  💡 <strong>How to generate Gmail App Password:</strong> Go to Google Account → Security → 2-Step Verification → App Passwords → Generate new password for "Mail".
+                  <strong>How to generate Gmail App Password:</strong> Go to Google Account → Security → 2-Step Verification → App Passwords → Generate new password for "Mail".
                 </p>
               )}
             </div>
@@ -520,7 +520,7 @@ function SettingsModule() {
             </div>
 
             {emailCfgMsg && (
-              <div style={{ background: emailCfgMsg.startsWith('✅') ? '#f0fdf4' : '#fef2f2', border: `1px solid ${emailCfgMsg.startsWith('✅') ? '#bbf7d0' : '#fca5a5'}`, color: emailCfgMsg.startsWith('✅') ? '#15803d' : '#dc2626', padding: '10px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, marginBottom: 12 }}>
+              <div style={{ background: (!emailCfgMsg.toLowerCase().includes('error') && !emailCfgMsg.toLowerCase().includes('fail') && !emailCfgMsg.toLowerCase().includes('timed out')) ? '#f0fdf4' : '#fef2f2', border: `1px solid ${(!emailCfgMsg.toLowerCase().includes('error') && !emailCfgMsg.toLowerCase().includes('fail') && !emailCfgMsg.toLowerCase().includes('timed out')) ? '#bbf7d0' : '#fca5a5'}`, color: (!emailCfgMsg.toLowerCase().includes('error') && !emailCfgMsg.toLowerCase().includes('fail') && !emailCfgMsg.toLowerCase().includes('timed out')) ? '#15803d' : '#dc2626', padding: '10px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, marginBottom: 12 }}>
                 {emailCfgMsg}
               </div>
             )}
@@ -528,11 +528,11 @@ function SettingsModule() {
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={handleSaveEmailConfig} disabled={emailCfgSaving}
                 style={{ flex: 2, padding: '11px 0', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
-                {emailCfgSaving ? '⏳ Saving...' : '💾 Save Email Config'}
+                {emailCfgSaving ? 'Saving...' : 'Save Email Config'}
               </button>
               <button onClick={handleTestEmail} disabled={testingEmail}
                 style={{ flex: 1, padding: '11px 0', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                {testingEmail ? '⏳ Testing...' : '📨 Send Test Email'}
+                {testingEmail ? 'Testing...' : 'Send Test Email'}
               </button>
             </div>
 
@@ -541,7 +541,7 @@ function SettingsModule() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 10 }}>
                 <div>
                   <h4 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span>📥</span> Email Resume Harvester & Auto-Ingestion Engine
+                    Email Resume Harvester & Auto-Ingestion Engine
                     <span style={{ background: '#dcfce7', color: '#15803d', fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 10, border: '1px solid #86efac' }}>
                       ● ZERO RESUMES DROPPED
                     </span>
@@ -566,7 +566,7 @@ function SettingsModule() {
               </div>
 
               {syncResumesMsg && (
-                <div style={{ background: syncResumesMsg.startsWith('✅') ? '#f0fdf4' : '#fef2f2', border: `1px solid ${syncResumesMsg.startsWith('✅') ? '#bbf7d0' : '#fca5a5'}`, color: syncResumesMsg.startsWith('✅') ? '#15803d' : '#dc2626', padding: '10px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, marginBottom: 12 }}>
+                <div style={{ background: (!syncResumesMsg.toLowerCase().includes('error') && !syncResumesMsg.toLowerCase().includes('fail')) ? '#f0fdf4' : '#fef2f2', border: `1px solid ${(!syncResumesMsg.toLowerCase().includes('error') && !syncResumesMsg.toLowerCase().includes('fail')) ? '#bbf7d0' : '#fca5a5'}`, color: (!syncResumesMsg.toLowerCase().includes('error') && !syncResumesMsg.toLowerCase().includes('fail')) ? '#15803d' : '#dc2626', padding: '10px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, marginBottom: 12 }}>
                   {syncResumesMsg}
                 </div>
               )}
@@ -605,7 +605,7 @@ function SettingsModule() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: 20, alignItems: 'flex-start' }}>
             {/* Template List */}
             <div>
-              <h4 style={{ fontSize: 14, fontWeight: 800, margin: '0 0 12px' }}>📋 Saved Templates ({emailTemplates.length})</h4>
+              <h4 style={{ fontSize: 14, fontWeight: 800, margin: '0 0 12px' }}>Saved Templates ({emailTemplates.length})</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {emailTemplates.map(tpl => (
                   <div key={tpl.id} style={{ background: '#fff', border: `1px solid ${editingTemplate?.id === tpl.id ? '#2563eb' : '#e2e8f0'}`, borderRadius: 10, padding: '12px 14px' }}>
@@ -617,8 +617,8 @@ function SettingsModule() {
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: 6 }}>
-                        <button onClick={() => handleEditTemplate(tpl)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid #bfdbfe', background: '#eff6ff', color: '#1d4ed8', cursor: 'pointer', fontWeight: 700 }}>✏️ Edit</button>
-                        <button onClick={() => handleDeleteTemplate(tpl.id)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid #fca5a5', background: '#fef2f2', color: '#dc2626', cursor: 'pointer', fontWeight: 700 }}>🗑️</button>
+                        <button onClick={() => handleEditTemplate(tpl)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid #bfdbfe', background: '#eff6ff', color: '#1d4ed8', cursor: 'pointer', fontWeight: 700 }}>Edit</button>
+                        <button onClick={() => handleDeleteTemplate(tpl.id)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid #fca5a5', background: '#fef2f2', color: '#dc2626', cursor: 'pointer', fontWeight: 700 }}>Delete</button>
                       </div>
                     </div>
                     <div style={{ fontSize: 11, color: '#475569', marginTop: 6, fontStyle: 'italic' }}>{tpl.subject.substring(0, 60)}...</div>
@@ -626,7 +626,7 @@ function SettingsModule() {
                 ))}
                 <button onClick={() => { setEditingTemplate(null); setTplName(''); setTplSubject(''); setTplBody(''); setTplCategory('RTR') }}
                   style={{ padding: '10px 0', border: '2px dashed #cbd5e1', borderRadius: 10, background: 'none', color: '#64748b', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                  ＋ New Template
+                  + New Template
                 </button>
               </div>
             </div>
@@ -634,7 +634,7 @@ function SettingsModule() {
             {/* Template Editor */}
             <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 18 }}>
               <h4 style={{ fontSize: 14, fontWeight: 800, margin: '0 0 14px' }}>
-                {editingTemplate ? `✏️ Edit: ${editingTemplate.name}` : '➕ Create New Template'}
+                {editingTemplate ? `Edit: ${editingTemplate.name}` : 'Create New Template'}
               </h4>
               <div style={{ marginBottom: 10 }}>
                 <label style={labelStyle}>Template Name</label>
@@ -656,7 +656,7 @@ function SettingsModule() {
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={handleSaveTemplate} style={{ flex: 1, padding: '10px 0', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
-                  💾 Save Template
+                  Save Template
                 </button>
                 {editingTemplate && (
                   <button onClick={() => { setEditingTemplate(null); setTplName(''); setTplSubject(''); setTplBody('') }}
@@ -674,7 +674,7 @@ function SettingsModule() {
       {activeSettingsTab === 'pipeline' && (
         <div className="settings-grid">
           <article className="card settings-card">
-            <h4 className="settings-card-title">🔄 Pipeline Stages</h4>
+            <h4 className="settings-card-title">Pipeline Stages</h4>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
               {stages.map(stage => (
                 <div key={stage} style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '5px 10px', fontSize: 12, fontWeight: 700 }}>
@@ -697,12 +697,12 @@ function SettingsModule() {
       {activeSettingsTab === 'export' && (
         <div className="settings-grid">
           <article className="card settings-card">
-            <h4 className="settings-card-title">📥 Data Export</h4>
+            <h4 className="settings-card-title">Data Export</h4>
             <div className="settings-form">
               {[['Export All Candidates', 'Download complete candidate database as CSV'], ['Export Submissions', 'Download all submission records as CSV'], ['Export Job Listings', 'Download active and closed job postings']].map(([label, desc]) => (
                 <div key={label} className="export-option">
                   <div><strong>{label}</strong><p style={{ fontSize: 12, color: 'var(--ink-soft)', margin: '2px 0 0' }}>{desc}</p></div>
-                  <button className="btn btn-sm btn-ghost">📥 Export</button>
+                  <button className="btn btn-sm btn-ghost">Export</button>
                 </div>
               ))}
             </div>

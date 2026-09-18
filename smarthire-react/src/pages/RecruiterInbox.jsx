@@ -188,17 +188,17 @@ const IconChevronDown = () => (
 )
 const IconFileExcel = () => (
   <span style={{ width: 28, height: 28, borderRadius: 6, background: '#ECFDF5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 13, flexShrink: 0 }}>
-    📊
+    XLS
   </span>
 )
 const IconFilePdf = () => (
   <span style={{ width: 28, height: 28, borderRadius: 6, background: '#FEF2F2', color: '#DC2626', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 13, flexShrink: 0 }}>
-    📄
+    PDF
   </span>
 )
 const IconFileWord = () => (
   <span style={{ width: 28, height: 28, borderRadius: 6, background: '#EFF6FF', color: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 13, flexShrink: 0 }}>
-    📝
+    DOC
   </span>
 )
 
@@ -522,7 +522,7 @@ function getFullResumeText(candidate) {
 CANDIDATE APPLICATION & EMAIL COVER NOTE
 ================================================================================
 Applicant: ${name} <${email}>
-${detectedAttachment ? `Attached Resume Document: 📎 ${detectedAttachment}\n` : ''}${phone ? `Contact Phone: ${phone}\n` : ''}Date: ${candidate?.date ? new Date(candidate.date).toLocaleDateString() : 'Recent Submission'}
+${detectedAttachment ? `Attached Resume Document: ${detectedAttachment}\n` : ''}${phone ? `Contact Phone: ${phone}\n` : ''}Date: ${candidate?.date ? new Date(candidate.date).toLocaleDateString() : 'Recent Submission'}
 
 ${cleanCoverText}
 
@@ -1036,7 +1036,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
       role: 'Sourcing Specialist',
       company: 'SmartHire LLC',
       jobTitle: 'Direct Reportee • SmartHire LLC',
-      subtitle: '🏛️ Direct Reportee • SmartHire LLC',
+      subtitle: 'Direct Reportee • SmartHire LLC',
       category: 'team',
       email: 'gourav@smarthire.com',
       phone: '+1 (555) 123-4567',
@@ -1057,7 +1057,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
         { id: 'g3', text: "Sure Gourav, give me 5 minutes.\nI'll share the shortlisted profiles shortly.", sender: 'recruiter', senderName: 'Omkesh', timestamp: '2026-09-10T14:22:00Z', timeStr: '02:22 PM', isDelivered: true },
         { id: 'g4', text: 'Thanks! Also, let me know if we can schedule a quick sync tomorrow.', sender: 'other', senderName: 'Gourav', timestamp: '2026-09-10T14:23:00Z', timeStr: '02:23 PM' },
         { id: 'g5', text: "Yes, tomorrow 11 AM works. I'll send a calendar invite.", sender: 'recruiter', senderName: 'Omkesh', timestamp: '2026-09-10T14:24:00Z', timeStr: '02:24 PM', isDelivered: true },
-        { id: 'g6', text: 'Great! 👍', sender: 'other', senderName: 'Gourav', timestamp: '2026-09-10T14:25:00Z', timeStr: '02:25 PM' }
+        { id: 'g6', text: 'Great, confirmed.', sender: 'other', senderName: 'Gourav', timestamp: '2026-09-10T14:25:00Z', timeStr: '02:25 PM' }
       ]
     },
     {
@@ -2241,9 +2241,9 @@ export default function RecruiterInbox({ defaultViewMode }) {
       if (data.success) {
         setDirectMailtoUrl(data.mailtoUrl || '')
         if (data.serverDispatched) {
-          setEmailSuccessToast(`✅ Email successfully sent to ${emailTo} directly from ${data.senderEmail}!`)
+          setEmailSuccessToast(`Email successfully sent to ${emailTo} directly from ${data.senderEmail}!`)
         } else {
-          setEmailSuccessToast(`✅ Email prepared from ${data.senderEmail}. Dispatching via your default mail client...`)
+          setEmailSuccessToast(`Email prepared from ${data.senderEmail}. Dispatching via your default mail client...`)
           if (data.mailtoUrl) {
             window.location.href = data.mailtoUrl
           }
@@ -2334,9 +2334,9 @@ export default function RecruiterInbox({ defaultViewMode }) {
         recruiterUser: { name: myName, email: myEmail, refCode: myRef }
       }).then(res => {
         if (res && res.success) {
-          console.log(`✅ Auto-sent JD for Req #${cleanId} to ${cand.email} via ${myEmail}`)
+          console.log(`Auto-sent JD for Req #${cleanId} to ${cand.email} via ${myEmail}`)
         }
-      }).catch(err => console.warn('⚠️ Auto-send JD notice:', err))
+      }).catch(err => console.warn('Auto-send JD notice:', err))
     }
 
     setAssignedToast(`✓ ${candName} assigned to Req #${cleanId} & Job Description sent to ${cand.email || 'candidate'}!`)
@@ -2888,7 +2888,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
     setAiGeneratingSummary(true)
     setTimeout(() => {
       setAiGeneratingSummary(false)
-      setAssignedToast('✨ AI Summary generated & synced with candidate profile!')
+      setAssignedToast('AI Summary generated & synced with candidate profile!')
       setTimeout(() => setAssignedToast(''), 4000)
     }, 900)
   }
@@ -3371,7 +3371,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
             {/* Notification Bell */}
             <div style={{ position: 'relative', cursor: 'pointer', padding: 6 }}>
-              <span style={{ fontSize: 17, color: C.textSecondary }}>🔔</span>
+              <span style={{ display: "flex", alignItems: "center", color: C.textSecondary }}><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></span>
               <span style={{
                 position: 'absolute',
                 top: 2,
@@ -3452,7 +3452,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 {/* Greeting */}
                 <div>
                   <h1 style={{ fontSize: 26, fontWeight: 800, color: C.textPrimary, margin: '0 0 6px', letterSpacing: '-0.02em' }}>
-                    Hi, Welcome back 👋
+                    Hi, Welcome back
                   </h1>
                   <p style={{ fontSize: 13.5, color: C.textSecondary, margin: 0 }}>
                     Here is your real-time candidate pipeline, auto-match telemetry, and requisition performance overview.
@@ -3685,7 +3685,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                         padding: '3px 8px',
                         borderRadius: 20
                       }}>
-                        🛡️ {dashboardMetrics.sources.spam.count} Spam Recovered
+                        {dashboardMetrics.sources.spam.count} Spam Recovered
                       </span>
                     </div>
 
@@ -3961,11 +3961,11 @@ export default function RecruiterInbox({ defaultViewMode }) {
                             </td>
                             <td style={{ padding: '12px 14px' }}>
                               {c.isSpamRecovery ? (
-                                <span style={{ color: '#B72136', fontWeight: 700, fontSize: 11 }}>🛡️ Spam Recovered</span>
+                                <span style={{ color: '#B72136', fontWeight: 700, fontSize: 11 }}>Spam Recovered</span>
                               ) : c.sourceCategory === 'careers_portal' ? (
-                                <span style={{ color: '#007B55', fontWeight: 700, fontSize: 11 }}>🌐 Careers Portal</span>
+                                <span style={{ color: '#007B55', fontWeight: 700, fontSize: 11 }}>Careers Portal</span>
                               ) : (
-                                <span style={{ color: '#006C9C', fontWeight: 700, fontSize: 11 }}>📥 Recruiter Email</span>
+                                <span style={{ color: '#006C9C', fontWeight: 700, fontSize: 11 }}>Recruiter Email</span>
                               )}
                             </td>
                             <td style={{ padding: '12px 14px' }}>
@@ -3996,7 +3996,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   cursor: 'pointer'
                                 }}
                               >
-                                👁️ View Card &amp; Resume
+                                View Card &amp; Resume
                               </button>
                             </td>
                           </tr>
@@ -4133,7 +4133,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     }}
                     title={`Assign to Requisition #${currentReqId}`}
                   >
-                    <span>💼</span> <span>Transfer to Job (Req #{currentReqId})</span>
+                    <span>Transfer to Job (Req #{currentReqId})</span>
                   </button>
 
                   <button
@@ -4155,7 +4155,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     }}
                     title={`Draft email to ${activeCandidate?.name} from ${currentUser?.email || 'omkesh@coolsofttech.com'}`}
                   >
-                    <IconMail /> <span>✉️ Email Candidate</span>
+                    <IconMail /> <span>Email Candidate</span>
                   </button>
 
                   <button
@@ -4346,7 +4346,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                           marginTop: 4
                         }}
                       >
-                        <span>🔍</span> <span>Search on LinkedIn ↗</span>
+                        <span>Search on LinkedIn ↗</span>
                       </a>
                     </div>
                   </div>
@@ -4387,19 +4387,19 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       <span style={{ color: C.textSecondary, display: 'block', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>Source Channel</span>
                       {activeCandidate?.isSpamRecovery ? (
                         <span style={{ fontSize: 11, fontWeight: 800, color: '#DC2626', background: '#FEF2F2', border: '1px solid #FECACA', padding: '3px 8px', borderRadius: 4, display: 'inline-block' }}>
-                          🛡️ Recovered from Spam Folder
+                          Recovered from Spam Folder
                         </span>
                       ) : activeCandidate?.sourceCategory === 'careers_portal' ? (
                         <span style={{ fontSize: 11, fontWeight: 700, color: '#047857', background: '#ECFDF5', border: '1px solid #A7F3D0', padding: '3px 8px', borderRadius: 4, display: 'inline-block' }}>
-                          🌐 Careers Portal (/jobs)
+                          Careers Portal (/jobs)
                         </span>
                       ) : activeCandidate?.sourceCategory === 'vendor_bench' ? (
                         <span style={{ fontSize: 11, fontWeight: 700, color: '#7E22CE', background: '#FAF5FF', border: '1px solid #E9D5FF', padding: '3px 8px', borderRadius: 4, display: 'inline-block' }}>
-                          🏢 Vendor Bench Partner
+                          Vendor Bench Partner
                         </span>
                       ) : (
                         <span style={{ fontSize: 11, fontWeight: 700, color: '#1D4ED8', background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '3px 8px', borderRadius: 4, display: 'inline-block' }}>
-                          📧 Recruiter Email Inbox
+                          Recruiter Email Inbox
                         </span>
                       )}
                     </div>
@@ -4421,11 +4421,11 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     flexShrink: 0
                   }}>
                     {[
-                      { id: 'analytics', label: 'Analytics', icon: '📊' },
-                      { id: 'resume', label: 'Resume', icon: '📄' },
-                      { id: 'comments', label: 'Comments', icon: '💬' },
-                      { id: 'emails', label: 'Emails', icon: '✉️' },
-                      { id: 'activity', label: 'Activity', icon: '⏱️' }
+                      { id: 'analytics', label: 'Analytics' },
+                      { id: 'resume', label: 'Resume' },
+                      { id: 'comments', label: 'Comments' },
+                      { id: 'emails', label: 'Emails' },
+                      { id: 'activity', label: 'Activity' }
                     ].map(tab => {
                       const isActive = activeTobuTab === tab.id
                       return (
@@ -4608,7 +4608,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                         }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                             <span style={{ fontSize: 12, fontWeight: 800, color: C.textPrimary }}>
-                              🎯 Target Requisition:
+                              Target Requisition:
                             </span>
                             <select
                               value={currentReqId}
@@ -4645,7 +4645,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                             </span>
 
                             <span style={{ fontSize: 11, color: '#B45309', backgroundColor: '#FEF3C7', padding: '2px 8px', borderRadius: 4, fontWeight: 800, border: '1px solid #FDE68A' }}>
-                              💡 Matching skills highlighted in yellow
+                              Matching skills highlighted in yellow
                             </span>
                           </div>
 
@@ -4727,7 +4727,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                 {/* PDF Download link */}
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                   <span style={{ fontSize: 12, fontWeight: 700, color: C.textSecondary }}>
-                                    📄 Original Resume: <span style={{ color: '#2563EB' }}>{activeCandidate.file.original_name || fileName}</span>
+                                    Original Resume: <span style={{ color: '#2563EB' }}>{activeCandidate.file.original_name || fileName}</span>
                                   </span>
                                   <a
                                     href={fileUrl}
@@ -4779,7 +4779,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   padding: '10px 16px'
                                 }}>
                                   <span style={{ fontSize: 12.5, fontWeight: 700, color: '#047857' }}>
-                                    📎 Resume on file: <span style={{ color: '#0F172A' }}>{activeCandidate.file.original_name || fileName}</span>
+                                    Resume on file: <span style={{ color: '#0F172A' }}>{activeCandidate.file.original_name || fileName}</span>
                                   </span>
                                   <a
                                     href={fileUrl}
@@ -4818,7 +4818,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       <div style={{ maxWidth: 860, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
                         <div style={{ backgroundColor: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 20 }}>
                           <h4 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 800, color: C.textPrimary }}>
-                            📊 AI Fit & Competency Analytics
+                            AI Fit & Competency Analytics
                           </h4>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                             <div>
@@ -4836,7 +4836,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
                         <div style={{ backgroundColor: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 20 }}>
                           <h4 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 800, color: C.textPrimary }}>
-                            🛡️ Compliance &amp; Verification Audit
+                            Compliance &amp; Verification Audit
                           </h4>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 12.5 }}>
                             <div><strong>Driver's License OCR:</strong> <span style={{ color: '#16A34A' }}>✓ Match Verified</span></div>
@@ -4853,7 +4853,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       <div style={{ maxWidth: 860, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
                         <div style={{ backgroundColor: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 20 }}>
                           <h4 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 800, color: C.textPrimary }}>
-                            💬 Internal Recruiter Screening Notes
+                            Internal Recruiter Screening Notes
                           </h4>
                           <textarea
                             placeholder="Add recruiter screening notes, interview feedback, or manager review comments..."
@@ -4893,7 +4893,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                         <div style={{ backgroundColor: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 20 }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                             <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: C.textPrimary }}>
-                              ✉️ Email Activity &amp; RTR Communications
+                              Email Activity &amp; RTR Communications
                             </h4>
                             <button
                               type="button"
@@ -4991,11 +4991,11 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 {/* 5 Metric KPI Cards matching screenshot */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                   {[
-                    { icon: '👤', count: streamCandidates.length, label: 'Total Candidates', filter: 'all' },
-                    { icon: '🟢', count: streamCandidates.filter(c => c.status === 'Active' || !c.status).length, label: 'Active', filter: 'active' },
-                    { icon: '🟡', count: streamCandidates.filter(c => c.sourceCategory === 'email_inbox').length, label: 'Resume Emails', filter: 'inbox' },
-                    { icon: '🔵', count: streamCandidates.filter(c => c.status === 'In Review' || c.status === 'Review').length, label: 'In Review', filter: 'review' },
-                    { icon: '🔴', count: streamCandidates.filter(c => c.sourceCategory === 'email_spam' || c.isSpamRecovery).length, label: 'Spam / Recovered', filter: 'spam' }
+                    { color: '#2563EB', count: streamCandidates.length, label: 'Total Candidates', filter: 'all' },
+                    { color: '#16A34A', count: streamCandidates.filter(c => c.status === 'Active' || !c.status).length, label: 'Active', filter: 'active' },
+                    { color: '#D97706', count: streamCandidates.filter(c => c.sourceCategory === 'email_inbox').length, label: 'Resume Emails', filter: 'inbox' },
+                    { color: '#0284C7', count: streamCandidates.filter(c => c.status === 'In Review' || c.status === 'Review').length, label: 'In Review', filter: 'review' },
+                    { color: '#DC2626', count: streamCandidates.filter(c => c.sourceCategory === 'email_spam' || c.isSpamRecovery).length, label: 'Spam / Recovered', filter: 'spam' }
                   ].map((card, cIdx) => {
                     const isSelected = tableCategory === card.filter
                     return (
@@ -5016,8 +5016,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
                           transition: 'all 0.15s ease'
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                          <span style={{ fontSize: 13 }}>{card.icon}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                          <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: card.color, flexShrink: 0 }} />
                           <span style={{ fontSize: 17, fontWeight: 800, color: C.textPrimary }}>
                             {card.count}
                           </span>
@@ -5066,16 +5066,14 @@ export default function RecruiterInbox({ defaultViewMode }) {
                         WebkitAppearance: 'none'
                       }}
                     >
-                      <option value="all">💼 All Open Requisitions</option>
+                      <option value="all">All Open Requisitions</option>
                       {openJobsList.map(j => (
                         <option key={j.id} value={j.id}>
                           Req #{j.id} · {j.title.slice(0, 24)}...
                         </option>
                       ))}
                     </select>
-                    <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', fontSize: 13 }}>
-                      💼
-                    </span>
+                    
                     <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', fontSize: 11, color: C.textSecondary }}>
                       ⌵
                     </span>
@@ -5669,7 +5667,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                           textAlign: 'left'
                                         }}
                                       >
-                                        <span>💼</span> <span>Assign to Req #{currentReqId}</span>
+                                        <span>Assign to Req #{currentReqId}</span>
                                       </button>
 
                                       <button
@@ -5693,7 +5691,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                           textAlign: 'left'
                                         }}
                                       >
-                                        <span>✉️</span> <span>Draft Custom Email</span>
+                                        <span>Draft Custom Email</span>
                                       </button>
 
                                       <button
@@ -5717,7 +5715,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                           textAlign: 'left'
                                         }}
                                       >
-                                        <span>🗑️</span> <span>Delete Candidate</span>
+                                        <span>Delete Candidate</span>
                                       </button>
                                     </div>
                                   )}
@@ -5861,7 +5859,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     alignItems: 'center',
                     gap: 4
                   }}>
-                    💡 Tip
+                    Tip
                   </span>
                   <span style={{ fontSize: 13, color: isLight ? '#1E3A8A' : '#93C5FD', fontWeight: 500 }}>
                     Focus on candidates with <strong style={{ fontWeight: 700 }}>70%+ match scores</strong> for the highest interview-to-placement conversion rates.
@@ -6083,9 +6081,9 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       cursor: 'pointer'
                     }}
                   >
-                    <option value="all">🌐 All Recruiters & Channels ({threads.length})</option>
+                    <option value="all">All Recruiters & Channels ({threads.length})</option>
                     {ALL_SMARTHIRE_RECRUITERS.map(r => (
-                      <option key={r.refCode} value={r.refCode}>👤 {r.name}</option>
+                      <option key={r.refCode} value={r.refCode}>{r.name}</option>
                     ))}
                   </select>
                 </div>
@@ -6321,7 +6319,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                         type="button"
                         onClick={() => {
                           setActiveCallModal('audio')
-                          setMessageToast(`📞 Calling ${activeThread.candidateName}...`)
+                          setMessageToast(`Calling ${activeThread.candidateName}...`)
                           setTimeout(() => setMessageToast(''), 4000)
                         }}
                         style={{
@@ -6343,7 +6341,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                         type="button"
                         onClick={() => {
                           setActiveCallModal('video')
-                          setMessageToast(`📹 Starting video meeting with ${activeThread.candidateName}...`)
+                          setMessageToast(`Starting video meeting with ${activeThread.candidateName}...`)
                           setTimeout(() => setMessageToast(''), 4000)
                         }}
                         style={{
@@ -6490,14 +6488,14 @@ export default function RecruiterInbox({ defaultViewMode }) {
                         borderRadius: 8,
                         border: `1px solid ${C.border}`
                       }}>
-                        {['👍', '👋', '🚀', '📄', '✅', '🎉', '💡', '👏', '😊', '🤝'].map(emoji => (
+                        {['Sounds good', 'Thank you', 'Profile received', 'Interview requested', 'Confirmed'].map(phrase => (
                           <button
                             key={emoji}
                             type="button"
-                            onClick={() => { setInputText(t => t + ' ' + emoji); setEmojiPickerOpen(false); inputRef.current?.focus(); }}
-                            style={{ background: 'transparent', border: 'none', fontSize: 16, cursor: 'pointer', padding: '2px 4px' }}
+                            onClick={() => { setInputText(t => t ? t + ' ' + phrase : phrase); setEmojiPickerOpen(false); inputRef.current?.focus(); }}
+                            style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 12, fontSize: 11, fontWeight: 700, color: '#1D4ED8', cursor: 'pointer', padding: '3px 9px' }}
                           >
-                            {emoji}
+                            {phrase}
                           </button>
                         ))}
                       </div>
@@ -6521,7 +6519,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                               borderRadius: 6
                             }}
                           >
-                            📎 {file.name}
+                            {file.name}
                             <button
                               type="button"
                               onClick={() => setAttachedFiles(fs => fs.filter((_, idx) => idx !== i))}
@@ -6550,7 +6548,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                         type="button"
                         onClick={() => {
                           setAttachedFiles(prev => [...prev, { name: 'Candidate_Resume_Update.pdf', size: '210 KB' }])
-                          setMessageToast('📎 File attached: Candidate_Resume_Update.pdf')
+                          setMessageToast('File attached: Candidate_Resume_Update.pdf')
                           setTimeout(() => setMessageToast(''), 3000)
                         }}
                         style={{
@@ -6736,7 +6734,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                         type="button"
                         onClick={() => {
                           setAttachedFiles(prev => [...prev, { name: 'Req_159078_Profile_Shortlist.xlsx', size: '34 KB' }])
-                          setMessageToast('📎 File attached: Req_159078_Profile_Shortlist.xlsx')
+                          setMessageToast('File attached: Req_159078_Profile_Shortlist.xlsx')
                           setTimeout(() => setMessageToast(''), 3000)
                         }}
                         style={{
@@ -6864,7 +6862,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       borderRadius: 12,
                       fontWeight: 600
                     }}>
-                      🕒 Local 02:25 PM (EST)
+                      Local 02:25 PM (EST)
                     </span>
                   </div>
                 </div>
@@ -6874,7 +6872,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   <button
                     type="button"
                     onClick={() => {
-                      setMessageToast(`📞 Calling ${activeThread.candidateName}...`)
+                      setMessageToast(`Calling ${activeThread.candidateName}...`)
                       setTimeout(() => setMessageToast(''), 3000)
                     }}
                     style={{
@@ -6900,7 +6898,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   <button
                     type="button"
                     onClick={() => {
-                      setMessageToast(`📹 Starting video meeting with ${activeThread.candidateName}...`)
+                      setMessageToast(`Starting video meeting with ${activeThread.candidateName}...`)
                       setTimeout(() => setMessageToast(''), 3000)
                     }}
                     style={{
@@ -7235,7 +7233,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                         cursor: 'pointer'
                       }}
                     >
-                      ✨ {p}
+                      {p}
                     </button>
                   ))}
                 </div>
@@ -7411,7 +7409,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
             flexShrink: 0
           }}>
             <span style={{ color: '#16A34A', fontWeight: 700 }}>
-              🔒 From: {currentUser?.email || 'omkesh@coolsofttech.com'}
+              From: {currentUser?.email || 'omkesh@coolsofttech.com'}
             </span>
             <span style={{ color: C.textSecondary }}>
               To: <strong style={{ color: C.textPrimary }}>{emailTo}</strong>
@@ -7437,28 +7435,28 @@ export default function RecruiterInbox({ defaultViewMode }) {
               onClick={() => handleApplyEmailTemplate('rtr')}
               style={{ background: C.inputBg, border: `1px solid ${C.border}`, borderRadius: 14, padding: '3px 9px', fontSize: 11, fontWeight: 700, color: C.textPrimary, cursor: 'pointer', whiteSpace: 'nowrap' }}
             >
-              📋 RTR Auth
+              RTR Auth
             </button>
             <button
               type="button"
               onClick={() => handleApplyEmailTemplate('screen')}
               style={{ background: C.inputBg, border: `1px solid ${C.border}`, borderRadius: 14, padding: '3px 9px', fontSize: 11, fontWeight: 700, color: C.textPrimary, cursor: 'pointer', whiteSpace: 'nowrap' }}
             >
-              📞 Screening Call
+              Screening Call
             </button>
             <button
               type="button"
               onClick={() => handleApplyEmailTemplate('rate')}
               style={{ background: C.inputBg, border: `1px solid ${C.border}`, borderRadius: 14, padding: '3px 9px', fontSize: 11, fontWeight: 700, color: C.textPrimary, cursor: 'pointer', whiteSpace: 'nowrap' }}
             >
-              💵 Rate & Auth
+              Rate & Auth
             </button>
             <button
               type="button"
               onClick={() => handleApplyEmailTemplate('interview')}
               style={{ background: C.inputBg, border: `1px solid ${C.border}`, borderRadius: 14, padding: '3px 9px', fontSize: 11, fontWeight: 700, color: C.textPrimary, cursor: 'pointer', whiteSpace: 'nowrap' }}
             >
-              📅 Interview Shortlist
+              Interview Shortlist
             </button>
           </div>
 
@@ -7518,7 +7516,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
             )}
           </div>
 
-          {/* Bottom Formatting & Action Bar (Matching Monster+ Toolbar: ↩ ↪ B I 🔗 ... Send) */}
+          {/* Bottom Formatting & Action Bar (Toolbar: Undo Redo Bold Italic Link Send) */}
           <div style={{
             padding: '9px 16px',
             borderTop: `1px solid ${C.border}`,
@@ -7566,9 +7564,9 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 type="button"
                 title="Insert Link"
                 onClick={() => setEmailBody(prev => prev + ' https://www.coolsofttech.com')}
-                style={{ background: 'none', border: 'none', color: C.textSecondary, cursor: 'pointer', padding: '4px 6px', fontSize: 14, borderRadius: 4 }}
+                style={{ background: 'none', border: 'none', color: C.textSecondary, cursor: 'pointer', padding: '4px 6px', fontSize: 12, fontWeight: 700, borderRadius: 4 }}
               >
-                🔗
+                Link
               </button>
 
               {/* Local Desktop Mail Launcher */}
@@ -7596,7 +7594,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   marginLeft: 4
                 }}
               >
-                📨 Mail App
+                Mail App
               </button>
             </div>
 
@@ -7716,19 +7714,19 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: C.textPrimary }}>{candidateName}</h3>
                       {isSpamOrigin ? (
                         <span style={{ background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA', padding: '2px 9px', borderRadius: 20, fontSize: 11, fontWeight: 800 }}>
-                          🛡️ Recovered from Spam Folder
+                          Recovered from Spam Folder
                         </span>
                       ) : candidateDetails.sourceCategory === 'careers_portal' ? (
                         <span style={{ background: '#ECFDF5', color: '#059669', border: '1px solid #A7F3D0', padding: '2px 9px', borderRadius: 20, fontSize: 11, fontWeight: 800 }}>
-                          🌐 Careers Portal (/jobs)
+                          Careers Portal (/jobs)
                         </span>
                       ) : candidateDetails.sourceCategory === 'vendor_bench' ? (
                         <span style={{ background: '#FAF5FF', color: '#7C3AED', border: '1px solid #E9D5FF', padding: '2px 9px', borderRadius: 20, fontSize: 11, fontWeight: 800 }}>
-                          🏢 Vendor Bench
+                          Vendor Bench
                         </span>
                       ) : (
                         <span style={{ background: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE', padding: '2px 9px', borderRadius: 20, fontSize: 11, fontWeight: 800 }}>
-                          📧 Recruiter Email Inbox
+                          Recruiter Email Inbox
                         </span>
                       )}
 
@@ -7779,7 +7777,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       boxShadow: '0 2px 8px rgba(37,99,235,0.35)'
                     }}
                   >
-                    <IconSend /> ✉️ Send Email / RTR
+                    <IconSend /> <span>Send Email / RTR</span>
                   </button>
 
                   <button
@@ -7800,7 +7798,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       boxShadow: '0 2px 8px rgba(5,150,105,0.3)'
                     }}
                   >
-                    <span>➕</span> Add to Req #{currentReqId}
+                    <span>Add to Req #{currentReqId}</span>
                   </button>
 
                   <button
@@ -7864,7 +7862,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                       <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#1D4ED8', display: 'flex', alignItems: 'center', gap: 6 }}>
-                        🎯 AI Multi-Position Match Analyzer
+                        AI Multi-Position Match Analyzer
                       </h4>
                       <span style={{ fontSize: 11, fontWeight: 800, color: '#16A34A', background: '#DCFCE7', padding: '2px 8px', borderRadius: 12 }}>
                         ● Live Evaluator
@@ -7984,7 +7982,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                           gap: 5
                         }}
                       >
-                        ➕ Assign to Req #{currentReqId}
+                        Assign to Req #{currentReqId}
                       </button>
 
                       <button
@@ -8012,7 +8010,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                           gap: 5
                         }}
                       >
-                        ✉️ Draft Email
+                        Draft Email
                       </button>
                     </div>
 
@@ -8021,33 +8019,33 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   {/* Compliance & Audit */}
                   <div style={{ border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}>
                     <h4 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 800, color: '#0F766E', display: 'flex', alignItems: 'center', gap: 6 }}>
-                      🛡️ Trust Verification &amp; Document Audit
+                      Trust Verification &amp; Document Audit
                     </h4>
                     
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
                         <span style={{ color: C.textSecondary }}>Driver's License OCR Check:</span>
                         <strong style={{ color: hasDl ? '#16A34A' : '#64748B' }}>
-                          {hasDl ? '✓ Match Verified' : '⏳ Pending / Not Uploaded'}
+                          {hasDl ? '✓ Match Verified' : 'Pending / Not Uploaded'}
                         </strong>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
                         <span style={{ color: C.textSecondary }}>Biometric Selfie verification:</span>
                         <strong style={{ color: hasSelfie ? '#16A34A' : '#64748B' }}>
-                          {hasSelfie ? '✓ Match Passed (98%)' : '⏳ Pending / Not Uploaded'}
+                          {hasSelfie ? '✓ Match Passed (98%)' : 'Pending / Not Uploaded'}
                         </strong>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
                         <span style={{ color: C.textSecondary }}>US Work Auth Visa verification:</span>
                         <strong style={{ color: hasVisa ? '#16A34A' : '#64748B' }}>
-                          {hasVisa ? '✓ Active / Verified' : '⏳ Pending / Not Uploaded'}
+                          {hasVisa ? '✓ Active / Verified' : 'Pending / Not Uploaded'}
                         </strong>
                       </div>
                       {candidateDetails.gps_data && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, borderTop: `1px solid ${C.border}`, paddingTop: 8, marginTop: 4 }}>
                           <span style={{ color: C.textSecondary }}>GPS Submission Geolocation:</span>
                           <strong style={{ color: C.textPrimary }}>
-                            📍 {candidateDetails.gps_data.city || 'Dallas'}, {candidateDetails.gps_data.state || 'TX'}
+                            {candidateDetails.gps_data.city || 'Dallas'}, {candidateDetails.gps_data.state || 'TX'}
                           </strong>
                         </div>
                       )}
@@ -8062,9 +8060,9 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   {/* Viewer Toolbar */}
                   <div style={{ padding: '12px 20px', borderBottom: `1px solid ${C.border}`, backgroundColor: C.surface, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexShrink: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: C.textPrimary }}>📄 Monster-Style Resume Viewer</span>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: C.textPrimary }}>Monster-Style Resume Viewer</span>
                       <span style={{ fontSize: 11, color: '#B45309', backgroundColor: '#FEF3C7', padding: '2px 8px', borderRadius: 4, fontWeight: 800, border: '1px solid #FDE68A' }}>
-                        💡 Matching skills for Req #{currentReqId} highlighted in yellow
+                        Matching skills for Req #{currentReqId} highlighted in yellow
                       </span>
                     </div>
 

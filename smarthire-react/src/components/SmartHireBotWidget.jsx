@@ -13,7 +13,7 @@ export default function SmartHireBotWidget({ jobs = [], onClose }) {
       {
         id: 'bot-welcome',
         sender: 'bot',
-        text: `Hello! 👋 I am your SmartHire AI Career Assistant. We currently have **${activeCount || jobs.length || 77} active job vacancies** available across C2C, W2, and 1099 contracts.`,
+        text: `Hello! I am your SmartHire AI Career Assistant. We currently have **${activeCount || jobs.length || 77} active job vacancies** available across C2C, W2, and 1099 contracts.`,
         timestamp: new Date().toISOString()
       },
       {
@@ -75,7 +75,7 @@ export default function SmartHireBotWidget({ jobs = [], onClose }) {
 
     // STRICT RULE: Pay rates / salary secrecy
     if (q.includes('rate') || q.includes('pay') || q.includes('salary') || q.includes('money') || q.includes('dollar') || q.includes('bill rate') || q.includes('compensation') || q.includes('hourly') || q.includes('$')) {
-      return `🔒 **Pay Rate Policy:** Compensation and hourly pay rates are evaluated individually based on your experience and discussed directly with our staffing recruiters during the initial screening call.\n\nTo get evaluated for a role, click **"Apply"** on any job opening on this page!`
+      return `**Pay Rate Policy:** Compensation and hourly pay rates are evaluated individually based on your experience and discussed directly with our staffing recruiters during the initial screening call.\n\nTo get evaluated for a role, click **"Apply"** on any job opening on this page!`
     }
 
     // Remote / Hybrid / Onsite query
@@ -88,7 +88,7 @@ export default function SmartHireBotWidget({ jobs = [], onClose }) {
       else matched = activeJobs.slice(0, 5)
 
       if (matched.length > 0) {
-        let text = `💼 Here are matching active vacancies:\n\n`
+        let text = `Here are matching active vacancies:\n\n`
         matched.slice(0, 4).forEach(j => {
           const mode = j.work_mode || j.workMode || 'Onsite'
           const exp = j.experience || '3+ yrs'
@@ -110,11 +110,11 @@ export default function SmartHireBotWidget({ jobs = [], onClose }) {
     })
 
     if (matchedJobs.length > 0) {
-      let text = `📋 Found ${matchedJobs.length} active matching position(s):\n\n`
+      let text = `Found ${matchedJobs.length} active matching position(s):\n\n`
       matchedJobs.slice(0, 3).forEach(j => {
         const mode = j.work_mode || j.workMode || 'Onsite'
         const exp = j.experience && j.experience !== 'TBD' ? j.experience : 'Relevant Experience'
-        text += `🔹 **${j.title}**\n  • Work Mode: ${mode}\n  • Experience: ${exp}\n  • Required Skills: ${(j.skills || []).slice(0, 4).join(', ')}\n\n`
+        text += `• **${j.title}**\n  • Work Mode: ${mode}\n  • Experience: ${exp}\n  • Required Skills: ${(j.skills || []).slice(0, 4).join(', ')}\n\n`
       })
       text += `Submit your application by clicking **"Apply"** on the job card!`
       return text
@@ -122,12 +122,12 @@ export default function SmartHireBotWidget({ jobs = [], onClose }) {
 
     // How to apply / application query
     if (q.includes('apply') || q.includes('submit') || q.includes('resume') || q.includes('how')) {
-      return `📝 **How to Apply:**\n1. Find your target job card on the portal\n2. Click the blue **"Apply"** button\n3. Attach your resume (PDF/Docx) — your info will auto-populate!\n4. Click Submit — our recruiting team receives it immediately and you'll get a direct **"Message Recruiter"** button!`
+      return `**How to Apply:**\n1. Find your target job card on the portal\n2. Click the blue **"Apply"** button\n3. Attach your resume (PDF/Docx) — your info will auto-populate!\n4. Click Submit — our recruiting team receives it immediately and you'll get a direct **"Message Recruiter"** button!`
     }
 
     // General fallback overview
     const sampleTitles = activeJobs.slice(0, 4).map(j => `"${j.title}"`).join(', ')
-    return `🤖 We have ${activeJobs.length || 77} active vacancies including ${sampleTitles || 'Engineering, Consulting, and Tech roles'}.\n\nYou can search by job title or skill at the top, or click **"Apply"** on any job card to submit your resume. Is there a specific role or technology stack you are looking for?`
+    return `We have ${activeJobs.length || 77} active vacancies including ${sampleTitles || 'Engineering, Consulting, and Tech roles'}.\n\nYou can search by job title or skill at the top, or click **"Apply"** on any job card to submit your resume. Is there a specific role or technology stack you are looking for?`
   }
 
   return (
@@ -165,7 +165,7 @@ export default function SmartHireBotWidget({ jobs = [], onClose }) {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 17, boxShadow: '0 2px 8px rgba(37,99,235,0.4)'
           }}>
-            🤖
+            AI
           </div>
           <div>
             <div style={{ fontWeight: 800, fontSize: 15, color: '#FFFFFF', lineHeight: 1.2 }}>
@@ -220,7 +220,7 @@ export default function SmartHireBotWidget({ jobs = [], onClose }) {
                   background: '#2563EB', color: '#FFF',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 14, flexShrink: 0, marginTop: 2
-                }}>🤖</div>
+                }}>AI</div>
               )}
               <div style={{
                 maxWidth: '80%',
@@ -243,7 +243,7 @@ export default function SmartHireBotWidget({ jobs = [], onClose }) {
 
         {isTyping && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#2563EB', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🤖</div>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#2563EB', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800 }}>AI</div>
             <div style={{ backgroundColor: '#FFF', border: '1px solid #E2E8F0', borderRadius: '14px 14px 14px 2px', padding: '8px 14px', fontSize: 12, color: '#64748B' }}>
               Assistant is typing…
             </div>

@@ -508,7 +508,7 @@ function Reports() {
         {/* ═══════════ TOP BREADCRUMB ═══════════ */}
         <div style={{ background: '#ffffff', borderBottom: '1px solid #cbd5e1', padding: '6px 18px', fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1e3a8a', fontWeight: 'bold' }}>
-            <span style={{ fontSize: '16px' }}>🏠</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block' }}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             <Link to="/dashboard" style={{ color: '#0066cc', textDecoration: 'underline' }}>Home</Link>
           </div>
         </div>
@@ -618,7 +618,7 @@ function Reports() {
                     onChange={e => setStartDate(e.target.value)}
                     style={{ border: 'none', outline: 'none', fontSize: '11px', width: '150px' }}
                   />
-                  <span style={{ cursor: 'pointer', fontSize: '12px' }}>📅</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" style={{ cursor: 'pointer' }}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 </div>
               </div>
 
@@ -632,7 +632,7 @@ function Reports() {
                     onChange={e => setEndDate(e.target.value)}
                     style={{ border: 'none', outline: 'none', fontSize: '11px', width: '150px' }}
                   />
-                  <span style={{ cursor: 'pointer', fontSize: '12px' }}>📅</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" style={{ cursor: 'pointer' }}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 </div>
               </div>
 
@@ -688,24 +688,24 @@ function Reports() {
           }}>
             {/* Page Navigation */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ cursor: 'pointer', fontSize: '11px', color: '#475569' }} onClick={() => setReportPage(1)} title="First Page">⏮</span>
-              <span style={{ cursor: 'pointer', fontSize: '11px', color: '#475569' }} onClick={() => setReportPage(prev => Math.max(1, prev - 1))} title="Previous Page">◀</span>
+              <span style={{ cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: '#475569' }} onClick={() => setReportPage(1)} title="First Page">|‹</span>
+              <span style={{ cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: '#475569' }} onClick={() => setReportPage(prev => Math.max(1, prev - 1))} title="Previous Page">‹</span>
               <input
                 type="text"
                 value={reportPage}
                 onChange={e => setReportPage(parseInt(e.target.value) || 1)}
                 style={{ width: '26px', textAlign: 'center', padding: '1px', fontSize: '11px', border: '1px solid #94a3b8', background: '#ffffff' }}
               />
-              <span style={{ fontSize: '11px' }}>of {totalPages} ?</span>
-              <span style={{ cursor: 'pointer', fontSize: '11px', color: '#475569' }} onClick={() => setReportPage(prev => Math.min(totalPages, prev + 1))} title="Next Page">▶</span>
-              <span style={{ cursor: 'pointer', fontSize: '11px', color: '#475569' }} onClick={() => setReportPage(totalPages)} title="Last Page">⏭</span>
+              <span style={{ fontSize: '11px' }}>of {totalPages}</span>
+              <span style={{ cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: '#475569' }} onClick={() => setReportPage(prev => Math.min(totalPages, prev + 1))} title="Next Page">›</span>
+              <span style={{ cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: '#475569' }} onClick={() => setReportPage(totalPages)} title="Last Page">›|</span>
             </div>
 
             <div style={{ height: '14px', width: '1px', background: '#cbd5e1' }} />
 
             {/* Refresh */}
-            <span style={{ cursor: 'pointer', fontSize: '13px' }} onClick={() => alert('Report data reloaded!')} title="Refresh">
-              🔄
+            <span style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', color: '#475569' }} onClick={() => alert('Report data reloaded!')} title="Refresh">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
             </span>
 
             <div style={{ height: '14px', width: '1px', background: '#cbd5e1' }} />
@@ -727,14 +727,14 @@ function Reports() {
             <div style={{ height: '14px', width: '1px', background: '#cbd5e1' }} />
 
             {/* Export Dropdown */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }} onClick={handleExportToExcel} title="Export to Excel / CSV">
-              <span>💾</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#334155' }} onClick={handleExportToExcel} title="Export to Excel / CSV">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               <span style={{ fontSize: '10px' }}>▼</span>
             </div>
 
             {/* Print */}
-            <span style={{ cursor: 'pointer', fontSize: '13px' }} onClick={() => window.print()} title="Print Report">
-              🖨️
+            <span style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', color: '#475569' }} onClick={() => window.print()} title="Print Report">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
             </span>
           </div>
 

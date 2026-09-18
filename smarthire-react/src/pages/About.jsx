@@ -143,7 +143,7 @@ function About() {
       // 3. Dispatch real-time Activity Notification to Admin with Audio Chime & Desktop Push
       pushActivityNotification({
         id: `notif-inq-${Date.now()}`,
-        title: `📩 New Client Inquiry: ${inquiryRecord.company}`,
+        title: `New Client Inquiry: ${inquiryRecord.company}`,
         message: `${inquiryRecord.name} (${inquiryRecord.email}) submitted inquiry: "${inquiryRecord.subject}" - ${inquiryRecord.message.slice(0, 75)}...`,
         type: 'inquiry',
         category: 'team',
@@ -350,7 +350,7 @@ function About() {
                   }}
                   className="tf-btn tf-btn-outline"
                 >
-                  🎧 Enterprise Support & Inquiries
+                  Enterprise Support & Inquiries
                 </button>
               </div>
 
@@ -392,7 +392,7 @@ function About() {
             
             <div style={{ textAlign: 'center', maxWidth: '760px', margin: '0 auto 50px' }}>
               <div style={{ fontSize: '12px', fontWeight: '800', color: '#2563eb', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>
-                🧠 Empirical AI Intelligence
+                Empirical AI Intelligence
               </div>
               <h2 style={{
                 fontFamily: 'Plus Jakarta Sans, sans-serif',
@@ -425,7 +425,7 @@ function About() {
                   fontSize: '22px',
                   marginBottom: '16px'
                 }}>
-                  🎯
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
                 </div>
                 <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', margin: '0 0 8px' }}>
                   Contextual Depth vs Keyword Stuffing
@@ -448,7 +448,7 @@ function About() {
                   fontSize: '22px',
                   marginBottom: '16px'
                 }}>
-                  💰
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
                 </div>
                 <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', margin: '0 0 8px' }}>
                   C2C, W2 & Bill Rate Corridor Calibration
@@ -471,7 +471,7 @@ function About() {
                   fontSize: '22px',
                   marginBottom: '16px'
                 }}>
-                  📊
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9333ea" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
                 </div>
                 <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', margin: '0 0 8px' }}>
                   Client Interview Probability Scoring
@@ -601,7 +601,7 @@ function About() {
             
             <div style={{ textAlign: 'center', maxWidth: '680px', margin: '0 auto 40px' }}>
               <div style={{ fontSize: '12px', fontWeight: '800', color: '#2563eb', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>
-                🛡️ Enterprise Security & Trust
+                Enterprise Security & Trust
               </div>
               <h2 style={{
                 fontFamily: 'Plus Jakarta Sans, sans-serif',
@@ -621,7 +621,7 @@ function About() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
               
               <div className="tf-card" style={{ borderLeft: '4px solid #2563eb' }}>
-                <div style={{ fontSize: '26px', marginBottom: '10px' }}>🔒</div>
+                <div style={{ marginBottom: '10px', display: 'flex' }}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>
                 <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: '0 0 6px' }}>
                   Zero-Leakage Private Recruiter Vaults
                 </h3>
@@ -631,7 +631,7 @@ function About() {
               </div>
 
               <div className="tf-card" style={{ borderLeft: '4px solid #16a34a' }}>
-                <div style={{ fontSize: '26px', marginBottom: '10px' }}>🛡️</div>
+                <div style={{ marginBottom: '10px', display: 'flex' }}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></div>
                 <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: '0 0 6px' }}>
                   Anti-Proxy Biometrics & OCR Verification
                 </h3>
@@ -641,7 +641,7 @@ function About() {
               </div>
 
               <div className="tf-card" style={{ borderLeft: '4px solid #ea580c' }}>
-                <div style={{ fontSize: '26px', marginBottom: '10px' }}>👥</div>
+                <div style={{ marginBottom: '10px', display: 'flex' }}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ea580c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div>
                 <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: '0 0 6px' }}>
                   Dynamic Multi-Role Reporting Hierarchy
                 </h3>
@@ -663,7 +663,7 @@ function About() {
             
             <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 40px' }}>
               <div className="tf-badge-pill" style={{ margin: '0 auto 16px' }}>
-                🎧 24/7 ENTERPRISE RECRUITMENT SUPPORT DESK
+                24/7 ENTERPRISE RECRUITMENT SUPPORT DESK
               </div>
               <h2 style={{
                 fontFamily: 'Plus Jakarta Sans, sans-serif',
@@ -685,7 +685,7 @@ function About() {
                   type="text"
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="🔍 Search questions, workflows, approvals, or candidate matching..."
+                  placeholder="Search questions, workflows, approvals, or candidate matching..."
                   className="tf-input"
                   style={{
                     padding: '14px 20px',
@@ -701,7 +701,7 @@ function About() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '45px' }}>
               
               <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '18px' }}>
-                <div style={{ fontSize: '24px', marginBottom: '8px' }}>🔧</div>
+                <div style={{ marginBottom: '8px', display: 'flex' }}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg></div>
                 <h4 style={{ fontSize: '14.5px', fontWeight: '800', color: '#0f172a', margin: '0 0 4px' }}>System Setup & Access</h4>
                 <p style={{ fontSize: '12px', color: '#64748b', margin: 0, lineHeight: 1.5 }}>
                   User logins, corporate email setups, role assignments, and password recovery.
@@ -709,7 +709,7 @@ function About() {
               </div>
 
               <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '18px' }}>
-                <div style={{ fontSize: '24px', marginBottom: '8px' }}>💼</div>
+                <div style={{ marginBottom: '8px', display: 'flex' }}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg></div>
                 <h4 style={{ fontSize: '14.5px', fontWeight: '800', color: '#0f172a', margin: '0 0 4px' }}>Requisitions & Sourcing</h4>
                 <p style={{ fontSize: '12px', color: '#64748b', margin: 0, lineHeight: 1.5 }}>
                   Position number matching (#68305, #74921), rate spreads, and 1-click candidate push.
@@ -717,7 +717,7 @@ function About() {
               </div>
 
               <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '18px' }}>
-                <div style={{ fontSize: '24px', marginBottom: '8px' }}>🤖</div>
+                <div style={{ marginBottom: '8px', display: 'flex' }}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8.01" y2="16"></line><line x1="16" y1="16" x2="16.01" y2="16"></line></svg></div>
                 <h4 style={{ fontSize: '14.5px', fontWeight: '800', color: '#0f172a', margin: '0 0 4px' }}>AI Match & Scoring</h4>
                 <p style={{ fontSize: '12px', color: '#64748b', margin: 0, lineHeight: 1.5 }}>
                   Placement probability scores, automated resume parsing, and gap analysis alerts.
@@ -725,7 +725,7 @@ function About() {
               </div>
 
               <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '18px' }}>
-                <div style={{ fontSize: '24px', marginBottom: '8px' }}>📋</div>
+                <div style={{ marginBottom: '8px', display: 'flex' }}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg></div>
                 <h4 style={{ fontSize: '14.5px', fontWeight: '800', color: '#0f172a', margin: '0 0 4px' }}>Compliance & RTR</h4>
                 <p style={{ fontSize: '12px', color: '#64748b', margin: 0, lineHeight: 1.5 }}>
                   Right-to-Represent digital signature, work authorization documents, and audit logs.
@@ -799,7 +799,7 @@ function About() {
             
             <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 50px' }}>
               <div style={{ fontSize: '12px', fontWeight: '800', color: '#2563eb', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>
-                ✉️ Enterprise Communication Hub
+                Enterprise Communication Hub
               </div>
               <h2 style={{
                 fontFamily: 'Plus Jakarta Sans, sans-serif',
@@ -828,7 +828,7 @@ function About() {
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '13px' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                      <span style={{ fontSize: '20px' }}>✉️</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', marginTop: 3 }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg></span>
                       <div>
                         <div style={{ fontWeight: '700', color: '#0f172a' }}>General & Sales Inquiries</div>
                         <a href="mailto:contact@smarthire.ai" style={{ color: '#2563eb', textDecoration: 'none' }}>contact@smarthire.ai</a>
@@ -836,7 +836,7 @@ function About() {
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                      <span style={{ fontSize: '20px' }}>🎧</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', marginTop: 3 }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg></span>
                       <div>
                         <div style={{ fontWeight: '700', color: '#0f172a' }}>Recruitment Tech Support</div>
                         <a href="mailto:support@smarthire.ai" style={{ color: '#2563eb', textDecoration: 'none' }}>support@smarthire.ai</a>
@@ -844,7 +844,7 @@ function About() {
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                      <span style={{ fontSize: '20px' }}>🛡️</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', marginTop: 3 }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span>
                       <div>
                         <div style={{ fontWeight: '700', color: '#0f172a' }}>Privacy & Security Officer</div>
                         <a href="mailto:privacy@smarthire.ai" style={{ color: '#2563eb', textDecoration: 'none' }}>privacy@smarthire.ai</a>
@@ -852,7 +852,7 @@ function About() {
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                      <span style={{ fontSize: '20px' }}>📞</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', marginTop: 3 }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg></span>
                       <div>
                         <div style={{ fontWeight: '700', color: '#0f172a' }}>Enterprise Dedicated Line</div>
                         <span style={{ color: '#475569' }}>+1 (800) 555-SMART (7627)</span>
@@ -891,7 +891,7 @@ function About() {
                     padding: '28px',
                     textAlign: 'center'
                   }}>
-                    <div style={{ fontSize: '36px', marginBottom: '10px' }}>🎉</div>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="16 9 10 15 7 12"></polyline></svg></div>
                     <h4 style={{ fontSize: '18px', fontWeight: '800', color: '#166534', margin: '0 0 8px' }}>
                       Inquiry Dispatched Successfully!
                     </h4>
@@ -935,7 +935,7 @@ function About() {
                         color: '#b91c1c',
                         marginBottom: '16px'
                       }}>
-                        ⚠️ {formError}
+                        {formError}
                       </div>
                     )}
 
@@ -1054,7 +1054,7 @@ function About() {
                       className="tf-btn tf-btn-primary"
                       style={{ width: '100%', padding: '14px', fontSize: '15px' }}
                     >
-                      {submittingInquiry ? 'Dispatching to Admin...' : 'Send Enterprise Inquiry 🚀'}
+                      {submittingInquiry ? 'Dispatching to Admin...' : 'Send Enterprise Inquiry'}
                     </button>
 
                   </form>

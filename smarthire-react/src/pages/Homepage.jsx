@@ -141,7 +141,7 @@ function Homepage() {
       await resetPasswordWithEmail(cleanForgotEmail)
       setForgotStatus({
         loading: false,
-        msg: `✅ Password reset email sent to ${cleanForgotEmail}! Please check your inbox and spam folder.`,
+        msg: `Password reset email sent to ${cleanForgotEmail}. Please check your inbox and spam folder.`,
         error: false
       })
     } catch (err) {
@@ -408,8 +408,8 @@ function Homepage() {
                         <h3>Overview</h3>
                       </div>
                       <div className="tf-dash-user">
-                        <span className="tf-dash-search-icon">🔍</span>
-                        <span className="tf-dash-bell">🔔</span>
+                        <span className="tf-dash-search-icon" style={{ display: "inline-flex", alignItems: "center" }}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
+                        <span className="tf-dash-bell" style={{ display: "inline-flex", alignItems: "center" }}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></span>
                         <div className="tf-dash-user-info">
                           <span className="tf-dash-user-name">Alex Morgan</span>
                           <span className="tf-dash-user-role">Super Admin (RBAC Active)</span>
@@ -1121,7 +1121,7 @@ function Homepage() {
                         <h3>Candidates</h3>
                       </div>
                       <div className="tf-dash-user">
-                        <span className="tf-dash-search-icon">🔍</span>
+                        <span className="tf-dash-search-icon" style={{ display: "inline-flex", alignItems: "center" }}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
                         <div className="tf-dash-user-info">
                           <span className="tf-dash-user-name">Alex Morgan</span>
                         </div>
@@ -1304,7 +1304,7 @@ function Homepage() {
           <div className="tf-container">
             {/* Section Header */}
             <div className="tf-section-header text-center">
-              <span className="tf-eyebrow-amber">🎥 PEEKHIRE AI CANDIDATE SCREENING</span>
+              <span className="tf-eyebrow-amber">PEEKHIRE AI CANDIDATE SCREENING</span>
               <h2 className="tf-section-title">
                 Screen 10x More Candidates with{' '}
                 <span className="tf-highlight-box">Asynchronous Video, Audio & Text AI</span>
@@ -1314,7 +1314,7 @@ function Homepage() {
               </p>
               <div className="tf-screening-cta-row">
                 <Link to="/screening" className="tf-btn tf-btn-primary">
-                  <span>🎥 Try Live Candidate Studio →</span>
+                  <span>Try Live Candidate Studio →</span>
                 </Link>
                 {isAuthenticated ? (
                   <Link to="/ats?tab=screening" className="tf-btn tf-btn-outline">
@@ -1354,14 +1354,14 @@ function Homepage() {
                   {/* Mode Selector Tabs */}
                   <div className="tf-mode-selector-bar">
                     <div className="tf-mode-pill active">
-                      <span>🎥 Video Response</span>
+                      <span>Video Response</span>
                       <span className="tf-pill-dot" />
                     </div>
                     <div className="tf-mode-pill">
-                      <span>🎙️ Voice Note</span>
+                      <span>Voice Note</span>
                     </div>
                     <div className="tf-mode-pill">
-                      <span>✍️ Written Text</span>
+                      <span>Written Text</span>
                     </div>
                   </div>
 
@@ -1414,7 +1414,7 @@ function Homepage() {
                     {/* Candidate Action Controls */}
                     <div className="tf-viewport-actions">
                       <button type="button" className="tf-btn-retake">
-                        <span>🔄 Retake</span>
+                        <span>Retake</span>
                       </button>
                       <button type="button" className="tf-btn-record-stop">
                         <span className="tf-stop-square" />
@@ -1424,7 +1424,7 @@ function Homepage() {
                   </div>
 
                   <div className="tf-studio-footer-note">
-                    🔒 Zero login required · Works smoothly on mobile Safari, Chrome, and desktop webcams
+                    Zero login required · Works smoothly on mobile Safari, Chrome, and desktop webcams
                   </div>
                 </div>
               </div>
@@ -1486,7 +1486,7 @@ function Homepage() {
                       Shortlist Candidate
                     </button>
                     <button type="button" className="tf-btn-action secondary">
-                      💼 Push to Req #74921
+                      Push to Req #74921
                     </button>
                     <button type="button" className="tf-btn-action outline">
                       ↗ Share Dossier
@@ -1507,7 +1507,7 @@ function Homepage() {
                     <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
                   </svg>
                 </div>
-                <h4>🎥 Asynchronous HD Video</h4>
+                <h4>Asynchronous HD Video</h4>
                 <p>
                   Candidates record answers on camera with countdown timers and instant replay. Evaluate presence, technical depth, and communication style without scheduling conflicts.
                 </p>
@@ -1523,7 +1523,7 @@ function Homepage() {
                     <line x1="8" y1="23" x2="16" y2="23"/>
                   </svg>
                 </div>
-                <h4>🎙️ Audio Waveform & Voice Notes</h4>
+                <h4>Audio Waveform & Voice Notes</h4>
                 <p>
                   Lightweight audio responses for fast pre-screening. Includes real-time microphone test volume meter and waveform playback with 1x, 1.25x, 1.5x, and 2x speed controls.
                 </p>
@@ -1562,7 +1562,7 @@ function Homepage() {
 
               <div className="tf-support-cta-wrap">
                 <a href="mailto:support@smarthire.com" className="tf-btn tf-btn-primary">
-                  <span style={{ marginRight: 8 }}>✉</span> Contact us
+                  <span style={{marginRight: 8, display: "inline-flex", verticalAlign: "middle" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg></span> Contact us
                 </a>
               </div>
 
@@ -1684,11 +1684,11 @@ function Homepage() {
                   {/* Left Micro Dark Sidebar */}
                   <div className="tf-persp-sidebar">
                     <div className="tf-persp-side-logo">SH</div>
-                    <div className="tf-persp-side-item" title="Home">🏠</div>
-                    <div className="tf-persp-side-item" title="Workqueue">📋</div>
-                    <div className="tf-persp-side-item active" title="Reports">📊</div>
-                    <div className="tf-persp-side-item" title="AI Agents">🤖</div>
-                    <div className="tf-persp-side-item" title="Settings">⚙️</div>
+                    <div className="tf-persp-side-item" title="Home"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg></div>
+                    <div className="tf-persp-side-item" title="Workqueue"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg></div>
+                    <div className="tf-persp-side-item active" title="Reports"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg></div>
+                    <div className="tf-persp-side-item" title="AI Agents"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8.01" y2="16"></line><line x1="16" y1="16" x2="16.01" y2="16"></line></svg></div>
+                    <div className="tf-persp-side-item" title="Settings"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></div>
                   </div>
 
                   {/* Main Dashboard Canvas */}
@@ -1701,7 +1701,7 @@ function Homepage() {
                         <span className="tf-persp-subbar-pill">Analytics · Org Overview</span>
                       </div>
                       <div className="tf-persp-subbar-right">
-                        <span className="tf-persp-date-badge">📅 This Month</span>
+                        <span className="tf-persp-date-badge">This Month</span>
                         <span className="tf-persp-btn-mini">+ Add Component</span>
                       </div>
                     </div>
@@ -1917,7 +1917,7 @@ function Homepage() {
                           <span className="req-sub">Data Integration Lead</span>
                         </div>
                         <div className="td-cell td-recruiter">
-                          <span className="recruiter-tag">👤 Omkesh</span>
+                          <span className="recruiter-tag">Gourav M.</span>
                         </div>
                         <div className="td-cell td-skills">
                           <span className="skill-chip">python</span>
@@ -1940,7 +1940,7 @@ function Homepage() {
                           <span className="req-sub">Full Stack Python Dev</span>
                         </div>
                         <div className="td-cell td-recruiter">
-                          <span className="recruiter-tag">👤 Omkesh</span>
+                          <span className="recruiter-tag">Naveen K.</span>
                         </div>
                         <div className="td-cell td-skills">
                           <span className="skill-chip">python</span>
@@ -1963,7 +1963,7 @@ function Homepage() {
                           <span className="req-sub">Solutions Architect</span>
                         </div>
                         <div className="td-cell td-recruiter">
-                          <span className="recruiter-tag">👤 Omkesh</span>
+                          <span className="recruiter-tag">Rahul S.</span>
                         </div>
                         <div className="td-cell td-skills">
                           <span className="skill-chip">javascript</span>
@@ -1986,7 +1986,7 @@ function Homepage() {
                           <span className="req-sub">Data Integration Lead</span>
                         </div>
                         <div className="td-cell td-recruiter">
-                          <span className="recruiter-tag">👤 Omkesh</span>
+                          <span className="recruiter-tag">Sukamal B.</span>
                         </div>
                         <div className="td-cell td-skills">
                           <span className="skill-chip">python</span>
@@ -2009,7 +2009,7 @@ function Homepage() {
                           <span className="req-sub">AWS Cloud Engineer</span>
                         </div>
                         <div className="td-cell td-recruiter">
-                          <span className="recruiter-tag">👤 Omkesh</span>
+                          <span className="recruiter-tag">Omkesh M.</span>
                         </div>
                         <div className="td-cell td-skills">
                           <span className="skill-chip">aws</span>
@@ -2258,7 +2258,7 @@ function Homepage() {
                     <span className="tf-annual-label">Estimated Annual Gross Margin</span>
                     <span className="tf-annual-val">${annualSpreadTotal.toLocaleString()}</span>
                     <p className="tf-annual-expl">
-                      💡 <em>SmartHire's entire yearly subscription is recouped in less than <strong>2 days</strong> of margin from a single placement.</em>
+                      <em>SmartHire's entire yearly subscription is recouped in less than <strong>2 days</strong> of margin from a single placement.</em>
                     </p>
                   </div>
                 </div>
@@ -2303,7 +2303,7 @@ function Homepage() {
                     boxShadow: authView === 'login' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none'
                   }}
                 >
-                  🔑 Sign In
+                  Sign In
                 </button>
                 <button
                   type="button"
@@ -2321,7 +2321,7 @@ function Homepage() {
                     boxShadow: authView === 'forgot' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none'
                   }}
                 >
-                  🔄 Forgot Password?
+                  Forgot Password?
                 </button>
               </div>
 
@@ -2371,7 +2371,7 @@ function Homepage() {
 
                   {errorMessage && (
                     <div className="tf-error-alert" style={{ marginBottom: 14 }}>
-                      ⚠️ {errorMessage}
+                      {errorMessage}
                     </div>
                   )}
 
@@ -2413,7 +2413,7 @@ function Homepage() {
                           style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13 }}
                           title={showPassword ? 'Hide password' : 'Show password'}
                         >
-                          {showPassword ? '🙈' : '👁'}
+                          {showPassword ? 'Hide' : 'Show'}
                         </button>
                       </div>
                     </div>
@@ -2463,7 +2463,7 @@ function Homepage() {
                       disabled={forgotStatus.loading}
                       style={{ background: '#2563eb', color: '#fff', padding: '11px', borderRadius: 8, fontWeight: 800, fontSize: 13.5 }}
                     >
-                      {forgotStatus.loading ? 'Sending Secure Reset Link...' : '✉️ Send Password Reset Email'}
+                      {forgotStatus.loading ? 'Sending Secure Reset Link...' : 'Send Password Reset Email'}
                     </button>
                   </form>
 
