@@ -976,10 +976,9 @@ if (fs.existsSync(distPath)) {
   app.use(express.static(distPath))
 }
 
-// Google Search Console HTML verification handler
-app.get('/google:hash.html', (req, res) => {
-  const hash = req.params.hash || ''
-  res.type('text/html').send(`google-site-verification: google${hash}.html`)
+// Specific Google Search Console verification file
+app.get('/google3157aa34a87a98ad.html', (_req, res) => {
+  res.type('text/html').send('google-site-verification: google3157aa34a87a98ad.html')
 })
 
 // ─── Multer Setup ─────────────────────────────────────────────────────────────
