@@ -2973,32 +2973,6 @@ export default function RecruiterInbox({ defaultViewMode }) {
               <IconUsers /> <span>Candidates</span>
             </button>
 
-            {/* 3. Jobs */}
-            <button
-              type="button"
-              onMouseEnter={() => setHoveredNav('jobs')}
-              onMouseLeave={() => setHoveredNav(null)}
-              onClick={() => navigate('/ats?tab=jobs')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                padding: '10px 14px',
-                borderRadius: 8,
-                border: 'none',
-                background: hoveredNav === 'jobs' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent',
-                color: hoveredNav === 'jobs' ? C.textPrimary : C.textSecondary,
-                fontWeight: hoveredNav === 'jobs' ? 600 : 500,
-                fontSize: 13.5,
-                cursor: 'pointer',
-                textAlign: 'left',
-                transform: hoveredNav === 'jobs' ? 'translateX(4px)' : 'none',
-                transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
-              }}
-            >
-              <IconBriefcase /> <span>Jobs</span>
-            </button>
-
             {/* 4. Messages */}
             <button
               type="button"
@@ -4926,7 +4900,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 justifyContent: 'space-between',
                 flexWrap: 'wrap',
                 gap: 16,
-                marginBottom: 20
+                marginBottom: 20,
+                flexShrink: 0
               }}>
                 <div>
                   <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: C.textPrimary, letterSpacing: '-0.5px' }}>
@@ -4992,7 +4967,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 justifyContent: 'space-between',
                 flexWrap: 'wrap',
                 gap: 12,
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                flexShrink: 0
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', flex: 1 }}>
                   {/* Requisition dropdown */}
@@ -5186,7 +5162,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 marginBottom: 12,
                 padding: '0 4px',
                 flexWrap: 'wrap',
-                gap: 10
+                gap: 10,
+                flexShrink: 0
               }}>
                 <div style={{ fontSize: 13.5, fontWeight: 700, color: C.textPrimary }}>
                   {filteredCandidates.length} candidates found
@@ -5274,22 +5251,27 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 border: `1px solid ${C.border}`,
                 borderRadius: 10,
                 overflow: 'hidden',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                flexShrink: 0,
+                display: 'flex',
+                flexDirection: 'column'
               }}>
                 <div
                   className="candidates-table-scroll"
                   style={{
                     overflowX: 'auto',
-                    overflowY: 'hidden',
+                    overflowY: 'auto',
+                    maxHeight: 'calc(100vh - 340px)',
+                    minHeight: 400,
                     width: '100%',
                     WebkitOverflowScrolling: 'touch',
                     scrollbarWidth: 'thin',
-                    scrollbarColor: isLight ? '#94A3B8 #F1F5F9' : '#475569 #1E293B',
-                    paddingBottom: 2
+                    scrollbarColor: isLight ? '#94A3B8 #F1F5F9' : '#475569 #1E293B'
                   }}
                 >
                   <style>{`
                     .candidates-table-scroll::-webkit-scrollbar {
+                      width: 8px;
                       height: 8px;
                     }
                     .candidates-table-scroll::-webkit-scrollbar-track {
@@ -5316,9 +5298,9 @@ export default function RecruiterInbox({ defaultViewMode }) {
                         letterSpacing: '0.4px',
                         position: 'sticky',
                         top: 0,
-                        zIndex: 2
+                        zIndex: 10
                       }}>
-                        <th style={{ padding: '8px 8px', width: 36, minWidth: 36, maxWidth: 36 }}>
+                        <th style={{ padding: '8px 8px', width: 36, minWidth: 36, maxWidth: 36, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>
                           <input
                             type="checkbox"
                             checked={selectedCardIds.size === filteredCandidates.length && filteredCandidates.length > 0}
@@ -5326,19 +5308,19 @@ export default function RecruiterInbox({ defaultViewMode }) {
                               if (e.target.checked) {
                                 setSelectedCardIds(new Set(filteredCandidates.map(c => c.id || c.email)))
                               } else {
-                                setSelectedCardIds(new Set())
+                                selectedCardIds(new Set())
                               }
                             }}
                           />
                         </th>
-                        <th style={{ padding: '8px 10px', width: 190, minWidth: 170, maxWidth: 210 }}>Candidate</th>
-                        <th style={{ padding: '8px 10px', width: 160, minWidth: 140, maxWidth: 180 }}>Role / Current Title</th>
-                        <th style={{ padding: '8px 10px', width: 220, minWidth: 200, maxWidth: 250 }}>AI Matched Requirement</th>
-                        <th style={{ padding: '8px 8px', width: 85, minWidth: 80, maxWidth: 90 }}>Match ⇕</th>
-                        <th style={{ padding: '8px 10px', width: 160, minWidth: 140, maxWidth: 190 }}>Key Skills</th>
-                        <th style={{ padding: '8px 8px', width: 90, minWidth: 80, maxWidth: 100 }}>Received ⇕</th>
-                        <th style={{ padding: '8px 8px', width: 100, minWidth: 90, maxWidth: 110 }}>Source</th>
-                        <th style={{ padding: '8px 10px', width: 95, minWidth: 90, textAlign: 'right' }}>Actions</th>
+                        <th style={{ padding: '8px 10px', width: 190, minWidth: 170, maxWidth: 210, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Candidate</th>
+                        <th style={{ padding: '8px 10px', width: 160, minWidth: 140, maxWidth: 180, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Role / Current Title</th>
+                        <th style={{ padding: '8px 10px', width: 220, minWidth: 200, maxWidth: 250, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>AI Matched Requirement</th>
+                        <th style={{ padding: '8px 8px', width: 85, minWidth: 80, maxWidth: 90, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Match ⇕</th>
+                        <th style={{ padding: '8px 10px', width: 160, minWidth: 140, maxWidth: 190, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Key Skills</th>
+                        <th style={{ padding: '8px 8px', width: 90, minWidth: 80, maxWidth: 100, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Received ⇕</th>
+                        <th style={{ padding: '8px 8px', width: 100, minWidth: 90, maxWidth: 110, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Source</th>
+                        <th style={{ padding: '8px 10px', width: 95, minWidth: 90, textAlign: 'right', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -5788,7 +5770,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 gap: 16,
-                flexWrap: 'wrap'
+                flexWrap: 'wrap',
+                flexShrink: 0
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{
