@@ -773,7 +773,42 @@ EDUCATION & CERTIFICATIONS
 - AWS Certified Solutions Architect – Professional
 - Certified Kubernetes Administrator (CKA)`
   }
-  // 7. Java Full Stack / Microservices / Spring Boot (Standard High-Yield Default)
+  // 7. Data Engineer & Cloud Data Architect (Spark, PySpark, Databricks, Snowflake, Azure Data Factory)
+  else if (roleText.includes('data engineer') || roleText.includes('data architect') || roleText.includes('etl') || roleText.includes('spark') || roleText.includes('databricks') || roleText.includes('snowflake')) {
+    profileDossier = `${name.toUpperCase()}
+Location: ${loc} | Contact: ${phoneDisplay} | E-mail: ${email} | ${visa}
+
+PROFESSIONAL SUMMARY
+Senior Data Engineer & Cloud Data Architect with over ${exp} of extensive experience architecting high-throughput big data pipelines, enterprise data lakes, and modern data warehouses across Azure and AWS. Deep hands-on expertise in Apache Spark, PySpark, Databricks, Snowflake, Azure Data Factory (ADF), Python, and advanced SQL data modeling. Proven track record designing scalable ETL/ELT architectures processing multi-terabyte datasets for Fortune 500 and state government clients.
+
+CORE BIG DATA & CLOUD SKILLS
+- Big Data & Processing: Apache Spark, PySpark, Azure Databricks, Delta Lake, Kafka, Hadoop
+- Cloud Data Warehousing: Snowflake, Azure Synapse Analytics, AWS Redshift, BigQuery
+- ETL / ELT & Orchestration: Azure Data Factory (ADF), Airflow, SSIS, dbt, AWS Glue
+- Databases & Languages: Python, SQL, T-SQL, PostgreSQL, Cosmos DB, MongoDB
+- Cloud & Infrastructure: Microsoft Azure (Blob Storage, ADLS Gen2, Key Vault), AWS (S3, EMR), Docker, Git, CI/CD
+
+PROFESSIONAL EXPERIENCE
+
+${currentCo} (2021 – Present)
+Senior Data Engineer / Cloud Data Architect
+- Architected and implemented scalable enterprise data pipelines using Azure Data Factory, Databricks, and PySpark, processing over 12TB of structured and unstructured data daily.
+- Designed dimensional Star and Snowflake schema data models in Snowflake, reducing query response times by 48%.
+- Built automated delta lake ingestion pipelines with streaming and batch architectures using Kafka and Spark Structured Streaming.
+- Implemented robust data quality checks, data lineage tracking, and automated CI/CD deployment pipelines using Azure DevOps and GitHub Actions.
+
+${prevCo} (2017 – 2021)
+Big Data Engineer
+- Developed distributed ETL workflows in Python and PySpark on AWS EMR and Redshift to consolidate fragmented departmental data sources.
+- Formulated complex SQL transformations and stored procedures for financial and regulatory compliance reporting.
+- Collaborated closely with business intelligence teams to provision clean, high-performance analytical data marts.
+
+EDUCATION & CERTIFICATIONS
+- Bachelor / Master of Science in Computer Science / Information Systems
+- Databricks Certified Data Engineer Associate / Professional
+- Microsoft Certified: Azure Data Engineer Associate (DP-203)`
+  }
+  // 8. Java Full Stack / Microservices / Spring Boot (Standard High-Yield Default)
   else {
     profileDossier = `${name.toUpperCase()}
 Location: ${loc} | Contact: ${phoneDisplay} | E-mail: ${email} | ${visa}
@@ -885,11 +920,14 @@ const highlightResumeText = (text, matchingSkills = [], searchQuery = '') => {
 
     for (const skill of uniqueSkills) {
       const trimmed = skill.trim();
-      const escaped = trimmed.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      const base = trimmed.replace(/s$/i, '');
+      const patternStr = (trimmed.length > 3)
+        ? `${base.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}s?`
+        : trimmed.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
       const startB = /^\w/.test(trimmed) ? '\\b' : '';
       const endB = /\w$/.test(trimmed) ? '\\b' : '';
       try {
-        const regex = new RegExp(`${startB}${escaped}${endB}`, 'gi');
+        const regex = new RegExp(`${startB}${patternStr}${endB}`, 'gi');
         let m;
         while ((m = regex.exec(text)) !== null) {
           intervals.push({ start: m.index, end: m.index + m[0].length, type: 'skill' });
@@ -1641,6 +1679,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const [sortOption, setSortOption] = useState('match_desc')
   const [activeActionMenuId, setActiveActionMenuId] = useState(null)
   const [hoveredNav, setHoveredNav] = useState(null)
+  const [hoveredTableCardId, setHoveredTableCardId] = useState(null)
 
   // Open Requisitions for Multi-Position AI Matcher
   const DEFAULT_OPEN_JOBS = [
@@ -3140,7 +3179,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
       )}
 
       {/* 2. Main Right Container */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, minHeight: 0 }}>
         
         {/* Top Navbar Matching Screenshot */}
         <header style={{
@@ -3344,7 +3383,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
         </header>
 
         {/* Content Body */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: C.bg }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, backgroundColor: C.bg }}>
 
           {/* VIEW 1: MINIMALS OVERVIEW DASHBOARD (EXACT REPLICA OF media_1789070880356.png) */}
           {inboxViewMode === 'dashboard' && (
@@ -3914,7 +3953,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
           {/* VIEW 2: CANDIDATE TALENT STREAM VIEW (TOBU.AI MASTER-DETAIL & TABLE MODES) */}
           {inboxViewMode === 'stream' && (
-            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', minHeight: 0 }}>
           
           {/* A. TOBU.AI CANDIDATE CARD DETAIL VIEW (MATCHING media_1789068769296.png & media_1789068785299.png) */}
           {inboxSubMode === 'card' && (
@@ -4554,7 +4593,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                         </div>
 
                         {/* Full Paper Resume Sheet */}
-                        {highlightResumeText(candResumeText, dynamicMatchingSkills, resumeKeywordSearch)}
+                        {highlightResumeText(candResumeText, [...new Set([...dynamicMatchingSkills, ...candSkillsList])], resumeKeywordSearch)}
                       </div>
                     )}
 
@@ -4686,14 +4725,34 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
           {/* B. CANDIDATES TABLE VIEW (PIXEL-PERFECT MATCHING media_1789727370931.png) */}
           {inboxSubMode === 'table' && (
-            <div style={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              overflowY: 'auto',
-              backgroundColor: isLight ? '#F8FAFC' : C.bg,
-              padding: '24px 32px'
-            }}>
+            <div
+              className="candidates-page-scroll"
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                overflowY: 'auto',
+                minHeight: 0,
+                backgroundColor: isLight ? '#F8FAFC' : C.bg,
+                padding: '20px 28px'
+              }}
+            >
+              <style>{`
+                .candidates-page-scroll::-webkit-scrollbar {
+                  width: 8px;
+                }
+                .candidates-page-scroll::-webkit-scrollbar-track {
+                  background: ${isLight ? '#F1F5F9' : '#1E293B'};
+                  border-radius: 4px;
+                }
+                .candidates-page-scroll::-webkit-scrollbar-thumb {
+                  background: ${isLight ? '#94A3B8' : '#475569'};
+                  border-radius: 4px;
+                }
+                .candidates-page-scroll::-webkit-scrollbar-thumb:hover {
+                  background: ${isLight ? '#64748B' : '#64748B'};
+                }
+              `}</style>
               {/* 1. Header Section: Title & Subtitle + 5 Metric Cards */}
               <div style={{
                 display: 'flex',
@@ -5079,7 +5138,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       background: ${isLight ? '#64748B' : '#64748B'};
                     }
                   `}</style>
-                  <table style={{ width: '100%', minWidth: 1280, borderCollapse: 'collapse', textAlign: 'left', fontSize: 12.5 }}>
+                  <table style={{ width: '100%', minWidth: 1080, borderCollapse: 'collapse', textAlign: 'left', fontSize: 12.5 }}>
                     <thead>
                       <tr style={{
                         backgroundColor: isLight ? '#F8FAFC' : '#1E293B',
@@ -5090,7 +5149,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                         textTransform: 'uppercase',
                         letterSpacing: '0.4px'
                       }}>
-                        <th style={{ padding: '10px 10px', width: 36, minWidth: 36, maxWidth: 36 }}>
+                        <th style={{ padding: '8px 8px', width: 36, minWidth: 36, maxWidth: 36 }}>
                           <input
                             type="checkbox"
                             checked={selectedCardIds.size === filteredCandidates.length && filteredCandidates.length > 0}
@@ -5103,21 +5162,20 @@ export default function RecruiterInbox({ defaultViewMode }) {
                             }}
                           />
                         </th>
-                        <th style={{ padding: '10px 12px', width: 210, minWidth: 190, maxWidth: 230 }}>Candidate</th>
-                        <th style={{ padding: '10px 12px', width: 160, minWidth: 140, maxWidth: 180 }}>Role / Current Title</th>
-                        <th style={{ padding: '10px 12px', width: 230, minWidth: 210, maxWidth: 270 }}>AI Matched Requirement</th>
-                        <th style={{ padding: '10px 10px', width: 90, minWidth: 85, maxWidth: 95 }}>Match ⇕</th>
-                        <th style={{ padding: '10px 12px', width: 170, minWidth: 150, maxWidth: 200 }}>Key Skills</th>
-                        <th style={{ padding: '10px 10px', width: 110, minWidth: 95, maxWidth: 125 }}>Location</th>
-                        <th style={{ padding: '10px 10px', width: 95, minWidth: 85, maxWidth: 105 }}>Received ⇕</th>
-                        <th style={{ padding: '10px 10px', width: 105, minWidth: 95, maxWidth: 115 }}>Source</th>
-                        <th style={{ padding: '10px 12px', width: 95, minWidth: 90, textAlign: 'right' }}>Actions</th>
+                        <th style={{ padding: '8px 10px', width: 190, minWidth: 170, maxWidth: 210 }}>Candidate</th>
+                        <th style={{ padding: '8px 10px', width: 160, minWidth: 140, maxWidth: 180 }}>Role / Current Title</th>
+                        <th style={{ padding: '8px 10px', width: 220, minWidth: 200, maxWidth: 250 }}>AI Matched Requirement</th>
+                        <th style={{ padding: '8px 8px', width: 85, minWidth: 80, maxWidth: 90 }}>Match ⇕</th>
+                        <th style={{ padding: '8px 10px', width: 160, minWidth: 140, maxWidth: 190 }}>Key Skills</th>
+                        <th style={{ padding: '8px 8px', width: 90, minWidth: 80, maxWidth: 100 }}>Received ⇕</th>
+                        <th style={{ padding: '8px 8px', width: 100, minWidth: 90, maxWidth: 110 }}>Source</th>
+                        <th style={{ padding: '8px 10px', width: 95, minWidth: 90, textAlign: 'right' }}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredCandidates.length === 0 ? (
                         <tr>
-                          <td colSpan={10} style={{ padding: 40, textAlign: 'center', color: C.textSecondary }}>
+                          <td colSpan={9} style={{ padding: 40, textAlign: 'center', color: C.textSecondary }}>
                             No candidates found matching your filters.
                           </td>
                         </tr>
@@ -5127,27 +5185,28 @@ export default function RecruiterInbox({ defaultViewMode }) {
                           .map((c, idx) => {
                             const candId = c.id || c.email || `cand-${idx}`
                             const isSelected = selectedCardIds.has(candId)
+                            const isHovered = hoveredTableCardId === candId
                             const skillsArr = Array.isArray(c.skills) ? c.skills : (c.skills ? String(c.skills).split(',').map(s => s.trim()) : [])
                             const avatarStyle = getCandidateAvatarColor(c.name || 'Candidate')
                             const initials = getInitials(c.name || 'Candidate')
                             const isActionMenuOpen = activeActionMenuId === candId
 
-                            // Parse location into city and state/country
-                            const locParts = (c.location || 'Remote, US').split(',').map(s => s.trim())
-                            const locCity = locParts[0] || 'Remote'
-                            const locCountry = locParts.length > 1 ? locParts.slice(1).join(', ') : 'US'
-
                             return (
                               <tr
                                 key={candId}
+                                onMouseEnter={() => setHoveredTableCardId(candId)}
+                                onMouseLeave={() => setHoveredTableCardId(null)}
                                 style={{
                                   borderBottom: `1px solid ${C.border}`,
-                                  backgroundColor: isSelected ? (isLight ? '#EFF6FF' : 'rgba(37,99,235,0.12)') : 'transparent',
-                                  transition: 'background 0.15s ease'
+                                  backgroundColor: isSelected
+                                    ? (isLight ? '#EFF6FF' : 'rgba(37,99,235,0.12)')
+                                    : (isHovered ? (isLight ? '#F1F5F9' : '#1E293B') : 'transparent'),
+                                  cursor: 'pointer',
+                                  transition: 'background-color 0.15s ease'
                                 }}
                               >
                                 {/* 1. Checkbox */}
-                                <td style={{ padding: '10px 10px' }}>
+                                <td style={{ padding: '8px 8px' }}>
                                   <input
                                     type="checkbox"
                                     checked={isSelected}
@@ -5155,12 +5214,12 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   />
                                 </td>
 
-                                {/* 2. Candidate: Initials Avatar + Name + Email */}
-                                <td style={{ padding: '10px 12px' }}>
+                                {/* 2. Candidate: Initials Avatar + Name */}
+                                <td style={{ padding: '8px 10px' }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                     <div style={{
-                                      width: 36,
-                                      height: 36,
+                                      width: 34,
+                                      height: 34,
                                       borderRadius: '50%',
                                       backgroundColor: avatarStyle.bg,
                                       color: avatarStyle.text,
@@ -5168,7 +5227,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                       alignItems: 'center',
                                       justifyContent: 'center',
                                       fontWeight: 800,
-                                      fontSize: 12.5,
+                                      fontSize: 12,
                                       flexShrink: 0
                                     }}>
                                       {initials}
@@ -5180,35 +5239,27 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                           setInboxSubMode('card')
                                         }}
                                         style={{
-                                          fontSize: 13.5,
+                                          fontSize: 13,
                                           fontWeight: 800,
-                                          color: '#0F172A',
+                                          color: isHovered ? '#2563EB' : '#0F172A',
                                           cursor: 'pointer',
                                           whiteSpace: 'nowrap',
                                           overflow: 'hidden',
-                                          textOverflow: 'ellipsis'
+                                          textOverflow: 'ellipsis',
+                                          transition: 'color 0.15s ease'
                                         }}
                                         title={c.name}
                                       >
                                         {c.name || 'Candidate'}
-                                      </span>
-                                      <span style={{
-                                        fontSize: 11.5,
-                                        color: '#64748B',
-                                        whiteSpace: 'nowrap',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis'
-                                      }}>
-                                        {c.email || ''}
                                       </span>
                                     </div>
                                   </div>
                                 </td>
 
                                 {/* 3. Role / Current Title */}
-                                <td style={{ padding: '10px 12px', maxWidth: 180 }}>
+                                <td style={{ padding: '8px 10px', maxWidth: 180 }}>
                                   <div style={{
-                                    fontSize: 13,
+                                    fontSize: 12.5,
                                     fontWeight: 600,
                                     color: '#1E293B',
                                     whiteSpace: 'nowrap',
@@ -5220,11 +5271,11 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                 </td>
 
                                 {/* 4. AI Matched Requirement (User Requested Column!) */}
-                                <td style={{ padding: '10px 12px', maxWidth: 270 }}>
+                                <td style={{ padding: '8px 10px', maxWidth: 250 }}>
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
                                       <span style={{
-                                        fontSize: 10.5,
+                                        fontSize: 10,
                                         fontWeight: 800,
                                         background: '#DBEAFE',
                                         color: '#1D4ED8',
@@ -5247,7 +5298,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                       </span>
                                     </div>
                                     <div style={{
-                                      fontSize: 12.5,
+                                      fontSize: 12,
                                       fontWeight: 700,
                                       color: '#0F172A',
                                       whiteSpace: 'nowrap',
@@ -5260,23 +5311,23 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                 </td>
 
                                 {/* 5. Match % (2-line colored badge pill) */}
-                                <td style={{ padding: '10px 10px' }}>
+                                <td style={{ padding: '8px 8px' }}>
                                   {renderMatchBadge(c.matchScore || 85)}
                                 </td>
 
                                 {/* 6. Key Skills */}
-                                <td style={{ padding: '10px 12px' }}>
+                                <td style={{ padding: '8px 10px' }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', maxWidth: 190 }}>
                                     {skillsArr.slice(0, 3).map((sk, sIdx) => (
                                       <span
                                         key={sIdx}
                                         style={{
-                                          fontSize: 11,
+                                          fontSize: 10.5,
                                           fontWeight: 600,
                                           backgroundColor: '#F1F5F9',
                                           border: '1px solid #E2E8F0',
                                           color: '#334155',
-                                          padding: '2px 7px',
+                                          padding: '2px 6px',
                                           borderRadius: 4
                                         }}
                                       >
@@ -5285,11 +5336,11 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                     ))}
                                     {skillsArr.length > 3 && (
                                       <span style={{
-                                        fontSize: 10.5,
+                                        fontSize: 10,
                                         fontWeight: 700,
                                         color: '#2563EB',
                                         backgroundColor: '#EFF6FF',
-                                        padding: '2px 6px',
+                                        padding: '2px 5px',
                                         borderRadius: 4
                                       }}>
                                         +{skillsArr.length - 3}
@@ -5298,27 +5349,17 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   </div>
                                 </td>
 
-                                {/* 7. Location (City on top, State/Country below) */}
-                                <td style={{ padding: '10px 10px' }}>
-                                  <div style={{ fontSize: 12.5, fontWeight: 600, color: '#1E293B' }}>
-                                    {locCity}
-                                  </div>
-                                  <div style={{ fontSize: 11.5, color: '#64748B' }}>
-                                    {locCountry}
-                                  </div>
-                                </td>
-
-                                {/* 8. Received Date */}
-                                <td style={{ padding: '10px 10px', fontSize: 12, color: '#475569', whiteSpace: 'nowrap' }}>
+                                {/* 7. Received Date */}
+                                <td style={{ padding: '8px 8px', fontSize: 11.5, color: '#475569', whiteSpace: 'nowrap' }}>
                                   {c.resumeUploadDate ? c.resumeUploadDate.split(',')[0] : (c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '18 Sept 2026')}
                                 </td>
 
-                                {/* 9. Source Badge */}
-                                <td style={{ padding: '10px 10px' }}>
+                                {/* 8. Source Badge */}
+                                <td style={{ padding: '8px 8px' }}>
                                   {renderSourceBadge(c)}
                                 </td>
 
-                                {/* 10. Actions: [ View ] + ⋮ */}
+                                {/* 9. Actions: [ View ] + ⋮ */}
                                 <td style={{ padding: '10px 12px', textAlign: 'right', position: 'relative' }}>
                                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                                     <button

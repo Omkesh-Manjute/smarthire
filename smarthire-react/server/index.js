@@ -8480,9 +8480,14 @@ EDUCATION & CERTIFICATIONS
 
     // Match with suggested or active position
     let targetJob = jobsStore.find(j => String(j.id).replace(/^J-/, '') === String(c.targetReqId || c.reqId || '').replace(/^J-/, ''));
-    let matchAnalysis;
+    let matchAnalysis = { matchScore: c.matchScore || 85, matchingSkills: cleanSkills.slice(0, 4), missingSkills: [] };
     if (targetJob) {
-      matchAnalysis = evaluateCandidateJobMatch({ ...c, role: cleanRole, skills: cleanSkills }, targetJob);
+      const calculatedAnalysis = evaluateCandidateJobMatch({ ...c, role: cleanRole, skills: cleanSkills }, targetJob);
+      matchAnalysis = {
+        matchScore: c.matchScore || calculatedAnalysis.matchScore,
+        matchingSkills: calculatedAnalysis.matchingSkills.length > 0 ? calculatedAnalysis.matchingSkills : cleanSkills.slice(0, 4),
+        missingSkills: calculatedAnalysis.missingSkills
+      };
     } else {
       let bestJob = null;
       let bestAnalysis = { matchScore: 0, matchingSkills: [], missingSkills: [] };
@@ -8493,12 +8498,16 @@ EDUCATION & CERTIFICATIONS
           bestJob = j;
         }
       }
-      if (bestJob && bestAnalysis.matchScore >= 60) {
+      if (bestJob) {
         targetJob = bestJob;
-        matchAnalysis = bestAnalysis;
+        matchAnalysis = {
+          matchScore: c.matchScore || bestAnalysis.matchScore,
+          matchingSkills: bestAnalysis.matchingSkills.length > 0 ? bestAnalysis.matchingSkills : cleanSkills.slice(0, 4),
+          missingSkills: bestAnalysis.missingSkills
+        };
       } else {
         targetJob = jobsStore[0];
-        matchAnalysis = targetJob ? evaluateCandidateJobMatch({ ...c, role: cleanRole, skills: cleanSkills }, targetJob) : { matchScore: 50, matchingSkills: [], missingSkills: [] };
+        matchAnalysis = targetJob ? evaluateCandidateJobMatch({ ...c, role: cleanRole, skills: cleanSkills }, targetJob) : { matchScore: c.matchScore || 75, matchingSkills: cleanSkills.slice(0, 3), missingSkills: [] };
       }
     }
 
