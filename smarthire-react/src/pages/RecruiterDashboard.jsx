@@ -783,6 +783,11 @@ We are currently reviewing candidate profiles and scheduling immediate interview
   // Notification toast on save
   const [saveToastMessage, setSaveToastMessage] = useState(null)
 
+  // JD Email Dispatch State
+  const [sendingJdRecruiterId, setSendingJdRecruiterId] = useState(null)
+  const [isSendingBatchJd, setIsSendingBatchJd] = useState(false)
+  const [jdEmailToast, setJdEmailToast] = useState(null)
+
   // Handler to update candidate submission status and record audit log (Who changed it, role, timestamp)
   const handleUpdatePotentialCandidate = (candId, field, value) => {
     const userRoleDisplay = isManager ? 'Manager' : (currentUser?.role === 'superadmin' || currentUser?.role === 'admin') ? 'Super Admin' : isEmployee ? 'Employee' : 'Recruiter'
@@ -1573,6 +1578,257 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
   // Alias for backward compatibility
   const handleSaveRecruiterAssignments = handleSaveRequisition
+
+  // Dispatches complete, executive-grade HTML Job Description to assigned recruiter
+  const handleSendJdToRecruiter = async (targetRecruiter) => {
+    if (!targetRecruiter || !targetRecruiter.email) {
+      setJdEmailToast({ type: 'error', message: `⚠️ Recruiter "${targetRecruiter?.name || 'Recruiter'}" does not have an email address configured.` })
+      setTimeout(() => setJdEmailToast(null), 5000)
+      return { success: false }
+    }
+
+    const recName = targetRecruiter.name || 'Recruiter'
+    const recEmail = targetRecruiter.email.trim()
+    const myName = userName || currentUser?.name || 'Omkesh Manjute'
+    const myEmail = currentUser?.email || 'omkesh@coolsofttech.com'
+    const myCompany = currentUser?.company || 'SmartHire ATS / COOLSOFT LLC'
+
+    const cleanReqId = resolveReqId(selectedReq?.id, selectedReq) || String(selectedReq?.id || editingFields.id || '159148').replace(/^J-/, '').replace(/^REQ-/, '').trim()
+    const jobTitle = editingFields.jobTitle || editingFields.title || selectedReq?.title || selectedReq?.jobTitle || 'Technical Specialist'
+    const clientName = editingFields.customer || editingFields.endClient || selectedReq?.client || selectedReq?.customer || 'Direct Client'
+    const location = editingFields.location || selectedReq?.location || 'Remote / US'
+    const rate = editingFields.payRate ? `$${String(editingFields.payRate).replace('$', '')}/hr` : (selectedReq?.budget || selectedReq?.payRate || '$75/hr')
+    const duration = editingFields.duration ? `${editingFields.duration} months` : (selectedReq?.duration || '12 months')
+    const reqType = editingFields.reqType || selectedReq?.type || 'Contract'
+    const status = editingFields.status || selectedReq?.status || 'Open'
+    const deadline = editingFields.submissionDeadline || editingFields.deadline || selectedReq?.submissionDeadline || selectedReq?.deadline || 'Immediate'
+
+    const rawSkills = editingFields.skills || selectedReq?.skills || []
+    const skillsList = Array.isArray(rawSkills) ? rawSkills : (rawSkills ? String(rawSkills).split(',').map(s => s.trim()) : ['Technical Skills'])
+    const skillsStr = skillsList.join(', ')
+
+    let jdSnippet = editingFields.description || selectedReq?.description || selectedReq?.fullDescription || selectedReq?.rawDescription || ''
+    jdSnippet = jdSnippet.replace(/={5,}/g, '').replace(/-{5,}/g, '').trim()
+
+    const subject = `[SmartHire ATS] New Requisition Assigned: #${cleanReqId} - ${jobTitle} (${clientName})`
+
+    const htmlBody = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 680px; margin: 0 auto; line-height: 1.6; color: #1e293b; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
+        <!-- SmartHire Header Banner -->
+        <div style="background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #2563eb 100%); padding: 24px 28px; color: #ffffff;">
+          <div style="font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #93c5fd; margin-bottom: 6px;">
+            SmartHire ATS &bull; Requisition Assignment Notice
+          </div>
+          <h1 style="margin: 0; font-size: 22px; font-weight: 800; line-height: 1.3; color: #ffffff;">${jobTitle}</h1>
+          <div style="margin-top: 10px; font-size: 13.5px; opacity: 0.95; display: flex; gap: 12px; flex-wrap: wrap;">
+            <span>📋 Req ID: <strong>#${cleanReqId}</strong></span>
+            <span>&bull;</span>
+            <span>🏛️ Client: <strong>${clientName}</strong></span>
+            <span>&bull;</span>
+            <span>⚡ Status: <strong>${status}</strong></span>
+          </div>
+        </div>
+
+        <!-- Recruiter Assignment Callout -->
+        <div style="padding: 24px 28px;">
+          <p style="font-size: 15px; margin-top: 0; color: #0f172a;">
+            Hi <strong>${recName}</strong>,
+          </p>
+          <p style="font-size: 14px; color: #334155; margin-bottom: 20px;">
+            You have been assigned to lead candidate sourcing and client submissions for <strong>${jobTitle}</strong> (Req #${cleanReqId}) for client <strong>${clientName}</strong>. Please find the full position specifications and job requirements below:
+          </p>
+
+          <!-- Specifications Matrix -->
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #2563eb; border-radius: 6px; padding: 16px 20px; margin: 18px 0;">
+            <h3 style="margin: 0 0 12px; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #1e3a8a;">
+              📌 Position Overview & Specs
+            </h3>
+            <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+              <tbody>
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                  <td style="padding: 6px 0; color: #64748b; width: 150px; font-weight: 600;">Requisition ID:</td>
+                  <td style="padding: 6px 0; color: #000080; font-weight: 800;">#${cleanReqId}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                  <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Position Title:</td>
+                  <td style="padding: 6px 0; color: #0f172a; font-weight: 700;">${jobTitle}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                  <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Client:</td>
+                  <td style="padding: 6px 0; color: #0f172a;">${clientName}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                  <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Work Location:</td>
+                  <td style="padding: 6px 0; color: #0f172a;">${location}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                  <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Pay / Target Rate:</td>
+                  <td style="padding: 6px 0; color: #059669; font-weight: 700;">${rate}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                  <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Duration / Type:</td>
+                  <td style="padding: 6px 0; color: #0f172a;">${duration} &bull; ${reqType}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                  <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Submission Deadline:</td>
+                  <td style="padding: 6px 0; color: #dc2626; font-weight: 700;">${deadline}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Primary Required Skills:</td>
+                  <td style="padding: 6px 0; color: #0f172a; font-weight: 600;">${skillsStr || 'Refer to Description'}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Full Job Description -->
+          ${jdSnippet ? `
+          <div style="margin: 22px 0;">
+            <h4 style="margin: 0 0 8px; font-size: 14px; font-weight: 800; color: #0f172a;">📄 Detailed Job Description & Responsibilities:</h4>
+            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 16px; font-size: 13px; line-height: 1.6; color: #334155; white-space: pre-line;">
+              ${jdSnippet}
+            </div>
+          </div>
+          ` : ''}
+
+          <!-- Recruiter Sourcing Action Box -->
+          <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 16px 20px; margin: 20px 0;">
+            <h4 style="margin: 0 0 6px; font-size: 13.5px; font-weight: 800; color: #1e40af;">
+              🚀 Next Sourcing Actions:
+            </h4>
+            <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #1e3a8a; line-height: 1.6;">
+              <li>Screen active candidate pool in SmartHire ATS against core stack.</li>
+              <li>Collect candidate RTR (Right to Represent) and verified work authorization status.</li>
+              <li>Submit qualified profiles via the SmartHire Requisition Submissions portal.</li>
+            </ul>
+            <div style="margin-top: 14px;">
+              <a href="https://smarthireus.com/dashboard?tab=requisitions&view=requisition&id=${cleanReqId}" 
+                 style="display: inline-block; background: #2563eb; color: #ffffff; text-decoration: none; padding: 8px 16px; font-size: 12.5px; font-weight: 700; border-radius: 4px;">
+                Open Requisition #${cleanReqId} in ATS &rarr;
+              </a>
+            </div>
+          </div>
+
+          <!-- Signature Block -->
+          <div style="border-top: 2px solid #f1f5f9; padding-top: 16px; font-size: 12.5px; color: #64748b;">
+            <div style="font-size: 14px; font-weight: 800; color: #0f172a;">${myName}</div>
+            <div style="font-size: 12.5px; color: #2563eb; font-weight: 600;">Technical Recruiting Lead</div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">${myCompany}</div>
+            <div style="font-size: 12px; color: #475569; margin-top: 3px;">
+              Email: <a href="mailto:${myEmail}" style="color: #2563eb; text-decoration: none; font-weight: 600;">${myEmail}</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+
+    const plainTextBody = `Hi ${recName},
+
+You have been assigned to Requisition #${cleanReqId} - ${jobTitle} (${clientName}).
+
+POSITION SPECIFICATIONS:
+- Req ID: #${cleanReqId}
+- Title: ${jobTitle}
+- Client: ${clientName}
+- Location: ${location}
+- Pay Rate: ${rate}
+- Duration / Type: ${duration} (${reqType})
+- Submission Deadline: ${deadline}
+- Core Skills: ${skillsStr}
+
+${jdSnippet ? `JOB DESCRIPTION:\n${jdSnippet}\n\n` : ''}
+Please source and submit qualified candidates with RTR via SmartHire ATS:
+https://smarthireus.com/dashboard?tab=requisitions&view=requisition&id=${cleanReqId}
+
+Regards,
+${myName}
+${myCompany}
+Email: ${myEmail}
+`
+
+    setSendingJdRecruiterId(recEmail)
+    try {
+      const res = await fetch('/api/recruiter/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recruiterEmail: myEmail,
+          to: recEmail,
+          subject,
+          html: htmlBody,
+          body: plainTextBody,
+          replyTo: myEmail
+        })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setJdEmailToast({ type: 'success', message: `✅ Job Description successfully sent to ${recName} (${recEmail}) from ${myEmail}!` })
+        setSaveToastMessage(`✅ JD sent to ${recName} (${recEmail})!`)
+        setTimeout(() => {
+          setJdEmailToast(null)
+          setSaveToastMessage(null)
+        }, 5000)
+        return { success: true }
+      } else {
+        setJdEmailToast({ type: 'error', message: `❌ Failed to send JD to ${recName}: ${data.message || 'Error'}` })
+        setTimeout(() => setJdEmailToast(null), 6000)
+        return { success: false, message: data.message }
+      }
+    } catch (err) {
+      setJdEmailToast({ type: 'error', message: `❌ Error sending JD email: ${err.message}` })
+      setTimeout(() => setJdEmailToast(null), 6000)
+      return { success: false, message: err.message }
+    } finally {
+      setSendingJdRecruiterId(null)
+    }
+  }
+
+  // Batch dispatches Job Description email to all currently assigned recruiters
+  const handleSendJdToAssignedRecruiters = async () => {
+    const assignedNames = editingFields.assignedRecruiters || []
+    if (assignedNames.length === 0) {
+      setJdEmailToast({ type: 'error', message: '⚠️ No recruiters are assigned to this requisition yet. Please assign at least one recruiter first.' })
+      setTimeout(() => setJdEmailToast(null), 4000)
+      return
+    }
+
+    const targets = allRecruitersList.filter(rec => {
+      return assignedNames.some(r =>
+        String(r || '').toLowerCase().trim() === String(rec.name || '').toLowerCase().trim() ||
+        (rec.email && String(r || '').toLowerCase().trim() === String(rec.email || '').toLowerCase().trim())
+      )
+    })
+
+    if (targets.length === 0) {
+      setJdEmailToast({ type: 'error', message: '⚠️ Could not find email profiles for the assigned recruiters.' })
+      setTimeout(() => setJdEmailToast(null), 4000)
+      return
+    }
+
+    setIsSendingBatchJd(true)
+    let successCount = 0
+    let failedNames = []
+
+    for (const rec of targets) {
+      const res = await handleSendJdToRecruiter(rec)
+      if (res && res.success) {
+        successCount++
+      } else {
+        failedNames.push(rec.name)
+      }
+    }
+
+    setIsSendingBatchJd(false)
+    if (successCount > 0) {
+      const msg = `✅ Job Description successfully sent to ${successCount} assigned recruiter(s)!` + (failedNames.length > 0 ? ` (Failed: ${failedNames.join(', ')})` : '')
+      setJdEmailToast({ type: 'success', message: msg })
+      setSaveToastMessage(msg)
+      setTimeout(() => {
+        setJdEmailToast(null)
+        setSaveToastMessage(null)
+      }, 6000)
+    }
+  }
 
   // Open Candidate Resume & AI Fit Modal (Strictly Admin & Manager)
   const handleOpenAiFitModal = (candidate) => {
@@ -7403,11 +7659,11 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                 {/* ─── TAB 2: ASSIGN TO RECRUITERS (COMPACT & SQUARE) ─── */}
                 {activeReqTab === 'assign' && (
                   <div style={{ fontSize: '11px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px', maxWidth: '920px' }}>
                       <div style={{ fontWeight: 'bold', color: '#000080', fontSize: '11.5px' }}>
                         Assign Recruiters to Requisition #{resolveReqId(selectedReq?.id, selectedReq)} ({editingFields.assignedRecruiters?.length || 0} Assigned)
                       </div>
-                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
                         <button
                           type="button"
                           onClick={() => {
@@ -7448,15 +7704,57 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                         >
                           + Assign to Me ({userName})
                         </button>
+                        <button
+                          type="button"
+                          disabled={isSendingBatchJd || (editingFields.assignedRecruiters || []).length === 0}
+                          onClick={() => handleSendJdToAssignedRecruiters()}
+                          style={{
+                            border: '1px solid #15803d',
+                            background: isSendingBatchJd ? '#94a3b8' : '#16a34a',
+                            color: '#ffffff',
+                            padding: '2px 10px',
+                            fontSize: '10.5px',
+                            fontWeight: 'bold',
+                            cursor: (editingFields.assignedRecruiters || []).length === 0 || isSendingBatchJd ? 'not-allowed' : 'pointer',
+                            borderRadius: 0,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                          title="Send full Job Description to all assigned recruiters via your configured email"
+                        >
+                          {isSendingBatchJd ? '⏳ Sending JDs...' : `📧 Send JD to Assigned (${(editingFields.assignedRecruiters || []).length})`}
+                        </button>
                       </div>
                     </div>
 
-                    {/* Recruiters Compact Table */}
-                    <div style={{ overflowX: 'auto', border: '1px solid #7f9db9', borderRadius: 0, marginBottom: '8px' }}>
-                      <table className="coolworks-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', fontFamily: 'Arial, Helvetica, sans-serif', background: '#ffffff' }}>
+                    {/* JD Email Dispatch Status Banner */}
+                    {jdEmailToast && (
+                      <div style={{
+                        maxWidth: '920px',
+                        padding: '6px 12px',
+                        marginBottom: '8px',
+                        borderRadius: '2px',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        background: jdEmailToast.type === 'error' ? '#fef2f2' : '#f0fdf4',
+                        border: `1px solid ${jdEmailToast.type === 'error' ? '#f87171' : '#86efac'}`,
+                        color: jdEmailToast.type === 'error' ? '#b91c1c' : '#15803d',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}>
+                        <span>{jdEmailToast.message}</span>
+                        <button type="button" onClick={() => setJdEmailToast(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px', color: 'inherit' }}>✕</button>
+                      </div>
+                    )}
+
+                    {/* Recruiters Compact Table (Constrained maxWidth: 920px to prevent horizontal stretching) */}
+                    <div style={{ maxWidth: '920px', overflowX: 'auto', border: '1px solid #7f9db9', borderRadius: 0, marginBottom: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                      <table className="coolworks-table" style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', fontFamily: 'Arial, Helvetica, sans-serif', background: '#ffffff' }}>
                         <thead>
                           <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
-                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', width: '30px', textAlign: 'center', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>
+                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', width: '36px', textAlign: 'center', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>
                               <input
                                 type="checkbox"
                                 checked={allRecruitersList.length > 0 && allRecruitersList.every(rec => 
@@ -7471,13 +7769,11 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                                 }}
                               />
                             </th>
-                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Recruiter Name</th>
-                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Role</th>
-                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Email Address</th>
-                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', fontWeight: 'bold', fontSize: '11px', borderRight: (isAdmin || isManager) ? '1px solid rgba(255,255,255,0.25)' : 'none' }}>Assignment Status</th>
-                            {(isAdmin || isManager) && (
-                              <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', fontWeight: 'bold', fontSize: '11px', textAlign: 'center', width: '70px' }}>Action</th>
-                            )}
+                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', width: '175px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Recruiter Name</th>
+                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', width: '185px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Role</th>
+                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', width: '210px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Email Address</th>
+                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', width: '130px', fontWeight: 'bold', fontSize: '11px', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Assignment Status</th>
+                            <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', width: '160px', fontWeight: 'bold', fontSize: '11px', textAlign: 'center' }}>Action</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -7504,48 +7800,71 @@ We are currently reviewing candidate profiles and scheduling immediate interview
                                     onChange={() => toggleRecruiterAssignment(rec.name)}
                                   />
                                 </td>
-                                <td style={{ padding: '3px 6px', fontWeight: 'bold', color: isAssigned ? '#0033cc' : '#000000' }}>
+                                <td style={{ padding: '3px 6px', fontWeight: 'bold', color: isAssigned ? '#0033cc' : '#000000', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                   {rec.name} {rec.name === userName ? '(You)' : ''}
                                 </td>
-                                <td style={{ padding: '3px 6px', color: '#000000' }}>
+                                <td style={{ padding: '3px 6px', color: '#000000', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                   {rec.role}
                                 </td>
-                                <td style={{ padding: '3px 6px', color: '#000000', fontFamily: 'monospace' }}>
+                                <td style={{ padding: '3px 6px', color: '#000000', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                   {rec.email}
                                 </td>
-                                <td style={{ padding: '3px 6px' }}>
+                                <td style={{ padding: '3px 6px', whiteSpace: 'nowrap' }}>
                                   {isAssigned ? (
                                     <span style={{ color: '#16a34a', fontWeight: 'bold' }}>🟢 Assigned</span>
                                   ) : (
                                     <span style={{ color: '#94a3b8' }}>⚪ Not Assigned</span>
                                   )}
                                 </td>
-                                {(isAdmin || isManager) && (
-                                  <td style={{ padding: '3px 6px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-                                    {rec.email !== 'omkesh@coolsofttech.com' && (
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          handleDeleteTeamUser(rec)
-                                        }}
-                                        style={{
-                                          background: '#fee2e2',
-                                          border: '1px solid #fca5a5',
-                                          color: '#dc2626',
-                                          padding: '1px 6px',
-                                          fontSize: '10px',
-                                          fontWeight: 'bold',
-                                          borderRadius: '2px',
-                                          cursor: 'pointer'
-                                        }}
-                                        title="Permanently delete user"
-                                      >
-                                        🗑️ Delete
-                                      </button>
-                                    )}
-                                  </td>
-                                )}
+                                <td style={{ padding: '3px 6px', textAlign: 'center', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleSendJdToRecruiter(rec)
+                                    }}
+                                    disabled={sendingJdRecruiterId === (rec.email?.trim())}
+                                    style={{
+                                      background: sendingJdRecruiterId === (rec.email?.trim()) ? '#94a3b8' : '#2563eb',
+                                      border: '1px solid #1d4ed8',
+                                      color: '#ffffff',
+                                      padding: '2px 8px',
+                                      fontSize: '10px',
+                                      fontWeight: 'bold',
+                                      borderRadius: '2px',
+                                      cursor: sendingJdRecruiterId === (rec.email?.trim()) ? 'not-allowed' : 'pointer',
+                                      marginRight: (isAdmin || isManager) && rec.email !== 'omkesh@coolsofttech.com' ? '4px' : '0',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '3px'
+                                    }}
+                                    title={`Send full JD email to ${rec.email || rec.name}`}
+                                  >
+                                    {sendingJdRecruiterId === (rec.email?.trim()) ? '⏳ Sending...' : '✉️ Send JD'}
+                                  </button>
+                                  {(isAdmin || isManager) && rec.email !== 'omkesh@coolsofttech.com' && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleDeleteTeamUser(rec)
+                                      }}
+                                      style={{
+                                        background: '#fee2e2',
+                                        border: '1px solid #fca5a5',
+                                        color: '#dc2626',
+                                        padding: '2px 6px',
+                                        fontSize: '10px',
+                                        fontWeight: 'bold',
+                                        borderRadius: '2px',
+                                        cursor: 'pointer'
+                                      }}
+                                      title="Permanently delete user"
+                                    >
+                                      🗑️ Delete
+                                    </button>
+                                  )}
+                                </td>
                               </tr>
                             )
                           })}

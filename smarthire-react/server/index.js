@@ -8441,23 +8441,71 @@ EDUCATION & CERTIFICATIONS
       }
     });
 
-  // Filter candidates strictly for this recruiter
+  // 1. Resolve all requisitions assigned to this recruiter / employee
+  const assignedReqIds = new Set();
+  jobsStore.forEach(j => {
+    const assigned = Array.isArray(j.assignedRecruiters) ? j.assignedRecruiters : [];
+    const isAssigned = assigned.some(r => {
+      const rStr = String(r || '').toLowerCase().trim();
+      return rStr === userIdent || rStr === userMail || (firstName.length >= 3 && rStr.includes(firstName));
+    });
+    if (isAssigned) {
+      const cleanId = String(j.id || '').replace(/^J-/, '').replace(/^REQ-/, '').trim();
+      assignedReqIds.add(cleanId);
+      if (j.id) assignedReqIds.add(String(j.id));
+      if (j.reqId) assignedReqIds.add(String(j.reqId));
+    }
+  });
+
+  // 2. Resolve subordinate reportees (for managers & recruiters)
+  const subordinateNames = new Set();
+  const subordinateEmails = new Set();
+  if (role === 'manager' || role === 'recruiter') {
+    (recruitersMock || []).forEach(u => {
+      if (!u) return;
+      const pName = (u.parentRecruiterName || '').toLowerCase().trim();
+      const pEmail = (u.parentRecruiterEmail || '').toLowerCase().trim();
+      if ((pName && (pName === userIdent || pName.includes(userIdent) || userIdent.includes(pName))) ||
+          (pEmail && pEmail === userMail)) {
+        if (u.name) subordinateNames.add(u.name.toLowerCase().trim());
+        if (u.email) subordinateEmails.add(u.email.toLowerCase().trim());
+      }
+    });
+  }
+
+  // 3. Filter candidates strictly for this recruiter
   const scopedCandidates = (candidatesStore || []).filter(c => {
     if (!c) return false;
     if (isSuper) return true;
 
-    const candAssigned = (c.assignedBy || c.recruiter || c.addedByName || c.lastChangedBy || '').toLowerCase().trim();
-    const candEmail = (c.recruiterEmail || c.addedByEmail || '').toLowerCase().trim();
+    const candAssigned = (c.assignedRecruiter || c.assignedBy || c.recruiter || c.addedByName || c.lastChangedBy || '').toLowerCase().trim();
+    const candEmail = (c.recruiterEmail || c.addedByEmail || c.createdBy || '').toLowerCase().trim();
+    const candReqId = String(c.targetReqId || c.reqId || c.job_id || '').replace(/^J-/, '').replace(/^REQ-/, '').trim();
+    const candSource = (c.source || '').toLowerCase().trim();
+    const candCategory = (c.sourceCategory || '').toLowerCase().trim();
 
-    // Ingested candidates from email stream or open talent pool without explicit assignment are viewable by all recruiters
-    if (!candAssigned && !candEmail) return true;
-
+    // Sourced by or assigned directly to this user
     const isMine = (candAssigned && (candAssigned === userIdent || candAssigned.includes(userIdent) || userIdent.includes(candAssigned))) ||
                    (userMail && (candEmail === userMail || candEmail.includes(userMail))) ||
-                   (firstName.length >= 3 && candAssigned.includes(firstName)) ||
-                   (c.pushedToJobsInHand && (!candAssigned || candAssigned.includes(firstName)));
+                   (firstName.length >= 3 && candAssigned.includes(firstName));
+    if (isMine) return true;
 
-    return isMine;
+    // Sourced by one of user's subordinate reportees
+    const isSubordinate = (candAssigned && subordinateNames.has(candAssigned)) ||
+                          (candEmail && subordinateEmails.has(candEmail));
+    if (isSubordinate) return true;
+
+    // Associated with a requisition assigned to this user
+    if (candReqId && assignedReqIds.has(candReqId)) {
+      return true;
+    }
+
+    // Careers portal applications (open company talent pool)
+    const isCareersPortal = candCategory === 'careers_portal' || candSource.includes('career') || candSource.includes('/jobs');
+    if (isCareersPortal) return true;
+
+    // Private email / spam harvester candidates from other recruiters are strictly hidden
+    return false;
   }).map(c => {
     // Enrich with source category and AI match against active positions
     const src = (c.source || '').toLowerCase();

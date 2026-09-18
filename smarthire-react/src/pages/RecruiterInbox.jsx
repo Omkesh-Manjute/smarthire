@@ -1648,7 +1648,15 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const [inboxViewMode, setInboxViewMode] = useState(initialInboxMode)
   const [minimalsSidebarOpen, setMinimalsSidebarOpen] = useState(true)
   const [streamFilter, setStreamFilter] = useState('all') // 'all', 'email_inbox', 'email_spam', 'careers_portal', 'vendor_bench'
-  const [streamCandidates, setStreamCandidates] = useState(DEFAULT_STREAM_CANDIDATES)
+  const [streamCandidates, setStreamCandidates] = useState(() => {
+    try {
+      const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
+      const role = u.role || localStorage.getItem('smarthire_active_role') || 'superadmin'
+      const isOm = role === 'superadmin' || role === 'admin' || (u.email && u.email.toLowerCase().includes('omkesh'))
+      if (isOm) return DEFAULT_STREAM_CANDIDATES
+    } catch (e) {}
+    return []
+  })
   const [streamCounts, setStreamCounts] = useState({
     candidatesTotal: 126,
     inboxResumes: 22,
@@ -1660,7 +1668,15 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const [streamSearch, setStreamSearch] = useState('')
   const [streamReqFilter, setStreamReqFilter] = useState('all')
   const [streamEntityFilter, setStreamEntityFilter] = useState('all') // 'all', 'candidates', 'recruiters'
-  const [selectedCandidate, setSelectedCandidate] = useState(DEFAULT_STREAM_CANDIDATES[0])
+  const [selectedCandidate, setSelectedCandidate] = useState(() => {
+    try {
+      const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
+      const role = u.role || localStorage.getItem('smarthire_active_role') || 'superadmin'
+      const isOm = role === 'superadmin' || role === 'admin' || (u.email && u.email.toLowerCase().includes('omkesh'))
+      if (isOm) return DEFAULT_STREAM_CANDIDATES[0]
+    } catch (e) {}
+    return null
+  })
   const [candidateSubTab, setCandidateSubTab] = useState('matches') // 'matches', 'favorites', 'spam'
   const [activeRightTab, setActiveRightTab] = useState('resume') // 'resume' or 'profile'
   const [viewedCandidateIds, setViewedCandidateIds] = useState(() => new Set(['cand-anmol-garg', 'cand-muhammad-zahid']))
@@ -2538,6 +2554,50 @@ export default function RecruiterInbox({ defaultViewMode }) {
     const rawFiltered = streamCandidates.filter(c => {
       if (!c) return false
 
+      // ─── STRICT ROLE-BASED PRIVACY CHECK ───
+      // Non-admins must only see candidates assigned to them, targeting their assigned reqs, from reportees, or careers portal
+      if (!isSuperAdmin && !currentUser?.email?.toLowerCase().includes('omkesh')) {
+        const userIdent = (currentUser?.name || '').toLowerCase().trim()
+        const userMail = (currentUser?.email || '').toLowerCase().trim()
+        const firstName = (userIdent.split(' ')[0] || '').toLowerCase().trim()
+
+        const candAssigned = (c.assignedRecruiter || c.assignedBy || c.recruiter || c.addedByName || '').toLowerCase().trim()
+        const candEmail = (c.recruiterEmail || c.addedByEmail || c.createdBy || '').toLowerCase().trim()
+        const candReqId = String(c.targetReqId || c.reqId || '').replace(/^J-/, '').replace(/^REQ-/, '').trim()
+        const candSource = (c.source || '').toLowerCase().trim()
+        const candCategory = (c.sourceCategory || '').toLowerCase().trim()
+
+        const isMine = (candAssigned && (candAssigned === userIdent || candAssigned.includes(userIdent) || userIdent.includes(candAssigned))) ||
+                       (userMail && (candEmail === userMail || candEmail.includes(userMail))) ||
+                       (firstName.length >= 3 && candAssigned.includes(firstName))
+        
+        const isAssignedReq = candReqId && (openJobsList || []).some(j => {
+          const jClean = String(j.id || '').replace(/^J-/, '').replace(/^REQ-/, '').trim()
+          if (jClean !== candReqId) return false
+          const assignedArr = Array.isArray(j.assignedRecruiters) ? j.assignedRecruiters : []
+          return assignedArr.some(r => {
+            const rStr = String(r || '').toLowerCase().trim()
+            return rStr === userIdent || rStr === userMail || (firstName.length >= 3 && rStr.includes(firstName))
+          })
+        })
+
+        const isReporteeCand = isManager && teamUsersList.some(u => {
+          const pName = (u.parentRecruiterName || '').toLowerCase().trim()
+          const pEmail = (u.parentRecruiterEmail || '').toLowerCase().trim()
+          const isMySub = pName === userIdent || pName.includes(userIdent) || (pEmail && pEmail === userMail)
+          if (!isMySub) return false
+          const subName = (u.name || '').toLowerCase().trim()
+          const subEmail = (u.email || '').toLowerCase().trim()
+          return (subName && candAssigned.includes(subName)) || (subEmail && candEmail.includes(subEmail))
+        })
+
+        const isCareersPortal = candCategory === 'careers_portal' || candSource.includes('career') || candSource.includes('/jobs')
+
+        if (!isMine && !isAssignedReq && !isReporteeCand && !isCareersPortal) {
+          return false
+        }
+      }
+
       // Table Category filtering (KPI cards / Mailbox)
       if (tableCategory === 'active' && c.status !== 'Active') return false
       if (tableCategory === 'review' && c.status !== 'In Review' && c.status !== 'Review') return false
@@ -2617,7 +2677,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
     })
 
     return deduplicateCandidates(rawFiltered)
-  }, [streamCandidates, tableCategory, favoriteCandidateIds, streamReqFilter, filterLocation, filterSkill, filterMatch, streamSearch, sortOption])
+  }, [streamCandidates, tableCategory, favoriteCandidateIds, streamReqFilter, filterLocation, filterSkill, filterMatch, streamSearch, sortOption, isSuperAdmin, currentUser?.name, currentUser?.email, openJobsList, isManager, teamUsersList])
 
   // Reset table to page 1 whenever any filter, search, or sort changes
   useEffect(() => {
