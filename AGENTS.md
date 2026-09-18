@@ -31,6 +31,25 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-19 — Platform-Wide De-Cluttering: Complete Emoji Removal Across All 46 Pages & Components
+- **Context & User Request**:
+  - Systematic audit and removal of all cartoon emojis, emoji badges, and decorative symbols across **every single page** of the SmartHire ATS platform to establish a sleek, modern enterprise SaaS aesthetic (Linear/Stripe/Workday caliber).
+  - Preserved candidate "Sourced By" origin attribution (`Dice`, `Monster`, `Inbound Email`, `Careers Portal`, `Direct Applicant`, `Vendor Bench`, `Referral`) and eliminated hardcoded fallback tags.
+  - Preserved requisition candidate privacy scoping so candidates attached to specific requisitions are restricted to authorized recruiters/superadmins.
+- **Pages & Modules Cleaned (100% Emoji-Free, Replaced with Clean Inline SVGs)**:
+  - **ATS Core Modules**: `Navigation.jsx`, `RecruiterDashboard.jsx`, `RecruiterInbox.jsx`, `CandidatesModule.jsx`, `DashboardModule.jsx`, `JobsModule.jsx`, `PipelineModule.jsx`, `SubmissionModule.jsx`, `ReportsModule.jsx`, `InquiriesModule.jsx`, `ScreeningModule.jsx`, `UsersModule.jsx`, `SettingsModule.jsx`, `AuditActivityLogModule.jsx`, `AutomationModule.jsx`, `AtsPlatform.jsx`.
+  - **Modals & Widgets**: `QuickSearchModal.jsx`, `CandidateDetailViewModal.jsx`, `CandidateMessengerWidget.jsx`, `CandidatePdfReportModal.jsx`, `SmartHireBotWidget.jsx`, `AiMatchingCandidatesModal.jsx`, `ActivityNotificationBell.jsx`, `ErrorBoundary.jsx`.
+  - **Public & Candidate Pages**: `Homepage.jsx`, `About.jsx`, `Pricing.jsx`, `Blog.jsx`, `Terms.jsx`, `PrivacyPolicy.jsx`, `Login.jsx`, `PublicCareers.jsx`, `ZoneCareersView.jsx`, `ZoneCareerAssets.jsx`, `ClassicCareersView.jsx`, `WellfoundCareersView.jsx`, `LinkedInCareersView.jsx`, `CandidateChat.jsx`, `CandidateVerification.jsx`, `LinkedInPosts.jsx`, `BrandingCenter.jsx`.
+  - **Helpers & Utilities**: `formatJobDescription.js`, `autoSendJdHelper.js`, `geminiAI.js`.
+- **Verification & Deployment**:
+  - Global codebase emoji scanner verified 0 cartoon emojis remaining across all `.jsx` / `.js` files.
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (built in 2.08s, bundle `dist/assets/index-DNFWKGkG.js`).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 2.12s).
+  - Git committed (`cf786b1`) and pushed to GitHub `origin/main`.
+  - Deployed `dist.tar.gz` to AWS Lightsail server (`34.194.119.199`), extracted into webroot `/home/ubuntu/smarthire/dist`.
+  - PM2 process `smarthire-ats` reloaded online (PID 67982).
+  - Live verified: `http://localhost:8787/assets/index-DNFWKGkG.js` and `https://smarthireus.com` → HTTP 200 OK (1,772,347 bytes).
+
 ### 2026-09-18 — Fix Duplicate Email Dispatch, Dynamic State Client Defaults, Empty Contact & Remove Mock Attachments
 - **Context & User Requirements**:
   - **Duplicate Email Dispatch Fix**: Outbound emails sent via recruiter SMTP were firing twice. Added both client-side in-flight ref locks (`inFlightEmailRef`, `isBatchSendingRef`) in `RecruiterDashboard.jsx` and a server-side in-memory 15-second deduplication cache (`recentEmailSendsMap`) in `server/index.js` keyed by `${recruiterEmail}__${toKey}__${subject}`. Duplicate requests within 15 seconds are safely suppressed (`{ success: true, deduplicated: true }`).
