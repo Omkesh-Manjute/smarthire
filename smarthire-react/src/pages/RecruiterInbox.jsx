@@ -2619,6 +2619,11 @@ export default function RecruiterInbox({ defaultViewMode }) {
     return deduplicateCandidates(rawFiltered)
   }, [streamCandidates, tableCategory, favoriteCandidateIds, streamReqFilter, filterLocation, filterSkill, filterMatch, streamSearch, sortOption])
 
+  // Reset table to page 1 whenever any filter, search, or sort changes
+  useEffect(() => {
+    setTablePage(1)
+  }, [tableCategory, streamReqFilter, filterLocation, filterSkill, filterMatch, streamSearch, sortOption, tablePageSize])
+
   // Dynamic ATS Recruitment Dashboard Telemetry (Calculated in real-time from candidate pool)
   const dashboardMetrics = useMemo(() => {
     const list = streamCandidates || []
@@ -2874,8 +2879,12 @@ export default function RecruiterInbox({ defaultViewMode }) {
           overflowY: 'auto',
           flexShrink: 0
         }}>
-          {/* Top Brand Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24, padding: '0 6px' }}>
+          {/* Top Brand Logo — clickable, navigates to Dashboard */}
+          <div
+            onClick={() => setInboxViewMode('dashboard')}
+            title="Go to Dashboard"
+            style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24, padding: '0 6px', cursor: 'pointer', borderRadius: 8, transition: 'opacity 0.15s' }}
+          >
             <div style={{
               width: 34,
               height: 34,
@@ -4120,34 +4129,58 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     <IconShare /> <span>Share</span>
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!activeCandidate) return
-                      const element = document.createElement('a')
-                      const file = new Blob([candResumeText], { type: 'text/plain' })
-                      element.href = URL.createObjectURL(file)
-                      element.download = `${(activeCandidate.name || 'Candidate').replace(/\s+/g, '_')}_Resume.txt`
-                      document.body.appendChild(element)
-                      element.click()
-                    }}
-                    style={{
-                      background: C.inputBg,
-                      border: `1px solid ${C.border}`,
-                      borderRadius: 6,
-                      padding: '7px 12px',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: C.textPrimary,
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 6
-                    }}
-                    title="Download Full Resume"
-                  >
-                    <IconDownload /> <span>Download Resume</span>
-                  </button>
+                  {activeCandidate?.file?.stored_name ? (
+                    <a
+                      href={`/uploads/${activeCandidate.file.stored_name}`}
+                      download={activeCandidate.file.original_name || activeCandidate.file.stored_name}
+                      style={{
+                        background: C.inputBg,
+                        border: `1px solid ${C.border}`,
+                        borderRadius: 6,
+                        padding: '7px 12px',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: C.textPrimary,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        textDecoration: 'none'
+                      }}
+                      title="Download Original Resume File"
+                    >
+                      <IconDownload /> <span>Download Resume</span>
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!activeCandidate) return
+                        const element = document.createElement('a')
+                        const file = new Blob([candResumeText], { type: 'text/plain' })
+                        element.href = URL.createObjectURL(file)
+                        element.download = `${(activeCandidate.name || 'Candidate').replace(/\s+/g, '_')}_Resume.txt`
+                        document.body.appendChild(element)
+                        element.click()
+                      }}
+                      style={{
+                        background: C.inputBg,
+                        border: `1px solid ${C.border}`,
+                        borderRadius: 6,
+                        padding: '7px 12px',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: C.textPrimary,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6
+                      }}
+                      title="Download Resume Text"
+                    >
+                      <IconDownload /> <span>Download Resume</span>
+                    </button>
+                  )}
 
                   <button
                     type="button"
@@ -4421,32 +4454,55 @@ export default function RecruiterInbox({ defaultViewMode }) {
                             )}
                           </div>
 
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const element = document.createElement('a')
-                              const file = new Blob([candResumeText], { type: 'text/plain' })
-                              element.href = URL.createObjectURL(file)
-                              element.download = `${(activeCandidate?.name || 'Candidate').replace(/\s+/g, '_')}_Resume.txt`
-                              document.body.appendChild(element)
-                              element.click()
-                            }}
-                            style={{
-                              background: 'transparent',
-                              border: `1px solid ${C.border}`,
-                              borderRadius: 6,
-                              padding: '5px 12px',
-                              fontSize: 11.5,
-                              fontWeight: 700,
-                              color: C.textPrimary,
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 6
-                            }}
-                          >
-                            <IconDownload /> <span>Download Resume</span>
-                          </button>
+                          {activeCandidate?.file?.stored_name ? (
+                            <a
+                              href={`/uploads/${activeCandidate.file.stored_name}`}
+                              download={activeCandidate.file.original_name || activeCandidate.file.stored_name}
+                              style={{
+                                background: 'transparent',
+                                border: `1px solid ${C.border}`,
+                                borderRadius: 6,
+                                padding: '5px 12px',
+                                fontSize: 11.5,
+                                fontWeight: 700,
+                                color: C.textPrimary,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                textDecoration: 'none'
+                              }}
+                            >
+                              <IconDownload /> <span>Download Resume</span>
+                            </a>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const element = document.createElement('a')
+                                const file = new Blob([candResumeText], { type: 'text/plain' })
+                                element.href = URL.createObjectURL(file)
+                                element.download = `${(activeCandidate?.name || 'Candidate').replace(/\s+/g, '_')}_Resume.txt`
+                                document.body.appendChild(element)
+                                element.click()
+                              }}
+                              style={{
+                                background: 'transparent',
+                                border: `1px solid ${C.border}`,
+                                borderRadius: 6,
+                                padding: '5px 12px',
+                                fontSize: 11.5,
+                                fontWeight: 700,
+                                color: C.textPrimary,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6
+                              }}
+                            >
+                              <IconDownload /> <span>Download Resume</span>
+                            </button>
+                          )}
                         </div>
 
                         {/* Tobu.ai Metadata Table (Resume Uploader | Method | Source | Received On) */}
@@ -4567,7 +4623,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                           </div>
                         </div>
 
-                        {/* Matching Skills Chips */}
+                        {/* Matching Skills Chips with count label */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', fontSize: 11 }}>
                           <span style={{ fontWeight: 800, color: '#15803D' }}>Matching Skills:</span>
                           {dynamicMatchingSkills.length > 0 ? (
@@ -4590,10 +4646,120 @@ export default function RecruiterInbox({ defaultViewMode }) {
                               ))}
                             </>
                           )}
+
+                          {/* Match count summary */}
+                          <span style={{
+                            marginLeft: 'auto',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: calculatedFitScore >= 80 ? '#15803D' : '#B45309',
+                            background: calculatedFitScore >= 80 ? '#DCFCE7' : '#FEF3C7',
+                            border: `1px solid ${calculatedFitScore >= 80 ? '#86EFAC' : '#FDE68A'}`,
+                            padding: '2px 9px',
+                            borderRadius: 4,
+                            flexShrink: 0
+                          }}>
+                            {dynamicMatchingSkills.length} of {reqSkillsList.length} required skills matched
+                          </span>
                         </div>
 
-                        {/* Full Paper Resume Sheet */}
-                        {highlightResumeText(candResumeText, [...new Set([...dynamicMatchingSkills, ...candSkillsList])], resumeKeywordSearch)}
+                        {/* Full Resume — PDF inline viewer / DOCX download + text / text fallback */}
+                        {(() => {
+                          const fileMime = activeCandidate?.file?.mime_type || ''
+                          const fileName = activeCandidate?.file?.stored_name || ''
+                          const fileUrl = fileName ? `/uploads/${fileName}` : ''
+                          const isPdf = fileMime === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf')
+                          const isDocx = fileMime.includes('wordprocessingml') || fileName.toLowerCase().endsWith('.docx') || fileName.toLowerCase().endsWith('.doc')
+
+                          if (isPdf && fileUrl) {
+                            return (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                {/* PDF Download link */}
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                  <span style={{ fontSize: 12, fontWeight: 700, color: C.textSecondary }}>
+                                    📄 Original Resume: <span style={{ color: '#2563EB' }}>{activeCandidate.file.original_name || fileName}</span>
+                                  </span>
+                                  <a
+                                    href={fileUrl}
+                                    download={activeCandidate.file.original_name || fileName}
+                                    style={{
+                                      background: '#EFF6FF',
+                                      color: '#1D4ED8',
+                                      border: '1px solid #BFDBFE',
+                                      borderRadius: 6,
+                                      padding: '5px 14px',
+                                      fontSize: 12,
+                                      fontWeight: 700,
+                                      textDecoration: 'none',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: 6
+                                    }}
+                                  >
+                                    ⬇ Download PDF
+                                  </a>
+                                </div>
+                                {/* Inline PDF iframe */}
+                                <iframe
+                                  src={fileUrl}
+                                  title={`Resume — ${activeCandidate.name}`}
+                                  style={{
+                                    width: '100%',
+                                    height: 720,
+                                    border: `1px solid ${C.border}`,
+                                    borderRadius: 8,
+                                    backgroundColor: '#FFFFFF'
+                                  }}
+                                />
+                              </div>
+                            )
+                          }
+
+                          if (isDocx && fileUrl) {
+                            return (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                {/* DOCX Download button */}
+                                <div style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  background: isLight ? '#F0FDF4' : 'rgba(5,150,105,0.08)',
+                                  border: '1px solid #A7F3D0',
+                                  borderRadius: 8,
+                                  padding: '10px 16px'
+                                }}>
+                                  <span style={{ fontSize: 12.5, fontWeight: 700, color: '#047857' }}>
+                                    📎 Resume on file: <span style={{ color: '#0F172A' }}>{activeCandidate.file.original_name || fileName}</span>
+                                  </span>
+                                  <a
+                                    href={fileUrl}
+                                    download={activeCandidate.file.original_name || fileName}
+                                    style={{
+                                      background: '#047857',
+                                      color: '#FFFFFF',
+                                      border: 'none',
+                                      borderRadius: 6,
+                                      padding: '6px 14px',
+                                      fontSize: 12,
+                                      fontWeight: 700,
+                                      textDecoration: 'none',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: 6
+                                    }}
+                                  >
+                                    ⬇ Download DOCX
+                                  </a>
+                                </div>
+                                {/* Text dossier with skill highlighting below */}
+                                {highlightResumeText(candResumeText, [...new Set([...dynamicMatchingSkills, ...candSkillsList])], resumeKeywordSearch)}
+                              </div>
+                            )
+                          }
+
+                          // Fallback: no file attached, show text dossier only
+                          return highlightResumeText(candResumeText, [...new Set([...dynamicMatchingSkills, ...candSkillsList])], resumeKeywordSearch)
+                        })()}
                       </div>
                     )}
 
@@ -5147,7 +5313,10 @@ export default function RecruiterInbox({ defaultViewMode }) {
                         fontSize: 11.5,
                         fontWeight: 700,
                         textTransform: 'uppercase',
-                        letterSpacing: '0.4px'
+                        letterSpacing: '0.4px',
+                        position: 'sticky',
+                        top: 0,
+                        zIndex: 2
                       }}>
                         <th style={{ padding: '8px 8px', width: 36, minWidth: 36, maxWidth: 36 }}>
                           <input
@@ -5196,6 +5365,11 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                 key={candId}
                                 onMouseEnter={() => setHoveredTableCardId(candId)}
                                 onMouseLeave={() => setHoveredTableCardId(null)}
+                                onClick={() => {
+                                  setSelectedCandidate(c)
+                                  setInboxSubMode('card')
+                                  setActiveTobuTab('resume')
+                                }}
                                 style={{
                                   borderBottom: `1px solid ${C.border}`,
                                   backgroundColor: isSelected
@@ -5205,8 +5379,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   transition: 'background-color 0.15s ease'
                                 }}
                               >
-                                {/* 1. Checkbox */}
-                                <td style={{ padding: '8px 8px' }}>
+                                {/* 1. Checkbox — stopPropagation so row click doesn't trigger */}
+                                <td style={{ padding: '8px 8px' }} onClick={e => e.stopPropagation()}>
                                   <input
                                     type="checkbox"
                                     checked={isSelected}
@@ -5359,8 +5533,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   {renderSourceBadge(c)}
                                 </td>
 
-                                {/* 9. Actions: [ View ] + ⋮ */}
-                                <td style={{ padding: '10px 12px', textAlign: 'right', position: 'relative' }}>
+                                {/* 9. Actions: [ View ] + ⋮ — stopPropagation so row onClick doesn't double-fire */}
+                                <td style={{ padding: '10px 12px', textAlign: 'right', position: 'relative' }} onClick={e => e.stopPropagation()}>
                                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                                     <button
                                       type="button"

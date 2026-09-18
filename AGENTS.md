@@ -31,6 +31,22 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-18 — Candidates Table Vertical Scroll Fix, Row Hover, Column Refinements, Skill Highlighting & Accurate Matching
+- **Context & User Requirements**:
+  - **Fixed Table Vertical Scrolling**: Solved issue where users could not scroll past row 7 when selecting 25 candidates/page. Added `minHeight: 0` to flex container ancestors (lines 3182, 3386, 3956, 4728) and integrated `.candidates-page-scroll` with styled custom vertical scrollbar (`width: 8px`, track `#F1F5F9`, thumb `#94A3B8`). All 25 candidate rows, pagination footer, and tip banner are now seamlessly scrollable.
+  - **Candidate Row Hover Effect**: Added `hoveredTableCardId` state. Hovering over any table row dynamically illuminates the row with soft gray (`#F1F5F9` in light mode / `#1E293B` in dark mode), changes cursor to pointer, and smoothly highlights candidate name in blue (`#2563EB`).
+  - **Cleaned Candidate Column & Tightened Spacing**: Removed candidate email `<span ...>{c.email}</span>` under name, centered avatar and name, reduced padding to `8px 10px`, and set table `minWidth: 1080` for a compact, clean look without unnecessary dead space.
+  - **Removed Location Column**: Completely removed the "LOCATION" column `<th>` and `<td>` from the table as requested, updating empty state `colSpan` to 9.
+  - **Enhanced Skill Highlighting**: Updated `highlightResumeText` to support plural/singular variants (e.g. `Microservices` / `Microservice`, `REST APIs` / `REST API`). Augmented highlighted skills list to combine both dynamic matched requisition skills and candidate verified skills (`[...dynamicMatchingSkills, ...candSkillsList]`), ensuring all core technical keywords light up vibrantly in yellow (`#FEF08A`).
+  - **Calibrated Candidate Data & Dedicated Data Engineer Generator**: Sanitized `candidates.json` from fake/junk documents. Calibrated real roles, target requisitions, clients, and realistic match scores for all 15 authentic candidates (Michael Mizuno, Aqib Ali, Abeedur Rahman Khan, Tulasi Kakumanu, Nodira Mardoni, PRANEETH REDDY CHAVVA, Akhil De, Saidabi K., Prashanth K., Vamsee Karanam, Reddy S., Chinna Reddy, Zaman Adwani, Sangeetha Kanamarlapudi, Asifa Cheema). Added authentic **Data Engineer & Cloud Data Architect** dossier generator in `getFullResumeText`.
+  - **Updated Server Matching Engine**: In `server/index.js`, prevented unmatched candidates from arbitrarily defaulting to `jobsStore[0]` (Public Health Program Director 1), ensuring proper requisition assignment.
+- **Verification & Deployment**:
+  - AST static analysis: 0 undeclared variables, 0 parser errors across `RecruiterInbox.jsx` and `server/index.js`.
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (built in 2.42s, bundle `index-C3v_x2X4.js`).
+  - Root `node build.js`: 0 errors (built in 2.06s).
+  - Deployed `dist.tar.gz`, `candidates.json`, and `server/index.js` to AWS Lightsail server (`34.194.119.199`), extracted to webroot, restarted PM2 `smarthire-ats`.
+  - Verified live: HTTP 200 on `https://smarthireus.com/inbox` and `https://smarthireus.com/assets/index-C3v_x2X4.js`, and confirmed API `/api/recruiter/email-streams` returns calibrated candidates.
+
 ### 2026-09-18 — Multi-Recruiter Yahoo Email Integration & Auto-Send JD to Candidate
 - **Context & Architecture**:
   - Answered user inquiry regarding team member email configuration: confirmed app-based configuration via ATS Settings UI (`SettingsModule.jsx`) is far superior to SSH/AWS `.env` editing. No server restarts or terminal access required.
