@@ -33,103 +33,91 @@ export async function autoSendJobDescriptionToCandidate({ candidate, job, recrui
     jdSnippet = jdSnippet.slice(0, 1950) + '...\n\n[Full specifications available upon confirmation]';
   }
 
-  const subject = `Job Opportunity: ${jobTitle} at ${clientName} (Req #${cleanReqId})`;
+  const subject = `Opportunity: ${jobTitle} - ${clientName} (Req #${cleanReqId})`;
 
   const htmlBody = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 660px; margin: 0 auto; line-height: 1.6; color: #1e293b; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-      <!-- Header Banner -->
-      <div style="background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); padding: 26px 28px; color: #ffffff;">
-        <div style="font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #93c5fd; margin-bottom: 4px;">
-          SmartHire &bull; Career Opportunity
-        </div>
-        <h1 style="margin: 0; font-size: 22px; font-weight: 800; line-height: 1.3;">${jobTitle}</h1>
-        <div style="margin-top: 8px; font-size: 14px; opacity: 0.95; display: flex; gap: 12px;">
-          <span>🏛️ Client: <strong>${clientName}</strong></span>
-          <span>&bull;</span>
-          <span>📋 Req #${cleanReqId}</span>
-        </div>
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 680px; margin: 0 auto; line-height: 1.6; color: #1e293b; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px;">
+      <p style="font-size: 15px; margin-top: 0; color: #0f172a;">
+        Hi <strong>${candName}</strong>,
+      </p>
+      
+      <p style="font-size: 14px; color: #334155; margin-bottom: 18px;">
+        ${customNote ? customNote : `I reviewed your profile and verified technical qualifications, and I am excited to reach out regarding a high-priority <strong>${jobTitle}</strong> position with our client <strong>${clientName}</strong>.`}
+      </p>
+
+      <!-- Position Specifications Matrix -->
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 16px 20px; margin: 20px 0;">
+        <h3 style="margin: 0 0 12px; font-size: 13.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #0f172a;">
+          Key Position Specifications
+        </h3>
+        <table style="width: 100%; font-size: 13.5px; border-collapse: collapse;">
+          <tbody>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 7px 0; color: #64748b; width: 150px; font-weight: 600;">Requisition ID:</td>
+              <td style="padding: 7px 0; color: #0f172a; font-weight: 700;">#${cleanReqId}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 7px 0; color: #64748b; font-weight: 600;">Position Title:</td>
+              <td style="padding: 7px 0; color: #0f172a; font-weight: 700;">${jobTitle}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 7px 0; color: #64748b; font-weight: 600;">Client:</td>
+              <td style="padding: 7px 0; color: #0f172a;">${clientName}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 7px 0; color: #64748b; font-weight: 600;">Work Location:</td>
+              <td style="padding: 7px 0; color: #0f172a;">${location}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 7px 0; color: #64748b; font-weight: 600;">Target Rate / Pay:</td>
+              <td style="padding: 7px 0; color: #059669; font-weight: 700;">${rate}</td>
+            </tr>
+            <tr>
+              <td style="padding: 7px 0; color: #64748b; font-weight: 600;">Required Skills:</td>
+              <td style="padding: 7px 0; color: #0f172a;">${skillsStr}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <!-- Main Body -->
-      <div style="padding: 28px;">
-        <p style="font-size: 15px; margin-top: 0; color: #0f172a;">
-          Hi <strong>${candName}</strong>,
-        </p>
-        
-        <p style="font-size: 14px; color: #334155; margin-bottom: 18px;">
-          ${customNote ? customNote : `I reviewed your profile and verified technical qualifications, and I am excited to reach out regarding a high-priority <strong>${jobTitle}</strong> position with our client <strong>${clientName}</strong>.`}
-        </p>
-
-        <!-- Position Specifications Matrix -->
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #2563eb; border-radius: 8px; padding: 18px 20px; margin: 20px 0;">
-          <h3 style="margin: 0 0 12px; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #1e3a8a;">
-            Key Position Specifications
-          </h3>
-          <table style="width: 100%; font-size: 13.5px; border-collapse: collapse;">
-            <tbody>
-              <tr>
-                <td style="padding: 6px 0; color: #64748b; width: 140px; font-weight: 600;">Position Title:</td>
-                <td style="padding: 6px 0; color: #0f172a; font-weight: 700;">${jobTitle}</td>
-              </tr>
-              <tr>
-                <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Client Organization:</td>
-                <td style="padding: 6px 0; color: #0f172a;">${clientName}</td>
-              </tr>
-              <tr>
-                <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Work Arrangement:</td>
-                <td style="padding: 6px 0; color: #0f172a;">${location}</td>
-              </tr>
-              <tr>
-                <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Target Rate / Pay:</td>
-                <td style="padding: 6px 0; color: #059669; font-weight: 700;">${rate}</td>
-              </tr>
-              <tr>
-                <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Core Required Stack:</td>
-                <td style="padding: 6px 0; color: #0f172a;">${skillsStr}</td>
-              </tr>
-            </tbody>
-          </table>
+      <!-- Job Description Extract -->
+      ${jdSnippet ? `
+      <div style="margin: 22px 0;">
+        <h4 style="margin: 0 0 8px; font-size: 14px; font-weight: 700; color: #0f172a;">Role Description &amp; Responsibilities:</h4>
+        <div style="background: #fafafa; border: 1px solid #e2e8f0; border-radius: 6px; padding: 16px; font-size: 13px; line-height: 1.6; color: #334155; white-space: pre-line;">
+          ${jdSnippet}
         </div>
+      </div>
+      ` : ''}
 
-        <!-- Job Description Extract -->
-        ${jdSnippet ? `
-        <div style="margin: 22px 0;">
-          <h4 style="margin: 0 0 8px; font-size: 14px; font-weight: 800; color: #0f172a;">Role Description & Key Responsibilities:</h4>
-          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; font-size: 13px; line-height: 1.6; color: #334155; white-space: pre-line;">
-            ${jdSnippet}
-          </div>
-        </div>
-        ` : ''}
-
-        <!-- Next Steps Action Box -->
-        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 18px 20px; margin: 24px 0;">
-          <h4 style="margin: 0 0 8px; font-size: 14px; font-weight: 800; color: #1e40af;">
-            ⚡ Next Steps to Proceed with Submission:
-          </h4>
-          <p style="margin: 0 0 10px; font-size: 13px; color: #1e3a8a;">
-            If you are interested in moving forward, please <strong>reply directly to this email</strong> with the following details:
-          </p>
-          <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #1e3a8a; line-height: 1.6;">
-            <li><strong>Latest Updated Resume</strong> (Word or PDF format)</li>
-            <li><strong>Current Work Authorization</strong> (US Citizen / GC / H1B / C2C / W2)</li>
-            <li><strong>Current Location</strong> (City, State)</li>
-            <li><strong>Target Hourly Rate</strong> ($/hr)</li>
-            <li><strong>Earliest Availability to Start</strong> (Immediate / 2 Weeks)</li>
-          </ul>
-        </div>
-
-        <p style="font-size: 14px; color: #334155; margin-bottom: 24px;">
-          Thank you, and I look forward to working with you on this opportunity.
+      <!-- Next Steps Action Box -->
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 16px 20px; margin: 24px 0;">
+        <h4 style="margin: 0 0 8px; font-size: 13.5px; font-weight: 700; color: #0f172a;">
+          Next Steps to Proceed with Submission:
+        </h4>
+        <p style="margin: 0 0 10px; font-size: 13px; color: #334155;">
+          If you are interested in moving forward, please <strong>reply directly to this email</strong> with the following details:
         </p>
+        <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #334155; line-height: 1.6;">
+          <li><strong>Latest Updated Resume</strong> (Word or PDF format)</li>
+          <li><strong>Current Work Authorization</strong> (US Citizen / GC / H1B / C2C / W2)</li>
+          <li><strong>Current Location</strong> (City, State)</li>
+          <li><strong>Target Hourly Rate</strong> ($/hr)</li>
+          <li><strong>Earliest Availability to Start</strong> (Immediate / 2 Weeks)</li>
+        </ul>
+      </div>
 
-        <!-- Recruiter Signature -->
-        <div style="border-top: 2px solid #f1f5f9; padding-top: 18px; font-size: 13px; color: #64748b;">
-          <div style="font-size: 15px; font-weight: 800; color: #0f172a;">${myName}</div>
-          <div style="font-size: 13px; color: #2563eb; font-weight: 600;">Technical Recruiting Specialist</div>
-          <div style="font-size: 12.5px; color: #64748b; margin-top: 3px;">${myCompany}</div>
-          <div style="font-size: 12.5px; color: #475569; margin-top: 4px;">
-            Email: <a href="mailto:${myEmail}" style="color: #2563eb; text-decoration: none; font-weight: 600;">${myEmail}</a>
-          </div>
+      <p style="font-size: 14px; color: #334155; margin-bottom: 24px;">
+        Thank you, and I look forward to working with you on this opportunity.
+      </p>
+
+      <!-- Recruiter Signature -->
+      <div style="border-top: 1px solid #e2e8f0; padding-top: 16px; font-size: 13px; color: #64748b;">
+        <div style="font-size: 14px; font-weight: 700; color: #0f172a;">${myName}</div>
+        <div style="font-size: 12.5px; color: #2563eb; font-weight: 600;">Technical Recruiting Specialist</div>
+        <div style="font-size: 12px; color: #64748b; margin-top: 2px;">${myCompany}</div>
+        <div style="font-size: 12px; color: #475569; margin-top: 3px;">
+          Email: <a href="mailto:${myEmail}" style="color: #2563eb; text-decoration: none; font-weight: 600;">${myEmail}</a>
         </div>
       </div>
     </div>

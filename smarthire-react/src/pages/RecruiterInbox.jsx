@@ -1657,12 +1657,28 @@ export default function RecruiterInbox({ defaultViewMode }) {
     } catch (e) {}
     return []
   })
-  const [streamCounts, setStreamCounts] = useState({
-    candidatesTotal: 126,
-    inboxResumes: 22,
-    spamResumes: 6,
-    careersResumes: 14,
-    vendorResumes: 0
+  const [streamCounts, setStreamCounts] = useState(() => {
+    try {
+      const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
+      const role = localStorage.getItem('smarthire_active_role') || u.role || 'superadmin'
+      const isOm = role === 'superadmin' || role === 'admin'
+      if (isOm) {
+        return {
+          candidatesTotal: 126,
+          inboxResumes: 22,
+          spamResumes: 6,
+          careersResumes: 14,
+          vendorResumes: 0
+        }
+      }
+    } catch (e) {}
+    return {
+      candidatesTotal: 0,
+      inboxResumes: 0,
+      spamResumes: 0,
+      careersResumes: 0,
+      vendorResumes: 0
+    }
   })
   const [loadingStream, setLoadingStream] = useState(false)
   const [streamSearch, setStreamSearch] = useState('')
@@ -2113,9 +2129,9 @@ export default function RecruiterInbox({ defaultViewMode }) {
     setLoadingStream(true)
     try {
       const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
-      const recEmail = u.email || currentUser?.email || 'omkesh@coolsofttech.com'
-      const recName = u.name || currentUser?.name || 'Omkesh Manjute'
-      const recRole = u.role || activeRole || 'superadmin'
+      const recEmail = u.email || currentUser?.email || (isSuperAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')
+      const recName = u.name || currentUser?.name || (isSuperAdmin ? 'Omkesh Manjute' : 'Recruiter')
+      const recRole = activeRole || u.role || 'superadmin'
 
       const params = new URLSearchParams({
         recruiterEmail: recEmail,
@@ -2146,14 +2162,14 @@ export default function RecruiterInbox({ defaultViewMode }) {
     } finally {
       setLoadingStream(false)
     }
-  }, [currentUser?.email, currentUser?.name, activeRole])
+  }, [currentUser?.email, currentUser?.name, activeRole, isSuperAdmin])
 
   const handleSyncEmailResumes = async () => {
     setSyncingEmailResumes(true)
     setEmailSyncToast('')
     try {
       const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
-      const recEmail = u.email || currentUser?.email || 'omkesh@coolsofttech.com'
+      const recEmail = u.email || currentUser?.email || (isSuperAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')
       const res = await fetch('/api/recruiter/sync-email-resumes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2187,8 +2203,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
     const candFirstName = (cand.name || 'Candidate').split(' ')[0]
     const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
-    const myName = u.name || currentUser?.name || 'Omkesh Manjute'
-    const myEmail = u.email || currentUser?.email || 'omkesh@coolsofttech.com'
+    const myName = u.name || currentUser?.name || (isSuperAdmin ? 'Omkesh Manjute' : 'Lead Recruiter')
+    const myEmail = u.email || currentUser?.email || (isSuperAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')
 
     const defaultBody = `Hi ${candFirstName},\n\nI reviewed your resume for the ${jobTitle} position (Req #${targetReq}) with our client ${jobClient} (${jobRate}). Your technical background and experience are a strong fit for this project.\n\nCould you please review and confirm:\n1. Your current work authorization status?\n2. Your updated hourly rate expectation for this position?\n3. Your immediate availability for a brief technical screening call?\n\nPlease reply directly to this email or feel free to attach your latest updated resume.\n\nWith Regards,\n${myName}\nLead Recruiter\nCOOLSOFT LLC | ${myEmail}\nhttp://www.coolsofttech.com`
 
@@ -2206,7 +2222,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
     setEmailSuccessToast('')
     try {
       const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
-      const recEmail = u.email || currentUser?.email || 'omkesh@coolsofttech.com'
+      const recEmail = u.email || currentUser?.email || (isSuperAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')
       const candId = emailModalCandidate?.id || emailModalCandidate?.candidate_id || ''
 
       const res = await fetch('/api/recruiter/send-direct-email', {
@@ -2753,7 +2769,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
         portal: { count: countPortal, pct: pctPortal },
         bench: { count: countBench + countDirect, pct: pctBench }
       },
-      topSkills: sortedSkills.length > 0 ? sortedSkills : [
+      topSkills: sortedSkills.length > 0 ? sortedSkills : (total > 0 ? [
         { name: 'JavaScript', count: 42, pct: 60 },
         { name: 'Java', count: 38, pct: 55 },
         { name: 'React', count: 35, pct: 50 },
@@ -2761,7 +2777,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
         { name: 'AWS', count: 28, pct: 40 },
         { name: 'SQL', count: 25, pct: 36 },
         { name: 'TypeScript', count: 24, pct: 34 }
-      ]
+      ] : [])
     }
   }, [streamCandidates, openJobsList])
 
@@ -4551,8 +4567,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
                           <div style={{ padding: '10px 14px', borderRight: `1px solid ${C.border}` }}>
                             <div style={{ fontSize: 10.5, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Resume Uploader</div>
                             <div style={{ fontSize: 12.5, fontWeight: 800, color: C.textPrimary, marginTop: 3 }}>
-                              {activeCandidate?.recruiterName || currentUser?.name || 'Omkesh Manjute'}
-                              <div style={{ fontSize: 11, color: C.textSecondary, fontWeight: 500 }}>({activeCandidate?.recruiterEmail || currentUser?.email || 'omkesh@coolsofttech.com'})</div>
+                              {activeCandidate?.recruiterName || currentUser?.name || (isSuperAdmin ? 'Omkesh Manjute' : 'Recruiter')}
+                              <div style={{ fontSize: 11, color: C.textSecondary, fontWeight: 500 }}>({activeCandidate?.recruiterEmail || currentUser?.email || (isSuperAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')})</div>
                             </div>
                           </div>
 
@@ -4566,7 +4582,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                           <div style={{ padding: '10px 14px', borderRight: `1px solid ${C.border}` }}>
                             <div style={{ fontSize: 10.5, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Source</div>
                             <div style={{ fontSize: 12.5, fontWeight: 800, color: C.textPrimary, marginTop: 3 }}>
-                              {activeCandidate?.source || 'Yahoo Small Business (omkesh@coolsofttech.com)'}
+                              {activeCandidate?.source || (isSuperAdmin ? 'Yahoo Small Business (omkesh@coolsofttech.com)' : 'Recruiter Inbox')}
                             </div>
                           </div>
 
@@ -4900,9 +4916,9 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     {activeTobuTab === 'activity' && (
                       <div style={{ maxWidth: 860, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
                         {[
-                          { title: 'Candidate Ingested into ATS', time: '10th Sep 2026, 09:42 PM', desc: `Ingested from ${activeCandidate?.source || 'Email Inbox'} by ${currentUser?.name || 'Omkesh Manjute'}` },
+                          { title: 'Candidate Ingested into ATS', time: '10th Sep 2026, 09:42 PM', desc: `Ingested from ${activeCandidate?.source || 'Email Inbox'} by ${currentUser?.name || (isSuperAdmin ? 'Omkesh Manjute' : 'Recruiter')}` },
                           { title: 'AI Match Calculated', time: '10th Sep 2026, 09:43 PM', desc: `Fit score calculated at ${calculatedFitScore}% for Req #${currentReqId} (${activeTargetJob?.title})` },
-                          { title: 'Profile Viewed', time: 'Just now', desc: `Profile inspected by ${currentUser?.name || 'Omkesh Manjute'}` }
+                          { title: 'Profile Viewed', time: 'Just now', desc: `Profile inspected by ${currentUser?.name || (isSuperAdmin ? 'Omkesh Manjute' : 'Recruiter')}` }
                         ].map((act, i) => (
                           <div key={i} style={{ backgroundColor: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                             <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563EB', marginTop: 5 }} />
@@ -4975,11 +4991,11 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 {/* 5 Metric KPI Cards matching screenshot */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                   {[
-                    { icon: '👤', count: Math.max(126, streamCandidates.length), label: 'Total Candidates', filter: 'all' },
-                    { icon: '🟢', count: Math.max(84, streamCandidates.filter(c => c.status === 'Active').length), label: 'Active', filter: 'active' },
-                    { icon: '🟡', count: Math.max(22, streamCandidates.filter(c => c.sourceCategory === 'email_inbox').length), label: 'Resume Emails', filter: 'inbox' },
-                    { icon: '🔵', count: Math.max(14, streamCandidates.filter(c => c.status === 'In Review' || c.status === 'Review').length), label: 'In Review', filter: 'review' },
-                    { icon: '🔴', count: Math.max(6, streamCandidates.filter(c => c.sourceCategory === 'email_spam' || c.isSpamRecovery).length), label: 'Spam / Recovered', filter: 'spam' }
+                    { icon: '👤', count: streamCandidates.length, label: 'Total Candidates', filter: 'all' },
+                    { icon: '🟢', count: streamCandidates.filter(c => c.status === 'Active' || !c.status).length, label: 'Active', filter: 'active' },
+                    { icon: '🟡', count: streamCandidates.filter(c => c.sourceCategory === 'email_inbox').length, label: 'Resume Emails', filter: 'inbox' },
+                    { icon: '🔵', count: streamCandidates.filter(c => c.status === 'In Review' || c.status === 'Review').length, label: 'In Review', filter: 'review' },
+                    { icon: '🔴', count: streamCandidates.filter(c => c.sourceCategory === 'email_spam' || c.isSpamRecovery).length, label: 'Spam / Recovered', filter: 'spam' }
                   ].map((card, cIdx) => {
                     const isSelected = tableCategory === card.filter
                     return (
@@ -7560,7 +7576,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 type="button"
                 title="Launch in Desktop Outlook / Apple Mail"
                 onClick={() => {
-                  const fullSig = `\n\nWith Regards,\n${currentUser?.name || 'Omkesh Manjute'}\nLead Recruiter\nCOOLSOFT LLC | ${currentUser?.email || 'omkesh@coolsofttech.com'}\nhttp://www.coolsofttech.com`
+                  const fullSig = `\n\nWith Regards,\n${currentUser?.name || (isSuperAdmin ? 'Omkesh Manjute' : 'Lead Recruiter')}\nLead Recruiter\nCOOLSOFT LLC | ${currentUser?.email || (isSuperAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')}\nhttp://www.coolsofttech.com`
                   const fullText = emailBody.includes('Regards') ? emailBody : `${emailBody}${fullSig}`
                   const url = `mailto:${encodeURIComponent(emailTo)}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(fullText)}`
                   window.location.href = url

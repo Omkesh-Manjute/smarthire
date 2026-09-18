@@ -1589,9 +1589,9 @@ We are currently reviewing candidate profiles and scheduling immediate interview
 
     const recName = targetRecruiter.name || 'Recruiter'
     const recEmail = targetRecruiter.email.trim()
-    const myName = userName || currentUser?.name || 'Omkesh Manjute'
-    const myEmail = currentUser?.email || 'omkesh@coolsofttech.com'
-    const myCompany = currentUser?.company || 'SmartHire ATS / COOLSOFT LLC'
+    const myName = userName || currentUser?.name || (isAdmin ? 'Omkesh Manjute' : 'Lead Recruiter')
+    const myEmail = currentUser?.email || (isAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')
+    const myCompany = currentUser?.company || 'COOLSOFT LLC'
 
     const cleanReqId = resolveReqId(selectedReq?.id, selectedReq) || String(selectedReq?.id || editingFields.id || '159148').replace(/^J-/, '').replace(/^REQ-/, '').trim()
     const jobTitle = editingFields.jobTitle || editingFields.title || selectedReq?.title || selectedReq?.jobTitle || 'Technical Specialist'
@@ -1610,137 +1610,151 @@ We are currently reviewing candidate profiles and scheduling immediate interview
     let jdSnippet = editingFields.description || selectedReq?.description || selectedReq?.fullDescription || selectedReq?.rawDescription || ''
     jdSnippet = jdSnippet.replace(/={5,}/g, '').replace(/-{5,}/g, '').trim()
 
-    const subject = `[SmartHire ATS] New Requisition Assigned: #${cleanReqId} - ${jobTitle} (${clientName})`
+    const workMode = editingFields.locationType || editingFields.workMode || editingFields.type || selectedReq?.workMode || selectedReq?.locationType || selectedReq?.type || (location.toLowerCase().includes('remote') ? 'Remote' : location.toLowerCase().includes('hybrid') ? 'Hybrid' : location.toLowerCase().includes('onsite') ? 'Onsite' : 'Hybrid')
+    const workModeStr = workMode ? ` ${workMode}` : ''
+    const subject = `Direct Client: ${cleanReqId} - ${jobTitle} (${clientName})${workModeStr}`
 
-    const htmlBody = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 680px; margin: 0 auto; line-height: 1.6; color: #1e293b; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
-        <!-- SmartHire Header Banner -->
-        <div style="background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #2563eb 100%); padding: 24px 28px; color: #ffffff;">
-          <div style="font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #93c5fd; margin-bottom: 6px;">
-            SmartHire ATS &bull; Requisition Assignment Notice
+    // Format raw JD text into clean executive email paragraphs and distinct bullet points
+    const formatJdForEmail = (text) => {
+      if (!text) return ''
+      let clean = String(text).replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+      clean = clean.replace(/([^\n])\s*([•\*\u2022]|\u25AA|\u25CF|\u2043)\s+/g, '$1\n• ')
+      clean = clean.replace(/([^\n])\s+(\d+\.)\s+/g, '$1\n$2 ')
+      clean = clean.replace(/^([•\*\u2022]|\u25AA|\u25CF|\u2043)\s*/gm, '• ')
+
+      const knownHeaders = [
+        'Job Description', 'Position Description', 'Job Summary', 'Role Summary', 'Position Summary',
+        'Responsibilities', 'Key Responsibilities', 'Roles and Responsibilities', 'Duties', 'Core Duties',
+        'Required Skills', 'Required Qualifications', 'Basic Qualifications', 'Qualifications',
+        'Minimum Qualifications', 'Minimum Requirements', 'Required Experience', 'Required Technical Proficiencies',
+        'Preferred Skills', 'Preferred Qualifications', 'Nice to Have', 'Desired Skills',
+        'Technical Skills', 'Skill Matrix', 'Scope of Work', 'Overview', 'About the Role'
+      ]
+
+      knownHeaders.forEach(h => {
+        const re = new RegExp(`(^|\\n|\\.\\s+)((${h}):?)(\\s+|\\n|$)`, 'gi')
+        clean = clean.replace(re, '\n\n__HEADER__$2__ENDHEADER__\n')
+      })
+
+      const rawLines = clean.split('\n').map(l => l.trim()).filter(Boolean)
+      let html = ''
+      let inList = false
+
+      for (const line of rawLines) {
+        if (line.includes('__HEADER__')) {
+          if (inList) {
+            html += '</ul>\n'
+            inList = false
+          }
+          const title = line.replace(/__HEADER__/g, '').replace(/__ENDHEADER__/g, '').replace(/:$/, '').trim()
+          html += `<div style="margin: 18px 0 8px 0; font-size: 13.5px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.3px; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px;">${title}</div>\n`
+        } else if (line.startsWith('•') || /^\d+\.\s+/.test(line)) {
+          if (!inList) {
+            html += '<ul style="margin: 6px 0 14px 0; padding-left: 20px; color: #334155; line-height: 1.6;">\n'
+            inList = true
+          }
+          const itemText = line.replace(/^(•|\d+\.)\s*/, '').trim()
+          html += `<li style="margin-bottom: 6px; font-size: 13.5px;">${itemText}</li>\n`
+        } else {
+          if (inList) {
+            html += '</ul>\n'
+            inList = false
+          }
+          html += `<p style="margin: 0 0 10px 0; font-size: 13.5px; line-height: 1.6; color: #334155;">${line}</p>\n`
+        }
+      }
+
+      if (inList) {
+        html += '</ul>\n'
+      }
+
+      return `
+        <div style="margin: 22px 0;">
+          <div style="font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
+            Job Description &amp; Requirements
           </div>
-          <h1 style="margin: 0; font-size: 22px; font-weight: 800; line-height: 1.3; color: #ffffff;">${jobTitle}</h1>
-          <div style="margin-top: 10px; font-size: 13.5px; opacity: 0.95; display: flex; gap: 12px; flex-wrap: wrap;">
-            <span>📋 Req ID: <strong>#${cleanReqId}</strong></span>
-            <span>&bull;</span>
-            <span>🏛️ Client: <strong>${clientName}</strong></span>
-            <span>&bull;</span>
-            <span>⚡ Status: <strong>${status}</strong></span>
+          <div style="background: #fafafa; border: 1px solid #e2e8f0; border-radius: 6px; padding: 18px 22px;">
+            ${html}
           </div>
         </div>
+      `
+    }
 
-        <!-- Recruiter Assignment Callout -->
-        <div style="padding: 24px 28px;">
-          <p style="font-size: 15px; margin-top: 0; color: #0f172a;">
-            Hi <strong>${recName}</strong>,
-          </p>
-          <p style="font-size: 14px; color: #334155; margin-bottom: 20px;">
-            You have been assigned to lead candidate sourcing and client submissions for <strong>${jobTitle}</strong> (Req #${cleanReqId}) for client <strong>${clientName}</strong>. Please find the full position specifications and job requirements below:
-          </p>
+    const htmlBody = `
+      <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.6; color: #1e293b; max-width: 720px; margin: 0 auto; padding: 20px 24px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px;">
+        <p style="margin: 0 0 16px 0; font-size: 14px; color: #0f172a;">Hi <strong>${recName}</strong>,</p>
+        <p style="margin: 0 0 20px 0; font-size: 14px; color: #334155;">Please find the requirement details below:</p>
 
-          <!-- Specifications Matrix -->
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #2563eb; border-radius: 6px; padding: 16px 20px; margin: 18px 0;">
-            <h3 style="margin: 0 0 12px; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #1e3a8a;">
-              📌 Position Overview & Specs
-            </h3>
-            <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
-              <tbody>
-                <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 6px 0; color: #64748b; width: 150px; font-weight: 600;">Requisition ID:</td>
-                  <td style="padding: 6px 0; color: #000080; font-weight: 800;">#${cleanReqId}</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Position Title:</td>
-                  <td style="padding: 6px 0; color: #0f172a; font-weight: 700;">${jobTitle}</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Client:</td>
-                  <td style="padding: 6px 0; color: #0f172a;">${clientName}</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Work Location:</td>
-                  <td style="padding: 6px 0; color: #0f172a;">${location}</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Pay / Target Rate:</td>
-                  <td style="padding: 6px 0; color: #059669; font-weight: 700;">${rate}</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Duration / Type:</td>
-                  <td style="padding: 6px 0; color: #0f172a;">${duration} &bull; ${reqType}</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Submission Deadline:</td>
-                  <td style="padding: 6px 0; color: #dc2626; font-weight: 700;">${deadline}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Primary Required Skills:</td>
-                  <td style="padding: 6px 0; color: #0f172a; font-weight: 600;">${skillsStr || 'Refer to Description'}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+        <!-- Specifications Table -->
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 13.5px; border: 1px solid #e2e8f0;">
+          <tbody>
+            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+              <td style="padding: 9px 14px; font-weight: 600; width: 170px; color: #475569;">Requisition ID:</td>
+              <td style="padding: 9px 14px; font-weight: 700; color: #0f172a;">#${cleanReqId}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+              <td style="padding: 9px 14px; font-weight: 600; color: #475569;">Position Title:</td>
+              <td style="padding: 9px 14px; font-weight: 700; color: #0f172a;">${jobTitle}</td>
+            </tr>
+            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+              <td style="padding: 9px 14px; font-weight: 600; color: #475569;">Client:</td>
+              <td style="padding: 9px 14px; color: #0f172a; font-weight: 600;">${clientName}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+              <td style="padding: 9px 14px; font-weight: 600; color: #475569;">Location / Work Mode:</td>
+              <td style="padding: 9px 14px; color: #0f172a;">${location}${workMode && !location.toLowerCase().includes(workMode.toLowerCase()) ? ` (${workMode})` : ''}</td>
+            </tr>
+            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+              <td style="padding: 9px 14px; font-weight: 600; color: #475569;">Pay / Target Rate:</td>
+              <td style="padding: 9px 14px; font-weight: 700; color: #047857;">${rate}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+              <td style="padding: 9px 14px; font-weight: 600; color: #475569;">Duration / Type:</td>
+              <td style="padding: 9px 14px; color: #0f172a;">${duration} &bull; ${reqType}</td>
+            </tr>
+            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+              <td style="padding: 9px 14px; font-weight: 600; color: #475569;">Submission Deadline:</td>
+              <td style="padding: 9px 14px; font-weight: 700; color: #b91c1c;">${deadline}</td>
+            </tr>
+            <tr>
+              <td style="padding: 9px 14px; font-weight: 600; color: #475569;">Core Skills:</td>
+              <td style="padding: 9px 14px; color: #0f172a; font-weight: 500;">${skillsStr || 'Refer to Job Description'}</td>
+            </tr>
+          </tbody>
+        </table>
 
-          <!-- Full Job Description -->
-          ${jdSnippet ? `
-          <div style="margin: 22px 0;">
-            <h4 style="margin: 0 0 8px; font-size: 14px; font-weight: 800; color: #0f172a;">📄 Detailed Job Description & Responsibilities:</h4>
-            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 16px; font-size: 13px; line-height: 1.6; color: #334155; white-space: pre-line;">
-              ${jdSnippet}
-            </div>
-          </div>
-          ` : ''}
+        <!-- Formatted Job Description -->
+        ${jdSnippet ? formatJdForEmail(jdSnippet) : ''}
 
-          <!-- Recruiter Sourcing Action Box -->
-          <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 16px 20px; margin: 20px 0;">
-            <h4 style="margin: 0 0 6px; font-size: 13.5px; font-weight: 800; color: #1e40af;">
-              🚀 Next Sourcing Actions:
-            </h4>
-            <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #1e3a8a; line-height: 1.6;">
-              <li>Screen active candidate pool in SmartHire ATS against core stack.</li>
-              <li>Collect candidate RTR (Right to Represent) and verified work authorization status.</li>
-              <li>Submit qualified profiles via the SmartHire Requisition Submissions portal.</li>
-            </ul>
-            <div style="margin-top: 14px;">
-              <a href="https://smarthireus.com/dashboard?tab=requisitions&view=requisition&id=${cleanReqId}" 
-                 style="display: inline-block; background: #2563eb; color: #ffffff; text-decoration: none; padding: 8px 16px; font-size: 12.5px; font-weight: 700; border-radius: 4px;">
-                Open Requisition #${cleanReqId} in ATS &rarr;
-              </a>
-            </div>
-          </div>
-
-          <!-- Signature Block -->
-          <div style="border-top: 2px solid #f1f5f9; padding-top: 16px; font-size: 12.5px; color: #64748b;">
-            <div style="font-size: 14px; font-weight: 800; color: #0f172a;">${myName}</div>
-            <div style="font-size: 12.5px; color: #2563eb; font-weight: 600;">Technical Recruiting Lead</div>
-            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">${myCompany}</div>
-            <div style="font-size: 12px; color: #475569; margin-top: 3px;">
-              Email: <a href="mailto:${myEmail}" style="color: #2563eb; text-decoration: none; font-weight: 600;">${myEmail}</a>
-            </div>
-          </div>
+        <!-- Clean Corporate Signature -->
+        <div style="margin-top: 32px; padding-top: 18px; border-top: 1px solid #e2e8f0; font-size: 13.5px; color: #334155; line-height: 1.5;">
+          <p style="margin: 0 0 4px 0;">Best Regards,</p>
+          <p style="margin: 0 0 2px 0; font-weight: 700; color: #0f172a; font-size: 14px;">${myName}</p>
+          <p style="margin: 0 0 2px 0; color: #64748b; font-size: 13px;">${myCompany}</p>
+          <p style="margin: 0 0 0 0; color: #64748b; font-size: 13px;">Email: <a href="mailto:${myEmail}" style="color: #2563eb; text-decoration: none;">${myEmail}</a></p>
         </div>
       </div>
     `
 
     const plainTextBody = `Hi ${recName},
 
-You have been assigned to Requisition #${cleanReqId} - ${jobTitle} (${clientName}).
+Please find the requirement details below:
 
-POSITION SPECIFICATIONS:
-- Req ID: #${cleanReqId}
-- Title: ${jobTitle}
-- Client: ${clientName}
-- Location: ${location}
-- Pay Rate: ${rate}
-- Duration / Type: ${duration} (${reqType})
-- Submission Deadline: ${deadline}
-- Core Skills: ${skillsStr}
+Requisition ID: #${cleanReqId}
+Position Title: ${jobTitle}
+Client: ${clientName}
+Location / Work Mode: ${location}${workMode ? ` (${workMode})` : ''}
+Pay / Target Rate: ${rate}
+Duration / Type: ${duration} (${reqType})
+Submission Deadline: ${deadline}
+Core Skills: ${skillsStr}
 
-${jdSnippet ? `JOB DESCRIPTION:\n${jdSnippet}\n\n` : ''}
-Please source and submit qualified candidates with RTR via SmartHire ATS:
-https://smarthireus.com/dashboard?tab=requisitions&view=requisition&id=${cleanReqId}
+--------------------------------------------------
+JOB DESCRIPTION & REQUIREMENTS:
+--------------------------------------------------
+${jdSnippet}
 
-Regards,
+Best Regards,
 ${myName}
 ${myCompany}
 Email: ${myEmail}

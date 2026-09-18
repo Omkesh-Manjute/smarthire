@@ -57,17 +57,28 @@ function Navigation() {
     (user?.name?.toLowerCase().includes('gourav') || user?.email?.toLowerCase().includes('gourav') ? 'Omkesh' : (user?.role === 'employee' ? 'Sukamal Chatterjee' : ''))
 
   const realUserRole = user?.role || 'recruiter'
-  const isEmployee = realUserRole === 'employee'
-  const isManager = realUserRole === 'manager'
-  const isRecruiter = realUserRole === 'recruiter'
-  const isSuperAdmin = (realUserRole === 'superadmin' || realUserRole === 'admin') && !isEmployee && !isManager
-  const canSwitchRoles = isSuperAdmin
+  const isSuperAdminAccount = (realUserRole === 'superadmin' || realUserRole === 'admin') || (user?.email && user.email.toLowerCase().includes('omkesh'))
+  const canSwitchRoles = isSuperAdminAccount
   const defaultRole = user && user.role ? user.role : 'recruiter'
   const [activeRole, setActiveRole] = useState(() => {
-    return isSuperAdmin ? (localStorage.getItem('smarthire_active_role') || 'superadmin') : defaultRole
+    return canSwitchRoles ? (localStorage.getItem('smarthire_active_role') || 'superadmin') : defaultRole
   })
 
-  const isReportee = Boolean(effectiveParentRecruiterName && !isSuperAdmin && !isManager && effectiveParentRecruiterName.toLowerCase() !== (user?.name || '').toLowerCase())
+  const isSuperAdmin = (activeRole === 'superadmin' || activeRole === 'admin')
+  const isManager = activeRole === 'manager'
+  const isEmployee = activeRole === 'employee'
+  const isRecruiter = activeRole === 'recruiter'
+
+  // Dynamic Display Name: In Super Admin mode show user's name; in Recruiter view mode show "Recruiter" (or authentic non-admin recruiter name)
+  const effectiveDisplayName = isSuperAdmin 
+    ? (user?.name || 'Admin') 
+    : (user?.role === 'superadmin' ? 'Recruiter' : (user?.name || 'Recruiter'))
+
+  const effectiveDisplayEmail = isSuperAdmin 
+    ? (user?.email || 'omkesh@coolsofttech.com') 
+    : (user?.role === 'superadmin' ? 'recruiter@coolsofttech.com' : (user?.email || 'recruiter@coolsofttech.com'))
+
+  const isReportee = Boolean(effectiveParentRecruiterName && !isSuperAdmin && !isManager && effectiveParentRecruiterName.toLowerCase() !== (effectiveDisplayName || '').toLowerCase())
 
   // Load permissions
   const [permissions, setPermissions] = useState(() => {
@@ -182,8 +193,8 @@ function Navigation() {
   }
 
   const getUserInitials = () => {
-    if (user && user.name) {
-      return user.name
+    if (effectiveDisplayName) {
+      return effectiveDisplayName
         .split(' ')
         .map((n) => n[0])
         .join('')
@@ -473,7 +484,7 @@ function Navigation() {
                     title="Open Command & Profile Menu"
                   >
                     <div className="avatar-circle" style={{ background: isEmployee ? '#16a34a' : undefined }}>{getUserInitials()}</div>
-                    <span className="profile-pill-name">{user?.name ? user.name.split(' ')[0] : (isSuperAdmin ? 'Admin' : 'Recruiter')}</span>
+                    <span className="profile-pill-name">{effectiveDisplayName ? effectiveDisplayName.split(' ')[0] : (isSuperAdmin ? 'Admin' : 'Recruiter')}</span>
                     <span className="nav-live-dot-beacon" title={apiOnline ? 'SmartHire Live Telemetry Active' : 'Backend Interrupted'} style={{ background: apiOnline ? '#10b981' : '#ef4444' }} />
                     <svg className="avatar-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <polyline points="6 9 12 15 18 9" />
@@ -486,10 +497,10 @@ function Navigation() {
                         <div className="profile-header-avatar" style={{ background: isEmployee ? '#16a34a' : undefined }}>{getUserInitials()}</div>
                         <div className="profile-header-info">
                           <div className="profile-user-name">
-                            {user?.name || (isSuperAdmin ? 'Administrator' : 'Recruiter')}
+                            {effectiveDisplayName}
                           </div>
                           <div className="profile-user-email">
-                            {user?.email || 'omkesh@coolsofttech.com'}
+                            {effectiveDisplayEmail}
                           </div>
                           <div className="profile-role-tag" style={{ background: isEmployee ? '#dcfce7' : undefined, color: isEmployee ? '#166534' : undefined }}>
                             {isEmployee ? `🔒 Employee (${user?.parentRecruiterName ? 'reports to ' + user.parentRecruiterName : 'Team Member'})` : isManager ? '👔 Manager Console' : isSuperAdmin ? '👑 Super Admin Console' : '💼 Lead Recruiter Portal'}
@@ -721,8 +732,8 @@ function Navigation() {
                 <div className="mobile-user-card">
                   <div className="mobile-user-avatar">{getUserInitials()}</div>
                   <div>
-                    <div className="mobile-user-name">{user?.name || 'Recruiter'}</div>
-                    <div className="mobile-user-email">{user?.email || 'Logged In'}</div>
+                    <div className="mobile-user-name">{effectiveDisplayName}</div>
+                    <div className="mobile-user-email">{effectiveDisplayEmail}</div>
                   </div>
                 </div>
 

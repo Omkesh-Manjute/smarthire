@@ -91,7 +91,7 @@ function CandidatesModule({
   const currentUser = useMemo(() => {
     try { return userStr ? JSON.parse(userStr) : null } catch(e) { return null }
   }, [userStr])
-  const currentUserName = currentUser?.name || 'Omkesh'
+  const currentUserName = currentUser?.name || (currentUser?.role === 'superadmin' ? 'Omkesh' : 'Recruiter')
 
   // Push to Requisition Modal State
   const [pushModalCandidate, setPushModalCandidate] = useState(null)

@@ -31,6 +31,24 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-18 — Clean Recruiter Email Format, Scoped Candidate KPI Cards & Dynamic Profile Name
+- **Context & User Requirements**:
+  - **Clean Recruiter JD Email Format & Subject**:
+    - Subject: Changed to clean executive format `Direct Client: {cleanReqId} - {jobTitle} ({clientName}) {workMode}` (e.g., `Direct Client: 159148 - Public Health Program Director 1 (TN DOH) Hybrid`). Strictly eliminated `[SmartHire ATS]` and `New Requisition Assigned:`.
+    - Body: Completely removed the "SMARTHIRE ATS • REQUISITION ASSIGNMENT NOTICE" banner, eliminated all emojis (`📋`, `🏛️`, `⚡`, `📌`, `🚀`, `📄`), removed "Next Sourcing Actions" box, and removed the ATS button. Formatted as an authentic corporate email: `Hi {recName}, Please find the requirement details below:`, clean specifications table, and corporate signature.
+    - **JD Bullet & Header Formatting**: Added `formatJdForEmail` helper that detects inline asterisks/bullets (`*`, `•`), line-breaks them into clean `<ul><li>...</li></ul>` HTML list items, bolds standard section headers (`Required Skills:`, `Responsibilities:`, `Qualifications:`), and structures text with readable paragraph spacing.
+  - **Scoped Candidate KPI Cards (`RecruiterInbox.jsx`)**:
+    - Removed hardcoded minimum floors (`Math.max(126, streamCandidates.length)`, `Math.max(84, ...)`, `Math.max(22, ...)`, `Math.max(14, ...)`, `Math.max(6, ...)`) in candidate table KPI cards.
+    - Dynamically initialized `streamCounts` to `0` for non-superadmin roles so other recruiters do not see Omkesh's 126/147 count.
+    - Cleaned up hardcoded `'Omkesh'` fallbacks in metadata uploader, activity log, and mailto signatures.
+  - **Top-Right Profile Name & Role Switcher Sync (`Navigation.jsx`)**:
+    - Fixed `isSuperAdmin` in `Navigation.jsx` to be responsive to `activeRole` (`activeRole === 'superadmin' || activeRole === 'admin'`).
+    - Introduced `effectiveDisplayName` and `effectiveDisplayEmail`: in Super Admin mode renders user's authentic name (Omkesh), and in Recruiter view mode dynamically renders "Recruiter" (or the logged-in team recruiter's name) with matching initials ("RC").
+- **Verification & Deployment**:
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (built in 2.22s, bundle `index-DiptLgk1.js`).
+  - Root `node build.js`: 0 errors (built in 2.02s).
+  - Deployed `dist.tar.gz` to AWS Lightsail server (`34.194.119.199`), extracted to webroot, restarted PM2 `smarthire-ats`.
+
 ### 2026-09-18 — Send JD to Assigned Recruiters, Assign Table Width Compaction & Role-Based Candidate Scoping
 - **Context & User Requirements**:
   - In Requisitions -> "Assign to Recruiters" tab: added `📧 Send JD to Assigned` batch button in toolbar and individual `✉️ Send JD` action buttons in table rows to send the complete Job Description via the recruiter's configured Yahoo/SMTP account.
