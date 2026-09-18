@@ -21,6 +21,7 @@ import {
   subscribeAtsJobs,
   deduplicateCandidates
 } from '../lib/atsFirestore'
+import { autoSendJobDescriptionToCandidate } from '../utils/autoSendJdHelper'
 
 function getFullDescriptionText(job) {
   if (!job) return ''
@@ -2615,6 +2616,14 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       body: JSON.stringify(masterCandObj)
     }).catch(() => {})
 
+    if (masterCandObj.email) {
+      autoSendJobDescriptionToCandidate({
+        candidate: masterCandObj,
+        job: selectedReq,
+        recruiterUser: currentUser || { name: userName }
+      }).catch(e => console.warn('Auto-send JD notice:', e))
+    }
+
     alert(`✅ Candidate ${fullName} (ID: ${candId}) has been successfully assigned to Requisition #${resolvedId || cleanId}!`)
     setViewMode('requisition')
     setActiveReqTab('potential')
@@ -2749,6 +2758,14 @@ We are currently reviewing candidate profiles and scheduling immediate interview
       },
       body: JSON.stringify(masterCandObj)
     }).catch(() => {})
+
+    if (masterCandObj.email) {
+      autoSendJobDescriptionToCandidate({
+        candidate: masterCandObj,
+        job: selectedReq,
+        recruiterUser: currentUser || { name: userName }
+      }).catch(e => console.warn('Auto-send JD notice:', e))
+    }
 
     alert(`✅ Candidate ${fullName} (ID: ${candId}) has been successfully assigned to Requisition #${resolvedId || cleanId}!`)
     setViewMode('requisition')
@@ -11347,8 +11364,16 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
                 candidateId: cand.id
               })
 
-              setSaveToastMessage(`🎉 Candidate ${cand.name} successfully submitted to Requisition #${cleanReqId}!`)
-              setTimeout(() => setSaveToastMessage(null), 4000)
+              if (cand.email) {
+                autoSendJobDescriptionToCandidate({
+                  candidate: newSubObj,
+                  job: targetJob,
+                  recruiterUser: currentUser || { name: userName }
+                }).catch(e => console.warn('Auto-send JD notice:', e))
+              }
+
+              setSaveToastMessage(`🎉 Candidate ${cand.name} assigned to Requisition #${cleanReqId} & Job Description sent!`)
+              setTimeout(() => setSaveToastMessage(null), 5000)
             }}
           />
         )}

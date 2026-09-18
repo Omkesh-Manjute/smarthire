@@ -1,33 +1,48 @@
 import React, { useState, useEffect } from 'react'
 
-const ALL_SMARTHIRE_RECRUITERS = [
-  { name: 'Omkesh Manjute', email: 'omkesh.manjute@smarthire.com', refCode: 'omkesh' },
-  { name: 'Vaibhav Bisen', email: 'vaibhav.bisen@smarthire.com', refCode: 'vaibhav-bisen' },
-  { name: 'Sukamal Chatterjee', email: 'sukamal.c@smarthire.com', refCode: 'sukamal-chatterjee' },
-  { name: 'Prudhvi Sevveti', email: 'prudhvi.s@smarthire.com', refCode: 'prudhvi-sevveti' },
-  { name: 'Nitin Bhosale', email: 'nitin.b@smarthire.com', refCode: 'nitin-bhosale' },
-  { name: 'Naveen Korimelli', email: 'naveen.k@smarthire.com', refCode: 'naveen-korimelli' },
-  { name: 'Ajay Arya', email: 'ajay.a@smarthire.com', refCode: 'ajay-arya' },
-  { name: 'Raj Barve', email: 'raj.b@smarthire.com', refCode: 'raj-barve' },
-  { name: 'Pankaj Maharwade', email: 'pankaj.m@smarthire.com', refCode: 'pankaj-maharwade' },
-  { name: 'Nishant Kathane', email: 'nishant.k@smarthire.com', refCode: 'nishant-kathane' }
+const DEFAULT_TEAM_RECRUITERS = [
+  { name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh' },
+  { name: 'Omkesh Manjute', email: 'omkesh.manjute@smarthire.com', role: 'superadmin', refCode: 'omkesh' },
+  { name: 'Gourav', email: 'gourav@coolsofttech.com', role: 'recruiter', parentRecruiterName: 'Omkesh', refCode: 'gourav' },
+  { name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com', role: 'recruiter', refCode: 'sukamal-chatterjee' },
+  { name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com', role: 'recruiter', refCode: 'vaibhav-bisen' },
+  { name: 'Naveen Bhardwaj', email: 'naveen@coolsofttech.com', role: 'employee', parentRecruiterName: 'Sukamal Chatterjee', refCode: 'naveen-bhardwaj' },
+  { name: 'Rahul Sharma', email: 'rahul@coolsofttech.com', role: 'employee', parentRecruiterName: 'Vaibhav Bisen', refCode: 'rahul-sharma' },
+  { name: 'Pankaj', email: 'pankajm@coolsofttech.com', role: 'recruiter', refCode: 'pankaj' },
+  { name: 'Priya Verma', email: 'priya@coolsofttech.com', role: 'employee', parentRecruiterName: 'Sukamal Chatterjee', refCode: 'priya-verma' },
+  { name: 'Alok Manager', email: 'manager@coolsofttech.com', role: 'manager', refCode: 'alok-manager' }
 ]
+
+function getRecruiterTeamList() {
+  try {
+    const raw = localStorage.getItem('smarthire_recruiters')
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const existingEmails = new Set(parsed.map(p => (p.email || '').toLowerCase().trim()))
+        const merged = [...parsed]
+        DEFAULT_TEAM_RECRUITERS.forEach(d => {
+          if (!existingEmails.has(d.email.toLowerCase())) {
+            merged.push(d)
+            existingEmails.add(d.email.toLowerCase())
+          }
+        })
+        return merged
+      }
+    }
+  } catch (e) {}
+  return DEFAULT_TEAM_RECRUITERS
+}
 
 function getInitialRecruiterEmail() {
   try {
     const raw = localStorage.getItem('smarthire_user')
     if (raw) {
       const u = JSON.parse(raw)
-      const found = ALL_SMARTHIRE_RECRUITERS.find(r => 
-        (u.email && r.email.toLowerCase() === u.email.toLowerCase()) ||
-        (u.refCode && r.refCode.toLowerCase() === u.refCode.toLowerCase()) ||
-        (u.name && r.name.toLowerCase().includes(u.name.toLowerCase())) ||
-        (u.name && u.name.toLowerCase().includes(r.refCode.toLowerCase()))
-      )
-      if (found) return found.email
+      if (u.email) return u.email.toLowerCase().trim()
     }
   } catch (e) {}
-  return localStorage.getItem('smarthire_current_user_email') || 'omkesh.manjute@smarthire.com'
+  return 'omkesh@coolsofttech.com'
 }
 
 function SettingsModule() {
@@ -38,19 +53,22 @@ function SettingsModule() {
   const [newStage, setNewStage] = useState('')
 
   // Email Config State
+  const [teamList, setTeamList] = useState(getRecruiterTeamList)
   const [recruiterEmailKey, setRecruiterEmailKey] = useState(getInitialRecruiterEmail)
   const [emailCfg, setEmailCfg] = useState(() => {
     const initialEmail = getInitialRecruiterEmail()
-    const rec = ALL_SMARTHIRE_RECRUITERS.find(r => r.email === initialEmail)
+    const rec = DEFAULT_TEAM_RECRUITERS.find(r => r.email.toLowerCase() === initialEmail.toLowerCase())
     return {
       displayName: rec ? rec.name : '',
-      fromEmail: '',
-      provider: 'gmail',
-      smtpHost: 'smtp.gmail.com',
-      smtpPort: 587,
-      security: 'TLS',
+      fromEmail: initialEmail,
+      provider: 'yahoo',
+      smtpHost: 'smtp.bizmail.yahoo.com',
+      smtpPort: 465,
+      security: 'SSL',
+      imapHost: 'imap.mail.yahoo.com',
+      imapPort: 993,
       appPassword: '',
-      signature: ''
+      signature: `With Regards,\n${rec ? rec.name : 'Technical Recruiter'}\nCOOLSOFT LLC | SmartHire ATS`
     }
   })
   const [emailCfgSaving, setEmailCfgSaving] = useState(false)
@@ -72,6 +90,19 @@ function SettingsModule() {
   const [tplBody, setTplBody] = useState('')
 
   useEffect(() => {
+    fetch('/api/admin/recruiters')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.recruiters) && data.recruiters.length > 0) {
+          const existingEmails = new Set(data.recruiters.map(u => (u.email || '').toLowerCase().trim()))
+          const extras = DEFAULT_TEAM_RECRUITERS.filter(d => !existingEmails.has(d.email.toLowerCase()))
+          setTeamList([...data.recruiters, ...extras])
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
     fetchEmailConfig(recruiterEmailKey)
     fetchEmailTemplates()
   }, [recruiterEmailKey])
@@ -83,17 +114,19 @@ function SettingsModule() {
       if (data.success && data.config) {
         setEmailCfg(prev => ({ ...prev, ...data.config }))
       } else {
-        const rec = ALL_SMARTHIRE_RECRUITERS.find(r => r.email === emailToFetch)
+        const rec = teamList.find(r => (r.email || '').toLowerCase() === emailToFetch.toLowerCase())
         setEmailCfg(prev => ({
           ...prev,
-          displayName: rec ? rec.name : prev.displayName,
-          fromEmail: '',
+          displayName: rec ? rec.name : (emailToFetch.split('@')[0] || ''),
+          fromEmail: emailToFetch,
           provider: 'yahoo',
-          smtpHost: 'smtp.mail.yahoo.com',
+          smtpHost: 'smtp.bizmail.yahoo.com',
           smtpPort: 465,
           security: 'SSL',
+          imapHost: 'imap.mail.yahoo.com',
+          imapPort: 993,
           appPassword: '',
-          signature: ''
+          signature: `With Regards,\n${rec ? rec.name : 'Technical Recruiter'}\nCOOLSOFT LLC | SmartHire ATS`
         }))
       }
     } catch(e) {}
@@ -399,7 +432,7 @@ function SettingsModule() {
                 }}
                 style={inputStyle}
               >
-                {ALL_SMARTHIRE_RECRUITERS.map(r => (
+                {teamList.map(r => (
                   <option key={r.email} value={r.email}>
                     {r.name} ({r.email})
                   </option>

@@ -31,6 +31,32 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-18 — Multi-Recruiter Yahoo Email Integration & Auto-Send JD to Candidate
+- **Context & Architecture**:
+  - Answered user inquiry regarding team member email configuration: confirmed app-based configuration via ATS Settings UI (`SettingsModule.jsx`) is far superior to SSH/AWS `.env` editing. No server restarts or terminal access required.
+  - Recruiter credentials (`displayName`, `fromEmail`, `smtpHost`, `appPassword`, `signature`, `imapHost`) are securely saved per-recruiter into `server/email_configs.json` via `POST /api/recruiter/email-config`.
+  - Backend route `/api/recruiter/send-email` dynamically routes outbound emails through each recruiter's configured Yahoo account (`smtp.bizmail.yahoo.com:465`) with automatic fallback to admin (`omkesh@coolsofttech.com`) and mirrors sent messages to Yahoo webmail's "Sent" folder via IMAP append.
+- **Auto-Send Job Description to Candidate**:
+  - Implemented `autoSendJobDescriptionToCandidate` utility in `autoSendJdHelper.js`.
+  - Automatically formats a polished, high-converting HTML email featuring:
+    - Gradient banner with job title, client name, and Req ID.
+    - Personal candidate greeting and recommendation context.
+    - Position specifications matrix (Title, Client, Work Arrangement, Pay Rate, Core Stack).
+    - Role description extract.
+    - Next steps submission checklist (Resume, Work Auth, Location, Target Rate, Availability).
+    - Recruiter signature block with contact details.
+  - Automatically triggered upon candidate requisition assignment across all ATS entrypoints:
+    1. `RecruiterInbox.jsx` (`handleAssignCandidateToReq`)
+    2. `RecruiterDashboard.jsx` (`handleAssignExistingCandidateSubmit`, `handleAssignCandidateToReq`, and AI match modal `onAssignCandidate`)
+    3. `CandidatesModule.jsx` (`executePushCandidate` JobsInHand pipeline push)
+- **Settings Module Roster Update**:
+  - Connected `SettingsModule.jsx` to real `@coolsofttech.com` team members (Omkesh, Gourav, Sukamal, Vaibhav, Naveen, Rahul, Pankaj, Priya, Alok Manager) and dynamic API fetch.
+  - Auto-selects logged-in recruiter's account with Yahoo presets.
+- **Verification & Deployment**:
+  - AST Static Analysis: 0 undeclared variables across all modified components.
+  - `npm run build` in `smarthire-react`: 0 errors (built in 2.10s, output `index-gPAOYXhv.js`).
+  - Root `node build.js`: 0 errors (built in 1.94s).
+
 ### 2026-09-18 — Sanitize MIME & Base64 Resume Dump, Fix Dummy "000" Phone Numbers & Attachment Display
 - **Root Cause**:
   - In `email-imap-scraper.js`, raw RFC822/MIME fetch (`BODY.PEEK[TEXT]<0.25000>`) was dumped directly into `resumeText`, causing base64 PDF chunks (`JVBERi0...`), padding blocks (`AAAAAAAA...`), MIME headers (`Content-Type:`, `Content-Disposition:`), and MIME boundaries (`--000000000000...`) to display directly in the candidate resume view.

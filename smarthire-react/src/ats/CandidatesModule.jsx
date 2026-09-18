@@ -3,6 +3,7 @@ import CandidateMessengerWidget from '../components/CandidateMessengerWidget'
 import CandidateDetailViewModal from '../components/CandidateDetailViewModal'
 import { saveRequisitionCandidates, saveCandidate, deduplicateCandidates } from '../lib/atsFirestore'
 import { resolveReqId } from '../utils/formatJobDescription'
+import { autoSendJobDescriptionToCandidate } from '../utils/autoSendJdHelper'
 
 // Helper to reliably extract timestamp from candidate for newest-first sorting
 const getCandidateTimestamp = (c) => {
@@ -636,12 +637,28 @@ function CandidatesModule({
       detail: { candidateId, reqId: resolvedFinalReqId, candidate: newSubObj, botResult }
     }))
 
+    // Auto-send JD email to candidate upon pipeline push
+    const targetJobForJd = matchedJob || {
+      id: resolvedFinalReqId,
+      title: candidate.role || candidate.jobTitle || 'Opportunity',
+      client: 'Direct Client',
+      budget: rate
+    }
+    const candEmail = candidate.email || candidate.extracted_profile?.email
+    if (candEmail) {
+      autoSendJobDescriptionToCandidate({
+        candidate: { ...candidate, email: candEmail, name: candName },
+        job: targetJobForJd,
+        recruiterUser: currentUser || { name: currentUserName }
+      }).catch(e => console.warn('Auto-send JD notice:', e))
+    }
+
     setPushingId(null)
     setPushIsSubmitting(false)
     setPushModalCandidate(null)
     if (!suppressAlert) {
       const botNote = botResult?.message ? `\n\n🤖 JobsInHand Bot Result:\n${botResult.message}` : ''
-      alert(`🎉 Candidate ${candName} successfully submitted to JobsInHand Requisition #${resolvedFinalReqId} & Pipeline!${botNote}`)
+      alert(`🎉 Candidate ${candName} successfully submitted to JobsInHand Requisition #${resolvedFinalReqId} & Job Description sent to ${candEmail || 'candidate'}!${botNote}`)
     }
   }
 

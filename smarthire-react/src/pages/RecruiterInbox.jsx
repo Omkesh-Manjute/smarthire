@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { saveMessageFirestore, getMessagesFirestore, saveRequisitionCandidates, saveCandidate } from '../lib/atsFirestore'
+import { autoSendJobDescriptionToCandidate } from '../utils/autoSendJdHelper'
 
 const POLL_INTERVAL = 3000
 
@@ -1819,8 +1820,30 @@ export default function RecruiterInbox({ defaultViewMode }) {
       window.dispatchEvent(new CustomEvent('candidate-pushed-to-req', { detail: { reqId: cleanId, candidate: newSubObj } }))
     } catch (e) {}
 
-    setAssignedToast(`✓ ${candName} successfully added to Requisition #${cleanId}!`)
-    setTimeout(() => setAssignedToast(''), 5000)
+    // Resolve target job details for auto-dispatching JD email
+    const targetJob = (openJobsList || []).find(j => String(j.id).replace('J-', '').replace('REQ-', '').trim() === cleanId) || {
+      id: cleanId,
+      title: cand.matchedJobTitle || cand.role || 'Technical Opportunity',
+      client: cand.matchedJobClient || 'Direct Enterprise Client',
+      location: cand.location || 'Remote / US',
+      budget: cand.matchedJobRate || '$75/hr',
+      skills: cand.skills || []
+    }
+
+    if (cand.email) {
+      autoSendJobDescriptionToCandidate({
+        candidate: cand,
+        job: targetJob,
+        recruiterUser: { name: myName, email: myEmail, refCode: myRef }
+      }).then(res => {
+        if (res && res.success) {
+          console.log(`✅ Auto-sent JD for Req #${cleanId} to ${cand.email} via ${myEmail}`)
+        }
+      }).catch(err => console.warn('⚠️ Auto-send JD notice:', err))
+    }
+
+    setAssignedToast(`✓ ${candName} assigned to Req #${cleanId} & Job Description sent to ${cand.email || 'candidate'}!`)
+    setTimeout(() => setAssignedToast(''), 6000)
   }
 
   const handleOpenCandidateChat = (cand) => {
