@@ -31,6 +31,24 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-18 — Send JD to Assigned Recruiters, Assign Table Width Compaction & Role-Based Candidate Scoping
+- **Context & User Requirements**:
+  - In Requisitions -> "Assign to Recruiters" tab: added `📧 Send JD to Assigned` batch button in toolbar and individual `✉️ Send JD` action buttons in table rows to send the complete Job Description via the recruiter's configured Yahoo/SMTP account.
+  - Table Width Compaction: Constrained the Assign to Recruiters table to `maxWidth: 920px` with fixed column widths (`width: 36px` checkbox, `175px` name, `185px` role, `210px` email, `130px` status, `160px` action) preventing excessive horizontal stretching.
+  - Role-Based Candidate Scoping: Fixed candidate privacy issue where non-admin recruiters saw Omkesh's private inbox/harvested candidates. Removed unsafe fallback line in `/api/recruiter/email-streams` and added multi-level RBAC check:
+    - `superadmin` / `admin` (Omkesh): full access to all candidates.
+    - `recruiter` / `manager` / `employee`: only see candidates assigned to them, candidates on requisitions assigned to them, candidates from reportees, or public careers portal applicants. Private email harvester candidates are strictly hidden.
+- **Verification & Deployment**:
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (built in 1.99s, bundle `index-DRGXzfeE.js`).
+  - Root `node build.js`: 0 errors (built in 2.18s).
+  - Git committed (`bd4d7e7`) and pushed to GitHub `origin/main`.
+  - Deployed `dist.tar.gz` and `server/index.js` to AWS Lightsail server (`34.194.119.199`), restarted PM2 `smarthire-ats`.
+  - Live verification:
+    - `https://smarthireus.com/assets/index-DRGXzfeE.js` → HTTP 200 OK.
+    - `https://smarthireus.com/api/recruiter/email-streams` with `superadmin` → returns 147 candidates.
+    - `https://smarthireus.com/api/recruiter/email-streams` with `employee` (Naveen) → returns 2 candidates (0 Omkesh private harvester candidates leaked).
+
+
 ### 2026-09-18 — Candidates Table Vertical Scroll Fix, Row Hover, Column Refinements, Skill Highlighting & Accurate Matching
 - **Context & User Requirements**:
   - **Fixed Table Vertical Scrolling**: Solved issue where users could not scroll past row 7 when selecting 25 candidates/page. Added `minHeight: 0` to flex container ancestors (lines 3182, 3386, 3956, 4728) and integrated `.candidates-page-scroll` with styled custom vertical scrollbar (`width: 8px`, track `#F1F5F9`, thumb `#94A3B8`). All 25 candidate rows, pagination footer, and tip banner are now seamlessly scrollable.
