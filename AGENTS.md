@@ -31,6 +31,33 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-20 — Recruiter Filter Roster, Manual Candidates Hub & "Push to Jobs in Hand" Button Deployment
+- **Context & Objectives**:
+  - User reported 3 items:
+    1. Recruiter filter dropdown in `/inbox` was empty and failed to show recruiter names or filter candidates properly.
+    2. Manually added candidates (via "+ Add Candidate" modal or ATS) must appear in the unified `/inbox` candidate pool.
+    3. Missing explicit "Push to Jobs in Hand" button on candidate rows to submit candidates to active requisitions.
+  - Subsequently, user reported a rendering error `zt.trim is not a function` on `/inbox` triggered by non-string/object skill entries in manually merged candidates.
+- **Root Cause & Key Deliverables**:
+  - **Recruiter Filter Roster**:
+    - Expanded route `app.get(['/api/admin/recruiters', '/api/recruiters'], ...)` in `server/index.js` and added remaining 7 recruiters to `recruiters.json` (15 total).
+    - Initialized `availableRecruiters` in `RecruiterInbox.jsx` with `ALL_SMARTHIRE_RECRUITERS` on mount.
+    - Added bidirectional token matching in candidate filtering so "Omkesh Manjute" matches candidates tagged "Omkesh".
+  - **Manual Candidate Ingestion**:
+    - Connected `getAllCandidates()` (Firestore) + `/api/candidates` + `localStorage.smarthire_all_candidates` to candidate stream loader.
+    - Tagged with `sourceCategory: 'manual_entry'` and rendered dedicated teal `Manual Entry` badge.
+  - **Push to Jobs in Hand Button**:
+    - Added dedicated blue button `Push to Jobs in Hand ↗` directly on every table row under `ACTIONS` next to `[ View ]`.
+    - Integrated with requisition selector modal and backend `POST /api/candidates/:id/push-to-req`.
+  - **`zt.trim is not a function` Resolution**:
+    - Root cause: Dynamic in-demand skills discovery in `dashboardMetrics` useMemo called `s.trim()` on `sks` array items without checking types. When candidates with object or non-string skills were merged, `s.trim()` threw `TypeError: zt.trim is not a function`.
+    - Added `safeSkillArray(skills)` and `safeString(val, fallback)` helpers to normalize skill arrays into clean non-empty string arrays across all candidate ingestion, filtering, and telemetry.
+- **Verification & Deployment**:
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (built in 2.02s, bundle `index-BwKnOecM.js`).
+  - Root `node build.js`: 0 errors (built in 2.41s).
+  - Deployed to AWS Lightsail server (`34.194.119.199`), extracted to `/var/www/html/` and reloaded PM2 `smarthire-ats` (pid 81521).
+  - Live verified: `https://smarthireus.com/assets/index-BwKnOecM.js` and `/api/recruiters` return HTTP 200 OK.
+
 ### 2026-09-19 — Unified Candidate Talent Hub Navigation, De-duplication & Blog Image WebP Re-encoding
 - **Context & Objectives**:
   - User reported two issues:
