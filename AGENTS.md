@@ -31,6 +31,19 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-20 — Resolution of ReferenceError: Cannot access 'zr' (fetchMessages) before initialization
+- **Context & Objectives**:
+  - User reported rendering error on `/inbox`: `Temporary View Rendering Notice: Cannot access 'zr' before initialization`.
+- **Root Cause & Resolution**:
+  - Root cause: `fetchMessages` (minified as `zr`) was declared below `fetchThreads`. During component evaluation, `fetchThreads = useCallback(..., [..., fetchMessages])` attempted to read `fetchMessages` in its dependency array before it was initialized in the Temporal Dead Zone (TDZ).
+  - Reordered hook declarations so that `fetchCandidateDetails` and `fetchMessages` are declared and initialized *before* `fetchThreads`.
+  - Created and ran static analysis verifying all 675 declarations across `RecruiterInbox.jsx`, confirming 0 TDZ dependency errors.
+- **Verification & Deployment**:
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-zk0YAKgC.js`).
+  - Root `node build.js`: 0 errors.
+  - Deployed `dist-bundle.tar.gz` to AWS Lightsail server (`34.194.119.199`), extracted to `/var/www/html/` and `/home/ubuntu/smarthire/dist/`, reloaded PM2 `smarthire-ats`.
+  - Live verified: `https://smarthireus.com/assets/index-zk0YAKgC.js` returns HTTP 200 OK.
+
 ### 2026-09-20 — Zoho Recruit Candidate Table Format, Complete Demo Messages Removal & Default Candidate Table Landing
 - **Context & Objectives**:
   - User requested three key improvements:

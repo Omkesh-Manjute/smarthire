@@ -2032,6 +2032,93 @@ export default function RecruiterInbox({ defaultViewMode }) {
     "We are submitting your profile to our client. You will hear back within 2-3 business days."
   ]
 
+  const fetchCandidateDetails = useCallback(async (candidateId, threadObj = null) => {
+    const thread = threadObj || threads.find(t => t.candidateId === candidateId)
+    if (thread?.isTeamMember || thread?.isLeadChannel || candidateId.startsWith('team-') || candidateId.startsWith('lead-')) {
+      const isLead = thread?.isLeadChannel || isReportee
+      setCandidateDetails({
+        name: thread?.candidateName || (isLead ? parentRecruiterName : 'Team Member'),
+        email: thread?.email || (isLead ? parentRecruiterEmail : 'team@coolsofttech.com'),
+        role: thread?.role || (isLead ? 'Lead Recruiter & Reporting Supervisor' : 'Sourcing Specialist / Team Member'),
+        phone: thread?.phone || '571-660-5778',
+        location: 'Richmond, VA / Remote',
+        skills: isLead 
+          ? ['Team Supervision', 'Requisition Approvals', 'Client Delivery', 'Rate Clearances', 'Candidate Intake']
+          : ['Active Sourcing', 'Resume Verification', 'RTR Screening', 'Boolean Search', 'Candidate Engagement'],
+        summary: isLead
+          ? `Lead Recruiter supervisor for ${currentUser?.name || 'Recruiter'}. Reviews candidates, requisition queries, and approves client submissions.`
+          : `Team member reporting to ${currentUser?.name || 'Lead Recruiter'}. Sources candidates, collects RTR documents, and submits profiles for requisition matching.`
+      })
+      return
+    }
+
+    try {
+      let res;
+      if (candidateId && candidateId.startsWith('SCR-')) {
+        res = await fetch('/api/screening/' + candidateId, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+          }
+        })
+      } else {
+        res = await fetch('/api/candidates/' + candidateId, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+          }
+        })
+      }
+      const data = await res.json()
+      if (data.success) {
+        const candidateObj = data.session || data.candidate || data.data?.candidate
+        setCandidateDetails(candidateObj)
+      } else {
+        setCandidateDetails(null)
+      }
+    } catch (e) { setCandidateDetails(null) }
+  }, [isReportee, parentRecruiterName, parentRecruiterEmail, currentUser?.name, threads])
+
+  const fetchMessages = useCallback(async (candidateId, silent = false) => {
+    if (!candidateId) return
+    if (!silent) setLoadingMessages(true)
+    try {
+      // 1. Fetch from Firestore
+      let fsMsgs = []
+      try {
+        fsMsgs = await getMessagesFirestore(candidateId)
+      } catch(e) {}
+
+      // 2. Fetch from backend /api/messages/:candidateId
+      let backendMsgs = []
+      try {
+        const res = await fetch('/api/messages/' + candidateId, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+          }
+        })
+        const data = await res.json()
+        if (data.success && Array.isArray(data.messages)) {
+          backendMsgs = data.messages
+        }
+      } catch (e) {}
+
+      // Merge and deduplicate
+      const msgMap = new Map()
+      ;[...(fsMsgs || []), ...(backendMsgs || [])].forEach(m => {
+        if (!m) return
+        const key = m.id || `${m.timestamp}_${m.text}`
+        if (!msgMap.has(key)) msgMap.set(key, m)
+      })
+
+      let merged = Array.from(msgMap.values()).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+
+      setMessages(merged)
+    } catch (e) {
+      console.warn('Message fetch error:', e)
+    } finally {
+      if (!silent) setLoadingMessages(false)
+    }
+  }, [])
+
   const fetchThreads = useCallback(async () => {
     let candidateThreads = []
     try {
@@ -2134,93 +2221,6 @@ export default function RecruiterInbox({ defaultViewMode }) {
     }
     setLoadingThreads(false)
   }, [recruiterFilter, isReportee, parentRecruiterName, parentRecruiterEmail, currentUser?.email, currentUser?.name, isAdmin, isSuperAdmin, teamUsersList, activeThread, fetchMessages])
-
-  const fetchCandidateDetails = useCallback(async (candidateId, threadObj = null) => {
-    const thread = threadObj || threads.find(t => t.candidateId === candidateId)
-    if (thread?.isTeamMember || thread?.isLeadChannel || candidateId.startsWith('team-') || candidateId.startsWith('lead-')) {
-      const isLead = thread?.isLeadChannel || isReportee
-      setCandidateDetails({
-        name: thread?.candidateName || (isLead ? parentRecruiterName : 'Team Member'),
-        email: thread?.email || (isLead ? parentRecruiterEmail : 'team@coolsofttech.com'),
-        role: thread?.role || (isLead ? 'Lead Recruiter & Reporting Supervisor' : 'Sourcing Specialist / Team Member'),
-        phone: thread?.phone || '571-660-5778',
-        location: 'Richmond, VA / Remote',
-        skills: isLead 
-          ? ['Team Supervision', 'Requisition Approvals', 'Client Delivery', 'Rate Clearances', 'Candidate Intake']
-          : ['Active Sourcing', 'Resume Verification', 'RTR Screening', 'Boolean Search', 'Candidate Engagement'],
-        summary: isLead
-          ? `Lead Recruiter supervisor for ${currentUser?.name || 'Recruiter'}. Reviews candidates, requisition queries, and approves client submissions.`
-          : `Team member reporting to ${currentUser?.name || 'Lead Recruiter'}. Sources candidates, collects RTR documents, and submits profiles for requisition matching.`
-      })
-      return
-    }
-
-    try {
-      let res;
-      if (candidateId && candidateId.startsWith('SCR-')) {
-        res = await fetch('/api/screening/' + candidateId, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
-          }
-        })
-      } else {
-        res = await fetch('/api/candidates/' + candidateId, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
-          }
-        })
-      }
-      const data = await res.json()
-      if (data.success) {
-        const candidateObj = data.session || data.candidate || data.data?.candidate
-        setCandidateDetails(candidateObj)
-      } else {
-        setCandidateDetails(null)
-      }
-    } catch (e) { setCandidateDetails(null) }
-  }, [isReportee, parentRecruiterName, parentRecruiterEmail, currentUser?.name, threads])
-
-  const fetchMessages = useCallback(async (candidateId, silent = false) => {
-    if (!candidateId) return
-    if (!silent) setLoadingMessages(true)
-    try {
-      // 1. Fetch from Firestore
-      let fsMsgs = []
-      try {
-        fsMsgs = await getMessagesFirestore(candidateId)
-      } catch(e) {}
-
-      // 2. Fetch from backend /api/messages/:candidateId
-      let backendMsgs = []
-      try {
-        const res = await fetch('/api/messages/' + candidateId, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
-          }
-        })
-        const data = await res.json()
-        if (data.success && Array.isArray(data.messages)) {
-          backendMsgs = data.messages
-        }
-      } catch (e) {}
-
-      // Merge and deduplicate
-      const msgMap = new Map()
-      ;[...(fsMsgs || []), ...(backendMsgs || [])].forEach(m => {
-        if (!m) return
-        const key = m.id || `${m.timestamp}_${m.text}`
-        if (!msgMap.has(key)) msgMap.set(key, m)
-      })
-
-      let merged = Array.from(msgMap.values()).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
-
-      setMessages(merged)
-    } catch (e) {
-      console.warn('Message fetch error:', e)
-    } finally {
-      if (!silent) setLoadingMessages(false)
-    }
-  }, [])
 
   const selectThread = useCallback(async (thread) => {
     setActiveThread(thread)
