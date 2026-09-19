@@ -8907,8 +8907,25 @@ EDUCATION & CERTIFICATIONS
       ? c.previousCompany
       : 'Senior Consultant, Tech Solutions';
 
+    // Clean documents to prevent duplicating giant resumeText strings inside file metadata
+    let cleanDocuments = undefined;
+    const rawDocs = c.documents || c.legalDocs;
+    if (rawDocs && typeof rawDocs === 'object') {
+      cleanDocuments = {};
+      for (const [docKey, docVal] of Object.entries(rawDocs)) {
+        if (docVal && typeof docVal === 'object') {
+          const { resumeText: _unusedResumeText, fileData: _unusedFileData, ...docMeta } = docVal;
+          cleanDocuments[docKey] = docMeta;
+        } else {
+          cleanDocuments[docKey] = docVal;
+        }
+      }
+    }
+
+    const { legalDocs: _unusedLd, resumeData: _unusedRd, ...cleanCandidate } = c;
+
     return {
-      ...c,
+      ...cleanCandidate,
       name: cleanName,
       email: cleanEmail,
       role: cleanRole,
@@ -8923,7 +8940,9 @@ EDUCATION & CERTIFICATIONS
       matchedJobClient: c.matchedJobClient || targetJob?.client || targetJob?.department || 'State Agency',
       matchedJobRate: c.matchedJobRate || targetJob?.rate || targetJob?.payRate || '$75/hr',
       matchingSkills: matchAnalysis.matchingSkills,
-      missingSkills: matchAnalysis.missingSkills
+      missingSkills: matchAnalysis.missingSkills,
+      documents: cleanDocuments || c.documents,
+      legalDocs: cleanDocuments || c.documents
     };
   });
 

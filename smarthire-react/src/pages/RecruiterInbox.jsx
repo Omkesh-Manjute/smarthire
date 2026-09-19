@@ -1825,15 +1825,27 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const [streamFilter, setStreamFilter] = useState('all') // 'all', 'email_inbox', 'email_spam', 'careers_portal', 'vendor_bench'
   const [streamCandidates, setStreamCandidates] = useState(() => {
     try {
+      const cached = localStorage.getItem('smarthire_stream_candidates_cache')
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed
+        }
+      }
       const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
       const role = u.role || localStorage.getItem('smarthire_active_role') || 'superadmin'
-      const isOm = role === 'superadmin' || role === 'admin' || (u.email && u.email.toLowerCase().includes('omkesh'))
+      const isOm = role === 'superadmin' || role === 'admin' || (u.email && u.email.toLowerCase().includes('omkesh')) || (u.name && u.name.toLowerCase().includes('omkesh'))
       if (isOm) return DEFAULT_STREAM_CANDIDATES
     } catch (e) {}
     return []
   })
   const [streamCounts, setStreamCounts] = useState(() => {
     try {
+      const cachedCounts = localStorage.getItem('smarthire_stream_counts_cache')
+      if (cachedCounts) {
+        const parsed = JSON.parse(cachedCounts)
+        if (parsed && typeof parsed === 'object') return parsed
+      }
       const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
       const role = localStorage.getItem('smarthire_active_role') || u.role || 'superadmin'
       const isOm = role === 'superadmin' || role === 'admin'
@@ -1861,9 +1873,16 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const [streamEntityFilter, setStreamEntityFilter] = useState('all') // 'all', 'candidates', 'recruiters'
   const [selectedCandidate, setSelectedCandidate] = useState(() => {
     try {
+      const cached = localStorage.getItem('smarthire_stream_candidates_cache')
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed[0]
+        }
+      }
       const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
       const role = u.role || localStorage.getItem('smarthire_active_role') || 'superadmin'
-      const isOm = role === 'superadmin' || role === 'admin' || (u.email && u.email.toLowerCase().includes('omkesh'))
+      const isOm = role === 'superadmin' || role === 'admin' || (u.email && u.email.toLowerCase().includes('omkesh')) || (u.name && u.name.toLowerCase().includes('omkesh'))
       if (isOm) return DEFAULT_STREAM_CANDIDATES[0]
     } catch (e) {}
     return null
@@ -2412,13 +2431,19 @@ export default function RecruiterInbox({ defaultViewMode }) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
   }
 
-  const fetchStreamCandidates = useCallback(async () => {
+  const fetchStreamCandidates = useCallback(async (retryCount = 0) => {
     setLoadingStream(true)
     try {
       const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
-      const recEmail = u.email || currentUser?.email || (isSuperAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')
-      const recName = u.name || currentUser?.name || (isSuperAdmin ? 'Omkesh Manjute' : 'Recruiter')
-      const recRole = activeRole || u.role || 'superadmin'
+      const isOm = isSuperAdmin || 
+        (u.email && u.email.toLowerCase().includes('omkesh')) || 
+        (u.name && u.name.toLowerCase().includes('omkesh')) || 
+        (currentUser?.email && currentUser.email.toLowerCase().includes('omkesh')) || 
+        (currentUser?.name && currentUser.name.toLowerCase().includes('omkesh'))
+
+      const recEmail = u.email || currentUser?.email || (isOm ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')
+      const recName = u.name || currentUser?.name || (isOm ? 'Omkesh Manjute' : 'Recruiter')
+      const recRole = isOm ? 'superadmin' : (activeRole || u.role || 'recruiter')
 
       const params = new URLSearchParams({
         recruiterEmail: recEmail,
@@ -2431,8 +2456,11 @@ export default function RecruiterInbox({ defaultViewMode }) {
           'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
         }
       })
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`)
+      }
       const data = await res.json()
-      if (data.success) {
+      if (data.success && Array.isArray(data.candidates)) {
         const cleaned = (data.candidates || []).map(c => {
           if (c.location && (c.location.toLowerCase().includes('search on') || c.location.toLowerCase().includes('webpage'))) {
             return { ...c, location: 'Remote, US' }
@@ -2442,10 +2470,54 @@ export default function RecruiterInbox({ defaultViewMode }) {
         setStreamCandidates(cleaned)
         if (data.counts) {
           setStreamCounts(data.counts)
+          try {
+            localStorage.setItem('smarthire_stream_counts_cache', JSON.stringify(data.counts))
+          } catch (e) {}
+        }
+        try {
+          // Cache lean candidate records so local storage quota is preserved
+          const leanCache = cleaned.slice(0, 300).map(c => ({
+            id: c.id,
+            candidate_id: c.candidate_id || c.id,
+            name: c.name,
+            email: c.email,
+            phone: c.phone,
+            role: c.role,
+            location: c.location,
+            currentCompany: c.currentCompany,
+            previousCompany: c.previousCompany,
+            experience: c.experience,
+            education: c.education,
+            visaStatus: c.visaStatus,
+            gender: c.gender,
+            status: c.status,
+            matchScore: c.matchScore,
+            targetReqId: c.targetReqId,
+            matchedJobTitle: c.matchedJobTitle,
+            matchedJobClient: c.matchedJobClient,
+            matchedJobRate: c.matchedJobRate,
+            summary: c.summary,
+            skills: c.skills,
+            resumeFile: c.resumeFile,
+            resumeUploadDate: c.resumeUploadDate,
+            createdAt: c.createdAt,
+            source: c.source,
+            sourceCategory: c.sourceCategory,
+            isSpamRecovery: c.isSpamRecovery,
+            assignedRecruiter: c.assignedRecruiter || c.recruiter,
+            recruiter: c.recruiter,
+            documents: c.documents
+          }))
+          localStorage.setItem('smarthire_stream_candidates_cache', JSON.stringify(leanCache))
+        } catch (cacheErr) {
+          console.warn('Cache write skipped:', cacheErr)
         }
       }
     } catch (err) {
       console.warn('Failed to fetch recruiter talent stream:', err)
+      if (retryCount < 2) {
+        setTimeout(() => fetchStreamCandidates(retryCount + 1), 1500)
+      }
     } finally {
       setLoadingStream(false)
     }
@@ -3157,7 +3229,11 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
       // ─── STRICT ROLE-BASED PRIVACY CHECK ───
       // Non-admins must only see candidates assigned to them, targeting their assigned reqs, from reportees, or careers portal
-      if (!isSuperAdmin && !currentUser?.email?.toLowerCase().includes('omkesh')) {
+      const isOm = isSuperAdmin || 
+        (currentUser?.email && currentUser.email.toLowerCase().includes('omkesh')) || 
+        (currentUser?.name && currentUser.name.toLowerCase().includes('omkesh'))
+
+      if (!isOm) {
         const userIdent = (currentUser?.name || '').toLowerCase().trim()
         const userMail = (currentUser?.email || '').toLowerCase().trim()
         const firstName = (userIdent.split(' ')[0] || '').toLowerCase().trim()
@@ -4099,7 +4175,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 width: 36,
                 height: 36,
                 borderRadius: '50%',
-                background: '#0284C7',
+                background: isEmployee ? '#16A34A' : '#0284C7',
                 color: '#FFF',
                 display: 'flex',
                 alignItems: 'center',
@@ -4107,11 +4183,11 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 fontWeight: 800,
                 fontSize: 13
               }}>
-                OM
+                {(currentUser?.name ? currentUser.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : 'OM')}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', lineHeight: 1.2 }}>
-                <span style={{ fontSize: 13, fontWeight: 800, color: C.textPrimary }}>Omkesh</span>
-                <span style={{ fontSize: 11, color: C.textSecondary }}>Recruiter</span>
+                <span style={{ fontSize: 13, fontWeight: 800, color: C.textPrimary }}>{currentUser?.name ? currentUser.name.split(' ')[0] : 'Omkesh'}</span>
+                <span style={{ fontSize: 11, color: C.textSecondary }}>{isSuperAdmin ? 'Super Admin' : isManager ? 'Manager' : isEmployee ? 'Sourcing Specialist' : 'Recruiter'}</span>
               </div>
               <span style={{ fontSize: 11, color: C.textSecondary, marginLeft: 2 }}>⌵</span>
             </div>
@@ -6510,9 +6586,17 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: C.textPrimary, letterSpacing: '-0.5px' }}>
                     Candidates
                   </h1>
-                  <p style={{ margin: '4px 0 0 0', fontSize: 13.5, color: C.textSecondary, fontWeight: 500 }}>
-                    Find the right talent, faster.
-                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                    <p style={{ margin: 0, fontSize: 13.5, color: C.textSecondary, fontWeight: 500 }}>
+                      Find the right talent, faster.
+                    </p>
+                    {loadingStream && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11.5, color: '#2563EB', fontWeight: 600, padding: '2px 8px', background: isLight ? '#EFF6FF' : 'rgba(37,99,235,0.15)', borderRadius: 12 }}>
+                        <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#2563EB' }} />
+                        Syncing database...
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* 5 Metric KPI Cards matching screenshot */}
