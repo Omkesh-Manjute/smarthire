@@ -161,7 +161,7 @@ const renderAtsIcon = (id, size = 16, color = 'currentColor') => {
 
 const ALL_MODULES = [
   { id: 'home',        label: 'Home',            category: 'main' },
-  { id: 'candidates',  label: 'Candidates',      category: 'talent', countKey: 'candidates' },
+  { id: 'candidates',  label: 'Candidates',      category: 'talent', countKey: 'candidates', isLink: '/inbox' },
   { id: 'pipeline',    label: 'Pipeline',        category: 'talent', adminOnly: true },
   { id: 'screening',   label: 'AI Screening',    category: 'talent' },
   { id: 'submissions', label: 'Submissions',     category: 'talent', adminOnly: true },
@@ -245,10 +245,14 @@ export default function AtsPlatform() {
     try {
       const params = new URLSearchParams(window.location.search)
       const tab = params.get('tab')
+      if (tab === 'candidates') {
+        setTimeout(() => navigate('/inbox'), 0)
+        return 'home'
+      }
       if (tab === 'jobs' || tab === 'dashboard') return 'home'
       if (tab) return tab
       const saved = localStorage.getItem('smarthire_ats_active_tab')
-      if (saved && saved !== 'jobs' && saved !== 'dashboard') return saved
+      if (saved && saved !== 'jobs' && saved !== 'dashboard' && saved !== 'candidates') return saved
     } catch (e) {
       return null
     }

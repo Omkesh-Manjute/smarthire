@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 const SEARCH_ITEMS = [
   { id: 'ats-dash', title: 'ATS Dashboard', category: 'ATS Suite', icon: '', path: '/ats?tab=dashboard', keywords: 'stats metrics overview candidates jobs' },
   { id: 'ats-jobs', title: 'Jobs Hub & Management', category: 'ATS Suite', icon: '', path: '/ats?tab=jobs', keywords: 'jobs vacancies openings post jd parse' },
-  { id: 'ats-cand', title: 'Candidates Directory', category: 'ATS Suite', icon: '', path: '/ats?tab=candidates', keywords: 'candidates talent resumes applicants profiles' },
+  { id: 'ats-cand', title: 'Candidates Directory', category: 'ATS Suite', icon: '', path: '/inbox', keywords: 'candidates talent resumes applicants profiles' },
   { id: 'ats-pipe', title: 'Visual Hiring Pipeline', category: 'ATS Suite', icon: '', path: '/ats?tab=pipeline', keywords: 'pipeline kanban stages status workflow' },
   { id: 'ats-screen', title: 'Video & Audio Screening (PeekHire)', category: 'ATS Suite', icon: '', path: '/ats?tab=screening', keywords: 'screening video voice audio peekhire interview async responses' },
   { id: 'ats-sub', title: 'Client Submissions', category: 'ATS Suite', icon: '', path: '/ats?tab=submissions', keywords: 'submissions clients rtr client submission' },

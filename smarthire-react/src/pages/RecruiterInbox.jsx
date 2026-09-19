@@ -1883,10 +1883,39 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const [filterLocation, setFilterLocation] = useState('all')
   const [filterSkill, setFilterSkill] = useState('all')
   const [filterMatch, setFilterMatch] = useState('all')
+  const [filterRecruiter, setFilterRecruiter] = useState('all')
+  const [filterSource, setFilterSource] = useState('all')
+  const [availableRecruiters, setAvailableRecruiters] = useState([])
   const [sortOption, setSortOption] = useState('match_desc')
   const [activeActionMenuId, setActiveActionMenuId] = useState(null)
   const [hoveredNav, setHoveredNav] = useState(null)
   const [hoveredTableCardId, setHoveredTableCardId] = useState(null)
+
+  // Push to Requisition Modal State
+  const [pushToReqModalOpen, setPushToReqModalOpen] = useState(false)
+  const [pushTargetCand, setPushTargetCand] = useState(null)
+  const [pushSelectedReqId, setPushSelectedReqId] = useState('')
+  const [pushPayRate, setPushPayRate] = useState('')
+  const [pushPipelineStage, setPushPipelineStage] = useState('Int-SubmittedToManager')
+  const [pushSourcingNotes, setPushSourcingNotes] = useState('')
+  const [isPushingToReq, setIsPushingToReq] = useState(false)
+
+  // Add Candidate Modal State
+  const [addCandidateModalOpen, setAddCandidateModalOpen] = useState(false)
+  const [newCandForm, setNewCandForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    role: '',
+    location: '',
+    experience: '5+ Years',
+    visaStatus: 'US Citizen',
+    skills: '',
+    source: 'Manual Entry',
+    targetReqId: '',
+    resumeText: ''
+  })
+  const [isSavingNewCand, setIsSavingNewCand] = useState(false)
 
   // Open Requisitions for Multi-Position AI Matcher
   const DEFAULT_OPEN_JOBS = [
@@ -2658,6 +2687,236 @@ export default function RecruiterInbox({ defaultViewMode }) {
     setTimeout(() => setAssignedToast(''), 6000)
   }
 
+  const handleOpenPushModal = (cand) => {
+    if (!cand) return
+    const defaultReq = cand.targetReqId ? String(cand.targetReqId).replace(/^J-/, '') : (openJobsList[0]?.id ? String(openJobsList[0].id).replace(/^J-/, '') : '159079')
+    const defaultRate = cand.matchedJobRate || cand.payRate || '$75/hr C2C'
+    setPushTargetCand(cand)
+    setPushSelectedReqId(defaultReq)
+    setPushPayRate(defaultRate)
+    setPushPipelineStage('Int-SubmittedToManager')
+    setPushSourcingNotes('')
+    setPushToReqModalOpen(true)
+  }
+
+  const handleConfirmPushToReq = async (e) => {
+    if (e) e.preventDefault()
+    if (!pushTargetCand || !pushSelectedReqId) return
+    setIsPushingToReq(true)
+
+    const cleanReqId = String(pushSelectedReqId).replace(/^J-/, '').replace(/^REQ-/, '').trim()
+    const cand = pushTargetCand
+    const candName = cand.name || 'Candidate'
+    const candId = cand.id || `875${Date.now().toString().slice(-4)}`
+    const dateStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
+    const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
+    const myName = u.name || currentUser?.name || 'Omkesh'
+    const myEmail = u.email || currentUser?.email || 'omkesh@coolsofttech.com'
+    const myRef = u.refCode || 'omkesh'
+
+    const targetJob = (openJobsList || []).find(j => String(j.id).replace(/^J-/, '').replace(/^REQ-/, '').trim() === cleanReqId) || {
+      id: cleanReqId,
+      title: cand.matchedJobTitle || cand.role || 'Direct Client Requisition',
+      client: cand.matchedJobClient || 'Direct Enterprise Client'
+    }
+
+    const newSubObj = {
+      id: candId,
+      candidateId: candId,
+      name: candName,
+      email: cand.email,
+      phone: cand.phone,
+      payRate: pushPayRate || '$75/hr C2C',
+      payRateType: (pushPayRate || '').includes('C2C') ? 'C2C' : 'W2',
+      assignedBy: myName,
+      assignedOn: dateStr,
+      status: pushPipelineStage,
+      statusComments: pushSourcingNotes || `Pushed to Requisition #${cleanReqId} (${targetJob.title}) by ${myName}`,
+      interview: 'Select',
+      recruiter: myName,
+      recruiterEmail: myEmail,
+      recruiterRefCode: myRef,
+      targetReqId: cleanReqId,
+      reqId: cleanReqId,
+      jobTitle: targetJob.title,
+      clientName: targetJob.client,
+      matchScore: cand.matchScore || 95,
+      pushedToJobsInHand: true,
+      timestamp: Date.now()
+    }
+
+    try {
+      const existingKey = `smarthire_potential_candidates_${cleanReqId}`
+      const raw = localStorage.getItem(existingKey)
+      let list = raw ? JSON.parse(raw) || [] : []
+      const updated = [newSubObj, ...list.filter(p => p.id !== candId && p.name !== candName)]
+      localStorage.setItem(existingKey, JSON.stringify(updated))
+      localStorage.setItem(`smarthire_potential_candidates_J-${cleanReqId}`, JSON.stringify(updated))
+
+      saveRequisitionCandidates(cleanReqId, updated).catch(err => console.warn('saveRequisitionCandidates notice:', err))
+      saveCandidate(candId, { ...cand, reqId: cleanReqId, name: candName, status: pushPipelineStage, pushedToJobsInHand: true }).catch(() => {})
+
+      await fetch(`/api/candidates/${encodeURIComponent(candId)}/push-to-req`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+        },
+        body: JSON.stringify({
+          targetReqId: cleanReqId,
+          payRate: pushPayRate,
+          status: pushPipelineStage,
+          comments: pushSourcingNotes,
+          recruiterName: myName,
+          recruiterEmail: myEmail
+        })
+      }).catch(() => {})
+
+      window.dispatchEvent(new CustomEvent('candidate-pushed-to-req', { detail: { reqId: cleanReqId, candidate: newSubObj } }))
+    } catch (err) {
+      console.warn('Push to req storage notice:', err)
+    }
+
+    // Activity log entry
+    try {
+      const actKey = `smarthire_cand_activities_${candId}`
+      const existingActs = JSON.parse(localStorage.getItem(actKey) || '[]')
+      const newAct = {
+        id: `act-${Date.now()}`,
+        title: `Pushed to Requisition #${cleanReqId}`,
+        desc: `Assigned to ${targetJob.title} (${targetJob.client}) at ${pushPayRate || '$75/hr'} — Stage: ${pushPipelineStage}`,
+        date: 'Just now',
+        badge: 'Push to Req',
+        badgeBg: '#1D4ED8',
+        timestamp: new Date().toISOString(),
+        by: myName
+      }
+      localStorage.setItem(actKey, JSON.stringify([newAct, ...existingActs]))
+      setCandidateActivities(prev => ({
+        ...prev,
+        [candId]: [newAct, ...(prev[candId] || [])]
+      }))
+    } catch (e) {}
+
+    // Update candidate in streamCandidates state
+    setStreamCandidates(prev => prev.map(c => {
+      if (c.id === candId || c.email === cand.email) {
+        return {
+          ...c,
+          targetReqId: cleanReqId,
+          reqId: cleanReqId,
+          matchedJobTitle: targetJob.title,
+          matchedJobClient: targetJob.client,
+          matchedJobRate: pushPayRate || c.matchedJobRate,
+          status: pushPipelineStage,
+          pushedToJobsInHand: true
+        }
+      }
+      return c
+    }))
+
+    // Auto send JD if candidate has email
+    if (cand.email) {
+      autoSendJobDescriptionToCandidate({
+        candidate: cand,
+        job: targetJob,
+        recruiterUser: { name: myName, email: myEmail, refCode: myRef }
+      }).catch(() => {})
+    }
+
+    setIsPushingToReq(false)
+    setPushToReqModalOpen(false)
+    setAssignedToast(`✓ ${candName} pushed to Requisition #${cleanReqId} (${targetJob.title})!`)
+    setTimeout(() => setAssignedToast(''), 6000)
+  }
+
+  const handleSaveNewCandidate = async (e) => {
+    if (e) e.preventDefault()
+    if (!newCandForm.name || !newCandForm.email) {
+      alert('Please enter Candidate Name and Email.')
+      return
+    }
+    setIsSavingNewCand(true)
+
+    const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
+    const myName = u.name || currentUser?.name || 'Omkesh'
+    const myEmail = u.email || currentUser?.email || 'omkesh@coolsofttech.com'
+    const candId = `cand-manual-${Date.now()}`
+
+    const skillsArr = typeof newCandForm.skills === 'string'
+      ? newCandForm.skills.split(',').map(s => s.trim()).filter(Boolean)
+      : []
+
+    const targetJob = (openJobsList || []).find(j => String(j.id).replace(/^J-/, '') === String(newCandForm.targetReqId).replace(/^J-/, ''))
+
+    const candRecord = {
+      id: candId,
+      candidate_id: candId,
+      name: newCandForm.name.trim(),
+      email: newCandForm.email.trim(),
+      phone: newCandForm.phone.trim(),
+      role: newCandForm.role.trim() || 'Software Engineer',
+      location: newCandForm.location.trim() || 'Remote, US',
+      experience: newCandForm.experience || '5+ Years',
+      visaStatus: newCandForm.visaStatus || 'US Citizen',
+      skills: skillsArr.length > 0 ? skillsArr : ['Java', 'SQL', 'Cloud'],
+      source: newCandForm.source || 'Manual Entry',
+      sourceCategory: 'manual_entry',
+      status: 'New',
+      targetReqId: newCandForm.targetReqId ? String(newCandForm.targetReqId).replace(/^J-/, '') : (targetJob?.id || '159079'),
+      matchedJobTitle: targetJob?.title || 'Direct Opportunity',
+      matchedJobClient: targetJob?.client || 'Enterprise Client',
+      matchedJobRate: targetJob?.rate || targetJob?.budget || '$75/hr',
+      matchScore: 92,
+      recruiter: myName,
+      recruiterName: myName,
+      recruiterEmail: myEmail,
+      assignedBy: myName,
+      resumeText: newCandForm.resumeText || `${newCandForm.name}\n${newCandForm.email} | ${newCandForm.phone}\n${newCandForm.role}\n\nSkills: ${newCandForm.skills}\nExperience: ${newCandForm.experience}\nLocation: ${newCandForm.location}`,
+      createdAt: new Date().toISOString()
+    }
+
+    try {
+      await fetch('/api/candidates', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+        },
+        body: JSON.stringify(candRecord)
+      })
+    } catch (err) {
+      console.warn('API save candidate error:', err)
+    }
+
+    // Prepend to streamCandidates & update count
+    setStreamCandidates(prev => [candRecord, ...prev])
+    setStreamCounts(prev => ({ ...prev, total: (prev.total || 0) + 1 }))
+
+    // Log activity
+    try {
+      const actKey = `smarthire_cand_activities_${candId}`
+      const initialAct = {
+        id: `act-${Date.now()}`,
+        title: 'Candidate Profile Created',
+        desc: `Manually added by ${myName} (${myEmail}) via Unified Candidate Hub`,
+        date: 'Just now',
+        badge: 'Manual Entry',
+        badgeBg: '#2563EB',
+        timestamp: new Date().toISOString(),
+        by: myName
+      }
+      localStorage.setItem(actKey, JSON.stringify([initialAct]))
+    } catch (e) {}
+
+    setIsSavingNewCand(false)
+    setAddCandidateModalOpen(false)
+    setNewCandForm({ name: '', email: '', phone: '', role: '', location: '', experience: '5+ Years', visaStatus: 'US Citizen', skills: '', source: 'Manual Entry', targetReqId: '', resumeText: '' })
+    setAssignedToast(`✓ Candidate ${candRecord.name} added to Unified Database!`)
+    setTimeout(() => setAssignedToast(''), 5000)
+  }
+
   const handleOpenCandidateChat = (cand) => {
     const threadId = cand.id || `cand-${cand.email}`
     const existing = threads.find(t => t.candidateId === threadId || (t.email && t.email.toLowerCase() === cand.email.toLowerCase()))
@@ -2811,6 +3070,17 @@ export default function RecruiterInbox({ defaultViewMode }) {
             })
             return merged
           })
+        }
+      })
+      .catch(() => {})
+
+    fetch('/api/recruiters', {
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}` }
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (d && d.success && Array.isArray(d.recruiters)) {
+          setAvailableRecruiters(d.recruiters)
         }
       })
       .catch(() => {})
@@ -2970,6 +3240,27 @@ export default function RecruiterInbox({ defaultViewMode }) {
         if (filterMatch === 'under_50' && score >= 50) return false
       }
 
+      // Recruiter filter (Super Admin & Admin can filter by assigned recruiter)
+      if (filterRecruiter !== 'all') {
+        const targetRec = filterRecruiter.toLowerCase().trim()
+        const candRec = (c.assignedRecruiter || c.assignedBy || c.recruiter || c.addedByName || c.recruiterName || '').toLowerCase().trim()
+        const candRecMail = (c.recruiterEmail || c.addedByEmail || c.createdBy || '').toLowerCase().trim()
+        if (!candRec.includes(targetRec) && !candRecMail.includes(targetRec)) {
+          return false
+        }
+      }
+
+      // Source channel filter
+      if (filterSource !== 'all') {
+        const src = (c.source || '').toLowerCase()
+        const cat = (c.sourceCategory || '').toLowerCase()
+        if (filterSource === 'email' && cat !== 'email_inbox' && !src.includes('inbox') && !src.includes('monster') && !src.includes('dice')) return false
+        if (filterSource === 'spam' && cat !== 'email_spam' && !c.isSpamRecovery && !src.includes('spam')) return false
+        if (filterSource === 'manual' && cat !== 'manual_entry' && !src.includes('manual') && !src.includes('direct')) return false
+        if (filterSource === 'careers' && cat !== 'careers_portal' && !src.includes('career') && !src.includes('/jobs')) return false
+        if (filterSource === 'vendor' && cat !== 'vendor_bench' && !src.includes('vendor') && !src.includes('bench')) return false
+      }
+
       // Search query
       if (streamSearch.trim()) {
         const q = streamSearch.toLowerCase().trim()
@@ -3008,12 +3299,12 @@ export default function RecruiterInbox({ defaultViewMode }) {
     })
 
     return deduplicateCandidates(rawFiltered)
-  }, [streamCandidates, tableCategory, favoriteCandidateIds, streamReqFilter, filterLocation, filterSkill, filterMatch, streamSearch, sortOption, isSuperAdmin, currentUser?.name, currentUser?.email, openJobsList, isManager, teamUsersList])
+  }, [streamCandidates, tableCategory, favoriteCandidateIds, streamReqFilter, filterLocation, filterSkill, filterMatch, filterRecruiter, filterSource, streamSearch, sortOption, isSuperAdmin, currentUser?.name, currentUser?.email, openJobsList, isManager, teamUsersList])
 
   // Reset table to page 1 whenever any filter, search, or sort changes
   useEffect(() => {
     setTablePage(1)
-  }, [tableCategory, streamReqFilter, filterLocation, filterSkill, filterMatch, streamSearch, sortOption, tablePageSize])
+  }, [tableCategory, streamReqFilter, filterLocation, filterSkill, filterMatch, filterRecruiter, filterSource, streamSearch, sortOption, tablePageSize])
 
   // Dynamic ATS Recruitment Dashboard Telemetry (Calculated in real-time from candidate pool)
   const dashboardMetrics = useMemo(() => {
@@ -3736,11 +4027,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
             <button
               type="button"
-              onClick={() => {
-                setInboxViewMode('stream')
-                setInboxSubMode('table')
-                navigate('/ats?tab=candidates&action=new')
-              }}
+              onClick={() => setAddCandidateModalOpen(true)}
               style={{
                 background: '#2563EB',
                 color: '#FFFFFF',
@@ -4533,7 +4820,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <button
                     type="button"
-                    onClick={() => handleAssignCandidateToReq(activeCandidate, currentReqId)}
+                    onClick={() => handleOpenPushModal(activeCandidate)}
                     style={{
                       background: '#2563EB',
                       color: '#FFFFFF',
@@ -4548,9 +4835,9 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       gap: 6,
                       boxShadow: '0 2px 6px rgba(37,99,235,0.25)'
                     }}
-                    title={`Assign to Requisition #${currentReqId}`}
+                    title="Push candidate to an active requisition & pipeline"
                   >
-                    <span>Transfer to Job (Req #{currentReqId})</span>
+                    <span>Push to Requisition ↗</span>
                   </button>
 
                   <button
@@ -6418,6 +6705,58 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     <option value="under_50">Under 50% Low</option>
                   </select>
 
+                  {/* Recruiter dropdown (Admin View Only) */}
+                  {(isSuperAdmin || isAdmin || isManager) && (
+                    <select
+                      value={filterRecruiter}
+                      onChange={e => { setFilterRecruiter(e.target.value); setTablePage(1); }}
+                      style={{
+                        backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
+                        border: filterRecruiter !== 'all' ? '1px solid #2563EB' : `1px solid ${C.border}`,
+                        borderRadius: 8,
+                        padding: '8px 12px',
+                        fontSize: 12.5,
+                        fontWeight: 600,
+                        color: filterRecruiter !== 'all' ? '#2563EB' : C.textPrimary,
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                      title="Filter candidates by assigned recruiter"
+                    >
+                      <option value="all">Recruiter: All ⌵</option>
+                      {availableRecruiters.map(r => (
+                        <option key={r.id || r._id || r.email} value={r.name || r.email}>
+                          {r.name} ({r.role || 'Recruiter'})
+                        </option>
+                      ))}
+                    </select>
+                  )}
+
+                  {/* Source Channel dropdown */}
+                  <select
+                    value={filterSource}
+                    onChange={e => { setFilterSource(e.target.value); setTablePage(1); }}
+                    style={{
+                      backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
+                      border: filterSource !== 'all' ? '1px solid #2563EB' : `1px solid ${C.border}`,
+                      borderRadius: 8,
+                      padding: '8px 12px',
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      color: filterSource !== 'all' ? '#2563EB' : C.textPrimary,
+                      outline: 'none',
+                      cursor: 'pointer'
+                    }}
+                    title="Filter candidates by acquisition channel"
+                  >
+                    <option value="all">Source: All ⌵</option>
+                    <option value="email">Email Ingest</option>
+                    <option value="spam">Spam Recovered</option>
+                    <option value="manual">Manual Entry</option>
+                    <option value="careers">Careers Portal</option>
+                    <option value="vendor">Vendor Bench</option>
+                  </select>
+
                   {/* Clear text button */}
                   <button
                     type="button"
@@ -6427,6 +6766,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       setFilterLocation('all')
                       setFilterSkill('all')
                       setFilterMatch('all')
+                      setFilterRecruiter('all')
+                      setFilterSource('all')
                       setTableCategory('all')
                       setTablePage(1)
                     }}
@@ -6890,7 +7231,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                         type="button"
                                         onClick={() => {
                                           setActiveActionMenuId(null)
-                                          handleAssignCandidateToReq(c, currentReqId)
+                                          handleOpenPushModal(c)
                                         }}
                                         style={{
                                           width: '100%',
@@ -6898,8 +7239,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                           border: 'none',
                                           padding: '8px 14px',
                                           fontSize: 12,
-                                          fontWeight: 600,
-                                          color: C.textPrimary,
+                                          fontWeight: 700,
+                                          color: '#2563EB',
                                           cursor: 'pointer',
                                           display: 'flex',
                                           alignItems: 'center',
@@ -6907,7 +7248,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                           textAlign: 'left'
                                         }}
                                       >
-                                        <span>Assign to Req #{currentReqId}</span>
+                                        <span>Push to Requisition ↗</span>
                                       </button>
 
                                       <button
@@ -9341,6 +9682,641 @@ export default function RecruiterInbox({ defaultViewMode }) {
           </div>
         )
       })()}
+
+      {/* ─── PUSH TO REQUISITION MODAL ─── */}
+      {pushToReqModalOpen && pushTargetCand && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 99999,
+          padding: 16
+        }}>
+          <div style={{
+            background: isLight ? '#FFFFFF' : '#1E293B',
+            borderRadius: 12,
+            width: '100%',
+            maxWidth: 540,
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.35)',
+            border: `1px solid ${C.border}`,
+            overflow: 'hidden'
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: `1px solid ${C.border}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: isLight ? '#F8FAFC' : '#0F172A'
+            }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: C.textPrimary, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  Push to Requisition &amp; Pipeline
+                </h3>
+                <p style={{ margin: '3px 0 0', fontSize: 12, color: C.textSecondary }}>
+                  Assign candidate to an active client position &amp; sync hiring pipeline
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPushToReqModalOpen(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: 18,
+                  color: C.textSecondary,
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  borderRadius: 6
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Candidate Summary Pill */}
+            <div style={{
+              margin: '16px 20px 0',
+              padding: '12px 14px',
+              background: isLight ? '#EFF6FF' : '#1E3A8A20',
+              border: '1px solid #BFDBFE',
+              borderRadius: 8,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: C.textPrimary }}>
+                  {pushTargetCand.name || 'Candidate'}
+                </div>
+                <div style={{ fontSize: 12, color: C.textSecondary, marginTop: 2 }}>
+                  {pushTargetCand.email || 'No email'} · {pushTargetCand.role || 'Applicant'}
+                </div>
+              </div>
+              <span style={{
+                fontSize: 11,
+                fontWeight: 800,
+                padding: '3px 8px',
+                borderRadius: 4,
+                background: '#DBEAFE',
+                color: '#1D4ED8'
+              }}>
+                Match: {pushTargetCand.matchScore || 90}%
+              </span>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleConfirmPushToReq} style={{ padding: '16px 20px' }}>
+              {/* Target Requisition Selector */}
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: C.textPrimary, marginBottom: 6 }}>
+                  Target Requisition <span style={{ color: '#EF4444' }}>*</span>
+                </label>
+                <select
+                  value={pushSelectedReqId}
+                  onChange={e => setPushSelectedReqId(e.target.value)}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    borderRadius: 8,
+                    border: `1px solid ${C.border}`,
+                    fontSize: 13,
+                    color: C.textPrimary,
+                    background: isLight ? '#FFFFFF' : '#0F172A',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  {openJobsList.map(job => {
+                    const cleanId = String(job.id || job.reqId || '').replace(/^J-/, '').trim()
+                    return (
+                      <option key={cleanId} value={cleanId}>
+                        Req #{cleanId} — {job.title} ({job.client || 'Direct Client'}) · {job.rate || job.budget || '$75/hr'}
+                      </option>
+                    )
+                  })}
+                </select>
+              </div>
+
+              {/* Pay Rate & Pipeline Stage */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: C.textPrimary, marginBottom: 6 }}>
+                    Pay / Bill Rate
+                  </label>
+                  <input
+                    type="text"
+                    value={pushPayRate}
+                    onChange={e => setPushPayRate(e.target.value)}
+                    placeholder="e.g. $75/hr C2C"
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      border: `1px solid ${C.border}`,
+                      fontSize: 13,
+                      color: C.textPrimary,
+                      background: isLight ? '#FFFFFF' : '#0F172A',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: C.textPrimary, marginBottom: 6 }}>
+                    Initial Pipeline Stage
+                  </label>
+                  <select
+                    value={pushPipelineStage}
+                    onChange={e => setPushPipelineStage(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      border: `1px solid ${C.border}`,
+                      fontSize: 13,
+                      color: C.textPrimary,
+                      background: isLight ? '#FFFFFF' : '#0F172A',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  >
+                    <option value="Int-SubmittedToManager">Int-SubmittedToManager (Default)</option>
+                    <option value="Shortlisted">Shortlisted</option>
+                    <option value="Client Submitted">Client Submitted</option>
+                    <option value="Interview Scheduled">Interview Scheduled</option>
+                    <option value="Active Review">Active Review</option>
+                    <option value="Offer">Offer</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Sourcing Notes */}
+              <div style={{ marginBottom: 18 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: C.textPrimary, marginBottom: 6 }}>
+                  Sourcing Notes (Optional)
+                </label>
+                <textarea
+                  rows={3}
+                  value={pushSourcingNotes}
+                  onChange={e => setPushSourcingNotes(e.target.value)}
+                  placeholder="e.g. Verified candidate work auth and available immediately for screening..."
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    borderRadius: 8,
+                    border: `1px solid ${C.border}`,
+                    fontSize: 12.5,
+                    color: C.textPrimary,
+                    background: isLight ? '#FFFFFF' : '#0F172A',
+                    outline: 'none',
+                    resize: 'vertical',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {/* Actions Footer */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setPushToReqModalOpen(false)}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 8,
+                    border: `1px solid ${C.border}`,
+                    background: 'transparent',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: C.textSecondary,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isPushingToReq}
+                  style={{
+                    padding: '8px 20px',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: '#2563EB',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: '#FFFFFF',
+                    cursor: isPushingToReq ? 'not-allowed' : 'pointer',
+                    opacity: isPushingToReq ? 0.7 : 1,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6
+                  }}
+                >
+                  {isPushingToReq ? 'Pushing...' : 'Confirm & Push to Requisition'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── ADD CANDIDATE MODAL ─── */}
+      {addCandidateModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 99999,
+          padding: 16
+        }}>
+          <div style={{
+            background: isLight ? '#FFFFFF' : '#1E293B',
+            borderRadius: 12,
+            width: '100%',
+            maxWidth: 620,
+            maxHeight: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.35)',
+            border: `1px solid ${C.border}`,
+            overflow: 'hidden'
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: `1px solid ${C.border}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: isLight ? '#F8FAFC' : '#0F172A',
+              flexShrink: 0
+            }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: C.textPrimary }}>
+                  Add Candidate to Unified Database
+                </h3>
+                <p style={{ margin: '3px 0 0', fontSize: 12, color: C.textSecondary }}>
+                  Create talent profile directly into the central ATS talent pool
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAddCandidateModalOpen(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: 18,
+                  color: C.textSecondary,
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  borderRadius: 6
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSaveNewCandidate} style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: C.textPrimary, marginBottom: 4 }}>
+                    Candidate Full Name <span style={{ color: '#EF4444' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newCandForm.name}
+                    onChange={e => setNewCandForm(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="e.g. Sravan Kumar"
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      border: `1px solid ${C.border}`,
+                      fontSize: 13,
+                      color: C.textPrimary,
+                      background: isLight ? '#FFFFFF' : '#0F172A',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: C.textPrimary, marginBottom: 4 }}>
+                    Email Address <span style={{ color: '#EF4444' }}>*</span>
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={newCandForm.email}
+                    onChange={e => setNewCandForm(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="e.g. sravan.k@gmail.com"
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      border: `1px solid ${C.border}`,
+                      fontSize: 13,
+                      color: C.textPrimary,
+                      background: isLight ? '#FFFFFF' : '#0F172A',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: C.textPrimary, marginBottom: 4 }}>
+                    Phone Number
+                  </label>
+                  <input
+                    type="text"
+                    value={newCandForm.phone}
+                    onChange={e => setNewCandForm(prev => ({ ...prev, phone: e.target.value }))}
+                    placeholder="e.g. +1 (972) 555-0182"
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      border: `1px solid ${C.border}`,
+                      fontSize: 13,
+                      color: C.textPrimary,
+                      background: isLight ? '#FFFFFF' : '#0F172A',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: C.textPrimary, marginBottom: 4 }}>
+                    Primary Job Title / Role <span style={{ color: '#EF4444' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newCandForm.role}
+                    onChange={e => setNewCandForm(prev => ({ ...prev, role: e.target.value }))}
+                    placeholder="e.g. Senior Java Fullstack Developer"
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      border: `1px solid ${C.border}`,
+                      fontSize: 13,
+                      color: C.textPrimary,
+                      background: isLight ? '#FFFFFF' : '#0F172A',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: C.textPrimary, marginBottom: 4 }}>
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    value={newCandForm.location}
+                    onChange={e => setNewCandForm(prev => ({ ...prev, location: e.target.value }))}
+                    placeholder="e.g. Dallas, TX"
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      border: `1px solid ${C.border}`,
+                      fontSize: 13,
+                      color: C.textPrimary,
+                      background: isLight ? '#FFFFFF' : '#0F172A',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: C.textPrimary, marginBottom: 4 }}>
+                    Total Experience
+                  </label>
+                  <input
+                    type="text"
+                    value={newCandForm.experience}
+                    onChange={e => setNewCandForm(prev => ({ ...prev, experience: e.target.value }))}
+                    placeholder="e.g. 8+ Years"
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      border: `1px solid ${C.border}`,
+                      fontSize: 13,
+                      color: C.textPrimary,
+                      background: isLight ? '#FFFFFF' : '#0F172A',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: C.textPrimary, marginBottom: 4 }}>
+                    Work Visa / Auth
+                  </label>
+                  <select
+                    value={newCandForm.visaStatus}
+                    onChange={e => setNewCandForm(prev => ({ ...prev, visaStatus: e.target.value }))}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      border: `1px solid ${C.border}`,
+                      fontSize: 13,
+                      color: C.textPrimary,
+                      background: isLight ? '#FFFFFF' : '#0F172A',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  >
+                    <option value="US Citizen">US Citizen</option>
+                    <option value="Green Card (GC)">Green Card (GC)</option>
+                    <option value="H-1B">H-1B</option>
+                    <option value="C2C / Corp-to-Corp">C2C / Corp-to-Corp</option>
+                    <option value="TN Visa">TN Visa</option>
+                    <option value="EAD / Other">EAD / Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: C.textPrimary, marginBottom: 4 }}>
+                    Source Channel
+                  </label>
+                  <select
+                    value={newCandForm.source}
+                    onChange={e => setNewCandForm(prev => ({ ...prev, source: e.target.value }))}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      border: `1px solid ${C.border}`,
+                      fontSize: 13,
+                      color: C.textPrimary,
+                      background: isLight ? '#FFFFFF' : '#0F172A',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  >
+                    <option value="Manual Entry">Manual Entry</option>
+                    <option value="Direct Referral">Direct Referral</option>
+                    <option value="Vendor Bench">Vendor Bench</option>
+                    <option value="LinkedIn Outreach">LinkedIn Outreach</option>
+                    <option value="Dice / Sourced">Dice / Sourced</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: C.textPrimary, marginBottom: 4 }}>
+                    Target Requisition (Optional)
+                  </label>
+                  <select
+                    value={newCandForm.targetReqId}
+                    onChange={e => setNewCandForm(prev => ({ ...prev, targetReqId: e.target.value }))}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      border: `1px solid ${C.border}`,
+                      fontSize: 13,
+                      color: C.textPrimary,
+                      background: isLight ? '#FFFFFF' : '#0F172A',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  >
+                    <option value="">-- General Talent Pool --</option>
+                    {openJobsList.map(j => {
+                      const cleanId = String(j.id || j.reqId || '').replace(/^J-/, '').trim()
+                      return (
+                        <option key={cleanId} value={cleanId}>
+                          Req #{cleanId} · {j.title.slice(0, 24)}... ({j.client || 'Client'})
+                        </option>
+                      )
+                    })}
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: C.textPrimary, marginBottom: 4 }}>
+                  Technical Skills (Comma separated)
+                </label>
+                <input
+                  type="text"
+                  value={newCandForm.skills}
+                  onChange={e => setNewCandForm(prev => ({ ...prev, skills: e.target.value }))}
+                  placeholder="e.g. Java, Spring Boot, Microservices, SQL, AWS, Kafka"
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    borderRadius: 8,
+                    border: `1px solid ${C.border}`,
+                    fontSize: 13,
+                    color: C.textPrimary,
+                    background: isLight ? '#FFFFFF' : '#0F172A',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: 18 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: C.textPrimary, marginBottom: 4 }}>
+                  Resume Text or Candidate Background
+                </label>
+                <textarea
+                  rows={4}
+                  value={newCandForm.resumeText}
+                  onChange={e => setNewCandForm(prev => ({ ...prev, resumeText: e.target.value }))}
+                  placeholder="Paste resume summary or profile details here..."
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    borderRadius: 8,
+                    border: `1px solid ${C.border}`,
+                    fontSize: 12.5,
+                    color: C.textPrimary,
+                    background: isLight ? '#FFFFFF' : '#0F172A',
+                    outline: 'none',
+                    resize: 'vertical',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {/* Modal Actions */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setAddCandidateModalOpen(false)}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 8,
+                    border: `1px solid ${C.border}`,
+                    background: 'transparent',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: C.textSecondary,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingNewCand}
+                  style={{
+                    padding: '8px 20px',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: '#2563EB',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: '#FFFFFF',
+                    cursor: isSavingNewCand ? 'not-allowed' : 'pointer',
+                    opacity: isSavingNewCand ? 0.7 : 1
+                  }}
+                >
+                  {isSavingNewCand ? 'Saving...' : 'Create & Save Candidate'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

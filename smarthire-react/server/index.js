@@ -1847,21 +1847,30 @@ app.post('/api/candidates', authenticateToken, (req, res) => {
   if (!candidateData || !candidateData.name) {
     return res.status(400).json({ success: false, message: 'Candidate name is required.' })
   }
-  const candId = String(candidateData.id || candidateData.candidate_id || `875${Date.now().toString().slice(-4)}`)
+  const candId = String(candidateData.id || candidateData.candidate_id || `cand-man-${Date.now().toString().slice(-6)}`)
   const newCandidate = {
     ...candidateData,
     id: candId,
     candidate_id: candId,
-    name: candidateData.name,
+    name: candidateData.name.trim(),
     email: candidateData.email || '',
     phone: candidateData.phone || '',
     role: candidateData.role || candidateData.fullRole || 'Consultant',
-    location: candidateData.location || `${candidateData.city || ''}, ${candidateData.state || ''}`,
-    status: candidateData.status || 'Int-SubmittedToManager',
+    location: candidateData.location || `${candidateData.city || ''}, ${candidateData.state || ''}`.trim() || 'Remote, US',
+    status: candidateData.status || 'New',
+    source: candidateData.source || 'Manual Entry',
+    sourceCategory: candidateData.sourceCategory || 'manual_entry',
+    recruiter: candidateData.recruiter || candidateData.recruiterName || req.user?.name || 'Omkesh',
+    recruiterName: candidateData.recruiterName || candidateData.recruiter || req.user?.name || 'Omkesh',
+    recruiterEmail: candidateData.recruiterEmail || req.user?.email || 'omkesh@coolsofttech.com',
+    skills: Array.isArray(candidateData.skills) ? candidateData.skills : (typeof candidateData.skills === 'string' ? candidateData.skills.split(',').map(s => s.trim()).filter(Boolean) : ['Java', 'SQL', 'Cloud']),
+    experience: candidateData.experience || '5+ Years',
+    visaStatus: candidateData.visaStatus || 'US Citizen',
+    createdAt: candidateData.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString()
   }
 
-  const existingIdx = candidatesStore.findIndex(c => String(c.id) === candId || String(c.candidate_id) === candId)
+  const existingIdx = candidatesStore.findIndex(c => String(c.id) === candId || String(c.candidate_id) === candId || (c.email && newCandidate.email && c.email.toLowerCase() === newCandidate.email.toLowerCase()))
   if (existingIdx >= 0) {
     candidatesStore[existingIdx] = { ...candidatesStore[existingIdx], ...newCandidate }
   } else {
@@ -3963,6 +3972,47 @@ app.post('/api/candidates/:id/finalize-rate', async (req, res) => {
   res.json({
     success: true,
     message: `Rate finalized to ${finalRate || candidate.expectedRate || '$70/hr'} and candidate approved.`,
+    candidate
+  });
+});
+
+// POST /api/candidates/:id/push-to-req — Pushes candidate to target requisition
+app.post('/api/candidates/:id/push-to-req', async (req, res) => {
+  const { id } = req.params;
+  const { targetReqId, payRate, status, comments, recruiterName, recruiterEmail } = req.body;
+
+  let candidate = candidatesStore.find(c => String(c.id) === String(id) || String(c.candidate_id) === String(id) || (c.email && req.body.email && c.email.toLowerCase() === req.body.email.toLowerCase()));
+  if (!candidate) {
+    return res.status(404).json({ success: false, message: 'Candidate not found in unified pool.' });
+  }
+
+  const cleanReqId = String(targetReqId || '').replace(/^J-/, '').replace(/^REQ-/, '').trim();
+  const matchedJob = jobsStore.find(j => String(j.id).replace(/^J-/, '') === cleanReqId || String(j.reqId).replace(/^J-/, '') === cleanReqId);
+
+  candidate.targetReqId = cleanReqId;
+  candidate.reqId = cleanReqId;
+  candidate.job_id = `J-${cleanReqId}`;
+  candidate.pushedToJobsInHand = true;
+  if (payRate) {
+    candidate.payRate = payRate;
+    candidate.matchedJobRate = payRate;
+  }
+  if (status) candidate.status = status;
+  if (matchedJob) {
+    candidate.matchedJobTitle = matchedJob.title;
+    candidate.matchedJobClient = matchedJob.client;
+  }
+  if (recruiterName) candidate.assignedBy = recruiterName;
+  if (recruiterEmail) candidate.recruiterEmail = recruiterEmail;
+  if (comments) candidate.statusComments = comments;
+  candidate.pushedAt = new Date().toISOString();
+  candidate.updatedAt = new Date().toISOString();
+
+  await saveCandidatesToDisk();
+
+  res.json({
+    success: true,
+    message: `Candidate ${candidate.name || 'Candidate'} successfully pushed to Requisition #${cleanReqId}!`,
     candidate
   });
 });
@@ -8783,6 +8833,8 @@ EDUCATION & CERTIFICATIONS
       sourceCategory = 'careers_portal';
     } else if (src.includes('vendor') || src.includes('bench') || src.includes('employer')) {
       sourceCategory = 'vendor_bench';
+    } else if (c.sourceCategory === 'manual_entry' || src.includes('manual') || src.includes('direct') || src.includes('added')) {
+      sourceCategory = 'manual_entry';
     }
 
     const cleanName = (c.name && c.name !== 'Candidate' && c.name.trim() !== '') ? c.name : (c.extracted_profile?.name || (c.email ? c.email.split('@')[0] : 'Applicant'));

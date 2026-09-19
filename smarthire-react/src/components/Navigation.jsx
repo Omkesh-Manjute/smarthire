@@ -188,6 +188,10 @@ function Navigation() {
   const navigateToAtsTab = (tab) => {
     setAtsMenuOpen(false)
     setMobileMenuOpen(false)
+    if (tab === 'candidates') {
+      navigate('/inbox')
+      return
+    }
     navigate(`/ats?tab=${tab}`)
     window.dispatchEvent(new CustomEvent('smarthire_switch_tab', { detail: { tab } }))
   }
