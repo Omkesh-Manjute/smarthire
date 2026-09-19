@@ -31,7 +31,139 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
-### 2026-09-19 — 2026 Blog Articles ("US IT Recruitment Market 2026" & "H-1B 2026 Update"), AI Hero Imagery & Jobs Top Bar Navigation
+### 2026-09-19 — Candidate Count Inconsistency Resolution, Payload Optimization (6.6MB → 300KB) & Client Cache
+- **Context & Objectives**:
+  - The user reported an intermittent candidate count anomaly: "/inbox sometimes shows 13 candidates instead of the full pool of 250+ candidates ('kabhi kam candidate batate hai kabhi pure')."
+  - Diagnosed exact root cause: The frontend initialized `streamCandidates` with a static fallback array `DEFAULT_STREAM_CANDIDATES` containing exactly 13 items.
+  - Whenever `/api/recruiter/email-streams` suffered network latency, payload bloat (6.6MB uncompressed JSON with triplicated `resumeText`), or timeout, the frontend catch block retained the 13 fallback items indefinitely.
+- **Key Deliverables**:
+  - **Payload Shrink (6.6MB → 2.3MB uncompressed, ~300KB gzipped)**:
+    - Stripped duplicate 30KB nested `resumeText` from `documents.resume` and `legalDocs.resume` file metadata in `/api/recruiter/email-streams` (referencing the single clean `c.resumeText` source of truth).
+    - Removed redundant `legalDocs` and `resumeData` duplicates.
+    - Enabled `gzip_proxied any;` and `gzip_types application/json ...` in Nginx configuration on AWS Lightsail, reducing transferred bytes by over 85%.
+  - **Client-Side Cache & Instant Warm Hydration**:
+    - Initialized `streamCandidates` and `selectedCandidate` from `localStorage` (`smarthire_stream_candidates_cache`).
+    - The UI now immediately renders all 250+ active candidates on page refresh with zero flashing of the 13 fallback items.
+    - Added automatic retry (up to 2 attempts with 1.5s backoff) in `fetchStreamCandidates` to self-heal temporary network blips.
+    - Added dynamic user avatar and role resolution in the top header.
+    - Added subtle `Syncing database...` status indicator next to the Candidate header.
+- **Verification & Deployment**:
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-LMIthVdT.js`).
+  - Root `node build.js`: 0 errors (built in 2.07s).
+  - Git committed (`3439874`) and pushed to GitHub `origin/main`.
+  - Deployed `dist-update.tar.gz` to AWS Lightsail server (`34.194.119.199`).
+  - PM2 process `smarthire-ats` restarted online (PID 80360).
+  - Live verified: `https://smarthireus.com` returns HTTP 200 OK with `index-LMIthVdT.js`, `/api/recruiter/email-streams` returns 251 candidates, and `/blog/india-vs-usa-it-jobs-2026` is active.
+
+### 2026-09-19 — India vs USA IT Jobs 2026 Blog Release, Event Loop O(1) Optimization & 504 Timeout Resolution
+- **Context & Objectives**:
+  - Incorporated authoritative article *India vs USA IT Jobs 2026: Salary, Taxes, Lifestyle & Career Growth* (`india-vs-usa-it-jobs-2026`).
+  - Diagnosed and resolved 504 Gateway Time-out on `/inbox?tab=home` where Nginx dropped upstream connections due to event loop starvation and high load on the 512MB RAM Lightsail instance.
+- **Key Deliverables**:
+  - **India vs USA IT Jobs 2026 Blog Post (`IndiaVsUsaJobs2026Article.jsx`)**:
+    - Complete rich article component in `src/pages/blog-articles/IndiaVsUsaJobs2026Article.jsx`.
+    - Interactive Table of Contents with smooth scrolling anchors.
+    - Crisp inline SVG software engineer salary comparison bar chart ($138k USD vs $16.5k USD).
+    - High-resolution editorial hero graphic (`india-vs-usa-it-jobs-2026-hero.webp`) and full comparison infographic matrix (`india-vs-usa-it-jobs-comparison-chart.webp`).
+    - Comparison tables: Bengaluru vs Austin take-home reality, comprehensive side-by-side evaluation, and career persona recommendations.
+    - Interactive FAQ accordion and CTA box linking directly to `/jobs` and `/pricing`.
+    - Internal backlinking to `/jobs`, `/blog/us-it-recruitment-market-2026`, `/blog/h1b-2026-update-it-work-visa-options`, and `/blog/c2c-vs-w2-vs-1099`.
+    - Registered in `BLOG_POSTS` catalog in `Blog.jsx` and updated `sitemap.xml`.
+  - **504 Gateway Time-out Resolution**:
+    - **O(1) Indexed Maps in `/api/messages`**: Precomputed `Map` structures for `screeningStore` and `candidatesStore`, eliminating O(N*M) linear array scans that previously blocked the Node.js event loop on `/inbox?tab=home`.
+    - **Memory Guard in Background Scraper**: Added `os.totalmem()` checks in `jobsinhand-scraper.js` preventing heavy Playwright Chromium launches in low-memory environments (< 1.2GB RAM) to eliminate swap thrashing and CPU starvation.
+    - **Nginx Timeout Configuration**: Increased proxy timeouts (`proxy_connect_timeout 120s; proxy_read_timeout 120s; proxy_send_timeout 120s`) to prevent premature gateway drops.
+- **Verification & Deployment**:
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-DUSIZXqt.js`).
+  - Root `node build.js`: 0 errors (built in 2.08s).
+  - Git committed (`ef2bcc5`) and pushed to GitHub `origin/main`.
+
+- **Context & Objectives**:
+  - Eliminated data fragmentation where candidates were split between `/inbox` (Tobu-style candidate cockpit) and `/ats?tab=candidates` (legacy ATS table).
+  - Implemented "Option 3: One Unified Candidate Talent Hub" where both manually added candidates and inbound email harvested candidates live in a single unified database pool.
+  - Provided full administrative visibility: Superadmins/Admins can filter by any specific recruiter (`Omkesh`, `Naveen`, `Rahul`, `Gourav`, etc.) or view all recruiters simultaneously, while regular recruiters remain scoped to their assigned candidates.
+  - Implemented an interactive "Push to Requisition" modal allowing 1-click submission of any candidate directly to an open requisition with custom billing rates, pipeline stage, and recruiter notes.
+  - Implemented an in-page "+ Add Candidate" modal so users never get bounced out of `/inbox` to create candidates.
+- **Key Deliverables**:
+  - **Unified Central Database & Routing**:
+    - Centralized all candidate streams into `candidatesStore` on disk (`server/candidates.json`) and MongoDB.
+    - Updated `Navigation.jsx`, `AtsPlatform.jsx`, and `QuickSearchModal.jsx` to route all "Candidates" navigation seamlessly to `/inbox`.
+    - Cleaned up duplicate/legacy navigation paths.
+  - **Multi-Role Recruiter & Source Filter Controls (`RecruiterInbox.jsx`)**:
+    - Added `Recruiter: All Recruiters` dropdown in top toolbar for Superadmins and Admins, dynamically populated from `/api/recruiters`.
+    - Added `Source: All Sources` dropdown supporting `Email Ingest`, `Spam Recovered`, `Manual Entry`, `Careers Portal`, `Vendor Bench`.
+  - **Interactive Push to Requisition Modal**:
+    - Triggerable from top profile header ("Push to Requisition ↗") and candidate table row actions.
+    - Fields: Active requisition selector (shows Req ID, Job Title, Client, Location, Openings), Pay/Bill Rate input (e.g. `$75/hr C2C`), Initial Pipeline Stage dropdown (`Int-SubmittedToManager`, `Shortlisted`, `Client Submitted`, `Internal Interview`), and Internal Sourcing Notes.
+    - Backend persistence via new `POST /api/candidates/:id/push-to-req` endpoint which updates candidate requisition assignment, status, pay rate, and logs an audit trail event.
+  - **In-Page Candidate Creation Modal**:
+    - Top "+ Add Candidate" button opens a sleek modal directly inside `/inbox`.
+    - Fields: Full Name, Email, Phone, Current Location, Visa/Work Auth, Primary Job Title, Experience (years), Skills (comma separated), and Resume text/notes.
+    - Submits to `POST /api/candidates` and automatically prepends candidate to active list without page reloads.
+- **Verification & Deployment**:
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-BcP7Ayz8.js`).
+  - Root `node build.js`: 0 errors, 0 warnings (built in 2.06s).
+  - Git committed (`f74c46c`) and pushed to GitHub `origin/main`.
+  - Deployed `dist.tar.gz` and `server/index.js` to AWS Lightsail server (`34.194.119.199`).
+  - Live verified: `https://smarthireus.com` and `https://smarthireus.com/assets/index-BcP7Ayz8.js` → HTTP 200 OK.
+
+- **Context & Objectives**:
+  - Replaced cramped floating bottom-right popup with a full-page email outreach command center in the `Emails` tab.
+  - Added support for CC, BCC, fully editable subject line, 1-click templates (RTR Auth, Screening, Rate, Interview), and spacious drafting textarea.
+  - Added real-time Activity Logging: every sent email is recorded into candidate sent history and automatically reflected in the `Activity` tab.
+  - Added keyboard shortcuts for rapid-fire screening: `J` / `ArrowRight` (Next Candidate), `K` / `ArrowLeft` (Previous Candidate), `Escape` (Back to Table), complete with visual `<kbd>` hints on buttons.
+- **Key Deliverables**:
+  - **Full-Page Email Tab (`Emails` tab)**:
+    - Renders directly in the large right canvas when clicking "Email Candidate" or the "Emails" tab.
+    - Fields: `From` (authenticated recruiter), `To` (editable candidate email), `+ Cc` and `+ Bcc` expandable inputs with clear actions, `Subject` (clean editable input), and quick 1-click templates toolbar.
+    - Spacious message textarea with line-height and typography matching Linear/Stripe.
+    - Bottom action bar with `Draft in Mail App ↗` desktop mailto launcher, `Reset Form`, and primary `Send Email` button.
+    - Dedicated "Outbound Email History" thread below the composer showing past sent messages, delivery status, and timestamps.
+  - **Live Candidate Activity Log (`Activity` tab)**:
+    - Every dispatched email is logged into candidate audit history (`Outbound Email Dispatched to {to}`) with purple badge (`#7C3AED`), sender metadata, and timestamps.
+    - Persisted to `localStorage` per-candidate so it survives reloads.
+  - **Keyboard Shortcuts (`RecruiterInbox.jsx`)**:
+    - Global key listener: `J` / `ArrowRight` cycles to next candidate, `K` / `ArrowLeft` cycles to previous candidate, `Escape` returns to table.
+    - Automatically skips interception if user is typing in any `input`, `textarea`, or `select`.
+    - Integrated clean `<kbd>` badges on navigation buttons (`K`, `J`, `ESC`).
+  - **Backend Support (`server/index.js`)**:
+    - Updated `POST /api/recruiter/send-direct-email` to accept `cc` and `bcc`, forwarding to `nodemailer` and desktop `mailtoUrl`.
+- **Verification & Deployment**:
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-BNocSaDS.js`).
+  - Root `node build.js`: 0 errors (built in 3.77s).
+  - Git committed (`8eced4e`) and pushed to GitHub `origin/main`.
+  - Deployed `dist.tar.gz` and `server/index.js` to AWS Lightsail server (`34.194.119.199`).
+  - Reloaded PM2 `smarthire-ats` (PID 75391).
+  - Live verified: `https://smarthireus.com` and `https://smarthireus.com/assets/index-BNocSaDS.js` → HTTP 200 OK.
+
+- **Context & Objectives**:
+  - Refactored Candidate Detail View in `RecruiterInbox.jsx` based on Tobu.ai UI patterns (matching reference screenshots).
+  - Resolved clutter in `Resume` tab where heavy analytics tables and dropdowns pushed the candidate resume down.
+  - Implemented crisp pastel yellow highlighting with toggle control, sidebar education/role statistics, and an interactive attachments locker.
+- **Key Deliverables**:
+  - **Uncluttered Resume Tab (`Resume` tab)**:
+    - Dedicated clean toolbar with `Download Resume` button, top 5 interactive keyword chips (`sql server (4 times)`, `github (8 times)`), in-resume search input, and a `Highlight Skills: [ON / OFF]` toggle.
+    - Displays authentic candidate resume text or inline PDF viewer front-and-center without vertical clutter.
+  - **Dedicated Analytics Tab (`Analytics` tab)**:
+    - Shifted all analytical widgets: Target Requisition Alignment with selector dropdown and AI Fit Match %, role specifications matrix (title, client, rate, location), required skills match density progress bar, matching vs missing skills badges, top keyword frequency cloud with occurrence counts, Tobu.ai ingest & sourcing metadata table, and compliance audit card.
+  - **Left Sidebar Dossier & Stats Extraction**:
+    - Extracted and formatted: `Education` (degree, major, university), `Number of Jobs / Positions` (count of previous roles/projects), `Current Employer`, `Current Job Position`, `Total Work Experience`, `Current Location`, `Work Permit / Visa Status`.
+    - Added direct contact action buttons with one-click copy to clipboard for Email and Phone.
+    - Added inbound email sender, source folder, and reception timestamp.
+  - **Interactive Attachments & Documents Locker**:
+    - Displays all candidate documents with categorized badges (`Resume`, `Driver's License`, `Work Auth / Visa`, `Photo ID`, `Other`).
+    - Added direct `View ↗` (opens in new tab) and `Download` actions.
+    - Added interactive `+ Upload Doc` button connecting directly to `POST /api/candidates/:id/upload-document`.
+  - **Highlighting Style & Color Calibration**:
+    - Updated skill highlighting to soft pastel yellow (`#FEF08A`) with crisp charcoal text (`#1E293B`) and subtle border (`#FDE047`) matching Tobu.ai.
+    - Search query matches highlighted in sky blue (`#BAE6FD`).
+- **Verification & Deployment**:
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (built in 2.25s, bundle `index-BHs1_P2X.js`).
+  - Root `node build.js`: 0 errors (built in 2.19s).
+  - Git committed (`e6fb98c`) and pushed to GitHub `origin/main`.
+  - Deployed `dist.tar.gz` to AWS Lightsail server (`34.194.119.199`), extracted into webroots, reloaded PM2 `smarthire-ats`.
+  - Live verified: `https://smarthireus.com` and `https://smarthireus.com/assets/index-BHs1_P2X.js` → HTTP 200 OK.
+
 - **Context & Objectives**:
   - Incorporated two authoritative articles into the SmartHire blog from raw HTML sources:
     1. *US IT Recruitment Market 2026: What's Changing and How to Win* (`us-it-recruitment-market-2026`)
