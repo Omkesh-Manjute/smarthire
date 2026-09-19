@@ -2056,8 +2056,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
       const threadId = `team-reportee-${(currentUser?.email || 'emp').toLowerCase().trim()}`
       let fsMsgs = []
       try { fsMsgs = await getMessagesFirestore(threadId) } catch(e) {}
-      const lastMsgText = (fsMsgs && fsMsgs.length > 0) ? fsMsgs[fsMsgs.length - 1].text : 'Direct reporting & candidate approval channel'
-      const lastMsgTime = (fsMsgs && fsMsgs.length > 0) ? fsMsgs[fsMsgs.length - 1].timestamp : new Date().toISOString()
+      const lastMsgText = (fsMsgs && fsMsgs.length > 0) ? fsMsgs[fsMsgs.length - 1].text : ''
+      const lastMsgTime = (fsMsgs && fsMsgs.length > 0) ? fsMsgs[fsMsgs.length - 1].timestamp : ''
 
       const supervisorThread = {
         candidateId: threadId,
@@ -2094,7 +2094,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
         const threadId = `team-reportee-${(rep.email || '').toLowerCase().trim()}`
         let fsMsgs = []
         try { fsMsgs = await getMessagesFirestore(threadId) } catch(e) {}
-        const lastMsgText = (fsMsgs && fsMsgs.length > 0) ? fsMsgs[fsMsgs.length - 1].text : 'Direct team reporting channel'
+        const lastMsgText = (fsMsgs && fsMsgs.length > 0) ? fsMsgs[fsMsgs.length - 1].text : ''
         const lastMsgTime = (fsMsgs && fsMsgs.length > 0) ? fsMsgs[fsMsgs.length - 1].timestamp : ''
 
         teamChannels.push({
@@ -2213,21 +2213,6 @@ export default function RecruiterInbox({ defaultViewMode }) {
       })
 
       let merged = Array.from(msgMap.values()).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
-
-      if (merged.length === 0 && candidateId.startsWith('team-reportee-')) {
-        const initial = [
-          {
-            id: 'lead-init-1',
-            sender: 'lead',
-            senderName: parentRecruiterName,
-            senderEmail: parentRecruiterEmail,
-            text: `Hi! Welcome to your direct reporting channel. Feel free to send candidate profiles for review, ask requisition questions, or request rate clearances here.`,
-            timestamp: new Date(Date.now() - 3600000).toISOString(),
-            candidateId: candidateId
-          }
-        ]
-        merged = initial
-      }
 
       setMessages(merged)
     } catch (e) {
@@ -2994,7 +2979,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
         candidateName: candName,
         jobTitle: cand.matchedJobTitle || cand.role || 'Requisition Candidate',
         subtitle: `${cand.role || 'Candidate'} • ${cand.experience || 'Talent Pool'}`,
-        lastMessage: 'Conversation initiated',
+        lastMessage: '',
         lastMessageTime: '',
         unreadCount: 0,
         email: cand.email || '',
@@ -8224,7 +8209,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                      (msg.senderEmail && myEmail && msg.senderEmail.toLowerCase() === myEmail) ||
                                      (!isReportee && msg.sender !== 'other' && msg.sender !== 'candidate')
 
-                        const timeDisplay = msg.timeStr || (msg.timestamp ? formatTime(msg.timestamp) : '02:22 PM')
+                        const timeDisplay = msg.timeStr || (msg.timestamp ? formatTime(msg.timestamp) : '')
 
                         return (
                           <div

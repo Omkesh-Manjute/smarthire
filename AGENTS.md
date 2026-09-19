@@ -31,6 +31,39 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-20 — Zoho Recruit Candidate Table Format, Complete Demo Messages Removal & Default Candidate Table Landing
+- **Context & Objectives**:
+  - User requested three key improvements:
+    1. Eliminate all demo/dummy messages from `/inbox` ("no damo message on inbox okay").
+    2. Format candidate table like Zoho Recruit with high readability and discoverability ("zoho recruiter type kar sakte ho candidate table ko").
+    3. Navigation clarification: Establish Candidate Table as the default landing view, opening Messages only when messaging a candidate ("candidate message karne pe yaha ana cahiye ya defalt ana cahiye").
+- **Root Cause & Key Deliverables**:
+  - **Complete Demo Messages Elimination**:
+    - Cleared `DEFAULT_MESSAGES_THREADS = []` and initialized state with empty arrays (`threads: []`, `activeThread: null`, `messages: []`).
+    - Removed synthetic intro message (`lead-init-1`) from `fetchMessages` so brand new channels remain completely free of fake text.
+    - Removed hardcoded fake conversations (Priya Sharma, Abhishek Jha, Dev Team, Manish Kumar, Sneha Nair).
+    - Removed fallback demo files (`Candidate_List.xlsx`, `Req_159078_Notes.pdf`, `Interview_Schedule.docx`).
+    - Removed demo email fallbacks (`gourav@smarthire.com`, `COOLSOFT LLC`).
+    - Removed fallback hardcoded timestamp `'02:22 PM'` on message items.
+    - Empty threads now display clean, professional state (*"Start a new conversation"*).
+  - **Default Landing View**:
+    - Set `initialInboxMode` to strictly default to `'stream'` (Candidate Table) unless `tab=chat` or `tab=messages` is explicitly in the query parameters.
+  - **Zoho Recruit Candidate Table Design**:
+    - Candidate Cell: Initial Avatar + Bold Name + Visa Status badge (`US Citizen`, `Green Card`, `H-1B`) + inline Candidate **Email** and **Phone** directly under name in subtle typography (`#64748B`, 11px).
+    - Role & Experience: Current Title + Experience tag + Current Company.
+    - Status Column: Added color-coded Zoho Recruit status pills (`New`, `Screened`, `Client Submitted`, `Interview`, `Offered`, `Hired`) via `renderZohoStatusBadge`.
+    - Row Actions Suite: Added dedicated green `[ Message ]` button (calls `handleOpenCandidateChat(c)`), `[ View ]`, and blue `[ Push to Jobs in Hand ↗ ]`.
+  - **Timestamp & Encoding Fixes**:
+    - Upgraded `formatTime` to eliminate raw ISO database timestamps (`2026-09-19T18:43:30.592Z`) across threads and message bubbles.
+    - Empty threads now set `lastMessageTime: ''` rather than generating `new Date().toISOString()`.
+    - Replaced broken characters (`â€¦`) with clean standard ellipses (`...`).
+- **Verification & Deployment**:
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (built in 2.07s, bundle `index-CQtZQgfM.js`).
+  - Root `node build.js`: 0 errors (built in 2.11s).
+  - Git committed (`f419cf1`) and pushed to GitHub `origin/main`.
+  - Deployed `dist-assets.tar.gz` to AWS Lightsail server (`34.194.119.199`), extracted into `/var/www/html/` and `/home/ubuntu/smarthire/dist/`, reloaded PM2 `smarthire-ats`.
+  - Live verified: `https://smarthireus.com` serves `assets/index-D2Yyi-Zp.js` with HTTP 200 OK.
+
 ### 2026-09-20 — Recruiter Filter Roster, Manual Candidates Hub & "Push to Jobs in Hand" Button Deployment
 - **Context & Objectives**:
   - User reported 3 items:
