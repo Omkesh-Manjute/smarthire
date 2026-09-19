@@ -229,13 +229,35 @@ const IconFileWord = () => (
   </span>
 )
 
+function safeSkillArray(skills) {
+  if (!skills) return []
+  if (Array.isArray(skills)) {
+    return skills.map(s => {
+      if (typeof s === 'string') return s.trim()
+      if (s && typeof s === 'object') return (s.name || s.skill || s.title || s.value || '').toString().trim()
+      return String(s || '').trim()
+    }).filter(Boolean)
+  }
+  if (typeof skills === 'string') {
+    return skills.split(',').map(s => s.trim()).filter(Boolean)
+  }
+  return []
+}
+
+function safeString(val, fallback = '') {
+  if (typeof val === 'string') return val.trim()
+  if (typeof val === 'number') return String(val)
+  if (val && typeof val === 'object') return (val.name || val.title || val.label || val.value || fallback).toString().trim()
+  return fallback
+}
+
 function getSkillFrequencies(resumeText = '', candidateSkills = []) {
   if (!resumeText) return []
-  const text = resumeText.toLowerCase()
+  const text = String(resumeText).toLowerCase()
   const freqMap = new Map()
 
   const candidatesToCheck = [
-    ...(Array.isArray(candidateSkills) ? candidateSkills : (candidateSkills ? String(candidateSkills).split(',').map(s => s.trim()) : [])),
+    ...safeSkillArray(candidateSkills),
     'SQL Server', 'GitHub', '.NET', 'Oracle', 'DB2', 'SAP', 'XML', 'NIEM',
     'Selenium', 'Java', 'Python', 'Spring Boot', 'AWS', 'Docker', 'Kubernetes',
     'Agile', 'Scrum', 'JIRA', 'PostgreSQL', 'Power BI', 'Salesforce', 'DAX',
@@ -243,7 +265,7 @@ function getSkillFrequencies(resumeText = '', candidateSkills = []) {
     'RAG', 'PyTorch', 'LangChain', 'Pinecone', 'Palo Alto', 'Cisco ASA', 'Firewalls'
   ]
 
-  const unique = Array.from(new Set(candidatesToCheck.map(s => s ? s.trim() : ''))).filter(s => s.length >= 2)
+  const unique = Array.from(new Set(candidatesToCheck.map(s => safeString(s)))).filter(s => s.length >= 2)
 
   unique.forEach(sk => {
     const skLower = sk.toLowerCase()
@@ -538,15 +560,16 @@ function getFullResumeText(candidate) {
   const loc = (rawLoc && !rawLoc.toLowerCase().includes('search on') && !rawLoc.toLowerCase().includes('webpage')) ? rawLoc : 'Remote / US'
   const exp = candidate?.experience || '8+ Years'
   const visa = candidate?.visaStatus || candidate?.visa_status || 'US Citizen'
-  const skills = Array.isArray(candidate?.skills) ? candidate.skills : (candidate?.skills ? String(candidate.skills).split(',').map(s => s.trim()) : ['Java', 'SQL', 'Git'])
+  const skills = safeSkillArray(candidate?.skills).length > 0 ? safeSkillArray(candidate?.skills) : ['Java', 'SQL', 'Git']
   const currentCo = candidate?.currentCompany || (candidate?.role ? `${candidate.role}, Enterprise Solutions` : 'Enterprise Partner Consultant')
   const prevCo = candidate?.previousCompany || 'Software Consultant, Tech Solutions'
 
   let cleanCoverText = ''
   let detectedAttachment = candidate?.attachmentName || null
 
-  if (candidate?.resumeText && candidate.resumeText.trim().length > 80) {
-    const rawText = candidate.resumeText.trim();
+  const rawResumeText = typeof candidate?.resumeText === 'string' ? candidate.resumeText.trim() : ''
+  if (rawResumeText.length > 80) {
+    const rawText = rawResumeText;
     const isForwardStubOnly = rawText.length < 350 && (
       rawText.toLowerCase().includes('please find my resume attached') ||
       rawText.toLowerCase().includes('please find attached my updated resume')
@@ -966,11 +989,11 @@ const highlightResumeText = (text, matchingSkills = [], searchQuery = '', enable
 
   // 2. Matching Skills Intervals (Soft Warm Pastel Yellow — Matching Tobu.ai)
   if (enableHighlight && matchingSkills && matchingSkills.length > 0) {
-    const uniqueSkills = [...new Set(matchingSkills.filter(s => s && s.trim().length >= 2))]
+    const uniqueSkills = [...new Set(matchingSkills.map(s => safeString(s)).filter(s => s.length >= 2))]
       .sort((a, b) => b.length - a.length);
 
     for (const skill of uniqueSkills) {
-      const trimmed = skill.trim();
+      const trimmed = safeString(skill);
       const base = trimmed.replace(/s$/i, '');
       const patternStr = (trimmed.length > 3)
         ? `${base.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}s?`
@@ -1875,7 +1898,11 @@ export default function RecruiterInbox({ defaultViewMode }) {
         }
       }
       if (initialList.length > 0) {
-        return deduplicateCandidates(initialList)
+        return deduplicateCandidates(initialList.map(c => ({
+          ...c,
+          name: safeString(c.name || c.candidateName || 'Candidate', 'Candidate'),
+          skills: safeSkillArray(c?.skills)
+        })))
       }
       const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
       const role = u.role || localStorage.getItem('smarthire_active_role') || 'superadmin'
@@ -2533,14 +2560,17 @@ export default function RecruiterInbox({ defaultViewMode }) {
       // Normalize manual and ATS candidates to match inbox format
       const normalizedManual = manualAndAtsList.filter(Boolean).map((c, idx) => {
         const candId = c.id || c.candidate_id || c.canId || `cand-manual-${idx}`
-        const name = (c.name || c.candidateName || c.extracted_profile?.name || (c.email ? c.email.split('@')[0] : 'Candidate')).trim()
-        const email = c.email || c.extracted_profile?.email || ''
-        const phone = c.phone || c.extracted_profile?.phone || ''
-        const skills = Array.isArray(c.skills) ? c.skills : (c.extracted_profile?.skills || (typeof c.skills === 'string' ? c.skills.split(',').map(s => s.trim()).filter(Boolean) : ['Java', 'SQL']))
-        const role = c.role || c.jobTitle || c.targetRole || c.extracted_profile?.role || 'Software Engineer'
-        const location = (c.location && !c.location.toLowerCase().includes('search on')) ? c.location : (`${c.city || ''}, ${c.state || ''}`.trim() || 'Remote, US')
-        const recName = c.recruiter || c.recruiterName || c.assignedRecruiter || c.assignedBy || c.addedByName || 'Omkesh'
-        const recMail = c.recruiterEmail || c.addedByEmail || c.createdBy || 'omkesh@coolsofttech.com'
+        const name = safeString(c.name || c.candidateName || c.extracted_profile?.name || (c.email ? c.email.split('@')[0] : 'Candidate'), 'Candidate')
+        const email = safeString(c.email || c.extracted_profile?.email)
+        const phone = safeString(c.phone || c.extracted_profile?.phone)
+        const skills = safeSkillArray(c.skills).length > 0 
+          ? safeSkillArray(c.skills) 
+          : (safeSkillArray(c.extracted_profile?.skills).length > 0 ? safeSkillArray(c.extracted_profile?.skills) : ['Java', 'SQL'])
+        const role = safeString(c.role || c.jobTitle || c.targetRole || c.extracted_profile?.role, 'Software Engineer')
+        const rawLoc = safeString(c.location)
+        const location = (rawLoc && !rawLoc.toLowerCase().includes('search on')) ? rawLoc : (`${c.city || ''}, ${c.state || ''}`.trim() || 'Remote, US')
+        const recName = safeString(c.recruiter || c.recruiterName || c.assignedRecruiter || c.assignedBy || c.addedByName, 'Omkesh')
+        const recMail = safeString(c.recruiterEmail || c.addedByEmail || c.createdBy, 'omkesh@coolsofttech.com')
         const isMan = c.sourceCategory === 'manual_entry' || (c.source && String(c.source).toLowerCase().includes('manual')) || !c.folder
         return {
           ...c,
@@ -2573,10 +2603,16 @@ export default function RecruiterInbox({ defaultViewMode }) {
       // Combine all: manual candidates + stream candidates
       const combinedPool = [...normalizedManual, ...streamList]
       const cleaned = deduplicateCandidates(combinedPool.map(c => {
-        if (c.location && (c.location.toLowerCase().includes('search on') || c.location.toLowerCase().includes('webpage'))) {
-          return { ...c, location: 'Remote, US' }
+        const rawLoc = safeString(c?.location)
+        const safeLoc = (rawLoc && (rawLoc.toLowerCase().includes('search on') || rawLoc.toLowerCase().includes('webpage')))
+          ? 'Remote, US'
+          : (rawLoc || 'Remote, US')
+        return {
+          ...c,
+          name: safeString(c?.name || c?.candidateName || 'Candidate', 'Candidate'),
+          skills: safeSkillArray(c?.skills),
+          location: safeLoc
         }
-        return c
       }))
 
       setStreamCandidates(cleaned)
@@ -2613,7 +2649,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
             matchedJobClient: c.matchedJobClient,
             matchedJobRate: c.matchedJobRate,
             summary: c.summary,
-            skills: c.skills,
+            skills: safeSkillArray(c.skills),
             resumeFile: c.resumeFile,
             resumeUploadDate: c.resumeUploadDate,
             createdAt: c.createdAt,
@@ -3262,7 +3298,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   client: j.client || j.department || 'Client',
                   rate: j.rate || j.payRate || j.budget || '$75/hr',
                   location: j.location || 'Remote',
-                  skills: Array.isArray(j.skills) ? j.skills : (typeof j.skills === 'string' ? j.skills.split(',').map(s => s.trim()) : ['Java', 'SQL'])
+                  skills: safeSkillArray(j.skills).length > 0 ? safeSkillArray(j.skills) : ['Java', 'SQL']
                 })
               }
             })
@@ -3279,10 +3315,13 @@ export default function RecruiterInbox({ defaultViewMode }) {
       .then(d => {
         if (d && d.success && Array.isArray(d.recruiters) && d.recruiters.length > 0) {
           const map = new Map()
-          ALL_SMARTHIRE_RECRUITERS.forEach(r => map.set((r.email || r.name).toLowerCase().trim(), r))
+          ALL_SMARTHIRE_RECRUITERS.forEach(r => {
+            const k = safeString(r.email || r.name).toLowerCase()
+            if (k) map.set(k, r)
+          })
           d.recruiters.forEach(r => {
-            const key = (r.email || r.name).toLowerCase().trim()
-            map.set(key, { ...(map.get(key) || {}), ...r })
+            const key = safeString(r.email || r.name).toLowerCase()
+            if (key) map.set(key, { ...(map.get(key) || {}), ...r })
           })
           const mergedRecs = Array.from(map.values())
           setAvailableRecruiters(mergedRecs)
@@ -3399,15 +3438,15 @@ export default function RecruiterInbox({ defaultViewMode }) {
         (currentUser?.name && currentUser.name.toLowerCase().includes('omkesh'))
 
       if (!isOm) {
-        const userIdent = (currentUser?.name || '').toLowerCase().trim()
-        const userMail = (currentUser?.email || '').toLowerCase().trim()
-        const firstName = (userIdent.split(' ')[0] || '').toLowerCase().trim()
+        const userIdent = safeString(currentUser?.name).toLowerCase()
+        const userMail = safeString(currentUser?.email).toLowerCase()
+        const firstName = safeString(userIdent.split(' ')[0]).toLowerCase()
 
-        const candAssigned = (c.assignedRecruiter || c.assignedBy || c.recruiter || c.addedByName || '').toLowerCase().trim()
-        const candEmail = (c.recruiterEmail || c.addedByEmail || c.createdBy || '').toLowerCase().trim()
+        const candAssigned = safeString(c.assignedRecruiter || c.assignedBy || c.recruiter || c.addedByName).toLowerCase()
+        const candEmail = safeString(c.recruiterEmail || c.addedByEmail || c.createdBy).toLowerCase()
         const candReqId = String(c.targetReqId || c.reqId || '').replace(/^J-/, '').replace(/^REQ-/, '').trim()
-        const candSource = (c.source || '').toLowerCase().trim()
-        const candCategory = (c.sourceCategory || '').toLowerCase().trim()
+        const candSource = safeString(c.source).toLowerCase()
+        const candCategory = safeString(c.sourceCategory).toLowerCase()
 
         const isMine = (candAssigned && (candAssigned === userIdent || candAssigned.includes(userIdent) || userIdent.includes(candAssigned))) ||
                        (userMail && (candEmail === userMail || candEmail.includes(userMail))) ||
@@ -3466,7 +3505,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
       // Skills filter
       if (filterSkill !== 'all') {
         const sFilter = filterSkill.toLowerCase()
-        const skillsArr = Array.isArray(c.skills) ? c.skills : (c.skills ? String(c.skills).split(',').map(s => s.trim()) : [])
+        const skillsArr = safeSkillArray(c.skills)
         const roleStr = (c.role || '').toLowerCase()
         const matchFound = skillsArr.some(s => s.toLowerCase().includes(sFilter)) || roleStr.includes(sFilter)
         if (!matchFound) return false
@@ -3522,7 +3561,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
         const req = String(c.targetReqId || '').toLowerCase()
         const jTitle = (c.matchedJobTitle || '').toLowerCase()
         const jClient = (c.matchedJobClient || '').toLowerCase()
-        const sMatch = Array.isArray(c.skills) ? c.skills.some(s => String(s).toLowerCase().includes(q)) : String(c.skills || '').toLowerCase().includes(q)
+        const sMatch = safeSkillArray(c.skills).some(s => s.toLowerCase().includes(q))
         return n.includes(q) || e.includes(q) || r.includes(q) || loc.includes(q) || req.includes(q) || jTitle.includes(q) || jClient.includes(q) || sMatch
       }
 
@@ -3596,9 +3635,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
     // Dynamic In-Demand Skills Discovery
     const skillMap = {}
     list.forEach(c => {
-      const sks = Array.isArray(c.skills) ? c.skills : (c.skills ? String(c.skills).split(',') : [])
-      sks.forEach(s => {
-        const cleanS = s.trim()
+      const sks = safeSkillArray(c?.skills)
+      sks.forEach(cleanS => {
         if (cleanS.length >= 2 && cleanS.length <= 25 && !cleanS.toLowerCase().includes('etc')) {
           skillMap[cleanS] = (skillMap[cleanS] || 0) + 1
         }
@@ -4898,9 +4936,9 @@ export default function RecruiterInbox({ defaultViewMode }) {
                             </td>
                             <td style={{ padding: '12px 14px' }}>
                               <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                                {(Array.isArray(c.skills) ? c.skills : String(c.skills || '').split(',')).slice(0, 3).map((sk, idx) => (
+                                {safeSkillArray(c.skills).slice(0, 3).map((sk, idx) => (
                                   <span key={idx} style={{ background: C.surface2, padding: '1px 6px', borderRadius: 4, fontSize: 10.5, color: C.textSecondary }}>
-                                    {sk.trim()}
+                                    {sk}
                                   </span>
                                 ))}
                               </div>
@@ -7249,9 +7287,10 @@ export default function RecruiterInbox({ defaultViewMode }) {
                             const candId = c.id || c.email || `cand-${idx}`
                             const isSelected = selectedCardIds.has(candId)
                             const isHovered = hoveredTableCardId === candId
-                            const skillsArr = Array.isArray(c.skills) ? c.skills : (c.skills ? String(c.skills).split(',').map(s => s.trim()) : [])
-                            const avatarStyle = getCandidateAvatarColor(c.name || 'Candidate')
-                            const initials = getInitials(c.name || 'Candidate')
+                            const skillsArr = safeSkillArray(c.skills)
+                            const candName = safeString(c.name || c.candidateName, 'Candidate')
+                            const avatarStyle = getCandidateAvatarColor(candName)
+                            const initials = getInitials(candName)
                             const isActionMenuOpen = activeActionMenuId === candId
 
                             return (
@@ -7316,9 +7355,9 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                           textOverflow: 'ellipsis',
                                           transition: 'color 0.15s ease'
                                         }}
-                                        title={c.name}
+                                        title={candName}
                                       >
-                                        {c.name || 'Candidate'}
+                                        {candName}
                                       </span>
                                     </div>
                                   </div>

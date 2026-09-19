@@ -554,14 +554,16 @@ export function deduplicateCandidates(list) {
       .filter(val => val.length > 0)
 
     // 2. Email
-    const email = (c.email || c.extracted_profile?.email || c.candidateEmail || '').toLowerCase().trim()
+    const emailVal = typeof c.email === 'string' ? c.email : (typeof c.candidateEmail === 'string' ? c.candidateEmail : (c.extracted_profile?.email || ''))
+    const email = String(emailVal || '').toLowerCase().trim()
 
     // 3. Phone (last 10 digits)
     const rawPhone = String(c.phone || c.phoneCell || c.extracted_profile?.phone || c.candidatePhone || '').replace(/\D/g, '')
     const phone = rawPhone.length >= 7 ? rawPhone.slice(-10) : ''
 
     // 4. Name
-    const rawName = (c.name || c.extracted_profile?.name || c.candidateName || `${c.firstName || ''} ${c.lastName || ''}`).trim()
+    const nameVal = typeof c.name === 'string' ? c.name : (typeof c.candidateName === 'string' ? c.candidateName : (c.extracted_profile?.name || (c.firstName || c.lastName ? `${c.firstName || ''} ${c.lastName || ''}` : '')))
+    const rawName = String(nameVal || '').trim()
     const cleanName = rawName.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim()
     const isValidName = cleanName.length >= 3 && !GENERIC_NAMES.has(cleanName)
 
