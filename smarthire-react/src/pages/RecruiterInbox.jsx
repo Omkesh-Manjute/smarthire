@@ -1,9 +1,27 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { saveMessageFirestore, getMessagesFirestore, saveRequisitionCandidates, saveCandidate, deduplicateCandidates } from '../lib/atsFirestore'
+import { saveMessageFirestore, getMessagesFirestore, saveRequisitionCandidates, saveCandidate, getAllCandidates, deduplicateCandidates } from '../lib/atsFirestore'
 import { autoSendJobDescriptionToCandidate } from '../utils/autoSendJdHelper'
 
 const POLL_INTERVAL = 3000
+
+export const ALL_SMARTHIRE_RECRUITERS = [
+  { id: 'rec-1', name: 'Omkesh Manjute', email: 'omkesh@coolsofttech.com', refCode: 'omkesh', role: 'Super Admin' },
+  { id: 'rec-2', name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com', refCode: 'vaibhav-bisen', role: 'Lead Recruiter' },
+  { id: 'rec-3', name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com', refCode: 'sukamal-chatterjee', role: 'Senior Recruiter' },
+  { id: 'rec-4', name: 'Gourav', email: 'gourav@coolsofttech.com', refCode: 'gourav', role: 'Recruiter' },
+  { id: 'rec-5', name: 'Naveen Bhardwaj', email: 'naveen@coolsofttech.com', refCode: 'naveen-bhardwaj', role: 'Recruiter' },
+  { id: 'rec-6', name: 'Rahul Sharma', email: 'rahul@coolsofttech.com', refCode: 'rahul-sharma', role: 'Recruiter' },
+  { id: 'rec-7', name: 'Priya Verma', email: 'priya@coolsofttech.com', refCode: 'priya-verma', role: 'Recruiter' },
+  { id: 'rec-8', name: 'Prudhvi Sevveti', email: 'prudhvi.s@smarthire.com', refCode: 'prudhvi-sevveti', role: 'Recruiter' },
+  { id: 'rec-9', name: 'Nitin Bhosale', email: 'nitin.b@smarthire.com', refCode: 'nitin-bhosale', role: 'Recruiter' },
+  { id: 'rec-10', name: 'Naveen Korimelli', email: 'naveen.k@smarthire.com', refCode: 'naveen-korimelli', role: 'Recruiter' },
+  { id: 'rec-11', name: 'Ajay Arya', email: 'ajay.a@smarthire.com', refCode: 'ajay-arya', role: 'Recruiter' },
+  { id: 'rec-12', name: 'Raj Barve', email: 'raj.b@smarthire.com', refCode: 'raj-barve', role: 'Recruiter' },
+  { id: 'rec-13', name: 'Pankaj Maharwade', email: 'pankaj.m@smarthire.com', refCode: 'pankaj-maharwade', role: 'Senior Recruiter' },
+  { id: 'rec-14', name: 'Nishant Kathane', email: 'nishant.k@smarthire.com', refCode: 'nishant-kathane', role: 'Recruiter' },
+  { id: 'mgr-1', name: 'Alok Manager', email: 'manager@coolsofttech.com', refCode: 'alok-manager', role: 'Manager' }
+]
 
 // --- Inline SVG Icons to prevent question marks or encoding bugs ---
 const IconArrowLeft = () => (
@@ -474,6 +492,22 @@ const renderSourceBadge = (c) => {
         whiteSpace: 'nowrap'
       }}>
         Vendor Bench
+      </span>
+    )
+  }
+  if (c.sourceCategory === 'manual_entry' || (c.source && String(c.source).toLowerCase().includes('manual'))) {
+    return (
+      <span style={{
+        fontSize: 11,
+        fontWeight: 700,
+        color: '#0D9488',
+        backgroundColor: '#F0FDFA',
+        border: '1px solid #99F6E4',
+        padding: '2px 8px',
+        borderRadius: 6,
+        whiteSpace: 'nowrap'
+      }}>
+        Manual Entry
       </span>
     )
   }
@@ -1826,11 +1860,22 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const [streamCandidates, setStreamCandidates] = useState(() => {
     try {
       const cached = localStorage.getItem('smarthire_stream_candidates_cache')
+      const manualCached = localStorage.getItem('smarthire_all_candidates')
+      let initialList = []
       if (cached) {
         const parsed = JSON.parse(cached)
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed
+          initialList = parsed
         }
+      }
+      if (manualCached) {
+        const parsedManual = JSON.parse(manualCached)
+        if (Array.isArray(parsedManual) && parsedManual.length > 0) {
+          initialList = [...parsedManual, ...initialList]
+        }
+      }
+      if (initialList.length > 0) {
+        return deduplicateCandidates(initialList)
       }
       const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
       const role = u.role || localStorage.getItem('smarthire_active_role') || 'superadmin'
@@ -1904,7 +1949,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const [filterMatch, setFilterMatch] = useState('all')
   const [filterRecruiter, setFilterRecruiter] = useState('all')
   const [filterSource, setFilterSource] = useState('all')
-  const [availableRecruiters, setAvailableRecruiters] = useState([])
+  const [availableRecruiters, setAvailableRecruiters] = useState(ALL_SMARTHIRE_RECRUITERS)
   const [sortOption, setSortOption] = useState('match_desc')
   const [activeActionMenuId, setActiveActionMenuId] = useState(null)
   const [hoveredNav, setHoveredNav] = useState(null)
@@ -2052,19 +2097,6 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
   const pollingRef = useRef(null)
-
-  const ALL_SMARTHIRE_RECRUITERS = [
-    { name: 'Omkesh Manjute', email: 'omkesh.manjute@smarthire.com', refCode: 'omkesh', role: 'Super Admin' },
-    { name: 'Vaibhav Bisen', email: 'vaibhav.bisen@smarthire.com', refCode: 'vaibhav-bisen', role: 'Lead Recruiter' },
-    { name: 'Sukamal Chatterjee', email: 'sukamal.c@smarthire.com', refCode: 'sukamal-chatterjee', role: 'Senior Recruiter' },
-    { name: 'Prudhvi Sevveti', email: 'prudhvi.s@smarthire.com', refCode: 'prudhvi-sevveti', role: 'Recruiter' },
-    { name: 'Nitin Bhosale', email: 'nitin.b@smarthire.com', refCode: 'nitin-bhosale', role: 'Recruiter' },
-    { name: 'Naveen Korimelli', email: 'naveen.k@smarthire.com', refCode: 'naveen-korimelli', role: 'Recruiter' },
-    { name: 'Ajay Arya', email: 'ajay.a@smarthire.com', refCode: 'ajay-arya', role: 'Recruiter' },
-    { name: 'Raj Barve', email: 'raj.b@smarthire.com', refCode: 'raj-barve', role: 'Recruiter' },
-    { name: 'Pankaj Maharwade', email: 'pankaj.m@smarthire.com', refCode: 'pankaj-maharwade', role: 'Senior Recruiter' },
-    { name: 'Nishant Kathane', email: 'nishant.k@smarthire.com', refCode: 'nishant-kathane', role: 'Recruiter' }
-  ]
 
   const userStr = localStorage.getItem('smarthire_user') || localStorage.getItem('verifyhire_user')
   let currentUser = null
@@ -2451,29 +2483,113 @@ export default function RecruiterInbox({ defaultViewMode }) {
         role: recRole
       })
 
-      const res = await fetch(`/api/recruiter/email-streams?${params.toString()}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+      const token = localStorage.getItem('smarthire_token') || ''
+      const authHeaders = { 'Authorization': `Bearer ${token}` }
+
+      const [streamRes, apiCandsRes, firestoreCandsRes] = await Promise.allSettled([
+        fetch(`/api/recruiter/email-streams?${params.toString()}`, { headers: authHeaders }),
+        fetch('/api/candidates', { headers: authHeaders }),
+        getAllCandidates()
+      ])
+
+      let streamList = []
+      let countsData = null
+
+      if (streamRes.status === 'fulfilled' && streamRes.value && streamRes.value.ok) {
+        const data = await streamRes.value.json()
+        if (data.success && Array.isArray(data.candidates)) {
+          streamList = data.candidates
+          countsData = data.counts
+        }
+      }
+
+      let manualAndAtsList = []
+
+      // 1. Merge API Candidates
+      if (apiCandsRes.status === 'fulfilled' && apiCandsRes.value && apiCandsRes.value.ok) {
+        try {
+          const apiData = await apiCandsRes.value.json()
+          const cList = Array.isArray(apiData) ? apiData : (Array.isArray(apiData.candidates) ? apiData.candidates : [])
+          manualAndAtsList.push(...cList)
+        } catch (e) {}
+      }
+
+      // 2. Merge Firestore Candidates
+      if (firestoreCandsRes.status === 'fulfilled' && Array.isArray(firestoreCandsRes.value)) {
+        manualAndAtsList.push(...firestoreCandsRes.value)
+      }
+
+      // 3. Merge LocalStorage Candidates
+      try {
+        const localRaw = localStorage.getItem('smarthire_all_candidates')
+        if (localRaw) {
+          const parsedLocal = JSON.parse(localRaw)
+          if (Array.isArray(parsedLocal)) {
+            manualAndAtsList.push(...parsedLocal)
+          }
+        }
+      } catch (e) {}
+
+      // Normalize manual and ATS candidates to match inbox format
+      const normalizedManual = manualAndAtsList.filter(Boolean).map((c, idx) => {
+        const candId = c.id || c.candidate_id || c.canId || `cand-manual-${idx}`
+        const name = (c.name || c.candidateName || c.extracted_profile?.name || (c.email ? c.email.split('@')[0] : 'Candidate')).trim()
+        const email = c.email || c.extracted_profile?.email || ''
+        const phone = c.phone || c.extracted_profile?.phone || ''
+        const skills = Array.isArray(c.skills) ? c.skills : (c.extracted_profile?.skills || (typeof c.skills === 'string' ? c.skills.split(',').map(s => s.trim()).filter(Boolean) : ['Java', 'SQL']))
+        const role = c.role || c.jobTitle || c.targetRole || c.extracted_profile?.role || 'Software Engineer'
+        const location = (c.location && !c.location.toLowerCase().includes('search on')) ? c.location : (`${c.city || ''}, ${c.state || ''}`.trim() || 'Remote, US')
+        const recName = c.recruiter || c.recruiterName || c.assignedRecruiter || c.assignedBy || c.addedByName || 'Omkesh'
+        const recMail = c.recruiterEmail || c.addedByEmail || c.createdBy || 'omkesh@coolsofttech.com'
+        const isMan = c.sourceCategory === 'manual_entry' || (c.source && String(c.source).toLowerCase().includes('manual')) || !c.folder
+        return {
+          ...c,
+          id: candId,
+          candidate_id: candId,
+          name,
+          email,
+          phone,
+          role,
+          location,
+          skills,
+          source: c.source || (isMan ? 'Manual Entry' : 'Careers Portal'),
+          sourceCategory: isMan ? 'manual_entry' : (c.sourceCategory || 'email_inbox'),
+          status: c.status || 'New',
+          recruiter: recName,
+          recruiterName: recName,
+          assignedRecruiter: recName,
+          assignedBy: recName,
+          recruiterEmail: recMail,
+          matchScore: c.matchScore || 90,
+          targetReqId: c.targetReqId || c.reqId || (c.job_id ? String(c.job_id).replace(/^J-/, '') : '159079'),
+          matchedJobTitle: c.matchedJobTitle || c.jobTitle || 'Open Requisition',
+          matchedJobClient: c.matchedJobClient || c.client || 'Enterprise Client',
+          matchedJobRate: c.matchedJobRate || c.rate || '$75/hr',
+          resumeText: c.resumeText || c.summary || `${name}\n${email} | ${phone}\n${role}\nSkills: ${skills.join(', ')}`,
+          createdAt: c.createdAt || c.timestamp || new Date().toISOString()
         }
       })
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`)
-      }
-      const data = await res.json()
-      if (data.success && Array.isArray(data.candidates)) {
-        const cleaned = deduplicateCandidates((data.candidates || []).map(c => {
-          if (c.location && (c.location.toLowerCase().includes('search on') || c.location.toLowerCase().includes('webpage'))) {
-            return { ...c, location: 'Remote, US' }
-          }
-          return c
-        }))
-        setStreamCandidates(cleaned)
-        if (data.counts) {
-          setStreamCounts(data.counts)
-          try {
-            localStorage.setItem('smarthire_stream_counts_cache', JSON.stringify(data.counts))
-          } catch (e) {}
+
+      // Combine all: manual candidates + stream candidates
+      const combinedPool = [...normalizedManual, ...streamList]
+      const cleaned = deduplicateCandidates(combinedPool.map(c => {
+        if (c.location && (c.location.toLowerCase().includes('search on') || c.location.toLowerCase().includes('webpage'))) {
+          return { ...c, location: 'Remote, US' }
         }
+        return c
+      }))
+
+      setStreamCandidates(cleaned)
+      if (countsData) {
+        const enrichedCounts = {
+          ...countsData,
+          candidatesTotal: cleaned.length
+        }
+        setStreamCounts(enrichedCounts)
+        try {
+          localStorage.setItem('smarthire_stream_counts_cache', JSON.stringify(enrichedCounts))
+        } catch (e) {}
+      }
         try {
           // Cache lean candidate records so local storage quota is preserved
           const leanCache = cleaned.slice(0, 300).map(c => ({
@@ -2512,7 +2628,6 @@ export default function RecruiterInbox({ defaultViewMode }) {
         } catch (cacheErr) {
           console.warn('Cache write skipped:', cacheErr)
         }
-      }
     } catch (err) {
       console.warn('Failed to fetch recruiter talent stream:', err)
       if (retryCount < 2) {
@@ -2962,6 +3077,17 @@ export default function RecruiterInbox({ defaultViewMode }) {
       console.warn('API save candidate error:', err)
     }
 
+    // Persist to local cache so manual candidates appear across reloads & ATS views
+    try {
+      const existingAll = JSON.parse(localStorage.getItem('smarthire_all_candidates') || '[]')
+      localStorage.setItem('smarthire_all_candidates', JSON.stringify([candRecord, ...existingAll.filter(c => c.id !== candId && c.email !== candRecord.email)]))
+    } catch (cacheErr) {}
+
+    // Persist to Firestore
+    try {
+      saveCandidate(candId, candRecord).catch(() => {})
+    } catch (fsErr) {}
+
     // Prepend to streamCandidates & update count
     setStreamCandidates(prev => [candRecord, ...prev])
     setStreamCounts(prev => ({ ...prev, total: (prev.total || 0) + 1 }))
@@ -3146,13 +3272,23 @@ export default function RecruiterInbox({ defaultViewMode }) {
       })
       .catch(() => {})
 
-    fetch('/api/recruiters', {
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}` }
-    })
-      .then(r => r.json())
+    const token = localStorage.getItem('smarthire_token') || ''
+    const reqHeaders = { 'Authorization': `Bearer ${token}` }
+    fetch('/api/recruiters', { headers: reqHeaders })
+      .then(r => r.ok ? r.json() : fetch('/api/admin/recruiters', { headers: reqHeaders }).then(ar => ar.json()))
       .then(d => {
-        if (d && d.success && Array.isArray(d.recruiters)) {
-          setAvailableRecruiters(d.recruiters)
+        if (d && d.success && Array.isArray(d.recruiters) && d.recruiters.length > 0) {
+          const map = new Map()
+          ALL_SMARTHIRE_RECRUITERS.forEach(r => map.set((r.email || r.name).toLowerCase().trim(), r))
+          d.recruiters.forEach(r => {
+            const key = (r.email || r.name).toLowerCase().trim()
+            map.set(key, { ...(map.get(key) || {}), ...r })
+          })
+          const mergedRecs = Array.from(map.values())
+          setAvailableRecruiters(mergedRecs)
+          try {
+            localStorage.setItem('smarthire_recruiters', JSON.stringify(mergedRecs))
+          } catch (e) {}
         }
       })
       .catch(() => {})
@@ -3348,9 +3484,19 @@ export default function RecruiterInbox({ defaultViewMode }) {
       // Recruiter filter (Super Admin & Admin can filter by assigned recruiter)
       if (filterRecruiter !== 'all') {
         const targetRec = filterRecruiter.toLowerCase().trim()
+        const targetTokens = targetRec.split(/[\s@._-]+/).filter(t => t.length >= 3)
         const candRec = (c.assignedRecruiter || c.assignedBy || c.recruiter || c.addedByName || c.recruiterName || '').toLowerCase().trim()
         const candRecMail = (c.recruiterEmail || c.addedByEmail || c.createdBy || '').toLowerCase().trim()
-        if (!candRec.includes(targetRec) && !candRecMail.includes(targetRec)) {
+        
+        const matched = 
+          candRec === targetRec ||
+          candRec.includes(targetRec) ||
+          targetRec.includes(candRec) ||
+          candRecMail === targetRec ||
+          candRecMail.includes(targetRec) ||
+          targetTokens.some(tok => candRec.includes(tok) || candRecMail.includes(tok))
+
+        if (!matched) {
           return false
         }
       }
@@ -4940,9 +5086,9 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       gap: 6,
                       boxShadow: '0 2px 6px rgba(37,99,235,0.25)'
                     }}
-                    title="Push candidate to an active requisition & pipeline"
+                    title="Push candidate to Jobs in Hand / active requisition"
                   >
-                    <span>Push to Requisition ↗</span>
+                    <span>Push to Jobs in Hand ↗</span>
                   </button>
 
                   <button
@@ -6818,32 +6964,30 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     <option value="under_50">Under 50% Low</option>
                   </select>
 
-                  {/* Recruiter dropdown (Admin View Only) */}
-                  {(isSuperAdmin || isAdmin || isManager) && (
-                    <select
-                      value={filterRecruiter}
-                      onChange={e => { setFilterRecruiter(e.target.value); setTablePage(1); }}
-                      style={{
-                        backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
-                        border: filterRecruiter !== 'all' ? '1px solid #2563EB' : `1px solid ${C.border}`,
-                        borderRadius: 8,
-                        padding: '8px 12px',
-                        fontSize: 12.5,
-                        fontWeight: 600,
-                        color: filterRecruiter !== 'all' ? '#2563EB' : C.textPrimary,
-                        outline: 'none',
-                        cursor: 'pointer'
-                      }}
-                      title="Filter candidates by assigned recruiter"
-                    >
-                      <option value="all">Recruiter: All ⌵</option>
+                  {/* Recruiter dropdown (Always Accessible) */}
+                  <select
+                    value={filterRecruiter}
+                    onChange={e => { setFilterRecruiter(e.target.value); setTablePage(1); }}
+                    style={{
+                      backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
+                      border: filterRecruiter !== 'all' ? '1px solid #2563EB' : `1px solid ${C.border}`,
+                      borderRadius: 8,
+                      padding: '8px 12px',
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      color: filterRecruiter !== 'all' ? '#2563EB' : C.textPrimary,
+                      outline: 'none',
+                      cursor: 'pointer'
+                    }}
+                    title="Filter candidates by assigned recruiter"
+                  >
+                    <option value="all">Recruiter: All (All Recruiters) ⌵</option>
                       {availableRecruiters.map(r => (
                         <option key={r.id || r._id || r.email} value={r.name || r.email}>
                           {r.name} ({r.role || 'Recruiter'})
                         </option>
                       ))}
                     </select>
-                  )}
 
                   {/* Source Channel dropdown */}
                   <select
@@ -7088,7 +7232,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                         <th style={{ padding: '8px 10px', width: 160, minWidth: 140, maxWidth: 190, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Key Skills</th>
                         <th style={{ padding: '8px 8px', width: 90, minWidth: 80, maxWidth: 100, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Received ⇕</th>
                         <th style={{ padding: '8px 8px', width: 100, minWidth: 90, maxWidth: 110, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Source</th>
-                        <th style={{ padding: '8px 10px', width: 95, minWidth: 90, textAlign: 'right', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Actions</th>
+                        <th style={{ padding: '8px 10px', width: 230, minWidth: 210, textAlign: 'right', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -7309,6 +7453,34 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
                                     <button
                                       type="button"
+                                      onClick={() => handleOpenPushModal(c)}
+                                      style={{
+                                        backgroundColor: '#2563EB',
+                                        color: '#FFFFFF',
+                                        border: 'none',
+                                        borderRadius: 6,
+                                        padding: '5px 10px',
+                                        fontSize: 11.5,
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 4,
+                                        whiteSpace: 'nowrap',
+                                        boxShadow: '0 1px 2px rgba(37,99,235,0.2)',
+                                        transition: 'all 0.15s ease'
+                                      }}
+                                      title="Push Candidate to Jobs in Hand / Active Requisition"
+                                    >
+                                      <span>Push to Jobs in Hand</span>
+                                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <line x1="7" y1="17" x2="17" y2="7"></line>
+                                        <polyline points="7 7 17 7 17 17"></polyline>
+                                      </svg>
+                                    </button>
+
+                                    <button
+                                      type="button"
                                       onClick={() => setActiveActionMenuId(isActionMenuOpen ? null : candId)}
                                       style={{
                                         background: 'transparent',
@@ -7361,7 +7533,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                           textAlign: 'left'
                                         }}
                                       >
-                                        <span>Push to Requisition ↗</span>
+                                        <span>Push to Jobs in Hand ↗</span>
                                       </button>
 
                                       <button
@@ -9832,7 +10004,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
             }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: C.textPrimary, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  Push to Requisition &amp; Pipeline
+                  Push to Jobs in Hand / Active Requisition
                 </h3>
                 <p style={{ margin: '3px 0 0', fontSize: 12, color: C.textSecondary }}>
                   Assign candidate to an active client position &amp; sync hiring pipeline
@@ -10035,7 +10207,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     gap: 6
                   }}
                 >
-                  {isPushingToReq ? 'Pushing...' : 'Confirm & Push to Requisition'}
+                  {isPushingToReq ? 'Pushing...' : 'Confirm & Push to Jobs in Hand'}
                 </button>
               </div>
             </form>

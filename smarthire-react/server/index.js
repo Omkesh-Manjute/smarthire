@@ -6950,7 +6950,7 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-app.get('/api/admin/recruiters', async (req, res) => {
+app.get(['/api/admin/recruiters', '/api/recruiters'], async (req, res) => {
   try {
     loadRecruitersFromDisk();
     if (isMongoConnected) {
