@@ -8769,17 +8769,23 @@ EDUCATION & CERTIFICATIONS
       }
     });
 
-  // 1. Resolve all requisitions assigned to this recruiter / employee
+  // 1. Pre-index all requisitions into an O(1) Map and resolve assigned requisitions
+  const jobMap = new Map();
   const assignedReqIds = new Set();
-  jobsStore.forEach(j => {
+  (jobsStore || []).forEach(j => {
+    if (!j) return;
+    const cleanId = String(j.id || '').replace(/^J-/, '').replace(/^REQ-/, '').trim();
+    if (cleanId) jobMap.set(cleanId, j);
+    if (j.id) jobMap.set(String(j.id), j);
+    if (j.reqId) jobMap.set(String(j.reqId), j);
+
     const assigned = Array.isArray(j.assignedRecruiters) ? j.assignedRecruiters : [];
     const isAssigned = assigned.some(r => {
       const rStr = String(r || '').toLowerCase().trim();
       return rStr === userIdent || rStr === userMail || (firstName.length >= 3 && rStr.includes(firstName));
     });
     if (isAssigned) {
-      const cleanId = String(j.id || '').replace(/^J-/, '').replace(/^REQ-/, '').trim();
-      assignedReqIds.add(cleanId);
+      if (cleanId) assignedReqIds.add(cleanId);
       if (j.id) assignedReqIds.add(String(j.id));
       if (j.reqId) assignedReqIds.add(String(j.reqId));
     }
@@ -8855,36 +8861,40 @@ EDUCATION & CERTIFICATIONS
       ? c.role 
       : (c.extracted_profile?.role || (cleanSkills.length > 0 ? `${cleanSkills[0]} Specialist` : 'Software Engineer'));
 
-    // Match with suggested or active position
-    let targetJob = jobsStore.find(j => String(j.id).replace(/^J-/, '') === String(c.targetReqId || c.reqId || '').replace(/^J-/, ''));
-    let matchAnalysis = { matchScore: c.matchScore || 85, matchingSkills: cleanSkills.slice(0, 4), missingSkills: [] };
-    if (targetJob) {
-      const calculatedAnalysis = evaluateCandidateJobMatch({ ...c, role: cleanRole, skills: cleanSkills }, targetJob);
-      matchAnalysis = {
-        matchScore: c.matchScore || calculatedAnalysis.matchScore,
-        matchingSkills: calculatedAnalysis.matchingSkills.length > 0 ? calculatedAnalysis.matchingSkills : cleanSkills.slice(0, 4),
-        missingSkills: calculatedAnalysis.missingSkills
-      };
-    } else {
-      let bestJob = null;
-      let bestAnalysis = { matchScore: 0, matchingSkills: [], missingSkills: [] };
-      for (const j of jobsStore) {
-        const analysis = evaluateCandidateJobMatch({ ...c, role: cleanRole, skills: cleanSkills }, j);
-        if (analysis.matchScore > bestAnalysis.matchScore) {
-          bestAnalysis = analysis;
-          bestJob = j;
-        }
-      }
-      if (bestJob) {
-        targetJob = bestJob;
+    // Fast O(1) Match with suggested or active position
+    const cleanReqKey = String(c.targetReqId || c.reqId || '').replace(/^J-/, '').replace(/^REQ-/, '').trim();
+    let targetJob = cleanReqKey && jobMap.has(cleanReqKey) ? jobMap.get(cleanReqKey) : null;
+
+    let matchAnalysis = {
+      matchScore: c.matchScore || 85,
+      matchingSkills: (Array.isArray(c.matchingSkills) && c.matchingSkills.length > 0) ? c.matchingSkills : cleanSkills.slice(0, 4),
+      missingSkills: Array.isArray(c.missingSkills) ? c.missingSkills : []
+    };
+
+    if (!c.matchScore) {
+      if (targetJob) {
+        const calculatedAnalysis = evaluateCandidateJobMatch({ ...c, role: cleanRole, skills: cleanSkills }, targetJob);
         matchAnalysis = {
-          matchScore: c.matchScore || bestAnalysis.matchScore,
-          matchingSkills: bestAnalysis.matchingSkills.length > 0 ? bestAnalysis.matchingSkills : cleanSkills.slice(0, 4),
-          missingSkills: bestAnalysis.missingSkills
+          matchScore: calculatedAnalysis.matchScore,
+          matchingSkills: calculatedAnalysis.matchingSkills.length > 0 ? calculatedAnalysis.matchingSkills : cleanSkills.slice(0, 4),
+          missingSkills: calculatedAnalysis.missingSkills
         };
       } else {
-        targetJob = jobsStore[0];
-        matchAnalysis = targetJob ? evaluateCandidateJobMatch({ ...c, role: cleanRole, skills: cleanSkills }, targetJob) : { matchScore: c.matchScore || 75, matchingSkills: cleanSkills.slice(0, 3), missingSkills: [] };
+        targetJob = jobsStore[0] || null;
+        if (targetJob) {
+          matchAnalysis = evaluateCandidateJobMatch({ ...c, role: cleanRole, skills: cleanSkills }, targetJob);
+        } else {
+          matchAnalysis = { matchScore: 82, matchingSkills: cleanSkills.slice(0, 3), missingSkills: [] };
+        }
+      }
+      c.matchScore = matchAnalysis.matchScore;
+      c.matchingSkills = matchAnalysis.matchingSkills;
+      c.missingSkills = matchAnalysis.missingSkills;
+      if (targetJob && !c.targetReqId) {
+        c.targetReqId = String(targetJob.id || '').replace(/^J-/, '');
+        c.matchedJobTitle = targetJob.title || targetJob.jobTitle || '';
+        c.matchedJobClient = targetJob.client || targetJob.clientName || 'Direct Client';
+        c.matchedJobRate = targetJob.rate || targetJob.payRate || '$75/hr';
       }
     }
 
