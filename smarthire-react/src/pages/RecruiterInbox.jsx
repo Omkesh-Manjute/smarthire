@@ -1902,14 +1902,20 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const [drawerReqId, setDrawerReqId] = useState('')
   const [resumeKeywordSearch, setResumeKeywordSearch] = useState('')
 
-  // Direct Outbound Email Modal State (Strictly sent from personal recruiter email)
+  // Direct Outbound Email State (Strictly sent from personal recruiter email)
   const [emailModalCandidate, setEmailModalCandidate] = useState(null)
   const [emailTo, setEmailTo] = useState('')
+  const [emailCc, setEmailCc] = useState('')
+  const [emailBcc, setEmailBcc] = useState('')
+  const [showCcInput, setShowCcInput] = useState(false)
+  const [showBccInput, setShowBccInput] = useState(false)
   const [emailSubject, setEmailSubject] = useState('')
   const [emailBody, setEmailBody] = useState('')
   const [emailSending, setEmailSending] = useState(false)
   const [emailSuccessToast, setEmailSuccessToast] = useState('')
   const [directMailtoUrl, setDirectMailtoUrl] = useState('')
+  const [candidateSentEmails, setCandidateSentEmails] = useState({})
+  const [candidateActivities, setCandidateActivities] = useState({})
 
   // Candidate Assignment Notification Toast
   const [assignedToast, setAssignedToast] = useState('')
@@ -2443,12 +2449,18 @@ export default function RecruiterInbox({ defaultViewMode }) {
   }
 
   const handleOpenEmailModal = (cand) => {
+    if (!cand) return
     setEmailModalCandidate(cand)
     setEmailTo(cand.email || '')
-    const targetReq = cand.targetReqId || '159079'
-    const jobTitle = cand.matchedJobTitle || 'Open Position'
-    const jobRate = cand.matchedJobRate || '$75/hr'
-    const jobClient = cand.matchedJobClient || 'State Agency'
+    setEmailCc('')
+    setEmailBcc('')
+    setShowCcInput(false)
+    setShowBccInput(false)
+
+    const targetReq = cand.targetReqId || drawerReqId || '159079'
+    const jobTitle = cand.matchedJobTitle || activeTargetJob?.title || 'Open Position'
+    const jobRate = cand.matchedJobRate || activeTargetJob?.rate || '$75/hr'
+    const jobClient = cand.matchedJobClient || activeTargetJob?.client || 'State Agency'
 
     const defaultSubject = `Opportunity: ${jobTitle} (Req #${targetReq}) | COOLSOFT LLC`
     setEmailSubject(defaultSubject)
@@ -2463,9 +2475,18 @@ export default function RecruiterInbox({ defaultViewMode }) {
     setEmailBody(defaultBody)
     setEmailSuccessToast('')
     setDirectMailtoUrl('')
+
+    if (inboxSubMode === 'card') {
+      setActiveTobuTab('emails')
+    } else {
+      setSelectedCandidate(cand)
+      setInboxSubMode('card')
+      setActiveTobuTab('emails')
+    }
   }
 
   const handleSendDirectEmail = async () => {
+    const targetCand = activeCandidate || emailModalCandidate
     if (!emailTo || !emailSubject || !emailBody) {
       alert('Please fill out Recipient, Subject, and Body.')
       return
@@ -2475,7 +2496,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
     try {
       const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
       const recEmail = u.email || currentUser?.email || (isSuperAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')
-      const candId = emailModalCandidate?.id || emailModalCandidate?.candidate_id || ''
+      const candId = String(targetCand?.id || targetCand?.candidate_id || targetCand?.canId || 'cand')
 
       const res = await fetch('/api/recruiter/send-direct-email', {
         method: 'POST',
@@ -2483,15 +2504,58 @@ export default function RecruiterInbox({ defaultViewMode }) {
         body: JSON.stringify({
           recruiterEmail: recEmail,
           to: emailTo,
+          cc: emailCc || '',
+          bcc: emailBcc || '',
           subject: emailSubject,
           body: emailBody,
-          candidateName: emailModalCandidate?.name || '',
+          candidateName: targetCand?.name || '',
           candidateId: candId
         })
       })
       const data = await res.json()
       if (data.success) {
         setDirectMailtoUrl(data.mailtoUrl || '')
+
+        const sentTime = new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
+        const sender = data.senderEmail || recEmail
+
+        // 1. Record in Candidate's Sent Emails Thread
+        const newSentRecord = {
+          id: `sent-${Date.now()}`,
+          subject: emailSubject,
+          to: emailTo,
+          cc: emailCc || '',
+          bcc: emailBcc || '',
+          body: emailBody,
+          sender: sender,
+          time: sentTime,
+          dispatched: data.serverDispatched
+        }
+        const existingEmails = candidateSentEmails[candId] || []
+        const updatedEmails = [newSentRecord, ...existingEmails]
+        setCandidateSentEmails(prev => ({ ...prev, [candId]: updatedEmails }))
+        try {
+          localStorage.setItem(`smarthire_cand_emails_${candId}`, JSON.stringify(updatedEmails))
+        } catch (_) {}
+
+        // 2. Record in Candidate's Activity Log
+        const newActivityRecord = {
+          id: `act-${Date.now()}`,
+          type: 'email',
+          title: `Outbound Email Dispatched to ${emailTo}`,
+          desc: `Subject: "${emailSubject}" · Sender: ${sender}${emailCc ? ' · Cc: ' + emailCc : ''}`,
+          time: sentTime,
+          badge: 'Email Outbound',
+          badgeBg: '#F5F3FF',
+          badgeColor: '#7C3AED'
+        }
+        const existingActivities = candidateActivities[candId] || []
+        const updatedActivities = [newActivityRecord, ...existingActivities]
+        setCandidateActivities(prev => ({ ...prev, [candId]: updatedActivities }))
+        try {
+          localStorage.setItem(`smarthire_cand_activities_${candId}`, JSON.stringify(updatedActivities))
+        } catch (_) {}
+
         if (data.serverDispatched) {
           setEmailSuccessToast(`Email successfully sent to ${emailTo} directly from ${data.senderEmail}!`)
         } else {
@@ -2501,9 +2565,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
           }
         }
         setTimeout(() => {
-          setEmailModalCandidate(null)
           setEmailSuccessToast('')
-        }, 3500)
+        }, 5000)
       } else {
         alert('Failed to send email: ' + (data.message || 'Unknown error'))
       }
@@ -3085,6 +3148,80 @@ export default function RecruiterInbox({ defaultViewMode }) {
     }
   }
 
+  // Keyboard Shortcuts for Rapid Screening: J / ArrowRight (Next), K / ArrowLeft (Prev), Esc (Back to Table)
+  useEffect(() => {
+    if (inboxSubMode !== 'card') return
+
+    const handleKeyDown = (e) => {
+      const activeEl = document.activeElement
+      const isEditing = activeEl && (
+        activeEl.tagName === 'INPUT' ||
+        activeEl.tagName === 'TEXTAREA' ||
+        activeEl.tagName === 'SELECT' ||
+        activeEl.isContentEditable
+      )
+      if (isEditing) return
+
+      if (e.key === 'j' || e.key === 'J' || e.key === 'ArrowRight') {
+        e.preventDefault()
+        handleNextCandidate()
+      } else if (e.key === 'k' || e.key === 'K' || e.key === 'ArrowLeft') {
+        e.preventDefault()
+        handlePrevCandidate()
+      } else if (e.key === 'Escape') {
+        e.preventDefault()
+        setInboxSubMode('table')
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [inboxSubMode, activeCandidateIndex, filteredCandidates])
+
+  // Sync stored emails and activities from localStorage when active candidate changes
+  useEffect(() => {
+    if (!activeCandidate) return
+    const cid = String(activeCandidate.id || activeCandidate.candidate_id || activeCandidate.canId || '')
+    if (!cid) return
+
+    try {
+      const storedEmails = localStorage.getItem(`smarthire_cand_emails_${cid}`)
+      if (storedEmails) {
+        setCandidateSentEmails(prev => ({ ...prev, [cid]: JSON.parse(storedEmails) }))
+      }
+    } catch (_) {}
+
+    try {
+      const storedActivities = localStorage.getItem(`smarthire_cand_activities_${cid}`)
+      if (storedActivities) {
+        setCandidateActivities(prev => ({ ...prev, [cid]: JSON.parse(storedActivities) }))
+      }
+    } catch (_) {}
+  }, [activeCandidate?.id, activeCandidate?.candidate_id, activeCandidate?.canId])
+
+  // Initialize Email Fields for Active Candidate
+  useEffect(() => {
+    if (!activeCandidate) return
+    const targetReq = activeCandidate.targetReqId || drawerReqId || '159079'
+    const jobTitle = activeCandidate.matchedJobTitle || activeTargetJob?.title || 'Open Position'
+    const jobRate = activeCandidate.matchedJobRate || activeTargetJob?.rate || '$75/hr'
+    const jobClient = activeCandidate.matchedJobClient || activeTargetJob?.client || 'State Agency'
+    const candFirstName = (activeCandidate.name || 'Candidate').split(' ')[0]
+
+    const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
+    const myName = u.name || currentUser?.name || (isSuperAdmin ? 'Omkesh Manjute' : 'Lead Recruiter')
+    const myEmail = u.email || currentUser?.email || (isSuperAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')
+
+    setEmailTo(activeCandidate.email || '')
+    setEmailSubject(`Opportunity: ${jobTitle} (Req #${targetReq}) | COOLSOFT LLC`)
+    setEmailBody(`Hi ${candFirstName},\n\nI reviewed your resume for the ${jobTitle} position (Req #${targetReq}) with our client ${jobClient} (${jobRate}). Your technical background and experience are a strong fit for this project.\n\nCould you please review and confirm:\n1. Your current work authorization status?\n2. Your updated hourly rate expectation for this position?\n3. Your immediate availability for a brief technical screening call?\n\nPlease reply directly to this email or feel free to attach your latest updated resume.\n\nWith Regards,\n${myName}\nLead Recruiter\nCOOLSOFT LLC | ${myEmail}\nhttp://www.coolsofttech.com`)
+    setEmailCc('')
+    setEmailBcc('')
+    setShowCcInput(false)
+    setShowBccInput(false)
+    setEmailSuccessToast('')
+  }, [activeCandidate?.id, activeCandidate?.candidate_id, activeCandidate?.canId, activeCandidate?.name, activeCandidate?.email])
+
   const handleShareCandidate = (cand) => {
     if (!cand) return
     const text = `Candidate: ${cand.name} | Role: ${cand.role || 'Specialist'} | Experience: ${cand.experience || '8+ Years'} | Location: ${cand.location} | Visa: ${cand.visaStatus || 'US Citizen'} | Contact: ${cand.email} (${cand.phone || 'N/A'})`
@@ -3146,15 +3283,16 @@ export default function RecruiterInbox({ defaultViewMode }) {
   }
 
   const handleApplyEmailTemplate = (key) => {
-    if (!emailModalCandidate) return
-    const candFirstName = (emailModalCandidate.name || emailModalCandidate.candidateName || 'Candidate').split(' ')[0]
+    const targetCand = emailModalCandidate || activeCandidate
+    if (!targetCand) return
+    const candFirstName = (targetCand.name || targetCand.candidateName || 'Candidate').split(' ')[0]
     const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
     const myName = u.name || currentUser?.name || 'Omkesh Manjute'
     const myEmail = u.email || currentUser?.email || 'omkesh@coolsofttech.com'
-    const targetReq = emailModalCandidate.targetReqId || drawerReqId || '159079'
-    const jobTitle = emailModalCandidate.matchedJobTitle || activeTargetJob?.title || 'Open Position'
-    const jobClient = emailModalCandidate.matchedJobClient || activeTargetJob?.client || 'State Agency'
-    const jobRate = emailModalCandidate.matchedJobRate || activeTargetJob?.rate || '$75/hr'
+    const targetReq = targetCand.targetReqId || drawerReqId || '159079'
+    const jobTitle = targetCand.matchedJobTitle || activeTargetJob?.title || 'Open Position'
+    const jobClient = targetCand.matchedJobClient || activeTargetJob?.client || 'State Agency'
+    const jobRate = targetCand.matchedJobRate || activeTargetJob?.rate || '$75/hr'
 
     if (key === 'rtr') {
       setEmailSubject(`Right to Represent (RTR) Authorization: ${jobTitle} (Req #${targetReq})`)
@@ -4300,11 +4438,20 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       cursor: activeCandidateIndex <= 0 ? 'not-allowed' : 'pointer',
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: 4
+                      gap: 5
                     }}
-                    title="Previous Candidate"
+                    title="Previous Candidate (Keyboard: K or ArrowLeft)"
                   >
                     <IconChevronLeft /> <span>Prev Candidate</span>
+                    <kbd style={{
+                      fontSize: 10,
+                      fontWeight: 800,
+                      backgroundColor: isLight ? '#E2E8F0' : '#334155',
+                      color: C.textSecondary,
+                      padding: '1px 5px',
+                      borderRadius: 3,
+                      fontFamily: 'monospace'
+                    }}>K</kbd>
                   </button>
 
                   <button
@@ -4323,11 +4470,20 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       cursor: (activeCandidateIndex < 0 || activeCandidateIndex >= filteredCandidates.length - 1) ? 'not-allowed' : 'pointer',
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: 4
+                      gap: 5
                     }}
-                    title="Next Candidate"
+                    title="Next Candidate (Keyboard: J or ArrowRight)"
                   >
                     <span>Next Candidate</span> <IconChevronRight />
+                    <kbd style={{
+                      fontSize: 10,
+                      fontWeight: 800,
+                      backgroundColor: isLight ? '#E2E8F0' : '#334155',
+                      color: C.textSecondary,
+                      padding: '1px 5px',
+                      borderRadius: 3,
+                      fontFamily: 'monospace'
+                    }}>J</kbd>
                   </button>
 
                   <span style={{
@@ -4358,9 +4514,18 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       alignItems: 'center',
                       gap: 6
                     }}
-                    title="Return to Candidates Table"
+                    title="Return to Candidates Table (Keyboard: ESC)"
                   >
                     <span>←</span> <span>Back to Candidates Table</span>
+                    <kbd style={{
+                      fontSize: 10,
+                      fontWeight: 800,
+                      backgroundColor: '#DBEAFE',
+                      color: '#1D4ED8',
+                      padding: '1px 5px',
+                      borderRadius: 3,
+                      fontFamily: 'monospace'
+                    }}>ESC</kbd>
                   </button>
                 </div>
 
@@ -4390,9 +4555,12 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
                   <button
                     type="button"
-                    onClick={() => handleOpenEmailModal(activeCandidate)}
+                    onClick={() => {
+                      handleOpenEmailModal(activeCandidate)
+                      setActiveTobuTab('emails')
+                    }}
                     style={{
-                      background: '#7C3AED',
+                      background: activeTobuTab === 'emails' ? '#5B21B6' : '#7C3AED',
                       color: '#FFFFFF',
                       border: 'none',
                       borderRadius: 6,
@@ -5407,50 +5575,602 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       </div>
                     )}
 
-                    {/* 4. EMAILS TAB */}
-                    {activeTobuTab === 'emails' && (
-                      <div style={{ maxWidth: 860, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
-                        <div style={{ backgroundColor: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 20 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                            <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: C.textPrimary }}>
-                              Email Activity &amp; RTR Communications
-                            </h4>
-                            <button
-                              type="button"
-                              onClick={() => handleOpenEmailModal(activeCandidate)}
-                              style={{ background: '#7C3AED', color: '#FFF', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}
-                            >
-                              + New Email
-                            </button>
-                          </div>
-                          <div style={{ fontSize: 12.5, color: C.textSecondary, lineHeight: 1.6 }}>
-                            <div><strong>Recipient:</strong> {activeCandidate?.email}</div>
-                            <div><strong>Sender:</strong> {currentUser?.email || 'omkesh@coolsofttech.com'} (COOLSOFT LLC)</div>
-                            <div><strong>Status:</strong> Ready for client submittal / RTR authorization</div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    {/* 4. FULL-PAGE EMAILS COMPOSER & OUTREACH TAB */}
+                    {activeTobuTab === 'emails' && (() => {
+                      const candId = String(activeCandidate?.id || activeCandidate?.candidate_id || activeCandidate?.canId || 'cand')
+                      const sentList = candidateSentEmails[candId] || []
+                      const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
+                      const myName = u.name || currentUser?.name || (isSuperAdmin ? 'Omkesh Manjute' : 'Lead Recruiter')
+                      const myEmail = u.email || currentUser?.email || (isSuperAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')
 
-                    {/* 5. ACTIVITY TAB */}
-                    {activeTobuTab === 'activity' && (
-                      <div style={{ maxWidth: 860, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                        {[
-                          { title: 'Candidate Ingested into ATS', time: '10th Sep 2026, 09:42 PM', desc: `Ingested from ${activeCandidate?.source || 'Email Inbox'} by ${currentUser?.name || (isSuperAdmin ? 'Omkesh Manjute' : 'Recruiter')}` },
-                          { title: 'AI Match Calculated', time: '10th Sep 2026, 09:43 PM', desc: `Fit score calculated at ${calculatedFitScore}% for Req #${currentReqId} (${activeTargetJob?.title})` },
-                          { title: 'Profile Viewed', time: 'Just now', desc: `Profile inspected by ${currentUser?.name || (isSuperAdmin ? 'Omkesh Manjute' : 'Recruiter')}` }
-                        ].map((act, i) => (
-                          <div key={i} style={{ backgroundColor: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563EB', marginTop: 5 }} />
-                            <div>
-                              <div style={{ fontSize: 13, fontWeight: 800, color: C.textPrimary }}>{act.title}</div>
-                              <div style={{ fontSize: 11, color: C.textSecondary }}>{act.time}</div>
-                              <div style={{ fontSize: 12, color: C.textSecondary, marginTop: 3 }}>{act.desc}</div>
+                      return (
+                        <div style={{ maxWidth: 940, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+                          
+                          {/* Composer Card */}
+                          <div style={{
+                            backgroundColor: C.surface,
+                            border: `1px solid ${C.border}`,
+                            borderRadius: 12,
+                            overflow: 'hidden',
+                            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)'
+                          }}>
+                            {/* Card Top Title Bar */}
+                            <div style={{
+                              padding: '16px 22px',
+                              borderBottom: `1px solid ${C.border}`,
+                              backgroundColor: isLight ? '#FFFFFF' : '#1E293B',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              flexWrap: 'wrap',
+                              gap: 10
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <div style={{
+                                  width: 34,
+                                  height: 34,
+                                  borderRadius: 8,
+                                  background: 'linear-gradient(135deg, #7C3AED, #4F46E5)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  color: '#FFFFFF'
+                                }}>
+                                  <IconMail />
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: 15, fontWeight: 900, color: C.textPrimary }}>
+                                    Compose Direct Email &amp; RTR Authorization
+                                  </div>
+                                  <div style={{ fontSize: 12, color: C.textSecondary }}>
+                                    To candidate: <strong style={{ color: '#2563EB' }}>{activeCandidate?.name}</strong> ({activeCandidate?.role || 'Technical Specialist'})
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{
+                                  fontSize: 11,
+                                  fontWeight: 800,
+                                  color: '#15803D',
+                                  backgroundColor: '#DCFCE7',
+                                  border: '1px solid #86EFAC',
+                                  borderRadius: 6,
+                                  padding: '4px 10px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 5
+                                }}>
+                                  <span>SMTP Authenticated: {myEmail}</span>
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Recipient & Headers Fields */}
+                            <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 12, borderBottom: `1px solid ${C.border}`, backgroundColor: isLight ? '#F8FAFC' : '#0B0F17' }}>
+                              
+                              {/* FROM Row */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <span style={{ width: 65, fontSize: 12, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase' }}>
+                                  From:
+                                </span>
+                                <div style={{
+                                  flex: 1,
+                                  fontSize: 12.5,
+                                  fontWeight: 700,
+                                  color: C.textPrimary,
+                                  background: C.inputBg,
+                                  border: `1px solid ${C.border}`,
+                                  borderRadius: 6,
+                                  padding: '6px 12px'
+                                }}>
+                                  <strong>{myName}</strong> &lt;{myEmail}&gt; <span style={{ color: C.textSecondary, fontWeight: 500 }}>(COOLSOFT LLC Recruiter Dispatch)</span>
+                                </div>
+                              </div>
+
+                              {/* TO Row with CC / BCC toggles */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <span style={{ width: 65, fontSize: 12, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase' }}>
+                                  To:
+                                </span>
+                                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <input
+                                    type="email"
+                                    value={emailTo}
+                                    onChange={e => setEmailTo(e.target.value)}
+                                    placeholder="candidate@example.com"
+                                    style={{
+                                      flex: 1,
+                                      background: C.surface,
+                                      border: `1px solid ${C.border}`,
+                                      borderRadius: 6,
+                                      padding: '7px 12px',
+                                      fontSize: 13,
+                                      fontWeight: 700,
+                                      color: C.textPrimary,
+                                      outline: 'none'
+                                    }}
+                                  />
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    {!showCcInput && !emailCc && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setShowCcInput(true)}
+                                        style={{
+                                          background: C.inputBg,
+                                          border: `1px solid ${C.border}`,
+                                          borderRadius: 6,
+                                          padding: '6px 10px',
+                                          fontSize: 11.5,
+                                          fontWeight: 800,
+                                          color: C.textSecondary,
+                                          cursor: 'pointer'
+                                        }}
+                                      >
+                                        + Cc
+                                      </button>
+                                    )}
+                                    {!showBccInput && !emailBcc && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setShowBccInput(true)}
+                                        style={{
+                                          background: C.inputBg,
+                                          border: `1px solid ${C.border}`,
+                                          borderRadius: 6,
+                                          padding: '6px 10px',
+                                          fontSize: 11.5,
+                                          fontWeight: 800,
+                                          color: C.textSecondary,
+                                          cursor: 'pointer'
+                                        }}
+                                      >
+                                        + Bcc
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* CC Row (Expandable) */}
+                              {(showCcInput || emailCc) && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                  <span style={{ width: 65, fontSize: 12, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase' }}>
+                                    Cc:
+                                  </span>
+                                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <input
+                                      type="text"
+                                      value={emailCc}
+                                      onChange={e => setEmailCc(e.target.value)}
+                                      placeholder="Copy supervisor or account manager (e.g. omkesh@coolsofttech.com)..."
+                                      style={{
+                                        flex: 1,
+                                        background: C.surface,
+                                        border: `1px solid ${C.border}`,
+                                        borderRadius: 6,
+                                        padding: '7px 12px',
+                                        fontSize: 12.5,
+                                        fontWeight: 600,
+                                        color: C.textPrimary,
+                                        outline: 'none'
+                                      }}
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setEmailCc('')
+                                        setShowCcInput(false)
+                                      }}
+                                      style={{ background: 'none', border: 'none', color: C.textSecondary, cursor: 'pointer', padding: '4px 6px', fontSize: 14 }}
+                                      title="Remove Cc"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* BCC Row (Expandable) */}
+                              {(showBccInput || emailBcc) && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                  <span style={{ width: 65, fontSize: 12, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase' }}>
+                                    Bcc:
+                                  </span>
+                                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <input
+                                      type="text"
+                                      value={emailBcc}
+                                      onChange={e => setEmailBcc(e.target.value)}
+                                      placeholder="Blind copy email address for ATS archiving..."
+                                      style={{
+                                        flex: 1,
+                                        background: C.surface,
+                                        border: `1px solid ${C.border}`,
+                                        borderRadius: 6,
+                                        padding: '7px 12px',
+                                        fontSize: 12.5,
+                                        fontWeight: 600,
+                                        color: C.textPrimary,
+                                        outline: 'none'
+                                      }}
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setEmailBcc('')
+                                        setShowBccInput(false)
+                                      }}
+                                      style={{ background: 'none', border: 'none', color: C.textSecondary, cursor: 'pointer', padding: '4px 6px', fontSize: 14 }}
+                                      title="Remove Bcc"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* SUBJECT Row (Fully Editable) */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <span style={{ width: 65, fontSize: 12, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase' }}>
+                                  Subject:
+                                </span>
+                                <input
+                                  type="text"
+                                  value={emailSubject}
+                                  onChange={e => setEmailSubject(e.target.value)}
+                                  placeholder="Opportunity subject line..."
+                                  style={{
+                                    flex: 1,
+                                    background: C.surface,
+                                    border: `1px solid ${C.border}`,
+                                    borderRadius: 6,
+                                    padding: '8px 12px',
+                                    fontSize: 13,
+                                    fontWeight: 800,
+                                    color: C.textPrimary,
+                                    outline: 'none'
+                                  }}
+                                />
+                              </div>
+
+                              {/* Quick 1-Click Templates Strip */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', paddingTop: 6, borderTop: `1px solid ${C.border}` }}>
+                                <span style={{ fontSize: 11, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                                  Templates:
+                                </span>
+                                {[
+                                  { key: 'rtr', label: 'RTR Authorization' },
+                                  { key: 'screen', label: 'Screening Call' },
+                                  { key: 'rate', label: 'Rate & Work Auth' },
+                                  { key: 'interview', label: 'Interview Shortlist' }
+                                ].map(tpl => (
+                                  <button
+                                    key={tpl.key}
+                                    type="button"
+                                    onClick={() => handleApplyEmailTemplate(tpl.key)}
+                                    style={{
+                                      background: C.surface,
+                                      border: `1px solid ${C.border}`,
+                                      borderRadius: 14,
+                                      padding: '4px 11px',
+                                      fontSize: 11.5,
+                                      fontWeight: 700,
+                                      color: '#4F46E5',
+                                      cursor: 'pointer',
+                                      transition: 'all 0.15s'
+                                    }}
+                                  >
+                                    {tpl.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Spacious Body Textarea */}
+                            <div style={{ padding: '18px 22px' }}>
+                              <textarea
+                                value={emailBody}
+                                onChange={e => setEmailBody(e.target.value)}
+                                placeholder={`Write a message to ${activeCandidate?.name || 'candidate'}...`}
+                                style={{
+                                  width: '100%',
+                                  minHeight: 260,
+                                  background: C.inputBg,
+                                  border: `1px solid ${C.border}`,
+                                  borderRadius: 8,
+                                  padding: '14px 16px',
+                                  fontSize: 13.5,
+                                  lineHeight: 1.65,
+                                  color: C.textPrimary,
+                                  outline: 'none',
+                                  resize: 'vertical',
+                                  fontFamily: 'inherit',
+                                  boxSizing: 'border-box'
+                                }}
+                              />
+
+                              {emailSuccessToast && (
+                                <div style={{
+                                  marginTop: 12,
+                                  backgroundColor: '#ECFDF5',
+                                  border: '1px solid #A7F3D0',
+                                  color: '#047857',
+                                  fontSize: 12.5,
+                                  fontWeight: 700,
+                                  padding: '10px 14px',
+                                  borderRadius: 6,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 8
+                                }}>
+                                  <IconCheckCircle color="#047857" />
+                                  <span>{emailSuccessToast}</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Bottom Toolbar & Primary Send Action */}
+                            <div style={{
+                              padding: '14px 22px',
+                              borderTop: `1px solid ${C.border}`,
+                              backgroundColor: isLight ? '#F8FAFC' : '#1E293B',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              flexWrap: 'wrap',
+                              gap: 12
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (!emailTo) return
+                                    let mailto = `mailto:${encodeURIComponent(emailTo)}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`
+                                    if (emailCc) mailto += `&cc=${encodeURIComponent(emailCc)}`
+                                    if (emailBcc) mailto += `&bcc=${encodeURIComponent(emailBcc)}`
+                                    window.location.href = mailto
+                                  }}
+                                  style={{
+                                    background: C.surface,
+                                    border: `1px solid ${C.border}`,
+                                    borderRadius: 6,
+                                    padding: '7px 12px',
+                                    fontSize: 12,
+                                    fontWeight: 700,
+                                    color: C.textSecondary,
+                                    cursor: 'pointer'
+                                  }}
+                                  title="Open in Apple Mail / Outlook / Thunderbird"
+                                >
+                                  Draft in Mail App ↗
+                                </button>
+                                <span style={{ fontSize: 11, color: C.textSecondary }}>
+                                  Sent messages are automatically mirrored to Yahoo Sent folder via IMAP
+                                </span>
+                              </div>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <button
+                                  type="button"
+                                  onClick={() => handleApplyEmailTemplate('rtr')}
+                                  style={{
+                                    background: 'transparent',
+                                    border: `1px solid ${C.border}`,
+                                    borderRadius: 6,
+                                    padding: '8px 14px',
+                                    fontSize: 12,
+                                    fontWeight: 700,
+                                    color: C.textSecondary,
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  Reset Form
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={handleSendDirectEmail}
+                                  disabled={emailSending}
+                                  style={{
+                                    background: '#2563EB',
+                                    color: '#FFFFFF',
+                                    border: 'none',
+                                    borderRadius: 6,
+                                    padding: '8px 20px',
+                                    fontSize: 13,
+                                    fontWeight: 800,
+                                    cursor: emailSending ? 'not-allowed' : 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 7,
+                                    boxShadow: '0 2px 8px rgba(37,99,235,0.3)',
+                                    opacity: emailSending ? 0.7 : 1
+                                  }}
+                                >
+                                  <IconMail /> <span>{emailSending ? 'Sending Email...' : 'Send Email'}</span>
+                                </button>
+                              </div>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    )}
+
+                          {/* Sent Emails History for this Candidate */}
+                          <div style={{
+                            backgroundColor: C.surface,
+                            border: `1px solid ${C.border}`,
+                            borderRadius: 12,
+                            padding: 22
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                              <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: C.textPrimary, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                                Outbound Email History ({sentList.length})
+                              </h4>
+                              <span style={{ fontSize: 11.5, color: C.textSecondary }}>
+                                Audit trail of messages dispatched to {activeCandidate?.name}
+                              </span>
+                            </div>
+
+                            {sentList.length > 0 ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                {sentList.map((m) => (
+                                  <div
+                                    key={m.id}
+                                    style={{
+                                      backgroundColor: isLight ? '#F8FAFC' : 'rgba(255,255,255,0.02)',
+                                      border: `1px solid ${C.border}`,
+                                      borderRadius: 8,
+                                      padding: '14px 16px'
+                                    }}
+                                  >
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                                      <strong style={{ fontSize: 13, color: C.textPrimary }}>{m.subject}</strong>
+                                      <span style={{ fontSize: 11, color: C.textSecondary }}>{m.time}</span>
+                                    </div>
+                                    <div style={{ fontSize: 11.5, color: C.textSecondary, marginBottom: 8 }}>
+                                      <span>To: <strong>{m.to}</strong></span>
+                                      {m.cc && <span style={{ marginLeft: 12 }}>Cc: <strong>{m.cc}</strong></span>}
+                                      <span style={{ marginLeft: 12 }}>Sender: <strong>{m.sender}</strong></span>
+                                      <span style={{
+                                        marginLeft: 12,
+                                        fontSize: 10,
+                                        fontWeight: 800,
+                                        color: '#16A34A',
+                                        backgroundColor: '#DCFCE7',
+                                        padding: '1px 6px',
+                                        borderRadius: 4
+                                      }}>
+                                        {m.dispatched ? 'Delivered via SMTP' : 'Dispatched'}
+                                      </span>
+                                    </div>
+                                    <div style={{
+                                      fontSize: 12.5,
+                                      color: C.textPrimary,
+                                      whiteSpace: 'pre-wrap',
+                                      lineHeight: 1.5,
+                                      maxHeight: 120,
+                                      overflowY: 'auto',
+                                      backgroundColor: C.surface,
+                                      padding: 10,
+                                      borderRadius: 6,
+                                      border: `1px solid ${C.border}`
+                                    }}>
+                                      {m.body}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div style={{ fontSize: 12.5, color: C.textSecondary, fontStyle: 'italic', padding: '10px 0' }}>
+                                No outbound emails sent to this candidate yet. Use the composer above to initiate direct communication.
+                              </div>
+                            )}
+                          </div>
+
+                        </div>
+                      )
+                    })()}
+
+                    {/* 5. ACTIVITY TAB */}
+                    {activeTobuTab === 'activity' && (() => {
+                      const candId = String(activeCandidate?.id || activeCandidate?.candidate_id || activeCandidate?.canId || 'cand')
+                      const candidateCustomActivities = candidateActivities[candId] || []
+                      const defaultActivities = [
+                        {
+                          id: 'act-ingest',
+                          title: 'Candidate Ingested into ATS',
+                          time: activeCandidate?.createdAt ? new Date(activeCandidate.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '10th Sep 2026, 09:42 PM',
+                          desc: `Ingested from ${activeCandidate?.source || 'Email Inbox'} by ${currentUser?.name || (isSuperAdmin ? 'Omkesh Manjute' : 'Recruiter')}`,
+                          badge: 'Profile Ingest',
+                          badgeBg: isLight ? '#F1F5F9' : '#1E293B',
+                          badgeColor: C.textPrimary
+                        },
+                        {
+                          id: 'act-match',
+                          title: 'AI Requisition Match Calculated',
+                          time: 'Calculated upon ingestion',
+                          desc: `Fit score calculated at ${calculatedFitScore}% for Req #${currentReqId} (${activeTargetJob?.title})`,
+                          badge: 'AI Match',
+                          badgeBg: '#EFF6FF',
+                          badgeColor: '#2563EB'
+                        },
+                        {
+                          id: 'act-view',
+                          title: 'Profile Inspected & Screened',
+                          time: 'Active session',
+                          desc: `Candidate dossier inspected by ${currentUser?.name || (isSuperAdmin ? 'Omkesh Manjute' : 'Recruiter')}`,
+                          badge: 'Screening',
+                          badgeBg: '#F0FDF4',
+                          badgeColor: '#16A34A'
+                        }
+                      ]
+
+                      const allActivities = [...candidateCustomActivities, ...defaultActivities]
+
+                      return (
+                        <div style={{ maxWidth: 860, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                            <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: C.textPrimary, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                              Candidate Activity &amp; Audit Trail ({allActivities.length})
+                            </h4>
+                            <span style={{ fontSize: 11.5, color: C.textSecondary }}>
+                              Real-time logging of communications, status changes, and assignments
+                            </span>
+                          </div>
+
+                          {allActivities.map((act) => (
+                            <div
+                              key={act.id}
+                              style={{
+                                backgroundColor: C.surface,
+                                border: `1px solid ${C.border}`,
+                                borderRadius: 10,
+                                padding: '14px 18px',
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                justifyContent: 'space-between',
+                                gap: 14
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                                <div style={{
+                                  width: 10,
+                                  height: 10,
+                                  borderRadius: '50%',
+                                  background: act.badgeColor || '#2563EB',
+                                  marginTop: 5,
+                                  flexShrink: 0
+                                }} />
+                                <div>
+                                  <div style={{ fontSize: 13.5, fontWeight: 800, color: C.textPrimary }}>
+                                    {act.title}
+                                  </div>
+                                  <div style={{ fontSize: 12, color: C.textSecondary, marginTop: 4 }}>
+                                    {act.desc}
+                                  </div>
+                                  <div style={{ fontSize: 11, color: C.textMuted, marginTop: 4 }}>
+                                    {act.time}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <span style={{
+                                fontSize: 10.5,
+                                fontWeight: 800,
+                                color: act.badgeColor || '#2563EB',
+                                backgroundColor: act.badgeBg || '#EFF6FF',
+                                padding: '3px 9px',
+                                borderRadius: 4,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.3px',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                {act.badge || 'Activity'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    })()}
 
                   </div>
                 </div>
@@ -7855,8 +8575,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
         </div> {/* closes main content canvas (line 1939) */}
       </div> {/* closes app body wrapper (line 1703) */}
 
-      {/* MONSTER+ FLOATING EMAIL COMPOSER (Docked Bottom-Right, Matching media_1789066806510.png) */}
-      {emailModalCandidate && (
+      {/* MONSTER+ FLOATING EMAIL COMPOSER (Docked Bottom-Right, Only shown when not in full candidate card view) */}
+      {emailModalCandidate && inboxSubMode !== 'card' && (
         <div
           style={{
             position: 'fixed',

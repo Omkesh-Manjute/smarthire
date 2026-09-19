@@ -9063,7 +9063,7 @@ setInterval(async () => {
 // POST /api/recruiter/send-direct-email
 // Strictly sends email from the recruiter's configured personal email address (never generic smarthire)
 app.post('/api/recruiter/send-direct-email', express.json(), async (req, res) => {
-  const { recruiterEmail, to, subject, body, candidateName, candidateId } = req.body;
+  const { recruiterEmail, to, cc, bcc, subject, body, candidateName, candidateId } = req.body;
   const cfg = emailConfigsStore[recruiterEmail] || emailConfigsStore['omkesh@coolsofttech.com'] || {};
 
   const senderEmail = cfg.fromEmail || recruiterEmail || 'omkesh@coolsofttech.com';
@@ -9080,7 +9080,10 @@ app.post('/api/recruiter/send-direct-email', express.json(), async (req, res) =>
     : `${body}\n\n---\n${senderSignature}`;
 
   // Generate mailto link as guaranteed zero-firewall desktop dispatch fallback
-  const mailtoUrl = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(fullBody)}`;
+  let mailtoQuery = `subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(fullBody)}`;
+  if (cc && cc.trim()) mailtoQuery += `&cc=${encodeURIComponent(cc.trim())}`;
+  if (bcc && bcc.trim()) mailtoQuery += `&bcc=${encodeURIComponent(bcc.trim())}`;
+  const mailtoUrl = `mailto:${encodeURIComponent(to)}?${mailtoQuery}`;
 
   // Attempt server-side dispatch via configured SMTP if password available
   let serverDispatched = false;
@@ -9105,13 +9108,17 @@ app.post('/api/recruiter/send-direct-email', express.json(), async (req, res) =>
           greetingTimeout: 8000
         });
 
-        await transporter.sendMail({
+        const mailOptions = {
           from: `"${senderName}" <${senderEmail}>`,
           to,
           replyTo: senderEmail,
           subject,
           text: fullBody
-        });
+        };
+        if (cc && cc.trim()) mailOptions.cc = cc.trim();
+        if (bcc && bcc.trim()) mailOptions.bcc = bcc.trim();
+
+        await transporter.sendMail(mailOptions);
         serverDispatched = true;
 
         // Automatically append to Yahoo IMAP "Sent" folder in background so it appears in Yahoo webmail
@@ -9143,7 +9150,11 @@ app.post('/api/recruiter/send-direct-email', express.json(), async (req, res) =>
       sender: 'recruiter',
       senderName: senderName,
       senderEmail: senderEmail,
-      text: `[EMAIL SENT to ${to}] ${subject}\n\n${fullBody}`,
+      to,
+      cc: cc || '',
+      bcc: bcc || '',
+      subject,
+      text: `[EMAIL SENT to ${to}${cc ? ' cc:' + cc : ''}] ${subject}\n\n${fullBody}`,
       timestamp: new Date().toISOString()
     });
     saveMessages();
@@ -9156,8 +9167,8 @@ app.post('/api/recruiter/send-direct-email', express.json(), async (req, res) =>
     senderName,
     mailtoUrl,
     message: serverDispatched 
-      ? `✅ Email successfully sent to ${to} directly from ${senderEmail}!`
-      : `✅ Prepared email from ${senderEmail}. Ready to send directly via your mailbox!`,
+      ? `Email successfully sent to ${to} directly from ${senderEmail}!`
+      : `Prepared email from ${senderEmail}. Ready to send directly via your mailbox!`,
     serverNotice: serverError ? `Note: Cloud port block prevented direct SMTP. Direct mail client launcher ready.` : null
   });
 });
