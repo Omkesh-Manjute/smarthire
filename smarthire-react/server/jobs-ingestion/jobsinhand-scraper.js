@@ -11,6 +11,7 @@
  */
 
 import https from 'https';
+import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
@@ -575,23 +576,36 @@ export async function scrapeViaHttp(logger = console.log) {
  */
 export async function scrapeJobsInHand(logger = console.log) {
   try {
-    logger(`[scraper] 🌐 Initiating HTTP scraper for fast, reliable requisition extraction...`);
+    logger(`[scraper] Initiating HTTP scraper for fast, reliable requisition extraction...`);
     const httpResult = await scrapeViaHttp(logger);
-    if (httpResult && httpResult.jobs && httpResult.jobs.length > 0) {
+    if (httpResult && (httpResult.jobs?.length > 0 || !httpResult.blocked)) {
       return httpResult;
     }
-    logger(`[scraper] HTTP scraper returned 0 jobs. Trying Playwright fallback...`);
+
+    const totalMemBytes = os.totalmem ? os.totalmem() : 1024 * 1024 * 1024;
+    if (totalMemBytes < 1.2 * 1024 * 1024 * 1024) {
+      logger(`[scraper] Low-memory system detected (${Math.round(totalMemBytes / 1024 / 1024)}MB RAM). Skipping heavy Playwright browser launch to protect web server stability.`);
+      return httpResult || { jobs: [], mode: 'http', error: 'Low-memory environment: Playwright skipped' };
+    }
+
+    logger(`[scraper] HTTP scraper returned 0 jobs or blocked. Trying Playwright fallback...`);
     const { scrapeViaPlaywright } = await import('./playwright-scraper.js');
     const playwrightResult = await scrapeViaPlaywright(logger);
     return { ...playwrightResult, mode: 'playwright' };
   } catch (err) {
-    logger(`[scraper] ⚠️ HTTP attempt notice (${err.message}). Trying Playwright fallback...`);
+    const totalMemBytes = os.totalmem ? os.totalmem() : 1024 * 1024 * 1024;
+    if (totalMemBytes < 1.2 * 1024 * 1024 * 1024) {
+      logger(`[scraper] Low-memory system (${Math.round(totalMemBytes / 1024 / 1024)}MB RAM). Skipping Playwright to preserve web server response time.`);
+      return { jobs: [], mode: 'http', error: err.message };
+    }
+
+    logger(`[scraper] HTTP attempt notice (${err.message}). Trying Playwright fallback...`);
     try {
       const { scrapeViaPlaywright } = await import('./playwright-scraper.js');
       const playwrightResult = await scrapeViaPlaywright(logger);
       return { ...playwrightResult, mode: 'playwright' };
     } catch (pwErr) {
-      logger(`[scraper] ❌ Playwright fallback also failed: ${pwErr.message}`);
+      logger(`[scraper] Playwright fallback also failed: ${pwErr.message}`);
       throw err;
     }
   }

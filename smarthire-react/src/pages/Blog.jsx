@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import C2cW2Article from './blog-articles/C2cW2Article'
 import UsItMarket2026Article from './blog-articles/UsItMarket2026Article'
 import H1b2026Article from './blog-articles/H1b2026Article'
+import IndiaVsUsaJobs2026Article from './blog-articles/IndiaVsUsaJobs2026Article'
 
 /* ─── SEO Helper Hook ─────────────────────────────────────────────── */
 function useSEO({ title, description, url, image, ldJson }) {
@@ -59,6 +60,21 @@ function useSEO({ title, description, url, image, ldJson }) {
 
 /* ─── Blog Post Catalog ───────────────────────────────────────────── */
 export const BLOG_POSTS = [
+  {
+    slug: 'india-vs-usa-it-jobs-2026',
+    aliases: ['india-vs-usa-it-jobs', 'software-engineer-salary-india-vs-usa-2026'],
+    title: "India vs USA IT Jobs 2026: Salary, Taxes, Lifestyle & Career Growth",
+    metaTitle: "India vs USA IT Jobs 2026: Salary, Taxes & Career Growth | SmartHire",
+    metaDescription: "India vs USA IT jobs in 2026 compared: real salary gap, taxes, cost of living, visas, job security and career growth. Find out where to build your tech career.",
+    excerpt: "The nominal salary gap is huge. The real gap is smaller. Here is the honest comparison for IT professionals deciding between India, the USA, GCCs, and remote dollar-denominated contracts in 2026.",
+    category: "IT Career Guide",
+    readTime: "9 min read",
+    date: "September 19, 2026",
+    author: "SmartHire Editorial Team",
+    tags: ["India vs USA IT Jobs", "Tech Salaries 2026", "GCCs", "H-1B vs India", "Remote US Jobs", "C2C", "Tax Comparison"],
+    image: "/images/blog/india-vs-usa-it-jobs-2026-hero.webp",
+    component: IndiaVsUsaJobs2026Article
+  },
   {
     slug: 'us-it-recruitment-market-2026',
     aliases: ['us-it-recruitment-market-2026-trends-skills-salaries'],

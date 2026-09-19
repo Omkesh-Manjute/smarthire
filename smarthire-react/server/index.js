@@ -7458,8 +7458,8 @@ app.get('/api/messages/:candidateId', authenticateToken, (req, res) => {
 
   // If recruiter and not team channel, check candidate ownership
   if (userRole === 'recruiter' && !isTeamChannel) {
-    const candidate = candidatesStore.find(c => c && (c.id === candidateId || c.candidate_id === candidateId));
-    const session = screeningStore.find(s => s && s.sessionId === candidateId);
+    const candidate = Array.isArray(candidatesStore) ? candidatesStore.find(c => c && (c.id === candidateId || c.candidate_id === candidateId || c.sessionId === candidateId)) : null;
+    const session = Array.isArray(screeningStore) ? screeningStore.find(s => s && (s.sessionId === candidateId || s.id === candidateId)) : null;
     
     const cOwner = (
       (candidate && (candidate.createdBy || candidate.recruiterEmail || candidate.submittedBy || candidate.recruiterId)) ||
@@ -7481,10 +7481,30 @@ app.get('/api/messages/:candidateId', authenticateToken, (req, res) => {
 
 // List all candidate message threads (for Recruiter Inbox)
 app.get('/api/messages', authenticateToken, (req, res) => {
-  // Helper to find candidate or session metadata
+  // Precompute O(1) lookup Maps for fast retrieval
+  const sessionMap = new Map();
+  if (Array.isArray(screeningStore)) {
+    for (const s of screeningStore) {
+      if (!s) continue;
+      if (s.sessionId) sessionMap.set(s.sessionId, s);
+      if (s.id) sessionMap.set(s.id, s);
+    }
+  }
+
+  const candMap = new Map();
+  if (Array.isArray(candidatesStore)) {
+    for (const c of candidatesStore) {
+      if (!c) continue;
+      if (c.id) candMap.set(c.id, c);
+      if (c.candidate_id) candMap.set(c.candidate_id, c);
+      if (c.sessionId) candMap.set(c.sessionId, c);
+    }
+  }
+
+  // Fast O(1) Helper to find candidate or session metadata
   const getCandidateMeta = (candidateId) => {
-    const session = Array.isArray(screeningStore) ? screeningStore.find(s => s && (s.sessionId === candidateId || s.id === candidateId)) : null;
-    const cand = Array.isArray(candidatesStore) ? candidatesStore.find(c => c && (c.id === candidateId || c.candidate_id === candidateId || c.sessionId === candidateId)) : null;
+    const session = sessionMap.get(candidateId) || null;
+    const cand = candMap.get(candidateId) || null;
     
     const recEmail = (
       (session && (session.recruiterEmail || session.referredByEmail || session.createdBy)) ||
@@ -7570,16 +7590,7 @@ app.get('/api/messages', authenticateToken, (req, res) => {
   const userRole = req.user?.role || 'superadmin';
   const userEmail = (req.user?.email || '').toLowerCase().trim();
 
-  let allThreads = Object.values(threadsMap).map(t => {
-    const meta = getCandidateMeta(t.candidateId);
-    return {
-      ...t,
-      recruiterEmail: t.recruiterEmail || meta.recEmail,
-      refCode: t.refCode || meta.refCode,
-      recruiterName: t.recruiterName || meta.recName,
-      jobId: t.jobId || meta.jobId
-    };
-  });
+  let allThreads = Object.values(threadsMap);
 
   let filteredThreads = allThreads;
 
