@@ -549,6 +549,48 @@ const renderSourceBadge = (c) => {
   )
 }
 
+const renderZohoStatusBadge = (status = 'New') => {
+  const s = String(status || 'New').trim()
+  let bg = '#EFF6FF', text = '#1D4ED8', border = '#BFDBFE', label = 'New Candidate'
+
+  if (s.toLowerCase().includes('screen') || s.toLowerCase().includes('qualif')) {
+    bg = '#ECFDF5'; text = '#059669'; border = '#A7F3D0'; label = 'Screened'
+  } else if (s.toLowerCase().includes('submit') || s.toLowerCase().includes('client')) {
+    bg = '#EEF2FF'; text = '#4338CA'; border = '#C7D2FE'; label = 'Submitted'
+  } else if (s.toLowerCase().includes('interview')) {
+    bg = '#F5F3FF'; text = '#6D28D9'; border = '#DDD6FE'; label = 'Interview'
+  } else if (s.toLowerCase().includes('offer')) {
+    bg = '#FFFBEB'; text = '#B45309'; border = '#FDE68A'; label = 'Offered'
+  } else if (s.toLowerCase().includes('hire')) {
+    bg = '#F0FDF4'; text = '#15803D'; border = '#BBF7D0'; label = 'Hired'
+  } else if (s.toLowerCase().includes('reject')) {
+    bg = '#FEF2F2'; text = '#B91C1C'; border = '#FECACA'; label = 'Rejected'
+  } else if (s.toLowerCase().includes('active')) {
+    bg = '#EFF6FF'; text = '#1D4ED8'; border = '#BFDBFE'; label = 'Active'
+  } else if (s && s !== 'undefined' && s !== 'null' && s !== 'New') {
+    bg = '#F1F5F9'; text = '#334155'; border = '#CBD5E1'; label = s
+  }
+
+  return (
+    <span style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 5,
+      padding: '3px 8px',
+      borderRadius: 12,
+      fontSize: 11,
+      fontWeight: 700,
+      backgroundColor: bg,
+      color: text,
+      border: `1px solid ${border}`,
+      whiteSpace: 'nowrap'
+    }}>
+      <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: text, flexShrink: 0 }} />
+      {label}
+    </span>
+  )
+}
+
 function getFullResumeText(candidate) {
   const name = candidate?.name || 'CANDIDATE'
   const role = candidate?.role || 'Senior Technical Specialist'
@@ -929,7 +971,12 @@ function getAvatarColor(name = '') {
 
 function formatTime(iso) {
   if (!iso) return ''
-  const d = new Date(iso)
+  const str = String(iso).trim()
+  if (str.includes('AM') || str.includes('PM') || str.includes('Yesterday') || str === 'Just now') {
+    return str
+  }
+  const d = new Date(str)
+  if (isNaN(d.getTime())) return str
   const now = new Date()
   const diffDays = Math.floor((now - d) / 86400000)
   if (diffDays === 0) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -1260,218 +1307,11 @@ export default function RecruiterInbox({ defaultViewMode }) {
     cardRadius: 16
   }
 
-  const DEFAULT_MESSAGES_THREADS = [
-    {
-      candidateId: 'team-gourav',
-      candidateName: 'Gourav (Sourcing Specialist)',
-      name: 'Gourav',
-      role: 'Sourcing Specialist',
-      company: 'SmartHire LLC',
-      jobTitle: 'Direct Reportee • SmartHire LLC',
-      subtitle: 'Direct Reportee • SmartHire LLC',
-      category: 'team',
-      email: 'gourav@smarthire.com',
-      phone: '+1 (555) 123-4567',
-      location: 'New York, USA',
-      status: 'active',
-      avatarColor: '#2065D1',
-      unreadCount: 1,
-      lastMessage: "Sure, I'll share the shortlisted profiles...",
-      lastMessageTime: '02:25 PM',
-      recentFiles: [
-        { name: 'Candidate_List.xlsx', size: '12 KB', date: '5 Sept', type: 'excel' },
-        { name: 'Req_159078_Notes.pdf', size: '245 KB', date: '4 Sept', type: 'pdf' },
-        { name: 'Interview_Schedule.docx', size: '18 KB', date: '2 Sept', type: 'word' }
-      ],
-      initialMessages: [
-        { id: 'g1', text: 'Hi Omkesh,', sender: 'other', senderName: 'Gourav', timestamp: '2026-09-10T14:20:00Z', timeStr: '02:20 PM' },
-        { id: 'g2', text: 'Can you share the latest candidate updates for Req #159078?', sender: 'other', senderName: 'Gourav', timestamp: '2026-09-10T14:21:00Z', timeStr: '02:21 PM' },
-        { id: 'g3', text: "Sure Gourav, give me 5 minutes.\nI'll share the shortlisted profiles shortly.", sender: 'recruiter', senderName: 'Omkesh', timestamp: '2026-09-10T14:22:00Z', timeStr: '02:22 PM', isDelivered: true },
-        { id: 'g4', text: 'Thanks! Also, let me know if we can schedule a quick sync tomorrow.', sender: 'other', senderName: 'Gourav', timestamp: '2026-09-10T14:23:00Z', timeStr: '02:23 PM' },
-        { id: 'g5', text: "Yes, tomorrow 11 AM works. I'll send a calendar invite.", sender: 'recruiter', senderName: 'Omkesh', timestamp: '2026-09-10T14:24:00Z', timeStr: '02:24 PM', isDelivered: true },
-        { id: 'g6', text: 'Great, confirmed.', sender: 'other', senderName: 'Gourav', timestamp: '2026-09-10T14:25:00Z', timeStr: '02:25 PM' }
-      ]
-    },
-    {
-      candidateId: 'cand-abhishek-jha',
-      candidateName: 'Abhishek Jha',
-      name: 'Abhishek Jha',
-      role: 'Product Manager',
-      company: 'Applied via Careers Portal',
-      jobTitle: 'Product Manager',
-      subtitle: 'Product Manager • Applied via Careers Portal',
-      category: 'candidates',
-      email: 'abhishek.jha@gmail.com',
-      phone: '+1 (408) 782-9012',
-      location: 'San Jose, CA',
-      status: 'away',
-      avatarColor: '#EA580C',
-      unreadCount: 1,
-      lastMessage: 'Can you share the JD?',
-      lastMessageTime: '11:40 AM',
-      recentFiles: [
-        { name: 'Abhishek_Jha_PM_Resume.pdf', size: '310 KB', date: '10 Sept', type: 'pdf' },
-        { name: 'Product_Portfolio_CaseStudy.pdf', size: '1.2 MB', date: '10 Sept', type: 'pdf' }
-      ],
-      initialMessages: [
-        { id: 'aj1', text: 'Hello Omkesh, I saw the Senior Product Manager position posted on SmartHire Careers.', sender: 'other', senderName: 'Abhishek Jha', timestamp: '2026-09-10T11:35:00Z', timeStr: '11:35 AM' },
-        { id: 'aj2', text: 'Hi Abhishek, thank you for reaching out! Your profile looks great.', sender: 'recruiter', senderName: 'Omkesh', timestamp: '2026-09-10T11:38:00Z', timeStr: '11:38 AM', isDelivered: true },
-        { id: 'aj3', text: 'Can you share the JD?', sender: 'other', senderName: 'Abhishek Jha', timestamp: '2026-09-10T11:40:00Z', timeStr: '11:40 AM' }
-      ]
-    },
-    {
-      candidateId: 'client-shweta-patel',
-      candidateName: 'Shweta Patel',
-      name: 'Shweta Patel',
-      role: 'HR Manager',
-      company: 'TechCorp',
-      jobTitle: 'HR Manager • TechCorp',
-      subtitle: 'HR Manager • TechCorp',
-      category: 'clients',
-      email: 'shweta.patel@techcorp.io',
-      phone: '+1 (650) 441-2980',
-      location: 'Austin, TX',
-      status: 'active',
-      avatarColor: '#9333EA',
-      unreadCount: 0,
-      lastMessage: 'Thanks for the update!',
-      lastMessageTime: '24 Aug',
-      recentFiles: [
-        { name: 'TechCorp_Q3_Hiring_Reqs.pdf', size: '420 KB', date: '24 Aug', type: 'pdf' }
-      ],
-      initialMessages: [
-        { id: 'sp1', text: 'Hi Shweta, we submitted 3 candidates for the Frontend Lead role.', sender: 'recruiter', senderName: 'Omkesh', timestamp: '2026-08-24T10:15:00Z', timeStr: '10:15 AM', isDelivered: true },
-        { id: 'sp2', text: 'Thanks for the update!', sender: 'other', senderName: 'Shweta Patel', timestamp: '2026-08-24T10:30:00Z', timeStr: '10:30 AM' }
-      ]
-    },
-    {
-      candidateId: 'cand-rahul-kumar',
-      candidateName: 'Rahul Kumar',
-      name: 'Rahul Kumar',
-      role: 'Senior Java Developer',
-      company: 'Enterprise Software Solutions',
-      jobTitle: 'Senior Java Developer',
-      subtitle: 'Senior Java Developer',
-      category: 'candidates',
-      email: 'rahul.kumar@gmail.com',
-      phone: '+1 (312) 998-1245',
-      location: 'Chicago, IL',
-      status: 'active',
-      avatarColor: '#16A34A',
-      unreadCount: 0,
-      lastMessage: 'Will be available tomorrow',
-      lastMessageTime: '23 Aug',
-      recentFiles: [
-        { name: 'Rahul_Kumar_Java_Lead.docx', size: '145 KB', date: '23 Aug', type: 'word' }
-      ],
-      initialMessages: [
-        { id: 'rk1', text: 'Hi Rahul, are you open for the client screening call tomorrow?', sender: 'recruiter', senderName: 'Omkesh', timestamp: '2026-08-23T14:00:00Z', timeStr: '02:00 PM', isDelivered: true },
-        { id: 'rk2', text: 'Will be available tomorrow', sender: 'other', senderName: 'Rahul Kumar', timestamp: '2026-08-23T14:15:00Z', timeStr: '02:15 PM' }
-      ]
-    },
-    {
-      candidateId: 'client-priya-sharma',
-      candidateName: 'Priya Sharma',
-      name: 'Priya Sharma',
-      role: 'Client Account Lead',
-      company: 'ABC Solutions',
-      jobTitle: 'Client • ABC Solutions',
-      subtitle: 'Client • ABC Solutions',
-      category: 'clients',
-      email: 'priya.sharma@abcsolutions.com',
-      phone: '+1 (212) 890-4433',
-      location: 'New York, NY',
-      status: 'active',
-      avatarColor: '#D946EF',
-      avatarImg: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80',
-      unreadCount: 0,
-      lastMessage: 'Interview feedback shared.',
-      lastMessageTime: '22 Aug',
-      recentFiles: [
-        { name: 'Client_Interview_Evaluation_Matrix.xlsx', size: '55 KB', date: '22 Aug', type: 'excel' }
-      ],
-      initialMessages: [
-        { id: 'ps1', text: 'Hi Omkesh, the hiring panel completed the second round interview for the Cloud Architect position.', sender: 'other', senderName: 'Priya Sharma', timestamp: '2026-08-22T16:10:00Z', timeStr: '04:10 PM' },
-        { id: 'ps2', text: 'Interview feedback shared.', sender: 'other', senderName: 'Priya Sharma', timestamp: '2026-08-22T16:15:00Z', timeStr: '04:15 PM' }
-      ]
-    },
-    {
-      candidateId: 'team-dev',
-      candidateName: 'Dev Team',
-      name: 'Dev Team',
-      role: 'Engineering Squad',
-      company: '3 members',
-      jobTitle: 'Sprint planning at 4 PM',
-      subtitle: '3 members',
-      category: 'team',
-      email: 'dev-team@smarthire.com',
-      phone: '+1 (555) 880-9911',
-      location: 'Remote, US',
-      status: 'active',
-      avatarColor: '#DB2777',
-      unreadCount: 0,
-      lastMessage: 'Sprint planning at 4 PM',
-      lastMessageTime: '21 Aug',
-      recentFiles: [
-        { name: 'Sprint_34_Release_Plan.pdf', size: '890 KB', date: '21 Aug', type: 'pdf' }
-      ],
-      initialMessages: [
-        { id: 'dt1', text: 'Sprint planning at 4 PM', sender: 'other', senderName: 'Dev Team', timestamp: '2026-08-21T09:30:00Z', timeStr: '09:30 AM' }
-      ]
-    },
-    {
-      candidateId: 'cand-manish-kumar',
-      candidateName: 'Manish Kumar',
-      name: 'Manish Kumar',
-      role: 'Data Engineer',
-      company: 'Tech Solutions',
-      jobTitle: 'Data Engineer',
-      subtitle: 'Data Engineer',
-      category: 'candidates',
-      email: 'manish.k@gmail.com',
-      phone: '+1 (206) 555-8123',
-      location: 'Seattle, WA',
-      status: 'offline',
-      avatarColor: '#D97706',
-      unreadCount: 0,
-      lastMessage: 'Salary expectation?',
-      lastMessageTime: '20 Aug',
-      recentFiles: [
-        { name: 'Manish_Kumar_DataEngineer.pdf', size: '210 KB', date: '20 Aug', type: 'pdf' }
-      ],
-      initialMessages: [
-        { id: 'mk1', text: 'Salary expectation?', sender: 'other', senderName: 'Manish Kumar', timestamp: '2026-08-20T11:20:00Z', timeStr: '11:20 AM' }
-      ]
-    },
-    {
-      candidateId: 'cand-sneha-nair',
-      candidateName: 'Sneha Nair',
-      name: 'Sneha Nair',
-      role: 'QA Engineer',
-      company: 'Enterprise Quality Lab',
-      jobTitle: 'QA Engineer',
-      subtitle: 'QA Engineer',
-      category: 'candidates',
-      email: 'sneha.nair@gmail.com',
-      phone: '+1 (470) 555-4421',
-      location: 'Atlanta, GA',
-      status: 'active',
-      avatarColor: '#0284C7',
-      unreadCount: 0,
-      lastMessage: 'Shared updated resume.',
-      lastMessageTime: '19 Aug',
-      recentFiles: [
-        { name: 'Sneha_Nair_SDET_Resume.pdf', size: '195 KB', date: '19 Aug', type: 'pdf' }
-      ],
-      initialMessages: [
-        { id: 'sn1', text: 'Shared updated resume.', sender: 'other', senderName: 'Sneha Nair', timestamp: '2026-08-19T15:45:00Z', timeStr: '03:45 PM' }
-      ]
-    }
-  ]
+  const DEFAULT_MESSAGES_THREADS = []
 
-  const [threads, setThreads] = useState(DEFAULT_MESSAGES_THREADS)
-  const [activeThread, setActiveThread] = useState(DEFAULT_MESSAGES_THREADS[0])
-  const [messages, setMessages] = useState(DEFAULT_MESSAGES_THREADS[0].initialMessages)
+  const [threads, setThreads] = useState([])
+  const [activeThread, setActiveThread] = useState(null)
+  const [messages, setMessages] = useState([])
   const [inputText, setInputText] = useState('')
   const [sending, setSending] = useState(false)
   const [loadingThreads, setLoadingThreads] = useState(false)
@@ -1875,8 +1715,12 @@ export default function RecruiterInbox({ defaultViewMode }) {
     }
   ]
 
-  // View switcher: 'chat' (Live Messages), 'dashboard' (KPI Overview), or 'stream' (Candidate Dossier / Table)
-  const initialInboxMode = defaultViewMode || searchParams.get('view') || searchParams.get('tab') || 'stream'
+  // View switcher: default is ALWAYS 'stream' (Zoho Recruit Candidate Table) unless explicitly requested 'chat' or 'dashboard'
+  const tabParam = (searchParams.get('tab') || '').toLowerCase()
+  const viewParam = (searchParams.get('view') || '').toLowerCase()
+  const initialInboxMode = (tabParam === 'chat' || tabParam === 'messages' || viewParam === 'chat')
+    ? 'chat'
+    : (tabParam === 'dashboard' || viewParam === 'dashboard' ? 'dashboard' : (defaultViewMode || 'stream'))
   const [inboxViewMode, setInboxViewMode] = useState(initialInboxMode)
   const [minimalsSidebarOpen, setMinimalsSidebarOpen] = useState(true)
   const [streamFilter, setStreamFilter] = useState('all') // 'all', 'email_inbox', 'email_spam', 'careers_portal', 'vendor_bench'
@@ -2250,8 +2094,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
         const threadId = `team-reportee-${(rep.email || '').toLowerCase().trim()}`
         let fsMsgs = []
         try { fsMsgs = await getMessagesFirestore(threadId) } catch(e) {}
-        const lastMsgText = (fsMsgs && fsMsgs.length > 0) ? fsMsgs[fsMsgs.length - 1].text : 'Team reporting & candidate review channel'
-        const lastMsgTime = (fsMsgs && fsMsgs.length > 0) ? fsMsgs[fsMsgs.length - 1].timestamp : new Date().toISOString()
+        const lastMsgText = (fsMsgs && fsMsgs.length > 0) ? fsMsgs[fsMsgs.length - 1].text : 'Direct team reporting channel'
+        const lastMsgTime = (fsMsgs && fsMsgs.length > 0) ? fsMsgs[fsMsgs.length - 1].timestamp : ''
 
         teamChannels.push({
           candidateId: threadId,
@@ -2263,20 +2107,16 @@ export default function RecruiterInbox({ defaultViewMode }) {
           isLeadChannel: false,
           isTeamMember: true,
           email: rep.email,
-          phone: rep.phone || '571-660-5778',
-          role: rep.role || 'Employee / Sourcing Specialist'
+          phone: rep.phone || '',
+          role: rep.role || 'Employee / Sourcing Specialist',
+          recentFiles: []
         })
       }
     }
 
     const threadMap = new Map()
-    DEFAULT_MESSAGES_THREADS.forEach(t => threadMap.set(t.candidateId, { ...t }))
     teamChannels.forEach(t => {
-      if (threadMap.has(t.candidateId)) {
-        threadMap.set(t.candidateId, { ...threadMap.get(t.candidateId), ...t })
-      } else {
-        threadMap.set(t.candidateId, t)
-      }
+      threadMap.set(t.candidateId, t)
     })
     candidateThreads.forEach(t => {
       if (threadMap.has(t.candidateId)) {
@@ -2290,12 +2130,10 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
     if (!activeThread && combined.length > 0) {
       setActiveThread(combined[0])
-      if (combined[0].initialMessages && (!messages || messages.length === 0)) {
-        setMessages(combined[0].initialMessages)
-      }
+      fetchMessages(combined[0].candidateId, true)
     }
     setLoadingThreads(false)
-  }, [recruiterFilter, isReportee, parentRecruiterName, parentRecruiterEmail, currentUser?.email, currentUser?.name, isAdmin, isSuperAdmin, teamUsersList, activeThread, messages])
+  }, [recruiterFilter, isReportee, parentRecruiterName, parentRecruiterEmail, currentUser?.email, currentUser?.name, isAdmin, isSuperAdmin, teamUsersList, activeThread, fetchMessages])
 
   const fetchCandidateDetails = useCallback(async (candidateId, threadObj = null) => {
     const thread = threadObj || threads.find(t => t.candidateId === candidateId)
@@ -2391,29 +2229,20 @@ export default function RecruiterInbox({ defaultViewMode }) {
         merged = initial
       }
 
-      if (merged.length === 0) {
-        const found = threads.find(t => t.candidateId === candidateId) || DEFAULT_MESSAGES_THREADS.find(t => t.candidateId === candidateId)
-        if (found?.initialMessages && found.initialMessages.length > 0) {
-          merged = found.initialMessages
-        }
-      }
-
       setMessages(merged)
     } catch (e) {
       console.warn('Message fetch error:', e)
     } finally {
       if (!silent) setLoadingMessages(false)
     }
-  }, [parentRecruiterName, parentRecruiterEmail, threads, DEFAULT_MESSAGES_THREADS])
+  }, [])
 
   const selectThread = useCallback(async (thread) => {
     setActiveThread(thread)
     setInputText('')
     setShowTemplates(false)
     setEmojiPickerOpen(false)
-    if (thread.initialMessages) {
-      setMessages(thread.initialMessages)
-    }
+    setMessages([])
     await fetchMessages(thread.candidateId)
     fetchCandidateDetails(thread.candidateId, thread)
     setThreads(prev => prev.map(t => t.candidateId === thread.candidateId ? { ...t, unreadCount: 0 } : t))
@@ -3152,24 +2981,29 @@ export default function RecruiterInbox({ defaultViewMode }) {
   }
 
   const handleOpenCandidateChat = (cand) => {
-    const threadId = cand.id || `cand-${cand.email}`
-    const existing = threads.find(t => t.candidateId === threadId || (t.email && t.email.toLowerCase() === cand.email.toLowerCase()))
+    if (!cand) return
+    const threadId = cand.id || `cand-${cand.email || Date.now()}`
+    const candName = safeString(cand.name || cand.candidateName, 'Candidate')
+    const existing = threads.find(t => t.candidateId === threadId || (t.email && cand.email && t.email.toLowerCase() === cand.email.toLowerCase()))
     if (existing) {
       setInboxViewMode('chat')
       selectThread(existing)
     } else {
       const newThread = {
         candidateId: threadId,
-        candidateName: cand.name,
+        candidateName: candName,
         jobTitle: cand.matchedJobTitle || cand.role || 'Requisition Candidate',
-        lastMessage: cand.isSpamRecovery ? 'Recovered candidate from email spam folder' : 'Candidate received via email inbox',
-        lastMessageTime: new Date().toISOString(),
+        subtitle: `${cand.role || 'Candidate'} • ${cand.experience || 'Talent Pool'}`,
+        lastMessage: 'Conversation initiated',
+        lastMessageTime: '',
         unreadCount: 0,
-        email: cand.email,
-        phone: cand.phone,
-        role: cand.role
+        email: cand.email || '',
+        phone: cand.phone || '',
+        role: cand.role || 'Candidate',
+        category: 'candidates',
+        recentFiles: cand.resumeFile ? [{ name: cand.resumeFile, size: 'Attached Resume', date: 'Resume', type: 'pdf' }] : []
       }
-      setThreads(prev => [newThread, ...prev])
+      setThreads(prev => [newThread, ...prev.filter(t => t.candidateId !== threadId)])
       setInboxViewMode('chat')
       selectThread(newThread)
     }
@@ -3988,7 +3822,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
               <IconHome /> <span>Dashboard</span>
             </button>
 
-            {/* 2. Candidates */}
+            {/* 2. Candidates (Primary Talent Pool) */}
             <button
               type="button"
               onMouseEnter={() => setHoveredNav('candidates')}
@@ -3997,29 +3831,34 @@ export default function RecruiterInbox({ defaultViewMode }) {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 12,
+                justifyContent: 'space-between',
                 padding: '10px 14px',
                 borderRadius: 8,
                 border: 'none',
-                background: (inboxViewMode === 'stream' && inboxSubMode !== 'card')
+                background: (inboxViewMode === 'stream')
                   ? (isLight ? '#E0F2FE' : 'rgba(14,165,233,0.18)')
                   : (hoveredNav === 'candidates' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent'),
-                color: (inboxViewMode === 'stream' && inboxSubMode !== 'card')
+                color: (inboxViewMode === 'stream')
                   ? (isLight ? '#0284C7' : '#38BDF8')
                   : (hoveredNav === 'candidates' ? C.textPrimary : C.textSecondary),
-                fontWeight: (inboxViewMode === 'stream' && inboxSubMode !== 'card') ? 700 : (hoveredNav === 'candidates' ? 600 : 500),
+                fontWeight: (inboxViewMode === 'stream') ? 700 : (hoveredNav === 'candidates' ? 600 : 500),
                 fontSize: 13.5,
                 cursor: 'pointer',
                 textAlign: 'left',
-                transform: hoveredNav === 'candidates' && !(inboxViewMode === 'stream' && inboxSubMode !== 'card') ? 'translateX(4px)' : 'none',
-                boxShadow: (inboxViewMode === 'stream' && inboxSubMode !== 'card') ? '0 1px 3px rgba(2,132,199,0.12)' : 'none',
+                transform: hoveredNav === 'candidates' && (inboxViewMode !== 'stream') ? 'translateX(4px)' : 'none',
+                boxShadow: (inboxViewMode === 'stream') ? '0 1px 3px rgba(2,132,199,0.12)' : 'none',
                 transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
               }}
             >
-              <IconUsers /> <span>Candidates</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <IconUsers /> <span>Candidates</span>
+              </span>
+              <span style={{ fontSize: 10.5, background: '#2563EB', color: '#FFFFFF', padding: '1px 7px', borderRadius: 10, fontWeight: 800 }}>
+                {streamCandidates.length || 264}
+              </span>
             </button>
 
-            {/* 4. Messages */}
+            {/* 3. Messages */}
             <button
               type="button"
               onMouseEnter={() => setHoveredNav('chat')}
@@ -4052,42 +3891,6 @@ export default function RecruiterInbox({ defaultViewMode }) {
               </span>
               <span style={{ fontSize: 10.5, background: '#FF5630', color: '#FFF', padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>
                 2
-              </span>
-            </button>
-
-            {/* 5. Database */}
-            <button
-              type="button"
-              onMouseEnter={() => setHoveredNav('database')}
-              onMouseLeave={() => setHoveredNav(null)}
-              onClick={() => { setInboxViewMode('stream'); setInboxSubMode('table'); }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '10px 14px',
-                borderRadius: 8,
-                border: 'none',
-                background: (inboxViewMode === 'stream' && inboxSubMode === 'table')
-                  ? (isLight ? '#E0F2FE' : 'rgba(14,165,233,0.18)')
-                  : (hoveredNav === 'database' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent'),
-                color: (inboxViewMode === 'stream' && inboxSubMode === 'table')
-                  ? (isLight ? '#0284C7' : '#38BDF8')
-                  : (hoveredNav === 'database' ? C.textPrimary : C.textSecondary),
-                fontWeight: (inboxViewMode === 'stream' && inboxSubMode === 'table') ? 700 : (hoveredNav === 'database' ? 600 : 500),
-                fontSize: 13.5,
-                cursor: 'pointer',
-                textAlign: 'left',
-                transform: hoveredNav === 'database' && !(inboxViewMode === 'stream' && inboxSubMode === 'table') ? 'translateX(4px)' : 'none',
-                boxShadow: (inboxViewMode === 'stream' && inboxSubMode === 'table') ? '0 1px 3px rgba(2,132,199,0.12)' : 'none',
-                transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
-              }}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <IconDatabase /> <span>Database</span>
-              </span>
-              <span style={{ fontSize: 10.5, background: '#FFAB00', color: '#1C252E', padding: '1px 6px', borderRadius: 10, fontWeight: 800 }}>
-                {streamCandidates.length || 126}
               </span>
             </button>
 
@@ -7263,20 +7066,21 @@ export default function RecruiterInbox({ defaultViewMode }) {
                             }}
                           />
                         </th>
-                        <th style={{ padding: '8px 10px', width: 190, minWidth: 170, maxWidth: 210, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Candidate</th>
-                        <th style={{ padding: '8px 10px', width: 160, minWidth: 140, maxWidth: 180, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Role / Current Title</th>
-                        <th style={{ padding: '8px 10px', width: 220, minWidth: 200, maxWidth: 250, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>AI Matched Requirement</th>
-                        <th style={{ padding: '8px 8px', width: 85, minWidth: 80, maxWidth: 90, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Match ⇕</th>
-                        <th style={{ padding: '8px 10px', width: 160, minWidth: 140, maxWidth: 190, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Key Skills</th>
+                        <th style={{ padding: '8px 10px', width: 220, minWidth: 200, maxWidth: 240, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Candidate</th>
+                        <th style={{ padding: '8px 10px', width: 170, minWidth: 150, maxWidth: 190, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Role / Current Title</th>
+                        <th style={{ padding: '8px 8px', width: 115, minWidth: 105, maxWidth: 125, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Status</th>
+                        <th style={{ padding: '8px 10px', width: 200, minWidth: 180, maxWidth: 230, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>AI Matched Requirement</th>
+                        <th style={{ padding: '8px 8px', width: 80, minWidth: 75, maxWidth: 90, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Match ⇕</th>
+                        <th style={{ padding: '8px 10px', width: 150, minWidth: 130, maxWidth: 180, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Key Skills</th>
                         <th style={{ padding: '8px 8px', width: 90, minWidth: 80, maxWidth: 100, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Received ⇕</th>
-                        <th style={{ padding: '8px 8px', width: 100, minWidth: 90, maxWidth: 110, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Source</th>
-                        <th style={{ padding: '8px 10px', width: 230, minWidth: 210, textAlign: 'right', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Actions</th>
+                        <th style={{ padding: '8px 8px', width: 95, minWidth: 85, maxWidth: 105, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Source</th>
+                        <th style={{ padding: '8px 10px', width: 280, minWidth: 260, textAlign: 'right', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredCandidates.length === 0 ? (
                         <tr>
-                          <td colSpan={9} style={{ padding: 40, textAlign: 'center', color: C.textSecondary }}>
+                          <td colSpan={10} style={{ padding: 40, textAlign: 'center', color: C.textSecondary }}>
                             No candidates found matching your filters.
                           </td>
                         </tr>
@@ -7321,12 +7125,12 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   />
                                 </td>
 
-                                {/* 2. Candidate: Initials Avatar + Name */}
-                                <td style={{ padding: '8px 10px' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                {/* 2. Candidate: Initials Avatar + Name + Subtitle (Email & Phone) + Visa */}
+                                <td style={{ padding: '10px 10px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                                     <div style={{
-                                      width: 34,
-                                      height: 34,
+                                      width: 36,
+                                      height: 36,
                                       borderRadius: '50%',
                                       backgroundColor: avatarStyle.bg,
                                       color: avatarStyle.text,
@@ -7334,51 +7138,117 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                       alignItems: 'center',
                                       justifyContent: 'center',
                                       fontWeight: 800,
-                                      fontSize: 12,
-                                      flexShrink: 0
+                                      fontSize: 12.5,
+                                      flexShrink: 0,
+                                      marginTop: 2
                                     }}>
                                       {initials}
                                     </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                                      <span
-                                        onClick={() => {
-                                          setSelectedCandidate(c)
-                                          setInboxSubMode('card')
-                                        }}
-                                        style={{
-                                          fontSize: 13,
-                                          fontWeight: 800,
-                                          color: isHovered ? '#2563EB' : '#0F172A',
-                                          cursor: 'pointer',
-                                          whiteSpace: 'nowrap',
-                                          overflow: 'hidden',
-                                          textOverflow: 'ellipsis',
-                                          transition: 'color 0.15s ease'
-                                        }}
-                                        title={candName}
-                                      >
-                                        {candName}
+                                    <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                        <span
+                                          onClick={() => {
+                                            setSelectedCandidate(c)
+                                            setInboxSubMode('card')
+                                          }}
+                                          style={{
+                                            fontSize: 13.5,
+                                            fontWeight: 800,
+                                            color: isHovered ? '#2563EB' : '#0F172A',
+                                            cursor: 'pointer',
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            transition: 'color 0.15s ease'
+                                          }}
+                                          title={candName}
+                                        >
+                                          {candName}
+                                        </span>
+                                        {c.visaStatus && (
+                                          <span style={{
+                                            fontSize: 9.5,
+                                            fontWeight: 700,
+                                            background: isLight ? '#F1F5F9' : '#334155',
+                                            color: isLight ? '#475569' : '#CBD5E1',
+                                            padding: '1px 5px',
+                                            borderRadius: 4,
+                                            border: `1px solid ${isLight ? '#E2E8F0' : '#475569'}`,
+                                            whiteSpace: 'nowrap'
+                                          }}>
+                                            {String(c.visaStatus).replace(/\s*\(.*?\)/g, '')}
+                                          </span>
+                                        )}
+                                      </div>
+                                      {/* Zoho Recruit style: Email & Phone right under name */}
+                                      <div style={{
+                                        fontSize: 11,
+                                        color: '#64748B',
+                                        marginTop: 2,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis'
+                                      }}>
+                                        {c.email && (
+                                          <span title={c.email} style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {c.email}
+                                          </span>
+                                        )}
+                                        {c.email && c.phone && <span style={{ color: '#CBD5E1' }}>•</span>}
+                                        {c.phone && (
+                                          <span>{c.phone}</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </td>
+
+                                {/* 3. Role / Current Title + Company & Experience */}
+                                <td style={{ padding: '10px 10px', maxWidth: 190 }}>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                    <div style={{
+                                      fontSize: 12.5,
+                                      fontWeight: 700,
+                                      color: '#1E293B',
+                                      whiteSpace: 'nowrap',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis'
+                                    }} title={c.role && c.role !== 'Senior Specialist' ? c.role : (skillsArr.length > 0 ? `${skillsArr[0]} Developer` : 'Full Stack Developer')}>
+                                      {c.role && c.role !== 'Senior Specialist' ? c.role : (skillsArr.length > 0 ? `${skillsArr[0]} Developer` : 'Full Stack Developer')}
+                                    </div>
+                                    <div style={{
+                                      fontSize: 11,
+                                      color: '#64748B',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 6,
+                                      whiteSpace: 'nowrap',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis'
+                                    }}>
+                                      {c.experience && (
+                                        <span style={{ fontWeight: 600, color: '#2563EB' }}>
+                                          {c.experience}
+                                        </span>
+                                      )}
+                                      {c.experience && (c.currentCompany || c.location) && <span style={{ color: '#CBD5E1' }}>•</span>}
+                                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }} title={c.currentCompany || c.location || 'United States'}>
+                                        {c.currentCompany ? c.currentCompany.split(',')[0] : (c.location || 'United States')}
                                       </span>
                                     </div>
                                   </div>
                                 </td>
 
-                                {/* 3. Role / Current Title */}
-                                <td style={{ padding: '8px 10px', maxWidth: 180 }}>
-                                  <div style={{
-                                    fontSize: 12.5,
-                                    fontWeight: 600,
-                                    color: '#1E293B',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis'
-                                  }} title={c.role && c.role !== 'Senior Specialist' ? c.role : (skillsArr.length > 0 ? `${skillsArr[0]} Developer` : 'Full Stack Developer')}>
-                                    {c.role && c.role !== 'Senior Specialist' ? c.role : (skillsArr.length > 0 ? `${skillsArr[0]} Developer` : 'Full Stack Developer')}
-                                  </div>
+                                {/* 4. Zoho Recruit Status Pill */}
+                                <td style={{ padding: '10px 8px' }}>
+                                  {renderZohoStatusBadge(c.status || 'Active')}
                                 </td>
 
-                                {/* 4. AI Matched Requirement (User Requested Column!) */}
-                                <td style={{ padding: '8px 10px', maxWidth: 250 }}>
+                                {/* 5. AI Matched Requirement */}
+                                <td style={{ padding: '8px 10px', maxWidth: 230 }}>
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
                                       <span style={{
@@ -7417,14 +7287,14 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   </div>
                                 </td>
 
-                                {/* 5. Match % (2-line colored badge pill) */}
+                                {/* 6. Match % */}
                                 <td style={{ padding: '8px 8px' }}>
                                   {renderMatchBadge(c.matchScore || 85)}
                                 </td>
 
-                                {/* 6. Key Skills */}
+                                {/* 7. Key Skills */}
                                 <td style={{ padding: '8px 10px' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', maxWidth: 190 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', maxWidth: 170 }}>
                                     {skillsArr.slice(0, 3).map((sk, sIdx) => (
                                       <span
                                         key={sIdx}
@@ -7456,18 +7326,18 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   </div>
                                 </td>
 
-                                {/* 7. Received Date */}
+                                {/* 8. Received Date */}
                                 <td style={{ padding: '8px 8px', fontSize: 11.5, color: '#475569', whiteSpace: 'nowrap' }}>
                                   {c.resumeUploadDate ? c.resumeUploadDate.split(',')[0] : (c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '18 Sept 2026')}
                                 </td>
 
-                                {/* 8. Source Badge */}
+                                {/* 9. Source Badge */}
                                 <td style={{ padding: '8px 8px' }}>
                                   {renderSourceBadge(c)}
                                 </td>
 
-                                {/* 9. Actions: [ View ] + ⋮ — stopPropagation so row onClick doesn't double-fire */}
-                                <td style={{ padding: '10px 12px', textAlign: 'right', position: 'relative' }} onClick={e => e.stopPropagation()}>
+                                {/* 10. Actions: [ View ] + [ Message ] + [ Push to Jobs in Hand ↗ ] + ⋮ */}
+                                <td style={{ padding: '10px 10px', textAlign: 'right', position: 'relative' }} onClick={e => e.stopPropagation()}>
                                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                                     <button
                                       type="button"
@@ -7480,14 +7350,41 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                         color: '#1D4ED8',
                                         border: '1px solid #BFDBFE',
                                         borderRadius: 6,
-                                        padding: '5px 12px',
-                                        fontSize: 12,
+                                        padding: '5px 10px',
+                                        fontSize: 11.5,
                                         fontWeight: 700,
                                         cursor: 'pointer',
                                         transition: 'all 0.15s ease'
                                       }}
+                                      title="View Candidate Full Profile"
                                     >
                                       View
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenCandidateChat(c)}
+                                      style={{
+                                        backgroundColor: '#F0FDF4',
+                                        color: '#166534',
+                                        border: '1px solid #BBF7D0',
+                                        borderRadius: 6,
+                                        padding: '5px 9px',
+                                        fontSize: 11.5,
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 4,
+                                        whiteSpace: 'nowrap',
+                                        transition: 'all 0.15s ease'
+                                      }}
+                                      title="Message Candidate"
+                                    >
+                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                      </svg>
+                                      <span>Message</span>
                                     </button>
 
                                     <button
@@ -8076,8 +7973,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
                             }}>
                               {thread.candidateName}
                             </span>
-                            <span style={{ fontSize: 11, color: C.textSecondary, flexShrink: 0, marginLeft: 6 }}>
-                              {thread.lastMessageTime || formatTime(thread.timestamp)}
+                            <span style={{ fontSize: 11, color: C.textSecondary, flexShrink: 0, marginLeft: 6, fontWeight: 500 }}>
+                              {formatTime(thread.lastMessageTime || thread.timestamp)}
                             </span>
                           </div>
 
@@ -8090,7 +7987,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                             textOverflow: 'ellipsis',
                             marginBottom: 3
                           }}>
-                            {thread.subtitle || thread.jobTitle || 'Team Member • SmartHire ATS'}
+                            {String(thread.subtitle || thread.jobTitle || 'Team Member • SmartHire ATS').replace(/â€¦/g, '...')}
                           </div>
 
                           {/* Row 3: Last message preview + Unread badge */}
@@ -8104,7 +8001,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                               textOverflow: 'ellipsis',
                               maxWidth: 180
                             }}>
-                              {thread.lastMessage}
+                              {String(thread.lastMessage || '').replace(/â€¦/g, '...')}
                             </span>
                             {thread.unreadCount > 0 && (
                               <span style={{
@@ -8295,20 +8192,22 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     gap: 12
                   }}>
                     {/* Centered Date Divider */}
-                    <div style={{ textAlign: 'center', margin: '4px 0 8px' }}>
-                      <span style={{
-                        backgroundColor: C.surface,
-                        border: `1px solid ${C.border}`,
-                        color: C.textSecondary,
-                        fontSize: 11.5,
-                        fontWeight: 600,
-                        padding: '4px 14px',
-                        borderRadius: 14,
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
-                      }}>
-                        Today, 10 Sept 2026
-                      </span>
-                    </div>
+                    {messages.length > 0 && (
+                      <div style={{ textAlign: 'center', margin: '4px 0 8px' }}>
+                        <span style={{
+                          backgroundColor: C.surface,
+                          border: `1px solid ${C.border}`,
+                          color: C.textSecondary,
+                          fontSize: 11.5,
+                          fontWeight: 600,
+                          padding: '4px 14px',
+                          borderRadius: 14,
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+                        }}>
+                          {new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </span>
+                      </div>
+                    )}
 
                     {/* Messages Loop */}
                     {messages.length === 0 ? (
@@ -8350,7 +8249,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                               wordBreak: 'break-word',
                               boxShadow: isMe ? '0 2px 8px rgba(32,101,209,0.22)' : '0 1px 2px rgba(0,0,0,0.04)'
                             }}>
-                              {msg.text}
+                              {String(msg.text || '').replace(/â€¦/g, '...').replace(/&hellip;/g, '...')}
                             </div>
 
                             {/* Timestamp & Delivery Indicators */}
@@ -8395,7 +8294,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       }}>
                         {['Sounds good', 'Thank you', 'Profile received', 'Interview requested', 'Confirmed'].map(phrase => (
                           <button
-                            key={emoji}
+                            key={phrase}
                             type="button"
                             onClick={() => { setInputText(t => t ? t + ' ' + phrase : phrase); setEmojiPickerOpen(false); inputRef.current?.focus(); }}
                             style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 12, fontSize: 11, fontWeight: 700, color: '#1D4ED8', cursor: 'pointer', padding: '3px 9px' }}
@@ -8829,16 +8728,17 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   <button
                     type="button"
                     onClick={() => {
+                      const contactName = activeThread.candidateName || activeThread.name || 'Candidate'
                       setEmailModalCandidate({
-                        name: activeThread.candidateName,
-                        email: activeThread.email || 'gourav@smarthire.com',
-                        targetReqId: '159078',
-                        matchedJobTitle: 'Public Health Program Director 1',
-                        matchedJobClient: 'Tennessee Department of Health'
+                        name: contactName,
+                        email: activeThread.email || '',
+                        targetReqId: activeThread.targetReqId || '159079',
+                        matchedJobTitle: activeThread.jobTitle || 'Active Requisition',
+                        matchedJobClient: activeThread.company || 'Client'
                       })
-                      setEmailTo(activeThread.email || 'gourav@smarthire.com')
-                      setEmailSubject(`SmartHire ATS: Quick sync regarding Req #159078`)
-                      setEmailBody(`Hi ${(activeThread.name || activeThread.candidateName).split(' ')[0]},\n\nSharing the latest updates for your review.\n\nWith Regards,\nOmkesh Manjute\nCOOLSOFT LLC`)
+                      setEmailTo(activeThread.email || '')
+                      setEmailSubject(`SmartHire ATS: Quick update regarding application`)
+                      setEmailBody(`Hi ${contactName.split(' ')[0]},\n\nSharing the latest updates for your review.\n\nWith Regards,\n${currentUser?.name || 'Recruiter'}\nSmartHire ATS`)
                     }}
                     style={{
                       background: isLight ? '#F9FAFB' : '#1C252E',
@@ -8890,97 +8790,95 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     About
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
-                      <span style={{ color: C.textSecondary, flexShrink: 0 }}><IconUser /></span>
-                      <span style={{ color: C.textPrimary, fontWeight: 500 }}>{activeThread.role || 'Sourcing Specialist'}</span>
-                    </div>
+                    {activeThread.role && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+                        <span style={{ color: C.textSecondary, flexShrink: 0 }}><IconUser /></span>
+                        <span style={{ color: C.textPrimary, fontWeight: 500 }}>{activeThread.role}</span>
+                      </div>
+                    )}
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
-                      <span style={{ color: C.textSecondary, flexShrink: 0 }}><IconBriefcase /></span>
-                      <span style={{ color: C.textPrimary, fontWeight: 500 }}>{activeThread.company || 'SmartHire LLC'}</span>
-                    </div>
+                    {activeThread.company && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+                        <span style={{ color: C.textSecondary, flexShrink: 0 }}><IconBriefcase /></span>
+                        <span style={{ color: C.textPrimary, fontWeight: 500 }}>{activeThread.company}</span>
+                      </div>
+                    )}
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
-                      <span style={{ color: C.textSecondary, flexShrink: 0 }}><IconMail /></span>
-                      <a
-                        href={`mailto:${activeThread.email || 'gourav@smarthire.com'}`}
-                        style={{ color: '#2065D1', textDecoration: 'none', fontWeight: 600, wordBreak: 'break-all' }}
-                      >
-                        {activeThread.email || 'gourav@smarthire.com'}
-                      </a>
-                    </div>
+                    {activeThread.email && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+                        <span style={{ color: C.textSecondary, flexShrink: 0 }}><IconMail /></span>
+                        <a
+                          href={`mailto:${activeThread.email}`}
+                          style={{ color: '#2065D1', textDecoration: 'none', fontWeight: 600, wordBreak: 'break-all' }}
+                        >
+                          {activeThread.email}
+                        </a>
+                      </div>
+                    )}
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
-                      <span style={{ color: C.textSecondary, flexShrink: 0 }}><IconPhone /></span>
-                      <a
-                        href={`tel:${activeThread.phone || '+15551234567'}`}
-                        style={{ color: C.textPrimary, textDecoration: 'none', fontWeight: 500 }}
-                      >
-                        {activeThread.phone || '+1 (555) 123-4567'}
-                      </a>
-                    </div>
+                    {activeThread.phone && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+                        <span style={{ color: C.textSecondary, flexShrink: 0 }}><IconPhone /></span>
+                        <a
+                          href={`tel:${activeThread.phone}`}
+                          style={{ color: C.textPrimary, textDecoration: 'none', fontWeight: 500 }}
+                        >
+                          {activeThread.phone}
+                        </a>
+                      </div>
+                    )}
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
-                      <span style={{ color: C.textSecondary, flexShrink: 0 }}><IconLocation /></span>
-                      <span style={{ color: C.textPrimary, fontWeight: 500 }}>{activeThread.location || 'New York, USA'}</span>
-                    </div>
+                    {activeThread.location && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+                        <span style={{ color: C.textSecondary, flexShrink: 0 }}><IconLocation /></span>
+                        <span style={{ color: C.textPrimary, fontWeight: 500 }}>{activeThread.location}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Recent Files Section */}
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <div style={{ fontSize: 12.5, fontWeight: 800, color: C.textPrimary, letterSpacing: '0.02em' }}>
-                      Recent Files
+                {/* Attached Files Section — Only render if real files exist */}
+                {activeThread.recentFiles && activeThread.recentFiles.length > 0 && (
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 800, color: C.textPrimary, letterSpacing: '0.02em' }}>
+                        Attached Files
+                      </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMessageToast('Displaying all shared requisition attachments.')
-                        setTimeout(() => setMessageToast(''), 3000)
-                      }}
-                      style={{ background: 'none', border: 'none', color: '#2065D1', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', padding: 0 }}
-                    >
-                      View All
-                    </button>
-                  </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {(activeThread.recentFiles || [
-                      { name: 'Candidate_List.xlsx', size: '12 KB', date: '5 Sept', type: 'excel' },
-                      { name: 'Req_159078_Notes.pdf', size: '245 KB', date: '4 Sept', type: 'pdf' },
-                      { name: 'Interview_Schedule.docx', size: '18 KB', date: '2 Sept', type: 'word' }
-                    ]).map((file, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 10,
-                          padding: '6px 8px',
-                          borderRadius: 8,
-                          backgroundColor: isLight ? '#F9FAFB' : '#1C252E',
-                          border: `1px solid ${C.border}`,
-                          cursor: 'pointer'
-                        }}
-                        onClick={() => {
-                          setMessageToast(`Downloading ${file.name}...`)
-                          setTimeout(() => setMessageToast(''), 3000)
-                        }}
-                      >
-                        {file.type === 'excel' ? <IconFileExcel /> : file.type === 'word' ? <IconFileWord /> : <IconFilePdf />}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: C.textPrimary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {file.name}
-                          </div>
-                          <div style={{ fontSize: 10.5, color: C.textSecondary }}>
-                            {file.size} • {file.date}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {activeThread.recentFiles.map((file, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            padding: '6px 8px',
+                            borderRadius: 8,
+                            backgroundColor: isLight ? '#F9FAFB' : '#1C252E',
+                            border: `1px solid ${C.border}`,
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => {
+                            setMessageToast(`Opening ${file.name}...`)
+                            setTimeout(() => setMessageToast(''), 3000)
+                          }}
+                        >
+                          {file.type === 'excel' ? <IconFileExcel /> : file.type === 'word' ? <IconFileWord /> : <IconFilePdf />}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: C.textPrimary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {file.name}
+                            </div>
+                            <div style={{ fontSize: 10.5, color: C.textSecondary }}>
+                              {file.size} {file.date ? `• ${file.date}` : ''}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Quick Actions Section */}
                 <div>
