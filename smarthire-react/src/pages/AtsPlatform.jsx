@@ -246,7 +246,7 @@ export default function AtsPlatform() {
       const params = new URLSearchParams(window.location.search)
       const tab = params.get('tab')
       if (tab === 'candidates') {
-        setTimeout(() => navigate('/inbox'), 0)
+        setTimeout(() => navigate('/inbox', { replace: true }), 0)
         return 'home'
       }
       if (tab === 'jobs' || tab === 'dashboard') return 'home'
@@ -266,6 +266,10 @@ export default function AtsPlatform() {
 
   // Synchronize activeTab to URL query parameters & localStorage so refresh always preserves the active tab
   useEffect(() => {
+    if (activeTab === 'candidates') {
+      navigate('/inbox', { replace: true })
+      return
+    }
     if (activeTab) {
       try {
         localStorage.setItem('smarthire_ats_active_tab', activeTab)
@@ -277,7 +281,7 @@ export default function AtsPlatform() {
         }
       } catch (e) {}
     }
-  }, [activeTab])
+  }, [activeTab, navigate])
 
   useEffect(() => {
     const urlTab = getTabFromUrl()
@@ -901,7 +905,7 @@ export default function AtsPlatform() {
           )}
 
           {[
-            { id: 'candidates', label: 'Candidates', count: safeCandidates.length },
+            { id: 'candidates', label: 'Candidates', isLink: '/inbox', count: safeCandidates.length },
             { id: 'pipeline', label: 'Pipeline' },
             { id: 'screening', label: 'Screening' },
             { id: 'submissions', label: 'Submissions' },
@@ -912,7 +916,11 @@ export default function AtsPlatform() {
               return (
                 <div
                   key={m.id}
-                  onClick={() => setActiveTab(m.id)}
+                  onClick={() => {
+                    if (m.isLink) navigate(m.isLink)
+                    else if (m.id === 'candidates') navigate('/inbox')
+                    else setActiveTab(m.id)
+                  }}
                   title={sidebarCollapsed ? m.label : undefined}
                   style={{
                     display: 'flex',
@@ -961,7 +969,7 @@ export default function AtsPlatform() {
             { id: 'inquiries', label: 'Client Inquiries', count: inquiriesCount || undefined },
             { id: 'audit', label: 'Audit Logs' },
             { id: 'automation', label: 'Automation' },
-            { id: 'inbox', label: 'Recruiter Inbox', isLink: '/inbox' },
+            { id: 'inbox', label: 'Candidate Messenger', isLink: '/inbox?tab=chat' },
             { id: 'settings', label: 'Settings' },
             { id: 'users', label: 'Manage Users' },
           ]
@@ -1143,9 +1151,11 @@ export default function AtsPlatform() {
               type="text"
               placeholder="Search candidate records, skills, requisitions... (⌘K)"
               value={query}
-              onChange={e => {
-                setQuery(e.target.value)
-                if (activeTab !== 'candidates') setActiveTab('candidates')
+              onChange={e => setQuery(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  navigate(`/inbox?search=${encodeURIComponent(query)}`)
+                }
               }}
               style={{
                 width: '100%',
@@ -1167,7 +1177,7 @@ export default function AtsPlatform() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             {/* Quick Add Pill */}
             <button
-              onClick={() => setActiveTab('candidates')}
+              onClick={() => navigate('/inbox?action=add')}
               title="Quick Add Candidate"
               style={{
                 width: '30px', height: '30px', borderRadius: '50%',
@@ -1199,7 +1209,7 @@ export default function AtsPlatform() {
             <ActivityNotificationBell
               theme="default"
               onSelectNotification={(notif) => {
-                if (notif.candidateId) setActiveTab('candidates')
+                if (notif.candidateId) navigate(`/inbox?candidateId=${notif.candidateId}`)
                 else if (notif.reqId) navigate('/dashboard')
               }}
             />
@@ -1395,8 +1405,8 @@ export default function AtsPlatform() {
                 marginBottom: '24px'
               }}>
                 {[
-                  { title: 'My Open Requisitions', value: activeJobs, change: '+4 this week', color: '#2563eb', action: () => setActiveTab('candidates') },
-                  { title: 'Total Talent Pool', value: safeCandidates.length, change: 'Across all sources', color: '#0f172a', action: () => setActiveTab('candidates') },
+                  { title: 'My Open Requisitions', value: activeJobs, change: '+4 this week', color: '#2563eb', action: () => navigate('/dashboard') },
+                  { title: 'Total Talent Pool', value: safeCandidates.length, change: 'Across all sources', color: '#0f172a', action: () => navigate('/inbox') },
                   { title: 'Interviews Scheduled', value: interviewsCount, change: 'Active pipeline', color: '#10b981', action: () => setActiveTab('pipeline') },
                   { title: 'Submissions & RTR', value: qualified, change: 'Manager ready', color: '#f59e0b', action: () => setActiveTab('submissions') },
                 ].map((kpi, idx) => (
@@ -1540,7 +1550,7 @@ export default function AtsPlatform() {
                         <tr
                           key={job.id || jIdx}
                           style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }}
-                          onClick={() => { setSelectedJob(job.id); setActiveTab('candidates') }}
+                          onClick={() => { setSelectedJob(job.id); navigate(`/inbox?reqId=${job.reqId || job.id}`) }}
                           onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                           onMouseLeave={e => e.currentTarget.style.background = '#ffffff'}
                         >
@@ -1564,8 +1574,11 @@ export default function AtsPlatform() {
                       ))}
                     </tbody>
                   </table>
-                  <div style={{ padding: '8px 16px', background: '#ffffff', borderTop: '1px solid #f1f5f9', fontSize: '11px', color: '#64748b', textAlign: 'right' }}>
-                    1 - 5 of {safeJobs.length} ›
+                  <div 
+                    onClick={() => navigate('/dashboard')}
+                    style={{ padding: '8px 16px', background: '#ffffff', borderTop: '1px solid #f1f5f9', fontSize: '11px', color: '#2563eb', textAlign: 'right', cursor: 'pointer', fontWeight: '600' }}
+                  >
+                    View All {safeJobs.length} Requisitions ›
                   </div>
                 </div>
 
@@ -1587,7 +1600,12 @@ export default function AtsPlatform() {
                     <span style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a' }}>
                       Recent Applicants & Interviews
                     </span>
-                    <span style={{ fontSize: '12px', color: '#64748b' }}>⋮</span>
+                    <span 
+                      onClick={() => navigate('/inbox')}
+                      style={{ fontSize: '12px', color: '#2563eb', fontWeight: '700', cursor: 'pointer' }}
+                    >
+                      Open Talent Hub ↗
+                    </span>
                   </div>
 
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
@@ -1603,7 +1621,7 @@ export default function AtsPlatform() {
                         <tr
                           key={cand.id || cIdx}
                           style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }}
-                          onClick={() => setActiveTab('candidates')}
+                          onClick={() => navigate(`/inbox?candidateId=${cand.id || cand.candidate_id || ''}`)}
                           onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                           onMouseLeave={e => e.currentTarget.style.background = '#ffffff'}
                         >
@@ -1622,8 +1640,11 @@ export default function AtsPlatform() {
                       ))}
                     </tbody>
                   </table>
-                  <div style={{ padding: '8px 16px', background: '#ffffff', borderTop: '1px solid #f1f5f9', fontSize: '11px', color: '#64748b', textAlign: 'right' }}>
-                    1 - 5 of {safeCandidates.length} ›
+                  <div 
+                    onClick={() => navigate('/inbox')}
+                    style={{ padding: '8px 16px', background: '#ffffff', borderTop: '1px solid #f1f5f9', fontSize: '11px', color: '#2563eb', textAlign: 'right', cursor: 'pointer', fontWeight: '600' }}
+                  >
+                    View All {safeCandidates.length} Candidates in Talent Hub ›
                   </div>
                 </div>
 
@@ -1632,29 +1653,36 @@ export default function AtsPlatform() {
           )}
 
           {/* ══════════════════════════════════════════════════════════════════
-              VIEW B: ZOHO CRM CANDIDATES / LEADS (Screenshot 3)
+              UNIFIED TALENT HUB REDIRECT (Candidate management lives in /inbox)
              ══════════════════════════════════════════════════════════════════ */}
           {activeTab === 'candidates' && (
-            <CandidatesModule
-              allCandidates={safeCandidates}
-              filteredCandidates={filteredCandidates}
-              jobsList={safeJobs}
-              selectedJob={selectedJob}
-              setSelectedJob={setSelectedJob}
-              statusFilter={statusFilter}
-              setStatusFilter={setStatusFilter}
-              query={query}
-              setQuery={setQuery}
-              selectedIds={selectedIds}
-              setSelectedIds={setSelectedIds}
-              toggleSelectAll={toggleSelectAll}
-              toggleSelectCandidate={toggleSelectCandidate}
-              updateStatus={updateStatus}
-              setDetailCandidate={setDetailCandidate}
-              handleBulkStatusChange={handleBulkStatusChange}
-              handleBulkDelete={handleBulkDelete}
-              statuses={STATUSES}
-            />
+            <div style={{ padding: '80px 24px', textAlign: 'center', background: '#FFFFFF', margin: 24, borderRadius: 12, border: '1px solid #E2E8F0' }}>
+              <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#EFF6FF', color: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 22, fontWeight: 800 }}>
+                ✓
+              </div>
+              <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', margin: '0 0 8px' }}>
+                Unified Candidate Talent Hub Active
+              </h3>
+              <p style={{ fontSize: 14, color: '#64748B', maxWidth: 460, margin: '0 auto 20px', lineHeight: 1.5 }}>
+                All candidate profiles, AI screening, and resume streams are unified in the primary Candidate Talent Hub at <code>/inbox</code>.
+              </p>
+              <button
+                onClick={() => navigate('/inbox', { replace: true })}
+                style={{
+                  background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
+                  color: '#FFFFFF',
+                  padding: '11px 24px',
+                  borderRadius: 8,
+                  border: 'none',
+                  fontWeight: 700,
+                  fontSize: 14,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(37,99,235,0.25)'
+                }}
+              >
+                Go to Candidate Talent Hub →
+              </button>
+            </div>
           )}
 
           {/* ══════════════════════════════════════════════════════════════════

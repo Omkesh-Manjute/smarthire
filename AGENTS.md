@@ -31,6 +31,33 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-19 — Unified Candidate Talent Hub Navigation, De-duplication & Blog Image WebP Re-encoding
+- **Context & Objectives**:
+  - User reported two issues:
+    1. Candidates appeared in both views: legacy `/ats?tab=candidates` (264 records) and candidate cockpit `/inbox` (251 records), confusing users who expected a single unified candidate talent hub ("dono jagha same candidate dikh rahe hai ye ek mai karna tha na fir q dikh raha hai").
+    2. Blog images failed to load on `/blog` cards and article pages ("blog update hua but sab ka image nahi dikh raha hai").
+- **Root Cause & Key Deliverables**:
+  - **Blog Images Resolution (Real RIFF WebP Conversion)**:
+    - Root cause: Hero and infographic images in `public/images/blog/` had `.webp` file extensions but were raw JPEG binaries (`0xFFD8`). When served with `Content-Type: image/webp`, Chromium/Safari rejected the container bytes, rendering blank dark boxes.
+    - Converted all blog images (`india-vs-usa-it-jobs-2026-hero`, `india-vs-usa-it-jobs-comparison-chart`, `us-it-recruitment-market-2026-hero`, `in-demand-it-roles-usa-2026`, `h1b-2026-update-hero`, `it-work-visa-options-usa-2026`, `career-hero-slide2`) into genuine RIFF VP8 WebP binaries using `cwebp -q 85` (dropping file sizes by ~75% from 1MB to ~150-250KB).
+    - Added resilient `onError` image handlers across `Blog.jsx`, `IndiaVsUsaJobs2026Article.jsx`, `H1b2026Article.jsx`, and `UsItMarket2026Article.jsx` to gracefully fallback between `.webp` and `.jpg` if needed.
+  - **Unified Candidate Talent Hub (/inbox)**:
+    - Removed the old `CandidatesModule` table from `/ats?tab=candidates` and routed all candidate access points across the platform directly to the unified candidate hub at `/inbox`.
+    - In `AtsPlatform.jsx`:
+      - Sidebar "Candidates" (Talent Acquisition) now links directly to `/inbox`.
+      - Sidebar "Operations & Admin" renamed from duplicate "Recruiter Inbox" to "Candidate Messenger" (`isLink: '/inbox?tab=chat'`).
+      - Quick Add (`+` pill button in ATS header) routes to `/inbox?action=add`.
+      - Notification bell candidate alerts route to `/inbox?candidateId=${notif.candidateId}`.
+      - "Total Talent Pool" KPI card and applicant table rows route to `/inbox`.
+      - Route `/ats?tab=candidates` automatically redirects via `navigate('/inbox', { replace: true })`.
+    - In `Navigation.jsx`: Notification bell candidate alerts route to `/inbox?candidateId=${n.candidateId}`.
+    - In `RecruiterInbox.jsx`:
+      - Wrapped `streamCandidates` with `deduplicateCandidates` to eliminate any duplicate entries.
+      - Added URL parameter handler listening for `?action=add` (auto-opens Add Candidate modal), `?candidateId=...` (auto-selects candidate), `?reqId=...`, and `?tab=chat`.
+- **Verification & Deployment**:
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-DmwaFIS7.js`).
+  - Root `node build.js`: 0 errors (built in 2.19s).
+
 ### 2026-09-19 — Candidate Count Inconsistency Resolution, Payload Optimization (6.6MB → 300KB) & Client Cache
 - **Context & Objectives**:
   - The user reported an intermittent candidate count anomaly: "/inbox sometimes shows 13 candidates instead of the full pool of 250+ candidates ('kabhi kam candidate batate hai kabhi pure')."

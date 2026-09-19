@@ -465,7 +465,7 @@ function Navigation() {
                       navigate(`/dashboard?tab=requisitions&reqId=${cleanId}`)
                       window.dispatchEvent(new CustomEvent('smarthire_open_req_detail', { detail: { reqId: cleanId } }))
                     } else if (n.candidateId) {
-                      navigate(`/ats?tab=candidates&candidateId=${n.candidateId}`)
+                      navigate(`/inbox?candidateId=${n.candidateId}`)
                     } else {
                       navigate('/dashboard')
                     }

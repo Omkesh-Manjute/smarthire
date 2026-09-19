@@ -208,6 +208,14 @@ export default function IndiaVsUsaJobs2026Article() {
         <img 
           src="/images/blog/india-vs-usa-it-jobs-comparison-chart.webp" 
           alt="Infographic matrix comparing IT software engineering careers in India vs USA in 2026 across salaries, taxes, and career growth"
+          onError={(e) => {
+            const currentSrc = e.currentTarget.src || ''
+            if (currentSrc.endsWith('.webp')) {
+              e.currentTarget.src = currentSrc.replace(/\.webp$/, '.jpg')
+            } else if (currentSrc.endsWith('.jpg')) {
+              e.currentTarget.src = currentSrc.replace(/\.jpg$/, '.webp')
+            }
+          }}
           style={{ width: '100%', height: 'auto', borderRadius: 14, border: '1px solid #E2E8F0', display: 'block', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}
           loading="lazy"
         />

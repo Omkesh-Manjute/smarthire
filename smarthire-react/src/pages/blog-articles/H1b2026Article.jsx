@@ -217,6 +217,14 @@ export default function H1b2026Article() {
           src="/images/blog/it-work-visa-options-usa-2026.webp"
           alt="Visual comparison chart of US IT work visa options for 2026"
           loading="lazy"
+          onError={(e) => {
+            const currentSrc = e.currentTarget.src || ''
+            if (currentSrc.endsWith('.webp')) {
+              e.currentTarget.src = currentSrc.replace(/\.webp$/, '.jpg')
+            } else if (currentSrc.endsWith('.jpg')) {
+              e.currentTarget.src = currentSrc.replace(/\.jpg$/, '.webp')
+            }
+          }}
           style={{ width: '100%', height: 'auto', borderRadius: 12, border: '1px solid #E2E8F0', boxShadow: '0 4px 16px rgba(0,0,0,0.06)' }}
         />
         <figcaption style={{ fontSize: 13.5, color: '#64748B', textAlign: 'center', marginTop: 10 }}>

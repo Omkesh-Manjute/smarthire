@@ -237,6 +237,14 @@ function BlogPostContent({ post }) {
           src={post.image}
           alt={`${post.title} — SmartHire Editorial`}
           loading="eager"
+          onError={(e) => {
+            const currentSrc = e.currentTarget.src || ''
+            if (currentSrc.endsWith('.webp')) {
+              e.currentTarget.src = currentSrc.replace(/\.webp$/, '.jpg')
+            } else if (currentSrc.endsWith('.jpg')) {
+              e.currentTarget.src = currentSrc.replace(/\.jpg$/, '.webp')
+            }
+          }}
           style={{ width: '100%', maxHeight: 440, objectFit: 'cover', borderRadius: 14, border: '1px solid #E2E8F0', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', display: 'block' }}
         />
       </div>
@@ -295,6 +303,14 @@ function BlogPostContent({ post }) {
                 src={rel.image}
                 alt={rel.title}
                 loading="lazy"
+                onError={(e) => {
+                  const currentSrc = e.currentTarget.src || ''
+                  if (currentSrc.endsWith('.webp')) {
+                    e.currentTarget.src = currentSrc.replace(/\.webp$/, '.jpg')
+                  } else if (currentSrc.endsWith('.jpg')) {
+                    e.currentTarget.src = currentSrc.replace(/\.jpg$/, '.webp')
+                  }
+                }}
                 style={{ width: '100%', height: 160, objectFit: 'cover' }}
               />
               <div style={{ padding: '16px 18px 20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -400,6 +416,14 @@ function BlogIndex() {
                   src={post.image}
                   alt={`${post.title} — SmartHire`}
                   loading="lazy"
+                  onError={(e) => {
+                    const currentSrc = e.currentTarget.src || ''
+                    if (currentSrc.endsWith('.webp')) {
+                      e.currentTarget.src = currentSrc.replace(/\.webp$/, '.jpg')
+                    } else if (currentSrc.endsWith('.jpg')) {
+                      e.currentTarget.src = currentSrc.replace(/\.jpg$/, '.webp')
+                    }
+                  }}
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.3s ease' }}
                 />
                 <div style={{ position: 'absolute', top: 12, left: 12, background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(4px)', color: '#FFFFFF', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, letterSpacing: '0.04em', textTransform: 'uppercase' }}>

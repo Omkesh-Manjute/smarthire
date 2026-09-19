@@ -2461,12 +2461,12 @@ export default function RecruiterInbox({ defaultViewMode }) {
       }
       const data = await res.json()
       if (data.success && Array.isArray(data.candidates)) {
-        const cleaned = (data.candidates || []).map(c => {
+        const cleaned = deduplicateCandidates((data.candidates || []).map(c => {
           if (c.location && (c.location.toLowerCase().includes('search on') || c.location.toLowerCase().includes('webpage'))) {
             return { ...c, location: 'Remote, US' }
           }
           return c
-        })
+        }))
         setStreamCandidates(cleaned)
         if (data.counts) {
           setStreamCounts(data.counts)
@@ -3179,6 +3179,35 @@ export default function RecruiterInbox({ defaultViewMode }) {
   }, [activeThread, fetchMessages, fetchThreads])
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
+
+  // Inbound URL deep-links handler (?action=add, ?candidateId=..., ?reqId=..., ?tab=chat)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('action') === 'add') {
+        setAddCandidateModalOpen(true)
+      }
+      const targetReq = params.get('reqId')
+      if (targetReq) {
+        setStreamReqFilter(targetReq)
+      }
+      const targetSearch = params.get('search')
+      if (targetSearch) {
+        setStreamSearch(decodeURIComponent(targetSearch))
+      }
+      const targetTab = params.get('tab')
+      if (targetTab === 'chat' || targetTab === 'messages') {
+        setInboxViewMode('chat')
+      }
+      const targetCandId = params.get('candidateId')
+      if (targetCandId && Array.isArray(streamCandidates) && streamCandidates.length > 0) {
+        const found = streamCandidates.find(c => c && (String(c.id) === String(targetCandId) || String(c.candidate_id) === String(targetCandId)))
+        if (found) {
+          setSelectedCandidate(found)
+        }
+      }
+    } catch (e) {}
+  }, [streamCandidates])
 
   const visibleThreads = threads.filter(t => {
     if (!t) return false
