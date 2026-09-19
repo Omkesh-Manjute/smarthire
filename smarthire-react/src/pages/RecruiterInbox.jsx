@@ -321,8 +321,12 @@ function cleanMimeEmail(raw) {
     if (/^(Content-Type|Content-Disposition|Content-Transfer-Encoding|Content-ID|X-Attachment-Id):/i.test(trimmed)) {
       return false
     }
-    // Boundary filter
-    if (/^--[a-zA-Z0-9_-]+--?$/.test(trimmed)) {
+    // Charset header filter
+    if (/^charset=["']?[a-zA-Z0-9_-]+["']?/i.test(trimmed)) {
+      return false
+    }
+    // Boundary filter (catches NextPart, dots, equals, multiple dashes)
+    if (/^-+(=?[a-zA-Z0-9_.-]+)+-*\s*$/i.test(trimmed) || trimmed.includes('_NextPart_') || trimmed.startsWith('------=')) {
       return false
     }
     // IMAP wrapper tag
