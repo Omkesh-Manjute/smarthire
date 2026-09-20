@@ -270,6 +270,10 @@ export default function AtsPlatform() {
       navigate('/inbox', { replace: true })
       return
     }
+    if (activeTab === 'pipeline') {
+      setActiveTab('submissions')
+      return
+    }
     if (activeTab) {
       try {
         localStorage.setItem('smarthire_ats_active_tab', activeTab)
@@ -325,8 +329,6 @@ export default function AtsPlatform() {
 
   // Zoho CRM Sidebar state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [teamspaceOpen, setTeamspaceOpen] = useState(true)
-  const [sidebarSearch, setSidebarSearch] = useState('')
   const [showUserDropdown, setShowUserDropdown] = useState(false)
   const [showHomeViewDropdown, setShowHomeViewDropdown] = useState(false)
   const [homeViewName, setHomeViewName] = useState(`${userName.split(' ')[0]}'s Home`)
@@ -804,13 +806,11 @@ export default function AtsPlatform() {
           </button>
         </div>
 
-        {/* Primary Upper Navigation (Home, Pipeline, Reports, Analytics, Agents) */}
+        {/* Primary Upper Navigation (Home, Reports) */}
         <div style={{ padding: '8px 8px 4px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
           {[
             { id: 'home', label: 'Home' },
-            { id: 'pipeline', label: 'Workqueue' },
-            { id: 'reports', label: 'Reports' },
-            { id: 'screening', label: 'AI Agents' }
+            { id: 'reports', label: 'Reports' }
           ].map(item => {
             const isActive = activeTab === item.id
             return (
@@ -842,57 +842,9 @@ export default function AtsPlatform() {
           })}
         </div>
 
-        {/* Middle Section: Collapsible ATS Teamspace Accordion with Search */}
+        {/* Clean Divider */}
         {!sidebarCollapsed && (
-          <div style={{ padding: '8px 12px 4px' }}>
-            <div
-              onClick={() => setTeamspaceOpen(prev => !prev)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                color: '#cbd5e1',
-                fontSize: '11px',
-                fontWeight: '700',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                cursor: 'pointer',
-                padding: '4px 0'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '10px', background: '#e11d48', color: '#fff', padding: '1px 4px', borderRadius: '3px', fontWeight: '800' }}>CT</span>
-                <span>ATS Teamspace</span>
-              </div>
-              <span style={{ fontSize: '9px' }}>{teamspaceOpen ? '▼' : '▶'}</span>
-            </div>
-
-            {/* Inline Module Search Box */}
-            {teamspaceOpen && (
-              <div style={{ marginTop: '8px', position: 'relative' }}>
-                <input
-                  type="text"
-                  placeholder="Search modules..."
-                  value={sidebarSearch}
-                  onChange={e => setSidebarSearch(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '6px 8px 6px 26px',
-                    fontSize: '11px',
-                    borderRadius: '5px',
-                    border: '1px solid #334155',
-                    background: '#0f172a',
-                    color: '#e2e8f0',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                />
-                <span style={{ position: 'absolute', left: '8px', top: '8px', color: '#64748b', display: 'flex', alignItems: 'center' }}>
-                  {renderAtsIcon('search', 12, '#64748b')}
-                </span>
-              </div>
-            )}
-          </div>
+          <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '8px 12px' }} />
         )}
 
         {/* Scrollable Sub-modules List */}
@@ -906,11 +858,9 @@ export default function AtsPlatform() {
 
           {[
             { id: 'candidates', label: 'Candidates', isLink: '/inbox', count: safeCandidates.length },
-            { id: 'pipeline', label: 'Pipeline' },
             { id: 'screening', label: 'Screening' },
             { id: 'submissions', label: 'Submissions' },
           ]
-            .filter(m => !sidebarSearch || m.label.toLowerCase().includes(sidebarSearch.toLowerCase()))
             .map(m => {
               const isActive = activeTab === m.id
               return (
@@ -969,11 +919,9 @@ export default function AtsPlatform() {
             { id: 'inquiries', label: 'Client Inquiries', count: inquiriesCount || undefined },
             { id: 'audit', label: 'Audit Logs' },
             { id: 'automation', label: 'Automation' },
-            { id: 'inbox', label: 'Candidate Messenger', isLink: '/inbox?tab=chat' },
             { id: 'settings', label: 'Settings' },
             { id: 'users', label: 'Manage Users' },
           ]
-            .filter(m => !sidebarSearch || m.label.toLowerCase().includes(sidebarSearch.toLowerCase()))
             .map(m => {
               const isActive = activeTab === m.id
               return (
@@ -1407,7 +1355,7 @@ export default function AtsPlatform() {
                 {[
                   { title: 'My Open Requisitions', value: activeJobs, change: '+4 this week', color: '#2563eb', action: () => navigate('/dashboard') },
                   { title: 'Total Talent Pool', value: safeCandidates.length, change: 'Across all sources', color: '#0f172a', action: () => navigate('/inbox') },
-                  { title: 'Interviews Scheduled', value: interviewsCount, change: 'Active pipeline', color: '#10b981', action: () => setActiveTab('pipeline') },
+                  { title: 'Interviews Scheduled', value: interviewsCount, change: 'Active pipeline', color: '#10b981', action: () => setActiveTab('submissions') },
                   { title: 'Submissions & RTR', value: qualified, change: 'Manager ready', color: '#f59e0b', action: () => setActiveTab('submissions') },
                 ].map((kpi, idx) => (
                   <div
@@ -1474,7 +1422,7 @@ export default function AtsPlatform() {
                 }}>
                   {[
                     { title: 'Invite your recruiting team', iconId: 'users', tab: 'users' },
-                    { title: 'Configure candidate pipeline stages', iconId: 'pipeline', tab: 'pipeline' },
+                    { title: 'Configure client submissions & RTR', iconId: 'submissions', tab: 'submissions' },
                     { title: 'AI Resume Screening & Matchmaker', iconId: 'screening', tab: 'screening' },
                     { title: 'Connect email & recruiter inbox', iconId: 'inbox', link: '/inbox' }
                   ].map((step, sIdx) => (
