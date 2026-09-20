@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { saveMessageFirestore, getMessagesFirestore, saveRequisitionCandidates, saveCandidate, getAllCandidates, deduplicateCandidates } from '../lib/atsFirestore'
+import { saveMessageFirestore, getMessagesFirestore, saveRequisitionCandidates, saveCandidate, getAllCandidates, deduplicateCandidates, deleteCandidateFirestore } from '../lib/atsFirestore'
 import { autoSendJobDescriptionToCandidate } from '../utils/autoSendJdHelper'
 
 const POLL_INTERVAL = 3000
@@ -469,23 +469,33 @@ const renderMatchBadge = (score = 85) => {
 }
 
 const renderSourceBadge = (c) => {
-  if (c.isSpamRecovery || c.sourceCategory === 'email_spam') {
+  if (!c) return null
+  const src = String(c.source || '').toLowerCase()
+  const cat = String(c.sourceCategory || '').toLowerCase()
+  const folder = String(c.folder || '').toLowerCase()
+
+  if (c.isSpamRecovery || cat === 'email_spam' || folder.includes('spam') || src.includes('spam')) {
     return (
       <span style={{
         fontSize: 11,
         fontWeight: 700,
-        color: '#4F46E5',
-        backgroundColor: '#EEF2FF',
-        border: '1px solid #C7D2FE',
+        color: '#EA580C',
+        backgroundColor: '#FFF7ED',
+        border: '1px solid #FED7AA',
         padding: '2px 8px',
         borderRadius: 6,
-        whiteSpace: 'nowrap'
+        whiteSpace: 'nowrap',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4
       }}>
-        Recovered
+        <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#EA580C' }}></span>
+        Email Spam
       </span>
     )
   }
-  if (c.sourceCategory === 'careers_portal') {
+
+  if (cat === 'careers_portal' || src.includes('career') || src.includes('/jobs')) {
     return (
       <span style={{
         fontSize: 11,
@@ -501,14 +511,15 @@ const renderSourceBadge = (c) => {
       </span>
     )
   }
-  if (c.sourceCategory === 'vendor_bench') {
+
+  if (cat === 'vendor_bench' || src.includes('vendor') || src.includes('bench')) {
     return (
       <span style={{
         fontSize: 11,
         fontWeight: 700,
-        color: '#D97706',
-        backgroundColor: '#FFFBEB',
-        border: '1px solid #FDE68A',
+        color: '#7C3AED',
+        backgroundColor: '#F5F3FF',
+        border: '1px solid #DDD6FE',
         padding: '2px 8px',
         borderRadius: 6,
         whiteSpace: 'nowrap'
@@ -517,7 +528,8 @@ const renderSourceBadge = (c) => {
       </span>
     )
   }
-  if (c.sourceCategory === 'manual_entry' || (c.source && String(c.source).toLowerCase().includes('manual'))) {
+
+  if (cat === 'manual_entry' || src.includes('manual') || src.includes('direct add')) {
     return (
       <span style={{
         fontSize: 11,
@@ -533,6 +545,24 @@ const renderSourceBadge = (c) => {
       </span>
     )
   }
+
+  if (src.includes('monster')) {
+    return (
+      <span style={{
+        fontSize: 11,
+        fontWeight: 700,
+        color: '#2563EB',
+        backgroundColor: '#EFF6FF',
+        border: '1px solid #BFDBFE',
+        padding: '2px 8px',
+        borderRadius: 6,
+        whiteSpace: 'nowrap'
+      }}>
+        Monster Search
+      </span>
+    )
+  }
+
   return (
     <span style={{
       fontSize: 11,
@@ -544,9 +574,52 @@ const renderSourceBadge = (c) => {
       borderRadius: 6,
       whiteSpace: 'nowrap'
     }}>
-      Email / Direct
+      Email Inbox
     </span>
   )
+}
+
+/**
+ * Robust Boolean Search Evaluator
+ * Supports AND, OR, NOT, quoted phrases, and parentheses
+ */
+export function evaluateBooleanSearch(query, candidateCorpus) {
+  if (!query || !query.trim()) return true
+  const corpus = (candidateCorpus || '').toLowerCase()
+  const rawQ = query.trim()
+
+  const hasOperators = /\b(AND|OR|NOT)\b/i.test(rawQ) || rawQ.includes('"') || rawQ.includes('(') || rawQ.includes(')')
+  if (!hasOperators) {
+    const terms = rawQ.toLowerCase().split(/\s+/).filter(Boolean)
+    return terms.every(t => corpus.includes(t))
+  }
+
+  try {
+    let expr = rawQ
+    const termResults = []
+    expr = expr.replace(/"([^"]+)"/g, (_, phrase) => {
+      const idx = termResults.length
+      termResults.push(corpus.includes(phrase.toLowerCase().trim()))
+      return ` __TERM_${idx}__ `
+    })
+    expr = expr.replace(/\bNOT\s+/gi, ' ! ').replace(/\bAND\b/gi, ' && ').replace(/\bOR\b/gi, ' || ')
+    expr = expr.replace(/([a-zA-Z0-9_.#+@-]+)/g, match => {
+      if (match === 'true' || match === 'false' || match.startsWith('__TERM_')) return match
+      const idx = termResults.length
+      termResults.push(corpus.includes(match.toLowerCase()))
+      return `__TERM_${idx}__`
+    })
+    termResults.forEach((val, idx) => {
+      expr = expr.replace(new RegExp(`__TERM_${idx}__`, 'g'), val ? 'true' : 'false')
+    })
+    if (/^[truefals!\s&|()]+$/.test(expr)) {
+      return Boolean(new Function(`return (${expr})`)())
+    }
+  } catch (e) {
+    const fallback = rawQ.replace(/["()]/g, '').toLowerCase().split(/\s+/).filter(t => t !== 'and' && t !== 'or' && t !== 'not' && t.length > 0)
+    return fallback.every(t => fallback.length === 0 || fallback.every(t => corpus.includes(t)))
+  }
+  return true
 }
 
 const renderZohoStatusBadge = (status = 'New') => {
@@ -2414,8 +2487,30 @@ export default function RecruiterInbox({ defaultViewMode }) {
         }
       })
 
-      // Combine all: manual candidates + stream candidates
-      const combinedPool = [...normalizedManual, ...streamList]
+      // Retrieve locally recorded deleted candidates blacklist
+      let localDeletedSet = new Set()
+      try {
+        const delRaw = localStorage.getItem('smarthire_deleted_candidates')
+        if (delRaw) {
+          const arr = JSON.parse(delRaw)
+          if (Array.isArray(arr)) {
+            localDeletedSet = new Set(arr.map(s => String(s).toLowerCase().trim()))
+          }
+        }
+      } catch (e) {}
+
+      // Combine all: manual candidates + stream candidates, filtering out permanently deleted ones
+      const combinedPool = [...normalizedManual, ...streamList].filter(c => {
+        if (!c) return false
+        const id1 = String(c.id || '').toLowerCase().trim()
+        const id2 = String(c.candidate_id || '').toLowerCase().trim()
+        const id3 = String(c.canId || '').toLowerCase().trim()
+        const em = String(c.email || '').toLowerCase().trim()
+        if (localDeletedSet.has(id1) || localDeletedSet.has(id2) || localDeletedSet.has(id3) || (em && localDeletedSet.has(em))) {
+          return false
+        }
+        return true
+      })
       const cleaned = deduplicateCandidates(combinedPool.map(c => {
         const rawLoc = safeString(c?.location)
         const safeLoc = (rawLoc && (rawLoc.toLowerCase().includes('search on') || rawLoc.toLowerCase().includes('webpage')))
@@ -3020,7 +3115,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const handleDeleteCandidate = async (cand) => {
     if (!cand) return
     const candName = cand.name || cand.extracted_profile?.name || (cand.email ? cand.email.split('@')[0] : 'Candidate')
-    const candId = cand.id || cand.candidate_id || ''
+    const candId = cand.id || cand.candidate_id || cand.canId || ''
     const candEmail = cand.email || ''
 
     if (!window.confirm(`Are you sure you want to delete "${candName}"? This action cannot be undone.`)) {
@@ -3028,6 +3123,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
     }
 
     try {
+      // 1. Delete from Server
       if (candId) {
         await fetch(`/api/candidates/${encodeURIComponent(candId)}`, {
           method: 'DELETE',
@@ -3035,19 +3131,76 @@ export default function RecruiterInbox({ defaultViewMode }) {
             'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`,
             'Content-Type': 'application/json'
           }
-        })
+        }).catch(() => {})
       }
 
+      // 2. Delete from Firestore atsCandidates collection
+      if (candId) {
+        await deleteCandidateFirestore(candId).catch(() => {})
+      }
+      if (cand.canId && cand.canId !== candId) {
+        await deleteCandidateFirestore(cand.canId).catch(() => {})
+      }
+
+      // 3. Record in LocalStorage Deleted Blacklist
+      try {
+        const delRaw = localStorage.getItem('smarthire_deleted_candidates')
+        const delList = delRaw ? JSON.parse(delRaw) : []
+        if (candId) delList.push(String(candId).toLowerCase().trim())
+        if (cand.id) delList.push(String(cand.id).toLowerCase().trim())
+        if (cand.candidate_id) delList.push(String(cand.candidate_id).toLowerCase().trim())
+        if (cand.canId) delList.push(String(cand.canId).toLowerCase().trim())
+        if (candEmail) delList.push(String(candEmail).toLowerCase().trim())
+        localStorage.setItem('smarthire_deleted_candidates', JSON.stringify(Array.from(new Set(delList))))
+      } catch (e) {}
+
+      // 4. Clean smarthire_stream_candidates_cache
+      try {
+        const cacheRaw = localStorage.getItem('smarthire_stream_candidates_cache')
+        if (cacheRaw) {
+          const cached = JSON.parse(cacheRaw)
+          if (Array.isArray(cached)) {
+            const filteredCache = cached.filter(c => {
+              const cId = String(c.id || c.candidate_id || c.canId || '').toLowerCase().trim()
+              const cEm = String(c.email || '').toLowerCase().trim()
+              if (candId && cId === String(candId).toLowerCase().trim()) return false
+              if (candEmail && cEm === candEmail.toLowerCase().trim()) return false
+              return true
+            })
+            localStorage.setItem('smarthire_stream_candidates_cache', JSON.stringify(filteredCache))
+          }
+        }
+      } catch (e) {}
+
+      // 5. Clean smarthire_all_candidates
+      try {
+        const allRaw = localStorage.getItem('smarthire_all_candidates')
+        if (allRaw) {
+          const allList = JSON.parse(allRaw)
+          if (Array.isArray(allList)) {
+            const filteredAll = allList.filter(c => {
+              const cId = String(c.id || c.candidate_id || c.canId || '').toLowerCase().trim()
+              const cEm = String(c.email || '').toLowerCase().trim()
+              if (candId && cId === String(candId).toLowerCase().trim()) return false
+              if (candEmail && cEm === candEmail.toLowerCase().trim()) return false
+              return true
+            })
+            localStorage.setItem('smarthire_all_candidates', JSON.stringify(filteredAll))
+          }
+        }
+      } catch (e) {}
+
+      // 6. Update active UI state
       setStreamCandidates(prev => {
         return prev.filter(c => {
-          const cId = c.id || c.candidate_id
-          if (candId && cId && String(cId) === String(candId)) return false
+          const cId = String(c.id || c.candidate_id || c.canId || '')
+          if (candId && cId && cId === String(candId)) return false
           if (candEmail && c.email && c.email.toLowerCase() === candEmail.toLowerCase()) return false
           return true
         })
       })
 
-      if (selectedCandidate && ((candId && (selectedCandidate.id === candId || selectedCandidate.candidate_id === candId)) || (candEmail && selectedCandidate.email === candEmail))) {
+      if (selectedCandidate && ((candId && (selectedCandidate.id === candId || selectedCandidate.candidate_id === candId || selectedCandidate.canId === candId)) || (candEmail && selectedCandidate.email === candEmail))) {
         setSelectedCandidate(null)
       }
 
@@ -3074,18 +3227,61 @@ export default function RecruiterInbox({ defaultViewMode }) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ ids: idsToDelete })
-      })
+      }).catch(() => {})
 
-      const idSet = new Set(idsToDelete.map(String))
+      // Delete from Firestore
+      for (const id of idsToDelete) {
+        await deleteCandidateFirestore(id).catch(() => {})
+      }
+
+      // Add to localStorage blacklist
+      try {
+        const delRaw = localStorage.getItem('smarthire_deleted_candidates')
+        const delList = delRaw ? JSON.parse(delRaw) : []
+        idsToDelete.forEach(id => delList.push(String(id).toLowerCase().trim()))
+        localStorage.setItem('smarthire_deleted_candidates', JSON.stringify(Array.from(new Set(delList))))
+      } catch (e) {}
+
+      const idSet = new Set(idsToDelete.map(s => String(s).toLowerCase().trim()))
+
+      // Clean caches
+      try {
+        const cacheRaw = localStorage.getItem('smarthire_stream_candidates_cache')
+        if (cacheRaw) {
+          const cached = JSON.parse(cacheRaw)
+          if (Array.isArray(cached)) {
+            localStorage.setItem('smarthire_stream_candidates_cache', JSON.stringify(cached.filter(c => {
+              const cId = String(c.id || c.candidate_id || c.canId || '').toLowerCase().trim()
+              const cEmail = String(c.email || '').toLowerCase().trim()
+              return !idSet.has(cId) && !idSet.has(cEmail)
+            })))
+          }
+        }
+      } catch (e) {}
+
+      try {
+        const allRaw = localStorage.getItem('smarthire_all_candidates')
+        if (allRaw) {
+          const allList = JSON.parse(allRaw)
+          if (Array.isArray(allList)) {
+            localStorage.setItem('smarthire_all_candidates', JSON.stringify(allList.filter(c => {
+              const cId = String(c.id || c.candidate_id || c.canId || '').toLowerCase().trim()
+              const cEmail = String(c.email || '').toLowerCase().trim()
+              return !idSet.has(cId) && !idSet.has(cEmail)
+            })))
+          }
+        }
+      } catch (e) {}
+
       setStreamCandidates(prev => prev.filter(c => {
-        const cId = String(c.id || c.candidate_id || '')
-        const cEmail = String(c.email || '')
+        const cId = String(c.id || c.candidate_id || c.canId || '').toLowerCase().trim()
+        const cEmail = String(c.email || '').toLowerCase().trim()
         return !idSet.has(cId) && !idSet.has(cEmail)
       }))
 
       if (selectedCandidate) {
-        const selId = String(selectedCandidate.id || selectedCandidate.candidate_id || '')
-        const selEmail = String(selectedCandidate.email || '')
+        const selId = String(selectedCandidate.id || selectedCandidate.candidate_id || selectedCandidate.canId || '').toLowerCase().trim()
+        const selEmail = String(selectedCandidate.email || '').toLowerCase().trim()
         if (idSet.has(selId) || idSet.has(selEmail)) {
           setSelectedCandidate(null)
         }
@@ -3370,18 +3566,28 @@ export default function RecruiterInbox({ defaultViewMode }) {
         if (filterSource === 'vendor' && cat !== 'vendor_bench' && !src.includes('vendor') && !src.includes('bench')) return false
       }
 
-      // Search query
+      // Search query (Supports Boolean Search: AND, OR, NOT, Quotes, Parentheses)
       if (streamSearch.trim()) {
-        const q = streamSearch.toLowerCase().trim()
-        const n = (c.name || '').toLowerCase()
-        const e = (c.email || '').toLowerCase()
-        const r = (c.role || '').toLowerCase()
-        const loc = (c.location || '').toLowerCase()
-        const req = String(c.targetReqId || '').toLowerCase()
-        const jTitle = (c.matchedJobTitle || '').toLowerCase()
-        const jClient = (c.matchedJobClient || '').toLowerCase()
-        const sMatch = safeSkillArray(c.skills).some(s => s.toLowerCase().includes(q))
-        return n.includes(q) || e.includes(q) || r.includes(q) || loc.includes(q) || req.includes(q) || jTitle.includes(q) || jClient.includes(q) || sMatch
+        const skillsList = safeSkillArray(c.skills).join(' ')
+        const candCorpus = [
+          c.name,
+          c.email,
+          c.role,
+          c.location,
+          c.currentCompany,
+          c.previousCompany,
+          c.targetReqId ? `Req #${c.targetReqId} ${c.targetReqId}` : '',
+          c.matchedJobTitle,
+          c.matchedJobClient,
+          c.visaStatus,
+          skillsList,
+          c.source,
+          c.resumeText ? c.resumeText.slice(0, 1500) : ''
+        ].filter(Boolean).join(' ')
+
+        if (!evaluateBooleanSearch(streamSearch, candCorpus)) {
+          return false
+        }
       }
 
       return true
@@ -3874,9 +4080,11 @@ export default function RecruiterInbox({ defaultViewMode }) {
               <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <IconChat /> <span>Messages</span>
               </span>
-              <span style={{ fontSize: 10.5, background: '#FF5630', color: '#FFF', padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>
-                2
-              </span>
+              {totalUnread > 0 && (
+                <span style={{ fontSize: 10.5, background: '#FF5630', color: '#FFF', padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>
+                  {totalUnread}
+                </span>
+              )}
             </button>
 
             {/* 6. Scan Ingest */}
@@ -4055,7 +4263,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
               <IconSearch />
             </span>
             <input
-              placeholder="Search candidates by name, role, skills, or location..."
+              placeholder="Search candidates or Boolean (e.g. Java AND Spring NOT Python)..."
               value={streamSearch}
               onChange={e => {
                 setStreamSearch(e.target.value)
@@ -6699,7 +6907,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     <input
                       value={streamSearch}
                       onChange={e => { setStreamSearch(e.target.value); setTablePage(1); }}
-                      placeholder="Search candidates..."
+                      placeholder="Search or Boolean (Java AND Spring)..."
                       style={{
                         width: '100%',
                         backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
@@ -7182,10 +7390,6 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                             {c.email}
                                           </span>
                                         )}
-                                        {c.email && c.phone && <span style={{ color: '#CBD5E1' }}>•</span>}
-                                        {c.phone && (
-                                          <span>{c.phone}</span>
-                                        )}
                                       </div>
                                     </div>
                                   </div>
@@ -7313,7 +7517,16 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
                                 {/* 8. Received Date */}
                                 <td style={{ padding: '8px 8px', fontSize: 11.5, color: '#475569', whiteSpace: 'nowrap' }}>
-                                  {c.resumeUploadDate ? c.resumeUploadDate.split(',')[0] : (c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '18 Sept 2026')}
+                                  {(() => {
+                                    const raw = c.createdAt || c.resumeUploadDate || c.timestamp
+                                    if (raw) {
+                                      const d = new Date(raw)
+                                      if (!isNaN(d.getTime())) {
+                                        return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+                                      }
+                                    }
+                                    return 'Today'
+                                  })()}
                                 </td>
 
                                 {/* 9. Source Badge */}
@@ -7321,31 +7534,9 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   {renderSourceBadge(c)}
                                 </td>
 
-                                {/* 10. Actions: [ View ] + [ Message ] + [ Push to Jobs in Hand ↗ ] + ⋮ */}
+                                {/* 10. Actions: [ Message ] + [ Push ↗ ] + ⋮ */}
                                 <td style={{ padding: '10px 10px', textAlign: 'right', position: 'relative' }} onClick={e => e.stopPropagation()}>
                                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setSelectedCandidate(c)
-                                        setInboxSubMode('card')
-                                      }}
-                                      style={{
-                                        backgroundColor: '#EFF6FF',
-                                        color: '#1D4ED8',
-                                        border: '1px solid #BFDBFE',
-                                        borderRadius: 6,
-                                        padding: '5px 10px',
-                                        fontSize: 11.5,
-                                        fontWeight: 700,
-                                        cursor: 'pointer',
-                                        transition: 'all 0.15s ease'
-                                      }}
-                                      title="View Candidate Full Profile"
-                                    >
-                                      View
-                                    </button>
-
                                     <button
                                       type="button"
                                       onClick={() => handleOpenCandidateChat(c)}
@@ -7380,20 +7571,20 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                         color: '#FFFFFF',
                                         border: 'none',
                                         borderRadius: 6,
-                                        padding: '5px 10px',
+                                        padding: '5px 9px',
                                         fontSize: 11.5,
                                         fontWeight: 700,
                                         cursor: 'pointer',
                                         display: 'inline-flex',
                                         alignItems: 'center',
-                                        gap: 4,
+                                        gap: 3,
                                         whiteSpace: 'nowrap',
                                         boxShadow: '0 1px 2px rgba(37,99,235,0.2)',
                                         transition: 'all 0.15s ease'
                                       }}
                                       title="Push Candidate to Jobs in Hand / Active Requisition"
                                     >
-                                      <span>Push to Jobs in Hand</span>
+                                      <span>Push</span>
                                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                         <line x1="7" y1="17" x2="17" y2="7"></line>
                                         <polyline points="7 7 17 7 17 17"></polyline>

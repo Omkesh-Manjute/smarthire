@@ -16,6 +16,7 @@ import {
   setDoc,
   getDoc,
   getDocs,
+  deleteDoc,
   collection,
   query,
   orderBy,
@@ -384,12 +385,25 @@ export async function getAllCandidates() {
     const snap = await getDocs(collection(db, CANDIDATES_COLLECTION))
     const candidates = []
     snap.forEach(docSnap => {
-      candidates.push({ id: docSnap.id, canId: docSnap.id, ...docSnap.data() })
+      candidates.push({ id: docSnap.id, canId: docSnap.id, candidate_id: docSnap.id, ...docSnap.data() })
     })
     return candidates
   } catch (err) {
     console.warn('Failed to fetch all candidates from Firestore:', err)
     return []
+  }
+}
+
+/**
+ * Permanently delete a candidate from Firestore
+ */
+export async function deleteCandidateFirestore(canId) {
+  if (!canId) return
+  try {
+    const cleanId = String(canId).trim()
+    await deleteDoc(doc(db, CANDIDATES_COLLECTION, cleanId))
+  } catch (err) {
+    console.warn('Failed to delete candidate from Firestore:', err)
   }
 }
 
@@ -548,7 +562,7 @@ export function deduplicateCandidates(list) {
     if (!c || typeof c !== 'object') continue
 
     // 1. Gather all ID variations
-    const ids = [c.id, c.canId, c.candidateId, c._id]
+    const ids = [c.id, c.canId, c.candidateId, c.candidate_id, c._id]
       .filter(Boolean)
       .map(val => String(val).trim())
       .filter(val => val.length > 0)

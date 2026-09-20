@@ -383,9 +383,55 @@ async function connectMongoDB() {
 
 // ─── Candidates DB File ───────────────────────────────────────────────────────
 const candidatesDbPath = path.resolve(__dirname, 'candidates.json')
+const deletedCandidatesDbPath = path.resolve(__dirname, 'deleted_candidates.json')
 
 // ─── Candidates Store (persisted to MongoDB or disk) ──────────────────────────
 let candidatesStore = []
+let deletedCandidateIds = new Set()
+
+function loadDeletedCandidates() {
+  try {
+    if (fs.existsSync(deletedCandidatesDbPath)) {
+      const raw = fs.readFileSync(deletedCandidatesDbPath, 'utf-8')
+      const list = JSON.parse(raw)
+      if (Array.isArray(list)) {
+        deletedCandidateIds = new Set(list.map(s => String(s).toLowerCase().trim()))
+        console.log(`🗑️  Loaded ${deletedCandidateIds.size} permanently deleted candidate signature(s).`)
+      }
+    }
+  } catch (err) {
+    console.error('⚠️  Failed to load deleted candidates list:', err.message)
+  }
+}
+
+function saveDeletedCandidates() {
+  try {
+    fs.writeFileSync(deletedCandidatesDbPath, JSON.stringify(Array.from(deletedCandidateIds), null, 2), 'utf-8')
+  } catch (err) {
+    console.error('⚠️  Failed to save deleted candidates list:', err.message)
+  }
+}
+
+function recordCandidateDeleted(candOrId, candEmail) {
+  if (!candOrId) return
+  if (typeof candOrId === 'string') {
+    const s = candOrId.toLowerCase().trim()
+    if (s) deletedCandidateIds.add(s)
+  } else if (typeof candOrId === 'object') {
+    if (candOrId.id) deletedCandidateIds.add(String(candOrId.id).toLowerCase().trim())
+    if (candOrId.candidate_id) deletedCandidateIds.add(String(candOrId.candidate_id).toLowerCase().trim())
+    if (candOrId.canId) deletedCandidateIds.add(String(candOrId.canId).toLowerCase().trim())
+    if (candOrId._id) deletedCandidateIds.add(String(candOrId._id).toLowerCase().trim())
+    if (candOrId.email) deletedCandidateIds.add(String(candOrId.email).toLowerCase().trim())
+  }
+  if (candEmail) {
+    const em = String(candEmail).toLowerCase().trim()
+    if (em) deletedCandidateIds.add(em)
+  }
+  saveDeletedCandidates()
+}
+
+loadDeletedCandidates()
 
 function cleanMimeEmail(raw) {
   let attachmentNames = [];
@@ -548,17 +594,34 @@ function normalizeAndDeduplicateCandidates(list) {
 
 async function loadCandidatesFromDisk() {
   try {
+    loadDeletedCandidates()
     if (isMongoConnected) {
       const doc = await CandidatesDoc.findOne();
       if (doc) {
-        candidatesStore = normalizeAndDeduplicateCandidates(doc.list || []);
+        const loaded = normalizeAndDeduplicateCandidates(doc.list || []);
+        candidatesStore = loaded.filter(c => {
+          if (!c) return false;
+          const id1 = String(c.id || '').toLowerCase().trim();
+          const id2 = String(c.candidate_id || '').toLowerCase().trim();
+          const id3 = String(c.canId || '').toLowerCase().trim();
+          const em = String(c.email || '').toLowerCase().trim();
+          return !deletedCandidateIds.has(id1) && !deletedCandidateIds.has(id2) && !deletedCandidateIds.has(id3) && (!em || !deletedCandidateIds.has(em));
+        });
         console.log(`📂 Loaded ${candidatesStore.length} candidate(s) from MongoDB Atlas.`);
         return;
       }
     }
     if (fs.existsSync(candidatesDbPath)) {
       const raw = fs.readFileSync(candidatesDbPath, 'utf-8')
-      candidatesStore = normalizeAndDeduplicateCandidates(JSON.parse(raw))
+      const loaded = normalizeAndDeduplicateCandidates(JSON.parse(raw))
+      candidatesStore = loaded.filter(c => {
+        if (!c) return false;
+        const id1 = String(c.id || '').toLowerCase().trim();
+        const id2 = String(c.candidate_id || '').toLowerCase().trim();
+        const id3 = String(c.canId || '').toLowerCase().trim();
+        const em = String(c.email || '').toLowerCase().trim();
+        return !deletedCandidateIds.has(id1) && !deletedCandidateIds.has(id2) && !deletedCandidateIds.has(id3) && (!em || !deletedCandidateIds.has(em));
+      });
       console.log(`📂 Loaded ${candidatesStore.length} candidate(s) from disk.`)
     } else {
       candidatesStore = []
@@ -1910,14 +1973,20 @@ app.get('/api/candidates/:id', authenticateToken, (req, res) => {
 // ─── DELETE /api/candidates/:id — Remove a candidate ─────────────────────────
 app.delete('/api/candidates/:id', authenticateToken, (req, res) => {
   const targetId = String(req.params.id);
-  const index = candidatesStore.findIndex(c => String(c.candidate_id) === targetId || String(c.id) === targetId);
-  if (index === -1) {
-    res.status(404).json({ success: false, message: 'Candidate not found' });
-    return;
+  const targetLower = targetId.toLowerCase().trim();
+  const index = candidatesStore.findIndex(c => 
+    String(c.candidate_id || '').toLowerCase().trim() === targetLower || 
+    String(c.id || '').toLowerCase().trim() === targetLower ||
+    String(c.canId || '').toLowerCase().trim() === targetLower ||
+    (c.email && String(c.email).toLowerCase().trim() === targetLower)
+  );
+  let removed = null;
+  if (index !== -1) {
+    removed = candidatesStore.splice(index, 1)[0];
   }
-  const removed = candidatesStore.splice(index, 1)[0];
+  recordCandidateDeleted(removed || targetId);
   saveCandidatesToDisk();
-  res.json({ success: true, message: `Candidate ${removed.name || targetId} removed successfully`, removedId: targetId });
+  res.json({ success: true, message: `Candidate ${removed?.name || targetId} removed successfully`, removedId: targetId });
 });
 
 // ─── POST /api/candidates/bulk-delete — Bulk remove candidates ─────────────
@@ -1926,9 +1995,24 @@ app.post('/api/candidates/bulk-delete', authenticateToken, (req, res) => {
   if (!Array.isArray(ids) || ids.length === 0) {
     return res.status(400).json({ success: false, message: 'Array of candidate IDs is required' });
   }
-  const idSet = new Set(ids.map(String));
+  const idSet = new Set(ids.map(s => String(s).toLowerCase().trim()));
   const beforeLen = candidatesStore.length;
-  candidatesStore = candidatesStore.filter(c => !idSet.has(String(c.candidate_id)) && !idSet.has(String(c.id)));
+
+  const toDelete = candidatesStore.filter(c => 
+    idSet.has(String(c.candidate_id || '').toLowerCase().trim()) || 
+    idSet.has(String(c.id || '').toLowerCase().trim()) ||
+    idSet.has(String(c.canId || '').toLowerCase().trim()) ||
+    (c.email && idSet.has(String(c.email).toLowerCase().trim()))
+  );
+  toDelete.forEach(c => recordCandidateDeleted(c));
+  ids.forEach(id => recordCandidateDeleted(id));
+
+  candidatesStore = candidatesStore.filter(c => 
+    !idSet.has(String(c.candidate_id || '').toLowerCase().trim()) && 
+    !idSet.has(String(c.id || '').toLowerCase().trim()) &&
+    !idSet.has(String(c.canId || '').toLowerCase().trim()) &&
+    (!c.email || !idSet.has(String(c.email).toLowerCase().trim()))
+  );
   const deletedCount = beforeLen - candidatesStore.length;
   saveCandidatesToDisk();
   res.json({ success: true, deletedCount, message: `Successfully deleted ${deletedCount} candidate(s)` });
@@ -3914,14 +3998,21 @@ app.post('/api/jobs', (req, res) => {
 // ─── Candidates Routes & Auto-Apply ──────────────────────────────────────────
 
 // GET all candidates
-// GET all candidates
 app.get('/api/candidates', authenticateToken, (req, res) => {
   const userRole = req.user?.role || 'superadmin';
   const userEmail = (req.user?.email || '').toLowerCase().trim();
 
-  let filtered = candidatesStore;
+  let filtered = (candidatesStore || []).filter(c => {
+    if (!c) return false;
+    const cid = String(c.id || '').toLowerCase().trim();
+    const c_id = String(c.candidate_id || '').toLowerCase().trim();
+    const can_id = String(c.canId || '').toLowerCase().trim();
+    const cem = String(c.email || '').toLowerCase().trim();
+    return !deletedCandidateIds.has(cid) && !deletedCandidateIds.has(c_id) && !deletedCandidateIds.has(can_id) && (!cem || !deletedCandidateIds.has(cem));
+  });
+
   if (userRole === 'recruiter') {
-    filtered = candidatesStore.filter(c => {
+    filtered = filtered.filter(c => {
       if (!c) return false;
       const cOwner = (c.createdBy || c.recruiterEmail || c.submittedBy || c.recruiterId || '').toLowerCase().trim();
       return cOwner === userEmail || c.isSample || c.job_id === 'J-102';
@@ -8759,6 +8850,13 @@ EDUCATION & CERTIFICATIONS
     ];
 
     initialHarvested.forEach(item => {
+      const id1 = String(item.id || '').toLowerCase().trim();
+      const id2 = String(item.candidate_id || '').toLowerCase().trim();
+      const em = String(item.email || '').toLowerCase().trim();
+      if (deletedCandidateIds.has(id1) || deletedCandidateIds.has(id2) || (em && deletedCandidateIds.has(em))) {
+        // DO NOT RESURRECT CANDIDATE PERMANENTLY REMOVED BY USER
+        return;
+      }
       const exists = candidatesStore.some(c => 
         (c.id && (c.id === item.id || c.id === item.candidate_id)) || 
         (c.candidate_id && (c.candidate_id === item.id || c.candidate_id === item.candidate_id)) ||
@@ -8810,6 +8908,13 @@ EDUCATION & CERTIFICATIONS
   // 3. Filter candidates strictly for this recruiter
   const scopedCandidates = (candidatesStore || []).filter(c => {
     if (!c) return false;
+    const cid = String(c.id || '').toLowerCase().trim();
+    const c_id = String(c.candidate_id || '').toLowerCase().trim();
+    const can_id = String(c.canId || '').toLowerCase().trim();
+    const cem = String(c.email || '').toLowerCase().trim();
+    if (deletedCandidateIds.has(cid) || deletedCandidateIds.has(c_id) || deletedCandidateIds.has(can_id) || (cem && deletedCandidateIds.has(cem))) {
+      return false;
+    }
     if (isSuper) return true;
 
     const candAssigned = (c.assignedRecruiter || c.assignedBy || c.recruiter || c.addedByName || c.lastChangedBy || '').toLowerCase().trim();
