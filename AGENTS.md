@@ -29,9 +29,59 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 4. **Zero Duplicate Candidates**:
    - Always run candidate lists through `deduplicateCandidates` across all stores, filters, and modals.
 
+5. **AWS Lightsail Disk Hygiene & Zero Waste Deployment (19GB Disk Protection)**:
+   - **Immediate Archive Removal**: Always delete temporary `.tar.gz` deployment archives immediately after extraction (`rm -f /home/ubuntu/dist-*.tar.gz /home/ubuntu/dist.tar.gz /home/ubuntu/smarthire/dist-*.tar.gz /home/ubuntu/smarthire/dist.tar.gz`). Never leave uploaded zip/tar files on server disk.
+   - **Asset Bundle Pruning**: In `/var/www/html/assets/`, keep only the 5 most recent `index-*.js` bundles (`ls -t index-*.js | tail -n +6 | xargs sudo rm -f`) to prevent gradual multi-gigabyte accumulation across builds.
+   - **Crash Dump & Journal Limits**: Keep Ubuntu `apport.service` permanently disabled to prevent 7GB+ core dump hoarding. Auto-vacuum journals (`journalctl --vacuum-time=3d`) and flush PM2 logs (`pm2 flush`).
+   - **Health Threshold**: Maintain at least $\ge 40\%$ free disk space on the 19GB root volume (`/dev/root`) at all times.
+
+6. **Firebase Domain Authorization for Custom Domains**:
+   - Whenever any new custom domain or subdomain is introduced (e.g. `smarthireus.com`, `www.smarthireus.com`), it MUST be added to Firebase Authentication `authorizedDomains` via Identity Toolkit API or Firebase Console to prevent `auth/unauthorized-domain` Google login failures.
+   - Always keep graceful fallbacks (e.g. instant Name + Email sign-in) in candidate modals so users are never blocked.
+
+7. **Dual-Sync Deployment Protocol (Git Push + Lightsail Sync)**:
+   - **Step 1**: Run `npm run build` in `smarthire-react` (must be 0 errors, 0 warnings).
+   - **Step 2**: Commit and `git push origin main` to GitHub (`Omkesh-Manjute/smarthire.git`) to update GitHub and Render.
+   - **Step 3**: Deploy production bundle to AWS Lightsail server (`34.194.119.199`), extract to `/var/www/html/` and `/home/ubuntu/smarthire/dist/`, clean up archives immediately, and reload PM2 `smarthire-ats`.
+   - **Step 4**: Verify HTTP 200 on live domain `https://smarthireus.com` with the new bundle hash.
+
 ## Recent Changes
 
-### 2026-09-20 — Resolution of ReferenceError: Cannot access 'zr' (fetchMessages) before initialization
+### 2026-09-21 — Public Sector / Department Experience Detection & Priority, Automated Career Gap Detection, Analytics Refactor & Recruiter KPI Leaderboard
+- **Context & Objectives**:
+  - User requested:
+    1. Remove skills pills from above the candidate name in the left dossier panel; keep skills exclusively inside the Analytics tab.
+    2. Display detailed career history line-by-line (Current and Old positions) in the Analytics tab.
+    3. Auto-detect employment gaps between jobs and flag them with alerts.
+    4. Auto-generate AI placement rationale & fit summary ("Why is this candidate a fit for Req #{id}?").
+    5. Detect state / public sector department experience (e.g., Texas DSHS, TxDOT, HHSC, Dept of Health, etc.) and give candidates with department experience 1st preference / priority in sorting and AI scoring.
+    6. Add a dedicated Department / Public Sector Experience search filter in the Candidate Table toolbar.
+    7. Build the full Recruiter KPI Leaderboard & Team Performance view with timeframe switcher, metrics, top 3 podium, and detailed performance rankings.
+- **Root Cause & Key Deliverables**:
+  - **Dossier Header Refactor**:
+    - Removed technical skill tags from above candidate name in the left profile panel.
+    - Moved all extracted candidate skills into a dedicated "Core Candidate Skills & Technical Competencies" card in the Analytics tab.
+  - **State / Public Sector Department Experience**:
+    - Built pattern recognizer `detectGovDepartmentExperience(candidate)` identifying Texas DSHS, TxDOT, Texas HHSC, DBHDS, Dept of Health (DOH), DFPS, DIR, TWC, DOL, VA, DoD, and general state agencies.
+    - Added green `🏛️ {shortName}` badge in candidate table rows under role/title.
+    - Added high-priority `⭐ 1st Preference Candidate` banner in the Analytics tab highlighting public sector qualifications.
+    - Prioritized candidates with government experience in candidate table sorting (`sortOption === 'match_desc'` puts them at the top as first preference, plus explicit `gov_first` option).
+    - Added `🏛️ Gov / Dept: All ⌵` dropdown filter in the candidate search toolbar with 1-click filtering.
+  - **Career History & Automated Employment Gap Detection**:
+    - Built `extractCandidateWorkHistoryAndGaps(candidate)` which extracts all previous roles line-by-line.
+    - Auto-calculates date difference between consecutive positions; flags gaps $\ge 4$ months with exact duration (e.g. `8 Months Gap between Company A and Company B`) and recruiter screening prompts.
+    - Renders an interactive vertical timeline with current/previous indicators and agency tags.
+  - **AI Placement Fit Rationale**:
+    - Generates multi-point fit analysis including department experience advantage, required skills match coverage, seniority alignment, employment continuity, and US work authorization.
+  - **Recruiter KPI Leaderboard View (`inboxViewMode === 'leaderboard'`)**:
+    - Backend endpoint `GET /api/analytics/recruiter-leaderboard?period={today|week|month|all}` in `server/index.js`.
+    - Sidebar navigation tab "Leaderboard 🏆".
+    - Top 3 Podium (🥇 Champion with gold crown, 🥈 Silver, 🥉 Bronze).
+    - Full team performance table tracking Sourced, Screened, Submissions, Interviews, Placements, Total Points, and Velocity status (`🔥 On Fire`, `⚡ High Velocity`, `🟢 Active`).
+    - 1-click `Talent Pool ↗` action button to filter candidates by recruiter.
+- **Verification**:
+  - `smarthire-react` production build: 0 errors, 0 warnings (built in 2.30s, bundle `index-DH8oQ35E.js`).
+  - Root `node build.js`: 0 errors (built in 2.34s).
 - **Context & Objectives**:
   - User reported rendering error on `/inbox`: `Temporary View Rendering Notice: Cannot access 'zr' before initialization`.
 - **Root Cause & Resolution**:
