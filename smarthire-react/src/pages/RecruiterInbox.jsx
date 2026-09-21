@@ -449,7 +449,31 @@ const getInitials = (name = '') => {
   return (name || 'CA').slice(0, 2).toUpperCase()
 }
 
-const renderMatchBadge = (score = 85) => {
+const renderMatchBadge = (score = 85, hasActiveMatch = true) => {
+  if (hasActiveMatch === false) {
+    return (
+      <div style={{
+        display: 'inline-flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#F1F5F9',
+        border: '1px solid #E2E8F0',
+        color: '#475569',
+        padding: '3px 8px',
+        borderRadius: 6,
+        minWidth: 64
+      }}>
+        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.3px', textTransform: 'uppercase' }}>
+          Talent Pool
+        </span>
+        <span style={{ fontSize: 9, fontWeight: 600, color: '#94A3B8' }}>
+          No Open Match
+        </span>
+      </div>
+    );
+  }
+
   let label = 'Low'
   let bg = '#FEF2F2'
   let text = '#B91C1C'
@@ -1343,9 +1367,9 @@ export default function RecruiterInbox({ defaultViewMode }) {
       gender: 'Male',
       status: 'Active',
       matchScore: 86,
-      targetReqId: '159079',
-      matchedJobTitle: 'Java Developer III - 165504',
-      matchedJobClient: 'State of Wisconsin (ETF)',
+      targetReqId: null,
+      matchedJobTitle: 'General Sourcing Pool',
+      matchedJobClient: 'Talent Pool (No active requisition match)',
       matchedJobRate: '$75/hr',
       summary: 'Senior .NET and Java Full Stack Engineer with 8+ years developing state agency enterprise systems and microservices.',
       skills: ['Java', 'React', 'Angular', 'SQL', 'Git', 'Spring Boot'],
@@ -1401,9 +1425,9 @@ export default function RecruiterInbox({ defaultViewMode }) {
       gender: 'Female',
       status: 'Active',
       matchScore: 53,
-      targetReqId: '159077',
-      matchedJobTitle: 'Java Developer III - 165503',
-      matchedJobClient: 'State of Wisconsin (ETF)',
+      targetReqId: null,
+      matchedJobTitle: 'General Sourcing Pool',
+      matchedJobClient: 'Talent Pool (No active requisition match)',
       matchedJobRate: '$75/hr',
       summary: 'Full Stack developer with strong experience in Vue, SQL, AWS, and Spring Boot.',
       skills: ['Vue', 'SQL', 'AWS', 'Spring Boot', 'Java'],
@@ -1487,10 +1511,10 @@ export default function RecruiterInbox({ defaultViewMode }) {
       visaStatus: 'US Citizen',
       gender: 'Female',
       status: 'In Review',
-      matchScore: 38,
-      targetReqId: '159078',
-      matchedJobTitle: 'Public Health Program Director 1 (66312)',
-      matchedJobClient: 'Tennessee Department of Health (TN DOH)',
+      matchScore: 65,
+      targetReqId: null,
+      matchedJobTitle: 'General Sourcing Pool',
+      matchedJobClient: 'Talent Pool (No active requisition match)',
       matchedJobRate: '$75/hr',
       summary: 'QA Automation Engineer with extensive experience in Selenium WebDriver, Java, SQL, TestNG, and CI/CD testing pipelines.',
       skills: ['Selenium', 'Java', 'SQL', 'TestNG', 'Postman'],
@@ -1516,10 +1540,10 @@ export default function RecruiterInbox({ defaultViewMode }) {
       visaStatus: 'US Citizen',
       gender: 'Female',
       status: 'Active',
-      matchScore: 96,
-      targetReqId: '159078',
-      matchedJobTitle: 'Public Health Program Director 1 (66312)',
-      matchedJobClient: 'Tennessee Department of Health (TN DOH)',
+      matchScore: 70,
+      targetReqId: null,
+      matchedJobTitle: 'General Sourcing Pool',
+      matchedJobClient: 'Talent Pool (No active requisition match)',
       matchedJobRate: '$75/hr',
       summary: 'Results-driven Lead Generative AI & Machine Learning Engineer with 8+ years of experience building scalable AI/ML solutions. Expertise in LLMs, Python, cloud platforms and enterprise applications. Passionate about solving real-world problems using AI.',
       skills: ['Generative AI', 'Large Language Models (LLMs)', 'Python', 'PyTorch', 'LangChain', 'Hugging Face', 'AWS', 'RAG', 'Pinecone', 'FAISS', 'Docker'],
@@ -1545,10 +1569,10 @@ export default function RecruiterInbox({ defaultViewMode }) {
       visaStatus: 'US Citizen',
       gender: 'Male',
       status: 'Active',
-      matchScore: 94,
-      targetReqId: '159079',
-      matchedJobTitle: 'Java Developer III - 165504',
-      matchedJobClient: 'State of Wisconsin (ETF)',
+      matchScore: 65,
+      targetReqId: null,
+      matchedJobTitle: 'General Sourcing Pool',
+      matchedJobClient: 'Talent Pool (No active requisition match)',
       matchedJobRate: '$75/hr',
       summary: 'Distinguished Lead SDET and QA Automation Specialist with 16+ years of rigorous experience leading enterprise testing across SAP, distributed services, and microservices.',
       skills: ['Selenium', 'SAP Testing', 'SQL Server', 'NIEM', 'XML Validation', 'Java', 'GitHub', 'CI/CD', 'TestNG'],
@@ -1574,10 +1598,10 @@ export default function RecruiterInbox({ defaultViewMode }) {
       visaStatus: 'US Citizen',
       gender: 'Male',
       status: 'Active',
-      matchScore: 92,
-      targetReqId: '159078',
-      matchedJobTitle: 'Public Health Program Director 1 (66312)',
-      matchedJobClient: 'Tennessee Department of Health (TN DOH)',
+      matchScore: 70,
+      targetReqId: null,
+      matchedJobTitle: 'General Sourcing Pool',
+      matchedJobClient: 'Talent Pool (No active requisition match)',
       matchedJobRate: '$75/hr',
       summary: 'Strategic Senior Technical Program Manager and Certified Scrum Master with 14+ years spearheading healthcare IT programs, public sector delivery, and federal compliance audits.',
       skills: ['Program Management', 'Strategic Planning', 'Agile / Scrum', 'Technical Writing', 'JIRA', 'Confluence', 'Risk Mitigation'],
@@ -1603,10 +1627,10 @@ export default function RecruiterInbox({ defaultViewMode }) {
       visaStatus: 'US Citizen',
       gender: 'Male',
       status: 'Active',
-      matchScore: 95,
-      targetReqId: '159079',
-      matchedJobTitle: 'Java Developer III - 165504',
-      matchedJobClient: 'State of Wisconsin (ETF)',
+      matchScore: 70,
+      targetReqId: null,
+      matchedJobTitle: 'General Sourcing Pool',
+      matchedJobClient: 'Talent Pool (No active requisition match)',
       matchedJobRate: '$75/hr',
       summary: 'Distinguished Lead Java Full Stack Developer with 12+ years building enterprise architectures using Spring Boot, React, Kafka, and cloud containerization.',
       skills: ['Java', 'Spring Boot', 'React', 'Vue', 'SQL', 'Git', 'Kafka', 'Docker', 'PostgreSQL', 'Microservices'],
@@ -1779,7 +1803,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const [leaderboardPeriod, setLeaderboardPeriod] = useState('month')
   const [leaderboardLoading, setLeaderboardLoading] = useState(false)
   const [availableRecruiters, setAvailableRecruiters] = useState(ALL_SMARTHIRE_RECRUITERS)
-  const [sortOption, setSortOption] = useState('match_desc')
+  const [sortOption, setSortOption] = useState('date_desc')
   const [activeActionMenuId, setActiveActionMenuId] = useState(null)
   const [hoveredNav, setHoveredNav] = useState(null)
   const [hoveredTableCardId, setHoveredTableCardId] = useState(null)
@@ -2487,7 +2511,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
   const handleSyncEmailResumes = async () => {
     setSyncingEmailResumes(true)
-    setEmailSyncToast('')
+    setEmailSyncToast('Scanning Yahoo Mail (Inbox & Spam)... Checking for new resumes...')
     try {
       const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
       const recEmail = u.email || currentUser?.email || (isSuperAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')
@@ -2503,6 +2527,9 @@ export default function RecruiterInbox({ defaultViewMode }) {
       setEmailSyncToast(data.message || 'Scanned INBOX & SPAM: Resumes synced!')
       await fetchStreamCandidates()
       await fetchThreads()
+      if (typeof fetchNotifications === 'function') {
+        fetchNotifications()
+      }
     } catch (e) {
       setEmailSyncToast('Failed to sync resumes: ' + e.message)
     } finally {
@@ -3283,9 +3310,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
       setNotificationsLoading(true)
       const res = await fetch(`/api/notifications?email=${encodeURIComponent(currentUser?.email || '')}`)
       const data = await res.json()
-      if (data && Array.isArray(data.notifications)) {
-        setNotifications(data.notifications)
-      }
+      const list = Array.isArray(data) ? data : (Array.isArray(data?.notifications) ? data.notifications : [])
+      setNotifications(list)
     } catch (err) {
       console.warn('[Notifications] Fetch notice:', err.message)
     } finally {
@@ -3677,9 +3703,25 @@ export default function RecruiterInbox({ defaultViewMode }) {
       }
       if (sortOption === 'match_asc') return (a.matchScore || 0) - (b.matchScore || 0)
       if (sortOption === 'date_desc') {
-        const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0
-        const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0
-        return tB - tA
+        const getCandTime = (c) => {
+          if (c.createdAt) {
+            const t = new Date(c.createdAt).getTime()
+            if (!isNaN(t) && t > 0) return t
+          }
+          if (c.receivedAt) {
+            const t = new Date(c.receivedAt).getTime()
+            if (!isNaN(t) && t > 0) return t
+          }
+          if (c.date) {
+            const t = new Date(c.date).getTime()
+            if (!isNaN(t) && t > 0) return t
+          }
+          return 0
+        }
+        const tA = getCandTime(a)
+        const tB = getCandTime(b)
+        if (tB !== tA) return tB - tA
+        return (b.matchScore || 0) - (a.matchScore || 0)
       }
       if (sortOption === 'date_asc') {
         const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0
@@ -8306,10 +8348,10 @@ export default function RecruiterInbox({ defaultViewMode }) {
                         cursor: 'pointer'
                       }}
                     >
+                      <option value="date_desc">Newest First (Recent Ingestion on Top)</option>
                       <option value="match_desc">Match (High to Low)</option>
                       <option value="gov_first">Department Experience (First Preference)</option>
                       <option value="match_asc">Match (Low to High)</option>
-                      <option value="date_desc">Newest First</option>
                       <option value="date_asc">Oldest First</option>
                       <option value="name_asc">Name (A-Z)</option>
                     </select>
@@ -8519,6 +8561,26 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                             {String(c.visaStatus).replace(/\s*\(.*?\)/g, '')}
                                           </span>
                                         )}
+                                        {(() => {
+                                          const candTime = c.createdAt ? new Date(c.createdAt).getTime() : 0;
+                                          const isNew = candTime > 0 && (Date.now() - candTime < 24 * 60 * 60 * 1000);
+                                          if (!isNew) return null;
+                                          return (
+                                            <span style={{
+                                              fontSize: 9,
+                                              fontWeight: 800,
+                                              background: '#ECFDF5',
+                                              color: '#059669',
+                                              padding: '1px 5px',
+                                              borderRadius: 4,
+                                              border: '1px solid #A7F3D0',
+                                              letterSpacing: '0.4px',
+                                              flexShrink: 0
+                                            }}>
+                                              NEW
+                                            </span>
+                                          );
+                                        })()}
                                       </div>
                                       {/* Zoho Recruit style: Email & Phone right under name */}
                                       <div style={{
@@ -8613,7 +8675,12 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                 {/* 5. AI Matched Requirement */}
                                 <td style={{ padding: '8px 10px', maxWidth: 230 }}>
                                   {(() => {
-                                    const isTalentPool = !c.targetReqId || String(c.matchedJobTitle || '').includes('Talent Pool') || String(c.matchedJobClient || '').includes('Talent Pool');
+                                    const matchedJob = c.targetReqId 
+                                      ? openJobsList.find(j => String(j.id || '').replace(/^J-/, '') === String(c.targetReqId).replace(/^J-/, ''))
+                                      : null;
+                                    const isJobActive = matchedJob ? isJobActiveAndOpen(matchedJob) : false;
+                                    const hasActiveMatch = Boolean(c.targetReqId && matchedJob && isJobActive);
+                                    const isTalentPool = !hasActiveMatch;
                                     return (
                                       <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
@@ -8628,7 +8695,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                             letterSpacing: '0.3px',
                                             flexShrink: 0
                                           }}>
-                                            {!isTalentPool ? `Req #${c.targetReqId}` : 'Talent Pool'}
+                                            {!isTalentPool ? `Req #${c.targetReqId}` : 'No Match Req Found'}
                                           </span>
                                           <span style={{
                                             fontSize: 11,
@@ -8638,7 +8705,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                             overflow: 'hidden',
                                             textOverflow: 'ellipsis'
                                           }}>
-                                            {!isTalentPool ? (c.matchedJobClient || 'Client') : 'General Sourcing'}
+                                            {!isTalentPool ? (matchedJob?.client || c.matchedJobClient || 'Client') : 'General Talent Pool'}
                                           </span>
                                         </div>
                                         <div style={{
@@ -8648,8 +8715,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                           whiteSpace: 'nowrap',
                                           overflow: 'hidden',
                                           textOverflow: 'ellipsis'
-                                        }} title={!isTalentPool ? (c.matchedJobTitle || c.role || 'Open Position') : 'General Talent Pool'}>
-                                          {!isTalentPool ? (c.matchedJobTitle || c.role || 'Open Position') : 'General Talent Pool'}
+                                        }} title={!isTalentPool ? (matchedJob?.title || c.matchedJobTitle || c.role || 'Open Position') : 'No Active Requisition Match'}>
+                                          {!isTalentPool ? (matchedJob?.title || c.matchedJobTitle || c.role || 'Open Position') : 'No Active Requisition Match'}
                                         </div>
                                       </div>
                                     );
@@ -8658,7 +8725,14 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
                                 {/* 6. Match % */}
                                 <td style={{ padding: '8px 8px' }}>
-                                  {renderMatchBadge(c.matchScore || 85)}
+                                  {(() => {
+                                    const matchedJob = c.targetReqId 
+                                      ? openJobsList.find(j => String(j.id || '').replace(/^J-/, '') === String(c.targetReqId).replace(/^J-/, ''))
+                                      : null;
+                                    const isJobActive = matchedJob ? isJobActiveAndOpen(matchedJob) : false;
+                                    const hasActiveMatch = Boolean(c.targetReqId && matchedJob && isJobActive);
+                                    return renderMatchBadge(c.matchScore || 85, hasActiveMatch);
+                                  })()}
                                 </td>
 
                                 {/* 7. Key Skills */}

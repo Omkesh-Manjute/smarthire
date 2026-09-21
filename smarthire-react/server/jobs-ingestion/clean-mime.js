@@ -88,14 +88,9 @@ export function classifyDocCategory(filename = '', existingCategories = []) {
     return 'id';
   }
 
-  // 4. Resume / CV
+  // 4. Resume / CV - In recruitment inbox, every attached document (.pdf, .docx, .doc) is a candidate resume
   if (fn.match(/\.(pdf|docx?|doc)$/i)) {
-    if (fn.match(/(?:resume|cv|curriculum|profile|dossier|candidate)/i)) {
-      return 'resume';
-    }
-    if (!existingCategories.includes('resume')) {
-      return 'resume';
-    }
+    return 'resume';
   }
 
   return 'other';

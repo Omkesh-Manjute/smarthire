@@ -249,10 +249,14 @@ export async function scrapeResumesFromIMAP({
       reject(err);
     });
 
-    const sendCommand = cmd => {
+    const sendCommand = (cmd, timeoutMs = 25000) => {
       return new Promise((res, rej) => {
         const tag = `TAG${tagCounter++}`;
+        const timer = setTimeout(() => {
+          rej(new Error(`IMAP Command timed out after ${timeoutMs}ms: ${cmd.slice(0, 40)}...`));
+        }, timeoutMs);
         currentResolver = (response, err) => {
+          clearTimeout(timer);
           if (err) return rej(err);
           res(response);
         };
@@ -421,10 +425,44 @@ export async function scrapeResumesFromIMAP({
             } catch (_) {}
           }
 
-          let parsedResumeText = '';
-          let primaryResumeFile = null;
+          const parsedResumes = [];
           const candidateDocs = {};
           let detectedVisa = null;
+
+          // Helper: Parse candidate profiles from email body (e.g. "1. Venkata – Python / AI/ML Engineer...")
+          const bodyProfiles = [];
+          if (cleanBody) {
+            const chunks = cleanBody.split(/(?:^|\n)\s*(?:\*?\s*\d+[\.\)]\s*\*?|\bCandidate\s+\d+[:\s])/i);
+            if (chunks.length > 1) {
+              for (let i = 1; i < chunks.length; i++) {
+                const chunk = chunks[i].trim();
+                const firstLine = chunk.split('\n')[0].trim();
+                const nameRoleMatch = firstLine.match(/^\*?([A-Za-z\s]+?)\*?\s*[-–—:]\s*\*?([^\r\n*]+)/);
+                const name = nameRoleMatch ? nameRoleMatch[1].replace(/[*_]/g, '').trim() : '';
+                const role = nameRoleMatch ? nameRoleMatch[2].replace(/[*_]/g, '').trim() : '';
+                const emailMatch = chunk.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+                const email = emailMatch ? emailMatch[1].toLowerCase().trim() : '';
+                const phoneMatch = chunk.match(/(?:(?:\+?1\s*(?:[.-]\s*)?)?(?:\(\s*([2-9]\d{2})\s*\)|([2-9]\d{2}))\s*(?:[.-]\s*)?([2-9]\d{2})\s*(?:[.-]\s*)?(\d{4}))/);
+                let candPhone = '';
+                if (phoneMatch) {
+                  const area = phoneMatch[1] || phoneMatch[2];
+                  const mid = phoneMatch[3];
+                  const last = phoneMatch[4];
+                  if (area !== '555' && mid !== '010' && last !== '0000') {
+                    candPhone = `+1 (${area}) ${mid}-${last}`;
+                  }
+                }
+                const visaMatch = chunk.match(/Visa\s*:\s*([^\r\n]+)/i);
+                const candVisa = visaMatch ? visaMatch[1].replace(/[*_]/g, '').trim() : '';
+                const expMatch = chunk.match(/Experience\s*:\s*([^\r\n]+)/i);
+                const candExp = expMatch ? expMatch[1].replace(/[*_]/g, '').trim() : '';
+
+                if (name || email) {
+                  bodyProfiles.push({ name, role, email, phone: candPhone, visa: candVisa, exp: candExp });
+                }
+              }
+            }
+          }
 
           for (const att of (attachments || [])) {
             const rawFn = att.filename || '';
@@ -437,7 +475,6 @@ export async function scrapeResumesFromIMAP({
             if (!isDoc && !isIdDoc) continue;
 
             const cleanBase = rawFn.replace(/[^a-zA-Z0-9.-]/g, '_');
-            // Check if file already exists with same basename to prevent duplicate disk storage
             let safeName = `${Date.now()}_${cleanBase}`;
             let targetPath = path.join(candidateDocsDir, safeName);
             let storageUrl = `/uploads/candidate-docs/${safeName}`;
@@ -467,38 +504,46 @@ export async function scrapeResumesFromIMAP({
               resumeText: ''
             };
 
-            if (att.docCategory === 'resume') {
-              primaryResumeFile = {
-                original_name: att.filename,
-                stored_name: safeName,
-                size_bytes: att.size,
-                mime_type: att.contentType,
-                local_path: storageUrl
-              };
-
-              // Extract authentic text using pdf-parse or mammoth
+            if (isDoc) {
+              let resumeText = '';
               try {
-                const lowerFn = att.filename.toLowerCase();
-                if (lowerFn.endsWith('.pdf') || att.contentType.includes('pdf')) {
+                if (lowerFn.endsWith('.pdf') || (att.contentType && att.contentType.includes('pdf'))) {
                   const pdfData = await pdfParse(att.content);
-                  parsedResumeText = (pdfData && pdfData.text) ? pdfData.text.trim() : '';
-                } else if (lowerFn.endsWith('.docx') || att.contentType.includes('wordprocessingml')) {
+                  resumeText = (pdfData && pdfData.text) ? pdfData.text.trim() : '';
+                } else if (lowerFn.endsWith('.docx') || (att.contentType && att.contentType.includes('wordprocessingml'))) {
                   const res = await mammoth.extractRawText({ buffer: att.content });
-                  parsedResumeText = (res && res.value) ? res.value.trim() : '';
+                  resumeText = (res && res.value) ? res.value.trim() : '';
                 } else if (lowerFn.endsWith('.doc')) {
                   try {
                     const res = await mammoth.extractRawText({ buffer: att.content });
-                    parsedResumeText = (res && res.value) ? res.value.trim() : '';
+                    resumeText = (res && res.value) ? res.value.trim() : '';
                   } catch (_) {
-                    parsedResumeText = att.content.toString('utf8').replace(/[^\x20-\x7E\r\n\t]/g, ' ').trim();
+                    resumeText = att.content.toString('utf8').replace(/[^\x20-\x7E\r\n\t]/g, ' ').trim();
                   }
                 }
               } catch (parseErr) {
                 console.warn(`⚠️ Failed parsing resume attachment ${att.filename}:`, parseErr.message);
               }
 
-              docEntry.resumeText = parsedResumeText;
+              docEntry.resumeText = resumeText;
               candidateDocs.resume = docEntry;
+
+              let rSkills = [];
+              if (resumeText) {
+                const lowerR = resumeText.toLowerCase();
+                rSkills = (COMMON_SKILLS || []).filter(skill => lowerR.includes(skill.toLowerCase()));
+              }
+
+              parsedResumes.push({
+                filename: att.filename,
+                safeName,
+                size: att.size,
+                contentType: att.contentType,
+                storageUrl,
+                resumeText,
+                skills: rSkills,
+                docEntry
+              });
             } else if (att.docCategory === 'dlFront') {
               candidateDocs.dlFront = docEntry;
               if (!candidateDocs.dl) candidateDocs.dl = docEntry;
@@ -506,7 +551,6 @@ export async function scrapeResumesFromIMAP({
               candidateDocs.dlBack = docEntry;
             } else if (att.docCategory === 'visa') {
               candidateDocs.visa = docEntry;
-              const lowerFn = att.filename.toLowerCase();
               if (lowerFn.includes('h1b') || lowerFn.includes('h-1b') || lowerFn.includes('i797') || lowerFn.includes('i-797')) {
                 detectedVisa = 'H-1B';
               } else if (lowerFn.includes('gc') || lowerFn.includes('green')) {
@@ -519,7 +563,7 @@ export async function scrapeResumesFromIMAP({
             }
           }
 
-          const hasResumeAttachment = Boolean(primaryResumeFile || candidateDocs.resume || parsedResumeText);
+          const hasResumeAttachment = parsedResumes.length > 0;
 
           // User requirement: If email has NO attachment, keep it UNREAD! Do not mark as read or ingest into candidate stream!
           if (!hasResumeAttachment) {
@@ -537,34 +581,147 @@ export async function scrapeResumesFromIMAP({
             });
           }
 
-          // Extract skills ONLY from parsed resume text, not from email body
-          let resumeSkills = [];
-          if (parsedResumeText) {
-            const lowerResume = parsedResumeText.toLowerCase();
-            resumeSkills = (COMMON_SKILLS || []).filter(skill => lowerResume.includes(skill.toLowerCase()));
-          }
+          // Helper: Derive candidate name from filename (e.g. "DhirenRavalResume.pdf" -> "Dhiren Raval")
+          const deriveNameFromFilename = (fn = '') => {
+            let base = fn.replace(/\.(pdf|docx?|doc)$/i, '');
+            base = base.replace(/(?:resume|cv|profile|dossier|final|updated|new|hotlist)/gi, '');
+            base = base.replace(/[_-]+/g, ' ').replace(/\(\d+\)/g, '').trim();
+            base = base.replace(/([a-z])([A-Z])/g, '$1 $2').trim();
+            const words = base.split(/\s+/).filter(w => w.length >= 2 && !/^(developer|engineer|lead|architect|java|python|qa|sdet|c2c|h1b|data)$/i.test(w));
+            if (words.length >= 1) {
+              return words.slice(0, 3).map(w => w[0].toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+            }
+            return '';
+          };
 
-          results.push({
-            name: senderName,
-            email: senderEmail,
-            phone: phone || '',
-            subject,
-            role: candidateRole || 'IT Specialist',
-            // Skills come from resume attachment ONLY — never from email body
-            skills: resumeSkills.length > 0 ? resumeSkills : [],
-            date,
-            folder: folder === 'Bulk' ? 'SPAM' : folder,
-            uid,
-            isSpamRecovery: folder === 'Bulk',
-            // resumeText is STRICTLY the parsed attachment text (PDF/DOCX) — never the email body
-            resumeText: parsedResumeText || '',
-            attachmentName: primaryResumeFile ? primaryResumeFile.original_name : (attachmentNames.length > 0 ? attachmentNames[0] : null),
-            attachments: attachmentNames,
-            file: primaryResumeFile,
-            documents: candidateDocs,
-            legalDocs: candidateDocs,
-            visaStatus: detectedVisa || null
-          });
+          // INGEST EACH RESUME AS A CANDIDATE PROFILE
+          for (let rIdx = 0; rIdx < parsedResumes.length; rIdx++) {
+            const r = parsedResumes[rIdx];
+
+            // Try matching this resume to a profile in the email body
+            let matchedProfile = bodyProfiles.find(bp => {
+              if (!bp.name) return false;
+              const firstPart = bp.name.split(' ')[0].toLowerCase();
+              return r.filename.toLowerCase().includes(firstPart);
+            });
+
+            // Fallback: match by index if counts align
+            if (!matchedProfile && bodyProfiles.length > rIdx) {
+              matchedProfile = bodyProfiles[rIdx];
+            }
+
+            // 1. Resolve candidate name
+            let candidateName = (matchedProfile && matchedProfile.name) ? matchedProfile.name : '';
+            if (!candidateName) {
+              candidateName = deriveNameFromFilename(r.filename);
+            }
+            if (!candidateName && r.resumeText) {
+              const firstLines = r.resumeText.split('\n').map(l => l.trim()).filter(Boolean);
+              for (const line of firstLines.slice(0, 5)) {
+                if (!line.includes('@') && !line.includes('http') && !line.includes('www') && !/^(resume|curriculum|profile|summary|skills|objective)/i.test(line)) {
+                  const cleaned = line.replace(/[^a-zA-Z\s.-]/g, '').trim();
+                  const words = cleaned.split(/\s+/);
+                  if (words.length >= 2 && words.length <= 4 && words.every(w => w.length >= 2)) {
+                    candidateName = words.map(w => w[0].toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                    break;
+                  }
+                }
+              }
+            }
+            if (!candidateName) {
+              candidateName = parsedResumes.length === 1 ? senderName : `Candidate ${rIdx + 1}`;
+            }
+
+            // 2. Resolve candidate email
+            let candidateEmail = (matchedProfile && matchedProfile.email) ? matchedProfile.email : '';
+            if (!candidateEmail && r.resumeText) {
+              const em = r.resumeText.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(?:com|org|net|edu|io|in|co|us|gov|mil|ai))\b/i);
+              if (em) candidateEmail = em[1].toLowerCase().trim();
+            }
+            if (!candidateEmail) {
+              candidateEmail = (parsedResumes.length === 1 ? senderEmail : `${candidateName.toLowerCase().replace(/\s+/g, '.')}.${senderEmail}`);
+            }
+
+            // 3. Resolve candidate phone
+            let candidatePhone = (matchedProfile && matchedProfile.phone) ? matchedProfile.phone : '';
+            if (!candidatePhone && r.resumeText) {
+              const pm = r.resumeText.match(/(?:(?:\+?1\s*(?:[.-]\s*)?)?(?:\(\s*([2-9]\d{2})\s*\)|([2-9]\d{2}))\s*(?:[.-]\s*)?([2-9]\d{2})\s*(?:[.-]\s*)?(\d{4}))/);
+              if (pm) {
+                const area = pm[1] || pm[2];
+                const mid = pm[3];
+                const last = pm[4];
+                if (area !== '555' && mid !== '010' && last !== '0000') {
+                  candidatePhone = `+1 (${area}) ${mid}-${last}`;
+                }
+              }
+            }
+            if (!candidatePhone) candidatePhone = phone || '';
+
+            // 4. Resolve candidate role
+            let cRole = (matchedProfile && matchedProfile.role) ? matchedProfile.role : '';
+            if (!cRole && r.resumeText) {
+              const firstLines = r.resumeText.split('\n').map(l => l.trim()).filter(Boolean);
+              for (const line of firstLines.slice(1, 6)) {
+                if (line.includes('|') || /(engineer|developer|architect|manager|lead|analyst|specialist|administrator)/i.test(line)) {
+                  cRole = line.split('|')[0].trim();
+                  break;
+                }
+              }
+            }
+            if (!cRole) cRole = candidateRole || 'IT Specialist';
+
+            // 5. Resolve candidate visa
+            let candidateVisa = (matchedProfile && matchedProfile.visa) ? matchedProfile.visa : '';
+            if (!candidateVisa && r.resumeText) {
+              const lowerR = r.resumeText.toLowerCase();
+              if (lowerR.includes('us citizen') || lowerR.includes('u.s. citizen')) candidateVisa = 'US Citizen';
+              else if (lowerR.includes('green card') || lowerR.includes('permanent resident')) candidateVisa = 'Permanent Resident (GC)';
+              else if (lowerR.includes('h-1b') || lowerR.includes('h1b') || lowerR.includes('i-797')) candidateVisa = 'H-1B';
+              else if (lowerR.includes('ead')) candidateVisa = 'EAD';
+            }
+            if (!candidateVisa) candidateVisa = detectedVisa || 'H-1B';
+
+            // 6. Resolve experience
+            const candidateExp = (matchedProfile && matchedProfile.exp)
+              ? matchedProfile.exp
+              : '5+ Years';
+
+            const primaryFileObj = {
+              original_name: r.filename,
+              stored_name: r.safeName,
+              size_bytes: r.size,
+              mime_type: r.contentType,
+              local_path: r.storageUrl
+            };
+
+            const candidateDocsCopy = {
+              ...candidateDocs,
+              resume: r.docEntry
+            };
+
+            results.push({
+              name: candidateName,
+              email: candidateEmail,
+              phone: candidatePhone,
+              subject,
+              role: cRole,
+              skills: r.skills && r.skills.length > 0 ? r.skills : [],
+              date,
+              folder: folder === 'Bulk' ? 'SPAM' : folder,
+              uid,
+              isSpamRecovery: folder === 'Bulk',
+              resumeText: r.resumeText || '',
+              attachmentName: r.filename,
+              attachments: [r.filename],
+              file: primaryFileObj,
+              documents: candidateDocsCopy,
+              legalDocs: candidateDocsCopy,
+              visaStatus: candidateVisa,
+              experience: candidateExp,
+              vendorName: senderName,
+              vendorEmail: senderEmail
+            });
+          }
         }
       }
     }

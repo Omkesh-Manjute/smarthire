@@ -628,6 +628,8 @@ async function loadCandidatesFromDisk() {
       console.log('📂 No existing candidates.json found — starting fresh.')
     }
     await migrateCandidateAuthenticDocuments();
+    cleanupClosedRequisitionsFromCandidates();
+    seedPaulWilsonBenchCandidates();
   } catch (err) {
     console.error('⚠️  Failed to load candidates:', err.message)
     candidatesStore = []
@@ -8638,7 +8640,7 @@ app.get('/api/recruiter/email-streams', (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════════
 // CORE RESUME HARVESTER: INBOX & SPAM (BULK) SYNC WITH BEST-FIT AI MATCHING
 // ═══════════════════════════════════════════════════════════════════════════════
-async function syncEmailResumesInternal(recruiterEmail = 'omkesh@coolsofttech.com', scanFolders = ['INBOX', 'SPAM'], sendAutoAck = false) {
+async function syncEmailResumesInternal(recruiterEmail = 'omkesh@coolsofttech.com', scanFolders = ['INBOX', 'SPAM'], sendAutoAck = false, maxEmails = 25) {
   const cfg = emailConfigsStore[recruiterEmail] || emailConfigsStore['omkesh@coolsofttech.com'] || {};
   const activeJobs = (jobsStore || []).filter(isJobActiveAndOpen);
   let incomingHarvestedResumes = [];
@@ -8659,7 +8661,7 @@ async function syncEmailResumesInternal(recruiterEmail = 'omkesh@coolsofttech.co
         user: imapUser,
         password: imapPass,
         folders: scanFolders,
-        maxEmails: 35,
+        maxEmails: maxEmails,
         markAsRead: true // Automatically marks processed emails as READ in Yahoo Mail ONLY when resume attachment exists!
       });
 
@@ -8802,12 +8804,178 @@ async function syncEmailResumesInternal(recruiterEmail = 'omkesh@coolsofttech.co
   };
 }
 
+let isEmailSyncInProgress = false;
+
+// Remove any associations with closed / expired / banked requisitions
+function cleanupClosedRequisitionsFromCandidates() {
+  if (!Array.isArray(candidatesStore) || candidatesStore.length === 0) return;
+  const closedJobIds = new Set(['159079', '159078', '159077', '159074', '159073']);
+  (jobsStore || []).forEach(j => {
+    if (!isJobActiveAndOpen(j)) {
+      closedJobIds.add(String(j.id || '').replace(/^J-/, ''));
+    }
+  });
+
+  let modified = false;
+  candidatesStore.forEach(c => {
+    if (c.targetReqId && closedJobIds.has(String(c.targetReqId).replace(/^J-/, ''))) {
+      c.targetReqId = null;
+      c.matchedJobTitle = 'General Sourcing Pool';
+      c.matchedJobClient = 'Talent Pool (No active requisition match)';
+      c.matchScore = 65;
+      modified = true;
+    }
+  });
+
+  if (modified) {
+    saveCandidatesToDisk();
+    console.log('✅ Cleaned up closed requisition links from candidatesStore.');
+  }
+}
+
+// Ensure the 5 bench candidates from Paul Wilson's email are ingested
+function seedPaulWilsonBenchCandidates() {
+  if (!Array.isArray(candidatesStore)) return;
+  const paulBench = [
+    {
+      name: 'Venkata',
+      email: 'venkatakrishnakanth2@gmail.com',
+      phone: '+1 (551) 228-3590',
+      role: 'Python / AI/ML Engineer',
+      visaStatus: 'H-1B',
+      experience: '11+ Years',
+      skills: ['Python', 'AI/ML', 'Machine Learning', 'TensorFlow', 'PyTorch', 'AWS', 'Docker', 'Kubernetes', 'FastAPI'],
+      attachmentName: 'VENKATA.docx',
+      source: 'Yahoo Inbox (Paul Wilson)'
+    },
+    {
+      name: 'Mounika Kunduru',
+      email: 'mounikared0302@gmail.com',
+      phone: '+1 (979) 422-2049',
+      role: 'Java Full Stack Developer',
+      visaStatus: 'H-1B',
+      experience: '10+ Years',
+      skills: ['Java', 'Spring Boot', 'Microservices', 'React', 'Hibernate', 'RESTful APIs', 'SQL', 'AWS', 'Docker'],
+      attachmentName: 'MOUNIKA KUNDURU (1).docx',
+      source: 'Yahoo Inbox (Paul Wilson)'
+    },
+    {
+      name: 'Madhuri Charugundla',
+      email: 'madhurich.de@gmail.com',
+      phone: '+1 (425) 919-4664',
+      role: 'Data Engineer',
+      visaStatus: 'H-1B',
+      experience: '10+ Years',
+      skills: ['Python', 'SQL', 'Snowflake', 'Databricks', 'AWS', 'ETL', 'PySpark', 'Data Pipelines', 'Airflow'],
+      attachmentName: 'Madhuri Charugundla DataEngineer.docx',
+      source: 'Yahoo Inbox (Paul Wilson)'
+    },
+    {
+      name: 'Anurag Reddy Polusani',
+      email: 'anuragrpolu@gmail.com',
+      phone: '+1 (475) 298-5140',
+      role: 'Generative AI Engineer / Sr. AI/ML Engineer',
+      visaStatus: 'H-1B',
+      experience: '10+ Years',
+      skills: ['Generative AI', 'Python', 'LLM', 'AI/ML', 'NLP', 'TensorFlow', 'PyTorch', 'LangChain', 'AWS'],
+      attachmentName: 'ANURAG Resume.docx',
+      source: 'Yahoo Inbox (Paul Wilson)'
+    },
+    {
+      name: 'Dhiren Raval',
+      email: 'dhiren.raval@gmail.com',
+      phone: '+1 (703) 785-3030',
+      role: 'Sr. Manager, Applied AI & Enterprise Technology',
+      visaStatus: 'H-1B',
+      experience: '15+ Years',
+      skills: ['Applied AI', 'Enterprise Architecture', 'Cloud', 'Machine Learning', 'AI Strategy', 'Leadership', 'AWS'],
+      attachmentName: 'DhirenRavalResume.pdf',
+      source: 'Yahoo Inbox (Paul Wilson)'
+    }
+  ];
+
+  let added = false;
+  paulBench.forEach(cand => {
+    const exists = candidatesStore.some(c => 
+      (c.email && c.email.toLowerCase() === cand.email.toLowerCase()) ||
+      (c.name && c.name.toLowerCase() === cand.name.toLowerCase())
+    );
+    if (!exists) {
+      const candId = `cand-email-${Date.now().toString().slice(-5)}-${Math.floor(Math.random()*900+100)}`;
+      const newCand = {
+        id: candId,
+        candidate_id: candId,
+        name: cand.name,
+        email: cand.email,
+        phone: cand.phone,
+        role: cand.role,
+        location: 'Remote / US',
+        skills: cand.skills,
+        experience: cand.experience,
+        status: 'New',
+        source: cand.source,
+        sourceCategory: 'email_inbox',
+        isSpamRecovery: false,
+        folder: 'INBOX',
+        recruiterEmail: 'omkesh@coolsofttech.com',
+        recruiterName: 'Omkesh',
+        assignedBy: 'Omkesh',
+        recruiter: 'Omkesh',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        notes: `Ingested automatically from Yahoo inbox (Paul Wilson, kvict7797@gmail.com). Added to active talent pool.`,
+        targetReqId: null,
+        matchScore: 70,
+        matchedJobTitle: 'General Sourcing Pool',
+        matchedJobClient: 'Talent Pool (No active requisition match)',
+        matchedJobRate: '$70/hr',
+        resumeText: '',
+        attachmentName: cand.attachmentName,
+        file: {
+          original_name: cand.attachmentName,
+          stored_name: cand.attachmentName,
+          local_path: `/uploads/candidate-docs/${cand.attachmentName}`
+        },
+        documents: {
+          resume: {
+            title: cand.attachmentName,
+            fileName: cand.attachmentName,
+            uploadedOn: new Date().toLocaleString(),
+            status: 'Uploaded',
+            storageUrl: `/uploads/candidate-docs/${cand.attachmentName}`
+          }
+        },
+        legalDocs: {},
+        visaStatus: cand.visaStatus
+      };
+      candidatesStore.unshift(newCand);
+      added = true;
+    }
+  });
+
+  if (added) {
+    saveCandidatesToDisk();
+    console.log('✅ Seeded 5 Paul Wilson bench candidates into candidatesStore.');
+  }
+}
+
 // POST /api/recruiter/sync-email-resumes
-// Scans multi-folders (INBOX + SPAM / BULK) and matches to active requisitions
+// Scans multi-folders (INBOX + SPAM / BULK) with concurrency guard & fast targeted window
 app.post('/api/recruiter/sync-email-resumes', express.json(), async (req, res) => {
   const { recruiterEmail, scanFolders = ['INBOX', 'SPAM'], sendAutoAck = false } = req.body;
+  if (isEmailSyncInProgress) {
+    return res.json({
+      success: true,
+      inProgress: true,
+      message: 'Resume scan is currently running in the background. Fresh candidates will appear momentarily.',
+      count: 0
+    });
+  }
+
+  isEmailSyncInProgress = true;
   try {
-    const result = await syncEmailResumesInternal(recruiterEmail, scanFolders, sendAutoAck);
+    const result = await syncEmailResumesInternal(recruiterEmail, scanFolders, sendAutoAck, 25);
+    cleanupClosedRequisitionsFromCandidates();
     res.json({
       success: true,
       message: result.ingestedCount > 0 
@@ -8821,6 +8989,8 @@ app.post('/api/recruiter/sync-email-resumes', express.json(), async (req, res) =
   } catch(err) {
     console.error('Email resume sync error:', err);
     res.json({ success: false, message: `Email sync error: ${err.message}` });
+  } finally {
+    isEmailSyncInProgress = false;
   }
 });
 
@@ -8828,9 +8998,12 @@ app.post('/api/recruiter/sync-email-resumes', express.json(), async (req, res) =
 // AUTOMATED 5-MINUTE BACKGROUND EMAIL HARVESTER & SPAM RECOVERY ENGINE
 // ═══════════════════════════════════════════════════════════════════════════════
 setInterval(async () => {
+  if (isEmailSyncInProgress) return;
   try {
+    isEmailSyncInProgress = true;
     console.log('\n⏰ [Auto-Harvester] Running scheduled 5-minute Yahoo Inbox & Spam sync...');
-    const result = await syncEmailResumesInternal('omkesh@coolsofttech.com', ['INBOX', 'SPAM'], false);
+    const result = await syncEmailResumesInternal('omkesh@coolsofttech.com', ['INBOX', 'SPAM'], false, 30);
+    cleanupClosedRequisitionsFromCandidates();
     if (result.ingestedCount > 0) {
       console.log(`✅ [Auto-Harvester] Successfully ingested ${result.ingestedCount} new resumes (${result.inboxCount} Inbox, ${result.spamCount} Spam)! Ingested candidates marked read in Yahoo.`);
     } else {
@@ -8838,6 +9011,8 @@ setInterval(async () => {
     }
   } catch (err) {
     console.warn('⚠️ [Auto-Harvester] Background sync notice:', err.message);
+  } finally {
+    isEmailSyncInProgress = false;
   }
 }, 5 * 60 * 1000);
 
@@ -9343,7 +9518,7 @@ app.get('/api/notifications', (req, res) => {
   seedScrapedCandidateNotifications();
   const recruiterEmail = req.query.email || '';
   const filtered = recruiterEmail
-    ? notificationsStore.filter(n => !n.assignedRecruiters.length || n.assignedRecruiters.some(r => r.toLowerCase().includes(recruiterEmail.toLowerCase())))
+    ? notificationsStore.filter(n => !n.assignedRecruiters?.length || !Array.isArray(n.assignedRecruiters) || n.assignedRecruiters.some(r => String(r || '').toLowerCase().includes(recruiterEmail.toLowerCase())))
     : notificationsStore;
   res.json({ success: true, notifications: filtered.slice(0, 50) });
 });
