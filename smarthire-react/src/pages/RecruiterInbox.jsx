@@ -281,6 +281,31 @@ function getSkillFrequencies(resumeText = '', candidateSkills = []) {
   return Array.from(freqMap.values()).sort((a, b) => b.count - a.count).slice(0, 10)
 }
 
+export function isJobActiveAndOpen(job) {
+  if (!job) return false;
+  const s = String(job.status || '').toLowerCase().trim();
+  if (['closed', 'bank', 'banked', 'filled', 'cancelled', 'expired', 'hold', 'on hold'].includes(s)) return false;
+
+  if (job.deadline) {
+    const d = new Date(job.deadline);
+    if (!isNaN(d.getTime())) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (d < today) return false;
+    }
+  }
+  if (job.description && typeof job.description === 'string') {
+    const m = job.description.match(/submission\s+deadline\s*:\s*(\d{1,2}\/\d{1,2}\/\d{4})/i);
+    if (m) {
+      const d = new Date(m[1]);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (!isNaN(d.getTime()) && d < today) return false;
+    }
+  }
+  return true;
+}
+
 function cleanMimeEmail(raw) {
   let attachmentNames = []
   if (!raw) return { textBody: '', attachmentNames: [] }
@@ -1785,19 +1810,34 @@ export default function RecruiterInbox({ defaultViewMode }) {
   })
   const [isSavingNewCand, setIsSavingNewCand] = useState(false)
 
-  // Open Requisitions for Multi-Position AI Matcher
+  // Open Requisitions for Multi-Position AI Matcher (Strictly Active & Unexpired)
   const DEFAULT_OPEN_JOBS = [
-    { id: '159116', title: 'Senior .NET/SQL Full-Stack Developer', client: 'Iowa HHS', rate: '$75/hr', location: 'Remote / US', skills: ['C#', '.NET', 'ASP.NET', 'Microservices', 'SQL Server', 'Angular', 'Azure', 'Entity Framework'] },
-    { id: '159079', title: 'Java Developer III - 165504', client: 'State of Wisconsin (ETF)', rate: '$75/hr', location: 'Madison, WI (Remote)', skills: ['Java', 'Spring Boot', 'React', 'Vue', 'SQL', 'Git', 'AWS'] },
-    { id: '159078', title: 'Public Health Program Director 1 (66312)', client: 'Tennessee Department of Health (TN DOH)', rate: '$75/hr', location: 'Nashville, TN (Hybrid)', skills: ['Strategic Planning', 'Technical Writing', 'Program Management', 'Healthcare', 'Project Management', 'Agile'] },
-    { id: '159077', title: 'Java Developer III - 165503', client: 'State of Wisconsin (ETF)', rate: '$75/hr', location: 'Madison, WI (Remote)', skills: ['Java', 'Angular', 'Vue', 'SQL', 'Git', 'Spring Boot'] },
-    { id: '159074', title: 'Attorney - 66316', client: 'Tennessee Department of Health (TN DOH)', rate: '$75/hr', location: 'Nashville, TN (Hybrid)', skills: ['Legal Writing', 'Regulatory Compliance', 'Health Policy', 'Communications'] },
-    { id: '159073', title: 'DBHDS - Data Governance Analyst (CDC Funded) (807900)', client: 'Virginia DBHDS', rate: '$75/hr', location: 'Richmond, VA (Hybrid)', skills: ['Data Governance', 'SQL', 'Data Warehouse', 'Python', 'Tableau', 'CDC', 'Power BI'] },
-    { id: '158997', title: 'NC DHHS - AWS Senior Developer (808496)', client: 'NC DHHS', rate: '$85/hr', location: 'Raleigh, NC (Hybrid)', skills: ['AWS', 'Cloud Architecture', 'Python', 'Lambda', 'Docker', 'Kubernetes'] }
+    { id: '159023', title: 'Business Analyst - Advanced (13467)', client: 'Enterprise Client', rate: '$75/hr', location: 'Remote / US', skills: ['Business Analysis', 'Agile', 'User Stories', 'Requirements Gathering', 'JIRA'] },
+    { id: '159021', title: 'IT Deployment Team Member (66166)', client: 'Enterprise Client', rate: '$65/hr', location: 'Remote / US', skills: ['IT Deployment', 'System Support', 'Troubleshooting', 'Hardware/Software Rollouts'] },
+    { id: '159020', title: 'CBUS Program Manager 1 (809896)', client: 'State Agency', rate: '$85/hr', location: 'Remote / US', skills: ['Program Management', 'Agile', 'Stakeholder Management', 'Risk Analysis'] },
+    { id: '159016', title: 'Network Engineer II (165232)', client: 'State Agency', rate: '$75/hr', location: 'Remote / US', skills: ['Network Engineering', 'Cisco', 'Routing', 'Switching', 'Firewalls'] },
+    { id: '159015', title: 'Systems Administrator III (165231)', client: 'State Agency', rate: '$75/hr', location: 'Remote / US', skills: ['Systems Administration', 'Linux', 'Windows Server', 'Active Directory', 'Cloud'] },
+    { id: '159014', title: 'VDOT Program Manager - Data And GIS Governance (810103)', client: 'Virginia DOT (State Agency)', rate: '$90/hr', location: 'Richmond, VA (Hybrid)', skills: ['Data Governance', 'GIS', 'Program Management', 'SQL', 'Policy'] },
+    { id: '159010', title: 'Security Analyst II (165213)', client: 'State Agency', rate: '$75/hr', location: 'Remote / US', skills: ['Cybersecurity', 'SIEM', 'Threat Analysis', 'Compliance', 'Security Operations'] }
   ]
   const [openJobsList, setOpenJobsList] = useState(DEFAULT_OPEN_JOBS)
   const [drawerReqId, setDrawerReqId] = useState('')
   const [resumeKeywordSearch, setResumeKeywordSearch] = useState('')
+
+  // Dynamic Notifications State
+  const [notifications, setNotifications] = useState([])
+  const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false)
+  const [notificationsLoading, setNotificationsLoading] = useState(false)
+  const notificationsDropdownRef = useRef(null)
+
+  // User Profile & Avatar State
+  const [userAvatar, setUserAvatar] = useState(() => {
+    return localStorage.getItem('smarthire_user_avatar') || ''
+  })
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false)
+  const profileDropdownRef = useRef(null)
+  const profilePhotoInputRef = useRef(null)
+  const [profileSaving, setProfileSaving] = useState(false)
 
   // Direct Outbound Email State (Strictly sent from personal recruiter email)
   const [emailModalCandidate, setEmailModalCandidate] = useState(null)
@@ -1824,6 +1864,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const [isUploadingDoc, setIsUploadingDoc] = useState(false)
   const [sidebarDocToast, setSidebarDocToast] = useState('')
   const [copiedToast, setCopiedToast] = useState('')
+
 
   const copyToClipboard = (text, label) => {
     if (!text) return
@@ -2338,7 +2379,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
           assignedBy: recName,
           recruiterEmail: recMail,
           matchScore: c.matchScore || 90,
-          targetReqId: c.targetReqId || c.reqId || (c.job_id ? String(c.job_id).replace(/^J-/, '') : '159079'),
+          targetReqId: c.targetReqId || c.reqId || (c.job_id ? String(c.job_id).replace(/^J-/, '') : (openJobsList[0]?.id || '')),
           matchedJobTitle: c.matchedJobTitle || c.jobTitle || 'Open Requisition',
           matchedJobClient: c.matchedJobClient || c.client || 'Enterprise Client',
           matchedJobRate: c.matchedJobRate || c.rate || '$75/hr',
@@ -2496,7 +2537,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
     setShowCcInput(false)
     setShowBccInput(false)
 
-    const targetReq = cand.targetReqId || drawerReqId || '159079'
+    const targetReq = cand.targetReqId || drawerReqId || openJobsList[0]?.id || ''
     const jobTitle = cand.matchedJobTitle || activeTargetJob?.title || 'Open Position'
     const jobRate = cand.matchedJobRate || activeTargetJob?.rate || '$75/hr'
     const jobClient = cand.matchedJobClient || activeTargetJob?.client || 'State Agency'
@@ -2617,7 +2658,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
   }
 
   const handleAssignCandidateToReq = async (cand, specificReqId = null) => {
-    const targetReqId = specificReqId || cand.targetReqId || '159079'
+    const targetReqId = specificReqId || cand.targetReqId || openJobsList[0]?.id || ''
     const cleanId = String(targetReqId).replace('J-', '').replace('REQ-', '').trim()
     const candName = cand.name || 'Candidate'
     const candId = cand.id || `875${Date.now().toString().slice(-4)}`
@@ -2699,7 +2740,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
   const handleOpenPushModal = (cand) => {
     if (!cand) return
-    const defaultReq = cand.targetReqId ? String(cand.targetReqId).replace(/^J-/, '') : (openJobsList[0]?.id ? String(openJobsList[0].id).replace(/^J-/, '') : '159079')
+    const defaultReq = cand.targetReqId ? String(cand.targetReqId).replace(/^J-/, '') : (openJobsList[0]?.id ? String(openJobsList[0].id).replace(/^J-/, '') : '')
     const defaultRate = cand.matchedJobRate || cand.payRate || '$75/hr C2C'
     setPushTargetCand(cand)
     setPushSelectedReqId(defaultReq)
@@ -2874,7 +2915,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
       source: newCandForm.source || 'Manual Entry',
       sourceCategory: 'manual_entry',
       status: 'New',
-      targetReqId: newCandForm.targetReqId ? String(newCandForm.targetReqId).replace(/^J-/, '') : (targetJob?.id || '159079'),
+      targetReqId: newCandForm.targetReqId ? String(newCandForm.targetReqId).replace(/^J-/, '') : (targetJob?.id || openJobsList[0]?.id || ''),
       matchedJobTitle: targetJob?.title || 'Direct Opportunity',
       matchedJobClient: targetJob?.client || 'Enterprise Client',
       matchedJobRate: targetJob?.rate || targetJob?.budget || '$75/hr',
@@ -2968,7 +3009,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
   }
 
   const handleViewCandidateProfile = (cand) => {
-    const targetReq = cand.targetReqId || '159079'
+    const targetReq = cand.targetReqId || openJobsList[0]?.id || ''
     setDrawerReqId(targetReq)
     setResumeKeywordSearch('')
     setCandidateDetails({
@@ -3173,16 +3214,17 @@ export default function RecruiterInbox({ defaultViewMode }) {
     }
   }
 
-  // Load live open requisitions to power the Multi-Position AI Matcher
+  // Load live open requisitions to power the Multi-Position AI Matcher (Strictly Active & Unexpired)
   useEffect(() => {
     fetch('/api/jobs')
       .then(res => res.json())
       .then(data => {
         const jList = Array.isArray(data) ? data : (data.jobs || [])
         if (jList && jList.length > 0) {
+          const activeOnly = jList.filter(isJobActiveAndOpen)
           setOpenJobsList(prev => {
-            const merged = [...prev]
-            jList.forEach(j => {
+            const merged = [...prev.filter(isJobActiveAndOpen)]
+            activeOnly.forEach(j => {
               const jId = String(j.id || j.reqId || j.job_id || '').replace(/^J-/, '')
               if (jId && !merged.some(m => String(m.id) === jId)) {
                 merged.push({
@@ -3235,6 +3277,130 @@ export default function RecruiterInbox({ defaultViewMode }) {
   }, [fetchStreamCandidates])
   useEffect(() => { fetchThreads() }, [fetchThreads])
   useEffect(() => { fetchLeaderboard() }, [fetchLeaderboard])
+
+  const fetchNotifications = useCallback(async () => {
+    try {
+      setNotificationsLoading(true)
+      const res = await fetch(`/api/notifications?email=${encodeURIComponent(currentUser?.email || '')}`)
+      const data = await res.json()
+      if (data && Array.isArray(data.notifications)) {
+        setNotifications(data.notifications)
+      }
+    } catch (err) {
+      console.warn('[Notifications] Fetch notice:', err.message)
+    } finally {
+      setNotificationsLoading(false)
+    }
+  }, [currentUser?.email])
+
+  useEffect(() => {
+    fetchNotifications()
+    const timer = setInterval(() => { fetchNotifications() }, 15000)
+    return () => clearInterval(timer)
+  }, [fetchNotifications])
+
+  // Click outside listener for notification and profile popovers
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (notificationsDropdownRef.current && !notificationsDropdownRef.current.contains(e.target)) {
+        setShowNotificationsDropdown(false)
+      }
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(e.target)) {
+        setShowProfileDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const handleMarkNotificationRead = async (notifId) => {
+    setNotifications(prev => prev.map(n => n.id === notifId ? { ...n, read: true } : n))
+    try {
+      await fetch('/api/notifications/mark-read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notificationIds: [notifId] })
+      })
+    } catch (_) {}
+  }
+
+  const handleMarkAllNotificationsRead = async () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+    try {
+      await fetch('/api/notifications/mark-all-read', { method: 'POST' })
+    } catch (_) {}
+  }
+
+  const handleNotificationClick = (notif) => {
+    handleMarkNotificationRead(notif.id)
+    setShowNotificationsDropdown(false)
+    if (notif.candidateId) {
+      const found = streamCandidates.find(c => 
+        c.id === notif.candidateId || 
+        c.candidate_id === notif.candidateId || 
+        (c.email && notif.candidateEmail && c.email.toLowerCase() === notif.candidateEmail.toLowerCase())
+      )
+      if (found) {
+        setSelectedCandidate(found)
+        setInboxViewMode('stream')
+      }
+    }
+  }
+
+  const handleAvatarUpload = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = async () => {
+      const base64 = reader.result
+      setUserAvatar(base64)
+      setProfileSaving(true)
+      try {
+        localStorage.setItem('smarthire_user_avatar', base64)
+        const u = currentUser || {}
+        u.avatar = base64
+        u.photoURL = base64
+        localStorage.setItem('smarthire_user', JSON.stringify(u))
+        await fetch('/api/users/profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: u.email || 'omkesh@coolsofttech.com',
+            name: u.name || 'Omkesh',
+            avatar: base64
+          })
+        })
+      } catch (err) {
+        console.warn('Profile photo update error:', err.message)
+      } finally {
+        setProfileSaving(false)
+      }
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleRemoveAvatar = async () => {
+    setUserAvatar('')
+    setProfileSaving(true)
+    try {
+      localStorage.removeItem('smarthire_user_avatar')
+      const u = currentUser || {}
+      delete u.avatar
+      delete u.photoURL
+      localStorage.setItem('smarthire_user', JSON.stringify(u))
+      await fetch('/api/users/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: u.email || 'omkesh@coolsofttech.com',
+          avatar: ''
+        })
+      })
+    } catch (_) {}
+    finally {
+      setProfileSaving(false)
+    }
+  }
 
   useEffect(() => {
     if (pollingRef.current) clearInterval(pollingRef.current)
@@ -3720,7 +3886,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
   // Initialize Email Fields for Active Candidate
   useEffect(() => {
     if (!activeCandidate) return
-    const targetReq = activeCandidate.targetReqId || drawerReqId || '159079'
+    const targetReq = activeCandidate.targetReqId || drawerReqId || openJobsList[0]?.id || ''
     const jobTitle = activeCandidate.matchedJobTitle || activeTargetJob?.title || 'Open Position'
     const jobRate = activeCandidate.matchedJobRate || activeTargetJob?.rate || '$75/hr'
     const jobClient = activeCandidate.matchedJobClient || activeTargetJob?.client || 'State Agency'
@@ -3757,7 +3923,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
     }
   }
 
-  const currentReqId = String(drawerReqId || activeCandidate?.targetReqId || '159079').replace(/^J-/, '')
+  const currentReqId = String(drawerReqId || activeCandidate?.targetReqId || openJobsList[0]?.id || '').replace(/^J-/, '')
   const activeTargetJob = openJobsList.find(j => String(j.id) === currentReqId) || openJobsList[0]
 
   const candSkillsList = activeCandidate ? (Array.isArray(activeCandidate.skills) ? activeCandidate.skills : (activeCandidate.skills ? String(activeCandidate.skills).split(',').map(s => s.trim()) : [])) : []
@@ -3889,7 +4055,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
     const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
     const myName = u.name || currentUser?.name || 'Omkesh Manjute'
     const myEmail = u.email || currentUser?.email || 'omkesh@coolsofttech.com'
-    const targetReq = targetCand.targetReqId || drawerReqId || '159079'
+    const targetReq = targetCand.targetReqId || drawerReqId || openJobsList[0]?.id || ''
     const jobTitle = targetCand.matchedJobTitle || activeTargetJob?.title || 'Open Position'
     const jobClient = targetCand.matchedJobClient || activeTargetJob?.client || 'State Agency'
     const jobRate = targetCand.matchedJobRate || activeTargetJob?.rate || '$75/hr'
@@ -4470,45 +4636,6 @@ export default function RecruiterInbox({ defaultViewMode }) {
               )}
             </button>
 
-            {/* 4. Recruiter Leaderboard */}
-            <button
-              type="button"
-              onMouseEnter={() => setHoveredNav('leaderboard')}
-              onMouseLeave={() => setHoveredNav(null)}
-              onClick={() => {
-                setInboxViewMode('leaderboard')
-                fetchLeaderboard()
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '10px 14px',
-                borderRadius: 8,
-                border: 'none',
-                background: inboxViewMode === 'leaderboard'
-                  ? (isLight ? '#FEF3C7' : 'rgba(245,158,11,0.18)')
-                  : (hoveredNav === 'leaderboard' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent'),
-                color: inboxViewMode === 'leaderboard'
-                  ? (isLight ? '#B45309' : '#FBBF24')
-                  : (hoveredNav === 'leaderboard' ? C.textPrimary : C.textSecondary),
-                fontWeight: inboxViewMode === 'leaderboard' ? 700 : (hoveredNav === 'leaderboard' ? 600 : 500),
-                fontSize: 13.5,
-                cursor: 'pointer',
-                textAlign: 'left',
-                transform: hoveredNav === 'leaderboard' && inboxViewMode !== 'leaderboard' ? 'translateX(4px)' : 'none',
-                boxShadow: inboxViewMode === 'leaderboard' ? '0 1px 3px rgba(245,158,11,0.2)' : 'none',
-                transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
-              }}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
-                <span>Leaderboard</span>
-              </span>
-              <span style={{ fontSize: 10, background: '#F59E0B', color: '#FFF', padding: '1px 6px', borderRadius: 10, fontWeight: 800 }}>
-                KPIs
-              </span>
-            </button>
 
             {/* 6. Scan Ingest */}
             <button
@@ -4754,26 +4881,176 @@ export default function RecruiterInbox({ defaultViewMode }) {
               <span style={{ fontSize: 16, lineHeight: 1 }}>+</span> <span>Add Candidate</span>
             </button>
 
-            {/* Notification Bell */}
-            <div style={{ position: 'relative', cursor: 'pointer', padding: 6 }}>
-              <span style={{ display: "flex", alignItems: "center", color: C.textSecondary }}><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></span>
-              <span style={{
-                position: 'absolute',
-                top: 2,
-                right: 2,
-                background: '#FF5630',
-                color: '#FFF',
-                borderRadius: '50%',
-                width: 15,
-                height: 15,
-                fontSize: 9.5,
-                fontWeight: 800,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                2
-              </span>
+            {/* Dynamic Notification Bell */}
+            <div ref={notificationsDropdownRef} style={{ position: 'relative' }}>
+              <div
+                onClick={() => setShowNotificationsDropdown(prev => !prev)}
+                style={{
+                  position: 'relative',
+                  cursor: 'pointer',
+                  padding: 6,
+                  display: 'flex',
+                  alignItems: 'center',
+                  borderRadius: 6,
+                  backgroundColor: showNotificationsDropdown ? (isLight ? '#E2E8F0' : '#334155') : 'transparent'
+                }}
+                title="Activity & Resume Notifications"
+              >
+                <span style={{ display: "flex", alignItems: "center", color: showNotificationsDropdown ? '#2563EB' : C.textSecondary }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                </span>
+                {notifications.filter(n => !n.read).length > 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    top: 2,
+                    right: 2,
+                    background: '#FF5630',
+                    color: '#FFF',
+                    borderRadius: '50%',
+                    minWidth: 16,
+                    height: 16,
+                    fontSize: 9.5,
+                    fontWeight: 800,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '0 3px',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                  }}>
+                    {notifications.filter(n => !n.read).length}
+                  </span>
+                )}
+              </div>
+
+              {/* Notifications Dropdown Panel */}
+              {showNotificationsDropdown && (
+                <div style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 8px)',
+                  right: 0,
+                  width: 380,
+                  maxHeight: 460,
+                  backgroundColor: isLight ? '#FFFFFF' : '#1E293B',
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 12,
+                  boxShadow: '0 16px 36px rgba(0,0,0,0.18)',
+                  zIndex: 9999,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden'
+                }}>
+                  {/* Dropdown Header */}
+                  <div style={{
+                    padding: '12px 16px',
+                    borderBottom: `1px solid ${C.border}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    backgroundColor: isLight ? '#F8FAFC' : '#0F172A'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 13.5, fontWeight: 800, color: C.textPrimary }}>Notifications</span>
+                      <span style={{
+                        fontSize: 10.5,
+                        fontWeight: 700,
+                        backgroundColor: '#EFF6FF',
+                        color: '#2563EB',
+                        padding: '1px 7px',
+                        borderRadius: 10,
+                        border: '1px solid #BFDBFE'
+                      }}>
+                        {notifications.filter(n => !n.read).length} Unread
+                      </span>
+                    </div>
+                    {notifications.some(n => !n.read) && (
+                      <button
+                        onClick={handleMarkAllNotificationsRead}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#2563EB',
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          padding: 0
+                        }}
+                      >
+                        Mark all as read
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Dropdown List */}
+                  <div style={{ flex: 1, overflowY: 'auto', maxHeight: 380 }}>
+                    {notifications.length === 0 ? (
+                      <div style={{ padding: '36px 20px', textAlign: 'center', color: C.textSecondary, fontSize: 12.5 }}>
+                        No notifications right now. Inbound resumes and position matches will appear here.
+                      </div>
+                    ) : (
+                      notifications.map(n => {
+                        const isMatch = n.isMatched || Boolean(n.targetReqId);
+                        return (
+                          <div
+                            key={n.id}
+                            onClick={() => handleNotificationClick(n)}
+                            style={{
+                              padding: '11px 14px',
+                              borderBottom: `1px solid ${C.border}`,
+                              borderLeft: n.read ? '3px solid transparent' : '3px solid #2563EB',
+                              backgroundColor: n.read ? 'transparent' : (isLight ? '#F8FAFC' : 'rgba(37,99,235,0.06)'),
+                              cursor: 'pointer',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 3,
+                              transition: 'background-color 0.15s'
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <span style={{ fontSize: 12.5, fontWeight: n.read ? 600 : 800, color: C.textPrimary }}>
+                                {n.candidateName || 'New Candidate Ingested'}
+                              </span>
+                              <span style={{ fontSize: 10.5, color: C.textSecondary, whiteSpace: 'nowrap' }}>
+                                {n.createdAt ? new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent'}
+                              </span>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginTop: 1 }}>
+                              {isMatch ? (
+                                <span style={{
+                                  fontSize: 10,
+                                  fontWeight: 800,
+                                  background: '#DCFCE7',
+                                  color: '#15803D',
+                                  padding: '1px 6px',
+                                  borderRadius: 4,
+                                  border: '1px solid #BBF7D0'
+                                }}>
+                                  Req #{n.targetReqId} • {n.matchScore || 85}% Match
+                                </span>
+                              ) : (
+                                <span style={{
+                                  fontSize: 10,
+                                  fontWeight: 700,
+                                  background: '#F1F5F9',
+                                  color: '#475569',
+                                  padding: '1px 6px',
+                                  borderRadius: 4,
+                                  border: '1px solid #E2E8F0'
+                                }}>
+                                  General Talent Pool
+                                </span>
+                              )}
+                              <span style={{ fontSize: 11, color: C.textSecondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 220 }}>
+                                {isMatch ? (n.matchedJobTitle || 'Open Requisition') : (n.role || 'No active requirement')}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Theme Mode Toggle */}
@@ -4794,34 +5071,163 @@ export default function RecruiterInbox({ defaultViewMode }) {
               {isLight ? <IconMoon /> : <IconSun />}
             </button>
 
-            {/* User Profile Pill matching media_1789727370931.png */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              padding: '4px 8px 4px 4px',
-              borderRadius: 8,
-              cursor: 'pointer'
-            }}>
-              <div style={{
-                width: 36,
-                height: 36,
-                borderRadius: '50%',
-                background: isEmployee ? '#16A34A' : '#0284C7',
-                color: '#FFF',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 800,
-                fontSize: 13
-              }}>
-                {(currentUser?.name ? currentUser.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : 'OM')}
+            {/* User Profile Pill & Upload Menu */}
+            <div ref={profileDropdownRef} style={{ position: 'relative' }}>
+              <div
+                onClick={() => setShowProfileDropdown(prev => !prev)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '4px 8px 4px 4px',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  backgroundColor: showProfileDropdown ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent',
+                  transition: 'background-color 0.15s'
+                }}
+              >
+                <div style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: '50%',
+                  background: userAvatar ? 'transparent' : (isEmployee ? '#16A34A' : '#0284C7'),
+                  color: '#FFF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 800,
+                  fontSize: 13,
+                  overflow: 'hidden',
+                  border: userAvatar ? '1px solid #CBD5E1' : 'none'
+                }}>
+                  {userAvatar ? (
+                    <img src={userAvatar} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    (currentUser?.name ? currentUser.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : 'OM')
+                  )}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', lineHeight: 1.2 }}>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: C.textPrimary }}>{currentUser?.name ? currentUser.name.split(' ')[0] : 'Omkesh'}</span>
+                  <span style={{ fontSize: 11, color: C.textSecondary }}>{isSuperAdmin ? 'Super Admin' : isManager ? 'Manager' : isEmployee ? 'Sourcing Specialist' : 'Recruiter'}</span>
+                </div>
+                <span style={{ fontSize: 11, color: C.textSecondary, marginLeft: 2 }}>⌵</span>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', lineHeight: 1.2 }}>
-                <span style={{ fontSize: 13, fontWeight: 800, color: C.textPrimary }}>{currentUser?.name ? currentUser.name.split(' ')[0] : 'Omkesh'}</span>
-                <span style={{ fontSize: 11, color: C.textSecondary }}>{isSuperAdmin ? 'Super Admin' : isManager ? 'Manager' : isEmployee ? 'Sourcing Specialist' : 'Recruiter'}</span>
-              </div>
-              <span style={{ fontSize: 11, color: C.textSecondary, marginLeft: 2 }}>⌵</span>
+
+              {/* Profile Photo & Settings Modal Dropdown */}
+              {showProfileDropdown && (
+                <div style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 8px)',
+                  right: 0,
+                  width: 290,
+                  backgroundColor: isLight ? '#FFFFFF' : '#1E293B',
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 12,
+                  boxShadow: '0 16px 36px rgba(0,0,0,0.18)',
+                  padding: '20px 18px',
+                  zIndex: 9999,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  textAlign: 'center',
+                  boxSizing: 'border-box'
+                }}>
+                  {/* Large Avatar with Photo Upload */}
+                  <div style={{ position: 'relative', marginBottom: 12 }}>
+                    <div style={{
+                      width: 68,
+                      height: 68,
+                      borderRadius: '50%',
+                      background: userAvatar ? 'transparent' : (isEmployee ? '#16A34A' : '#0284C7'),
+                      color: '#FFFFFF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 800,
+                      fontSize: 22,
+                      overflow: 'hidden',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+                      border: userAvatar ? '2px solid #3B82F6' : 'none'
+                    }}>
+                      {userAvatar ? (
+                        <img src={userAvatar} alt="Profile Large" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        (currentUser?.name ? currentUser.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : 'OM')
+                      )}
+                    </div>
+                  </div>
+
+                  <input
+                    ref={profilePhotoInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    style={{ display: 'none' }}
+                  />
+
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                    <button
+                      type="button"
+                      onClick={() => profilePhotoInputRef.current?.click()}
+                      disabled={profileSaving}
+                      style={{
+                        padding: '6px 12px',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        borderRadius: 6,
+                        backgroundColor: '#2563EB',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 4px rgba(37,99,235,0.2)'
+                      }}
+                    >
+                      {userAvatar ? 'Change Photo' : 'Upload Photo'}
+                    </button>
+                    {userAvatar && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveAvatar}
+                        disabled={profileSaving}
+                        style={{
+                          padding: '6px 10px',
+                          fontSize: 11.5,
+                          fontWeight: 600,
+                          borderRadius: 6,
+                          backgroundColor: 'transparent',
+                          color: '#EF4444',
+                          border: '1px solid #FECACA',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Profile Details */}
+                  <div style={{ width: '100%', borderTop: `1px solid ${C.border}`, paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: C.textPrimary }}>
+                      {currentUser?.name || 'Omkesh Manjute'}
+                    </div>
+                    <div style={{ fontSize: 11.5, color: C.textSecondary, wordBreak: 'break-all' }}>
+                      {currentUser?.email || 'omkesh@coolsofttech.com'}
+                    </div>
+                    <span style={{
+                      marginTop: 4,
+                      fontSize: 10.5,
+                      fontWeight: 700,
+                      backgroundColor: isLight ? '#F1F5F9' : '#0F172A',
+                      color: '#2563EB',
+                      padding: '2px 8px',
+                      borderRadius: 10,
+                      border: `1px solid ${C.border}`
+                    }}>
+                      {isSuperAdmin ? 'Super Admin' : isManager ? 'Manager' : isEmployee ? 'Sourcing Specialist' : 'Recruiter'}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -8206,42 +8612,48 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
                                 {/* 5. AI Matched Requirement */}
                                 <td style={{ padding: '8px 10px', maxWidth: 230 }}>
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-                                      <span style={{
-                                        fontSize: 10,
-                                        fontWeight: 800,
-                                        background: '#DBEAFE',
-                                        color: '#1D4ED8',
-                                        padding: '1px 6px',
-                                        borderRadius: 4,
-                                        letterSpacing: '0.3px',
-                                        flexShrink: 0
-                                      }}>
-                                        Req #{c.targetReqId || '159116'}
-                                      </span>
-                                      <span style={{
-                                        fontSize: 11,
-                                        color: '#475569',
-                                        fontWeight: 600,
-                                        whiteSpace: 'nowrap',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis'
-                                      }}>
-                                        {c.matchedJobClient || 'State Agency'}
-                                      </span>
-                                    </div>
-                                    <div style={{
-                                      fontSize: 12,
-                                      fontWeight: 700,
-                                      color: '#0F172A',
-                                      whiteSpace: 'nowrap',
-                                      overflow: 'hidden',
-                                      textOverflow: 'ellipsis'
-                                    }} title={c.matchedJobTitle || c.role || 'Senior Specialist'}>
-                                      {c.matchedJobTitle || c.role || 'Senior Specialist'}
-                                    </div>
-                                  </div>
+                                  {(() => {
+                                    const isTalentPool = !c.targetReqId || String(c.matchedJobTitle || '').includes('Talent Pool') || String(c.matchedJobClient || '').includes('Talent Pool');
+                                    return (
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                                          <span style={{
+                                            fontSize: 10,
+                                            fontWeight: 800,
+                                            background: !isTalentPool ? '#DBEAFE' : '#F1F5F9',
+                                            color: !isTalentPool ? '#1D4ED8' : '#475569',
+                                            padding: '1px 6px',
+                                            borderRadius: 4,
+                                            border: !isTalentPool ? '1px solid #BFDBFE' : '1px solid #E2E8F0',
+                                            letterSpacing: '0.3px',
+                                            flexShrink: 0
+                                          }}>
+                                            {!isTalentPool ? `Req #${c.targetReqId}` : 'Talent Pool'}
+                                          </span>
+                                          <span style={{
+                                            fontSize: 11,
+                                            color: '#475569',
+                                            fontWeight: 600,
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis'
+                                          }}>
+                                            {!isTalentPool ? (c.matchedJobClient || 'Client') : 'General Sourcing'}
+                                          </span>
+                                        </div>
+                                        <div style={{
+                                          fontSize: 12,
+                                          fontWeight: 700,
+                                          color: '#0F172A',
+                                          whiteSpace: 'nowrap',
+                                          overflow: 'hidden',
+                                          textOverflow: 'ellipsis'
+                                        }} title={!isTalentPool ? (c.matchedJobTitle || c.role || 'Open Position') : 'General Talent Pool'}>
+                                          {!isTalentPool ? (c.matchedJobTitle || c.role || 'Open Position') : 'General Talent Pool'}
+                                        </div>
+                                      </div>
+                                    );
+                                  })()}
                                 </td>
 
                                 {/* 6. Match % */}
@@ -9685,7 +10097,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       setEmailModalCandidate({
                         name: contactName,
                         email: activeThread.email || '',
-                        targetReqId: activeThread.targetReqId || '159079',
+                        targetReqId: activeThread.targetReqId || openJobsList[0]?.id || '',
                         matchedJobTitle: activeThread.jobTitle || 'Active Requisition',
                         matchedJobClient: activeThread.company || 'Client'
                       })
@@ -10395,7 +10807,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
         const resumeText = candidateDetails.resumeText || candidateDetails.resume_text || ''
 
         // Currently selected requisition to evaluate against
-        const currentReqId = String(drawerReqId || candidateDetails.targetReqId || '159079').replace(/^J-/, '')
+        const currentReqId = String(drawerReqId || candidateDetails.targetReqId || openJobsList[0]?.id || '').replace(/^J-/, '')
         const activeTargetJob = openJobsList.find(j => String(j.id) === currentReqId) || openJobsList[0]
 
         // Candidate skills list

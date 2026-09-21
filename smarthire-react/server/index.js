@@ -7149,21 +7149,20 @@ app.get(['/api/analytics/recruiter-leaderboard', '/api/recruiter-leaderboard'], 
       const firstName = (rName.split(' ')[0] || '').toLowerCase().trim();
 
       const matchedCandidates = activeCandidates.filter((c, cIdx) => {
-        const cRec = (c.assignedRecruiter || c.assignedBy || c.recruiter || c.addedByName || '').toLowerCase().trim();
-        const cMail = (c.recruiterEmail || c.addedByEmail || c.fromEmail || '').toLowerCase().trim();
+        const cExplicitAssigned = (c.assignedRecruiter || c.sourcingSpecialist || '').toLowerCase().trim();
         
-        // Direct match
-        if (cRec === rName || cMail === rEmail || (firstName.length >= 3 && (cRec.includes(firstName) || cMail.includes(firstName)))) {
+        // Direct match if specifically assigned to this recruiter
+        if (cExplicitAssigned && (cExplicitAssigned === rName || (firstName.length >= 3 && cExplicitAssigned.includes(firstName)))) {
           return true;
         }
 
-        // Supervisor hierarchy: reportees associate to their assigned team leads
-        if (rName.includes('omkesh') && (cRec.includes('gourav') || cMail.includes('gourav'))) return true;
-        if (rName.includes('sukamal') && (cRec.includes('naveen') || cMail.includes('naveen'))) return true;
-        if (rName.includes('vaibhav') && (cRec.includes('rahul') || cMail.includes('rahul'))) return true;
+        // Supervisor hierarchy
+        if (rName.includes('omkesh') && cExplicitAssigned.includes('gourav')) return true;
+        if (rName.includes('sukamal') && cExplicitAssigned.includes('naveen')) return true;
+        if (rName.includes('vaibhav') && cExplicitAssigned.includes('rahul')) return true;
 
-        // For unassigned harvested candidates, distribute evenly across roster
-        if (!cRec && !cMail) {
+        // If candidate is in general pool (not delegated yet), distribute across the team roster
+        if (!cExplicitAssigned) {
           const slot = (hashStr(String(c.id || c.email || c.name || cIdx)) + cIdx) % roster.length;
           return slot === rIdx;
         }
@@ -8370,6 +8369,35 @@ function calculateCandidateMatch(candSkills = [], job) {
   };
 }
 
+// Helper to strictly determine if a job requisition is active, open, and unexpired
+function isJobActiveAndOpen(job) {
+  if (!job) return false;
+  const s = String(job.status || '').toLowerCase().trim();
+  if (['closed', 'bank', 'banked', 'filled', 'cancelled', 'expired', 'hold', 'on hold'].includes(s)) return false;
+
+  // Check deadline date
+  if (job.deadline) {
+    const d = new Date(job.deadline);
+    if (!isNaN(d.getTime())) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (d < today) return false;
+    }
+  }
+
+  // Check description text for submission deadline
+  if (job.description && typeof job.description === 'string') {
+    const m = job.description.match(/submission\s+deadline\s*:\s*(\d{1,2}\/\d{1,2}\/\d{4})/i);
+    if (m) {
+      const d = new Date(m[1]);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (!isNaN(d.getTime()) && d < today) return false;
+    }
+  }
+  return true;
+}
+
 // GET /api/recruiter/email-streams
 // Strictly scoped to the logged-in recruiter (Indeed-style privacy) unless superadmin
 app.get('/api/recruiter/email-streams', (req, res) => {
@@ -8380,9 +8408,8 @@ app.get('/api/recruiter/email-streams', (req, res) => {
   const isOmkesh = userMail === 'omkesh@coolsofttech.com' || firstName === 'omkesh' || userIdent.includes('omkesh');
   const isSuper = role === 'superadmin' || role === 'admin' || isOmkesh;
 
-  // NOTE: No hardcoded demo candidates — only real scraped candidates from candidates.json are shown.
-  // candidatesStore is already loaded from disk/MongoDB in loadCandidatesFromDisk()
-
+  // Pre-filter strictly active and unexpired requisitions for accurate matching
+  const activeUnexpiredJobs = (jobsStore || []).filter(isJobActiveAndOpen);
 
   // 1. Pre-index all requisitions into an O(1) Map and resolve assigned requisitions
   const jobMap = new Map();
@@ -8497,44 +8524,46 @@ app.get('/api/recruiter/email-streams', (req, res) => {
       ? c.role 
       : (c.extracted_profile?.role || (cleanSkills.length > 0 ? `${cleanSkills[0]} Specialist` : 'Software Engineer'));
 
-    // Fast O(1) Match with suggested or active position
+    // Check candidate target requisition
     const cleanReqKey = String(c.targetReqId || c.reqId || '').replace(/^J-/, '').replace(/^REQ-/, '').trim();
     let targetJob = cleanReqKey && jobMap.has(cleanReqKey) ? jobMap.get(cleanReqKey) : null;
 
-    let matchAnalysis = {
-      matchScore: c.matchScore || 85,
-      matchingSkills: (Array.isArray(c.matchingSkills) && c.matchingSkills.length > 0) ? c.matchingSkills : cleanSkills.slice(0, 4),
-      missingSkills: Array.isArray(c.missingSkills) ? c.missingSkills : []
-    };
+    // Strict Enforcement: If position is closed, banked, or its deadline has expired, DO NOT MATCH to it!
+    if (targetJob && !isJobActiveAndOpen(targetJob)) {
+      targetJob = null;
+    }
 
-    if (!c.matchScore) {
-      if (targetJob) {
-        const calculatedAnalysis = evaluateCandidateJobMatch({ ...c, role: cleanRole, skills: cleanSkills }, targetJob);
-        matchAnalysis = {
-          matchScore: calculatedAnalysis.matchScore,
-          matchingSkills: calculatedAnalysis.matchingSkills.length > 0 ? calculatedAnalysis.matchingSkills : cleanSkills.slice(0, 4),
-          missingSkills: calculatedAnalysis.missingSkills
-        };
-      } else {
-        targetJob = jobsStore[0] || null;
-        if (targetJob) {
-          matchAnalysis = evaluateCandidateJobMatch({ ...c, role: cleanRole, skills: cleanSkills }, targetJob);
-        } else {
-          matchAnalysis = { matchScore: 82, matchingSkills: cleanSkills.slice(0, 3), missingSkills: [] };
+    let matchAnalysis = null;
+    if (targetJob) {
+      matchAnalysis = evaluateCandidateJobMatch({ ...c, role: cleanRole, skills: cleanSkills }, targetJob);
+    } else {
+      // Find true best-fitting job strictly among ACTIVE, UNEXPIRED client requisitions
+      let bestJob = null;
+      let bestMatch = { matchScore: 0, matchingSkills: [] };
+      for (const j of activeUnexpiredJobs) {
+        const scoreObj = evaluateCandidateJobMatch({ ...c, role: cleanRole, skills: cleanSkills }, j);
+        if (scoreObj.matchScore > bestMatch.matchScore) {
+          bestMatch = scoreObj;
+          bestJob = j;
         }
       }
-      c.matchScore = matchAnalysis.matchScore;
-      c.matchingSkills = matchAnalysis.matchingSkills;
-      c.missingSkills = matchAnalysis.missingSkills;
-      if (targetJob && !c.targetReqId) {
-        c.targetReqId = String(targetJob.id || '').replace(/^J-/, '');
-        c.matchedJobTitle = targetJob.title || targetJob.jobTitle || '';
-        c.matchedJobClient = targetJob.client || targetJob.clientName || 'Direct Client';
-        c.matchedJobRate = targetJob.rate || targetJob.payRate || '$75/hr';
+
+      if (bestJob && bestMatch.matchScore >= 65) {
+        targetJob = bestJob;
+        matchAnalysis = bestMatch;
+      } else {
+        // No active open requisition matches — place in General Talent Pool
+        targetJob = null;
+        matchAnalysis = {
+          matchScore: 60,
+          matchingSkills: cleanSkills.slice(0, 3),
+          missingSkills: []
+        };
       }
     }
 
-    const cleanReqId = c.targetReqId ? String(c.targetReqId).replace(/^J-/, '') : (targetJob?.id ? String(targetJob.id).replace(/^J-/, '') : '159079');
+    const cleanReqId = targetJob ? String(targetJob.id).replace(/^J-/, '') : null;
+    const finalScore = (targetJob && c.matchScore) ? c.matchScore : matchAnalysis.matchScore;
 
     const cleanCurrentCo = c.currentCompany && !String(c.currentCompany).includes('undefined')
       ? c.currentCompany
@@ -8570,17 +8599,18 @@ app.get('/api/recruiter/email-streams', (req, res) => {
       previousCompany: cleanPrevCo,
       sourceCategory,
       isSpamRecovery: sourceCategory === 'email_spam' || !!c.isSpamRecovery,
-      matchScore: c.matchScore || matchAnalysis.matchScore,
+      matchScore: finalScore,
       targetReqId: cleanReqId,
-      matchedJobTitle: c.matchedJobTitle || targetJob?.title || 'Open Requisition',
-      matchedJobClient: c.matchedJobClient || targetJob?.client || targetJob?.department || 'State Agency',
-      matchedJobRate: c.matchedJobRate || targetJob?.rate || targetJob?.payRate || '$75/hr',
+      matchedJobTitle: targetJob ? (targetJob.title || targetJob.jobTitle || 'Open Requisition') : 'General Sourcing Pool',
+      matchedJobClient: targetJob ? (targetJob.client || targetJob.customer || 'Direct Client') : 'Talent Pool (No active requisition match)',
+      matchedJobRate: targetJob ? (targetJob.rate || targetJob.payRate || '$75/hr') : '$70/hr',
       matchingSkills: matchAnalysis.matchingSkills,
       missingSkills: matchAnalysis.missingSkills,
       documents: cleanDocuments || c.documents,
       legalDocs: cleanDocuments || c.documents
     };
   });
+
 
   res.json({
     success: true,
@@ -8610,7 +8640,7 @@ app.get('/api/recruiter/email-streams', (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════════
 async function syncEmailResumesInternal(recruiterEmail = 'omkesh@coolsofttech.com', scanFolders = ['INBOX', 'SPAM'], sendAutoAck = false) {
   const cfg = emailConfigsStore[recruiterEmail] || emailConfigsStore['omkesh@coolsofttech.com'] || {};
-  const activeJobs = jobsStore.filter(j => j && j.status !== 'Closed');
+  const activeJobs = (jobsStore || []).filter(isJobActiveAndOpen);
   let incomingHarvestedResumes = [];
 
   const imapHost = (cfg.imapHost && !cfg.imapHost.includes('bizmail')) 
@@ -8630,12 +8660,12 @@ async function syncEmailResumesInternal(recruiterEmail = 'omkesh@coolsofttech.co
         password: imapPass,
         folders: scanFolders,
         maxEmails: 35,
-        markAsRead: true // Automatically marks processed emails as READ in Yahoo Mail!
+        markAsRead: true // Automatically marks processed emails as READ in Yahoo Mail ONLY when resume attachment exists!
       });
 
       if (Array.isArray(liveEmails) && liveEmails.length > 0) {
         incomingHarvestedResumes = liveEmails.map((item) => {
-          // Calculate true BEST-FIT job among all active client requisitions
+          // Calculate true BEST-FIT job among all ACTIVE UNEXPIRED client requisitions
           let bestJob = null;
           let bestMatch = { matchScore: 0, matchingSkills: [] };
 
@@ -8663,8 +8693,8 @@ async function syncEmailResumesInternal(recruiterEmail = 'omkesh@coolsofttech.co
             folder: item.folder || (item.isSpamRecovery ? 'SPAM' : 'INBOX'),
             suggestedReqId: hasReqFit ? String(bestJob.id).replace('J-', '') : null,
             matchScore: bestMatch.matchScore || 65,
-            matchedJobTitle: hasReqFit ? bestJob.title : 'Talent Pool (No active requisition match)',
-            matchedJobClient: hasReqFit ? (bestJob.client || bestJob.customer || 'Direct Client') : 'General Sourcing Pool',
+            matchedJobTitle: hasReqFit ? bestJob.title : 'General Sourcing Pool',
+            matchedJobClient: hasReqFit ? (bestJob.client || bestJob.customer || 'Direct Client') : 'Talent Pool (No active requisition match)',
             matchedJobRate: hasReqFit ? (bestJob.budget || bestJob.rate || '$75/hr') : '$70/hr',
             resumeText: item.resumeText || '',
             attachmentName: item.attachmentName || null,
@@ -8733,12 +8763,35 @@ async function syncEmailResumesInternal(recruiterEmail = 'omkesh@coolsofttech.co
 
       candidatesStore.unshift(newCand);
       ingested.push(newCand);
+
+      // Real-time dynamic notification for newly ingested scraped resume
+      const isMatched = Boolean(newCand.targetReqId && newCand.matchScore >= 65);
+      notificationsStore.unshift({
+        id: `notif-scraped-${newCand.id}-${Date.now()}`,
+        type: 'candidate_scraped',
+        candidateId: newCand.id,
+        candidateName: newCand.name || newCand.email,
+        candidateEmail: newCand.email,
+        role: newCand.role,
+        targetReqId: isMatched ? newCand.targetReqId : null,
+        matchedJobTitle: isMatched ? newCand.matchedJobTitle : 'General Talent Pool',
+        matchScore: newCand.matchScore || 60,
+        isMatched,
+        message: isMatched
+          ? `Matched with ${newCand.matchedJobTitle} (Req #${newCand.targetReqId}) • ${newCand.matchScore}% fit.`
+          : `Added to General Talent Pool (${newCand.role || 'Specialist'}) • No active open requisition match.`,
+        createdAt: new Date().toISOString(),
+        read: false,
+        assignedRecruiters: [recruiterEmail, 'omkesh@coolsofttech.com']
+      });
     }
   }
 
   if (ingested.length > 0) {
     saveCandidatesToDisk();
+    saveNotifications();
   }
+
 
   return {
     success: true,
@@ -9222,6 +9275,44 @@ function saveNotifications() {
   try { fs.writeFileSync(notificationsPath, JSON.stringify(notificationsStore, null, 2)); } catch(e) {}
 }
 
+// Ensure initial candidate scraping notifications exist based on recent candidates
+function seedScrapedCandidateNotifications() {
+  if (!Array.isArray(candidatesStore) || candidatesStore.length === 0) return;
+  const existingCandIds = new Set(notificationsStore.map(n => n.candidateId).filter(Boolean));
+  
+  const recentCands = candidatesStore.slice(0, 15);
+  let added = false;
+  for (const c of recentCands) {
+    if (!existingCandIds.has(c.id)) {
+      const isMatched = Boolean(c.targetReqId && c.matchScore >= 65);
+      const notif = {
+        id: `notif-cand-${c.id || Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        type: 'candidate_scraped',
+        candidateId: c.id,
+        candidateName: c.name || c.email || 'Applicant',
+        candidateEmail: c.email,
+        role: c.role || 'Specialist',
+        targetReqId: isMatched ? c.targetReqId : null,
+        matchedJobTitle: isMatched ? c.matchedJobTitle : 'General Talent Pool',
+        matchScore: c.matchScore || 60,
+        isMatched,
+        message: isMatched
+          ? `Matched with ${c.matchedJobTitle} (Req #${c.targetReqId}) • ${c.matchScore}% match.`
+          : `Added to General Talent Pool (${c.role || 'Specialist'}) • No active open requisition match.`,
+        createdAt: c.createdAt || new Date().toISOString(),
+        read: false,
+        assignedRecruiters: []
+      };
+      notificationsStore.push(notif);
+      added = true;
+    }
+  }
+  if (added) {
+    notificationsStore.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    saveNotifications();
+  }
+}
+
 app.post('/api/notifications/status-change', express.json(), (req, res) => {
   const { candidateName, jobTitle, jobId, newStatus, previousStatus, changedBy, assignedRecruiters } = req.body;
   
@@ -9235,7 +9326,7 @@ app.post('/api/notifications/status-change', express.json(), (req, res) => {
     previousStatus,
     changedBy: changedBy || 'Manager',
     assignedRecruiters: assignedRecruiters || [],
-    message: `📋 ${changedBy || 'Manager'} updated ${candidateName}'s status from "${previousStatus}" to "${newStatus}" for position: ${jobTitle}`,
+    message: `${changedBy || 'Manager'} updated ${candidateName}'s status from "${previousStatus}" to "${newStatus}" for position: ${jobTitle}`,
     createdAt: new Date().toISOString(),
     read: false
   };
@@ -9249,6 +9340,7 @@ app.post('/api/notifications/status-change', express.json(), (req, res) => {
 });
 
 app.get('/api/notifications', (req, res) => {
+  seedScrapedCandidateNotifications();
   const recruiterEmail = req.query.email || '';
   const filtered = recruiterEmail
     ? notificationsStore.filter(n => !n.assignedRecruiters.length || n.assignedRecruiters.some(r => r.toLowerCase().includes(recruiterEmail.toLowerCase())))
@@ -9266,6 +9358,45 @@ app.post('/api/notifications/mark-read', express.json(), (req, res) => {
   }
   res.json({ success: true });
 });
+
+app.post('/api/notifications/mark-all-read', (req, res) => {
+  notificationsStore = notificationsStore.map(n => ({ ...n, read: true }));
+  saveNotifications();
+  res.json({ success: true });
+});
+
+// Profile avatar and settings update
+app.post('/api/users/profile', express.json({ limit: '10mb' }), async (req, res) => {
+  try {
+    const { email, name, avatar } = req.body;
+    const targetEmail = (email || '').toLowerCase().trim();
+    if (!targetEmail) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+
+    loadRecruitersFromDisk();
+    const idx = recruitersMock.findIndex(r => (r.email || '').toLowerCase().trim() === targetEmail);
+    if (idx !== -1) {
+      if (avatar !== undefined) recruitersMock[idx].avatar = avatar;
+      if (name) recruitersMock[idx].name = name;
+      saveRecruitersToDisk();
+    }
+
+    if (isMongoConnected) {
+      try {
+        await RecruiterDoc.findOneAndUpdate(
+          { email: new RegExp(`^${targetEmail}$`, 'i') },
+          { $set: { avatar, name } }
+        );
+      } catch (_) {}
+    }
+
+    res.json({ success: true, avatar, name, email: targetEmail });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // FEATURE 6: Email Templates Store

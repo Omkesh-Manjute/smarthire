@@ -394,12 +394,7 @@ export async function scrapeResumesFromIMAP({
             candidateRole = candidateRole.slice(0, 67) + '...';
           }
 
-          // Mark message as READ in Yahoo IMAP if requested
-          if (markAsRead && uid) {
-            await client.sendCommand(`UID STORE ${uid} +FLAGS (\\Seen)`).catch((e) => {
-              console.warn(`⚠️ Could not mark UID ${uid} as seen:`, e.message);
-            });
-          }
+          // NOTE: Only mark as read AFTER confirming a valid resume attachment exists (handled below)
 
           // Fetch complete RFC822 message payload for recruitment emails to ensure all attachments are downloaded
           let fullPayload = msgChunk;
@@ -522,6 +517,24 @@ export async function scrapeResumesFromIMAP({
             } else if (att.docCategory === 'id') {
               candidateDocs.id = docEntry;
             }
+          }
+
+          const hasResumeAttachment = Boolean(primaryResumeFile || candidateDocs.resume || parsedResumeText);
+
+          // User requirement: If email has NO attachment, keep it UNREAD! Do not mark as read or ingest into candidate stream!
+          if (!hasResumeAttachment) {
+            if (uid) {
+              await client.sendCommand(`UID STORE ${uid} -FLAGS (\\Seen)`).catch(() => {});
+            }
+            console.log(`ℹ️ Email from ${senderEmail} ("${subject}") has no resume attachment. Kept UNREAD in inbox.`);
+            continue;
+          }
+
+          // Mark message as READ in Yahoo IMAP ONLY when a valid resume attachment is parsed
+          if (markAsRead && uid) {
+            await client.sendCommand(`UID STORE ${uid} +FLAGS (\\Seen)`).catch((e) => {
+              console.warn(`⚠️ Could not mark UID ${uid} as seen:`, e.message);
+            });
           }
 
           // Extract skills ONLY from parsed resume text, not from email body
