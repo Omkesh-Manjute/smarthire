@@ -1609,7 +1609,8 @@ export default function PublicCareers() {
                   handleCandidateLogin(candidateUserObj)
                 } catch (err) {
                   console.error('Candidate Google Login Error:', err)
-                  alert('Login failed: ' + err.message)
+                  if (err.code === 'auth/popup-closed-by-user') return
+                  alert('Login Notice: ' + (err.code === 'auth/unauthorized-domain' ? 'Domain verification updating. You can also sign in instantly using your Name and Email below.' : err.message))
                 }
               }}
               style={{
