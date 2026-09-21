@@ -358,12 +358,9 @@ export async function scrapeResumesFromIMAP({
           }
         }
 
-        // Detect technical skills from Subject and Body
+        // NOTE: Skills are NOT auto-detected from email body.
+        // They will be extracted from the actual resume attachment text later.
         const lowerChunk = msgChunk.toLowerCase();
-        const detectedSkills = COMMON_SKILLS.filter(skill => {
-          const sLower = skill.toLowerCase();
-          return lowerChunk.includes(sLower);
-        });
 
         // Determine if recruitment/job application related
         const isRecruitmentRelated =
@@ -435,16 +432,33 @@ export async function scrapeResumesFromIMAP({
           let detectedVisa = null;
 
           for (const att of (attachments || [])) {
-            const safeName = `${Date.now()}_${att.filename.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-            const targetPath = path.join(candidateDocsDir, safeName);
-            const storageUrl = `/uploads/candidate-docs/${safeName}`;
+            const rawFn = att.filename || '';
+            const lowerFn = rawFn.toLowerCase();
+            const isDoc = lowerFn.endsWith('.pdf') || lowerFn.endsWith('.docx') || lowerFn.endsWith('.doc');
+            const isIdDoc = (lowerFn.endsWith('.png') || lowerFn.endsWith('.jpg') || lowerFn.endsWith('.jpeg')) && 
+              (lowerFn.includes('dl') || lowerFn.includes('license') || lowerFn.includes('visa') || lowerFn.includes('passport') || lowerFn.includes('i797') || lowerFn.includes('ead'));
+            
+            // Skip email signatures, logos, social media buttons, tracking pixels
+            if (!isDoc && !isIdDoc) continue;
 
-            if (att.content && att.content.length > 0) {
-              try {
+            const cleanBase = rawFn.replace(/[^a-zA-Z0-9.-]/g, '_');
+            // Check if file already exists with same basename to prevent duplicate disk storage
+            let safeName = `${Date.now()}_${cleanBase}`;
+            let targetPath = path.join(candidateDocsDir, safeName);
+            let storageUrl = `/uploads/candidate-docs/${safeName}`;
+
+            try {
+              const existingFiles = fs.readdirSync(candidateDocsDir);
+              const alreadySaved = existingFiles.find(ef => ef.endsWith(`_${cleanBase}`) || ef === cleanBase);
+              if (alreadySaved) {
+                safeName = alreadySaved;
+                targetPath = path.join(candidateDocsDir, alreadySaved);
+                storageUrl = `/uploads/candidate-docs/${alreadySaved}`;
+              } else if (att.content && att.content.length > 0) {
                 fs.writeFileSync(targetPath, att.content);
-              } catch (writeErr) {
-                console.warn(`⚠️ Failed writing attachment ${att.filename}:`, writeErr.message);
               }
+            } catch (writeErr) {
+              console.warn(`⚠️ Attachment handling note ${rawFn}:`, writeErr.message);
             }
 
             const docEntry = {
@@ -510,20 +524,26 @@ export async function scrapeResumesFromIMAP({
             }
           }
 
+          // Extract skills ONLY from parsed resume text, not from email body
+          let resumeSkills = [];
+          if (parsedResumeText) {
+            const lowerResume = parsedResumeText.toLowerCase();
+            resumeSkills = (COMMON_SKILLS || []).filter(skill => lowerResume.includes(skill.toLowerCase()));
+          }
+
           results.push({
             name: senderName,
             email: senderEmail,
             phone: phone || '',
             subject,
             role: candidateRole || 'IT Specialist',
-            skills: detectedSkills.length > 0 ? detectedSkills : ['Java', 'SQL', 'Cloud Technologies'],
+            // Skills come from resume attachment ONLY — never from email body
+            skills: resumeSkills.length > 0 ? resumeSkills : [],
             date,
             folder: folder === 'Bulk' ? 'SPAM' : folder,
             uid,
             isSpamRecovery: folder === 'Bulk',
-            rawPreview: (cleanBody || msgChunk).slice(0, 500),
-            emailBodyNote: cleanBody || '',
-            // CRITICAL: ONLY use parsed resume text from attachment; NEVER save raw email body as resume text!
+            // resumeText is STRICTLY the parsed attachment text (PDF/DOCX) — never the email body
             resumeText: parsedResumeText || '',
             attachmentName: primaryResumeFile ? primaryResumeFile.original_name : (attachmentNames.length > 0 ? attachmentNames[0] : null),
             attachments: attachmentNames,

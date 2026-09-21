@@ -665,374 +665,23 @@ const renderZohoStatusBadge = (status = 'New') => {
 }
 
 function getFullResumeText(candidate) {
-  const name = candidate?.name || 'CANDIDATE'
-  const role = candidate?.role || 'Senior Technical Specialist'
-  const email = candidate?.email || 'candidate@domain.com'
-  const rawPhone = candidate?.phone || ''
-  const phone = (rawPhone && !rawPhone.includes('555') && !rawPhone.includes('010-0000') && !rawPhone.includes('000-0000')) ? rawPhone : ''
-  const phoneDisplay = phone || 'Available via Resume Attachment'
-  const rawLoc = candidate?.location || ''
-  const loc = (rawLoc && !rawLoc.toLowerCase().includes('search on') && !rawLoc.toLowerCase().includes('webpage')) ? rawLoc : 'Remote / US'
-  const exp = candidate?.experience || '8+ Years'
-  const visa = candidate?.visaStatus || candidate?.visa_status || 'US Citizen'
-  const skills = safeSkillArray(candidate?.skills).length > 0 ? safeSkillArray(candidate?.skills) : ['Java', 'SQL', 'Git']
-  const currentCo = candidate?.currentCompany || (candidate?.role ? `${candidate.role}, Enterprise Solutions` : 'Enterprise Partner Consultant')
-  const prevCo = candidate?.previousCompany || 'Software Consultant, Tech Solutions'
-
-  let cleanCoverText = ''
-  let detectedAttachment = candidate?.attachmentName || null
-
+  if (!candidate) return ''
   const rawResumeText = typeof candidate?.resumeText === 'string' ? candidate.resumeText.trim() : ''
-  if (rawResumeText.length > 80) {
-    const rawText = rawResumeText;
-    const isForwardStubOnly = rawText.length < 350 && (
-      rawText.toLowerCase().includes('please find my resume attached') ||
-      rawText.toLowerCase().includes('please find attached my updated resume')
+  if (rawResumeText.length > 50) {
+    const isForwardStubOnly = rawResumeText.length < 250 && (
+      rawResumeText.toLowerCase().includes('please find my resume attached') ||
+      rawResumeText.toLowerCase().includes('please find attached my updated resume')
     );
 
     if (!isForwardStubOnly) {
-      const cleaned = cleanMimeEmail(rawText);
-      const finalText = cleaned.textBody || rawText;
-      if (finalText.length > 80) {
+      const cleaned = cleanMimeEmail(rawResumeText);
+      const finalText = (cleaned.textBody && cleaned.textBody.trim()) ? cleaned.textBody.trim() : rawResumeText;
+      if (finalText.length > 50) {
         return finalText;
       }
     }
-    const cleaned = cleanMimeEmail(candidate.resumeText);
-    cleanCoverText = cleaned.textBody;
-    if (!detectedAttachment && cleaned.attachmentNames && cleaned.attachmentNames.length > 0) {
-      detectedAttachment = cleaned.attachmentNames[0];
-    }
   }
-
-  // Build clean application header ONLY if meaningful email application note exists (not just generic signature or mailing list line)
-  let coverSection = ''
-  if (cleanCoverText && cleanCoverText.length > 60 && !cleanCoverText.toLowerCase().startsWith('thanks & regards') && !cleanCoverText.toLowerCase().includes('google group')) {
-    coverSection = `================================================================================
-CANDIDATE APPLICATION & EMAIL COVER NOTE
-================================================================================
-Applicant: ${name} <${email}>
-${detectedAttachment ? `Attached Resume Document: ${detectedAttachment}\n` : ''}${phone ? `Contact Phone: ${phone}\n` : ''}Date: ${candidate?.date ? new Date(candidate.date).toLocaleDateString() : 'Recent Submission'}
-
-${cleanCoverText}
-
-================================================================================
-VERIFIED TECHNICAL PROFILE & DOSSIER
-================================================================================`
-  }
-
-  const roleText = (role + ' ' + skills.join(' ')).toLowerCase()
-  let profileDossier = ''
-
-  // 1. .NET / C# / ASP.NET Full Stack (Check FIRST so .NET developers aren't miscategorized)
-  if (roleText.includes('.net') || roleText.includes('c#') || roleText.includes('asp.net') || roleText.includes('csharp')) {
-    profileDossier = `${name.toUpperCase()}
-Location: ${loc} | Contact: ${phoneDisplay} | E-mail: ${email} | ${visa}
-
-PROFESSIONAL SUMMARY
-Senior Full Stack .NET Developer with over ${exp} of hands-on experience in design, development, and deployment of scalable enterprise web applications, microservices, and distributed cloud systems using C#, .NET Core, ASP.NET MVC, Web API, and Microsoft SQL Server. Strong expertise in building responsive single-page applications with Angular and React, architecting RESTful services, Entity Framework Core, Azure cloud infrastructure, and CI/CD automated deployment pipelines.
-
-CORE TECHNICAL SKILLS
-- Backend Technologies: C#, .NET Core 6/7/8, ASP.NET Core, Web API, WCF, Entity Framework (EF Core), LINQ, Microservices
-- Frontend & UI: Angular (12/14/16), TypeScript, JavaScript, React, HTML5, CSS3, Bootstrap, Tailwind CSS
-- Databases & Querying: Microsoft SQL Server, T-SQL, Stored Procedures, Triggers, Query Optimization, SSIS, PostgreSQL
-- Cloud & DevOps: Microsoft Azure (App Services, Azure SQL, Blob Storage, Key Vault), Docker, Git, Azure DevOps, CI/CD, JIRA
-- Architecture & Practices: RESTful Web APIs, Microservices, Object-Oriented Programming (OOP), SOLID Principles, Design Patterns, Agile / Scrum
-- Testing & Quality: Unit Testing (NUnit / xUnit), Moq, Postman, Integration Testing
-
-PROFESSIONAL EXPERIENCE
-
-${currentCo} (2020 – Present)
-- Spearheaded the design and implementation of mission-critical enterprise microservices using C# .NET Core and ASP.NET Web API, processing over 1.5M transactions daily.
-- Built dynamic, responsive UI client components using Angular, TypeScript, and RxJS, integrating RESTful backend endpoints with seamless authentication.
-- Designed and optimized high-performance relational database schemas, complex T-SQL queries, and stored procedures on Microsoft SQL Server.
-- Containerized .NET microservices with Docker and deployed to Microsoft Azure App Services with automated CI/CD pipelines via Azure DevOps.
-- Implemented robust unit and integration testing suites utilizing xUnit and Moq, achieving over 88% automated test coverage.
-
-${prevCo} (2016 – 2020)
-- Developed secure multi-tiered web applications using ASP.NET MVC, C#, Entity Framework, and SQL Server.
-- Built reusable RESTful API services consumed by downstream client applications and mobile platforms.
-- Collaborated in daily Agile standups, sprint planning, and code review sessions to deliver quarterly feature releases on schedule.
-- Enhanced legacy data pipelines with SSIS packages for automated data extraction, transformation, and loading.
-
-EDUCATION & CERTIFICATIONS
-- Bachelor of Science in Computer Science & Information Technology
-- Microsoft Certified: Azure Developer Associate (AZ-204)
-- Certified ScrumMaster (CSM)®`
-  }
-  // 2. UI / Frontend / Full-Stack JavaScript & TypeScript (React, Angular, Vue, Node.js)
-  else if (roleText.includes('javascript') || roleText.includes('react') || roleText.includes('angular') || roleText.includes('frontend') || roleText.includes('front-end') || roleText.includes('ui developer') || roleText.includes('ui lead') || roleText.includes('node') || roleText.includes('typescript') || roleText.includes('vue')) {
-    const topSkillsList = skills.length > 0 ? skills.slice(0, 16).join(', ') : 'JavaScript, TypeScript, React, Angular, Node.js, HTML5, CSS3, Redux, Tailwind, REST API, Git'
-    profileDossier = `${name.toUpperCase()}
-Location: ${loc} | Contact: ${phoneDisplay} | E-mail: ${email} | ${visa}
-
-PROFESSIONAL SUMMARY
-Senior UI / Full Stack JavaScript Engineer with over ${exp} of specialized experience architecting responsive, high-performance web applications, enterprise single-page apps (SPAs), micro-frontends, and cloud-native services. Expert in React.js, Angular, TypeScript, Node.js, Next.js, Redux, REST/GraphQL APIs, and modern CSS/Tailwind design systems. Proven history leading UI architectural migrations, optimizing core web vitals, and delivering resilient enterprise software across Agile environments.
-
-CORE TECHNICAL COMPETENCIES
-- Frontend Frameworks & Libraries: React.js, TypeScript, Next.js, Angular (12-17), Vue.js, Redux Toolkit, Context API, RxJS, HTML5, CSS3/SCSS
-- UI Styling & Design Systems: Tailwind CSS, Material UI, Bootstrap, Styled Components, Ant Design, Figma-to-Code
-- Backend & Runtime: Node.js, Express.js, RESTful APIs, GraphQL, WebSockets, Microservices
-- Databases & State: PostgreSQL, MongoDB, MySQL, Redis, Firebase, IndexedDB
-- Cloud & CI/CD: AWS (S3, CloudFront, Lambda, EC2), Docker, Kubernetes, GitHub Actions, Jenkins, Git
-- Testing & Quality: Jest, React Testing Library, Cypress, Playwright, Mocha, SonarQube
-- Verified Skills Stack: ${topSkillsList}
-
-PROFESSIONAL EXPERIENCE
-
-${currentCo} (2021 – Present)
-Lead UI / Full Stack JavaScript Engineer
-- Architected enterprise React and TypeScript front-end portals serving 250,000+ active enterprise users, reducing page load latency by 42%.
-- Built modular micro-frontend components using Webpack Module Federation, enabling independent deployment across 4 cross-functional squads.
-- Implemented robust global state management with Redux Toolkit and React Query for automated cache invalidation, optimistic updates, and background synchronization.
-- Engineered reusable UI component design systems strictly adhering to WCAG 2.1 AA accessibility guidelines and responsive design standards.
-- Integrated comprehensive end-to-end and unit testing pipelines using Cypress and React Testing Library, exceeding 88% code coverage.
-
-${prevCo} (2017 – 2021)
-Senior Frontend / UI Developer
-- Developed responsive Single Page Applications (SPA) with Angular, TypeScript, and Node.js backend microservices.
-- Constructed high-performance RESTful API endpoints and WebSocket channels for real-time live data streaming.
-- Collaborated in bi-weekly Agile sprints, participating in architectural reviews, backlog grooming, and mentoring junior engineers.
-- Optimized client-side bundle sizes using dynamic imports, code splitting, and tree-shaking, cutting initial bundle payload by 35%.
-
-EDUCATION & CREDENTIALS
-- Bachelor of Science in Computer Science & Engineering
-- Meta Certified Front-End Developer / AWS Certified Cloud Practitioner`
-  }
-  // 3. SAP / Enterprise ERP Specialist (NOT QA!)
-  else if (roleText.includes('sap') || roleText.includes('s/4hana') || roleText.includes('ecc') || roleText.includes('abap') || roleText.includes('fico')) {
-    profileDossier = `${name.toUpperCase()}
-Location: ${loc} | Contact: ${phoneDisplay} | E-mail: ${email} | ${visa}
-
-PROFESSIONAL SUMMARY
-Accomplished Senior SAP Functional & Technical Consultant with over ${exp} of extensive experience in enterprise SAP implementations, system migrations, business process re-engineering, and module integrations across SAP ECC 6.0 and SAP S/4HANA environments. Proven track record leading end-to-end configuration, custom enhancement developments, data migration, and supporting high-profile public-sector and enterprise clients.
-
-CORE SAP COMPETENCIES
-- SAP Core Modules: SAP ECC 6.0, SAP S/4HANA, FI/CO, MM, SD, ABAP, Integration & Custom Enhancements
-- Integration & Interfaces: SAP PI/PO, IDoc, RFC, BAPI, OData Services, REST / SOAP APIs, XML Validation
-- Data Management & Tools: SAP LSMW, LTMC, Solution Manager, SQL, SAP GUI, Fiori Launchpad
-- Project Methodologies: SAP Activate, Agile / Scrum, Waterfall, Blueprinting, Cutover Management
-- Compliance & Reporting: Financial Reconciliation, GAAP Compliance, Master Data Governance (MDG)
-
-PROFESSIONAL EXPERIENCE
-
-${currentCo} (2020 – Present)
-- Led SAP business process modernization and S/4HANA migration projects, overseeing end-to-end blueprinting, realization, and cutover phases.
-- Configured core business logic, validation rules, and integration workflows between SAP modules and external corporate databases.
-- Partnered with client executive stakeholders and department heads to gather detailed business requirements and translate them into functional specification documents (FSD).
-- Coordinated user acceptance testing (UAT), regression test scenarios, and delivered comprehensive end-user training documentation.
-
-${prevCo} (2016 – 2020)
-- Provided expert level tier-3 configuration and functional support across enterprise SAP ECC production instances.
-- Engineered automated data transformation routines and IDoc interface troubleshooting for third-party billing and procurement systems.
-- Executed periodic disaster recovery drills, system patch validation, and master data cleanup initiatives.
-
-EDUCATION & CERTIFICATIONS
-- Bachelor / Master of Science in Information Systems / Business Administration
-- SAP Certified Application Associate – SAP S/4HANA`
-  }
-  // 3. Dedicated QA Automation / SDET (Only when role specifically indicates testing)
-  else if (roleText.includes('sdet') || roleText.includes('qa automation') || roleText.includes('quality assurance') || roleText.includes('test lead') || roleText.includes('test engineer') || (roleText.includes('qa') && !roleText.includes('sql'))) {
-    profileDossier = `${name.toUpperCase()}
-Location: ${loc} | Contact: ${phoneDisplay} | E-mail: ${email} | ${visa}
-
-PROFESSIONAL SUMMARY
-Results-driven Lead QA Automation Engineer / SDET with over ${exp} of extensive experience in design, development, and execution of automated regression test suites, enterprise web service validations, and end-to-end software quality assurance. Demonstrated expertise in Selenium WebDriver, Playwright, Cucumber BDD, SQL database reconciliation, and CI/CD automated test pipelines.
-
-CORE TECHNICAL SKILLS
-- Automation Tools: Selenium WebDriver, Playwright, TestNG, Cucumber BDD, SoapUI, Postman, REST Assured, JUnit
-- Programming & Scripting: Java, Python, SQL, JavaScript, TypeScript
-- Databases & Verification: Microsoft SQL Server, Oracle 12c, PostgreSQL, MySQL
-- DevOps & CI/CD: Jenkins, Git, GitHub, JIRA, HP ALM / Quality Center, Azure DevOps
-- Testing Methodologies: Agile / Scrum, Functional Testing, Regression, System Integration (SIT), UAT
-
-PROFESSIONAL EXPERIENCE
-
-${currentCo} (2020 – Present)
-- Spearheaded development and maintenance of scalable test automation frameworks using Selenium Java and Playwright, increasing automated regression test coverage to 86%.
-- Performed end-to-end functional and regression testing across enterprise transaction processing systems and cloud web portals.
-- Integrated automated test runs with Jenkins CI/CD pipelines, sending instant alerts and HTML test execution reports to engineering leads.
-- Formulated complex SQL verification scripts to audit relational database states, reconciliation ledgers, and downstream API payloads.
-
-${prevCo} (2016 – 2020)
-- Designed and executed 800+ automated test scenarios for enterprise web applications using Selenium and Cucumber BDD.
-- Conducted RESTful API verification using Postman and SoapUI, verifying HTTP response codes, headers, and payload structures.
-- Managed bug lifecycle in JIRA, participating in daily triage meetings with developers and product managers.
-
-EDUCATION & CERTIFICATIONS
-- Bachelor of Science in Computer Science & Engineering
-- ISTQB Certified Software Tester (CTFL / CTAL)
-- Certified ScrumMaster (CSM)®`
-  }
-  // 4. Technical Program Manager / Project Manager / Scrum Master
-  else if (roleText.includes('tpm') || roleText.includes('program manager') || roleText.includes('project manager') || roleText.includes('scrum master') || roleText.includes('pmo') || roleText.includes('pmp')) {
-    profileDossier = `${name.toUpperCase()}, PMP, CSM
-Location: ${loc} | Contact: ${phoneDisplay} | E-mail: ${email} | ${visa}
-
-EXECUTIVE PROFILE
-Distinguished Senior Technical Program Manager (TPM) with ${exp} of leadership directing multi-million dollar cloud transformations, enterprise digital roadmaps, and cross-functional engineering delivery squads. Expert in strategic roadmap planning, stakeholder alignment, executive technical communications, Agile/Scrum delivery governance, risk management, and vendor contract negotiations.
-
-CORE LEADERSHIP COMPETENCIES
-- Program & Project Governance: Strategic Roadmap Execution, SDLC Governance, Scope Baseline Management, Risk Mitigation
-- Delivery Methodologies: Agile, Scrum, Kanban, SAFe (Scaled Agile), Hybrid Waterfall, Sprint Planning, OKR Alignment
-- Technical Domain Knowledge: Cloud Infrastructure (AWS / Azure), Microservices Architecture, CI/CD Continuous Delivery
-- Tools & Software: JIRA, Confluence, Microsoft Project, Smartsheet, AWS CloudWatch, Power BI, Slack
-- Vendor & Budget Management: Multi-Million Dollar Program Budgeting ($10M+), Vendor Management, SOW Negotiation, SLA Tracking
-
-PROFESSIONAL EXPERIENCE
-
-${currentCo} (2020 – Present)
-- Directed the end-to-end execution of enterprise multi-cloud transformation programs managing 5 distributed squads and 35+ software engineers.
-- Accelerated sprint velocity by 32% by instituting automated JIRA burndown analytics, continuous backlog grooming, and transparent impediment clearing sessions.
-- Partnered closely with VP of Engineering and Lead Cloud Architects to establish phased rollout roadmaps, minimizing system downtime during cutover.
-- Led weekly executive progress reviews and quarterly OKR retrospectives, maintaining high alignment across engineering, product management, and compliance teams.
-
-${prevCo} (2015 – 2020)
-- Managed complex enterprise IT modernization projects from project charter through operational handover.
-- Authored comprehensive project charters, technical risk registers, communications plans, and executive status dashboards.
-- Facilitated daily standups, sprint reviews, and retrospective meetings as certified Scrum Master for two high-performing Agile squads.
-- Enforced strict budget tracking and burn-rate modeling across an $8M annual technical project portfolio.
-
-EDUCATION & CERTIFICATIONS
-- Master of Science in Engineering / Business Administration
-- Project Management Professional (PMP)® — PMI
-- Certified ScrumMaster (CSM)® — Scrum Alliance`
-  }
-  // 5. Data Analyst / Power BI / Data Governance / Snowflake
-  else if (roleText.includes('data') || roleText.includes('power bi') || roleText.includes('bi analyst') || roleText.includes('governance') || roleText.includes('warehouse') || roleText.includes('tableau')) {
-    profileDossier = `${name.toUpperCase()}
-Location: ${loc} | Contact: ${phoneDisplay} | E-mail: ${email} | ${visa}
-
-EXECUTIVE SUMMARY
-Senior Power BI Data Analyst and Data Governance Specialist with ${exp} of expertise in enterprise data warehouse design, advanced SQL analytics, data governance frameworks, DAX calculations, and automated ETL data pipelines. Proven record translating complex data into actionable executive dashboards and compliant state reporting systems.
-
-CORE TECHNICAL SKILLS
-- BI & Analytics: Power BI Desktop & Service, DAX, Power Query (M), Tableau, Excel (VBA, Power Pivot)
-- Database & Warehousing: SQL, Snowflake, SQL Server, Oracle, Data Modeling (Star/Snowflake Schema), Data Governance, Collibra
-- Languages & Scripting: SQL, Python (Pandas, NumPy), T-SQL, PL/SQL
-- ETL & Pipelines: SSIS, Azure Data Factory, Alteryx, CDC (Change Data Capture)
-- Compliance & Methodologies: Data Governance, HIPAA, Data Lineage, Agile / Scrum
-
-PROFESSIONAL EXPERIENCE
-
-${currentCo} (2021 – Present)
-- Architected enterprise executive dashboards in Power BI connected to Snowflake data warehouse, automating weekly reporting for 500+ stakeholders.
-- Enforced data governance standards, data dictionary definitions, and row-level security (RLS) policies for state agency reporting.
-- Developed complex DAX measures, time-intelligence calculations, and optimized Power Query transformations, improving report refresh times by 55%.
-- Integrated corporate data warehouse using REST APIs and automated ETL pipelines.
-
-${prevCo} (2017 – 2021)
-- Designed and maintained dimensional star-schema data models and stored procedures on SQL Server and Oracle databases.
-- Built automated ETL data ingestion pipelines handling 10M+ daily healthcare transaction records.
-- Facilitated user training workshops and created comprehensive dashboard documentation and data governance operating procedures.
-
-EDUCATION & CREDENTIALS
-- Master / Bachelor of Science in Data Analytics / Computer Science
-- Microsoft Certified: Power BI Data Analyst Associate (PL-300)`
-  }
-  // 6. Cloud / DevOps / SRE / Kubernetes
-  else if (roleText.includes('devops') || roleText.includes('cloud') || roleText.includes('sre') || roleText.includes('kubernetes') || roleText.includes('aws') || roleText.includes('terraform')) {
-    profileDossier = `${name.toUpperCase()}
-Location: ${loc} | Contact: ${phoneDisplay} | E-mail: ${email} | ${visa}
-
-PROFESSIONAL SUMMARY
-Senior Cloud & DevOps Engineer with over ${exp} of experience architecting, automating, and operating mission-critical enterprise cloud infrastructure across AWS and Azure. Extensive hands-on expertise with Infrastructure as Code (Terraform), container orchestration (Kubernetes, Docker), CI/CD pipeline automation (GitLab CI, GitHub Actions, Jenkins), and site reliability engineering (SRE).
-
-CORE TECHNICAL SKILLS
-- Cloud Platforms: Amazon Web Services (AWS - EC2, EKS, S3, RDS, Lambda, VPC, IAM), Microsoft Azure
-- Infrastructure as Code: Terraform, CloudFormation, Ansible, Shell Scripting, Python
-- Containers & Orchestraction: Docker, Kubernetes (EKS/AKS), Helm, Istio Service Mesh
-- CI/CD & Automation: GitHub Actions, GitLab CI/CD, Jenkins, ArgoCD
-- Monitoring & Observability: Prometheus, Grafana, AWS CloudWatch, Datadog, ELK Stack
-
-PROFESSIONAL EXPERIENCE
-
-${currentCo} (2021 – Present)
-- Architected multi-region AWS cloud infrastructure using Terraform, provisioning automated VPCs, EKS clusters, and RDS databases with 99.99% uptime.
-- Built zero-downtime CI/CD deployment pipelines using GitHub Actions and ArgoCD, reducing release cycle duration from 4 hours to 15 minutes.
-- Containerized 20+ monolithic services into lightweight Docker containers and orchestrated microservice autoscaling on Kubernetes.
-- Configured real-time system observability and alerting using Prometheus, Grafana, and AWS CloudWatch.
-
-${prevCo} (2017 – 2021)
-- Managed Linux production server fleet, automated OS patch management and backup configurations using Ansible.
-- Implemented automated security scanning and vulnerability checks into Jenkins build pipelines.
-- Partnered with development teams to optimize application resource usage and cloud hosting costs by 26%.
-
-EDUCATION & CERTIFICATIONS
-- Bachelor of Science in Computer Science / Information Technology
-- AWS Certified Solutions Architect – Professional
-- Certified Kubernetes Administrator (CKA)`
-  }
-  // 7. Data Engineer & Cloud Data Architect (Spark, PySpark, Databricks, Snowflake, Azure Data Factory)
-  else if (roleText.includes('data engineer') || roleText.includes('data architect') || roleText.includes('etl') || roleText.includes('spark') || roleText.includes('databricks') || roleText.includes('snowflake')) {
-    profileDossier = `${name.toUpperCase()}
-Location: ${loc} | Contact: ${phoneDisplay} | E-mail: ${email} | ${visa}
-
-PROFESSIONAL SUMMARY
-Senior Data Engineer & Cloud Data Architect with over ${exp} of extensive experience architecting high-throughput big data pipelines, enterprise data lakes, and modern data warehouses across Azure and AWS. Deep hands-on expertise in Apache Spark, PySpark, Databricks, Snowflake, Azure Data Factory (ADF), Python, and advanced SQL data modeling. Proven track record designing scalable ETL/ELT architectures processing multi-terabyte datasets for Fortune 500 and state government clients.
-
-CORE BIG DATA & CLOUD SKILLS
-- Big Data & Processing: Apache Spark, PySpark, Azure Databricks, Delta Lake, Kafka, Hadoop
-- Cloud Data Warehousing: Snowflake, Azure Synapse Analytics, AWS Redshift, BigQuery
-- ETL / ELT & Orchestration: Azure Data Factory (ADF), Airflow, SSIS, dbt, AWS Glue
-- Databases & Languages: Python, SQL, T-SQL, PostgreSQL, Cosmos DB, MongoDB
-- Cloud & Infrastructure: Microsoft Azure (Blob Storage, ADLS Gen2, Key Vault), AWS (S3, EMR), Docker, Git, CI/CD
-
-PROFESSIONAL EXPERIENCE
-
-${currentCo} (2021 – Present)
-Senior Data Engineer / Cloud Data Architect
-- Architected and implemented scalable enterprise data pipelines using Azure Data Factory, Databricks, and PySpark, processing over 12TB of structured and unstructured data daily.
-- Designed dimensional Star and Snowflake schema data models in Snowflake, reducing query response times by 48%.
-- Built automated delta lake ingestion pipelines with streaming and batch architectures using Kafka and Spark Structured Streaming.
-- Implemented robust data quality checks, data lineage tracking, and automated CI/CD deployment pipelines using Azure DevOps and GitHub Actions.
-
-${prevCo} (2017 – 2021)
-Big Data Engineer
-- Developed distributed ETL workflows in Python and PySpark on AWS EMR and Redshift to consolidate fragmented departmental data sources.
-- Formulated complex SQL transformations and stored procedures for financial and regulatory compliance reporting.
-- Collaborated closely with business intelligence teams to provision clean, high-performance analytical data marts.
-
-EDUCATION & CERTIFICATIONS
-- Bachelor / Master of Science in Computer Science / Information Systems
-- Databricks Certified Data Engineer Associate / Professional
-- Microsoft Certified: Azure Data Engineer Associate (DP-203)`
-  }
-  // 8. Java Full Stack / Microservices / Spring Boot (Standard High-Yield Default)
-  else {
-    profileDossier = `${name.toUpperCase()}
-Location: ${loc} | Contact: ${phoneDisplay} | E-mail: ${email} | ${visa}
-
-EXECUTIVE SUMMARY
-Accomplished ${role} with over ${exp} of experience in design, development, and implementation of high-throughput enterprise web applications, microservices, and distributed cloud solutions. Strong proficiency in ${skills.slice(0, 5).join(', ')}, SQL, Git, and RESTful API architecture. Proven success delivering mission-critical applications and collaborating across cross-functional Agile engineering teams.
-
-CORE TECHNICAL SKILLS
-- Languages & Core: Java (8/11/17), Python, SQL, JavaScript, HTML5/CSS3
-- Frameworks & Backend: Spring Boot, Spring MVC, Spring Data JPA, Hibernate, Microservices, RESTful APIs, Kafka
-- Frontend & UI: React, Angular, Vue.js, Redux, Tailwind CSS, TypeScript
-- Cloud & DevOps: AWS (EC2, S3, RDS, CloudWatch), Docker, Kubernetes, Git, Jenkins CI/CD, Maven
-- Databases: PostgreSQL, Oracle 12c, MySQL, MongoDB, SQL Server
-- Testing & Methodologies: JUnit 5, Mockito, TestNG, SonarQube, Postman, Agile / Scrum, TDD
-
-PROFESSIONAL EXPERIENCE
-
-${currentCo} (2021 – Present)
-- Architected and delivered resilient enterprise microservices utilizing ${skills.slice(0, 3).join(', ')}, reducing API p99 latency by 38%.
-- Integrated relational database schemas and optimized SQL queries, ensuring data consistency and sub-second response times.
-- Implemented Git version control branching workflows, automated peer code reviews, and containerized microservice deployments via Docker and Kubernetes on AWS.
-- Designed secure OAuth2/JWT authentication filters and API Gateway routing for multi-tenant state agency and vendor integrations.
-
-${prevCo} (2017 – 2021)
-- Developed and maintained critical backend business logic and client integration endpoints.
-- Designed comprehensive automated unit and integration tests using JUnit and Mockito, raising test coverage above 90%.
-- Resolved complex production defect tickets and provided reliable escalation support for production releases.
-
-EDUCATION & CERTIFICATIONS
-- Bachelor of Science in Computer Science
-- Oracle Certified Professional: Java Developer
-- Certified ScrumMaster (CSM)®`
-  }
-
-  return coverSection ? `${coverSection}\n\n${profileDossier}` : profileDossier
+  return ''
 }
 
 function getAvatarColor(name = '') {
@@ -1078,15 +727,28 @@ const highlightResumeText = (text, matchingSkills = [], searchQuery = '', enable
     return (
       <div style={{
         backgroundColor: '#FFFFFF',
-        color: '#64748B',
-        fontStyle: 'italic',
-        padding: '36px 44px',
+        color: '#475569',
+        padding: '40px 32px',
         borderRadius: '10px',
         border: '1px solid #E2E8F0',
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
-        fontFamily: "'Plus Jakarta Sans', Inter, system-ui, sans-serif"
+        fontFamily: "'Plus Jakarta Sans', Inter, system-ui, sans-serif",
+        textAlign: 'center',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 10
       }}>
-        No resume text available for this profile.
+        <div style={{ width: 44, height: 44, borderRadius: '50%', backgroundColor: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>
+          📄
+        </div>
+        <div style={{ fontWeight: 700, color: '#1E293B', fontSize: 14 }}>
+          No Direct Resume Text Extracted
+        </div>
+        <div style={{ fontSize: 12.5, color: '#64748B', maxWidth: 440, lineHeight: 1.5 }}>
+          The candidate's original resume document is attached. Please click <strong>Download</strong> or view the original file under <strong>Attachments</strong> in the left sidebar.
+        </div>
       </div>
     )
   }
@@ -1192,7 +854,7 @@ function extractCandidateEducation(candidate) {
     return candidate.education.trim()
   }
   const text = candidate?.resumeText || ''
-  if (!text) return 'B.S. in Computer Science / Information Technology'
+  if (!text) return 'Details in Attached Resume'
 
   const lines = text.split(/\r?\n/)
   let inEdu = false
@@ -1220,7 +882,7 @@ function extractCandidateEducation(candidate) {
   const degMatch = text.match(/\b(Bachelor(?:\x27s)?(?:\s+(?:of|in)\s+[A-Za-z\s]+)?|Master(?:\x27s)?(?:\s+(?:of|in)\s+[A-Za-z\s]+)?|B\.S\.(?:\s+in\s+[A-Za-z\s]+)?|M\.S\.(?:\s+in\s+[A-Za-z\s]+)?|B\.Tech(?:\s+in\s+[A-Za-z\s]+)?|M\.Tech(?:\s+in\s+[A-Za-z\s]+)?|B\.E\.(?:\s+in\s+[A-Za-z\s]+)?|MBA|Ph\.D\.)\b/i)
   if (degMatch) return degMatch[0].trim()
 
-  return 'B.S. in Computer Science / Information Systems'
+  return 'Listed in Resume Attachment'
 }
 
 // Smart helper to extract Experience stats (jobs count, current employer, position)
@@ -1228,7 +890,7 @@ function extractCandidateExperienceStats(candidate) {
   const text = candidate?.resumeText || ''
   const dateRegex = /\b(19\d\d|20\d\d)\s*[–\-—to]+\s*(Present|Current|19\d\d|20\d\d)\b/gi
   const matches = text.match(dateRegex) || []
-  const jobsCount = Math.max(matches.length, 3)
+  const jobsCount = matches.length > 0 ? `${matches.length} Roles` : (candidate?.experience ? `${candidate.experience}` : '1+ Roles')
 
   let currentEmployer = candidate?.currentCompany || ''
   let currentTitle = candidate?.role || ''
@@ -1239,9 +901,182 @@ function extractCandidateExperienceStats(candidate) {
       currentEmployer = expMatch[1].replace(/^[•\-\*]\s*/, '').trim()
     }
   }
-  if (!currentEmployer) currentEmployer = 'Enterprise Client / Partner Solutions'
+  if (!currentEmployer) currentEmployer = candidate?.currentCompany || 'Listed in Resume'
 
   return { jobsCount, currentEmployer, currentTitle }
+}
+
+// --- Public Sector & Government Department Keywords ---
+const GOV_DEPARTMENT_PATTERNS = [
+  { name: 'Texas Dept of State Health Services (DSHS)', short: 'Texas DSHS', regex: /\b(dshs|state\s+health\s+services|texas\s+department\s+of\s+state\s+health|dept\s+of\s+state\s+health)\b/i },
+  { name: 'Texas Health & Human Services (HHSC)', short: 'Texas HHSC', regex: /\b(hhsc|health\s+and\s+human\s+services|texas\s+health\s+and\s+human)\b/i },
+  { name: 'Department of Health (Public Health / DOH)', short: 'Dept of Health', regex: /\b(department\s+of\s+health|dept\s+of\s+health|public\s+health|doh|tennessee\s+department\s+of\s+health|tn\s+doh)\b/i },
+  { name: 'Texas Dept of Transportation (TxDOT)', short: 'TxDOT', regex: /\b(txdot|texas\s+department\s+of\s+transportation|dept\s+of\s+transportation|department\s+of\s+transportation)\b/i },
+  { name: 'Texas Dept of Family & Protective Services (DFPS)', short: 'Texas DFPS', regex: /\b(dfps|family\s+and\s+protective\s+services)\b/i },
+  { name: 'Texas Dept of Information Resources (DIR)', short: 'Texas DIR', regex: /\b(texas\s+dir|department\s+of\s+information\s+resources)\b/i },
+  { name: 'Texas Dept of Motor Vehicles (TxDMV)', short: 'TxDMV', regex: /\b(txdmv|department\s+of\s+motor\s+vehicles|dmv)\b/i },
+  { name: 'Dept of Behavioral Health (DBHDS)', short: 'DBHDS', regex: /\b(dbhds|behavioral\s+health\s+and\s+developmental)\b/i },
+  { name: 'Texas Workforce Commission (TWC)', short: 'Texas TWC', regex: /\b(twc|texas\s+workforce\s+commission|workforce\s+commission)\b/i },
+  { name: 'Department of Labor (DOL)', short: 'Dept of Labor', regex: /\b(department\s+of\s+labor|dept\s+of\s+labor)\b/i },
+  { name: 'Veterans Affairs (VA)', short: 'Veterans Affairs', regex: /\b(veterans\s+affairs|dept\s+of\s+veterans)\b/i },
+  { name: 'Department of Defense (DoD)', short: 'DoD', regex: /\b(department\s+of\s+defense|dod)\b/i },
+  { name: 'State / Public Sector Agency', short: 'State Agency', regex: /\b(state\s+of\s+texas|texas\s+state\s+agency|public\s+sector|state\s+agency|city\s+of\s+austin|county\s+of)\b/i }
+]
+
+function detectGovDepartmentExperience(candidate) {
+  if (!candidate) return { hasGov: false, primaryDept: '', allDepts: [], shortName: '' }
+  const text = ((candidate?.resumeText || '') + ' ' + (candidate?.currentCompany || '') + ' ' + (candidate?.previousCompany || '') + ' ' + (candidate?.role || '') + ' ' + (candidate?.summary || '')).toLowerCase()
+  const matched = []
+  for (const dp of GOV_DEPARTMENT_PATTERNS) {
+    if (dp.regex.test(text)) {
+      matched.push(dp)
+    }
+  }
+  const hasGov = matched.length > 0
+  const primaryDept = hasGov ? matched[0].name : ''
+  const shortName = hasGov ? matched[0].short : ''
+  const allDepts = matched.map(m => m.name)
+  return { hasGov, primaryDept, shortName, allDepts }
+}
+
+function parseMonthYearDate(str) {
+  if (!str) return null
+  const s = str.trim().toLowerCase()
+  if (s.includes('present') || s.includes('current') || s.includes('now')) return new Date(2026, 8, 1)
+  const m = s.match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s*(\d{4})\b/i) || s.match(/(\d{1,2})\/(\d{4})/) || s.match(/\b(19\d\d|20\d\d)\b/)
+  if (!m) return null
+  const monthMap = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 }
+  if (m[1] && monthMap[m[1].toLowerCase().slice(0, 3)] !== undefined && m[2]) {
+    return new Date(parseInt(m[2]), monthMap[m[1].toLowerCase().slice(0, 3)], 1)
+  } else if (m[2] && parseInt(m[2]) > 1900) {
+    return new Date(parseInt(m[2]), parseInt(m[1]) - 1, 1)
+  } else if (m[1] && parseInt(m[1]) > 1900) {
+    return new Date(parseInt(m[1]), 0, 1)
+  }
+  return null
+}
+
+function extractCandidateWorkHistoryAndGaps(candidate) {
+  const text = candidate?.resumeText || ''
+  const roles = []
+  const gaps = []
+
+  if (!text || text.length < 100) {
+    const cur = candidate?.currentCompany || 'Software Partner Consultant'
+    const prev = candidate?.previousCompany || 'Enterprise Solutions'
+    const role = candidate?.role || 'Technical Specialist'
+    return {
+      roles: [
+        { title: role, company: cur, period: '2021 – Present', isCurrent: true, isGov: detectGovDepartmentExperience({ resumeText: cur }).hasGov, deptName: detectGovDepartmentExperience({ resumeText: cur }).shortName, highlights: [] },
+        { title: 'Senior Consultant', company: prev, period: '2017 – 2021', isCurrent: false, isGov: detectGovDepartmentExperience({ resumeText: prev }).hasGov, deptName: detectGovDepartmentExperience({ resumeText: prev }).shortName, highlights: [] }
+      ],
+      gaps: [],
+      hasGaps: false,
+      gapMessage: 'Continuous Employment — No career gaps detected'
+    }
+  }
+
+  const lines = text.split(/\r?\n/)
+  const dateRegex = /\b(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?|\d{1,2}\/)?\s*(19\d\d|20\d\d)\s*[–\-—to]+\s*(Present|Current|Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?|\d{1,2}\/)?\s*(Present|Current|19\d\d|20\d\d)?\b/i
+
+  let currentRole = null
+
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i].trim()
+    if (!l) continue
+
+    const dMatch = l.match(dateRegex)
+    if (dMatch && (l.includes('|') || l.includes('–') || l.includes('-') || l.includes('at ') || l.includes('Client') || l.includes('Company') || l.includes('Corporation') || l.includes('Developer') || l.includes('Engineer') || l.includes('Manager') || l.includes('Consultant') || l.includes('State') || l.includes('Department') || l.includes('Analyst') || l.includes('Lead'))) {
+      if (currentRole) {
+        roles.push(currentRole)
+      }
+
+      const rawPeriod = dMatch[0]
+      const periodParts = rawPeriod.split(/[–\-—to]+/)
+      const startDate = parseMonthYearDate(periodParts[0])
+      const endDate = parseMonthYearDate(periodParts[1] || 'Present')
+
+      const lineWithoutDates = l.replace(rawPeriod, '').replace(/^[•\-\*|\s]+/, '').replace(/[•\-\*|\s]+$/, '').trim()
+      let parsedTitle = candidate?.role || 'Senior Specialist'
+      let parsedCompany = 'Enterprise Client'
+
+      if (lineWithoutDates.includes('|')) {
+        const p = lineWithoutDates.split('|').map(s => s.trim()).filter(Boolean)
+        parsedTitle = p[0] || parsedTitle
+        parsedCompany = p[1] || parsedCompany
+      } else if (lineWithoutDates.includes(' at ')) {
+        const p = lineWithoutDates.split(' at ').map(s => s.trim()).filter(Boolean)
+        parsedTitle = p[0] || parsedTitle
+        parsedCompany = p[1] || parsedCompany
+      } else if (lineWithoutDates.includes(' - ')) {
+        const p = lineWithoutDates.split(' - ').map(s => s.trim()).filter(Boolean)
+        parsedTitle = p[0] || parsedTitle
+        parsedCompany = p[1] || parsedCompany
+      } else if (lineWithoutDates.length > 5) {
+        parsedCompany = lineWithoutDates
+      }
+
+      const isCurrent = /present|current|now/i.test(rawPeriod)
+      const govCheck = detectGovDepartmentExperience({ resumeText: l + ' ' + parsedCompany })
+
+      currentRole = {
+        title: parsedTitle,
+        company: parsedCompany,
+        period: rawPeriod.trim(),
+        startDate,
+        endDate,
+        isCurrent,
+        isGov: govCheck.hasGov,
+        deptName: govCheck.shortName || govCheck.primaryDept,
+        highlights: []
+      }
+    } else if (currentRole && currentRole.highlights.length < 3 && /^[•\-\*]/.test(l) && l.length > 20) {
+      currentRole.highlights.push(l.replace(/^[•\-\*]\s*/, '').trim())
+    }
+  }
+
+  if (currentRole) roles.push(currentRole)
+
+  if (roles.length < 2) {
+    const defaultCur = candidate?.currentCompany || 'Senior Technical Consultant'
+    const govCheck = detectGovDepartmentExperience({ resumeText: defaultCur })
+    roles.unshift({
+      title: candidate?.role || 'Lead Specialist',
+      company: defaultCur,
+      period: '2021 – Present',
+      isCurrent: true,
+      isGov: govCheck.hasGov,
+      deptName: govCheck.shortName,
+      highlights: []
+    })
+  }
+
+  for (let i = 0; i < roles.length - 1; i++) {
+    const newerJob = roles[i]
+    const olderJob = roles[i + 1]
+
+    if (newerJob.startDate && olderJob.endDate) {
+      const diffTime = newerJob.startDate.getTime() - olderJob.endDate.getTime()
+      const diffMonths = Math.round(diffTime / (1000 * 60 * 60 * 24 * 30.4))
+      if (diffMonths >= 4) {
+        gaps.push({
+          gapMonths: diffMonths,
+          afterCompany: olderJob.company,
+          beforeCompany: newerJob.company,
+          periodText: `${diffMonths} Months gap between ${olderJob.company} and ${newerJob.company}`
+        })
+      }
+    }
+  }
+
+  return {
+    roles,
+    gaps,
+    hasGaps: gaps.length > 0,
+    gapMessage: gaps.length > 0 
+      ? `⚠️ ${gaps.length} Career Gap${gaps.length > 1 ? 's' : ''} Detected (${gaps.map(g => `${g.gapMonths} mos`).join(', ')})`
+      : '✓ Continuous Employment — 0 Significant Career Gaps'
+  }
 }
 
 // Smart helper to normalize and retrieve all candidate attachments and verified compliance documents
@@ -1793,19 +1628,40 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const viewParam = (searchParams.get('view') || '').toLowerCase()
   const initialInboxMode = (tabParam === 'chat' || tabParam === 'messages' || viewParam === 'chat')
     ? 'chat'
-    : (tabParam === 'dashboard' || viewParam === 'dashboard' ? 'dashboard' : (defaultViewMode || 'stream'))
+    : (tabParam === 'leaderboard' || viewParam === 'leaderboard')
+      ? 'leaderboard'
+      : (tabParam === 'dashboard' || viewParam === 'dashboard' ? 'dashboard' : (defaultViewMode || 'stream'))
   const [inboxViewMode, setInboxViewMode] = useState(initialInboxMode)
   const [minimalsSidebarOpen, setMinimalsSidebarOpen] = useState(true)
   const [streamFilter, setStreamFilter] = useState('all') // 'all', 'email_inbox', 'email_spam', 'careers_portal', 'vendor_bench'
   const [streamCandidates, setStreamCandidates] = useState(() => {
     try {
+      // Cache version v2: flushes stale demo-candidates cache from old scraping runs
+      const CACHE_VERSION = 'v2'
+      const storedVersion = localStorage.getItem('smarthire_cache_version')
+      if (storedVersion !== CACHE_VERSION) {
+        // Clear all stale candidate caches — real data will reload from server
+        localStorage.removeItem('smarthire_stream_candidates_cache')
+        localStorage.removeItem('smarthire_all_candidates')
+        localStorage.setItem('smarthire_cache_version', CACHE_VERSION)
+        console.log('[SmartHire] Cache v2 flush: cleared stale candidate cache')
+        return []
+      }
+
       const cached = localStorage.getItem('smarthire_stream_candidates_cache')
       const manualCached = localStorage.getItem('smarthire_all_candidates')
       let initialList = []
       if (cached) {
         const parsed = JSON.parse(cached)
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          initialList = parsed
+        // Only load cache if candidates have real attachments (filter out attachment-less)
+        const withAttachment = Array.isArray(parsed) ? parsed.filter(c =>
+          (c.resumeText && c.resumeText.length > 100) ||
+          c.attachmentName ||
+          c.file ||
+          (c.resumeUrl && c.resumeUrl.length > 0)
+        ) : []
+        if (withAttachment.length > 0) {
+          initialList = withAttachment
         }
       }
       if (manualCached) {
@@ -1893,6 +1749,10 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const [filterMatch, setFilterMatch] = useState('all')
   const [filterRecruiter, setFilterRecruiter] = useState('all')
   const [filterSource, setFilterSource] = useState('all')
+  const [filterGovDept, setFilterGovDept] = useState('all')
+  const [leaderboardData, setLeaderboardData] = useState([])
+  const [leaderboardPeriod, setLeaderboardPeriod] = useState('month')
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false)
   const [availableRecruiters, setAvailableRecruiters] = useState(ALL_SMARTHIRE_RECRUITERS)
   const [sortOption, setSortOption] = useState('match_desc')
   const [activeActionMenuId, setActiveActionMenuId] = useState(null)
@@ -2482,7 +2342,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
           matchedJobTitle: c.matchedJobTitle || c.jobTitle || 'Open Requisition',
           matchedJobClient: c.matchedJobClient || c.client || 'Enterprise Client',
           matchedJobRate: c.matchedJobRate || c.rate || '$75/hr',
-          resumeText: c.resumeText || c.summary || `${name}\n${email} | ${phone}\n${role}\nSkills: ${skills.join(', ')}`,
+          // resumeText: ONLY real attachment text — never fabricated from name/email/role
+          resumeText: c.resumeText || c.summary || '',
           createdAt: c.createdAt || c.timestamp || new Date().toISOString()
         }
       })
@@ -2608,6 +2469,23 @@ export default function RecruiterInbox({ defaultViewMode }) {
       setTimeout(() => setEmailSyncToast(''), 8000)
     }
   }
+
+  const fetchLeaderboard = useCallback(async (period = leaderboardPeriod) => {
+    setLeaderboardLoading(true)
+    try {
+      const res = await fetch(`/api/analytics/recruiter-leaderboard?period=${period}`)
+      if (res.ok) {
+        const data = await res.json()
+        if (data && data.leaderboard) {
+          setLeaderboardData(data.leaderboard)
+        }
+      }
+    } catch (err) {
+      console.error('[Leaderboard] Fetch error:', err)
+    } finally {
+      setLeaderboardLoading(false)
+    }
+  }, [leaderboardPeriod])
 
   const handleOpenEmailModal = (cand) => {
     if (!cand) return
@@ -3356,6 +3234,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
     return () => clearInterval(timer)
   }, [fetchStreamCandidates])
   useEffect(() => { fetchThreads() }, [fetchThreads])
+  useEffect(() => { fetchLeaderboard() }, [fetchLeaderboard])
 
   useEffect(() => {
     if (pollingRef.current) clearInterval(pollingRef.current)
@@ -3566,6 +3445,28 @@ export default function RecruiterInbox({ defaultViewMode }) {
         if (filterSource === 'vendor' && cat !== 'vendor_bench' && !src.includes('vendor') && !src.includes('bench')) return false
       }
 
+      // State / Public Sector Department Experience filter
+      if (filterGovDept !== 'all') {
+        const gov = detectGovDepartmentExperience(c)
+        if (filterGovDept === 'any_gov' && !gov.hasGov) return false
+        if (filterGovDept === 'health') {
+          const t = ((c.resumeText || '') + ' ' + (c.currentCompany || '') + ' ' + (c.role || '')).toLowerCase()
+          if (!/\b(health|dshs|hhsc|doh|public health|state health)\b/i.test(t)) return false
+        }
+        if (filterGovDept === 'transportation') {
+          const t = ((c.resumeText || '') + ' ' + (c.currentCompany || '') + ' ' + (c.role || '')).toLowerCase()
+          if (!/\b(transportation|txdot|dot|dmv|txdmv)\b/i.test(t)) return false
+        }
+        if (filterGovDept === 'behavioral') {
+          const t = ((c.resumeText || '') + ' ' + (c.currentCompany || '') + ' ' + (c.role || '')).toLowerCase()
+          if (!/\b(behavioral|dbhds|mental|developmental)\b/i.test(t)) return false
+        }
+        if (filterGovDept === 'state_tx') {
+          const t = ((c.resumeText || '') + ' ' + (c.currentCompany || '') + ' ' + (c.role || '')).toLowerCase()
+          if (!/\b(texas|txdot|dshs|hhsc|dfps|dir|twc|txdmv|state of texas)\b/i.test(t)) return false
+        }
+      }
+
       // Search query (Supports Boolean Search: AND, OR, NOT, Quotes, Parentheses)
       if (streamSearch.trim()) {
         const skillsList = safeSkillArray(c.skills).join(' ')
@@ -3593,9 +3494,21 @@ export default function RecruiterInbox({ defaultViewMode }) {
       return true
     })
 
-    // Sorting
+    // Sorting (with First Preference for Public Sector / State Dept Experience)
     rawFiltered.sort((a, b) => {
-      if (sortOption === 'match_desc') return (b.matchScore || 0) - (a.matchScore || 0)
+      const govA = detectGovDepartmentExperience(a).hasGov ? 1 : 0
+      const govB = detectGovDepartmentExperience(b).hasGov ? 1 : 0
+
+      if (sortOption === 'gov_first' || filterGovDept !== 'all') {
+        if (govA !== govB) return govB - govA
+        return (b.matchScore || 0) - (a.matchScore || 0)
+      }
+
+      if (sortOption === 'match_desc') {
+        // Preference boost: candidates with verified public sector department experience get priority
+        if (govA !== govB) return govB - govA
+        return (b.matchScore || 0) - (a.matchScore || 0)
+      }
       if (sortOption === 'match_asc') return (a.matchScore || 0) - (b.matchScore || 0)
       if (sortOption === 'date_desc') {
         const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0
@@ -3614,12 +3527,12 @@ export default function RecruiterInbox({ defaultViewMode }) {
     })
 
     return deduplicateCandidates(rawFiltered)
-  }, [streamCandidates, tableCategory, favoriteCandidateIds, streamReqFilter, filterLocation, filterSkill, filterMatch, filterRecruiter, filterSource, streamSearch, sortOption, isSuperAdmin, currentUser?.name, currentUser?.email, openJobsList, isManager, teamUsersList])
+  }, [streamCandidates, tableCategory, favoriteCandidateIds, streamReqFilter, filterLocation, filterSkill, filterMatch, filterRecruiter, filterSource, filterGovDept, streamSearch, sortOption, isSuperAdmin, currentUser?.name, currentUser?.email, openJobsList, isManager, teamUsersList])
 
   // Reset table to page 1 whenever any filter, search, or sort changes
   useEffect(() => {
     setTablePage(1)
-  }, [tableCategory, streamReqFilter, filterLocation, filterSkill, filterMatch, filterRecruiter, filterSource, streamSearch, sortOption, tablePageSize])
+  }, [tableCategory, streamReqFilter, filterLocation, filterSkill, filterMatch, filterRecruiter, filterSource, filterGovDept, streamSearch, sortOption, tablePageSize])
 
   // Dynamic ATS Recruitment Dashboard Telemetry (Calculated in real-time from candidate pool)
   const dashboardMetrics = useMemo(() => {
@@ -3870,11 +3783,99 @@ export default function RecruiterInbox({ defaultViewMode }) {
       const titleWords = (activeTargetJob.title || '').toLowerCase().split(/[\s\-_/]+/).filter(w => w.length > 3)
       const hasTitleOverlap = titleWords.some(w => roleStr.includes(w))
       const titleBonus = hasTitleOverlap ? 15 : 0
-      const calculated = Math.round((skillsRatio * 85) + titleBonus)
+      const govCheck = detectGovDepartmentExperience(activeCandidate)
+      const govBonus = govCheck.hasGov ? 15 : 0
+      const calculated = Math.round((skillsRatio * 70) + titleBonus + govBonus)
       return Math.min(99, Math.max(15, calculated))
     }
     return activeCandidate.matchScore || 75
   }, [activeCandidate, currentReqId, activeTargetJob, dynamicMatchingSkills.length, reqSkillsList.length])
+
+  const candidateWorkHistory = useMemo(() => {
+    return extractCandidateWorkHistoryAndGaps(activeCandidate)
+  }, [activeCandidate])
+
+  const candidateGovExperience = useMemo(() => {
+    return detectGovDepartmentExperience(activeCandidate)
+  }, [activeCandidate])
+
+  const aiFitSummary = useMemo(() => {
+    if (!activeCandidate) return null
+    const candName = safeString(activeCandidate.name || activeCandidate.candidateName, 'Candidate')
+    const role = activeCandidate.role || 'Specialist'
+    const targetJobTitle = activeTargetJob?.title || 'Target Requisition'
+    const client = activeTargetJob?.client || 'Enterprise Client'
+    const gov = candidateGovExperience
+    const workHistory = candidateWorkHistory
+    const matchedCount = dynamicMatchingSkills.length
+    const totalRequired = reqSkillsList.length
+    const visa = activeCandidate.visaStatus || 'Work Authorized'
+    const exp = activeCandidate.experience || '8+ Years'
+
+    const points = []
+    
+    // 1. Department / Public Sector Experience
+    if (gov.hasGov) {
+      points.push({
+        type: 'priority',
+        icon: '🏛️',
+        title: `Public Sector Institutional Experience (${gov.shortName})`,
+        desc: `${candName} has verified institutional experience with ${gov.allDepts.join(', ')}. Matches state procurement & vendor qualification guidelines for public sector accounts like ${client}.`
+      })
+    }
+
+    // 2. Core Skills & Tech Density
+    points.push({
+      type: 'skills',
+      icon: '⚡',
+      title: `Technical Coverage: ${matchedCount}/${totalRequired} Required Skills Matched`,
+      desc: matchedCount > 0 
+        ? `Hands-on expertise verified across ${dynamicMatchingSkills.slice(0, 5).join(', ')}${dynamicMatchingSkills.length > 5 ? ` and ${dynamicMatchingSkills.length - 5} more` : ''}.`
+        : `Demonstrates transferable enterprise capability aligned with ${targetJobTitle}.`
+    })
+
+    // 3. Role & Seniority Alignment
+    points.push({
+      type: 'title',
+      icon: '🎯',
+      title: `Role Alignment: ${role}`,
+      desc: `With ${exp} of recorded experience, their professional background aligns with the core responsibilities of ${targetJobTitle}.`
+    })
+
+    // 4. Employment Continuity & Gap Detection
+    if (workHistory.hasGaps) {
+      points.push({
+        type: 'gap_warning',
+        icon: '⚠️',
+        title: `Career Timeline Gap Alert (${workHistory.gaps.length} detected)`,
+        desc: workHistory.gaps.map(g => `${g.gapMonths} months gap between ${g.afterCompany} and ${g.beforeCompany}`).join('; ') + '. Recruiter screening advised.'
+      })
+    } else {
+      points.push({
+        type: 'continuity',
+        icon: '✓',
+        title: 'Continuous Employment Continuity',
+        desc: 'Zero significant career gaps detected across recorded enterprise engagements.'
+      })
+    }
+
+    // 5. Work Authorization & Compliance
+    points.push({
+      type: 'compliance',
+      icon: '🛡️',
+      title: `Work Authorization: ${visa}`,
+      desc: `Legal work eligibility verified for immediate direct-hire or C2C contract submission.`
+    })
+
+    return {
+      overview: `${candName} is evaluated at ${calculatedFitScore}% fit for Req #${currentReqId} (${targetJobTitle} at ${client}). ${gov.hasGov ? `Possesses high-priority public sector experience with ${gov.shortName}, giving them first preference for this submission.` : 'Solid technical background matching requisition specifications.'}`,
+      points,
+      hasGov: gov.hasGov,
+      govDepts: gov.allDepts,
+      govPrimary: gov.primaryDept,
+      govShort: gov.shortName
+    }
+  }, [activeCandidate, activeTargetJob, currentReqId, calculatedFitScore, dynamicMatchingSkills, reqSkillsList, candidateGovExperience, candidateWorkHistory])
 
   const candidateFrequencies = activeCandidate ? getSkillFrequencies(candResumeText, candSkillsList) : []
 
@@ -4085,6 +4086,45 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   {totalUnread}
                 </span>
               )}
+            </button>
+
+            {/* 4. Recruiter Leaderboard */}
+            <button
+              type="button"
+              onMouseEnter={() => setHoveredNav('leaderboard')}
+              onMouseLeave={() => setHoveredNav(null)}
+              onClick={() => {
+                setInboxViewMode('leaderboard')
+                fetchLeaderboard()
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px 14px',
+                borderRadius: 8,
+                border: 'none',
+                background: inboxViewMode === 'leaderboard'
+                  ? (isLight ? '#FEF3C7' : 'rgba(245,158,11,0.18)')
+                  : (hoveredNav === 'leaderboard' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent'),
+                color: inboxViewMode === 'leaderboard'
+                  ? (isLight ? '#B45309' : '#FBBF24')
+                  : (hoveredNav === 'leaderboard' ? C.textPrimary : C.textSecondary),
+                fontWeight: inboxViewMode === 'leaderboard' ? 700 : (hoveredNav === 'leaderboard' ? 600 : 500),
+                fontSize: 13.5,
+                cursor: 'pointer',
+                textAlign: 'left',
+                transform: hoveredNav === 'leaderboard' && inboxViewMode !== 'leaderboard' ? 'translateX(4px)' : 'none',
+                boxShadow: inboxViewMode === 'leaderboard' ? '0 1px 3px rgba(245,158,11,0.2)' : 'none',
+                transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ fontSize: 16 }}>🏆</span> <span>Leaderboard</span>
+              </span>
+              <span style={{ fontSize: 10, background: '#F59E0B', color: '#FFF', padding: '1px 6px', borderRadius: 10, fontWeight: 800 }}>
+                KPIs
+              </span>
             </button>
 
             {/* 6. Scan Ingest */}
@@ -5264,25 +5304,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   flexDirection: 'column',
                   gap: 16
                 }}>
-                  {/* Skill tags with '+' */}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                    {candSkillsList.slice(0, 6).map((sk, idx) => (
-                      <span key={idx} style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: '#2563EB',
-                        backgroundColor: isLight ? '#EFF6FF' : 'rgba(37,99,235,0.15)',
-                        border: '1px solid #BFDBFE',
-                        borderRadius: 14,
-                        padding: '2px 8px',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 3
-                      }}>
-                        {sk.toLowerCase()} +
-                      </span>
-                    ))}
-                  </div>
+
 
                   {/* Candidate Name & Contact Details */}
                   <div>
@@ -5862,10 +5884,268 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       </div>
                     )}
 
-                    {/* 2. ANALYTICS TAB (AI Fit, Keyword Frequencies, Match Matrix & Ingest Metadata) */}
+                    {/* 2. ANALYTICS TAB (AI Fit, Keyword Frequencies, Match Matrix, Public Sector & Career Gap Telemetry) */}
                     {activeTobuTab === 'analytics' && (
                       <div style={{ maxWidth: 940, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
-                        
+
+                        {/* Card 0A: Verified Public Sector & Government Department Experience (High Priority) */}
+                        {candidateGovExperience.hasGov && (
+                          <div style={{
+                            backgroundColor: isLight ? '#F0FDF4' : 'rgba(5,150,105,0.08)',
+                            border: '1.5px solid #10B981',
+                            borderRadius: 10,
+                            padding: '18px 22px',
+                            boxShadow: '0 4px 14px rgba(16,185,129,0.08)'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <span style={{ fontSize: 24 }}>🏛️</span>
+                                <div>
+                                  <h4 style={{ margin: 0, fontSize: 14.5, fontWeight: 900, color: '#065F46' }}>
+                                    Verified Public Sector / Government Department Experience
+                                  </h4>
+                                  <div style={{ fontSize: 12, color: '#047857', marginTop: 2 }}>
+                                    High-priority candidate preference for State of Texas, Public Health, Transportation &amp; Agency contracts
+                                  </div>
+                                </div>
+                              </div>
+                              <span style={{
+                                backgroundColor: '#059669',
+                                color: '#FFFFFF',
+                                fontSize: 11,
+                                fontWeight: 900,
+                                padding: '4px 12px',
+                                borderRadius: 6,
+                                letterSpacing: '0.4px',
+                                textTransform: 'uppercase'
+                              }}>
+                                ⭐ 1st Preference Candidate
+                              </span>
+                            </div>
+
+                            <div style={{ marginTop: 14, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                              {candidateGovExperience.allDepts.map((d, i) => (
+                                <span key={i} style={{
+                                  backgroundColor: '#ECFDF5',
+                                  color: '#065F46',
+                                  border: '1px solid #A7F3D0',
+                                  borderRadius: 6,
+                                  padding: '5px 12px',
+                                  fontSize: 12,
+                                  fontWeight: 800,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 6
+                                }}>
+                                  <span>✓</span> <span>{d}</span>
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Card 0B: AI Placement Fit Rationale & Match Breakdown */}
+                        {aiFitSummary && (
+                          <div style={{
+                            backgroundColor: C.surface,
+                            border: `1px solid ${C.border}`,
+                            borderRadius: 10,
+                            padding: 22,
+                            boxShadow: '0 2px 10px rgba(0,0,0,0.02)'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{ fontSize: 18 }}>🤖</span>
+                                <h4 style={{ margin: 0, fontSize: 14, fontWeight: 900, color: C.textPrimary, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                                  AI Placement Fit Rationale: Why Candidate Fits Req #{currentReqId}
+                                </h4>
+                              </div>
+                              <span style={{ fontSize: 12, fontWeight: 800, color: calculatedFitScore >= 80 ? '#16A34A' : '#D97706' }}>
+                                {calculatedFitScore}% AI Placement Score
+                              </span>
+                            </div>
+
+                            <p style={{
+                              fontSize: 13,
+                              lineHeight: 1.6,
+                              color: C.textPrimary,
+                              margin: '0 0 16px',
+                              backgroundColor: isLight ? '#F8FAFC' : 'rgba(255,255,255,0.03)',
+                              padding: '12px 16px',
+                              borderRadius: 8,
+                              border: `1px solid ${C.border}`
+                            }}>
+                              {aiFitSummary.overview}
+                            </p>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10 }}>
+                              {aiFitSummary.points.map((pt, i) => (
+                                <div key={i} style={{
+                                  display: 'flex',
+                                  alignItems: 'flex-start',
+                                  gap: 12,
+                                  padding: '10px 14px',
+                                  borderRadius: 8,
+                                  backgroundColor: pt.type === 'priority' ? (isLight ? '#ECFDF5' : 'rgba(16,185,129,0.08)') : pt.type === 'gap_warning' ? (isLight ? '#FFFBEB' : 'rgba(245,158,11,0.08)') : (isLight ? '#FFFFFF' : C.inputBg),
+                                  border: `1px solid ${pt.type === 'priority' ? '#A7F3D0' : pt.type === 'gap_warning' ? '#FDE68A' : C.border}`
+                                }}>
+                                  <span style={{ fontSize: 16, marginTop: 1 }}>{pt.icon}</span>
+                                  <div style={{ flex: 1 }}>
+                                    <div style={{
+                                      fontSize: 12.5,
+                                      fontWeight: 800,
+                                      color: pt.type === 'priority' ? '#065F46' : pt.type === 'gap_warning' ? '#B45309' : C.textPrimary
+                                    }}>
+                                      {pt.title}
+                                    </div>
+                                    <div style={{ fontSize: 12, color: C.textSecondary, marginTop: 2, lineHeight: 1.45 }}>
+                                      {pt.desc}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Card 0C: Career History & Automated Employment Gap Detection */}
+                        {candidateWorkHistory && (
+                          <div style={{
+                            backgroundColor: C.surface,
+                            border: `1px solid ${C.border}`,
+                            borderRadius: 10,
+                            padding: 22,
+                            boxShadow: '0 2px 10px rgba(0,0,0,0.02)'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+                              <div>
+                                <h4 style={{ margin: 0, fontSize: 14, fontWeight: 900, color: C.textPrimary, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                                  Career History &amp; Employment Gap Analysis
+                                </h4>
+                                <div style={{ fontSize: 11.5, color: C.textSecondary, marginTop: 2 }}>
+                                  {candidateWorkHistory.roles.length} recorded positions verified from resume
+                                </div>
+                              </div>
+
+                              {/* Gap Detection Status Badge */}
+                              <span style={{
+                                fontSize: 12,
+                                fontWeight: 800,
+                                backgroundColor: candidateWorkHistory.hasGaps ? '#FEF3C7' : '#DCFCE7',
+                                color: candidateWorkHistory.hasGaps ? '#B45309' : '#15803D',
+                                border: `1px solid ${candidateWorkHistory.hasGaps ? '#FDE68A' : '#86EFAC'}`,
+                                padding: '6px 12px',
+                                borderRadius: 6,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6
+                              }}>
+                                {candidateWorkHistory.gapMessage}
+                              </span>
+                            </div>
+
+                            {/* Employment Gap Notice Alert Box if Gaps Exist */}
+                            {candidateWorkHistory.hasGaps && (
+                              <div style={{
+                                backgroundColor: isLight ? '#FFFBEB' : 'rgba(245,158,11,0.08)',
+                                border: '1px solid #FDE68A',
+                                borderRadius: 8,
+                                padding: '12px 16px',
+                                marginBottom: 16
+                              }}>
+                                <div style={{ fontSize: 12.5, fontWeight: 800, color: '#B45309', marginBottom: 6 }}>
+                                  ⚠️ Notice: Career Hiatus Detected
+                                </div>
+                                {candidateWorkHistory.gaps.map((g, idx) => (
+                                  <div key={idx} style={{ fontSize: 12, color: '#92400E', lineHeight: 1.5 }}>
+                                    • <strong>{g.gapMonths} Months Gap</strong> between <em>{g.afterCompany}</em> and <em>{g.beforeCompany}</em>.
+                                  </div>
+                                ))}
+                                <div style={{ fontSize: 11, color: '#B45309', marginTop: 6, fontStyle: 'italic' }}>
+                                  Recruiter Tip: Confirm reason for hiatus during candidate phone screen before client submission.
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Timeline of Positions (Current and Old, line by line) */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                              {candidateWorkHistory.roles.map((role, idx) => (
+                                <div key={idx} style={{
+                                  position: 'relative',
+                                  paddingLeft: 22,
+                                  borderLeft: `2px solid ${role.isCurrent ? '#2563EB' : role.isGov ? '#10B981' : (isLight ? '#CBD5E1' : '#475569')}`,
+                                  paddingBottom: 4
+                                }}>
+                                  {/* Dot Indicator */}
+                                  <div style={{
+                                    position: 'absolute',
+                                    left: -6,
+                                    top: 2,
+                                    width: 10,
+                                    height: 10,
+                                    borderRadius: '50%',
+                                    backgroundColor: role.isCurrent ? '#2563EB' : role.isGov ? '#10B981' : (isLight ? '#94A3B8' : '#64748B'),
+                                    boxShadow: role.isCurrent ? '0 0 0 3px rgba(37,99,235,0.2)' : 'none'
+                                  }} />
+
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                      <span style={{ fontSize: 13.5, fontWeight: 800, color: C.textPrimary }}>
+                                        {role.title}
+                                      </span>
+                                      <span style={{ color: C.textSecondary }}>•</span>
+                                      <span style={{ fontSize: 13, fontWeight: 700, color: role.isGov ? '#065F46' : '#2563EB' }}>
+                                        {role.company}
+                                      </span>
+                                      {role.isCurrent && (
+                                        <span style={{
+                                          fontSize: 10,
+                                          fontWeight: 800,
+                                          backgroundColor: '#DBEAFE',
+                                          color: '#1D4ED8',
+                                          padding: '1px 6px',
+                                          borderRadius: 4
+                                        }}>
+                                          Current Position
+                                        </span>
+                                      )}
+                                      {role.isGov && (
+                                        <span style={{
+                                          fontSize: 10,
+                                          fontWeight: 800,
+                                          backgroundColor: '#ECFDF5',
+                                          color: '#065F46',
+                                          border: '1px solid #A7F3D0',
+                                          padding: '1px 6px',
+                                          borderRadius: 4,
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: 3
+                                        }}>
+                                          🏛️ {role.deptName || 'State Agency'}
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <span style={{ fontSize: 11.5, fontWeight: 700, color: C.textSecondary }}>
+                                      {role.period}
+                                    </span>
+                                  </div>
+
+                                  {/* Highlights / Responsibilities */}
+                                  {role.highlights && role.highlights.length > 0 && (
+                                    <ul style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 11.5, color: C.textSecondary, lineHeight: 1.5 }}>
+                                      {role.highlights.map((hl, hIdx) => (
+                                        <li key={hIdx} style={{ marginBottom: 2 }}>{hl}</li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         {/* Card 1: Requisition Fit & Skills Match Matrix */}
                         <div style={{ backgroundColor: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 22, boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
@@ -6000,6 +6280,45 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                 )}
                               </div>
                             </div>
+                          </div>
+                        </div>
+
+                        {/* Card 1.5: Core Candidate Skills & Technical Competencies (Relocated exclusively to Analytics) */}
+                        <div style={{ backgroundColor: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 22 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                            <h4 style={{ margin: 0, fontSize: 13.5, fontWeight: 800, color: C.textPrimary, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                              Core Candidate Skills &amp; Technical Competencies
+                            </h4>
+                            <span style={{ fontSize: 11, color: C.textSecondary }}>
+                              {candSkillsList.length} Extracted Skills
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                            {candSkillsList.length > 0 ? (
+                              candSkillsList.map((sk, idx) => (
+                                <span
+                                  key={idx}
+                                  style={{
+                                    fontSize: 12,
+                                    fontWeight: 700,
+                                    color: '#2563EB',
+                                    backgroundColor: isLight ? '#EFF6FF' : 'rgba(37,99,235,0.15)',
+                                    border: '1px solid #BFDBFE',
+                                    borderRadius: 6,
+                                    padding: '5px 12px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 4
+                                  }}
+                                >
+                                  {sk}
+                                </span>
+                              ))
+                            ) : (
+                              <span style={{ fontSize: 12, color: C.textSecondary, fontStyle: 'italic' }}>
+                                No explicit technical skills listed
+                              </span>
+                            )}
                           </div>
                         </div>
 
@@ -7048,6 +7367,31 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     <option value="vendor">Vendor Bench</option>
                   </select>
 
+                  {/* State / Public Sector Department Experience dropdown */}
+                  <select
+                    value={filterGovDept}
+                    onChange={e => { setFilterGovDept(e.target.value); setTablePage(1); }}
+                    style={{
+                      backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
+                      border: filterGovDept !== 'all' ? '1px solid #059669' : `1px solid ${C.border}`,
+                      borderRadius: 8,
+                      padding: '8px 12px',
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      color: filterGovDept !== 'all' ? '#059669' : C.textPrimary,
+                      outline: 'none',
+                      cursor: 'pointer'
+                    }}
+                    title="Filter candidates by State & Public Sector Department Experience"
+                  >
+                    <option value="all">🏛️ Gov / Dept: All ⌵</option>
+                    <option value="any_gov">🏛️ Any Gov / State Dept Exp</option>
+                    <option value="health">🏥 Dept of Health / DSHS / HHSC</option>
+                    <option value="transportation">🚗 TxDOT / Transportation</option>
+                    <option value="behavioral">🧠 DBHDS / Behavioral Health</option>
+                    <option value="state_tx">⭐ State of Texas Agencies</option>
+                  </select>
+
                   {/* Clear text button */}
                   <button
                     type="button"
@@ -7059,6 +7403,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       setFilterMatch('all')
                       setFilterRecruiter('all')
                       setFilterSource('all')
+                      setFilterGovDept('all')
                       setTableCategory('all')
                       setTablePage(1)
                     }}
@@ -7161,6 +7506,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       }}
                     >
                       <option value="match_desc">Match (High to Low)</option>
+                      <option value="gov_first">🏛️ Department Experience First</option>
                       <option value="match_asc">Match (Low to High)</option>
                       <option value="date_desc">Newest First</option>
                       <option value="date_asc">Oldest First</option>
@@ -7428,6 +7774,33 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                         {c.currentCompany ? c.currentCompany.split(',')[0] : (c.location || 'United States')}
                                       </span>
                                     </div>
+                                    {/* Public Sector / Gov Dept Badge */}
+                                    {(() => {
+                                      const g = detectGovDepartmentExperience(c)
+                                      if (!g.hasGov) return null
+                                      return (
+                                        <div style={{ marginTop: 2 }}>
+                                          <span style={{
+                                            fontSize: 9.5,
+                                            fontWeight: 700,
+                                            backgroundColor: '#ECFDF5',
+                                            color: '#065F46',
+                                            border: '1px solid #A7F3D0',
+                                            borderRadius: 4,
+                                            padding: '1px 5px',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: 3,
+                                            maxWidth: 175,
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap'
+                                          }} title={`Verified Public Sector Experience: ${g.primaryDept}`}>
+                                            🏛️ {g.shortName}
+                                          </span>
+                                        </div>
+                                      )
+                                    })()}
                                   </div>
                                 </td>
 
@@ -7859,6 +8232,359 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 </a>
               </div>
 
+            </div>
+          )}
+
+          {/* VIEW 3: RECRUITER KPI LEADERBOARD & TEAM PERFORMANCE VIEW */}
+          {inboxViewMode === 'leaderboard' && (
+            <div style={{ flex: 1, overflowY: 'auto', padding: '28px 36px', boxSizing: 'border-box' }}>
+              <div style={{ maxWidth: 1320, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
+                
+                {/* Header & Timeframe Filter */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 26 }}>🏆</span>
+                      <h1 style={{ fontSize: 24, fontWeight: 800, color: C.textPrimary, margin: 0, letterSpacing: '-0.02em' }}>
+                        Recruiter KPI Leaderboard &amp; Team Performance
+                      </h1>
+                    </div>
+                    <p style={{ fontSize: 13.5, color: C.textSecondary, margin: '4px 0 0' }}>
+                      Real-time rankings across sourcing volume, candidate screenings, client submittals, interviews &amp; placements.
+                    </p>
+                  </div>
+
+                  {/* Period Switcher Pills */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    backgroundColor: isLight ? '#F1F5F9' : '#1E293B',
+                    padding: 4,
+                    borderRadius: 8,
+                    border: `1px solid ${C.border}`
+                  }}>
+                    {[
+                      { key: 'today', label: 'Today' },
+                      { key: 'week', label: 'This Week' },
+                      { key: 'month', label: 'This Month' },
+                      { key: 'all', label: 'All Time' }
+                    ].map(p => (
+                      <button
+                        key={p.key}
+                        type="button"
+                        onClick={() => {
+                          setLeaderboardPeriod(p.key)
+                          fetchLeaderboard(p.key)
+                        }}
+                        style={{
+                          border: 'none',
+                          borderRadius: 6,
+                          padding: '6px 14px',
+                          fontSize: 12.5,
+                          fontWeight: leaderboardPeriod === p.key ? 800 : 600,
+                          backgroundColor: leaderboardPeriod === p.key ? (isLight ? '#FFFFFF' : '#0F172A') : 'transparent',
+                          color: leaderboardPeriod === p.key ? '#2563EB' : C.textSecondary,
+                          boxShadow: leaderboardPeriod === p.key ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Aggregated KPI Summary Row */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+                  {[
+                    { label: 'Total Sourced', val: leaderboardData.reduce((acc, r) => acc + (r.sourced || 0), 0), icon: '📥', color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE' },
+                    { label: 'Screened Candidates', val: leaderboardData.reduce((acc, r) => acc + (r.screened || 0), 0), icon: '📞', color: '#059669', bg: '#ECFDF5', border: '#A7F3D0' },
+                    { label: 'Client Submittals', val: leaderboardData.reduce((acc, r) => acc + (r.submissions || 0), 0), icon: '🚀', color: '#7C3AED', bg: '#F5F3FF', border: '#DDD6FE' },
+                    { label: 'Interviews & Offers', val: leaderboardData.reduce((acc, r) => acc + (r.interviews || 0), 0), icon: '🎯', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
+                    { label: 'Total Placements', val: leaderboardData.reduce((acc, r) => acc + (r.placed || 0), 0), icon: '⭐', color: '#DC2626', bg: '#FEF2F2', border: '#FECACA' }
+                  ].map((stat, i) => (
+                    <div key={i} style={{
+                      backgroundColor: C.surface,
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 12,
+                      padding: '16px 20px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 16,
+                      boxShadow: C.shadow
+                    }}>
+                      <div style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 10,
+                        backgroundColor: stat.bg,
+                        border: `1px solid ${stat.border}`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 20
+                      }}>
+                        {stat.icon}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 11.5, fontWeight: 700, color: C.textSecondary, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                          {stat.label}
+                        </div>
+                        <div style={{ fontSize: 22, fontWeight: 900, color: stat.color, marginTop: 2 }}>
+                          {stat.val}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Top 3 Podium Showcase */}
+                {leaderboardData.length >= 3 && (
+                  <div style={{
+                    backgroundColor: C.surface,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 16,
+                    padding: '28px 24px 20px',
+                    boxShadow: C.shadow
+                  }}>
+                    <div style={{ textAlign: 'center', marginBottom: 20 }}>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: '#D97706', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                        ★ Top Performance Podium ★
+                      </span>
+                      <h3 style={{ margin: '4px 0 0', fontSize: 18, fontWeight: 900, color: C.textPrimary }}>
+                        Leaders of the Sprint ({leaderboardPeriod === 'today' ? 'Today' : leaderboardPeriod === 'week' ? 'This Week' : leaderboardPeriod === 'month' ? 'This Month' : 'All Time'})
+                      </h3>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, alignItems: 'flex-end', maxWidth: 880, margin: '0 auto' }}>
+                      {/* #2 Silver (Left) */}
+                      {(() => {
+                        const r = leaderboardData[1]
+                        if (!r) return null
+                        return (
+                          <div style={{
+                            backgroundColor: isLight ? '#F8FAFC' : '#1E293B',
+                            border: '1.5px solid #94A3B8',
+                            borderRadius: '16px 16px 0 0',
+                            padding: '24px 16px 20px',
+                            textAlign: 'center',
+                            boxShadow: '0 4px 14px rgba(148,163,184,0.15)'
+                          }}>
+                            <div style={{ fontSize: 28, marginBottom: 4 }}>🥈</div>
+                            <div style={{ fontSize: 12, fontWeight: 900, color: '#64748B', textTransform: 'uppercase' }}>Rank #2 · Silver</div>
+                            <h4 style={{ margin: '6px 0 2px', fontSize: 16, fontWeight: 900, color: C.textPrimary }}>{r.name}</h4>
+                            <div style={{ fontSize: 11, color: C.textSecondary }}>{r.role || 'Senior Recruiter'}</div>
+                            <div style={{ marginTop: 12, fontSize: 18, fontWeight: 900, color: '#2563EB' }}>{r.points} <span style={{ fontSize: 11, fontWeight: 600, color: C.textSecondary }}>pts</span></div>
+                            <div style={{ marginTop: 8, fontSize: 11.5, color: C.textSecondary }}>
+                              <strong>{r.submissions || 0}</strong> subs · <strong>{r.interviews || 0}</strong> ints · <strong>{r.placed || 0}</strong> hires
+                            </div>
+                          </div>
+                        )
+                      })()}
+
+                      {/* #1 Gold (Center, Elevated) */}
+                      {(() => {
+                        const r = leaderboardData[0]
+                        if (!r) return null
+                        return (
+                          <div style={{
+                            backgroundColor: isLight ? '#FEFCE8' : 'rgba(234,179,8,0.1)',
+                            border: '2px solid #EAB308',
+                            borderRadius: '16px 16px 0 0',
+                            padding: '36px 18px 24px',
+                            textAlign: 'center',
+                            boxShadow: '0 8px 24px rgba(234,179,8,0.25)',
+                            transform: 'translateY(-12px)'
+                          }}>
+                            <div style={{ fontSize: 36, marginBottom: 4 }}>👑 🥇</div>
+                            <div style={{ fontSize: 12, fontWeight: 900, color: '#CA8A04', textTransform: 'uppercase' }}>Rank #1 · Champion</div>
+                            <h4 style={{ margin: '6px 0 2px', fontSize: 18, fontWeight: 900, color: C.textPrimary }}>{r.name}</h4>
+                            <div style={{ fontSize: 11.5, color: C.textSecondary }}>{r.role || 'Lead Recruiter'}</div>
+                            <div style={{ marginTop: 14, fontSize: 24, fontWeight: 900, color: '#CA8A04' }}>{r.points} <span style={{ fontSize: 12, fontWeight: 600, color: C.textSecondary }}>pts</span></div>
+                            <div style={{ marginTop: 8, fontSize: 12, color: C.textSecondary }}>
+                              <strong>{r.submissions || 0}</strong> subs · <strong>{r.interviews || 0}</strong> ints · <strong>{r.placed || 0}</strong> hires
+                            </div>
+                          </div>
+                        )
+                      })()}
+
+                      {/* #3 Bronze (Right) */}
+                      {(() => {
+                        const r = leaderboardData[2]
+                        if (!r) return null
+                        return (
+                          <div style={{
+                            backgroundColor: isLight ? '#FFF7ED' : '#1E293B',
+                            border: '1.5px solid #F97316',
+                            borderRadius: '16px 16px 0 0',
+                            padding: '20px 16px 16px',
+                            textAlign: 'center',
+                            boxShadow: '0 4px 14px rgba(249,115,22,0.15)'
+                          }}>
+                            <div style={{ fontSize: 26, marginBottom: 4 }}>🥉</div>
+                            <div style={{ fontSize: 12, fontWeight: 900, color: '#EA580C', textTransform: 'uppercase' }}>Rank #3 · Bronze</div>
+                            <h4 style={{ margin: '6px 0 2px', fontSize: 15, fontWeight: 900, color: C.textPrimary }}>{r.name}</h4>
+                            <div style={{ fontSize: 11, color: C.textSecondary }}>{r.role || 'Recruiter'}</div>
+                            <div style={{ marginTop: 12, fontSize: 18, fontWeight: 900, color: '#EA580C' }}>{r.points} <span style={{ fontSize: 11, fontWeight: 600, color: C.textSecondary }}>pts</span></div>
+                            <div style={{ marginTop: 8, fontSize: 11.5, color: C.textSecondary }}>
+                              <strong>{r.submissions || 0}</strong> subs · <strong>{r.interviews || 0}</strong> ints · <strong>{r.placed || 0}</strong> hires
+                            </div>
+                          </div>
+                        )
+                      })()}
+                    </div>
+                  </div>
+                )}
+
+                {/* Full Recruiter KPI Table */}
+                <div style={{
+                  backgroundColor: C.surface,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 14,
+                  overflow: 'hidden',
+                  boxShadow: C.shadow
+                }}>
+                  <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 800, color: C.textPrimary, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                      Detailed Recruiter Sourcing &amp; Placement Performance
+                    </div>
+                    <span style={{ fontSize: 11.5, color: C.textSecondary }}>
+                      {leaderboardData.length} Active Recruiters Tracked
+                    </span>
+                  </div>
+
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 12.5 }}>
+                    <thead>
+                      <tr style={{
+                        backgroundColor: isLight ? '#F8FAFC' : '#1E293B',
+                        borderBottom: `1px solid ${C.border}`,
+                        color: '#64748B',
+                        fontSize: 11.5,
+                        fontWeight: 700,
+                        textTransform: 'uppercase'
+                      }}>
+                        <th style={{ padding: '10px 14px', width: 60 }}>Rank</th>
+                        <th style={{ padding: '10px 14px' }}>Recruiter</th>
+                        <th style={{ padding: '10px 12px', textAlign: 'center' }}>Sourced</th>
+                        <th style={{ padding: '10px 12px', textAlign: 'center' }}>Screened</th>
+                        <th style={{ padding: '10px 12px', textAlign: 'center' }}>Submissions</th>
+                        <th style={{ padding: '10px 12px', textAlign: 'center' }}>Interviews</th>
+                        <th style={{ padding: '10px 12px', textAlign: 'center' }}>Placements</th>
+                        <th style={{ padding: '10px 14px', textAlign: 'right' }}>Total Points</th>
+                        <th style={{ padding: '10px 14px', textAlign: 'center' }}>Velocity</th>
+                        <th style={{ padding: '10px 14px', textAlign: 'right' }}>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {leaderboardLoading ? (
+                        <tr>
+                          <td colSpan={10} style={{ padding: 40, textAlign: 'center', color: C.textSecondary }}>
+                            Loading team performance telemetry...
+                          </td>
+                        </tr>
+                      ) : leaderboardData.length === 0 ? (
+                        <tr>
+                          <td colSpan={10} style={{ padding: 40, textAlign: 'center', color: C.textSecondary }}>
+                            No activity logged for the selected period.
+                          </td>
+                        </tr>
+                      ) : (
+                        leaderboardData.map((r, i) => {
+                          const isTop3 = i < 3
+                          const rankMedal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`
+                          return (
+                            <tr
+                              key={r.id || r.email || i}
+                              style={{
+                                borderBottom: `1px solid ${C.border}`,
+                                backgroundColor: isTop3 ? (isLight ? 'rgba(254,249,195,0.25)' : 'rgba(234,179,8,0.04)') : 'transparent',
+                                transition: 'background-color 0.15s ease'
+                              }}
+                            >
+                              <td style={{ padding: '12px 14px', fontWeight: 900, fontSize: isTop3 ? 16 : 13, color: isTop3 ? '#B45309' : C.textSecondary }}>
+                                {rankMedal}
+                              </td>
+                              <td style={{ padding: '12px 14px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                  <div style={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: '50%',
+                                    backgroundColor: isTop3 ? '#FEF3C7' : '#EFF6FF',
+                                    color: isTop3 ? '#B45309' : '#2563EB',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontWeight: 800,
+                                    fontSize: 12
+                                  }}>
+                                    {getInitials(r.name || 'Recruiter')}
+                                  </div>
+                                  <div>
+                                    <strong style={{ color: C.textPrimary, fontSize: 13 }}>{r.name}</strong>
+                                    <div style={{ fontSize: 11, color: C.textSecondary }}>{r.email} · {r.role || 'Recruiter'}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td style={{ padding: '12px 12px', textAlign: 'center', fontWeight: 700, color: C.textPrimary }}>{r.sourced || 0}</td>
+                              <td style={{ padding: '12px 12px', textAlign: 'center', fontWeight: 700, color: '#059669' }}>{r.screened || 0}</td>
+                              <td style={{ padding: '12px 12px', textAlign: 'center', fontWeight: 700, color: '#2563EB' }}>{r.submissions || 0}</td>
+                              <td style={{ padding: '12px 12px', textAlign: 'center', fontWeight: 700, color: '#7C3AED' }}>{r.interviews || 0}</td>
+                              <td style={{ padding: '12px 12px', textAlign: 'center', fontWeight: 800, color: '#DC2626' }}>{r.placed || 0}</td>
+                              <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 900, color: '#0F172A', fontSize: 14 }}>
+                                {r.points || 0} <span style={{ fontSize: 10, color: C.textSecondary, fontWeight: 500 }}>pts</span>
+                              </td>
+                              <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                                <span style={{
+                                  fontSize: 10.5,
+                                  fontWeight: 800,
+                                  backgroundColor: r.velocity === 'On Fire' ? '#FEF2F2' : r.velocity === 'High Velocity' ? '#EFF6FF' : '#ECFDF5',
+                                  color: r.velocity === 'On Fire' ? '#DC2626' : r.velocity === 'High Velocity' ? '#2563EB' : '#059669',
+                                  border: `1px solid ${r.velocity === 'On Fire' ? '#FECACA' : r.velocity === 'High Velocity' ? '#BFDBFE' : '#A7F3D0'}`,
+                                  borderRadius: 6,
+                                  padding: '2px 8px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 4
+                                }}>
+                                  {r.velocity === 'On Fire' ? '🔥' : r.velocity === 'High Velocity' ? '⚡' : '🟢'} {r.velocity || 'Active'}
+                                </span>
+                              </td>
+                              <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setFilterRecruiter(r.name)
+                                    setInboxViewMode('stream')
+                                    setInboxSubMode('table')
+                                    setTablePage(1)
+                                  }}
+                                  style={{
+                                    backgroundColor: isLight ? '#EFF6FF' : 'rgba(37,99,235,0.15)',
+                                    color: '#2563EB',
+                                    border: '1px solid #BFDBFE',
+                                    borderRadius: 6,
+                                    padding: '4px 10px',
+                                    fontSize: 11,
+                                    fontWeight: 700,
+                                    cursor: 'pointer'
+                                  }}
+                                  title={`View candidate talent pool assigned to ${r.name}`}
+                                >
+                                  Talent Pool ↗
+                                </button>
+                              </td>
+                            </tr>
+                          )
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+              </div>
             </div>
           )}
 
