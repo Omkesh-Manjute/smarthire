@@ -45,7 +45,45 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
    - **Step 3**: Deploy production bundle to AWS Lightsail server (`34.194.119.199`), extract to `/var/www/html/` and `/home/ubuntu/smarthire/dist/`, clean up archives immediately, and reload PM2 `smarthire-ats`.
    - **Step 4**: Verify HTTP 200 on live domain `https://smarthireus.com` with the new bundle hash.
 
+8. **Strict Zero Unrequested Emojis & Decorative Symbols (Enterprise B2B Polish)**:
+   - **NEVER** add random decorative Unicode emojis or symbols (e.g. 🏛️, 🚗, 🧠, 🤖, ⭐, ⚡, 🎯, 🛡️, 👑, 🥇, 🥈, 🥉, 🏆, 🔥, etc.) to labels, dropdown options, table badges, card headers, or UI elements unless explicitly asked by the user.
+   - The platform is an enterprise-grade B2B recruiting ATS (like Zoho Recruit, Workday, Linear). All UI elements must maintain clean, modern corporate aesthetics with subtle typography, sleek color palettes, and standard SVG line icons.
+
+
 ## Recent Changes
+
+### 2026-09-22 — Closed/Banked Job Match Filtering, IMAP Unread Attachment Guard, Dynamic Candidate Notifications & Profile Photo Upload
+- **Context & Objectives**:
+  - User requested 5 key refinements across ATS workflows:
+    1. **Prevent matching to closed/banked/expired requisitions**: Positions whose deadline has passed (e.g. `159079`, deadline was `2026-09-16`) or status is `Bank`/`Closed` must NOT be matched to candidates. Show clean `Talent Pool` / `General Sourcing` for unmatched candidates instead of hardcoded expired req numbers.
+    2. **Dynamic Ingestion Notifications**: Replace hardcoded notification bell badge with a real-time interactive alert center notifying recruiters when new candidate resumes are scraped, indicating whether they matched an active open requisition or were routed to the General Talent Pool.
+    3. **Profile Photo Upload**: Add profile picture upload functionality to the top user profile menu and edit modal with client FileReader preview, server-side persistence (`POST /api/users/profile`), and fallback to initials.
+    4. **IMAP Email Attachment Unread Rule**: In Yahoo Mail / IMAP ingestion (`email-imap-scraper.js`), if an incoming email does not contain a valid resume attachment (`.pdf`, `.docx`, `.doc`), keep the email strictly UNREAD (`-FLAGS (\Seen)`) in the recruiter inbox, and do not ingest it as a candidate.
+    5. **Remove Leaderboard KPI Tab**: Remove the duplicate "Leaderboard (KPIs)" navigation tab from the left sidebar since team analytics are already present in the Dashboard.
+- **Root Cause & Key Deliverables**:
+  - **Requisition Status & Deadline Integrity**:
+    - Marked 5 expired positions (`159079`, `159078`, `159077`, `159074`, `159073`) as `Closed` with `closeReason: "Deadline Expired"` in `server/jobs.json`.
+    - Added `isJobActiveAndOpen(job)` in backend and frontend checking both `status` (`closed`, `bank`, `banked`, `filled`, `expired`) and deadline dates.
+    - Updated candidate matching logic in `server/index.js` and `RecruiterInbox.jsx` to match candidates strictly against active unexpired jobs (`activeUnexpiredJobs`).
+    - Candidates without an active requisition match are cleanly labeled `Talent Pool` / `General Sourcing` with `targetReqId: null` and subtle neutral styling.
+  - **IMAP Attachment Unread Guard**:
+    - Modified `email-imap-scraper.js`: removed premature `\Seen` marking.
+    - If no valid resume file attachment is found, actively clears the seen flag (`UID STORE ${uid} -FLAGS (\Seen)`), keeps the recruiter's email unread, and skips ingestion. Only marks as read if a valid resume attachment is parsed.
+  - **Dynamic Ingestion Notification System**:
+    - Automated creation of candidate ingestion alerts in `syncEmailResumesInternal` and seeded existing candidate notifications via `seedScrapedCandidateNotifications()`.
+    - Added interactive notification popover in `RecruiterInbox.jsx` with unread count badge, candidate name, match status badge (`Matched • Req #[id]` or `Talent Pool`), click-to-view candidate navigation, and "Mark all as read" API integration.
+  - **Recruiter Profile Avatar Management**:
+    - Created avatar file upload handler in `RecruiterInbox.jsx` with 5MB validation, FileReader preview, and `localStorage` caching.
+    - Created `POST /api/users/profile` in `server/index.js` to persist profile updates.
+    - Added clean profile popup with user details, "Upload Photo", and "Remove Photo" actions.
+  - **Leaderboard Sidebar Cleanup**:
+    - Removed redundant Leaderboard navigation tab from the left sidebar.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-I2DwMRns.js`).
+  - Git committed (`27af9ae`) and pushed to GitHub `origin/main`.
+  - Deployed to AWS Lightsail server (`34.194.119.199`), updated `server/index.js`, `jobs.json`, `email-imap-scraper.js`, and extracted frontend bundle into `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Cleaned all deployment archives and pruned old bundles (kept top 5).
+  - Reloaded PM2 process `smarthire-ats`. Verified HTTP 200 on `https://smarthireus.com/assets/index-I2DwMRns.js` and confirmed live `/api/notifications` returns dynamic candidate match alerts.
 
 ### 2026-09-21 — Public Sector / Department Experience Detection & Priority, Automated Career Gap Detection, Analytics Refactor & Recruiter KPI Leaderboard
 - **Context & Objectives**:
