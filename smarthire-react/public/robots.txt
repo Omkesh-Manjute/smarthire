@@ -23,4 +23,3 @@ Disallow: /linkedin-posts
 Disallow: /candidate-chat/
 
 Sitemap: https://smarthireus.com/sitemap.xml
-Sitemap: https://smarthire-4zqf.onrender.com/sitemap.xml

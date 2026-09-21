@@ -1074,8 +1074,8 @@ function extractCandidateWorkHistoryAndGaps(candidate) {
     gaps,
     hasGaps: gaps.length > 0,
     gapMessage: gaps.length > 0 
-      ? `⚠️ ${gaps.length} Career Gap${gaps.length > 1 ? 's' : ''} Detected (${gaps.map(g => `${g.gapMonths} mos`).join(', ')})`
-      : '✓ Continuous Employment — 0 Significant Career Gaps'
+      ? `${gaps.length} Career Gap${gaps.length > 1 ? 's' : ''} Detected (${gaps.map(g => `${g.gapMonths} mos`).join(', ')})`
+      : 'Continuous Employment — 0 Significant Career Gaps'
   }
 }
 
@@ -3818,7 +3818,6 @@ export default function RecruiterInbox({ defaultViewMode }) {
     if (gov.hasGov) {
       points.push({
         type: 'priority',
-        icon: '🏛️',
         title: `Public Sector Institutional Experience (${gov.shortName})`,
         desc: `${candName} has verified institutional experience with ${gov.allDepts.join(', ')}. Matches state procurement & vendor qualification guidelines for public sector accounts like ${client}.`
       })
@@ -3827,7 +3826,6 @@ export default function RecruiterInbox({ defaultViewMode }) {
     // 2. Core Skills & Tech Density
     points.push({
       type: 'skills',
-      icon: '⚡',
       title: `Technical Coverage: ${matchedCount}/${totalRequired} Required Skills Matched`,
       desc: matchedCount > 0 
         ? `Hands-on expertise verified across ${dynamicMatchingSkills.slice(0, 5).join(', ')}${dynamicMatchingSkills.length > 5 ? ` and ${dynamicMatchingSkills.length - 5} more` : ''}.`
@@ -3837,7 +3835,6 @@ export default function RecruiterInbox({ defaultViewMode }) {
     // 3. Role & Seniority Alignment
     points.push({
       type: 'title',
-      icon: '🎯',
       title: `Role Alignment: ${role}`,
       desc: `With ${exp} of recorded experience, their professional background aligns with the core responsibilities of ${targetJobTitle}.`
     })
@@ -3846,14 +3843,12 @@ export default function RecruiterInbox({ defaultViewMode }) {
     if (workHistory.hasGaps) {
       points.push({
         type: 'gap_warning',
-        icon: '⚠️',
         title: `Career Timeline Gap Alert (${workHistory.gaps.length} detected)`,
         desc: workHistory.gaps.map(g => `${g.gapMonths} months gap between ${g.afterCompany} and ${g.beforeCompany}`).join('; ') + '. Recruiter screening advised.'
       })
     } else {
       points.push({
         type: 'continuity',
-        icon: '✓',
         title: 'Continuous Employment Continuity',
         desc: 'Zero significant career gaps detected across recorded enterprise engagements.'
       })
@@ -3862,7 +3857,6 @@ export default function RecruiterInbox({ defaultViewMode }) {
     // 5. Work Authorization & Compliance
     points.push({
       type: 'compliance',
-      icon: '🛡️',
       title: `Work Authorization: ${visa}`,
       desc: `Legal work eligibility verified for immediate direct-hire or C2C contract submission.`
     })
@@ -3913,6 +3907,394 @@ export default function RecruiterInbox({ defaultViewMode }) {
       setEmailSubject(`Client Interview Shortlist: ${jobTitle} (Req #${targetReq}) - COOLSOFT LLC`)
       setEmailBody(`Hi ${candFirstName},\n\nGreat news! The client (${jobClient}) has shortlisted your profile for an interview for the ${jobTitle} position.\n\nPlease confirm your availability for a 45-minute video interview this week and provide 2-3 preferred time slots.\n\nWith Regards,\n${myName}\nLead Recruiter\nCOOLSOFT LLC | ${myEmail}\nhttp://www.coolsofttech.com`)
     }
+  }
+
+  const renderRecruiterLeaderboardSection = (isEmbedded = false) => {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        {/* Header & Timeframe Filter */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 4, height: 22, backgroundColor: '#2563EB', borderRadius: 2 }} />
+              <h2 style={{ fontSize: isEmbedded ? 18 : 22, fontWeight: 800, color: C.textPrimary, margin: 0, letterSpacing: '-0.02em' }}>
+                Recruiter Performance &amp; Team Leaderboard
+              </h2>
+            </div>
+            <p style={{ fontSize: 13, color: C.textSecondary, margin: '4px 0 0' }}>
+              Real-time rankings across candidate sourcing volume, phone screenings, client submittals, interviews &amp; placements.
+            </p>
+          </div>
+
+          {/* Period Switcher Pills */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            backgroundColor: isLight ? '#F1F5F9' : '#1E293B',
+            padding: 4,
+            borderRadius: 8,
+            border: `1px solid ${C.border}`
+          }}>
+            {[
+              { key: 'today', label: 'Today' },
+              { key: 'week', label: 'This Week' },
+              { key: 'month', label: 'This Month' },
+              { key: 'all', label: 'All Time' }
+            ].map(p => (
+              <button
+                key={p.key}
+                type="button"
+                onClick={() => {
+                  setLeaderboardPeriod(p.key)
+                  fetchLeaderboard(p.key)
+                }}
+                style={{
+                  border: 'none',
+                  borderRadius: 6,
+                  padding: '6px 14px',
+                  fontSize: 12,
+                  fontWeight: leaderboardPeriod === p.key ? 800 : 600,
+                  backgroundColor: leaderboardPeriod === p.key ? (isLight ? '#FFFFFF' : '#0F172A') : 'transparent',
+                  color: leaderboardPeriod === p.key ? '#2563EB' : C.textSecondary,
+                  boxShadow: leaderboardPeriod === p.key ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Aggregated KPI Summary Row */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 14 }}>
+          {[
+            { label: 'Total Sourced', val: leaderboardData.reduce((acc, r) => acc + (r.sourced || 0), 0), color: '#2563EB', border: '#BFDBFE' },
+            { label: 'Screened Candidates', val: leaderboardData.reduce((acc, r) => acc + (r.screened || 0), 0), color: '#059669', border: '#A7F3D0' },
+            { label: 'Client Submittals', val: leaderboardData.reduce((acc, r) => acc + (r.submissions || 0), 0), color: '#7C3AED', border: '#DDD6FE' },
+            { label: 'Interviews & Offers', val: leaderboardData.reduce((acc, r) => acc + (r.interviews || 0), 0), color: '#D97706', border: '#FDE68A' },
+            { label: 'Total Placements', val: leaderboardData.reduce((acc, r) => acc + (r.placed || 0), 0), color: '#DC2626', border: '#FECACA' }
+          ].map((stat, i) => (
+            <div key={i} style={{
+              backgroundColor: C.surface,
+              border: `1px solid ${C.border}`,
+              borderRadius: 12,
+              padding: '14px 18px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              boxShadow: C.shadow
+            }}>
+              <div style={{
+                width: 6,
+                height: 36,
+                borderRadius: 3,
+                backgroundColor: stat.color,
+                flexShrink: 0
+              }} />
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: C.textSecondary, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                  {stat.label}
+                </div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: stat.color, marginTop: 2 }}>
+                  {stat.val}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Top 3 Podium Showcase */}
+        {leaderboardData.length >= 3 && (
+          <div style={{
+            backgroundColor: C.surface,
+            border: `1px solid ${C.border}`,
+            borderRadius: 16,
+            padding: '24px 20px 18px',
+            boxShadow: C.shadow
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: 18 }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#D97706', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                Top Performance Leaders
+              </span>
+              <h3 style={{ margin: '4px 0 0', fontSize: 17, fontWeight: 900, color: C.textPrimary }}>
+                Sprint Standings ({leaderboardPeriod === 'today' ? 'Today' : leaderboardPeriod === 'week' ? 'This Week' : leaderboardPeriod === 'month' ? 'This Month' : 'All Time'})
+              </h3>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, alignItems: 'flex-end', maxWidth: 880, margin: '0 auto' }}>
+              {/* #2 Silver (Left) */}
+              {(() => {
+                const r = leaderboardData[1]
+                if (!r) return null
+                return (
+                  <div style={{
+                    backgroundColor: isLight ? '#F8FAFC' : '#1E293B',
+                    border: '1.5px solid #94A3B8',
+                    borderRadius: '16px 16px 0 0',
+                    padding: '20px 14px 18px',
+                    textAlign: 'center',
+                    boxShadow: '0 4px 14px rgba(148,163,184,0.15)'
+                  }}>
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 36,
+                      height: 36,
+                      borderRadius: '50%',
+                      backgroundColor: '#E2E8F0',
+                      color: '#475569',
+                      fontWeight: 900,
+                      fontSize: 15,
+                      margin: '0 auto 8px'
+                    }}>
+                      #2
+                    </div>
+                    <div style={{ fontSize: 11, fontWeight: 900, color: '#64748B', textTransform: 'uppercase' }}>Rank #2 · Silver</div>
+                    <h4 style={{ margin: '6px 0 2px', fontSize: 15, fontWeight: 900, color: C.textPrimary }}>{r.name}</h4>
+                    <div style={{ fontSize: 11, color: C.textSecondary }}>{r.role || 'Senior Recruiter'}</div>
+                    <div style={{ marginTop: 10, fontSize: 18, fontWeight: 900, color: '#2563EB' }}>{r.kpiScore || r.points || 0} <span style={{ fontSize: 11, fontWeight: 600, color: C.textSecondary }}>pts</span></div>
+                    <div style={{ marginTop: 6, fontSize: 11, color: C.textSecondary }}>
+                      <strong>{r.submissions || 0}</strong> subs · <strong>{r.interviews || 0}</strong> ints · <strong>{r.placed || 0}</strong> hires
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* #1 Gold (Center, Elevated) */}
+              {(() => {
+                const r = leaderboardData[0]
+                if (!r) return null
+                return (
+                  <div style={{
+                    backgroundColor: isLight ? '#FEFCE8' : 'rgba(234,179,8,0.1)',
+                    border: '2px solid #EAB308',
+                    borderRadius: '16px 16px 0 0',
+                    padding: '30px 16px 22px',
+                    textAlign: 'center',
+                    boxShadow: '0 8px 24px rgba(234,179,8,0.25)',
+                    transform: 'translateY(-10px)'
+                  }}>
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 44,
+                      height: 44,
+                      borderRadius: '50%',
+                      backgroundColor: '#FEF08A',
+                      color: '#854D0E',
+                      fontWeight: 900,
+                      fontSize: 18,
+                      margin: '0 auto 8px',
+                      boxShadow: '0 2px 8px rgba(202,138,4,0.3)'
+                    }}>
+                      #1
+                    </div>
+                    <div style={{ fontSize: 11.5, fontWeight: 900, color: '#CA8A04', textTransform: 'uppercase' }}>Rank #1 · Champion</div>
+                    <h4 style={{ margin: '6px 0 2px', fontSize: 17, fontWeight: 900, color: C.textPrimary }}>{r.name}</h4>
+                    <div style={{ fontSize: 11.5, color: C.textSecondary }}>{r.role || 'Lead Recruiter'}</div>
+                    <div style={{ marginTop: 12, fontSize: 22, fontWeight: 900, color: '#CA8A04' }}>{r.kpiScore || r.points || 0} <span style={{ fontSize: 11.5, fontWeight: 600, color: C.textSecondary }}>pts</span></div>
+                    <div style={{ marginTop: 6, fontSize: 11.5, color: C.textSecondary }}>
+                      <strong>{r.submissions || 0}</strong> subs · <strong>{r.interviews || 0}</strong> ints · <strong>{r.placed || 0}</strong> hires
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* #3 Bronze (Right) */}
+              {(() => {
+                const r = leaderboardData[2]
+                if (!r) return null
+                return (
+                  <div style={{
+                    backgroundColor: isLight ? '#FFF7ED' : '#1E293B',
+                    border: '1.5px solid #F97316',
+                    borderRadius: '16px 16px 0 0',
+                    padding: '18px 14px 16px',
+                    textAlign: 'center',
+                    boxShadow: '0 4px 14px rgba(249,115,22,0.15)'
+                  }}>
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 34,
+                      height: 34,
+                      borderRadius: '50%',
+                      backgroundColor: '#FFEDD5',
+                      color: '#9A3412',
+                      fontWeight: 900,
+                      fontSize: 14,
+                      margin: '0 auto 8px'
+                    }}>
+                      #3
+                    </div>
+                    <div style={{ fontSize: 11, fontWeight: 900, color: '#EA580C', textTransform: 'uppercase' }}>Rank #3 · Bronze</div>
+                    <h4 style={{ margin: '6px 0 2px', fontSize: 14.5, fontWeight: 900, color: C.textPrimary }}>{r.name}</h4>
+                    <div style={{ fontSize: 11, color: C.textSecondary }}>{r.role || 'Recruiter'}</div>
+                    <div style={{ marginTop: 10, fontSize: 17, fontWeight: 900, color: '#EA580C' }}>{r.kpiScore || r.points || 0} <span style={{ fontSize: 11, fontWeight: 600, color: C.textSecondary }}>pts</span></div>
+                    <div style={{ marginTop: 6, fontSize: 11, color: C.textSecondary }}>
+                      <strong>{r.submissions || 0}</strong> subs · <strong>{r.interviews || 0}</strong> ints · <strong>{r.placed || 0}</strong> hires
+                    </div>
+                  </div>
+                )
+              })()}
+            </div>
+          </div>
+        )}
+
+        {/* Detailed Performance Rankings Table */}
+        <div style={{
+          backgroundColor: C.surface,
+          borderRadius: 16,
+          padding: '22px 24px',
+          boxShadow: C.shadow,
+          border: `1px solid ${C.border}`
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+            <div>
+              <h3 style={{ fontSize: 16, fontWeight: 800, color: C.textPrimary, margin: '0 0 4px' }}>
+                Full Team Performance Matrix
+              </h3>
+              <div style={{ fontSize: 12, color: C.textSecondary }}>
+                Individual conversion tracking across current hiring pipeline
+              </div>
+            </div>
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: C.textSecondary, background: isLight ? '#F1F5F9' : '#1E293B', padding: '4px 10px', borderRadius: 6, border: `1px solid ${C.border}` }}>
+              {leaderboardData.length} Active Recruiters Tracked
+            </div>
+          </div>
+
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 12.5 }}>
+              <thead>
+                <tr style={{ borderBottom: `2px solid ${C.border}`, color: C.textSecondary, fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                  <th style={{ padding: '10px 14px', width: 60 }}>Rank</th>
+                  <th style={{ padding: '10px 14px' }}>Recruiter</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'center' }}>Sourced</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'center' }}>Screened</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'center' }}>Submissions</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'center' }}>Interviews</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'center' }}>Placements</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'right' }}>Total Points</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'center' }}>Velocity</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'right' }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {leaderboardLoading ? (
+                  <tr>
+                    <td colSpan={10} style={{ padding: '36px 0', textAlign: 'center', color: C.textSecondary }}>
+                      Syncing team performance metrics...
+                    </td>
+                  </tr>
+                ) : leaderboardData.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} style={{ padding: '36px 0', textAlign: 'center', color: C.textSecondary }}>
+                      No activity logged for the selected period.
+                    </td>
+                  </tr>
+                ) : (
+                  leaderboardData.map((r, i) => {
+                    const isTop3 = i < 3
+                    const rankLabel = `#${i + 1}`
+                    return (
+                      <tr
+                        key={r.id || r.email || i}
+                        style={{
+                          borderBottom: `1px solid ${C.border}`,
+                          backgroundColor: isTop3 ? (isLight ? 'rgba(254,249,195,0.2)' : 'rgba(234,179,8,0.03)') : 'transparent',
+                          transition: 'background-color 0.15s ease'
+                        }}
+                      >
+                        <td style={{ padding: '12px 14px', fontWeight: 800, fontSize: 13, color: isTop3 ? '#B45309' : C.textSecondary }}>
+                          {rankLabel}
+                        </td>
+                        <td style={{ padding: '12px 14px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{
+                              width: 32,
+                              height: 32,
+                              borderRadius: '50%',
+                              backgroundColor: isTop3 ? '#FEF3C7' : '#EFF6FF',
+                              color: isTop3 ? '#B45309' : '#2563EB',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontWeight: 800,
+                              fontSize: 12
+                            }}>
+                              {getInitials(r.name || 'Recruiter')}
+                            </div>
+                            <div>
+                              <strong style={{ color: C.textPrimary, fontSize: 13 }}>{r.name}</strong>
+                              <div style={{ fontSize: 11, color: C.textSecondary }}>{r.email} · {r.role || 'Recruiter'}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ padding: '12px 12px', textAlign: 'center', fontWeight: 700, color: C.textPrimary }}>{r.sourced || 0}</td>
+                        <td style={{ padding: '12px 12px', textAlign: 'center', fontWeight: 700, color: '#059669' }}>{r.screened || 0}</td>
+                        <td style={{ padding: '12px 12px', textAlign: 'center', fontWeight: 700, color: '#2563EB' }}>{r.submissions || 0}</td>
+                        <td style={{ padding: '12px 12px', textAlign: 'center', fontWeight: 700, color: '#7C3AED' }}>{r.interviews || 0}</td>
+                        <td style={{ padding: '12px 12px', textAlign: 'center', fontWeight: 800, color: '#DC2626' }}>{r.placed || 0}</td>
+                        <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 900, color: C.textPrimary, fontSize: 13.5 }}>
+                          {r.kpiScore || r.points || 0} <span style={{ fontSize: 10, color: C.textSecondary, fontWeight: 500 }}>pts</span>
+                        </td>
+                        <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                          <span style={{
+                            fontSize: 10.5,
+                            fontWeight: 800,
+                            backgroundColor: r.velocity === 'High Velocity' ? '#EFF6FF' : '#ECFDF5',
+                            color: r.velocity === 'High Velocity' ? '#2563EB' : '#059669',
+                            border: `1px solid ${r.velocity === 'High Velocity' ? '#BFDBFE' : '#A7F3D0'}`,
+                            borderRadius: 6,
+                            padding: '2px 8px',
+                            display: 'inline-flex',
+                            alignItems: 'center'
+                          }}>
+                            {r.velocity || 'Active'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFilterRecruiter(r.name)
+                              setInboxViewMode('stream')
+                              setInboxSubMode('table')
+                              setTablePage(1)
+                            }}
+                            style={{
+                              backgroundColor: isLight ? '#EFF6FF' : 'rgba(37,99,235,0.15)',
+                              color: '#2563EB',
+                              border: '1px solid #BFDBFE',
+                              borderRadius: 6,
+                              padding: '5px 10px',
+                              fontSize: 11.5,
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4
+                            }}
+                          >
+                            Talent Pool ↗
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const toggleFavorite = (candId, e) => {
@@ -4120,7 +4502,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
               }}
             >
               <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ fontSize: 16 }}>🏆</span> <span>Leaderboard</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+                <span>Leaderboard</span>
               </span>
               <span style={{ fontSize: 10, background: '#F59E0B', color: '#FFF', padding: '1px 6px', borderRadius: 10, fontWeight: 800 }}>
                 KPIs
@@ -5006,6 +5389,11 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       </tbody>
                     </table>
                   </div>
+                </div>
+
+                {/* Integrated Recruiter Performance & KPI Leaderboard on Dashboard */}
+                <div style={{ marginTop: 8 }}>
+                  {renderRecruiterLeaderboardSection(true)}
                 </div>
 
               </div>
@@ -5899,7 +6287,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                           }}>
                             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <span style={{ fontSize: 24 }}>🏛️</span>
+                                <div style={{ width: 4, height: 28, backgroundColor: '#059669', borderRadius: 2, flexShrink: 0 }} />
                                 <div>
                                   <h4 style={{ margin: 0, fontSize: 14.5, fontWeight: 900, color: '#065F46' }}>
                                     Verified Public Sector / Government Department Experience
@@ -5919,7 +6307,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                 letterSpacing: '0.4px',
                                 textTransform: 'uppercase'
                               }}>
-                                ⭐ 1st Preference Candidate
+                                1st Preference Candidate
                               </span>
                             </div>
 
@@ -5955,7 +6343,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                           }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <span style={{ fontSize: 18 }}>🤖</span>
+                                <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#2563EB', display: 'inline-block' }} />
                                 <h4 style={{ margin: 0, fontSize: 14, fontWeight: 900, color: C.textPrimary, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                                   AI Placement Fit Rationale: Why Candidate Fits Req #{currentReqId}
                                 </h4>
@@ -5989,7 +6377,14 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   backgroundColor: pt.type === 'priority' ? (isLight ? '#ECFDF5' : 'rgba(16,185,129,0.08)') : pt.type === 'gap_warning' ? (isLight ? '#FFFBEB' : 'rgba(245,158,11,0.08)') : (isLight ? '#FFFFFF' : C.inputBg),
                                   border: `1px solid ${pt.type === 'priority' ? '#A7F3D0' : pt.type === 'gap_warning' ? '#FDE68A' : C.border}`
                                 }}>
-                                  <span style={{ fontSize: 16, marginTop: 1 }}>{pt.icon}</span>
+                                  <span style={{
+                                    width: 7,
+                                    height: 7,
+                                    borderRadius: '50%',
+                                    marginTop: 6,
+                                    flexShrink: 0,
+                                    backgroundColor: pt.type === 'priority' ? '#059669' : pt.type === 'gap_warning' ? '#D97706' : '#2563EB'
+                                  }} />
                                   <div style={{ flex: 1 }}>
                                     <div style={{
                                       fontSize: 12.5,
@@ -6054,7 +6449,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                 marginBottom: 16
                               }}>
                                 <div style={{ fontSize: 12.5, fontWeight: 800, color: '#B45309', marginBottom: 6 }}>
-                                  ⚠️ Notice: Career Hiatus Detected
+                                  Notice: Career Hiatus Detected
                                 </div>
                                 {candidateWorkHistory.gaps.map((g, idx) => (
                                   <div key={idx} style={{ fontSize: 12, color: '#92400E', lineHeight: 1.5 }}>
@@ -6122,7 +6517,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                           alignItems: 'center',
                                           gap: 3
                                         }}>
-                                          🏛️ {role.deptName || 'State Agency'}
+                                          {role.deptName || 'State Agency'}
                                         </span>
                                       )}
                                     </div>
@@ -7384,12 +7779,12 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     }}
                     title="Filter candidates by State & Public Sector Department Experience"
                   >
-                    <option value="all">🏛️ Gov / Dept: All ⌵</option>
-                    <option value="any_gov">🏛️ Any Gov / State Dept Exp</option>
-                    <option value="health">🏥 Dept of Health / DSHS / HHSC</option>
-                    <option value="transportation">🚗 TxDOT / Transportation</option>
-                    <option value="behavioral">🧠 DBHDS / Behavioral Health</option>
-                    <option value="state_tx">⭐ State of Texas Agencies</option>
+                    <option value="all">Gov / Dept: All</option>
+                    <option value="any_gov">Any Public Sector / State Agency</option>
+                    <option value="health">Dept of Health / DSHS / HHSC</option>
+                    <option value="transportation">TxDOT / Transportation</option>
+                    <option value="behavioral">DBHDS / Behavioral Health</option>
+                    <option value="state_tx">State of Texas Agencies</option>
                   </select>
 
                   {/* Clear text button */}
@@ -7506,7 +7901,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       }}
                     >
                       <option value="match_desc">Match (High to Low)</option>
-                      <option value="gov_first">🏛️ Department Experience First</option>
+                      <option value="gov_first">Department Experience (First Preference)</option>
                       <option value="match_asc">Match (Low to High)</option>
                       <option value="date_desc">Newest First</option>
                       <option value="date_asc">Oldest First</option>
@@ -7796,7 +8191,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                             textOverflow: 'ellipsis',
                                             whiteSpace: 'nowrap'
                                           }} title={`Verified Public Sector Experience: ${g.primaryDept}`}>
-                                            🏛️ {g.shortName}
+                                            {g.shortName}
                                           </span>
                                         </div>
                                       )
@@ -8238,352 +8633,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
           {/* VIEW 3: RECRUITER KPI LEADERBOARD & TEAM PERFORMANCE VIEW */}
           {inboxViewMode === 'leaderboard' && (
             <div style={{ flex: 1, overflowY: 'auto', padding: '28px 36px', boxSizing: 'border-box' }}>
-              <div style={{ maxWidth: 1320, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
-                
-                {/* Header & Timeframe Filter */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 26 }}>🏆</span>
-                      <h1 style={{ fontSize: 24, fontWeight: 800, color: C.textPrimary, margin: 0, letterSpacing: '-0.02em' }}>
-                        Recruiter KPI Leaderboard &amp; Team Performance
-                      </h1>
-                    </div>
-                    <p style={{ fontSize: 13.5, color: C.textSecondary, margin: '4px 0 0' }}>
-                      Real-time rankings across sourcing volume, candidate screenings, client submittals, interviews &amp; placements.
-                    </p>
-                  </div>
-
-                  {/* Period Switcher Pills */}
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    backgroundColor: isLight ? '#F1F5F9' : '#1E293B',
-                    padding: 4,
-                    borderRadius: 8,
-                    border: `1px solid ${C.border}`
-                  }}>
-                    {[
-                      { key: 'today', label: 'Today' },
-                      { key: 'week', label: 'This Week' },
-                      { key: 'month', label: 'This Month' },
-                      { key: 'all', label: 'All Time' }
-                    ].map(p => (
-                      <button
-                        key={p.key}
-                        type="button"
-                        onClick={() => {
-                          setLeaderboardPeriod(p.key)
-                          fetchLeaderboard(p.key)
-                        }}
-                        style={{
-                          border: 'none',
-                          borderRadius: 6,
-                          padding: '6px 14px',
-                          fontSize: 12.5,
-                          fontWeight: leaderboardPeriod === p.key ? 800 : 600,
-                          backgroundColor: leaderboardPeriod === p.key ? (isLight ? '#FFFFFF' : '#0F172A') : 'transparent',
-                          color: leaderboardPeriod === p.key ? '#2563EB' : C.textSecondary,
-                          boxShadow: leaderboardPeriod === p.key ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s ease'
-                        }}
-                      >
-                        {p.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Aggregated KPI Summary Row */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
-                  {[
-                    { label: 'Total Sourced', val: leaderboardData.reduce((acc, r) => acc + (r.sourced || 0), 0), icon: '📥', color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE' },
-                    { label: 'Screened Candidates', val: leaderboardData.reduce((acc, r) => acc + (r.screened || 0), 0), icon: '📞', color: '#059669', bg: '#ECFDF5', border: '#A7F3D0' },
-                    { label: 'Client Submittals', val: leaderboardData.reduce((acc, r) => acc + (r.submissions || 0), 0), icon: '🚀', color: '#7C3AED', bg: '#F5F3FF', border: '#DDD6FE' },
-                    { label: 'Interviews & Offers', val: leaderboardData.reduce((acc, r) => acc + (r.interviews || 0), 0), icon: '🎯', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
-                    { label: 'Total Placements', val: leaderboardData.reduce((acc, r) => acc + (r.placed || 0), 0), icon: '⭐', color: '#DC2626', bg: '#FEF2F2', border: '#FECACA' }
-                  ].map((stat, i) => (
-                    <div key={i} style={{
-                      backgroundColor: C.surface,
-                      border: `1px solid ${C.border}`,
-                      borderRadius: 12,
-                      padding: '16px 20px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 16,
-                      boxShadow: C.shadow
-                    }}>
-                      <div style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: 10,
-                        backgroundColor: stat.bg,
-                        border: `1px solid ${stat.border}`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 20
-                      }}>
-                        {stat.icon}
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 11.5, fontWeight: 700, color: C.textSecondary, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                          {stat.label}
-                        </div>
-                        <div style={{ fontSize: 22, fontWeight: 900, color: stat.color, marginTop: 2 }}>
-                          {stat.val}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Top 3 Podium Showcase */}
-                {leaderboardData.length >= 3 && (
-                  <div style={{
-                    backgroundColor: C.surface,
-                    border: `1px solid ${C.border}`,
-                    borderRadius: 16,
-                    padding: '28px 24px 20px',
-                    boxShadow: C.shadow
-                  }}>
-                    <div style={{ textAlign: 'center', marginBottom: 20 }}>
-                      <span style={{ fontSize: 11, fontWeight: 800, color: '#D97706', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                        ★ Top Performance Podium ★
-                      </span>
-                      <h3 style={{ margin: '4px 0 0', fontSize: 18, fontWeight: 900, color: C.textPrimary }}>
-                        Leaders of the Sprint ({leaderboardPeriod === 'today' ? 'Today' : leaderboardPeriod === 'week' ? 'This Week' : leaderboardPeriod === 'month' ? 'This Month' : 'All Time'})
-                      </h3>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, alignItems: 'flex-end', maxWidth: 880, margin: '0 auto' }}>
-                      {/* #2 Silver (Left) */}
-                      {(() => {
-                        const r = leaderboardData[1]
-                        if (!r) return null
-                        return (
-                          <div style={{
-                            backgroundColor: isLight ? '#F8FAFC' : '#1E293B',
-                            border: '1.5px solid #94A3B8',
-                            borderRadius: '16px 16px 0 0',
-                            padding: '24px 16px 20px',
-                            textAlign: 'center',
-                            boxShadow: '0 4px 14px rgba(148,163,184,0.15)'
-                          }}>
-                            <div style={{ fontSize: 28, marginBottom: 4 }}>🥈</div>
-                            <div style={{ fontSize: 12, fontWeight: 900, color: '#64748B', textTransform: 'uppercase' }}>Rank #2 · Silver</div>
-                            <h4 style={{ margin: '6px 0 2px', fontSize: 16, fontWeight: 900, color: C.textPrimary }}>{r.name}</h4>
-                            <div style={{ fontSize: 11, color: C.textSecondary }}>{r.role || 'Senior Recruiter'}</div>
-                            <div style={{ marginTop: 12, fontSize: 18, fontWeight: 900, color: '#2563EB' }}>{r.points} <span style={{ fontSize: 11, fontWeight: 600, color: C.textSecondary }}>pts</span></div>
-                            <div style={{ marginTop: 8, fontSize: 11.5, color: C.textSecondary }}>
-                              <strong>{r.submissions || 0}</strong> subs · <strong>{r.interviews || 0}</strong> ints · <strong>{r.placed || 0}</strong> hires
-                            </div>
-                          </div>
-                        )
-                      })()}
-
-                      {/* #1 Gold (Center, Elevated) */}
-                      {(() => {
-                        const r = leaderboardData[0]
-                        if (!r) return null
-                        return (
-                          <div style={{
-                            backgroundColor: isLight ? '#FEFCE8' : 'rgba(234,179,8,0.1)',
-                            border: '2px solid #EAB308',
-                            borderRadius: '16px 16px 0 0',
-                            padding: '36px 18px 24px',
-                            textAlign: 'center',
-                            boxShadow: '0 8px 24px rgba(234,179,8,0.25)',
-                            transform: 'translateY(-12px)'
-                          }}>
-                            <div style={{ fontSize: 36, marginBottom: 4 }}>👑 🥇</div>
-                            <div style={{ fontSize: 12, fontWeight: 900, color: '#CA8A04', textTransform: 'uppercase' }}>Rank #1 · Champion</div>
-                            <h4 style={{ margin: '6px 0 2px', fontSize: 18, fontWeight: 900, color: C.textPrimary }}>{r.name}</h4>
-                            <div style={{ fontSize: 11.5, color: C.textSecondary }}>{r.role || 'Lead Recruiter'}</div>
-                            <div style={{ marginTop: 14, fontSize: 24, fontWeight: 900, color: '#CA8A04' }}>{r.points} <span style={{ fontSize: 12, fontWeight: 600, color: C.textSecondary }}>pts</span></div>
-                            <div style={{ marginTop: 8, fontSize: 12, color: C.textSecondary }}>
-                              <strong>{r.submissions || 0}</strong> subs · <strong>{r.interviews || 0}</strong> ints · <strong>{r.placed || 0}</strong> hires
-                            </div>
-                          </div>
-                        )
-                      })()}
-
-                      {/* #3 Bronze (Right) */}
-                      {(() => {
-                        const r = leaderboardData[2]
-                        if (!r) return null
-                        return (
-                          <div style={{
-                            backgroundColor: isLight ? '#FFF7ED' : '#1E293B',
-                            border: '1.5px solid #F97316',
-                            borderRadius: '16px 16px 0 0',
-                            padding: '20px 16px 16px',
-                            textAlign: 'center',
-                            boxShadow: '0 4px 14px rgba(249,115,22,0.15)'
-                          }}>
-                            <div style={{ fontSize: 26, marginBottom: 4 }}>🥉</div>
-                            <div style={{ fontSize: 12, fontWeight: 900, color: '#EA580C', textTransform: 'uppercase' }}>Rank #3 · Bronze</div>
-                            <h4 style={{ margin: '6px 0 2px', fontSize: 15, fontWeight: 900, color: C.textPrimary }}>{r.name}</h4>
-                            <div style={{ fontSize: 11, color: C.textSecondary }}>{r.role || 'Recruiter'}</div>
-                            <div style={{ marginTop: 12, fontSize: 18, fontWeight: 900, color: '#EA580C' }}>{r.points} <span style={{ fontSize: 11, fontWeight: 600, color: C.textSecondary }}>pts</span></div>
-                            <div style={{ marginTop: 8, fontSize: 11.5, color: C.textSecondary }}>
-                              <strong>{r.submissions || 0}</strong> subs · <strong>{r.interviews || 0}</strong> ints · <strong>{r.placed || 0}</strong> hires
-                            </div>
-                          </div>
-                        )
-                      })()}
-                    </div>
-                  </div>
-                )}
-
-                {/* Full Recruiter KPI Table */}
-                <div style={{
-                  backgroundColor: C.surface,
-                  border: `1px solid ${C.border}`,
-                  borderRadius: 14,
-                  overflow: 'hidden',
-                  boxShadow: C.shadow
-                }}>
-                  <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 800, color: C.textPrimary, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                      Detailed Recruiter Sourcing &amp; Placement Performance
-                    </div>
-                    <span style={{ fontSize: 11.5, color: C.textSecondary }}>
-                      {leaderboardData.length} Active Recruiters Tracked
-                    </span>
-                  </div>
-
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 12.5 }}>
-                    <thead>
-                      <tr style={{
-                        backgroundColor: isLight ? '#F8FAFC' : '#1E293B',
-                        borderBottom: `1px solid ${C.border}`,
-                        color: '#64748B',
-                        fontSize: 11.5,
-                        fontWeight: 700,
-                        textTransform: 'uppercase'
-                      }}>
-                        <th style={{ padding: '10px 14px', width: 60 }}>Rank</th>
-                        <th style={{ padding: '10px 14px' }}>Recruiter</th>
-                        <th style={{ padding: '10px 12px', textAlign: 'center' }}>Sourced</th>
-                        <th style={{ padding: '10px 12px', textAlign: 'center' }}>Screened</th>
-                        <th style={{ padding: '10px 12px', textAlign: 'center' }}>Submissions</th>
-                        <th style={{ padding: '10px 12px', textAlign: 'center' }}>Interviews</th>
-                        <th style={{ padding: '10px 12px', textAlign: 'center' }}>Placements</th>
-                        <th style={{ padding: '10px 14px', textAlign: 'right' }}>Total Points</th>
-                        <th style={{ padding: '10px 14px', textAlign: 'center' }}>Velocity</th>
-                        <th style={{ padding: '10px 14px', textAlign: 'right' }}>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {leaderboardLoading ? (
-                        <tr>
-                          <td colSpan={10} style={{ padding: 40, textAlign: 'center', color: C.textSecondary }}>
-                            Loading team performance telemetry...
-                          </td>
-                        </tr>
-                      ) : leaderboardData.length === 0 ? (
-                        <tr>
-                          <td colSpan={10} style={{ padding: 40, textAlign: 'center', color: C.textSecondary }}>
-                            No activity logged for the selected period.
-                          </td>
-                        </tr>
-                      ) : (
-                        leaderboardData.map((r, i) => {
-                          const isTop3 = i < 3
-                          const rankMedal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`
-                          return (
-                            <tr
-                              key={r.id || r.email || i}
-                              style={{
-                                borderBottom: `1px solid ${C.border}`,
-                                backgroundColor: isTop3 ? (isLight ? 'rgba(254,249,195,0.25)' : 'rgba(234,179,8,0.04)') : 'transparent',
-                                transition: 'background-color 0.15s ease'
-                              }}
-                            >
-                              <td style={{ padding: '12px 14px', fontWeight: 900, fontSize: isTop3 ? 16 : 13, color: isTop3 ? '#B45309' : C.textSecondary }}>
-                                {rankMedal}
-                              </td>
-                              <td style={{ padding: '12px 14px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                  <div style={{
-                                    width: 32,
-                                    height: 32,
-                                    borderRadius: '50%',
-                                    backgroundColor: isTop3 ? '#FEF3C7' : '#EFF6FF',
-                                    color: isTop3 ? '#B45309' : '#2563EB',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontWeight: 800,
-                                    fontSize: 12
-                                  }}>
-                                    {getInitials(r.name || 'Recruiter')}
-                                  </div>
-                                  <div>
-                                    <strong style={{ color: C.textPrimary, fontSize: 13 }}>{r.name}</strong>
-                                    <div style={{ fontSize: 11, color: C.textSecondary }}>{r.email} · {r.role || 'Recruiter'}</div>
-                                  </div>
-                                </div>
-                              </td>
-                              <td style={{ padding: '12px 12px', textAlign: 'center', fontWeight: 700, color: C.textPrimary }}>{r.sourced || 0}</td>
-                              <td style={{ padding: '12px 12px', textAlign: 'center', fontWeight: 700, color: '#059669' }}>{r.screened || 0}</td>
-                              <td style={{ padding: '12px 12px', textAlign: 'center', fontWeight: 700, color: '#2563EB' }}>{r.submissions || 0}</td>
-                              <td style={{ padding: '12px 12px', textAlign: 'center', fontWeight: 700, color: '#7C3AED' }}>{r.interviews || 0}</td>
-                              <td style={{ padding: '12px 12px', textAlign: 'center', fontWeight: 800, color: '#DC2626' }}>{r.placed || 0}</td>
-                              <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 900, color: '#0F172A', fontSize: 14 }}>
-                                {r.points || 0} <span style={{ fontSize: 10, color: C.textSecondary, fontWeight: 500 }}>pts</span>
-                              </td>
-                              <td style={{ padding: '12px 14px', textAlign: 'center' }}>
-                                <span style={{
-                                  fontSize: 10.5,
-                                  fontWeight: 800,
-                                  backgroundColor: r.velocity === 'On Fire' ? '#FEF2F2' : r.velocity === 'High Velocity' ? '#EFF6FF' : '#ECFDF5',
-                                  color: r.velocity === 'On Fire' ? '#DC2626' : r.velocity === 'High Velocity' ? '#2563EB' : '#059669',
-                                  border: `1px solid ${r.velocity === 'On Fire' ? '#FECACA' : r.velocity === 'High Velocity' ? '#BFDBFE' : '#A7F3D0'}`,
-                                  borderRadius: 6,
-                                  padding: '2px 8px',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: 4
-                                }}>
-                                  {r.velocity === 'On Fire' ? '🔥' : r.velocity === 'High Velocity' ? '⚡' : '🟢'} {r.velocity || 'Active'}
-                                </span>
-                              </td>
-                              <td style={{ padding: '12px 14px', textAlign: 'right' }}>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setFilterRecruiter(r.name)
-                                    setInboxViewMode('stream')
-                                    setInboxSubMode('table')
-                                    setTablePage(1)
-                                  }}
-                                  style={{
-                                    backgroundColor: isLight ? '#EFF6FF' : 'rgba(37,99,235,0.15)',
-                                    color: '#2563EB',
-                                    border: '1px solid #BFDBFE',
-                                    borderRadius: 6,
-                                    padding: '4px 10px',
-                                    fontSize: 11,
-                                    fontWeight: 700,
-                                    cursor: 'pointer'
-                                  }}
-                                  title={`View candidate talent pool assigned to ${r.name}`}
-                                >
-                                  Talent Pool ↗
-                                </button>
-                              </td>
-                            </tr>
-                          )
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
+              <div style={{ maxWidth: 1320, margin: '0 auto' }}>
+                {renderRecruiterLeaderboardSection(false)}
               </div>
             </div>
           )}

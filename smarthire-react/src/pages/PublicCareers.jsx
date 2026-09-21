@@ -114,7 +114,7 @@ export default function PublicCareers() {
       canonical.setAttribute('rel', 'canonical')
       document.head.appendChild(canonical)
     }
-    canonical.setAttribute('href', 'https://smarthire-4zqf.onrender.com/jobs')
+    canonical.setAttribute('href', 'https://smarthireus.com/jobs')
 
     const existingLd = document.getElementById('smarthire-jobs-jsonld')
     if (existingLd) existingLd.remove()
