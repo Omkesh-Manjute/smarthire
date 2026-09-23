@@ -792,6 +792,7 @@ export async function scrapeResumesFromIMAP({
           sourceEmailSubject: cand.subject || 'Vendor Candidate Bench',
           attachmentName: cand.attachmentName || null,
           storageUrl: cand.file?.local_path || '',
+          recruiterEmail: (recruiterEmail || 'omkesh@coolsofttech.com'),
           status: 'Available'
         });
         addedToHotlists++;

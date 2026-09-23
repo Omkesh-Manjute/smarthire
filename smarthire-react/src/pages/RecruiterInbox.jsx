@@ -3882,7 +3882,14 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const fetchVendorHotlists = useCallback(async () => {
     try {
       setVendorHotlistsLoading(true)
-      const res = await fetch('/api/recruiter/vendor-hotlists')
+      const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
+      const isOm = isSuperAdmin || 
+        (u.email && u.email.toLowerCase().includes('omkesh')) || 
+        (u.name && u.name.toLowerCase().includes('omkesh')) || 
+        (currentUser?.email && currentUser.email.toLowerCase().includes('omkesh'))
+      const myEmail = u.email || currentUser?.email || (isOm ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')
+      const myRole = isOm ? 'superadmin' : (activeRole || u.role || (isManager ? 'manager' : 'recruiter'))
+      const res = await fetch(`/api/recruiter/vendor-hotlists?recruiterEmail=${encodeURIComponent(myEmail)}&role=${encodeURIComponent(myRole)}`)
       const data = await res.json()
       if (data && data.success && Array.isArray(data.hotlists)) {
         setVendorHotlists(data.hotlists)
@@ -3892,7 +3899,23 @@ export default function RecruiterInbox({ defaultViewMode }) {
     } finally {
       setVendorHotlistsLoading(false)
     }
-  }, [])
+  }, [isSuperAdmin, isManager, currentUser?.email, currentUser?.name, activeRole])
+
+  const scopedVendorHotlists = useMemo(() => {
+    const isOm = isSuperAdmin || 
+      (currentUser?.email && currentUser.email.toLowerCase().includes('omkesh')) || 
+      (currentUser?.name && currentUser.name.toLowerCase().includes('omkesh'))
+    if (isOm) return vendorHotlists
+
+    const userMail = (currentUser?.email || '').toLowerCase().trim()
+    if (isManager) {
+      return vendorHotlists.filter(item => {
+        const rEmail = (item.recruiterEmail || 'omkesh@coolsofttech.com').toLowerCase().trim()
+        return rEmail === userMail || teamUsersList.some(u => (u.email || '').toLowerCase().trim() === rEmail)
+      })
+    }
+    return vendorHotlists.filter(item => (item.recruiterEmail || 'omkesh@coolsofttech.com').toLowerCase().trim() === userMail)
+  }, [vendorHotlists, isSuperAdmin, isManager, currentUser?.email, currentUser?.name, teamUsersList])
 
   useEffect(() => {
     fetchVendorHotlists()
@@ -4117,57 +4140,66 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const candidateJob = activeThread?.jobTitle || 'Vacancy'
   const profile = candidateDetails?.extracted_profile || candidateDetails
 
-  const filteredCandidates = useMemo(() => {
-    const rawFiltered = streamCandidates.filter(c => {
+  // ─── STRICT ROLE-BASED PRIVACY & SCOPING CHECK ───
+  // SuperAdmin/Omkesh and Managers see all team candidates to manage them.
+  // Standard recruiters and employees strictly see candidates assigned to them, targeting their assigned reqs, reportees, or careers portal.
+  const roleScopedCandidates = useMemo(() => {
+    const isOm = isSuperAdmin || 
+      (currentUser?.email && currentUser.email.toLowerCase().includes('omkesh')) || 
+      (currentUser?.name && currentUser.name.toLowerCase().includes('omkesh'))
+
+    return streamCandidates.filter(c => {
       if (!c) return false
 
-      // ─── STRICT ROLE-BASED PRIVACY CHECK ───
-      // Non-admins must only see candidates assigned to them, targeting their assigned reqs, from reportees, or careers portal
-      const isOm = isSuperAdmin || 
-        (currentUser?.email && currentUser.email.toLowerCase().includes('omkesh')) || 
-        (currentUser?.name && currentUser.name.toLowerCase().includes('omkesh'))
+      // SuperAdmin or Omkesh has full visibility
+      if (isOm) return true
 
-      if (!isOm) {
-        const userIdent = safeString(currentUser?.name).toLowerCase()
-        const userMail = safeString(currentUser?.email).toLowerCase()
-        const firstName = safeString(userIdent.split(' ')[0]).toLowerCase()
+      // Manager has full managerial oversight of team candidates to manage them ("manager user bhi dikh raha hai so vo manage kar sake")
+      if (isManager) return true
 
-        const candAssigned = safeString(c.assignedRecruiter || c.assignedBy || c.recruiter || c.addedByName).toLowerCase()
-        const candEmail = safeString(c.recruiterEmail || c.addedByEmail || c.createdBy).toLowerCase()
-        const candReqId = String(c.targetReqId || c.reqId || '').replace(/^J-/, '').replace(/^REQ-/, '').trim()
-        const candSource = safeString(c.source).toLowerCase()
-        const candCategory = safeString(c.sourceCategory).toLowerCase()
+      const userIdent = safeString(currentUser?.name).toLowerCase()
+      const userMail = safeString(currentUser?.email).toLowerCase()
+      const firstName = safeString(userIdent.split(' ')[0]).toLowerCase()
 
-        const isMine = (candAssigned && (candAssigned === userIdent || candAssigned.includes(userIdent) || userIdent.includes(candAssigned))) ||
-                       (userMail && (candEmail === userMail || candEmail.includes(userMail))) ||
-                       (firstName.length >= 3 && candAssigned.includes(firstName))
-        
-        const isAssignedReq = candReqId && (openJobsList || []).some(j => {
-          const jClean = String(j.id || '').replace(/^J-/, '').replace(/^REQ-/, '').trim()
-          if (jClean !== candReqId) return false
-          const assignedArr = Array.isArray(j.assignedRecruiters) ? j.assignedRecruiters : []
-          return assignedArr.some(r => {
-            const rStr = String(r || '').toLowerCase().trim()
-            return rStr === userIdent || rStr === userMail || (firstName.length >= 3 && rStr.includes(firstName))
-          })
+      const candAssigned = safeString(c.assignedRecruiter || c.assignedBy || c.recruiter || c.addedByName || c.recruiterName).toLowerCase()
+      const candEmail = safeString(c.recruiterEmail || c.addedByEmail || c.createdBy).toLowerCase()
+      const candReqId = String(c.targetReqId || c.reqId || '').replace(/^J-/, '').replace(/^REQ-/, '').trim()
+      const candSource = safeString(c.source).toLowerCase()
+      const candCategory = safeString(c.sourceCategory).toLowerCase()
+
+      const isMine = (candAssigned && (candAssigned === userIdent || candAssigned.includes(userIdent) || userIdent.includes(candAssigned))) ||
+                     (userMail && (candEmail === userMail || candEmail.includes(userMail))) ||
+                     (firstName.length >= 3 && candAssigned.includes(firstName))
+      
+      const isAssignedReq = candReqId && (openJobsList || []).some(j => {
+        const jClean = String(j.id || '').replace(/^J-/, '').replace(/^REQ-/, '').trim()
+        if (jClean !== candReqId) return false
+        const assignedArr = Array.isArray(j.assignedRecruiters) ? j.assignedRecruiters : []
+        return assignedArr.some(r => {
+          const rStr = String(r || '').toLowerCase().trim()
+          return rStr === userIdent || rStr === userMail || (firstName.length >= 3 && rStr.includes(firstName))
         })
+      })
 
-        const isReporteeCand = isManager && teamUsersList.some(u => {
-          const pName = (u.parentRecruiterName || '').toLowerCase().trim()
-          const pEmail = (u.parentRecruiterEmail || '').toLowerCase().trim()
-          const isMySub = pName === userIdent || pName.includes(userIdent) || (pEmail && pEmail === userMail)
-          if (!isMySub) return false
-          const subName = (u.name || '').toLowerCase().trim()
-          const subEmail = (u.email || '').toLowerCase().trim()
-          return (subName && candAssigned.includes(subName)) || (subEmail && candEmail.includes(subEmail))
-        })
+      const isReporteeCand = teamUsersList.some(u => {
+        const pName = (u.parentRecruiterName || '').toLowerCase().trim()
+        const pEmail = (u.parentRecruiterEmail || '').toLowerCase().trim()
+        const isMySub = pName === userIdent || pName.includes(userIdent) || (pEmail && pEmail === userMail)
+        if (!isMySub) return false
+        const subName = (u.name || '').toLowerCase().trim()
+        const subEmail = (u.email || '').toLowerCase().trim()
+        return (subName && candAssigned.includes(subName)) || (subEmail && candEmail.includes(subEmail))
+      })
 
-        const isCareersPortal = candCategory === 'careers_portal' || candSource.includes('career') || candSource.includes('/jobs')
+      const isCareersPortal = candCategory === 'careers_portal' || candSource.includes('career') || candSource.includes('/jobs')
 
-        if (!isMine && !isAssignedReq && !isReporteeCand && !isCareersPortal) {
-          return false
-        }
-      }
+      return isMine || isAssignedReq || isReporteeCand || isCareersPortal
+    })
+  }, [streamCandidates, isSuperAdmin, isManager, currentUser?.name, currentUser?.email, openJobsList, teamUsersList])
+
+  const filteredCandidates = useMemo(() => {
+    const rawFiltered = roleScopedCandidates.filter(c => {
+      if (!c) return false
 
       // Table Category filtering (KPI cards / Mailbox)
       // When viewing 'all' (default view), exclude spam / recovered candidates from main table
@@ -4359,7 +4391,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
     })
 
     return deduplicateCandidates(rawFiltered)
-  }, [streamCandidates, tableCategory, favoriteCandidateIds, streamReqFilter, filterLocation, filterSkill, filterMatch, filterRecruiter, filterSource, filterGovDept, filterLocalFit, streamSearch, sortOption, isSuperAdmin, currentUser?.name, currentUser?.email, openJobsList, isManager, teamUsersList])
+  }, [roleScopedCandidates, tableCategory, favoriteCandidateIds, streamReqFilter, filterLocation, filterSkill, filterMatch, filterRecruiter, filterSource, filterGovDept, filterLocalFit, streamSearch, sortOption])
 
   // Reset table to page 1 whenever any filter, search, or sort changes
   useEffect(() => {
@@ -4368,7 +4400,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
   // Dynamic ATS Recruitment Dashboard Telemetry (Calculated in real-time from candidate pool)
   const dashboardMetrics = useMemo(() => {
-    const list = (streamCandidates || []).filter(c => c.sourceCategory !== "email_spam" && !c.isSpamRecovery)
+    const list = (roleScopedCandidates || []).filter(c => c.sourceCategory !== "email_spam" && !c.isSpamRecovery)
     const total = list.length
     const strongFits = list.filter(c => (c.matchScore || 0) >= 80).length
     const goodFits = list.filter(c => (c.matchScore || 0) >= 70 && (c.matchScore || 0) < 80).length
@@ -5179,6 +5211,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
           vendorCompany: newHotlistVendorCompany || 'Vendor IT Solutions',
           vendorEmail: newHotlistVendorEmail || 'partner@vendorit.com',
           vendorPhone: newHotlistVendorPhone || '',
+          recruiterEmail: (currentUser?.email || (isSuperAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')),
           rawText: newHotlistText
         })
       })
@@ -5204,7 +5237,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
   }
 
   const renderVendorHotlistsView = () => {
-    const rawList = Array.isArray(vendorHotlists) ? vendorHotlists : []
+    const rawList = Array.isArray(scopedVendorHotlists) ? scopedVendorHotlists : []
     
     // Distinct Vendors list for filter dropdown
     const uniqueVendors = Array.from(new Set(rawList.map(v => v.vendorCompany || v.vendorName).filter(Boolean))).sort()
@@ -6262,7 +6295,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
           {/* 2. Candidates (Primary Talent Pool) */}
           <button
             type="button"
-            title={`Candidates (${streamCandidates.length || 264})`}
+            title={`Candidates (${roleScopedCandidates.length || 0})`}
             onMouseEnter={() => setHoveredNav('candidates')}
             onMouseLeave={() => setHoveredNav(null)}
             onClick={() => { setInboxViewMode('stream'); setInboxSubMode('table'); }}
@@ -6294,7 +6327,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
             </span>
             {!sidebarCollapsed ? (
               <span style={{ fontSize: 10.5, background: '#2563EB', color: '#FFFFFF', padding: '1px 7px', borderRadius: 10, fontWeight: 800 }}>
-                {streamCandidates.length || 264}
+                {roleScopedCandidates.length || 0}
               </span>
             ) : (
               <span style={{
@@ -6362,7 +6395,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
           {/* 4. Vendor Hotlists */}
           <button
             type="button"
-            title={`Vendor Hotlists (${vendorHotlists.length || 0})`}
+            title={`Vendor Hotlists (${scopedVendorHotlists.length || 0})`}
             onMouseEnter={() => setHoveredNav('hotlists')}
             onMouseLeave={() => setHoveredNav(null)}
             onClick={() => {
@@ -6397,7 +6430,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
             </span>
             {!sidebarCollapsed ? (
               <span style={{ fontSize: 10.5, background: '#0D9488', color: '#FFFFFF', padding: '1px 7px', borderRadius: 10, fontWeight: 800 }}>
-                {vendorHotlists.length || 0}
+                {scopedVendorHotlists.length || 0}
               </span>
             ) : (
               <span style={{
@@ -9822,11 +9855,11 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 {/* 5 Metric KPI Cards matching screenshot */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                   {[
-                    { color: '#2563EB', count: streamCandidates.filter(c => c.sourceCategory !== 'email_spam' && !c.isSpamRecovery).length, label: 'Total Candidates', filter: 'all' },
-                    { color: '#16A34A', count: streamCandidates.filter(c => (c.sourceCategory !== 'email_spam' && !c.isSpamRecovery) && (c.status !== 'Archived' && c.status !== 'Rejected' && c.status !== 'Closed')).length, label: 'Active', filter: 'active' },
-                    { color: '#D97706', count: streamCandidates.filter(c => c.sourceCategory === 'email_inbox').length, label: 'Resume Emails', filter: 'inbox' },
-                    { color: '#0284C7', count: streamCandidates.filter(c => c.status === 'In Review' || c.status === 'Review').length, label: 'In Review', filter: 'review' },
-                    { color: '#DC2626', count: streamCandidates.filter(c => c.sourceCategory === 'email_spam' || c.isSpamRecovery).length, label: 'Spam / Recovered', filter: 'spam' }
+                    { color: '#2563EB', count: roleScopedCandidates.filter(c => c.sourceCategory !== 'email_spam' && !c.isSpamRecovery).length, label: 'Total Candidates', filter: 'all' },
+                    { color: '#16A34A', count: roleScopedCandidates.filter(c => (c.sourceCategory !== 'email_spam' && !c.isSpamRecovery) && (c.status !== 'Archived' && c.status !== 'Rejected' && c.status !== 'Closed')).length, label: 'Active', filter: 'active' },
+                    { color: '#D97706', count: roleScopedCandidates.filter(c => c.sourceCategory === 'email_inbox').length, label: 'Resume Emails', filter: 'inbox' },
+                    { color: '#0284C7', count: roleScopedCandidates.filter(c => c.status === 'In Review' || c.status === 'Review').length, label: 'In Review', filter: 'review' },
+                    { color: '#DC2626', count: roleScopedCandidates.filter(c => c.sourceCategory === 'email_spam' || c.isSpamRecovery).length, label: 'Spam / Recovered', filter: 'spam' }
                   ].map((card, cIdx) => {
                     const isSelected = tableCategory === card.filter
                     return (

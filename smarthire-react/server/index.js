@@ -9326,14 +9326,43 @@ function saveVendorHotlists() {
   }
 }
 
-// GET /api/recruiter/vendor-hotlists - list all vendor hotlists with vendor metrics
+// GET /api/recruiter/vendor-hotlists - list vendor hotlists with role-based privacy scoping
 app.get('/api/recruiter/vendor-hotlists', (req, res) => {
   loadVendorHotlists();
   const search = (req.query.q || '').toLowerCase().trim();
   const vendorFilter = (req.query.vendor || '').toLowerCase().trim();
   const visaFilter = (req.query.visa || '').toLowerCase().trim();
+  const recruiterEmail = (req.query.recruiterEmail || req.user?.email || '').toLowerCase().trim();
+  const userRole = (req.query.role || req.user?.role || '').toLowerCase().trim();
+  const isSuper = userRole === 'superadmin' || userRole === 'admin' || recruiterEmail === 'omkesh@coolsofttech.com' || recruiterEmail.includes('omkesh');
+  const isManager = userRole === 'manager';
 
   let list = [...vendorHotlistsStore];
+
+  // Strictly filter by role and recruiter identity:
+  if (!isSuper) {
+    if (isManager) {
+      // Manager sees hotlists belonging to them or their subordinate team
+      const subEmails = new Set([recruiterEmail]);
+      (recruitersMock || []).forEach(u => {
+        const pEmail = (u.parentRecruiterEmail || '').toLowerCase().trim();
+        const pName = (u.parentRecruiterName || '').toLowerCase().trim();
+        if (pEmail === recruiterEmail || (pName && recruiterEmail.includes(pName))) {
+          if (u.email) subEmails.add(u.email.toLowerCase().trim());
+        }
+      });
+      list = list.filter(item => {
+        const rEmail = (item.recruiterEmail || 'omkesh@coolsofttech.com').toLowerCase().trim();
+        return subEmails.has(rEmail) || rEmail === recruiterEmail;
+      });
+    } else {
+      // Standard recruiter / employee: ONLY see their own vendor hotlists
+      list = list.filter(item => {
+        const rEmail = (item.recruiterEmail || 'omkesh@coolsofttech.com').toLowerCase().trim();
+        return rEmail === recruiterEmail;
+      });
+    }
+  }
 
   if (vendorFilter && vendorFilter !== 'all') {
     list = list.filter(item => 
@@ -9355,12 +9384,12 @@ app.get('/api/recruiter/vendor-hotlists', (req, res) => {
     });
   }
 
-  const uniqueVendors = [...new Set(vendorHotlistsStore.map(i => i.vendorCompany || i.vendorName || i.vendorEmail).filter(Boolean))];
+  const uniqueVendors = [...new Set(list.map(i => i.vendorCompany || i.vendorName || i.vendorEmail).filter(Boolean))];
 
   res.json({
     success: true,
     hotlists: list,
-    totalCount: vendorHotlistsStore.length,
+    totalCount: list.length,
     filteredCount: list.length,
     vendorsCount: uniqueVendors.length,
     uniqueVendors
@@ -9372,6 +9401,7 @@ app.post('/api/recruiter/vendor-hotlists', express.json(), (req, res) => {
   loadVendorHotlists();
   const payload = req.body;
   const items = Array.isArray(payload) ? payload : (Array.isArray(payload.items) ? payload.items : [payload]);
+  const defaultRecruiter = (req.body.recruiterEmail || req.user?.email || 'omkesh@coolsofttech.com').toLowerCase().trim();
   let added = 0;
 
   for (const item of items) {
@@ -9408,6 +9438,7 @@ app.post('/api/recruiter/vendor-hotlists', express.json(), (req, res) => {
         sourceEmailSubject: item.sourceEmailSubject || 'Bench Candidate Hotlist',
         attachmentName: item.attachmentName || null,
         storageUrl: item.storageUrl || '',
+        recruiterEmail: item.recruiterEmail || defaultRecruiter,
         status: item.status || 'Available'
       };
       vendorHotlistsStore.unshift(newEntry);
