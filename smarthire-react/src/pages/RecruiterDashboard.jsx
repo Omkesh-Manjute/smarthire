@@ -1712,7 +1712,7 @@ Apply / Submit Profile: ${applyUrl}
     const recEmail = targetRecruiter.email.trim()
     const myName = userName || currentUser?.name || (isAdmin ? 'Omkesh Manjute' : 'Lead Recruiter')
     const myEmail = currentUser?.email || (isAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')
-    const myCompany = currentUser?.company || 'COOLSOFT LLC'
+    const myCompany = (currentUser?.company && !currentUser.company.toLowerCase().includes('smarthire')) ? currentUser.company : 'COOLSOFT LLC'
 
     const cleanReqId = resolveReqId(selectedReq?.id, selectedReq) || String(selectedReq?.id || editingFields.id || '159148').replace(/^J-/, '').replace(/^REQ-/, '').trim()
     const jobTitle = editingFields.jobTitle || editingFields.title || selectedReq?.title || selectedReq?.jobTitle || 'Technical Specialist'

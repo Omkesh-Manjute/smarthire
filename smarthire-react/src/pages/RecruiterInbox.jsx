@@ -771,7 +771,215 @@ function Avatar({ name, size = 40, style = {} }) {
   )
 }
 
-const highlightResumeText = (text, matchingSkills = [], searchQuery = '', enableHighlight = true) => {
+// US State dictionary for bidirectional conversion and normalization
+const US_STATES_MAP = {
+  'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',
+  'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE', 'florida': 'FL', 'georgia': 'GA',
+  'hawaii': 'HI', 'idaho': 'ID', 'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA',
+  'kansas': 'KS', 'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
+  'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS', 'missouri': 'MO',
+  'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ',
+  'new mexico': 'NM', 'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH',
+  'oklahoma': 'OK', 'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
+  'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT', 'vermont': 'VT',
+  'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
+  'dc': 'DC', 'district of columbia': 'DC'
+};
+
+function extractCandidateStateAndCity(locStr = '', textStr = '') {
+  const combined = `${locStr} ${textStr}`.toLowerCase();
+  let foundState = null;
+  let foundCity = null;
+
+  const codeMatch = locStr.match(/\b([A-Z]{2})\b(?:\s+\d{5})?/);
+  if (codeMatch && Object.values(US_STATES_MAP).includes(codeMatch[1].toUpperCase())) {
+    foundState = codeMatch[1].toUpperCase();
+  }
+
+  if (!foundState) {
+    for (const [full, code] of Object.entries(US_STATES_MAP)) {
+      const reg = new RegExp(`\\b${full}\\b`, 'i');
+      if (reg.test(combined)) {
+        foundState = code;
+        break;
+      }
+    }
+  }
+
+  const cityMatch = locStr.split(/[,–-]/)[0]?.trim();
+  if (cityMatch && cityMatch.length > 2 && !cityMatch.toLowerCase().includes('united states')) {
+    foundCity = cityMatch;
+  }
+
+  return { state: foundState, city: foundCity };
+}
+
+function evaluateCandidateLocationFit(candidate = {}, job = null) {
+  if (!job) {
+    const candLoc = candidate.location || '';
+    const { state: candState, city: candCity } = extractCandidateStateAndCity(candLoc, candidate.resumeText || '');
+    return {
+      isLocal: null,
+      status: 'remote_ok',
+      badge: 'Remote / US',
+      label: candLoc ? candLoc : 'US Nationwide',
+      scoreAdj: 0,
+      jobState: null,
+      candState,
+      candCity,
+      needsLocal: false
+    };
+  }
+
+  const jobDesc = `${job.description || ''} ${job.rawDescription || ''} ${job.fullDescription || ''}`.toLowerCase();
+  const jobLoc = job.location || '';
+  const jobMode = (job.workMode || job.type || '').toLowerCase();
+
+  const { state: jobState, city: jobCity } = extractCandidateStateAndCity(jobLoc, jobDesc);
+  const candLoc = candidate.location || '';
+  const { state: candState, city: candCity } = extractCandidateStateAndCity(candLoc, candidate.resumeText || '');
+
+  const explicitLocalReq = (
+    /(?:need|needs|must be|require|seeking|looking for)\s+local/i.test(jobDesc) ||
+    /local candidates?\s+(?:only|preferred|must)/i.test(jobDesc) ||
+    /must be current\s+[a-z\s]{2,15}\s+residents?/i.test(jobDesc) ||
+    /no relocation/i.test(jobDesc) ||
+    /in-state only/i.test(jobDesc) ||
+    /meet in person/i.test(jobDesc) ||
+    jobMode === 'onsite' ||
+    jobMode === 'hybrid'
+  );
+
+  const isRemoteOnly = jobMode === 'remote' && !explicitLocalReq;
+
+  if (isRemoteOnly) {
+    return {
+      isLocal: true,
+      status: 'remote_ok',
+      badge: 'Remote Eligible',
+      label: '100% Remote Position — US Nationwide',
+      scoreAdj: 5,
+      jobState,
+      candState,
+      candCity,
+      needsLocal: false
+    };
+  }
+
+  if (explicitLocalReq || jobState) {
+    const isStateMatch = Boolean(jobState && candState && jobState === candState);
+    const isCityMatch = Boolean(jobCity && candCity && (jobCity.toLowerCase().includes(candCity.toLowerCase()) || candCity.toLowerCase().includes(jobCity.toLowerCase())));
+
+    if (isStateMatch || isCityMatch) {
+      return {
+        isLocal: true,
+        status: 'confirmed_local',
+        badge: '📍 Confirmed Local',
+        label: `Confirmed Local • ${candCity ? `${candCity}, ` : ''}${candState || jobState} (${jobMode ? jobMode.toUpperCase() : 'LOCAL'} Fit)`,
+        scoreAdj: 15,
+        jobState,
+        candState,
+        candCity,
+        needsLocal: explicitLocalReq
+      };
+    } else if (candState && jobState && candState !== jobState) {
+      return {
+        isLocal: false,
+        status: 'relocation_needed',
+        badge: 'Non-Local / Relocation',
+        label: `Located in ${candState} vs Job in ${jobState} (${explicitLocalReq ? 'JD Requires Local' : 'Relocation Needed'})`,
+        scoreAdj: explicitLocalReq ? -15 : -8,
+        jobState,
+        candState,
+        candCity,
+        needsLocal: explicitLocalReq
+      };
+    }
+  }
+
+  return {
+    isLocal: null,
+    status: 'remote_ok',
+    badge: 'Remote / US',
+    label: candLoc ? candLoc : 'US Nationwide',
+    scoreAdj: 0,
+    jobState,
+    candState,
+    candCity,
+    needsLocal: explicitLocalReq
+  };
+}
+
+const renderLocationBadge = (locFit) => {
+  if (!locFit || locFit.status === 'unknown') return null;
+
+  if (locFit.status === 'confirmed_local') {
+    return (
+      <span style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5,
+        padding: '2px 8px',
+        borderRadius: 6,
+        fontSize: 10.5,
+        fontWeight: 700,
+        backgroundColor: '#ECFDF5',
+        color: '#047857',
+        border: '1px solid #A7F3D0',
+        whiteSpace: 'nowrap'
+      }} title={locFit.label}>
+        <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#10B981', display: 'inline-block' }} />
+        <span>Confirmed Local</span>
+      </span>
+    );
+  }
+
+  if (locFit.status === 'relocation_needed') {
+    return (
+      <span style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5,
+        padding: '2px 8px',
+        borderRadius: 6,
+        fontSize: 10.5,
+        fontWeight: 700,
+        backgroundColor: '#FEF3C7',
+        color: '#B45309',
+        border: '1px solid #FDE68A',
+        whiteSpace: 'nowrap'
+      }} title={locFit.label}>
+        <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#F59E0B', display: 'inline-block' }} />
+        <span>Relocation Needed</span>
+      </span>
+    );
+  }
+
+  if (locFit.status === 'remote_ok') {
+    return (
+      <span style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5,
+        padding: '2px 8px',
+        borderRadius: 6,
+        fontSize: 10.5,
+        fontWeight: 700,
+        backgroundColor: '#EFF6FF',
+        color: '#1D4ED8',
+        border: '1px solid #BFDBFE',
+        whiteSpace: 'nowrap'
+      }} title={locFit.label}>
+        <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#3B82F6', display: 'inline-block' }} />
+        <span>Remote / US</span>
+      </span>
+    );
+  }
+
+  return null;
+};
+
+const highlightResumeText = (text, matchingSkills = [], searchQuery = '', enableHighlight = true, candidate = null) => {
   if (!text) {
     return (
       <div style={{
@@ -818,7 +1026,7 @@ const highlightResumeText = (text, matchingSkills = [], searchQuery = '', enable
     } catch (_) {}
   }
 
-  // 2. Matching Skills Intervals (Soft Warm Pastel Yellow — Matching Tobu.ai)
+  // 2. Matching Skills Intervals (Soft Warm Pastel Yellow — Matching Monster Reference)
   if (enableHighlight && matchingSkills && matchingSkills.length > 0) {
     const uniqueSkills = [...new Set(matchingSkills.map(s => safeString(s)).filter(s => s.length >= 2))]
       .sort((a, b) => b.length - a.length);
@@ -867,7 +1075,7 @@ const highlightResumeText = (text, matchingSkills = [], searchQuery = '', enable
       if (span.type === 'search') {
         parts.push(`<mark style="background-color: #BAE6FD; color: #0369A1; font-weight: 700; padding: 1px 4px; border-radius: 3px; border: 1px solid #7DD3FC;">${matchedStr}</mark>`);
       } else {
-        parts.push(`<mark style="background-color: #FEF08A; color: #1E293B; font-weight: 600; padding: 1px 4px; border-radius: 3px; border: 1px solid #FDE047;">${matchedStr}</mark>`);
+        parts.push(`<mark style="background-color: #FEF08A; color: #1E293B; font-weight: 700; padding: 1px 4px; border-radius: 3px; border: 1px solid #FDE047;">${matchedStr}</mark>`);
       }
       curr = span.end;
     }
@@ -877,23 +1085,90 @@ const highlightResumeText = (text, matchingSkills = [], searchQuery = '', enable
     renderedContent = parts.join('');
   }
 
+  // Enhance standard section titles in renderedContent (Matching Monster Screenshots 2-4)
+  const SECTION_TITLES = [
+    'SUMMARY', 'PROFESSIONAL SUMMARY', 'EXECUTIVE SUMMARY',
+    'WORK EXPERIENCE', 'PROFESSIONAL EXPERIENCE', 'EXPERIENCE', 'EMPLOYMENT HISTORY',
+    'EDUCATION', 'ACADEMIC BACKGROUND',
+    'SKILLS', 'TECHNICAL SKILLS', 'CORE COMPETENCIES',
+    'CERTIFICATIONS', 'HONORS & AWARDS', 'AWARDS', 'LANGUAGES', 'WORK AUTHORIZATION'
+  ];
+  for (const st of SECTION_TITLES) {
+    const re = new RegExp(`(^|\\n)(${st})(:|\\b)(\\s*\\n)`, 'g');
+    renderedContent = renderedContent.replace(re, '$1<div style="font-size: 15px; font-weight: 800; color: #0F172A; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 24px; margin-bottom: 10px; border-bottom: 2px solid #E2E8F0; padding-bottom: 4px;">$2</div>$4');
+  }
+
+  // Candidate fields for the Monster Top Header Card
+  const candName = candidate?.name || 'Candidate Profile';
+  const candRole = candidate?.role || 'Software Specialist';
+  const candLoc = candidate?.location || 'United States';
+  const candPhone = candidate?.phone || '';
+  const candEmail = candidate?.email || '';
+
+  // Highlight key terms in the role title
+  let highlightedRole = candRole;
+  if (enableHighlight && matchingSkills && matchingSkills.length > 0) {
+    for (const s of matchingSkills.slice(0, 3)) {
+      const sk = safeString(s);
+      if (sk && sk.length >= 3 && highlightedRole.toLowerCase().includes(sk.toLowerCase())) {
+        const re = new RegExp(`(${sk})`, 'gi');
+        highlightedRole = highlightedRole.replace(re, '<mark style="background-color: #FEF08A; color: #1E293B; font-weight: 700; padding: 1px 5px; border-radius: 3px; border: 1px solid #FDE047;">$1</mark>');
+      }
+    }
+  }
+
   return (
-    <div 
-      dangerouslySetInnerHTML={{ __html: renderedContent }} 
-      style={{ 
-        whiteSpace: 'pre-wrap', 
-        lineHeight: '1.85', 
-        fontSize: '14px', 
-        fontFamily: "'Plus Jakarta Sans', Inter, system-ui, -apple-system, sans-serif",
-        color: '#1E293B',
-        backgroundColor: '#FFFFFF',
-        padding: '36px 44px',
-        borderRadius: '10px',
-        border: '1px solid #E2E8F0',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)',
-        boxSizing: 'border-box'
-      }} 
-    />
+    <div style={{
+      backgroundColor: '#FFFFFF',
+      borderRadius: '10px',
+      border: '1px solid #E2E8F0',
+      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)',
+      overflow: 'hidden',
+      fontFamily: "'Plus Jakarta Sans', Inter, system-ui, -apple-system, sans-serif"
+    }}>
+      {/* Monster Header Box (Matching User Reference Screenshot 2) */}
+      <div style={{
+        backgroundColor: '#F8FAFC',
+        borderBottom: '1px solid #E2E8F0',
+        padding: '28px 36px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 6
+      }}>
+        <h1 style={{
+          margin: '0 0 2px',
+          fontSize: 24,
+          fontWeight: 800,
+          color: '#0F172A',
+          letterSpacing: '-0.02em',
+          lineHeight: 1.2
+        }}>
+          {candName}
+        </h1>
+        <div 
+          style={{ fontSize: 15, fontWeight: 700, color: '#1E293B', marginBottom: 4 }}
+          dangerouslySetInnerHTML={{ __html: highlightedRole }}
+        />
+        <div style={{ fontSize: 13, color: '#475569', display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <div>{candLoc}</div>
+          {candPhone && <div>{candPhone}</div>}
+          {candEmail && <div>{candEmail}</div>}
+        </div>
+      </div>
+
+      {/* Main Resume Body with Clean Uppercase Section Styling */}
+      <div 
+        dangerouslySetInnerHTML={{ __html: renderedContent }} 
+        style={{ 
+          whiteSpace: 'pre-wrap', 
+          lineHeight: '1.85', 
+          fontSize: '13.5px', 
+          color: '#1E293B',
+          padding: '32px 36px',
+          boxSizing: 'border-box'
+        }} 
+      />
+    </div>
   )
 }
 
@@ -943,6 +1218,8 @@ function extractCandidateExperienceStats(candidate) {
 
   let currentEmployer = candidate?.currentCompany || ''
   let currentTitle = candidate?.role || ''
+  let previousEmployer = candidate?.previousCompany || ''
+  let previousTitle = ''
 
   if (!currentEmployer && text) {
     const expMatch = text.match(/PROFESSIONAL EXPERIENCE[\s\S]*?\n\n([^\n]+)/i)
@@ -950,9 +1227,19 @@ function extractCandidateExperienceStats(candidate) {
       currentEmployer = expMatch[1].replace(/^[•\-\*]\s*/, '').trim()
     }
   }
-  if (!currentEmployer) currentEmployer = candidate?.currentCompany || 'Listed in Resume'
+  if (!currentEmployer) currentEmployer = candidate?.currentCompany || 'Client Engagement'
+  if (!currentTitle) currentTitle = candidate?.role || 'Senior Specialist'
 
-  return { jobsCount, currentEmployer, currentTitle }
+  if (text) {
+    const rolesMatch = text.match(/\b(19\d\d|20\d\d)[\s\S]{10,80}?(Developer|Engineer|Consultant|Architect|Lead|Analyst|Specialist|Manager)\b/gi)
+    if (rolesMatch && rolesMatch.length > 1) {
+      previousTitle = rolesMatch[1].replace(/^(19\d\d|20\d\d)\s*[–\-—to\s]+/, '').trim()
+    }
+  }
+  if (!previousEmployer) previousEmployer = 'Prior Engagement'
+  if (!previousTitle) previousTitle = 'Software Engineer'
+
+  return { jobsCount, currentEmployer, currentTitle, previousEmployer, previousTitle }
 }
 
 // --- Public Sector & Government Department Keywords ---
@@ -1799,6 +2086,22 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const [filterRecruiter, setFilterRecruiter] = useState('all')
   const [filterSource, setFilterSource] = useState('all')
   const [filterGovDept, setFilterGovDept] = useState('all')
+  const [filterLocalFit, setFilterLocalFit] = useState('all') // 'all', 'confirmed_local', 'remote_ok', 'relocation_needed'
+  const [vendorHotlists, setVendorHotlists] = useState([])
+  const [vendorHotlistsLoading, setVendorHotlistsLoading] = useState(false)
+  const [vendorSearch, setVendorSearch] = useState('')
+  const [vendorFilterCompany, setVendorFilterCompany] = useState('all')
+  const [vendorFilterVisa, setVendorFilterVisa] = useState('all')
+  const [vendorTablePage, setVendorTablePage] = useState(1)
+  const [vendorTablePageSize, setVendorTablePageSize] = useState(25)
+  const [addHotlistModalOpen, setAddHotlistModalOpen] = useState(false)
+  const [newHotlistText, setNewHotlistText] = useState('')
+  const [newHotlistVendorName, setNewHotlistVendorName] = useState('')
+  const [newHotlistVendorCompany, setNewHotlistVendorCompany] = useState('')
+  const [newHotlistVendorEmail, setNewHotlistVendorEmail] = useState('')
+  const [newHotlistVendorPhone, setNewHotlistVendorPhone] = useState('')
+  const [isSubmittingHotlist, setIsSubmittingHotlist] = useState(false)
+  const [hotlistToast, setHotlistToast] = useState('')
   const [leaderboardData, setLeaderboardData] = useState([])
   const [leaderboardPeriod, setLeaderboardPeriod] = useState('month')
   const [leaderboardLoading, setLeaderboardLoading] = useState(false)
@@ -3325,6 +3628,25 @@ export default function RecruiterInbox({ defaultViewMode }) {
     return () => clearInterval(timer)
   }, [fetchNotifications])
 
+  const fetchVendorHotlists = useCallback(async () => {
+    try {
+      setVendorHotlistsLoading(true)
+      const res = await fetch('/api/recruiter/vendor-hotlists')
+      const data = await res.json()
+      if (data && data.success && Array.isArray(data.hotlists)) {
+        setVendorHotlists(data.hotlists)
+      }
+    } catch (err) {
+      console.warn('[Vendor Hotlists] Fetch error:', err.message)
+    } finally {
+      setVendorHotlistsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchVendorHotlists()
+  }, [fetchVendorHotlists])
+
   // Click outside listener for notification and profile popovers
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -3659,6 +3981,15 @@ export default function RecruiterInbox({ defaultViewMode }) {
         }
       }
 
+      // Local Candidate Fit Filter
+      if (filterLocalFit !== 'all') {
+        const job = openJobsList.find(j => String(j.id) === String(c.targetReqId)) || null
+        const locFit = evaluateCandidateLocationFit(c, job)
+        if (filterLocalFit === 'confirmed_local' && locFit.status !== 'confirmed_local') return false
+        if (filterLocalFit === 'remote_ok' && locFit.status !== 'remote_ok') return false
+        if (filterLocalFit === 'relocation_needed' && locFit.status !== 'relocation_needed') return false
+      }
+
       // Search query (Supports Boolean Search: AND, OR, NOT, Quotes, Parentheses)
       if (streamSearch.trim()) {
         const skillsList = safeSkillArray(c.skills).join(' ')
@@ -3686,13 +4017,22 @@ export default function RecruiterInbox({ defaultViewMode }) {
       return true
     })
 
-    // Sorting (with First Preference for Public Sector / State Dept Experience)
+    // Sorting (with First Preference for Public Sector / State Dept Experience & Local Priority)
     rawFiltered.sort((a, b) => {
       const govA = detectGovDepartmentExperience(a).hasGov ? 1 : 0
       const govB = detectGovDepartmentExperience(b).hasGov ? 1 : 0
 
       if (sortOption === 'gov_first' || filterGovDept !== 'all') {
         if (govA !== govB) return govB - govA
+        return (b.matchScore || 0) - (a.matchScore || 0)
+      }
+
+      if (sortOption === 'local_first') {
+        const jobA = openJobsList.find(j => String(j.id) === String(a.targetReqId)) || null
+        const jobB = openJobsList.find(j => String(j.id) === String(b.targetReqId)) || null
+        const locA = evaluateCandidateLocationFit(a, jobA).status === 'confirmed_local' ? 1 : 0
+        const locB = evaluateCandidateLocationFit(b, jobB).status === 'confirmed_local' ? 1 : 0
+        if (locA !== locB) return locB - locA
         return (b.matchScore || 0) - (a.matchScore || 0)
       }
 
@@ -3735,12 +4075,12 @@ export default function RecruiterInbox({ defaultViewMode }) {
     })
 
     return deduplicateCandidates(rawFiltered)
-  }, [streamCandidates, tableCategory, favoriteCandidateIds, streamReqFilter, filterLocation, filterSkill, filterMatch, filterRecruiter, filterSource, filterGovDept, streamSearch, sortOption, isSuperAdmin, currentUser?.name, currentUser?.email, openJobsList, isManager, teamUsersList])
+  }, [streamCandidates, tableCategory, favoriteCandidateIds, streamReqFilter, filterLocation, filterSkill, filterMatch, filterRecruiter, filterSource, filterGovDept, filterLocalFit, streamSearch, sortOption, isSuperAdmin, currentUser?.name, currentUser?.email, openJobsList, isManager, teamUsersList])
 
   // Reset table to page 1 whenever any filter, search, or sort changes
   useEffect(() => {
     setTablePage(1)
-  }, [tableCategory, streamReqFilter, filterLocation, filterSkill, filterMatch, filterRecruiter, filterSource, filterGovDept, streamSearch, sortOption, tablePageSize])
+  }, [tableCategory, streamReqFilter, filterLocation, filterSkill, filterMatch, filterRecruiter, filterSource, filterGovDept, filterLocalFit, streamSearch, sortOption, tablePageSize])
 
   // Dynamic ATS Recruitment Dashboard Telemetry (Calculated in real-time from candidate pool)
   const dashboardMetrics = useMemo(() => {
@@ -4505,6 +4845,1037 @@ export default function RecruiterInbox({ defaultViewMode }) {
     )
   }
 
+  // --- VENDOR HOTLISTS & BENCH MANAGEMENT VIEW ---
+  const handlePushHotlistToATS = async (item) => {
+    try {
+      const res = await fetch('/api/recruiter/vendor-hotlists/push-to-candidates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hotlistId: item.id, candidate: item })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setHotlistToast(`✓ Successfully added ${item.candidateName} to ATS Candidate Talent Pool!`)
+        setTimeout(() => setHotlistToast(''), 4000)
+        fetchStreamCandidates()
+      } else {
+        alert(data.message || 'Failed to add to ATS')
+      }
+    } catch (err) {
+      alert('Error adding to ATS: ' + err.message)
+    }
+  }
+
+  const handleEmailVendor = (item) => {
+    setEmailModalCandidate({
+      name: item.candidateName,
+      email: item.vendorEmail,
+      phone: item.vendorPhone,
+      role: item.role
+    })
+    setEmailTo(item.vendorEmail || '')
+    setEmailSubject(`Candidate Profile Inquiry: ${item.candidateName} (${item.role}) | COOLSOFT LLC`)
+    setEmailBody(`Hi ${item.vendorName ? item.vendorName.split(' ')[0] : 'Partner'},\n\nWe received your hotlist profile for ${item.candidateName} (${item.role}). We have active direct client openings that match their background.\n\nPlease share their updated resume with full contact details, current availability, and confirmed C2C rate.\n\nWith Regards,\n${currentUser?.name || 'Omkesh Manjute'}\nLead Recruiter\nCOOLSOFT LLC | http://www.coolsofttech.com`)
+  }
+
+  const handleDeleteHotlist = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to remove ${name} from Vendor Hotlists?`)) return
+    try {
+      const res = await fetch(`/api/recruiter/vendor-hotlists/${id}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (data.success) {
+        setVendorHotlists(prev => prev.filter(v => v.id !== id))
+        setHotlistToast(`✓ Removed ${name} from hotlists.`)
+        setTimeout(() => setHotlistToast(''), 3000)
+      }
+    } catch (err) {
+      alert('Failed to delete: ' + err.message)
+    }
+  }
+
+  const handleSaveNewHotlist = async (e) => {
+    if (e) e.preventDefault()
+    if (!newHotlistText.trim()) {
+      alert('Please paste hotlist text or profile details.')
+      return
+    }
+    setIsSubmittingHotlist(true)
+    try {
+      const res = await fetch('/api/recruiter/vendor-hotlists', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vendorName: newHotlistVendorName || 'Vendor Partner',
+          vendorCompany: newHotlistVendorCompany || 'Vendor IT Solutions',
+          vendorEmail: newHotlistVendorEmail || 'partner@vendorit.com',
+          vendorPhone: newHotlistVendorPhone || '',
+          rawText: newHotlistText
+        })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setHotlistToast(`✓ Successfully ingested ${data.addedCount || 1} bench candidate(s)!`)
+        setTimeout(() => setHotlistToast(''), 4000)
+        setAddHotlistModalOpen(false)
+        setNewHotlistText('')
+        setNewHotlistVendorName('')
+        setNewHotlistVendorCompany('')
+        setNewHotlistVendorEmail('')
+        setNewHotlistVendorPhone('')
+        fetchVendorHotlists()
+      } else {
+        alert(data.message || 'Failed to parse hotlist')
+      }
+    } catch (err) {
+      alert('Error saving hotlist: ' + err.message)
+    } finally {
+      setIsSubmittingHotlist(false)
+    }
+  }
+
+  const renderVendorHotlistsView = () => {
+    const rawList = Array.isArray(vendorHotlists) ? vendorHotlists : []
+    
+    // Distinct Vendors list for filter dropdown
+    const uniqueVendors = Array.from(new Set(rawList.map(v => v.vendorCompany || v.vendorName).filter(Boolean))).sort()
+
+    // Filtered Hotlist items
+    const filteredList = rawList.filter(item => {
+      if (vendorSearch.trim()) {
+        const q = vendorSearch.toLowerCase()
+        const text = [
+          item.candidateName,
+          item.role,
+          (item.skills || []).join(' '),
+          item.vendorCompany,
+          item.vendorName,
+          item.vendorEmail,
+          item.candidateEmail,
+          item.candidatePhone,
+          item.location,
+          item.visa
+        ].filter(Boolean).join(' ').toLowerCase()
+        if (!text.includes(q)) return false
+      }
+      if (vendorFilterCompany !== 'all' && (item.vendorCompany || item.vendorName) !== vendorFilterCompany) {
+        return false
+      }
+      if (vendorFilterVisa !== 'all') {
+        const v = (item.visa || '').toLowerCase()
+        if (vendorFilterVisa === 'citizen' && !v.includes('citizen')) return false
+        if (vendorFilterVisa === 'gc' && !v.includes('green') && !v.includes('permanent') && !v.includes('gc')) return false
+        if (vendorFilterVisa === 'h1b' && !v.includes('h-1b') && !v.includes('h1b')) return false
+      }
+      return true
+    })
+
+    const totalBench = rawList.length
+    const totalVendors = uniqueVendors.length
+    const directContactCount = rawList.filter(v => v.candidateEmail || v.candidatePhone).length
+    const c2cCount = rawList.filter(v => (v.status || '').toLowerCase().includes('avail') || (v.rate || '').includes('C2C')).length
+
+    const pagedItems = filteredList.slice((vendorTablePage - 1) * vendorTablePageSize, vendorTablePage * vendorTablePageSize)
+    const totalPages = Math.ceil(filteredList.length / vendorTablePageSize) || 1
+
+    return (
+      <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px', boxSizing: 'border-box', backgroundColor: isLight ? '#F8FAFC' : '#0B0F19' }}>
+        <div style={{ maxWidth: 1440, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+          
+          {/* Toast Alert */}
+          {hotlistToast && (
+            <div style={{
+              backgroundColor: '#ECFDF5',
+              border: '1px solid #A7F3D0',
+              color: '#065F46',
+              padding: '10px 16px',
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 700,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+            }}>
+              {hotlistToast}
+            </div>
+          )}
+
+          {/* Top Page Header & Ingestion Actions */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 4, height: 24, backgroundColor: '#0D9488', borderRadius: 2 }} />
+                <h1 style={{ fontSize: 22, fontWeight: 900, color: C.textPrimary, margin: 0, letterSpacing: '-0.02em' }}>
+                  Vendor Hotlists &amp; Bench Ingestion Hub
+                </h1>
+                <span style={{ fontSize: 11, fontWeight: 800, backgroundColor: '#CCFBF1', color: '#0F766E', padding: '2px 8px', borderRadius: 6, border: '1px solid #99F6E4' }}>
+                  Big Data Table
+                </span>
+              </div>
+              <p style={{ fontSize: 13, color: C.textSecondary, margin: '4px 0 0' }}>
+                Consolidated candidate bench lists auto-parsed from vendor emails, C2C rate cards, and direct partner submissions.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button
+                type="button"
+                onClick={() => setAddHotlistModalOpen(true)}
+                style={{
+                  backgroundColor: '#0D9488',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '9px 16px',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  boxShadow: '0 2px 6px rgba(13,148,136,0.25)'
+                }}
+              >
+                <span>+ Add / Paste Hotlist</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => fetchVendorHotlists()}
+                disabled={vendorHotlistsLoading}
+                style={{
+                  backgroundColor: isLight ? '#FFFFFF' : C.surface,
+                  border: `1px solid ${C.border}`,
+                  color: C.textPrimary,
+                  borderRadius: 8,
+                  padding: '9px 14px',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: vendorHotlistsLoading ? 'wait' : 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6
+                }}
+              >
+                <span>{vendorHotlistsLoading ? 'Syncing...' : 'Refresh'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Metrics Ribbon (4 Cards) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
+            <div style={{ backgroundColor: isLight ? '#FFFFFF' : C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+              <div style={{ fontSize: 12, color: C.textSecondary, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                Total Bench Candidates
+              </div>
+              <div style={{ fontSize: 24, fontWeight: 900, color: '#0F172A', marginTop: 4 }}>
+                {totalBench}
+              </div>
+              <div style={{ fontSize: 11.5, color: '#0D9488', marginTop: 2, fontWeight: 600 }}>
+                Across {totalVendors} Vendor Partners
+              </div>
+            </div>
+
+            <div style={{ backgroundColor: isLight ? '#FFFFFF' : C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+              <div style={{ fontSize: 12, color: C.textSecondary, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                Active Sponsoring Vendors
+              </div>
+              <div style={{ fontSize: 24, fontWeight: 900, color: '#2563EB', marginTop: 4 }}>
+                {totalVendors}
+              </div>
+              <div style={{ fontSize: 11.5, color: C.textSecondary, marginTop: 2 }}>
+                V-Soft, TekStaff, Apex Bench &amp; More
+              </div>
+            </div>
+
+            <div style={{ backgroundColor: isLight ? '#FFFFFF' : C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+              <div style={{ fontSize: 12, color: C.textSecondary, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                Direct Contact Parsed
+              </div>
+              <div style={{ fontSize: 24, fontWeight: 900, color: '#059669', marginTop: 4 }}>
+                {directContactCount}
+              </div>
+              <div style={{ fontSize: 11.5, color: '#059669', marginTop: 2, fontWeight: 600 }}>
+                Candidate Direct Email &amp; Phone
+              </div>
+            </div>
+
+            <div style={{ backgroundColor: isLight ? '#FFFFFF' : C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+              <div style={{ fontSize: 12, color: C.textSecondary, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                Immediate C2C Availability
+              </div>
+              <div style={{ fontSize: 24, fontWeight: 900, color: '#7C3AED', marginTop: 4 }}>
+                {c2cCount}
+              </div>
+              <div style={{ fontSize: 11.5, color: C.textSecondary, marginTop: 2 }}>
+                Ready for Client Submissions
+              </div>
+            </div>
+          </div>
+
+          {/* Search & Filter Toolbar */}
+          <div style={{
+            backgroundColor: isLight ? '#FFFFFF' : C.surface,
+            border: `1px solid ${C.border}`,
+            borderRadius: 10,
+            padding: '12px 18px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 12
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 260 }}>
+              <div style={{
+                position: 'relative',
+                flex: 1,
+                maxWidth: 420
+              }}>
+                <input
+                  type="text"
+                  placeholder="Search bench candidates, roles, skills, vendors, locations..."
+                  value={vendorSearch}
+                  onChange={(e) => { setVendorSearch(e.target.value); setVendorTablePage(1); }}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    borderRadius: 8,
+                    border: `1px solid ${C.border}`,
+                    backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
+                    color: C.textPrimary,
+                    fontSize: 13,
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {/* Vendor Company Dropdown */}
+              <select
+                value={vendorFilterCompany}
+                onChange={(e) => { setVendorFilterCompany(e.target.value); setVendorTablePage(1); }}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: 8,
+                  border: `1px solid ${C.border}`,
+                  backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
+                  color: C.textPrimary,
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="all">Vendor: All ({totalVendors})</option>
+                {uniqueVendors.map((v, i) => (
+                  <option key={i} value={v}>{v}</option>
+                ))}
+              </select>
+
+              {/* Visa Dropdown */}
+              <select
+                value={vendorFilterVisa}
+                onChange={(e) => { setVendorFilterVisa(e.target.value); setVendorTablePage(1); }}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: 8,
+                  border: `1px solid ${C.border}`,
+                  backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
+                  color: C.textPrimary,
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="all">Visa: All</option>
+                <option value="citizen">US Citizen</option>
+                <option value="gc">Green Card (GC)</option>
+                <option value="h1b">H-1B</option>
+              </select>
+
+              {(vendorSearch || vendorFilterCompany !== 'all' || vendorFilterVisa !== 'all') && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setVendorSearch('')
+                    setVendorFilterCompany('all')
+                    setVendorFilterVisa('all')
+                    setVendorTablePage(1)
+                  }}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: C.textSecondary,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    padding: '4px 8px'
+                  }}
+                >
+                  Clear Filters
+                </button>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, color: C.textSecondary }}>
+              <span>Showing <strong>{filteredList.length}</strong> bench records</span>
+              <select
+                value={vendorTablePageSize}
+                onChange={(e) => { setVendorTablePageSize(Number(e.target.value)); setVendorTablePage(1); }}
+                style={{
+                  padding: '4px 8px',
+                  borderRadius: 6,
+                  border: `1px solid ${C.border}`,
+                  backgroundColor: isLight ? '#FFFFFF' : C.inputBg,
+                  color: C.textPrimary,
+                  fontSize: 12,
+                  outline: 'none'
+                }}
+              >
+                <option value={10}>10 / page</option>
+                <option value={25}>25 / page</option>
+                <option value={50}>50 / page</option>
+                <option value={100}>100 / page</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Dynamic Big Data Table */}
+          <div style={{
+            backgroundColor: isLight ? '#FFFFFF' : C.surface,
+            border: `1px solid ${C.border}`,
+            borderRadius: 10,
+            overflow: 'hidden',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+          }}>
+            <div style={{ overflowX: 'auto', maxHeight: 'calc(100vh - 360px)', minHeight: 420 }}>
+              <table style={{ width: '100%', minWidth: 1200, borderCollapse: 'collapse', textAlign: 'left', fontSize: 12.5 }}>
+                <thead>
+                  <tr style={{
+                    backgroundColor: isLight ? '#F8FAFC' : '#1E293B',
+                    borderBottom: `1px solid ${C.border}`,
+                    color: '#64748B',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 5
+                  }}>
+                    <th style={{ padding: '10px 14px', width: 220 }}>Vendor / Sponsoring Agency</th>
+                    <th style={{ padding: '10px 14px', width: 200 }}>Candidate Profile</th>
+                    <th style={{ padding: '10px 14px', width: 220 }}>Role &amp; Primary Tech Stack</th>
+                    <th style={{ padding: '10px 14px', width: 200 }}>Candidate Direct Contact</th>
+                    <th style={{ padding: '10px 14px', width: 160 }}>Location &amp; Mobility</th>
+                    <th style={{ padding: '10px 12px', width: 110 }}>Rate &amp; Availability</th>
+                    <th style={{ padding: '10px 12px', width: 120 }}>Resume Doc</th>
+                    <th style={{ padding: '10px 14px', width: 240, textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredList.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} style={{ padding: 48, textAlign: 'center', color: C.textSecondary }}>
+                        No vendor bench candidates found matching your filters.
+                      </td>
+                    </tr>
+                  ) : (
+                    pagedItems.map((item, idx) => {
+                      const avatar = getCandidateAvatarColor(item.candidateName || 'Candidate')
+                      const initials = getInitials(item.candidateName || 'Candidate')
+                      const skills = safeSkillArray(item.skills)
+                      return (
+                        <tr
+                          key={item.id || idx}
+                          style={{
+                            borderBottom: `1px solid ${C.border}`,
+                            transition: 'background-color 0.15s ease'
+                          }}
+                        >
+                          {/* 1. Vendor / Sponsoring Agency */}
+                          <td style={{ padding: '12px 14px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                              <strong style={{ color: '#0F172A', fontSize: 13 }}>
+                                {item.vendorCompany || 'Vendor IT Solutions'}
+                              </strong>
+                              <div style={{ fontSize: 11.5, color: '#475569', fontWeight: 600 }}>
+                                {item.vendorName || 'Vendor Rep'}
+                              </div>
+                              <div style={{ fontSize: 11, color: '#64748B' }}>
+                                <a href={`mailto:${item.vendorEmail}`} style={{ color: '#2563EB', textDecoration: 'none' }}>
+                                  {item.vendorEmail}
+                                </a>
+                              </div>
+                              {item.vendorPhone && (
+                                <div style={{ fontSize: 11, color: '#94A3B8' }}>
+                                  {item.vendorPhone}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* 2. Candidate Profile */}
+                          <td style={{ padding: '12px 14px' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                              <div style={{
+                                width: 34,
+                                height: 34,
+                                borderRadius: '50%',
+                                backgroundColor: avatar.bg,
+                                color: avatar.text,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: 800,
+                                fontSize: 12,
+                                flexShrink: 0
+                              }}>
+                                {initials}
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                  <strong style={{ fontSize: 13.5, color: '#0F172A' }}>
+                                    {item.candidateName}
+                                  </strong>
+                                  {item.visa && (
+                                    <span style={{
+                                      fontSize: 9.5,
+                                      fontWeight: 700,
+                                      backgroundColor: isLight ? '#F1F5F9' : '#334155',
+                                      color: isLight ? '#475569' : '#CBD5E1',
+                                      padding: '1px 5px',
+                                      borderRadius: 4,
+                                      border: `1px solid ${isLight ? '#E2E8F0' : '#475569'}`
+                                    }}>
+                                      {String(item.visa).replace(/\s*\(.*?\)/g, '')}
+                                    </span>
+                                  )}
+                                </div>
+                                <div style={{ fontSize: 11, color: '#2563EB', fontWeight: 600, marginTop: 2 }}>
+                                  {item.experience || '8+ Years'} Experience
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* 3. Role & Primary Tech Stack */}
+                          <td style={{ padding: '12px 14px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>
+                                {item.role}
+                              </div>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                {skills.slice(0, 4).map((sk, sidx) => (
+                                  <span
+                                    key={sidx}
+                                    style={{
+                                      fontSize: 10.5,
+                                      fontWeight: 600,
+                                      backgroundColor: isLight ? '#F1F5F9' : '#1E293B',
+                                      color: '#334155',
+                                      padding: '2px 6px',
+                                      borderRadius: 4,
+                                      border: `1px solid ${C.border}`
+                                    }}
+                                  >
+                                    {sk}
+                                  </span>
+                                ))}
+                                {skills.length > 4 && (
+                                  <span style={{ fontSize: 10, color: '#64748B', fontWeight: 700, alignSelf: 'center' }}>
+                                    +{skills.length - 4}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* 4. Candidate Direct Contact */}
+                          <td style={{ padding: '12px 14px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                              {item.candidateEmail ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                  <a
+                                    href={`mailto:${item.candidateEmail}`}
+                                    style={{ fontSize: 11.5, color: '#2563EB', fontWeight: 600, textDecoration: 'none' }}
+                                    title="Email candidate directly"
+                                  >
+                                    {item.candidateEmail}
+                                  </a>
+                                  <button
+                                    type="button"
+                                    onClick={() => copyToClipboard(item.candidateEmail, 'candidate email')}
+                                    style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 1 }}
+                                    title="Copy email"
+                                  >
+                                    <IconCopy />
+                                  </button>
+                                </div>
+                              ) : (
+                                <span style={{ fontSize: 11, color: '#94A3B8' }}>Via Vendor Contact</span>
+                              )}
+
+                              {item.candidatePhone ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                  <a
+                                    href={`tel:${item.candidatePhone}`}
+                                    style={{ fontSize: 11.5, color: '#475569', textDecoration: 'none' }}
+                                  >
+                                    {item.candidatePhone}
+                                  </a>
+                                  <button
+                                    type="button"
+                                    onClick={() => copyToClipboard(item.candidatePhone, 'candidate phone')}
+                                    style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 1 }}
+                                    title="Copy phone"
+                                  >
+                                    <IconCopy />
+                                  </button>
+                                </div>
+                              ) : (
+                                <span style={{ fontSize: 11, color: '#94A3B8' }}>Phone on request</span>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* 5. Location & Mobility */}
+                          <td style={{ padding: '12px 14px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                              <div style={{ fontSize: 12, fontWeight: 600, color: '#0F172A' }}>
+                                {item.location || 'Remote / US'}
+                              </div>
+                              {item.relocation && (
+                                <span style={{
+                                  fontSize: 10,
+                                  fontWeight: 700,
+                                  color: '#059669',
+                                  backgroundColor: '#ECFDF5',
+                                  padding: '1px 5px',
+                                  borderRadius: 4,
+                                  border: '1px solid #A7F3D0',
+                                  display: 'inline-block',
+                                  width: 'fit-content'
+                                }}>
+                                  {item.relocation}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* 6. Rate & Availability */}
+                          <td style={{ padding: '12px 12px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                              <strong style={{ fontSize: 12.5, color: '#0F172A' }}>
+                                {item.rate || '$75/hr C2C'}
+                              </strong>
+                              <span style={{
+                                fontSize: 9.5,
+                                fontWeight: 800,
+                                color: '#047857',
+                                backgroundColor: '#ECFDF5',
+                                padding: '1px 5px',
+                                borderRadius: 4,
+                                border: '1px solid #A7F3D0',
+                                width: 'fit-content'
+                              }}>
+                                {item.status || 'Available'}
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* 7. Resume Doc */}
+                          <td style={{ padding: '12px 12px' }}>
+                            {item.attachmentName ? (
+                              <a
+                                href={item.storageUrl || `/uploads/candidate-docs/${item.attachmentName}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  color: '#2563EB',
+                                  textDecoration: 'none',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 4
+                                }}
+                              >
+                                <IconFileText />
+                                <span style={{ maxWidth: 85, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.attachmentName}>
+                                  {item.attachmentName}
+                                </span>
+                              </a>
+                            ) : (
+                              <span style={{ fontSize: 11, color: '#94A3B8' }}>Via Email</span>
+                            )}
+                          </td>
+
+                          {/* 8. Row Actions */}
+                          <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
+                              {/* Blue: Push to Jobs in Hand */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const candObj = {
+                                    id: item.id || `vh-${Date.now()}`,
+                                    name: item.candidateName,
+                                    role: item.role,
+                                    email: item.candidateEmail || item.vendorEmail,
+                                    phone: item.candidatePhone || item.vendorPhone,
+                                    location: item.location || 'Remote / US',
+                                    experience: item.experience || '8+ Years',
+                                    visaStatus: item.visa || 'US Citizen',
+                                    skills: item.skills || [],
+                                    source: `Vendor Hotlist (${item.vendorCompany || item.vendorName})`,
+                                    sourceCategory: 'vendor_bench',
+                                    recruiterEmail: currentUser?.email || 'omkesh@coolsofttech.com',
+                                    vendorEmail: item.vendorEmail,
+                                    vendorCompany: item.vendorCompany
+                                  }
+                                  setPushTargetCand(candObj)
+                                  setPushToReqModalOpen(true)
+                                }}
+                                style={{
+                                  backgroundColor: '#2563EB',
+                                  color: '#FFFFFF',
+                                  border: 'none',
+                                  borderRadius: 6,
+                                  padding: '5px 9px',
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 3
+                                }}
+                                title="Submit candidate to active requisition"
+                              >
+                                <span>Push to Req ↗</span>
+                              </button>
+
+                              {/* Teal: Add to ATS */}
+                              <button
+                                type="button"
+                                onClick={() => handlePushHotlistToATS(item)}
+                                style={{
+                                  backgroundColor: '#0D9488',
+                                  color: '#FFFFFF',
+                                  border: 'none',
+                                  borderRadius: 6,
+                                  padding: '5px 8px',
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  cursor: 'pointer'
+                                }}
+                                title="Add profile into primary ATS Candidates Pool"
+                              >
+                                + ATS
+                              </button>
+
+                              {/* Email Vendor */}
+                              <button
+                                type="button"
+                                onClick={() => handleEmailVendor(item)}
+                                style={{
+                                  backgroundColor: isLight ? '#F1F5F9' : '#334155',
+                                  color: '#475569',
+                                  border: `1px solid ${C.border}`,
+                                  borderRadius: 6,
+                                  padding: '5px 8px',
+                                  fontSize: 11,
+                                  fontWeight: 600,
+                                  cursor: 'pointer'
+                                }}
+                                title="Send email inquiry to vendor partner"
+                              >
+                                Email
+                              </button>
+
+                              {/* Delete */}
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteHotlist(item.id, item.candidateName)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: '#DC2626',
+                                  cursor: 'pointer',
+                                  padding: 4
+                                }}
+                                title="Remove from vendor hotlists"
+                              >
+                                <IconTrash />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div style={{
+                padding: '12px 18px',
+                borderTop: `1px solid ${C.border}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontSize: 12,
+                color: C.textSecondary
+              }}>
+                <div>
+                  Page <strong>{vendorTablePage}</strong> of <strong>{totalPages}</strong>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <button
+                    type="button"
+                    disabled={vendorTablePage <= 1}
+                    onClick={() => setVendorTablePage(p => Math.max(1, p - 1))}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      border: `1px solid ${C.border}`,
+                      backgroundColor: isLight ? '#FFFFFF' : C.inputBg,
+                      color: C.textPrimary,
+                      cursor: vendorTablePage <= 1 ? 'not-allowed' : 'pointer',
+                      opacity: vendorTablePage <= 1 ? 0.5 : 1
+                    }}
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    disabled={vendorTablePage >= totalPages}
+                    onClick={() => setVendorTablePage(p => Math.min(totalPages, p + 1))}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      border: `1px solid ${C.border}`,
+                      backgroundColor: isLight ? '#FFFFFF' : C.inputBg,
+                      color: C.textPrimary,
+                      cursor: vendorTablePage >= totalPages ? 'not-allowed' : 'pointer',
+                      opacity: vendorTablePage >= totalPages ? 0.5 : 1
+                    }}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Modal: + Add / Paste Vendor Bench Hotlist */}
+        {addHotlistModalOpen && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20
+          }}>
+            <div style={{
+              backgroundColor: isLight ? '#FFFFFF' : C.surface,
+              borderRadius: 12,
+              width: '100%',
+              maxWidth: 620,
+              boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column'
+            }}>
+              <div style={{
+                padding: '18px 24px',
+                borderBottom: `1px solid ${C.border}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: C.textPrimary }}>
+                    Add or Paste Vendor Bench Hotlist
+                  </h3>
+                  <p style={{ margin: '2px 0 0', fontSize: 12, color: C.textSecondary }}>
+                    Paste email bench tables or raw consultant profiles. SmartHire auto-parses candidate records.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAddHotlistModalOpen(false)}
+                  style={{ background: 'none', border: 'none', fontSize: 18, color: C.textSecondary, cursor: 'pointer' }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveNewHotlist} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: C.textSecondary, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>
+                      Vendor Sponsoring Company
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. V-Soft Solutions, TekStaff"
+                      value={newHotlistVendorCompany}
+                      onChange={e => setNewHotlistVendorCompany(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '8px 10px',
+                        borderRadius: 6,
+                        border: `1px solid ${C.border}`,
+                        backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
+                        color: C.textPrimary,
+                        fontSize: 12.5,
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: C.textSecondary, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>
+                      Vendor Contact Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Paul Wilson, Sarah Miller"
+                      value={newHotlistVendorName}
+                      onChange={e => setNewHotlistVendorName(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '8px 10px',
+                        borderRadius: 6,
+                        border: `1px solid ${C.border}`,
+                        backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
+                        color: C.textPrimary,
+                        fontSize: 12.5,
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: C.textSecondary, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>
+                      Vendor Email Address
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="e.g. vendor@supplier.com"
+                      value={newHotlistVendorEmail}
+                      onChange={e => setNewHotlistVendorEmail(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '8px 10px',
+                        borderRadius: 6,
+                        border: `1px solid ${C.border}`,
+                        backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
+                        color: C.textPrimary,
+                        fontSize: 12.5,
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: C.textSecondary, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>
+                      Vendor Phone (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="+1 (xxx) xxx-xxxx"
+                      value={newHotlistVendorPhone}
+                      onChange={e => setNewHotlistVendorPhone(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '8px 10px',
+                        borderRadius: 6,
+                        border: `1px solid ${C.border}`,
+                        backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
+                        color: C.textPrimary,
+                        fontSize: 12.5,
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: C.textSecondary, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>
+                    Paste Bench Hotlist Text or Email Content
+                  </label>
+                  <textarea
+                    rows={8}
+                    placeholder={`Paste hotlist email, e.g.:\n\nCandidate: Dhiren Raval\nRole: Sr. Manager Applied AI\nEmail: dhiren.raval@gmail.com\nPhone: +1 703 785 3030\nVisa: US Citizen\nRate: $95/hr C2C\nSkills: Python, Machine Learning, AWS, Cloud Strategy`}
+                    value={newHotlistText}
+                    onChange={e => setNewHotlistText(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: 8,
+                      border: `1px solid ${C.border}`,
+                      backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
+                      color: C.textPrimary,
+                      fontSize: 12.5,
+                      fontFamily: 'monospace',
+                      boxSizing: 'border-box',
+                      resize: 'vertical'
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, marginTop: 6 }}>
+                  <button
+                    type="button"
+                    onClick={() => setAddHotlistModalOpen(false)}
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: 6,
+                      border: `1px solid ${C.border}`,
+                      backgroundColor: 'transparent',
+                      color: C.textPrimary,
+                      fontSize: 12.5,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingHotlist}
+                    style={{
+                      padding: '8px 18px',
+                      borderRadius: 6,
+                      border: 'none',
+                      backgroundColor: '#0D9488',
+                      color: '#FFFFFF',
+                      fontSize: 12.5,
+                      fontWeight: 700,
+                      cursor: isSubmittingHotlist ? 'wait' : 'pointer'
+                    }}
+                  >
+                    {isSubmittingHotlist ? 'Ingesting Bench...' : 'Parse & Save Bench Candidates'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   const toggleFavorite = (candId, e) => {
     e?.stopPropagation()
     setFavoriteCandidateIds(prev => {
@@ -4676,6 +6047,45 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   {totalUnread}
                 </span>
               )}
+            </button>
+
+            {/* 4. Vendor Hotlists */}
+            <button
+              type="button"
+              onMouseEnter={() => setHoveredNav('hotlists')}
+              onMouseLeave={() => setHoveredNav(null)}
+              onClick={() => {
+                setInboxViewMode('hotlists')
+                fetchVendorHotlists()
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px 14px',
+                borderRadius: 8,
+                border: 'none',
+                background: inboxViewMode === 'hotlists'
+                  ? (isLight ? '#CCFBF1' : 'rgba(13,148,136,0.18)')
+                  : (hoveredNav === 'hotlists' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent'),
+                color: inboxViewMode === 'hotlists'
+                  ? '#0D9488'
+                  : (hoveredNav === 'hotlists' ? C.textPrimary : C.textSecondary),
+                fontWeight: inboxViewMode === 'hotlists' ? 700 : (hoveredNav === 'hotlists' ? 600 : 500),
+                fontSize: 13.5,
+                cursor: 'pointer',
+                textAlign: 'left',
+                transform: hoveredNav === 'hotlists' && inboxViewMode !== 'hotlists' ? 'translateX(4px)' : 'none',
+                boxShadow: inboxViewMode === 'hotlists' ? '0 1px 3px rgba(13,148,136,0.15)' : 'none',
+                transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <IconBriefcase /> <span>Vendor Hotlists</span>
+              </span>
+              <span style={{ fontSize: 10.5, background: '#0D9488', color: '#FFFFFF', padding: '1px 7px', borderRadius: 10, fontWeight: 800 }}>
+                {vendorHotlists.length || 0}
+              </span>
             </button>
 
 
@@ -6142,152 +7552,278 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 }}>
 
 
-                  {/* Candidate Name & Contact Details */}
-                  <div>
-                    <h2 style={{ fontSize: 20, fontWeight: 900, color: C.textPrimary, margin: '0 0 4px', letterSpacing: '-0.02em' }}>
-                      {activeCandidate?.name || activeCandidate?.extracted_profile?.name || (activeCandidate?.email ? activeCandidate.email.split('@')[0] : 'Candidate Profile')}
-                    </h2>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#2563EB', marginBottom: 12 }}>
-                      {activeCandidate?.role || (candSkillsList.length > 0 ? `${candSkillsList[0]} Specialist` : 'Software Specialist')}
+                  {/* MONSTER-STYLE CANDIDATE PROFILE CARD (Screenshot 5) */}
+                  <div style={{
+                    backgroundColor: isLight ? '#FFFFFF' : C.cardBg,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 10,
+                    padding: '16px',
+                    boxShadow: isLight ? '0 1px 4px rgba(0,0,0,0.04)' : 'none',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 12
+                  }}>
+                    {/* Top Row: Checkbox, Star Favorite, Name & External Link */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <input
+                          type="checkbox"
+                          checked={Boolean(activeCandidate?.id && selectedCardIds.has(activeCandidate.id))}
+                          onChange={() => {
+                            if (!activeCandidate?.id) return
+                            setSelectedCardIds(prev => {
+                              const next = new Set(prev)
+                              if (next.has(activeCandidate.id)) next.delete(activeCandidate.id)
+                              else next.add(activeCandidate.id)
+                              return next
+                            })
+                          }}
+                          style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#2563EB' }}
+                          title="Select candidate for bulk actions"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!activeCandidate?.id) return
+                            setFavoriteCandidateIds(prev => {
+                              const next = new Set(prev)
+                              if (next.has(activeCandidate.id)) next.delete(activeCandidate.id)
+                              else next.add(activeCandidate.id)
+                              return next
+                            })
+                          }}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            color: activeCandidate?.id && favoriteCandidateIds.has(activeCandidate.id) ? '#F59E0B' : C.textSecondary,
+                            fontSize: 16
+                          }}
+                          title="Star candidate"
+                        >
+                          {activeCandidate?.id && favoriteCandidateIds.has(activeCandidate.id) ? '★' : '☆'}
+                        </button>
+                      </div>
+
+                      <span style={{ fontSize: 11, color: C.textSecondary, fontWeight: 600 }}>
+                        {activeCandidate?.createdAt ? new Date(activeCandidate.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' }) : 'Recent'}
+                      </span>
                     </div>
 
-                    {/* Interactive Contacts */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {activeCandidate?.email && (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
-                          <a
-                            href={`mailto:${activeCandidate.email}`}
-                            style={{ fontSize: 12, fontWeight: 700, color: '#2563EB', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6, wordBreak: 'break-all' }}
-                            title="Click to send email"
-                          >
-                            <IconMail /> <span>{activeCandidate.email}</span>
-                          </a>
-                          <button
-                            type="button"
-                            onClick={() => copyToClipboard(activeCandidate.email, 'email')}
-                            style={{ background: 'none', border: 'none', color: C.textSecondary, cursor: 'pointer', padding: 2, display: 'flex', alignItems: 'center' }}
-                            title="Copy email"
-                          >
-                            <IconCopy />
-                          </button>
-                        </div>
-                      )}
+                    {/* Candidate Name & Role */}
+                    <div>
+                      <h2 style={{
+                        fontSize: 17,
+                        fontWeight: 800,
+                        color: C.textPrimary,
+                        margin: '0 0 2px',
+                        lineHeight: 1.25,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6
+                      }}>
+                        <span>{activeCandidate?.name || activeCandidate?.extracted_profile?.name || (activeCandidate?.email ? activeCandidate.email.split('@')[0] : 'Candidate Profile')}</span>
+                        <a
+                          href={`https://www.google.com/search?q=${encodeURIComponent((activeCandidate?.name || '') + ' ' + (activeCandidate?.role || ''))}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: '#2563EB', textDecoration: 'none', fontSize: 13 }}
+                          title="Search online"
+                        >
+                          ↗
+                        </a>
+                      </h2>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#2563EB', marginTop: 2 }}>
+                        {activeCandidate?.role || (candSkillsList.length > 0 ? `${candSkillsList[0]} Specialist` : 'Software Specialist')}
+                      </div>
+                    </div>
 
+                    {/* Location & Local Verification Badge */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <div style={{ fontSize: 12, color: C.textSecondary, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span style={{ fontWeight: 600, color: C.textPrimary }}>
+                          {(() => {
+                            const l = activeCandidate?.location || '';
+                            return (l && !l.toLowerCase().includes('search on') && !l.toLowerCase().includes('webpage')) ? l : 'United States';
+                          })()}
+                        </span>
+                        {activeCandidate?.visaStatus && (
+                          <span style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            background: isLight ? '#F1F5F9' : '#334155',
+                            color: isLight ? '#475569' : '#CBD5E1',
+                            padding: '1px 5px',
+                            borderRadius: 4,
+                            border: `1px solid ${isLight ? '#E2E8F0' : '#475569'}`
+                          }}>
+                            {String(activeCandidate.visaStatus).replace(/\s*\(.*?\)/g, '')}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Local Fit Badge */}
                       {(() => {
-                        const rawPhone = activeCandidate?.phone || '';
-                        const isFakePhone = !rawPhone || rawPhone.includes('555') || rawPhone.includes('010-0000') || rawPhone.includes('000-0000');
-                        if (isFakePhone) {
-                          return (
-                            <span style={{ fontSize: 12, color: C.textMuted, display: 'flex', alignItems: 'center', gap: 6 }} title="Phone not provided in email message">
-                              <IconPhone /> <span>Phone: Via Resume / Request</span>
-                            </span>
-                          );
-                        }
-                        return (
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
-                            <a
-                              href={`tel:${rawPhone}`}
-                              style={{ fontSize: 12, color: C.textSecondary, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}
-                              title="Click to call"
-                            >
-                              <IconPhone /> <span>{rawPhone}</span>
-                            </a>
-                            <button
-                              type="button"
-                              onClick={() => copyToClipboard(rawPhone, 'phone')}
-                              style={{ background: 'none', border: 'none', color: C.textSecondary, cursor: 'pointer', padding: 2, display: 'flex', alignItems: 'center' }}
-                              title="Copy phone"
-                            >
-                              <IconCopy />
-                            </button>
-                          </div>
-                        );
+                        const matchedJob = activeCandidate?.targetReqId 
+                          ? openJobsList.find(j => String(j.id || '').replace(/^J-/, '') === String(activeCandidate.targetReqId).replace(/^J-/, ''))
+                          : null;
+                        const locFit = evaluateCandidateLocationFit(activeCandidate, matchedJob);
+                        return renderLocationBadge(locFit);
                       })()}
+                    </div>
 
-                      <a
-                        href={`https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(activeCandidate?.name || '')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                    {/* Monster-Style Work Experience Short Card */}
+                    {(() => {
+                      const candStats = extractCandidateExperienceStats(activeCandidate)
+                      const candEducation = extractCandidateEducation(activeCandidate)
+                      return (
+                        <div style={{
+                          borderTop: `1px solid ${C.border}`,
+                          paddingTop: 10,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 6,
+                          fontSize: 11.5
+                        }}>
+                          <div>
+                            <span style={{ color: C.textSecondary, fontWeight: 700 }}>Current: </span>
+                            <strong style={{ color: C.textPrimary }}>
+                              {candStats.currentTitle} at {candStats.currentEmployer}
+                            </strong>
+                          </div>
+
+                          <div>
+                            <span style={{ color: C.textSecondary, fontWeight: 700 }}>Previous: </span>
+                            <span style={{ color: C.textPrimary }}>
+                              {candStats.previousTitle} at {candStats.previousEmployer}
+                            </span>
+                          </div>
+
+                          <div>
+                            <span style={{ color: C.textSecondary, fontWeight: 700 }}>Education: </span>
+                            <span style={{ color: C.textPrimary }}>{candEducation}</span>
+                          </div>
+                        </div>
+                      )
+                    })()}
+
+                    {/* Top Skills Chips (Monster Style) */}
+                    {candSkillsList.length > 0 && (
+                      <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
+                        <div style={{ fontSize: 10.5, fontWeight: 700, color: C.textSecondary, textTransform: 'uppercase', marginBottom: 6 }}>
+                          Skills
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                          {candSkillsList.slice(0, 5).map((sk, sIdx) => (
+                            <span
+                              key={sIdx}
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 600,
+                                backgroundColor: isLight ? '#F1F5F9' : '#334155',
+                                border: `1px solid ${isLight ? '#E2E8F0' : '#475569'}`,
+                                color: C.textPrimary,
+                                padding: '2px 7px',
+                                borderRadius: 4
+                              }}
+                            >
+                              {sk}
+                            </span>
+                          ))}
+                          {candSkillsList.length > 5 && (
+                            <span
+                              onClick={() => setActiveTobuTab('analytics')}
+                              style={{
+                                fontSize: 10.5,
+                                fontWeight: 700,
+                                color: '#2563EB',
+                                backgroundColor: '#EFF6FF',
+                                border: '1px solid #BFDBFE',
+                                padding: '2px 6px',
+                                borderRadius: 4,
+                                cursor: 'pointer'
+                              }}
+                              title="Click to view all skills in Analytics tab"
+                            >
+                              +{candSkillsList.length - 5} more
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Quick Action Buttons */}
+                    <div style={{ display: 'flex', gap: 8, marginTop: 4, borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEmailModal(activeCandidate)}
                         style={{
+                          flex: 1,
+                          backgroundColor: '#2563EB',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          borderRadius: 6,
+                          padding: '7px 10px',
                           fontSize: 12,
-                          fontWeight: 800,
-                          color: '#0A66C2',
-                          textDecoration: 'none',
+                          fontWeight: 700,
+                          cursor: 'pointer',
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: 6,
-                          marginTop: 2
+                          justifyContent: 'center',
+                          gap: 5
                         }}
                       >
-                        <span>Search on LinkedIn ↗</span>
-                      </a>
+                        <IconMail /> <span>Email Candidate</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setActiveTobuTab('analytics')}
+                        style={{
+                          backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
+                          border: `1px solid ${C.border}`,
+                          color: C.textPrimary,
+                          borderRadius: 6,
+                          padding: '7px 10px',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 4
+                        }}
+                        title="View deep analysis, career gaps, and full fit breakdown"
+                      >
+                        <span>Analytics ↗</span>
+                      </button>
                     </div>
                   </div>
 
-                  {/* Professional Background & Experience Stats (Matching Tobu.ai) */}
-                  {(() => {
-                    const candEducation = extractCandidateEducation(activeCandidate)
-                    const candStats = extractCandidateExperienceStats(activeCandidate)
-                    return (
-                      <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 10, fontSize: 12 }}>
-                        <div>
-                          <span style={{ color: C.textSecondary, display: 'block', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase' }}>Total work experience</span>
-                          <strong style={{ color: C.textPrimary, fontSize: 12.5 }}>{activeCandidate?.experience || '10+ Years'}</strong>
-                        </div>
-
-                        <div>
-                          <span style={{ color: C.textSecondary, display: 'block', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase' }}>Number of Jobs / Positions</span>
-                          <strong style={{ color: '#0F766E', fontSize: 12.5 }}>{candStats.jobsCount} Previous Roles / Projects</strong>
-                        </div>
-
-                        <div>
-                          <span style={{ color: C.textSecondary, display: 'block', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase' }}>Current Employer</span>
-                          <strong style={{ color: C.textPrimary, fontSize: 12.5 }}>{candStats.currentEmployer}</strong>
-                        </div>
-
-                        <div>
-                          <span style={{ color: C.textSecondary, display: 'block', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase' }}>Current Job Position</span>
-                          <strong style={{ color: '#2563EB', fontSize: 12.5 }}>{candStats.currentTitle || activeCandidate?.role || 'Senior Specialist'}</strong>
-                        </div>
-
-                        <div>
-                          <span style={{ color: C.textSecondary, display: 'block', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase' }}>Education</span>
-                          <strong style={{ color: C.textPrimary, fontSize: 12, lineHeight: 1.4, display: 'block', marginTop: 2 }}>{candEducation}</strong>
-                        </div>
-
-                        <div>
-                          <span style={{ color: C.textSecondary, display: 'block', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase' }}>Current location</span>
-                          <strong style={{ color: C.textPrimary, fontSize: 12.5 }}>
-                            {(() => {
-                              const l = activeCandidate?.location || '';
-                              return (l && !l.toLowerCase().includes('search on') && !l.toLowerCase().includes('webpage')) ? l : 'Remote / US';
-                            })()}
-                          </strong>
-                        </div>
-
-                        <div>
-                          <span style={{ color: C.textSecondary, display: 'block', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase' }}>Work Permit / Visa Status</span>
-                          <strong style={{ color: '#16A34A', fontSize: 12.5 }}>{activeCandidate?.visaStatus || 'US Citizen'}</strong>
-                        </div>
-
-                        {/* Sourcing & Inbound Sender Info */}
-                        <div style={{ marginTop: 4, paddingTop: 10, borderTop: `1px solid ${C.border}` }}>
-                          <span style={{ color: C.textSecondary, display: 'block', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>
-                            Email Sender &amp; Channel
-                          </span>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: C.textPrimary, wordBreak: 'break-all' }}>
-                            {activeCandidate?.recruiterEmail || activeCandidate?.fromEmail || 'omkesh@coolsofttech.com'}
-                          </div>
-                          <div style={{ fontSize: 11, color: C.textSecondary, marginTop: 2 }}>
-                            Source: {activeCandidate?.isSpamRecovery ? 'Yahoo Spam Folder' : activeCandidate?.sourceCategory === 'careers_portal' ? 'Careers Portal' : activeCandidate?.sourceCategory === 'vendor_bench' ? 'Vendor Bench' : 'Recruiter Email Inbox'}
-                          </div>
-                          <div style={{ fontSize: 11, color: C.textSecondary, marginTop: 2 }}>
-                            Received: {activeCandidate?.createdAt ? new Date(activeCandidate.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Recent Submission'}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })()}
+                  {/* Sourcing & Inbound Sender Info */}
+                  <div style={{
+                    backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 8,
+                    padding: '10px 14px',
+                    fontSize: 11
+                  }}>
+                    <div style={{ color: C.textSecondary, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, marginBottom: 4 }}>
+                      Sourcing &amp; Acquisition Channel
+                    </div>
+                    <div style={{ fontSize: 11.5, fontWeight: 700, color: C.textPrimary, wordBreak: 'break-all' }}>
+                      {activeCandidate?.recruiterEmail || activeCandidate?.fromEmail || 'omkesh@coolsofttech.com'}
+                    </div>
+                    <div style={{ color: C.textSecondary, marginTop: 2 }}>
+                      Channel: {activeCandidate?.isSpamRecovery ? 'Yahoo Spam Folder' : activeCandidate?.sourceCategory === 'careers_portal' ? 'Careers Portal' : activeCandidate?.sourceCategory === 'vendor_bench' ? 'Vendor Bench' : 'Recruiter Email Inbox'}
+                    </div>
+                    <div style={{ color: C.textSecondary, marginTop: 2 }}>
+                      Received: {activeCandidate?.createdAt ? new Date(activeCandidate.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Recent Submission'}
+                    </div>
+                  </div>
 
                   {/* Candidate Attachments & Documents Locker (Tobu.ai style + DL, ID, Visa) */}
                   {(() => {
@@ -6710,12 +8246,12 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                     <IconDownload /> <span>Download DOCX</span>
                                   </a>
                                 </div>
-                                {highlightResumeText(candResumeText, [...new Set([...dynamicMatchingSkills, ...candSkillsList])], resumeKeywordSearch, isHighlightSkillsEnabled)}
+                                {highlightResumeText(candResumeText, [...new Set([...dynamicMatchingSkills, ...candSkillsList])], resumeKeywordSearch, isHighlightSkillsEnabled, activeCandidate)}
                               </div>
                             )
                           }
 
-                          return highlightResumeText(candResumeText, [...new Set([...dynamicMatchingSkills, ...candSkillsList])], resumeKeywordSearch, isHighlightSkillsEnabled)
+                          return highlightResumeText(candResumeText, [...new Set([...dynamicMatchingSkills, ...candSkillsList])], resumeKeywordSearch, isHighlightSkillsEnabled, activeCandidate)
                         })()}
                       </div>
                     )}
@@ -8235,6 +9771,29 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     <option value="state_tx">State of Texas Agencies</option>
                   </select>
 
+                  {/* Local Candidate Fit filter dropdown */}
+                  <select
+                    value={filterLocalFit}
+                    onChange={e => { setFilterLocalFit(e.target.value); setTablePage(1); }}
+                    style={{
+                      backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
+                      border: filterLocalFit !== 'all' ? '1px solid #059669' : `1px solid ${C.border}`,
+                      borderRadius: 8,
+                      padding: '8px 12px',
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      color: filterLocalFit !== 'all' ? '#059669' : C.textPrimary,
+                      outline: 'none',
+                      cursor: 'pointer'
+                    }}
+                    title="Filter candidates by location proximity to requisition (Local vs Non-Local)"
+                  >
+                    <option value="all">Local Fit: All</option>
+                    <option value="confirmed_local">Confirmed Local (Exact Match)</option>
+                    <option value="remote_ok">Remote / Nationwide Eligible</option>
+                    <option value="relocation_needed">Non-Local / Relocation Needed</option>
+                  </select>
+
                   {/* Clear text button */}
                   <button
                     type="button"
@@ -8247,6 +9806,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       setFilterRecruiter('all')
                       setFilterSource('all')
                       setFilterGovDept('all')
+                      setFilterLocalFit('all')
                       setTableCategory('all')
                       setTablePage(1)
                     }}
@@ -8349,6 +9909,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       }}
                     >
                       <option value="date_desc">Newest First (Recent Ingestion on Top)</option>
+                      <option value="local_first">Confirmed Local First (Priority)</option>
                       <option value="match_desc">Match (High to Low)</option>
                       <option value="gov_first">Department Experience (First Preference)</option>
                       <option value="match_asc">Match (Low to High)</option>
@@ -8663,6 +10224,14 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                           </span>
                                         </div>
                                       )
+                                    })()}
+                                    {/* Local Proximity / Location Verification Badge */}
+                                    {(() => {
+                                      const matchedJob = c.targetReqId 
+                                        ? openJobsList.find(j => String(j.id || '').replace(/^J-/, '') === String(c.targetReqId).replace(/^J-/, ''))
+                                        : null;
+                                      const locFit = evaluateCandidateLocationFit(c, matchedJob);
+                                      return renderLocationBadge(locFit);
                                     })()}
                                   </div>
                                 </td>
@@ -9124,6 +10693,9 @@ export default function RecruiterInbox({ defaultViewMode }) {
               </div>
             </div>
           )}
+
+          {/* VIEW 4: VENDOR HOTLISTS & BENCH CANDIDATES HUB */}
+          {inboxViewMode === 'hotlists' && renderVendorHotlistsView()}
 
         </div>
       )}
@@ -10176,8 +11748,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
                         matchedJobClient: activeThread.company || 'Client'
                       })
                       setEmailTo(activeThread.email || '')
-                      setEmailSubject(`SmartHire ATS: Quick update regarding application`)
-                      setEmailBody(`Hi ${contactName.split(' ')[0]},\n\nSharing the latest updates for your review.\n\nWith Regards,\n${currentUser?.name || 'Recruiter'}\nSmartHire ATS`)
+                      setEmailSubject(`Application Update: Next Steps | COOLSOFT LLC`)
+                      setEmailBody(`Hi ${contactName.split(' ')[0]},\n\nSharing the latest updates for your review.\n\nWith Regards,\n${currentUser?.name || 'Omkesh Manjute'}\nLead Recruiter\nCOOLSOFT LLC | http://www.coolsofttech.com`)
                     }}
                     style={{
                       background: isLight ? '#F9FAFB' : '#1C252E',

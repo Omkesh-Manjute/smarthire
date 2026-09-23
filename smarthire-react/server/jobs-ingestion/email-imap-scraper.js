@@ -732,6 +732,60 @@ export async function scrapeResumesFromIMAP({
     client.socket.end();
   }
 
+  // Automatically sync vendor bench candidates into vendor_hotlists.json
+  try {
+    const vhFile = path.resolve(__dirname, '../vendor_hotlists.json');
+    let existingHotlists = [];
+    if (fs.existsSync(vhFile)) {
+      existingHotlists = JSON.parse(fs.readFileSync(vhFile, 'utf8'));
+    }
+    let addedToHotlists = 0;
+    for (const cand of results) {
+      if (!cand.vendorEmail && !cand.email) continue;
+      const cName = (cand.name || '').trim();
+      const vEmail = (cand.vendorEmail || '').toLowerCase().trim();
+      const cEmail = (cand.email || '').toLowerCase().trim();
+
+      const exists = existingHotlists.some(ex => {
+        if (cEmail && ex.candidateEmail && ex.candidateEmail.toLowerCase() === cEmail) return true;
+        if (ex.candidateName.toLowerCase() === cName.toLowerCase() && ex.vendorEmail.toLowerCase() === vEmail) return true;
+        return false;
+      });
+
+      if (!exists) {
+        existingHotlists.unshift({
+          id: `vh-${Date.now()}-${Math.floor(Math.random()*900+100)}`,
+          vendorName: cand.vendorName || 'Staffing Vendor',
+          vendorCompany: cand.vendorName ? `${cand.vendorName} Agency` : 'Vendor Partner',
+          vendorEmail: cand.vendorEmail || '',
+          vendorPhone: cand.phone || '',
+          candidateName: cName,
+          role: cand.role || 'IT Specialist',
+          candidateEmail: cand.email || '',
+          candidatePhone: cand.phone || '',
+          visa: cand.visaStatus || 'H-1B',
+          location: cand.location || 'Remote / US',
+          experience: cand.experience || '8+ Years',
+          skills: cand.skills || [],
+          rate: '$70/hr',
+          relocation: 'Open',
+          receivedDate: cand.date || new Date().toISOString(),
+          sourceEmailSubject: cand.subject || 'Vendor Candidate Bench',
+          attachmentName: cand.attachmentName || null,
+          storageUrl: cand.file?.local_path || '',
+          status: 'Available'
+        });
+        addedToHotlists++;
+      }
+    }
+    if (addedToHotlists > 0) {
+      fs.writeFileSync(vhFile, JSON.stringify(existingHotlists, null, 2));
+      console.log(`📋 Synced ${addedToHotlists} new candidate(s) to Vendor Hotlists database.`);
+    }
+  } catch(hotlistErr) {
+    console.warn('⚠️ Hotlist auto-sync notice:', hotlistErr.message);
+  }
+
   console.log(`🎯 IMAP Scan completed! Ingested & marked read: ${results.length} candidate application emails.`);
   return results;
 }

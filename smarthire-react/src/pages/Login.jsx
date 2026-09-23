@@ -20,16 +20,16 @@ function Login() {
   const [forgotStatus, setForgotStatus] = useState({ loading: false, msg: '', error: false })
 
   const defaultRecs = [
-    { id: 'rec-1', name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', company: 'SmartHire', isActive: true },
-    { id: 'rec-1b', name: 'Omkesh Manjute', email: 'omkesh.manjute@smarthire.com', role: 'superadmin', refCode: 'omkesh', company: 'SmartHire', isActive: true },
-    { id: 'rec-2', name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com', role: 'recruiter', refCode: 'sukamal-chatterjee', company: 'SmartHire', isActive: true },
-    { id: 'rec-3', name: 'Gourav', email: 'gourav@coolsofttech.com', role: 'recruiter', refCode: 'gourav', parentRecruiterName: 'Omkesh', company: 'SmartHire', isActive: true },
-    { id: 'rec-4', name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com', role: 'recruiter', refCode: 'vaibhav-bisen', company: 'SmartHire', isActive: true },
-    { id: 'rec-5', name: 'Pankaj', email: 'pankajm@coolsofttech.com', role: 'recruiter', refCode: 'pankaj', company: 'SmartHire', isActive: true },
-    { id: 'mgr-1', name: 'Alok Manager', email: 'manager@coolsofttech.com', role: 'manager', refCode: 'alok-manager', company: 'SmartHire', isActive: true },
-    { id: 'emp-1', name: 'Naveen Bhardwaj', email: 'naveen@coolsofttech.com', role: 'employee', parentRecruiterName: 'Sukamal Chatterjee', refCode: 'naveen-bhardwaj', company: 'SmartHire', isActive: true },
-    { id: 'emp-2', name: 'Rahul Sharma', email: 'rahul@coolsofttech.com', role: 'employee', parentRecruiterName: 'Vaibhav Bisen', refCode: 'rahul-sharma', company: 'SmartHire', isActive: true },
-    { id: 'emp-3', name: 'Priya Verma', email: 'priya@coolsofttech.com', role: 'employee', parentRecruiterName: 'Sukamal Chatterjee', refCode: 'priya-verma', company: 'SmartHire', isActive: true }
+    { id: 'rec-1', name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', company: 'COOLSOFT LLC', isActive: true },
+    { id: 'rec-1b', name: 'Omkesh Manjute', email: 'omkesh.manjute@smarthire.com', role: 'superadmin', refCode: 'omkesh', company: 'COOLSOFT LLC', isActive: true },
+    { id: 'rec-2', name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com', role: 'recruiter', refCode: 'sukamal-chatterjee', company: 'COOLSOFT LLC', isActive: true },
+    { id: 'rec-3', name: 'Gourav', email: 'gourav@coolsofttech.com', role: 'recruiter', refCode: 'gourav', parentRecruiterName: 'Omkesh', company: 'COOLSOFT LLC', isActive: true },
+    { id: 'rec-4', name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com', role: 'recruiter', refCode: 'vaibhav-bisen', company: 'COOLSOFT LLC', isActive: true },
+    { id: 'rec-5', name: 'Pankaj', email: 'pankajm@coolsofttech.com', role: 'recruiter', refCode: 'pankaj', company: 'COOLSOFT LLC', isActive: true },
+    { id: 'mgr-1', name: 'Alok Manager', email: 'manager@coolsofttech.com', role: 'manager', refCode: 'alok-manager', company: 'COOLSOFT LLC', isActive: true },
+    { id: 'emp-1', name: 'Naveen Bhardwaj', email: 'naveen@coolsofttech.com', role: 'employee', parentRecruiterName: 'Sukamal Chatterjee', refCode: 'naveen-bhardwaj', company: 'COOLSOFT LLC', isActive: true },
+    { id: 'emp-2', name: 'Rahul Sharma', email: 'rahul@coolsofttech.com', role: 'employee', parentRecruiterName: 'Vaibhav Bisen', refCode: 'rahul-sharma', company: 'COOLSOFT LLC', isActive: true },
+    { id: 'emp-3', name: 'Priya Verma', email: 'priya@coolsofttech.com', role: 'employee', parentRecruiterName: 'Sukamal Chatterjee', refCode: 'priya-verma', company: 'COOLSOFT LLC', isActive: true }
   ]
 
   // Pre-sync all active team members from the backend server into localStorage on mount

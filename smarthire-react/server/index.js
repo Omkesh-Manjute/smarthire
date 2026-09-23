@@ -8027,14 +8027,22 @@ app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
       socketTimeout: 10000
     });
 
-    const emailSignature = cfg.signature ? `\n\n--\n${cfg.signature}` : '';
+    const senderDisplayName = cfg.displayName || 'Omkesh Manjute (COOLSOFT LLC)';
+    const defaultCoolsoftSig = 'With Regards,\nOmkesh Manjute\nCOOLSOFT LLC | http://www.coolsofttech.com';
+    const activeSig = cfg.signature || defaultCoolsoftSig;
+    const bodyAlreadyHasSig = (body || '').includes('Regards') || (body || '').includes('COOLSOFT');
+    const emailSignature = (!bodyAlreadyHasSig && activeSig) ? `\n\n--\n${activeSig}` : '';
+
+    const htmlAlreadyHasSig = (html || '').includes('Regards') || (html || '').includes('COOLSOFT');
+    const htmlSignature = (!htmlAlreadyHasSig && activeSig) ? `<br><br>--<br>${activeSig.replace(/\n/g, '<br>')}` : '';
+
     await transporter.sendMail({
-      from: `"${cfg.displayName || 'SmartHire Recruiter'}" <${cfg.fromEmail}>`,
+      from: `"${senderDisplayName}" <${cfg.fromEmail || fromEmail}>`,
       to: Array.isArray(to) ? to.join(', ') : to,
-      replyTo: replyTo || cfg.fromEmail,
+      replyTo: replyTo || cfg.fromEmail || fromEmail,
       subject,
       text: (body || '') + emailSignature,
-      html: html ? html + (cfg.signature ? `<br><br>--<br>${cfg.signature}` : '') : undefined
+      html: html ? (html + htmlSignature) : undefined
     });
 
     // Automatically append to Yahoo IMAP "Sent" folder in background so it appears in Yahoo webmail
@@ -8044,11 +8052,11 @@ app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
         port: parseInt(cfg.imapPort) || 993,
         user: fromEmail,
         password: cleanedPass,
-        from: `"${cfg.displayName || 'SmartHire Recruiter'}" <${fromEmail}>`,
+        from: `"${senderDisplayName}" <${fromEmail}>`,
         to,
         subject,
         text: (body || '') + emailSignature,
-        html: html ? html + (cfg.signature ? `<br><br>--<br>${cfg.signature}` : '') : undefined
+        html: html ? (html + htmlSignature) : undefined
       }).catch(e => console.warn('Background append to Sent notice:', e.message));
     }).catch(() => {});
 
@@ -8276,6 +8284,132 @@ function classifyTechnicalDomain(title = '', skills = [], text = '') {
   return bestDomain;
 }
 
+// US State dictionary for bidirectional conversion and normalization
+const US_STATES_MAP = {
+  'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',
+  'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE', 'florida': 'FL', 'georgia': 'GA',
+  'hawaii': 'HI', 'idaho': 'ID', 'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA',
+  'kansas': 'KS', 'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
+  'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS', 'missouri': 'MO',
+  'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ',
+  'new mexico': 'NM', 'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH',
+  'oklahoma': 'OK', 'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
+  'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT', 'vermont': 'VT',
+  'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
+  'dc': 'DC', 'district of columbia': 'DC'
+};
+
+function extractStateAndCity(locStr = '', textStr = '') {
+  const combined = `${locStr} ${textStr}`.toLowerCase();
+  let foundState = null;
+  let foundCity = null;
+
+  // 1. Check 2-letter state code with regex like ", TX", " TX ", "TX 78701"
+  const codeMatch = locStr.match(/\b([A-Z]{2})\b(?:\s+\d{5})?/);
+  if (codeMatch && Object.values(US_STATES_MAP).includes(codeMatch[1].toUpperCase())) {
+    foundState = codeMatch[1].toUpperCase();
+  }
+
+  // 2. Check full state names
+  if (!foundState) {
+    for (const [full, code] of Object.entries(US_STATES_MAP)) {
+      const reg = new RegExp(`\\b${full}\\b`, 'i');
+      if (reg.test(combined)) {
+        foundState = code;
+        break;
+      }
+    }
+  }
+
+  // 3. Common city extraction
+  const cityMatch = locStr.split(/[,–-]/)[0]?.trim();
+  if (cityMatch && cityMatch.length > 2 && !cityMatch.toLowerCase().includes('united states')) {
+    foundCity = cityMatch;
+  }
+
+  return { state: foundState, city: foundCity };
+}
+
+function evaluateCandidateLocationFit(candidate = {}, job = {}) {
+  if (!job) return { isLocal: null, status: 'unknown', badge: 'Location Not Specified', scoreAdj: 0 };
+
+  const jobDesc = `${job.description || ''} ${job.rawDescription || ''} ${job.fullDescription || ''}`.toLowerCase();
+  const jobLoc = job.location || '';
+  const jobMode = (job.workMode || job.type || '').toLowerCase();
+
+  const { state: jobState, city: jobCity } = extractStateAndCity(jobLoc, jobDesc);
+  const candLoc = candidate.location || '';
+  const { state: candState, city: candCity } = extractStateAndCity(candLoc, candidate.resumeText || '');
+
+  // Detect if Job explicitly requires local candidates
+  const explicitLocalReq = (
+    /(?:need|needs|must be|require|seeking|looking for)\s+local/i.test(jobDesc) ||
+    /local candidates?\s+(?:only|preferred|must)/i.test(jobDesc) ||
+    /must be current\s+[a-z\s]{2,15}\s+residents?/i.test(jobDesc) ||
+    /no relocation/i.test(jobDesc) ||
+    /in-state only/i.test(jobDesc) ||
+    /meet in person/i.test(jobDesc) ||
+    jobMode === 'onsite' ||
+    jobMode === 'hybrid'
+  );
+
+  const isRemoteOnly = jobMode === 'remote' && !explicitLocalReq;
+
+  if (isRemoteOnly) {
+    return {
+      isLocal: true,
+      status: 'remote_ok',
+      badge: 'Remote Eligible',
+      label: '100% Remote Position — US Nationwide',
+      scoreAdj: 5,
+      jobState,
+      candState,
+      needsLocal: false
+    };
+  }
+
+  // If Job specifies local / hybrid / onsite or specific state residents:
+  if (explicitLocalReq || jobState) {
+    const isStateMatch = Boolean(jobState && candState && jobState === candState);
+    const isCityMatch = Boolean(jobCity && candCity && (jobCity.toLowerCase().includes(candCity.toLowerCase()) || candCity.toLowerCase().includes(jobCity.toLowerCase())));
+
+    if (isStateMatch || isCityMatch) {
+      return {
+        isLocal: true,
+        status: 'confirmed_local',
+        badge: '📍 Confirmed Local',
+        label: `Confirmed Local • ${candCity ? `${candCity}, ` : ''}${candState || jobState} (${jobMode ? jobMode.toUpperCase() : 'LOCAL'} Match)`,
+        scoreAdj: 15,
+        jobState,
+        candState,
+        needsLocal: explicitLocalReq
+      };
+    } else if (candState && jobState && candState !== jobState) {
+      return {
+        isLocal: false,
+        status: 'relocation_needed',
+        badge: 'Non-Local / Relocation',
+        label: `Located in ${candState} vs Job in ${jobState} (${explicitLocalReq ? 'JD Requires Local' : 'Relocation Needed'})`,
+        scoreAdj: explicitLocalReq ? -15 : -8,
+        jobState,
+        candState,
+        needsLocal: explicitLocalReq
+      };
+    }
+  }
+
+  return {
+    isLocal: null,
+    status: 'remote_ok',
+    badge: 'Remote / US',
+    label: candLoc ? candLoc : 'US Nationwide',
+    scoreAdj: 0,
+    jobState,
+    candState,
+    needsLocal: explicitLocalReq
+  };
+}
+
 function evaluateCandidateJobMatch(candidate, job) {
   if (!job) return { matchScore: 40, matchingSkills: [], missingSkills: [], isDomainMatch: false };
 
@@ -8341,11 +8475,18 @@ function evaluateCandidateJobMatch(candidate, job) {
     bonusPts += 5;
   }
 
-  let totalScore = domainPts + skillPts + titlePts + bonusPts;
+  // 5. Location Match (Score bonus or penalty based on JD local requirement)
+  const locFit = evaluateCandidateLocationFit(candidate, job);
+  let totalScore = domainPts + skillPts + titlePts + bonusPts + (locFit.scoreAdj || 0);
 
   // Strict domain ceiling: If domains conflict (e.g. QA vs Java, or BA vs Network), ceiling at 42%
   if (!isDomainMatch) {
     totalScore = Math.min(42, totalScore);
+  }
+
+  // Strict local requirement ceiling: If JD requires local and candidate is non-local, ceiling at 65%
+  if (locFit.needsLocal && locFit.isLocal === false) {
+    totalScore = Math.min(65, totalScore);
   }
 
   const finalScore = Math.min(98, Math.max(25, totalScore));
@@ -8357,6 +8498,8 @@ function evaluateCandidateJobMatch(candidate, job) {
     candDomain,
     jobDomain,
     isDomainMatch,
+    locationFit: locFit,
+    isLocal: locFit.isLocal,
     isHighFit: finalScore >= 70
   };
 }
@@ -9100,10 +9243,9 @@ app.post('/api/recruiter/send-direct-email', express.json(), async (req, res) =>
 
   // Record outgoing message into thread store
   if (candidateId) {
-    const threadKey = String(candidateId);
-    if (!messagesStore[threadKey]) messagesStore[threadKey] = [];
-    messagesStore[threadKey].push({
+    const threadMsg = {
       id: `msg-${Date.now()}`,
+      candidateId: String(candidateId),
       sender: 'recruiter',
       senderName: senderName,
       senderEmail: senderEmail,
@@ -9113,8 +9255,13 @@ app.post('/api/recruiter/send-direct-email', express.json(), async (req, res) =>
       subject,
       text: `[EMAIL SENT to ${to}${cc ? ' cc:' + cc : ''}] ${subject}\n\n${fullBody}`,
       timestamp: new Date().toISOString()
-    });
-    saveMessages();
+    };
+    messagesStore.push(threadMsg);
+    try {
+      fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messagesStore, null, 2));
+    } catch(err) {
+      console.warn('Could not persist messagesStore to disk:', err.message);
+    }
   }
 
   res.json({
@@ -9128,6 +9275,255 @@ app.post('/api/recruiter/send-direct-email', express.json(), async (req, res) =>
       : `Prepared email from ${senderEmail}. Ready to send directly via your mailbox!`,
     serverNotice: serverError ? `Note: Cloud port block prevented direct SMTP. Direct mail client launcher ready.` : null
   });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// VENDOR HOTLISTS & BENCH MANAGEMENT HUB (API)
+// ═══════════════════════════════════════════════════════════════════════════════
+const VENDOR_HOTLISTS_FILE = path.resolve(__dirname, 'vendor_hotlists.json');
+let vendorHotlistsStore = [];
+
+function loadVendorHotlists() {
+  try {
+    if (fs.existsSync(VENDOR_HOTLISTS_FILE)) {
+      vendorHotlistsStore = JSON.parse(fs.readFileSync(VENDOR_HOTLISTS_FILE, 'utf8'));
+    }
+  } catch(e) {
+    console.warn('⚠️ Could not load vendor_hotlists.json:', e.message);
+    vendorHotlistsStore = [];
+  }
+}
+loadVendorHotlists();
+
+function saveVendorHotlists() {
+  try {
+    fs.writeFileSync(VENDOR_HOTLISTS_FILE, JSON.stringify(vendorHotlistsStore, null, 2));
+  } catch(e) {
+    console.warn('⚠️ Could not save vendor_hotlists.json:', e.message);
+  }
+}
+
+// GET /api/recruiter/vendor-hotlists - list all vendor hotlists with vendor metrics
+app.get('/api/recruiter/vendor-hotlists', (req, res) => {
+  loadVendorHotlists();
+  const search = (req.query.q || '').toLowerCase().trim();
+  const vendorFilter = (req.query.vendor || '').toLowerCase().trim();
+  const visaFilter = (req.query.visa || '').toLowerCase().trim();
+
+  let list = [...vendorHotlistsStore];
+
+  if (vendorFilter && vendorFilter !== 'all') {
+    list = list.filter(item => 
+      (item.vendorName || '').toLowerCase().includes(vendorFilter) ||
+      (item.vendorCompany || '').toLowerCase().includes(vendorFilter) ||
+      (item.vendorEmail || '').toLowerCase().includes(vendorFilter)
+    );
+  }
+
+  if (visaFilter && visaFilter !== 'all') {
+    list = list.filter(item => (item.visa || '').toLowerCase().includes(visaFilter));
+  }
+
+  if (search) {
+    list = list.filter(item => {
+      const skills = Array.isArray(item.skills) ? item.skills.join(' ') : String(item.skills || '');
+      const str = `${item.candidateName} ${item.role} ${skills} ${item.location} ${item.vendorName} ${item.vendorCompany}`.toLowerCase();
+      return str.includes(search);
+    });
+  }
+
+  const uniqueVendors = [...new Set(vendorHotlistsStore.map(i => i.vendorCompany || i.vendorName || i.vendorEmail).filter(Boolean))];
+
+  res.json({
+    success: true,
+    hotlists: list,
+    totalCount: vendorHotlistsStore.length,
+    filteredCount: list.length,
+    vendorsCount: uniqueVendors.length,
+    uniqueVendors
+  });
+});
+
+// POST /api/recruiter/vendor-hotlists - add single or batch hotlist entries
+app.post('/api/recruiter/vendor-hotlists', express.json(), (req, res) => {
+  loadVendorHotlists();
+  const payload = req.body;
+  const items = Array.isArray(payload) ? payload : (Array.isArray(payload.items) ? payload.items : [payload]);
+  let added = 0;
+
+  for (const item of items) {
+    if (!item.candidateName && !item.role) continue;
+    const candName = (item.candidateName || 'Candidate').trim();
+    const vEmail = (item.vendorEmail || '').toLowerCase().trim();
+    const cEmail = (item.candidateEmail || '').toLowerCase().trim();
+
+    // Deduplicate against existing
+    const exists = vendorHotlistsStore.some(ex => {
+      if (cEmail && ex.candidateEmail && ex.candidateEmail.toLowerCase() === cEmail) return true;
+      if (ex.candidateName.toLowerCase() === candName.toLowerCase() && ex.vendorEmail.toLowerCase() === vEmail) return true;
+      return false;
+    });
+
+    if (!exists) {
+      const newEntry = {
+        id: `vh-${Date.now()}-${Math.floor(Math.random()*900+100)}`,
+        vendorName: item.vendorName || 'Staffing Vendor',
+        vendorCompany: item.vendorCompany || 'Agency Partner',
+        vendorEmail: item.vendorEmail || '',
+        vendorPhone: item.vendorPhone || '',
+        candidateName: candName,
+        role: item.role || 'IT Consultant',
+        candidateEmail: item.candidateEmail || '',
+        candidatePhone: item.candidatePhone || '',
+        visa: item.visa || 'H-1B',
+        location: item.location || 'Remote / US',
+        experience: item.experience || '7+ Years',
+        skills: Array.isArray(item.skills) ? item.skills : (item.skills ? String(item.skills).split(',').map(s=>s.trim()) : []),
+        rate: item.rate || '$70/hr',
+        relocation: item.relocation || 'Open',
+        receivedDate: item.receivedDate || new Date().toISOString(),
+        sourceEmailSubject: item.sourceEmailSubject || 'Bench Candidate Hotlist',
+        attachmentName: item.attachmentName || null,
+        storageUrl: item.storageUrl || '',
+        status: item.status || 'Available'
+      };
+      vendorHotlistsStore.unshift(newEntry);
+      added++;
+    }
+  }
+
+  saveVendorHotlists();
+  res.json({ success: true, addedCount: added, totalCount: vendorHotlistsStore.length });
+});
+
+// POST /api/recruiter/vendor-hotlists/push-to-candidates - push hotlist candidate directly into ATS Candidate Pool
+app.post('/api/recruiter/vendor-hotlists/push-to-candidates', express.json(), (req, res) => {
+  loadVendorHotlists();
+  const { hotlistId, targetReqId } = req.body;
+  if (!hotlistId) return res.status(400).json({ success: false, message: 'hotlistId required' });
+
+  const hotlistCandidate = vendorHotlistsStore.find(h => h.id === hotlistId);
+  if (!hotlistCandidate) return res.status(404).json({ success: false, message: 'Hotlist candidate not found' });
+
+  // Check if candidate already in candidatesStore
+  const cEmail = (hotlistCandidate.candidateEmail || '').toLowerCase();
+  const cName = hotlistCandidate.candidateName.toLowerCase();
+  let existing = (candidatesStore || []).find(c => 
+    (cEmail && c.email && c.email.toLowerCase() === cEmail) ||
+    (c.name && c.name.toLowerCase() === cName)
+  );
+
+  let targetJob = null;
+  if (targetReqId) {
+    targetJob = (jobsStore || []).find(j => String(j.id) === String(targetReqId) || String(j.reqId) === String(targetReqId));
+  }
+
+  let matchAnalysis = { matchScore: 75, matchingSkills: hotlistCandidate.skills || [] };
+  if (targetJob) {
+    matchAnalysis = evaluateCandidateJobMatch(hotlistCandidate, targetJob);
+  }
+
+  if (existing) {
+    if (targetReqId && targetJob) {
+      existing.targetReqId = String(targetReqId);
+      existing.matchedJobTitle = targetJob.title;
+      existing.matchedJobClient = targetJob.client || targetJob.customer;
+      existing.matchedJobRate = targetJob.budget || targetJob.payRate;
+      existing.matchScore = matchAnalysis.matchScore;
+      existing.status = 'Screened';
+      saveCandidatesToDisk();
+    }
+    return res.json({
+      success: true,
+      message: `${hotlistCandidate.candidateName} was already in ATS. Updated requisition assignment to Req #${targetReqId || 'Talent Pool'}.`,
+      candidate: existing
+    });
+  }
+
+  const candId = `cand-hotlist-${Date.now().toString().slice(-5)}-${Math.floor(Math.random()*900+100)}`;
+  const newCand = {
+    id: candId,
+    candidate_id: candId,
+    name: hotlistCandidate.candidateName,
+    email: hotlistCandidate.candidateEmail || `${hotlistCandidate.candidateName.toLowerCase().replace(/\s+/g, '.')}@bench.coolsofttech.com`,
+    phone: hotlistCandidate.candidatePhone || hotlistCandidate.vendorPhone || '+1 (555) 010-0000',
+    role: hotlistCandidate.role,
+    location: hotlistCandidate.location,
+    skills: hotlistCandidate.skills || [],
+    experience: hotlistCandidate.experience || '8+ Years',
+    status: targetReqId ? 'Screened' : 'New',
+    source: `Vendor Bench (${hotlistCandidate.vendorCompany || hotlistCandidate.vendorName})`,
+    sourceCategory: 'vendor_hotlist',
+    recruiterEmail: 'omkesh@coolsofttech.com',
+    recruiterName: 'Omkesh Manjute',
+    assignedBy: 'Omkesh Manjute',
+    recruiter: 'Omkesh Manjute',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    notes: `Pushed from Vendor Hotlists Hub (Vendor: ${hotlistCandidate.vendorName}, ${hotlistCandidate.vendorCompany}, ${hotlistCandidate.vendorEmail}). Rate: ${hotlistCandidate.rate || 'Open'}.`,
+    targetReqId: targetReqId ? String(targetReqId) : null,
+    matchScore: matchAnalysis.matchScore || 75,
+    matchedJobTitle: targetJob ? targetJob.title : 'General Talent Pool',
+    matchedJobClient: targetJob ? (targetJob.client || targetJob.customer) : 'Talent Pool',
+    matchedJobRate: targetJob ? (targetJob.budget || targetJob.payRate) : (hotlistCandidate.rate || '$70/hr'),
+    resumeText: '',
+    attachmentName: hotlistCandidate.attachmentName || null,
+    file: hotlistCandidate.attachmentName ? {
+      original_name: hotlistCandidate.attachmentName,
+      stored_name: hotlistCandidate.attachmentName,
+      local_path: hotlistCandidate.storageUrl || `/uploads/candidate-docs/${hotlistCandidate.attachmentName}`
+    } : null,
+    documents: hotlistCandidate.attachmentName ? {
+      resume: {
+        title: hotlistCandidate.attachmentName,
+        fileName: hotlistCandidate.attachmentName,
+        storageUrl: hotlistCandidate.storageUrl || `/uploads/candidate-docs/${hotlistCandidate.attachmentName}`,
+        status: 'Uploaded'
+      }
+    } : {},
+    visaStatus: hotlistCandidate.visa || 'H-1B'
+  };
+
+  candidatesStore.unshift(newCand);
+  saveCandidatesToDisk();
+
+  // Create notification
+  notificationsStore.unshift({
+    id: `notif-hotlist-${newCand.id}-${Date.now()}`,
+    type: 'candidate_scraped',
+    candidateId: newCand.id,
+    candidateName: newCand.name,
+    candidateEmail: newCand.email,
+    role: newCand.role,
+    targetReqId: newCand.targetReqId,
+    matchedJobTitle: newCand.matchedJobTitle,
+    matchScore: newCand.matchScore,
+    isMatched: Boolean(newCand.targetReqId),
+    message: `Pushed bench candidate ${newCand.name} (${hotlistCandidate.vendorCompany}) to ${newCand.targetReqId ? `Req #${newCand.targetReqId}` : 'Talent Pool'}.`,
+    createdAt: new Date().toISOString(),
+    read: false,
+    assignedRecruiters: ['omkesh@coolsofttech.com']
+  });
+  saveNotifications();
+
+  res.json({
+    success: true,
+    message: `Successfully transferred ${newCand.name} into ATS Candidates!`,
+    candidate: newCand
+  });
+});
+
+// DELETE /api/recruiter/vendor-hotlists/:id
+app.delete('/api/recruiter/vendor-hotlists/:id', (req, res) => {
+  loadVendorHotlists();
+  const id = req.params.id;
+  const beforeLen = vendorHotlistsStore.length;
+  vendorHotlistsStore = vendorHotlistsStore.filter(h => h.id !== id);
+  if (vendorHotlistsStore.length !== beforeLen) {
+    saveVendorHotlists();
+    return res.json({ success: true, message: 'Hotlist candidate removed' });
+  }
+  res.json({ success: false, message: 'Hotlist entry not found' });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
