@@ -24,6 +24,7 @@ logs/
 dist/
 dist-ssr/
 dist.tar.gz
+*.tar.gz
 
 # IDE & Editor files
 .vscode/

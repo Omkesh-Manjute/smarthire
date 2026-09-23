@@ -9852,11 +9852,30 @@ function seedScrapedCandidateNotifications() {
   if (!Array.isArray(candidatesStore) || candidatesStore.length === 0) return;
   const existingCandIds = new Set(notificationsStore.map(n => n.candidateId).filter(Boolean));
   
-  const recentCands = candidatesStore.slice(0, 15);
   let added = false;
+
+  // 1. Clean up existing notifications pointing to closed/expired requisitions
+  for (const n of notificationsStore) {
+    if (n.targetReqId) {
+      const targetJob = (jobsStore || []).find(j => String(j.id).replace(/^J-/, '') === String(n.targetReqId).replace(/^J-/, ''));
+      if (!targetJob || !isJobActiveAndOpen(targetJob)) {
+        n.targetReqId = null;
+        n.matchedJobTitle = 'General Talent Pool';
+        n.isMatched = false;
+        n.matchScore = 0;
+        n.message = `Added to General Talent Pool (${n.role || 'Specialist'}) • Requisition closed / deadline expired.`;
+        added = true;
+      }
+    }
+  }
+
+  // 2. Add notifications for recent candidates if missing
+  const recentCands = candidatesStore.slice(0, 15);
   for (const c of recentCands) {
     if (!existingCandIds.has(c.id)) {
-      const isMatched = Boolean(c.targetReqId && c.matchScore >= 65);
+      const targetJob = c.targetReqId ? (jobsStore || []).find(j => String(j.id).replace(/^J-/, '') === String(c.targetReqId).replace(/^J-/, '')) : null;
+      const isActiveJob = targetJob ? isJobActiveAndOpen(targetJob) : false;
+      const isMatched = Boolean(isActiveJob && c.targetReqId && c.matchScore >= 65);
       const notif = {
         id: `notif-cand-${c.id || Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
         type: 'candidate_scraped',
@@ -9865,11 +9884,11 @@ function seedScrapedCandidateNotifications() {
         candidateEmail: c.email,
         role: c.role || 'Specialist',
         targetReqId: isMatched ? c.targetReqId : null,
-        matchedJobTitle: isMatched ? c.matchedJobTitle : 'General Talent Pool',
-        matchScore: c.matchScore || 60,
+        matchedJobTitle: isMatched ? (targetJob?.title || c.matchedJobTitle) : 'General Talent Pool',
+        matchScore: isMatched ? (c.matchScore || 60) : 0,
         isMatched,
         message: isMatched
-          ? `Matched with ${c.matchedJobTitle} (Req #${c.targetReqId}) • ${c.matchScore}% match.`
+          ? `Matched with ${targetJob?.title || c.matchedJobTitle} (Req #${c.targetReqId}) • ${c.matchScore}% match.`
           : `Added to General Talent Pool (${c.role || 'Specialist'}) • No active open requisition match.`,
         createdAt: c.createdAt || new Date().toISOString(),
         read: false,

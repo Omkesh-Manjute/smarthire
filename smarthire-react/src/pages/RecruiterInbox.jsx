@@ -1010,93 +1010,244 @@ const highlightResumeText = (text, matchingSkills = [], searchQuery = '', enable
     )
   }
 
-  // Find all match intervals [start, end, type]
-  const intervals = [];
+  const escapeHtml = (str) => {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  };
 
-  // 1. Search Query Intervals (Soft Sky Blue)
-  if (searchQuery && searchQuery.trim().length >= 2) {
-    const q = searchQuery.trim();
-    const escaped = q.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-    try {
-      const regex = new RegExp(escaped, 'gi');
-      let m;
-      while ((m = regex.exec(text)) !== null) {
-        intervals.push({ start: m.index, end: m.index + m[0].length, type: 'search' });
-      }
-    } catch (_) {}
-  }
+  const highlightKeywords = (plainText) => {
+    if (!plainText) return '';
+    let escaped = escapeHtml(plainText);
 
-  // 2. Matching Skills Intervals (Soft Warm Pastel Yellow — Matching Monster Reference)
-  if (enableHighlight && matchingSkills && matchingSkills.length > 0) {
-    const uniqueSkills = [...new Set(matchingSkills.map(s => safeString(s)).filter(s => s.length >= 2))]
-      .sort((a, b) => b.length - a.length);
-
-    for (const skill of uniqueSkills) {
-      const trimmed = safeString(skill);
-      const base = trimmed.replace(/s$/i, '');
-      const patternStr = (trimmed.length > 3)
-        ? `${base.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}s?`
-        : trimmed.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-      const startB = /^\w/.test(trimmed) ? '\\b' : '';
-      const endB = /\w$/.test(trimmed) ? '\\b' : '';
+    // 1. Search Query (Soft Sky Blue)
+    if (searchQuery && searchQuery.trim().length >= 2) {
+      const q = searchQuery.trim().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
       try {
-        const regex = new RegExp(`${startB}${patternStr}${endB}`, 'gi');
-        let m;
-        while ((m = regex.exec(text)) !== null) {
-          intervals.push({ start: m.index, end: m.index + m[0].length, type: 'skill' });
-        }
+        escaped = escaped.replace(new RegExp(`(${q})`, 'gi'), '<mark style="background-color: #BAE6FD; color: #0369A1; font-weight: 700; padding: 1px 4px; border-radius: 3px; border: 1px solid #7DD3FC;">$1</mark>');
       } catch (_) {}
     }
-  }
 
-  let renderedContent;
-  if (intervals.length === 0) {
-    renderedContent = text;
-  } else {
-    // Sort intervals by start index, longer intervals first on ties
-    intervals.sort((a, b) => a.start - b.start || b.end - a.end);
+    // 2. Matching Skills (Warm Yellow #FEF08A — Matching Monster Reference)
+    if (enableHighlight && matchingSkills && matchingSkills.length > 0) {
+      const uniqueSkills = [...new Set(matchingSkills.map(s => safeString(s)).filter(s => s.length >= 2))]
+        .sort((a, b) => b.length - a.length);
 
-    const nonOverlapping = [];
-    let lastEnd = -1;
-    for (const item of intervals) {
-      if (item.start >= lastEnd) {
-        nonOverlapping.push(item);
-        lastEnd = item.end;
+      for (const skill of uniqueSkills) {
+        const trimmed = safeString(skill);
+        const base = trimmed.replace(/s$/i, '');
+        const patternStr = (trimmed.length > 3)
+          ? `${base.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}s?`
+          : trimmed.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        const startB = /^\w/.test(trimmed) ? '\\b' : '';
+        const endB = /\w$/.test(trimmed) ? '\\b' : '';
+        try {
+          escaped = escaped.replace(new RegExp(`(${startB}${patternStr}${endB})`, 'gi'), '<mark style="background-color: #FEF08A; color: #1E293B; font-weight: 700; padding: 1px 4px; border-radius: 3px; border: 1px solid #FDE047;">$1</mark>');
+        } catch (_) {}
       }
     }
+    return escaped;
+  };
 
-    const parts = [];
-    let curr = 0;
-    for (const span of nonOverlapping) {
-      if (span.start > curr) {
-        parts.push(text.substring(curr, span.start));
-      }
-      const matchedStr = text.substring(span.start, span.end);
-      if (span.type === 'search') {
-        parts.push(`<mark style="background-color: #BAE6FD; color: #0369A1; font-weight: 700; padding: 1px 4px; border-radius: 3px; border: 1px solid #7DD3FC;">${matchedStr}</mark>`);
+  const rawLines = text.split(/\r?\n/);
+  const SECTION_MAP = {
+    'SUMMARY': 'SUMMARY',
+    'PROFESSIONAL SUMMARY': 'SUMMARY',
+    'EXECUTIVE SUMMARY': 'SUMMARY',
+    'CAREER SUMMARY': 'SUMMARY',
+    'OBJECTIVE': 'SUMMARY',
+    'PROFILE': 'SUMMARY',
+    'WORK EXPERIENCE': 'EXPERIENCE',
+    'PROFESSIONAL EXPERIENCE': 'EXPERIENCE',
+    'EXPERIENCE': 'EXPERIENCE',
+    'EMPLOYMENT HISTORY': 'EXPERIENCE',
+    'WORK HISTORY': 'EXPERIENCE',
+    'PROJECTS': 'EXPERIENCE',
+    'KEY PROJECTS': 'EXPERIENCE',
+    'EDUCATION': 'EDUCATION',
+    'ACADEMIC BACKGROUND': 'EDUCATION',
+    'ACADEMIC QUALIFICATIONS': 'EDUCATION',
+    'SKILLS': 'SKILLS',
+    'TECHNICAL SKILLS': 'SKILLS',
+    'CORE COMPETENCIES': 'SKILLS',
+    'AREAS OF EXPERTISE': 'SKILLS',
+    'TECHNICAL PROFICIENCIES': 'SKILLS',
+    'CERTIFICATIONS': 'CERTIFICATIONS',
+    'CERTIFICATES': 'CERTIFICATIONS',
+    'HONORS & AWARDS': 'AWARDS',
+    'AWARDS': 'AWARDS',
+    'LANGUAGES': 'LANGUAGES',
+    'WORK AUTHORIZATION': 'WORK AUTHORIZATION'
+  };
+
+  const renderedBlocks = [];
+  let currentSection = 'SUMMARY';
+  let hasParsedSkills = false;
+
+  const datePattern = /\b(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?|\d{1,2}\/)?\s*(19\d\d|20\d\d)\s*(?:[–\-—]|\bto\b|\buntil\b|\bthru\b|\bthrough\b)\s*(Present|Current|Now|Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?|\d{1,2}\/)?\s*(Present|Current|Now|19\d\d|20\d\d)?\b/i;
+  const jobTitlePattern = /\b(Developer|Engineer|Architect|Lead|Manager|Consultant|Analyst|Specialist|Intern|Administrator|Director|Designer|Programmer|Associate|Officer|Tester|QA)\b/i;
+
+  for (let i = 0; i < rawLines.length; i++) {
+    const l = rawLines[i].trim();
+    if (!l) continue;
+
+    // Check if line is a Section Header
+    const cleanHeader = l.replace(/^[:#\*\-\s]+/, '').replace(/[:#\*\-\s]+$/, '').toUpperCase();
+    if (SECTION_MAP[cleanHeader] && l.length <= 40) {
+      currentSection = SECTION_MAP[cleanHeader];
+      renderedBlocks.push(`
+        <div style="font-size: 16px; font-weight: 800; color: #0F172A; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 28px; margin-bottom: 12px; border-bottom: 2px solid #E2E8F0; padding-bottom: 6px;">
+          ${escapeHtml(l)}
+        </div>
+      `);
+      continue;
+    }
+
+    if (currentSection === 'EXPERIENCE') {
+      const hasDate = datePattern.test(l);
+      const hasJobTitle = jobTitlePattern.test(l);
+      const hasSeparator = l.includes(' - ') || l.includes(' | ') || l.includes(' at ');
+      const isBullet = /^[•\-\*o\d\.]+\s+/.test(l);
+
+      if (!isBullet && (hasJobTitle || hasSeparator || l.startsWith('Project:') || l.startsWith('Client:')) && l.length < 130) {
+        // Bold Project / Role title (Matching media_1790179078355.png)
+        renderedBlocks.push(`
+          <div style="font-size: 15px; font-weight: 800; color: #0F172A; margin-top: 18px; margin-bottom: 4px; line-height: 1.35;">
+            ${highlightKeywords(l)}
+          </div>
+        `);
+      } else if (!isBullet && hasDate && l.length < 80) {
+        // Date line in gray
+        renderedBlocks.push(`
+          <div style="font-size: 13px; color: #64748B; margin-bottom: 8px;">
+            ${escapeHtml(l)}
+          </div>
+        `);
+      } else if (!isBullet && /^[A-Za-z\s]+,\s*[A-Za-z\s]+/.test(l) && l.length < 60) {
+        // Location line in gray
+        renderedBlocks.push(`
+          <div style="font-size: 13px; color: #64748B; margin-bottom: 2px;">
+            ${escapeHtml(l)}
+          </div>
+        `);
+      } else if (isBullet) {
+        // Bullet point
+        const cleanBullet = l.replace(/^[•\-\*o\d\.]+\s*/, '');
+        renderedBlocks.push(`
+          <div style="font-size: 13.5px; line-height: 1.65; color: #1E293B; margin-bottom: 6px; padding-left: 18px; position: relative;">
+            <span style="position: absolute; left: 3px; color: #94A3B8;">•</span>
+            ${highlightKeywords(cleanBullet)}
+          </div>
+        `);
       } else {
-        parts.push(`<mark style="background-color: #FEF08A; color: #1E293B; font-weight: 700; padding: 1px 4px; border-radius: 3px; border: 1px solid #FDE047;">${matchedStr}</mark>`);
+        // Regular paragraph description
+        renderedBlocks.push(`
+          <div style="font-size: 13.5px; line-height: 1.65; color: #1E293B; margin-bottom: 8px;">
+            ${highlightKeywords(l)}
+          </div>
+        `);
       }
-      curr = span.end;
+    } else if (currentSection === 'EDUCATION') {
+      const isDegree = /\b(bachelor|master|b\.?tech|m\.?tech|b\.?s\.?|m\.?s\.?|phd|degree|diploma|university|college|school|institute)\b/i.test(l);
+      if (isDegree && l.length < 130) {
+        renderedBlocks.push(`
+          <div style="font-size: 15px; font-weight: 800; color: #0F172A; margin-top: 14px; margin-bottom: 4px; line-height: 1.35;">
+            ${highlightKeywords(l)}
+          </div>
+        `);
+      } else if (/^[A-Za-z\s]+,\s*[A-Za-z\s]+/.test(l) && l.length < 60) {
+        renderedBlocks.push(`
+          <div style="font-size: 13px; color: #64748B; margin-bottom: 2px;">
+            ${escapeHtml(l)}
+          </div>
+        `);
+      } else {
+        renderedBlocks.push(`
+          <div style="font-size: 13px; color: #334155; margin-bottom: 6px;">
+            ${highlightKeywords(l)}
+          </div>
+        `);
+      }
+    } else if (currentSection === 'SKILLS') {
+      hasParsedSkills = true;
+      let category = '';
+      let skillsStr = l;
+      if (l.includes(':')) {
+        const parts = l.split(':');
+        category = parts[0].trim();
+        skillsStr = parts.slice(1).join(':').trim();
+      }
+
+      if (category) {
+        renderedBlocks.push(`
+          <div style="font-size: 13px; font-weight: 700; color: #475569; margin-top: 10px; margin-bottom: 4px;">
+            ${escapeHtml(category)}
+          </div>
+        `);
+      }
+
+      // Format skills as individual rounded pill capsules (Matching media_1790179097285.png)
+      const skillItems = skillsStr.split(/[,;•|]/).map(s => s.trim()).filter(Boolean);
+      if (skillItems.length > 0) {
+        const pillsHtml = skillItems.map(item => `
+          <span style="display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 9999px; background-color: #FFFFFF; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 500; color: #0F172A; box-shadow: 0 1px 2px rgba(0,0,0,0.04); margin: 3px 3px 3px 0;">
+            ${highlightKeywords(item)}
+          </span>
+        `).join('');
+
+        renderedBlocks.push(`
+          <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;">
+            ${pillsHtml}
+          </div>
+        `);
+      }
+    } else {
+      // SUMMARY or other section
+      const isBullet = /^[•\-\*o\d\.]+\s+/.test(l);
+      if (isBullet) {
+        const cleanBullet = l.replace(/^[•\-\*o\d\.]+\s*/, '');
+        renderedBlocks.push(`
+          <div style="font-size: 13.5px; line-height: 1.65; color: #1E293B; margin-bottom: 6px; padding-left: 18px; position: relative;">
+            <span style="position: absolute; left: 3px; color: #94A3B8;">•</span>
+            ${highlightKeywords(cleanBullet)}
+          </div>
+        `);
+      } else {
+        renderedBlocks.push(`
+          <div style="font-size: 13.5px; line-height: 1.65; color: #1E293B; margin-bottom: 8px;">
+            ${highlightKeywords(l)}
+          </div>
+        `);
+      }
     }
-    if (curr < text.length) {
-      parts.push(text.substring(curr));
-    }
-    renderedContent = parts.join('');
   }
 
-  // Enhance standard section titles in renderedContent (Matching Monster Screenshots 2-4)
-  const SECTION_TITLES = [
-    'SUMMARY', 'PROFESSIONAL SUMMARY', 'EXECUTIVE SUMMARY',
-    'WORK EXPERIENCE', 'PROFESSIONAL EXPERIENCE', 'EXPERIENCE', 'EMPLOYMENT HISTORY',
-    'EDUCATION', 'ACADEMIC BACKGROUND',
-    'SKILLS', 'TECHNICAL SKILLS', 'CORE COMPETENCIES',
-    'CERTIFICATIONS', 'HONORS & AWARDS', 'AWARDS', 'LANGUAGES', 'WORK AUTHORIZATION'
-  ];
-  for (const st of SECTION_TITLES) {
-    const re = new RegExp(`(^|\\n)(${st})(:|\\b)(\\s*\\n)`, 'g');
-    renderedContent = renderedContent.replace(re, '$1<div style="font-size: 15px; font-weight: 800; color: #0F172A; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 24px; margin-bottom: 10px; border-bottom: 2px solid #E2E8F0; padding-bottom: 4px;">$2</div>$4');
+  // If no SKILLS section was in text or candidate has extracted skills, append Monster skill capsules
+  const candExtractedSkills = candidate?.skills ? (Array.isArray(candidate.skills) ? candidate.skills : String(candidate.skills).split(',')) : [];
+  if (!hasParsedSkills && candExtractedSkills.length > 0) {
+    renderedBlocks.push(`
+      <div style="font-size: 16px; font-weight: 800; color: #0F172A; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 28px; margin-bottom: 12px; border-bottom: 2px solid #E2E8F0; padding-bottom: 6px;">
+        SKILLS
+      </div>
+    `);
+    const cleanCandSkills = [...new Set(candExtractedSkills.map(s => safeString(s)).filter(Boolean))];
+    const pillsHtml = cleanCandSkills.map(sk => `
+      <span style="display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 9999px; background-color: #FFFFFF; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 500; color: #0F172A; box-shadow: 0 1px 2px rgba(0,0,0,0.04); margin: 3px 3px 3px 0;">
+        ${highlightKeywords(sk)}
+      </span>
+    `).join('');
+
+    renderedBlocks.push(`
+      <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px;">
+        ${pillsHtml}
+      </div>
+    `);
   }
+
+  const renderedContent = renderedBlocks.join('');
 
   // Candidate fields for the Monster Top Header Card
   const candName = candidate?.name || 'Candidate Profile';
@@ -1160,8 +1311,6 @@ const highlightResumeText = (text, matchingSkills = [], searchQuery = '', enable
       <div 
         dangerouslySetInnerHTML={{ __html: renderedContent }} 
         style={{ 
-          whiteSpace: 'pre-wrap', 
-          lineHeight: '1.85', 
           fontSize: '13.5px', 
           color: '#1E293B',
           padding: '32px 36px',
@@ -1279,15 +1428,26 @@ function parseMonthYearDate(str) {
   if (!str) return null
   const s = str.trim().toLowerCase()
   if (s.includes('present') || s.includes('current') || s.includes('now')) return new Date(2026, 8, 1)
-  const m = s.match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s*(\d{4})\b/i) || s.match(/(\d{1,2})\/(\d{4})/) || s.match(/\b(19\d\d|20\d\d)\b/)
-  if (!m) return null
-  const monthMap = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 }
-  if (m[1] && monthMap[m[1].toLowerCase().slice(0, 3)] !== undefined && m[2]) {
-    return new Date(parseInt(m[2]), monthMap[m[1].toLowerCase().slice(0, 3)], 1)
-  } else if (m[2] && parseInt(m[2]) > 1900) {
-    return new Date(parseInt(m[2]), parseInt(m[1]) - 1, 1)
-  } else if (m[1] && parseInt(m[1]) > 1900) {
-    return new Date(parseInt(m[1]), 0, 1)
+
+  // 1. Month Name + 4-digit Year (e.g. "October 2017", "Oct 2017", "Oct, 2017")
+  const mNamed = s.match(/\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)[,\s]+(\d{4})\b/i)
+  if (mNamed) {
+    const monthMap = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 }
+    const mo = monthMap[mNamed[1].toLowerCase().slice(0, 3)]
+    return new Date(parseInt(mNamed[2]), mo !== undefined ? mo : 0, 1)
+  }
+
+  // 2. Numeric MM/YYYY or M/YYYY (e.g. "10/2017", "7/2018")
+  const mSlash = s.match(/\b(\d{1,2})\/(\d{4})\b/)
+  if (mSlash) {
+    const mo = Math.max(0, Math.min(11, parseInt(mSlash[1]) - 1))
+    return new Date(parseInt(mSlash[2]), mo, 1)
+  }
+
+  // 3. Standalone 4-digit Year (e.g. "2018")
+  const mYear = s.match(/\b(19\d\d|20\d\d)\b/)
+  if (mYear) {
+    return new Date(parseInt(mYear[1]), 0, 1)
   }
   return null
 }
@@ -1313,13 +1473,17 @@ function extractCandidateWorkHistoryAndGaps(candidate) {
   }
 
   const lines = text.split(/\r?\n/)
-  const dateRegex = /\b(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?|\d{1,2}\/)?\s*(19\d\d|20\d\d)\s*[–\-—to]+\s*(Present|Current|Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?|\d{1,2}\/)?\s*(Present|Current|19\d\d|20\d\d)?\b/i
+  const dateRegex = /\b(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?|\d{1,2}\/)?\s*(19\d\d|20\d\d)\s*(?:[–\-—]|\bto\b|\buntil\b|\bthru\b|\bthrough\b)\s*(Present|Current|Now|Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?|\d{1,2}\/)?\s*(Present|Current|Now|19\d\d|20\d\d)?\b/i
 
   let currentRole = null
 
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i].trim()
     if (!l) continue
+
+    // Strictly ignore education lines (degrees, universities, colleges) from being treated as employment roles
+    const isEducation = /\b(bachelor|master|b\.?tech|m\.?tech|b\.?s\.?|m\.?s\.?|phd|degree|diploma|university|college|school|jntu|institute|secondary|gpa|cgpa)\b/i.test(l)
+    if (isEducation) continue
 
     const dMatch = l.match(dateRegex)
     if (dMatch && (l.includes('|') || l.includes('–') || l.includes('-') || l.includes('at ') || l.includes('Client') || l.includes('Company') || l.includes('Corporation') || l.includes('Developer') || l.includes('Engineer') || l.includes('Manager') || l.includes('Consultant') || l.includes('State') || l.includes('Department') || l.includes('Analyst') || l.includes('Lead'))) {
@@ -1328,9 +1492,11 @@ function extractCandidateWorkHistoryAndGaps(candidate) {
       }
 
       const rawPeriod = dMatch[0]
-      const periodParts = rawPeriod.split(/[–\-—to]+/)
-      const startDate = parseMonthYearDate(periodParts[0])
-      const endDate = parseMonthYearDate(periodParts[1] || 'Present')
+      const splitMatch = rawPeriod.match(/^(.*?)\s*(?:[–\-—]|\bto\b|\buntil\b|\bthru\b|\bthrough\b)\s*(.*)$/i)
+      const startStr = splitMatch ? splitMatch[1].trim() : rawPeriod
+      const endStr = splitMatch ? splitMatch[2].trim() : 'Present'
+      const startDate = parseMonthYearDate(startStr)
+      const endDate = parseMonthYearDate(endStr)
 
       const lineWithoutDates = l.replace(rawPeriod, '').replace(/^[•\-\*|\s]+/, '').replace(/[•\-\*|\s]+$/, '').trim()
       let parsedTitle = candidate?.role || 'Senior Specialist'
@@ -1387,6 +1553,14 @@ function extractCandidateWorkHistoryAndGaps(candidate) {
     })
   }
 
+  // Sort chronologically descending (newer roles first)
+  roles.sort((a, b) => {
+    const timeA = a.startDate ? a.startDate.getTime() : (a.isCurrent ? Date.now() : 0)
+    const timeB = b.startDate ? b.startDate.getTime() : (b.isCurrent ? Date.now() : 0)
+    return timeB - timeA
+  })
+
+  // Calculate gaps: Compare older role's end date with newer role's start date
   for (let i = 0; i < roles.length - 1; i++) {
     const newerJob = roles[i]
     const olderJob = roles[i + 1]
@@ -2706,9 +2880,9 @@ export default function RecruiterInbox({ defaultViewMode }) {
           assignedBy: recName,
           recruiterEmail: recMail,
           matchScore: c.matchScore || 90,
-          targetReqId: c.targetReqId || c.reqId || (c.job_id ? String(c.job_id).replace(/^J-/, '') : (openJobsList[0]?.id || '')),
-          matchedJobTitle: c.matchedJobTitle || c.jobTitle || 'Open Requisition',
-          matchedJobClient: c.matchedJobClient || c.client || 'Enterprise Client',
+          targetReqId: c.targetReqId || c.reqId || (c.job_id ? String(c.job_id).replace(/^J-/, '') : null),
+          matchedJobTitle: c.targetReqId ? (c.matchedJobTitle || c.jobTitle || 'Open Requisition') : 'General Talent Pool',
+          matchedJobClient: c.targetReqId ? (c.matchedJobClient || c.client || 'Enterprise Client') : 'Talent Pool',
           matchedJobRate: c.matchedJobRate || c.rate || '$75/hr',
           // resumeText: ONLY real attachment text — never fabricated from name/email/role
           resumeText: c.resumeText || c.summary || '',
@@ -2815,6 +2989,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const handleSyncEmailResumes = async () => {
     setSyncingEmailResumes(true)
     setEmailSyncToast('Scanning Yahoo Mail (Inbox & Spam)... Checking for new resumes...')
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 15000)
     try {
       const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
       const recEmail = u.email || currentUser?.email || (isSuperAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')
@@ -2824,8 +3000,10 @@ export default function RecruiterInbox({ defaultViewMode }) {
         body: JSON.stringify({
           recruiterEmail: recEmail,
           scanFolders: ['INBOX', 'SPAM']
-        })
+        }),
+        signal: controller.signal
       })
+      clearTimeout(timeoutId)
       const data = await res.json()
       setEmailSyncToast(data.message || 'Scanned INBOX & SPAM: Resumes synced!')
       await fetchStreamCandidates()
@@ -2834,8 +3012,15 @@ export default function RecruiterInbox({ defaultViewMode }) {
         fetchNotifications()
       }
     } catch (e) {
-      setEmailSyncToast('Failed to sync resumes: ' + e.message)
+      clearTimeout(timeoutId)
+      if (e.name === 'AbortError') {
+        setEmailSyncToast('Scan completed in background. Updating candidate talent pool...')
+        await fetchStreamCandidates()
+      } else {
+        setEmailSyncToast('Failed to sync resumes: ' + e.message)
+      }
     } finally {
+      clearTimeout(timeoutId)
       setSyncingEmailResumes(false)
       setTimeout(() => setEmailSyncToast(''), 8000)
     }
@@ -4173,30 +4358,16 @@ export default function RecruiterInbox({ defaultViewMode }) {
   useEffect(() => {
     if (activeCandidate?.targetReqId) {
       const cleanTarget = String(activeCandidate.targetReqId).replace(/^J-/, '')
-      setDrawerReqId(cleanTarget)
+      const matchedJob = openJobsList.find(j => String(j.id || '').replace(/^J-/, '') === cleanTarget)
+      if (matchedJob && !isJobActiveAndOpen(matchedJob)) {
+        setDrawerReqId('')
+      } else {
+        setDrawerReqId(cleanTarget)
+      }
+    } else {
+      setDrawerReqId('')
     }
-  }, [activeCandidate?.id, activeCandidate?.email, activeCandidate?.targetReqId])
-
-  // Ensure candidate's target job is registered in openJobsList
-  useEffect(() => {
-    if (activeCandidate?.targetReqId && activeCandidate?.matchedJobTitle) {
-      const cId = String(activeCandidate.targetReqId).replace(/^J-/, '')
-      setOpenJobsList(prev => {
-        if (prev.some(j => String(j.id) === cId)) return prev
-        return [
-          ...prev,
-          {
-            id: cId,
-            title: activeCandidate.matchedJobTitle,
-            client: activeCandidate.matchedJobClient || 'Client Agency',
-            rate: activeCandidate.matchedJobRate || '$75/hr',
-            location: 'Remote / US',
-            skills: activeCandidate.matchingSkills?.length ? activeCandidate.matchingSkills : (activeCandidate.skills || ['Core Skills'])
-          }
-        ]
-      })
-    }
-  }, [activeCandidate?.targetReqId, activeCandidate?.matchedJobTitle, activeCandidate?.matchedJobClient, activeCandidate?.matchedJobRate, activeCandidate?.matchingSkills, activeCandidate?.skills])
+  }, [activeCandidate?.id, activeCandidate?.email, activeCandidate?.targetReqId, openJobsList])
 
   const handlePrevCandidate = () => {
     if (activeCandidateIndex > 0) {
@@ -4305,11 +4476,11 @@ export default function RecruiterInbox({ defaultViewMode }) {
     }
   }
 
-  const currentReqId = String(drawerReqId || activeCandidate?.targetReqId || openJobsList[0]?.id || '').replace(/^J-/, '')
-  const activeTargetJob = openJobsList.find(j => String(j.id) === currentReqId) || openJobsList[0]
+  const currentReqId = String(drawerReqId || activeCandidate?.targetReqId || '').replace(/^J-/, '')
+  const activeTargetJob = currentReqId ? (openJobsList.find(j => String(j.id) === currentReqId && isJobActiveAndOpen(j)) || null) : null
 
   const candSkillsList = activeCandidate ? (Array.isArray(activeCandidate.skills) ? activeCandidate.skills : (activeCandidate.skills ? String(activeCandidate.skills).split(',').map(s => s.trim()) : [])) : []
-  const reqSkillsList = activeTargetJob?.skills || ['Java', 'SQL']
+  const reqSkillsList = activeTargetJob?.skills || (candSkillsList.length > 0 ? candSkillsList.slice(0, 5) : ['Java', 'SQL'])
   const candResumeText = activeCandidate ? getFullResumeText(activeCandidate) : ''
   const candidateCorpus = (candResumeText + ' ' + candSkillsList.join(' ')).toLowerCase()
 
@@ -10685,20 +10856,20 @@ export default function RecruiterInbox({ defaultViewMode }) {
             </div>
           )}
 
-          {/* VIEW 3: RECRUITER KPI LEADERBOARD & TEAM PERFORMANCE VIEW */}
-          {inboxViewMode === 'leaderboard' && (
-            <div style={{ flex: 1, overflowY: 'auto', padding: '28px 36px', boxSizing: 'border-box' }}>
-              <div style={{ maxWidth: 1320, margin: '0 auto' }}>
-                {renderRecruiterLeaderboardSection(false)}
-              </div>
-            </div>
-          )}
-
-          {/* VIEW 4: VENDOR HOTLISTS & BENCH CANDIDATES HUB */}
-          {inboxViewMode === 'hotlists' && renderVendorHotlistsView()}
-
         </div>
       )}
+
+      {/* VIEW 3: RECRUITER KPI LEADERBOARD & TEAM PERFORMANCE VIEW */}
+      {inboxViewMode === 'leaderboard' && (
+        <div style={{ flex: 1, overflowY: 'auto', padding: '28px 36px', boxSizing: 'border-box' }}>
+          <div style={{ maxWidth: 1320, margin: '0 auto' }}>
+            {renderRecruiterLeaderboardSection(false)}
+          </div>
+        </div>
+      )}
+
+      {/* VIEW 4: VENDOR HOTLISTS & BENCH CANDIDATES HUB */}
+      {inboxViewMode === 'hotlists' && renderVendorHotlistsView()}
 
       {/* ========================================================================= */}
       {/* REDESIGNED MESSAGES PAGE (Linear / Slack / Notion Premium SaaS UX)        */}

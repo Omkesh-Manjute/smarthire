@@ -249,7 +249,7 @@ export async function scrapeResumesFromIMAP({
       reject(err);
     });
 
-    const sendCommand = (cmd, timeoutMs = 25000) => {
+    const sendCommand = (cmd, timeoutMs = 8000) => {
       return new Promise((res, rej) => {
         const tag = `TAG${tagCounter++}`;
         const timer = setTimeout(() => {
@@ -402,10 +402,15 @@ export async function scrapeResumesFromIMAP({
 
           // Fetch complete RFC822 message payload for recruitment emails to ensure all attachments are downloaded
           let fullPayload = msgChunk;
-          if (uid) {
+          const hasAttachmentHint = lowerChunk.includes('boundary') ||
+                                    lowerChunk.includes('filename') ||
+                                    lowerChunk.includes('.pdf') ||
+                                    lowerChunk.includes('.doc') ||
+                                    lowerChunk.includes('multipart');
+          if (uid && hasAttachmentHint) {
             try {
               console.log(`📥 Fetching full RFC822 payload for UID ${uid} (${senderName})...`);
-              const fullRes = await client.sendCommand(`UID FETCH ${uid} (BODY.PEEK[])`);
+              const fullRes = await client.sendCommand(`UID FETCH ${uid} (BODY.PEEK[])`, 10000);
               if (fullRes && fullRes.length > msgChunk.length) {
                 fullPayload = fullRes;
               }
