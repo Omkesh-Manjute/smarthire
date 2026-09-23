@@ -36,8 +36,10 @@ const COMMON_SKILLS = [
   'QA Automation', 'SDET', 'Selenium', 'Cypress', 'Playwright', 'TestNG', 'Cucumber', 'Manual Testing',
   'Cisco', 'Palo Alto', 'Firewall', 'Network Security', 'Routing', 'Switching',
   'Data Governance', 'Power BI', 'Tableau', 'ETL', 'Informatica', 'Collibra',
+  'Data Engineer', 'Apache Spark', 'PySpark', 'Kafka', 'Hadoop',
   'Business Analyst', 'Product Owner', 'Scrum Master', 'Agile', 'JIRA', 'BRD', 'UAT',
-  'Salesforce', 'SAP', 'Workday', 'ServiceNow'
+  'Salesforce', 'SAP', 'Workday', 'ServiceNow',
+  'Git', 'Linux', 'REST API', 'GraphQL', 'Jenkins', 'Ansible'
 ];
 
 /**
@@ -308,7 +310,7 @@ export async function scrapeResumesFromIMAP({
       const fetchRange = `${fetchStart}:${totalMessages}`;
       console.log(`🔍 Fetching headers & bodies for range ${fetchRange}...`);
 
-      const fetchRes = await client.sendCommand(`FETCH ${fetchRange} (UID FLAGS BODY.PEEK[HEADER.FIELDS (FROM TO SUBJECT DATE)] BODY.PEEK[TEXT]<0.25000>)`);
+      const fetchRes = await client.sendCommand(`FETCH ${fetchRange} (UID FLAGS BODY.PEEK[HEADER.FIELDS (FROM TO SUBJECT DATE CONTENT-TYPE)] BODY.PEEK[TEXT]<0.25000>)`);
 
       // Parse individual messages from fetch output
       const rawMessages = fetchRes.split(/\*\s+\d+\s+FETCH/i).filter(Boolean);
@@ -663,17 +665,29 @@ export async function scrapeResumesFromIMAP({
             if (!candidatePhone) candidatePhone = phone || '';
 
             // 4. Resolve candidate role
-            let cRole = (matchedProfile && matchedProfile.role) ? matchedProfile.role : '';
+            let cRole = (matchedProfile && matchedProfile.role) ? matchedProfile.role.trim() : '';
+            // Reject phone numbers, emails, or excessively long strings as role
+            if (cRole && (/^[\d+\s().-]+$/.test(cRole) || cRole.includes('@') || cRole.length > 70)) {
+              cRole = '';
+            }
             if (!cRole && r.resumeText) {
               const firstLines = r.resumeText.split('\n').map(l => l.trim()).filter(Boolean);
               for (const line of firstLines.slice(1, 6)) {
                 if (line.includes('|') || /(engineer|developer|architect|manager|lead|analyst|specialist|administrator)/i.test(line)) {
-                  cRole = line.split('|')[0].trim();
-                  break;
+                  const potRole = line.split('|')[0].trim();
+                  if (!/^[\d+\s().-]+$/.test(potRole) && !potRole.includes('@') && potRole.length <= 60) {
+                    cRole = potRole;
+                    break;
+                  }
                 }
               }
             }
-            if (!cRole) cRole = candidateRole || 'IT Specialist';
+            if (!cRole) {
+              cRole = candidateRole || ((r.skills && r.skills.length > 0) ? `${r.skills[0]} Specialist` : 'IT Specialist');
+            }
+            if (/^[\d+\s().-]+$/.test(cRole) || cRole.includes('@')) {
+              cRole = (r.skills && r.skills.length > 0) ? `${r.skills[0]} Specialist` : 'IT Specialist';
+            }
 
             // 5. Resolve candidate visa
             let candidateVisa = (matchedProfile && matchedProfile.visa) ? matchedProfile.visa : '';
@@ -712,9 +726,9 @@ export async function scrapeResumesFromIMAP({
               role: cRole,
               skills: r.skills && r.skills.length > 0 ? r.skills : [],
               date,
-              folder: folder === 'Bulk' ? 'SPAM' : folder,
+              folder: (folder === 'Bulk' || folder === 'SPAM') ? 'SPAM' : String(folder || 'INBOX').toUpperCase(),
               uid,
-              isSpamRecovery: folder === 'Bulk',
+              isSpamRecovery: (folder === 'Bulk' || folder === 'SPAM'),
               resumeText: r.resumeText || '',
               attachmentName: r.filename,
               attachments: [r.filename],

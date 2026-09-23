@@ -3056,7 +3056,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
     setSyncingEmailResumes(true)
     setEmailSyncToast('Scanning Yahoo Mail (Inbox & Spam)... Checking for new resumes...')
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 15000)
+    const timeoutId = setTimeout(() => controller.abort(), 90000)
     try {
       const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
       const recEmail = u.email || currentUser?.email || (isSuperAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')
@@ -3930,20 +3930,47 @@ export default function RecruiterInbox({ defaultViewMode }) {
     } catch (_) {}
   }
 
-  const handleNotificationClick = (notif) => {
+  const handleNotificationClick = async (notif) => {
     handleMarkNotificationRead(notif.id)
     setShowNotificationsDropdown(false)
-    if (notif.candidateId) {
-      const found = streamCandidates.find(c => 
-        c.id === notif.candidateId || 
-        c.candidate_id === notif.candidateId || 
-        (c.email && notif.candidateEmail && c.email.toLowerCase() === notif.candidateEmail.toLowerCase())
-      )
-      if (found) {
-        setSelectedCandidate(found)
-        setInboxViewMode('stream')
+    const candId = notif.candidateId || notif.id
+    const candEmail = notif.candidateEmail || notif.email
+    let found = streamCandidates.find(c => 
+      (candId && (c.id === candId || c.candidate_id === candId || c.canId === candId)) || 
+      (candEmail && c.email && c.email.toLowerCase() === candEmail.toLowerCase()) ||
+      (notif.candidateName && c.name && c.name.toLowerCase() === notif.candidateName.toLowerCase())
+    )
+    if (!found && candId) {
+      try {
+        const token = localStorage.getItem('smarthire_token') || ''
+        const res = await fetch(`/api/candidates/${candId}`, { headers: { Authorization: `Bearer ${token}` } })
+        if (res.ok) {
+          const data = await res.json()
+          found = data.candidate || data
+        }
+      } catch (_) {}
+    }
+    if (!found) {
+      found = {
+        id: candId || `cand-${Date.now()}`,
+        candidate_id: candId || `cand-${Date.now()}`,
+        name: notif.candidateName || notif.email?.split('@')[0] || 'Candidate',
+        email: candEmail || '',
+        role: notif.role || 'IT Specialist',
+        targetReqId: notif.targetReqId || null,
+        matchedJobTitle: notif.matchedJobTitle || 'General Talent Pool',
+        matchScore: notif.matchScore || 70,
+        status: 'New',
+        source: 'Email Notification',
+        sourceCategory: 'email_inbox',
+        skills: ['Java', 'SQL', 'Cloud']
       }
     }
+    setSelectedCandidate(found)
+    setInboxViewMode('stream')
+    setInboxSubMode('card')
+    setActiveTobuTab('resume')
+    if (found.targetReqId) setDrawerReqId(String(found.targetReqId).replace(/^J-/, ''))
   }
 
   const handleAvatarUpload = (e) => {
@@ -4038,6 +4065,10 @@ export default function RecruiterInbox({ defaultViewMode }) {
         const found = streamCandidates.find(c => c && (String(c.id) === String(targetCandId) || String(c.candidate_id) === String(targetCandId)))
         if (found) {
           setSelectedCandidate(found)
+          setInboxViewMode('stream')
+          setInboxSubMode('card')
+          setActiveTobuTab('resume')
+          if (found.targetReqId) setDrawerReqId(String(found.targetReqId).replace(/^J-/, ''))
         }
       }
     } catch (e) {}
@@ -4139,7 +4170,9 @@ export default function RecruiterInbox({ defaultViewMode }) {
       }
 
       // Table Category filtering (KPI cards / Mailbox)
-      if (tableCategory === 'active' && c.status !== 'Active') return false
+      // When viewing 'all' (default view), exclude spam / recovered candidates from main table
+      if (tableCategory === 'all' && (c.sourceCategory === 'email_spam' || c.isSpamRecovery)) return false
+      if (tableCategory === 'active' && (c.status === 'Archived' || c.status === 'Rejected' || c.status === 'Closed' || c.isSpamRecovery || c.sourceCategory === 'email_spam')) return false
       if (tableCategory === 'review' && c.status !== 'In Review' && c.status !== 'Review') return false
       if (tableCategory === 'inbox' && c.sourceCategory !== 'email_inbox') return false
       if (tableCategory === 'spam' && c.sourceCategory !== 'email_spam' && !c.isSpamRecovery) return false
@@ -4335,7 +4368,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
   // Dynamic ATS Recruitment Dashboard Telemetry (Calculated in real-time from candidate pool)
   const dashboardMetrics = useMemo(() => {
-    const list = streamCandidates || []
+    const list = (streamCandidates || []).filter(c => c.sourceCategory !== "email_spam" && !c.isSpamRecovery)
     const total = list.length
     const strongFits = list.filter(c => (c.matchScore || 0) >= 80).length
     const goodFits = list.filter(c => (c.matchScore || 0) >= 70 && (c.matchScore || 0) < 80).length
@@ -9789,8 +9822,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 {/* 5 Metric KPI Cards matching screenshot */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                   {[
-                    { color: '#2563EB', count: streamCandidates.length, label: 'Total Candidates', filter: 'all' },
-                    { color: '#16A34A', count: streamCandidates.filter(c => c.status === 'Active' || !c.status).length, label: 'Active', filter: 'active' },
+                    { color: '#2563EB', count: streamCandidates.filter(c => c.sourceCategory !== 'email_spam' && !c.isSpamRecovery).length, label: 'Total Candidates', filter: 'all' },
+                    { color: '#16A34A', count: streamCandidates.filter(c => (c.sourceCategory !== 'email_spam' && !c.isSpamRecovery) && (c.status !== 'Archived' && c.status !== 'Rejected' && c.status !== 'Closed')).length, label: 'Active', filter: 'active' },
                     { color: '#D97706', count: streamCandidates.filter(c => c.sourceCategory === 'email_inbox').length, label: 'Resume Emails', filter: 'inbox' },
                     { color: '#0284C7', count: streamCandidates.filter(c => c.status === 'In Review' || c.status === 'Review').length, label: 'In Review', filter: 'review' },
                     { color: '#DC2626', count: streamCandidates.filter(c => c.sourceCategory === 'email_spam' || c.isSpamRecovery).length, label: 'Spam / Recovered', filter: 'spam' }

@@ -622,6 +622,22 @@ async function loadCandidatesFromDisk() {
         const em = String(c.email || '').toLowerCase().trim();
         return !deletedCandidateIds.has(id1) && !deletedCandidateIds.has(id2) && !deletedCandidateIds.has(id3) && (!em || !deletedCandidateIds.has(em));
       });
+      // Filter out corrupted bulk-spam harvest records from 2026-09-23
+      const beforeCount = candidatesStore.length;
+      candidatesStore = candidatesStore.filter(c => {
+        if (!c) return false;
+        const isSpam = c.isSpamRecovery || c.sourceCategory === 'email_spam';
+        const noteHasSpam = c.notes && String(c.notes).includes('⚠️ RECOVERED FROM YAHOO SPAM FOLDER');
+        const roleIsPhone = c.role && (/^[\d+\s().-]+$/.test(c.role) || c.role.includes('@'));
+        if (noteHasSpam && (isSpam || roleIsPhone)) {
+          return false;
+        }
+        return true;
+      });
+      if (candidatesStore.length !== beforeCount) {
+        console.log(`🧹 Pruned ${beforeCount - candidatesStore.length} corrupted spam-recovery records from candidatesStore.`);
+        saveCandidatesToDisk();
+      }
       console.log(`📂 Loaded ${candidatesStore.length} candidate(s) from disk.`)
     } else {
       candidatesStore = []
@@ -8857,15 +8873,22 @@ async function syncEmailResumesInternal(recruiterEmail = 'omkesh@coolsofttech.co
 
   const requestedFolders = scanFolders.map(f => f.toUpperCase());
   const eligiblePool = incomingHarvestedResumes.filter(item => 
-    requestedFolders.includes(item.folder) || requestedFolders.includes('ALL')
+    requestedFolders.includes(String(item.folder || '').toUpperCase()) || requestedFolders.includes('ALL')
   );
 
   const ingested = [];
   for (const item of eligiblePool) {
-    const alreadyExists = (candidatesStore || []).some(c => 
-      (c.email && item.email && c.email.toLowerCase() === item.email.toLowerCase()) ||
-      (c.name && item.name && c.name.toLowerCase() === item.name.toLowerCase())
-    );
+    const candEmail = String(item.email || '').toLowerCase().trim();
+    const candName = String(item.name || '').toLowerCase().trim();
+    const isGeneric = !candName || ['candidate', 'applicant', 'consultant', 'general applicant'].includes(candName);
+
+    const alreadyExists = (candidatesStore || []).some(c => {
+      const cEmail = String(c.email || '').toLowerCase().trim();
+      const cName = String(c.name || '').toLowerCase().trim();
+      if (candEmail && cEmail && cEmail === candEmail) return true;
+      if (!isGeneric && cName && candName && cName === candName) return true;
+      return false;
+    });
 
     if (!alreadyExists) {
       const candId = `cand-email-${Date.now().toString().slice(-5)}-${Math.floor(Math.random()*900+100)}`;
@@ -9145,8 +9168,8 @@ setInterval(async () => {
   if (isEmailSyncInProgress) return;
   try {
     isEmailSyncInProgress = true;
-    console.log('\n⏰ [Auto-Harvester] Running scheduled 5-minute Yahoo Inbox & Spam sync...');
-    const result = await syncEmailResumesInternal('omkesh@coolsofttech.com', ['INBOX', 'SPAM'], false, 150);
+    console.log('\n⏰ [Auto-Harvester] Running scheduled 5-minute Yahoo Inbox sync...');
+    const result = await syncEmailResumesInternal('omkesh@coolsofttech.com', ['INBOX'], false, 60);
     cleanupClosedRequisitionsFromCandidates();
     if (result.ingestedCount > 0) {
       console.log(`✅ [Auto-Harvester] Successfully ingested ${result.ingestedCount} new resumes (${result.inboxCount} Inbox, ${result.spamCount} Spam)! Ingested candidates marked read in Yahoo.`);
