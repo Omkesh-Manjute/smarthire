@@ -1086,9 +1086,11 @@ const highlightResumeText = (text, matchingSkills = [], searchQuery = '', enable
   const renderedBlocks = [];
   let currentSection = 'SUMMARY';
   let hasParsedSkills = false;
+  let inResponsibilitiesBlock = false;
 
   const datePattern = /\b(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?|\d{1,2}\/)?\s*(19\d\d|20\d\d)\s*(?:[–\-—]|\bto\b|\buntil\b|\bthru\b|\bthrough\b)\s*(Present|Current|Now|Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?|\d{1,2}\/)?\s*(Present|Current|Now|19\d\d|20\d\d)?\b/i;
   const jobTitlePattern = /\b(Developer|Engineer|Architect|Lead|Manager|Consultant|Analyst|Specialist|Intern|Administrator|Director|Designer|Programmer|Associate|Officer|Tester|QA)\b/i;
+  const ACTION_VERB_REGEX = /^(?:designed|developed|collaborated|engineered|configured|registered|implemented|built|managed|led|created|maintained|architected|automated|coordinated|supported|performed|resolved|prepared|conducted|analyzed|tested|integrated|deployed|optimized|migrated|spearheaded|established|utilized|participated|assisted|authored|administered|executed|monitored|improved|facilitated|delivered|customized|troubleshot|reviewed|worked|written|involved|provided|handled|ensured|gathered|interfaced|trained)\b/i;
 
   for (let i = 0; i < rawLines.length; i++) {
     const l = rawLines[i].trim();
@@ -1098,6 +1100,7 @@ const highlightResumeText = (text, matchingSkills = [], searchQuery = '', enable
     const cleanHeader = l.replace(/^[:#\*\-\s]+/, '').replace(/[:#\*\-\s]+$/, '').toUpperCase();
     if (SECTION_MAP[cleanHeader] && l.length <= 40) {
       currentSection = SECTION_MAP[cleanHeader];
+      inResponsibilitiesBlock = false;
       renderedBlocks.push(`
         <div style="font-size: 16px; font-weight: 800; color: #0F172A; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 28px; margin-bottom: 12px; border-bottom: 2px solid #E2E8F0; padding-bottom: 6px;">
           ${escapeHtml(l)}
@@ -1107,49 +1110,99 @@ const highlightResumeText = (text, matchingSkills = [], searchQuery = '', enable
     }
 
     if (currentSection === 'EXPERIENCE') {
+      const isRespHeader = /^(?:key\s+|core\s+)?(?:responsibilities|duties|roles\s*&?\s*responsibilities|contributions|tasks)\s*[:\-]?$/i.test(l);
+      if (isRespHeader) {
+        inResponsibilitiesBlock = true;
+        renderedBlocks.push(`
+          <div style="font-size: 13.5px; font-weight: 700; color: #334155; margin-top: 10px; margin-bottom: 6px; letter-spacing: 0.2px;">
+            ${escapeHtml(l)}
+          </div>
+        `);
+        continue;
+      }
+
+      const isEnvLine = /^(?:environment|technologies|tools|tech\s+stack)\s*[:\-]/i.test(l);
+      if (isEnvLine) {
+        inResponsibilitiesBlock = false;
+        renderedBlocks.push(`
+          <div style="font-size: 12.5px; font-weight: 700; color: #475569; margin-top: 8px; margin-bottom: 8px; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 6px 12px; border-radius: 6px;">
+            ${highlightKeywords(l)}
+          </div>
+        `);
+        continue;
+      }
+
+      const isBullet = /^[•\-\*o\u2022\u2023\u25E6\u2043\u2219\d+\.]\s+/.test(l);
+      const isActionVerb = ACTION_VERB_REGEX.test(l);
+      const isClientOrProject = l.startsWith('Project:') || l.startsWith('Client:') || l.startsWith('Company:');
       const hasDate = datePattern.test(l);
       const hasJobTitle = jobTitlePattern.test(l);
       const hasSeparator = l.includes(' - ') || l.includes(' | ') || l.includes(' at ');
-      const isBullet = /^[•\-\*o\d\.]+\s+/.test(l);
 
-      if (!isBullet && (hasJobTitle || hasSeparator || l.startsWith('Project:') || l.startsWith('Client:')) && l.length < 130) {
-        // Bold Project / Role title (Matching media_1790179078355.png)
+      // Check if this is a new project or role header
+      if ((isClientOrProject || (hasJobTitle && (hasSeparator || hasDate))) && l.length < 130 && !isBullet) {
+        inResponsibilitiesBlock = false;
         renderedBlocks.push(`
           <div style="font-size: 15px; font-weight: 800; color: #0F172A; margin-top: 18px; margin-bottom: 4px; line-height: 1.35;">
             ${highlightKeywords(l)}
           </div>
         `);
-      } else if (!isBullet && hasDate && l.length < 80) {
-        // Date line in gray
+        continue;
+      }
+
+      if (!isBullet && !inResponsibilitiesBlock && hasDate && l.length < 80) {
         renderedBlocks.push(`
-          <div style="font-size: 13px; color: #64748B; margin-bottom: 8px;">
+          <div style="font-size: 13px; color: #64748B; margin-bottom: 6px;">
             ${escapeHtml(l)}
           </div>
         `);
-      } else if (!isBullet && /^[A-Za-z\s]+,\s*[A-Za-z\s]+/.test(l) && l.length < 60) {
-        // Location line in gray
+        continue;
+      }
+
+      if (!isBullet && !inResponsibilitiesBlock && /^[A-Za-z\s]+,\s*[A-Za-z\s]+/.test(l) && l.length < 60) {
         renderedBlocks.push(`
           <div style="font-size: 13px; color: #64748B; margin-bottom: 2px;">
             ${escapeHtml(l)}
           </div>
         `);
-      } else if (isBullet) {
-        // Bullet point
-        const cleanBullet = l.replace(/^[•\-\*o\d\.]+\s*/, '');
+        continue;
+      }
+
+      // Format as Bullet Point
+      if (isBullet || inResponsibilitiesBlock || (isActionVerb && l.length > 20)) {
+        const cleanBullet = l.replace(/^[•\-\*o\u2022\u2023\u25E6\u2043\u2219\d+\.]+\s*/, '').trim();
         renderedBlocks.push(`
-          <div style="font-size: 13.5px; line-height: 1.65; color: #1E293B; margin-bottom: 6px; padding-left: 18px; position: relative;">
-            <span style="position: absolute; left: 3px; color: #94A3B8;">•</span>
+          <div style="font-size: 13.5px; line-height: 1.65; color: #1E293B; margin-bottom: 6px; padding-left: 20px; position: relative;">
+            <span style="position: absolute; left: 4px; top: 0; color: #2563EB; font-size: 16px; line-height: 1.4; font-weight: 900;">•</span>
             ${highlightKeywords(cleanBullet)}
           </div>
         `);
-      } else {
-        // Regular paragraph description
+        continue;
+      }
+
+      // Regular paragraph description
+      renderedBlocks.push(`
+        <div style="font-size: 13.5px; line-height: 1.65; color: #1E293B; margin-bottom: 8px;">
+          ${highlightKeywords(l)}
+        </div>
+      `);
+    } else if (currentSection === 'SUMMARY') {
+      const isBullet = /^[•\-\*o\u2022\u2023\u25E6\u2043\u2219\d+\.]\s+/.test(l);
+      if (isBullet) {
+        const cleanBullet = l.replace(/^[•\-\*o\u2022\u2023\u25E6\u2043\u2219\d+\.]+\s*/, '').trim();
         renderedBlocks.push(`
-          <div style="font-size: 13.5px; line-height: 1.65; color: #1E293B; margin-bottom: 8px;">
-            ${highlightKeywords(l)}
+          <div style="font-size: 13.5px; line-height: 1.65; color: #1E293B; margin-bottom: 6px; padding-left: 20px; position: relative;">
+            <span style="position: absolute; left: 4px; top: 0; color: #2563EB; font-size: 16px; line-height: 1.4; font-weight: 900;">•</span>
+            ${highlightKeywords(cleanBullet)}
           </div>
         `);
+        continue;
       }
+      renderedBlocks.push(`
+        <div style="font-size: 13.5px; line-height: 1.65; color: #1E293B; margin-bottom: 8px;">
+          ${highlightKeywords(l)}
+        </div>
+      `);
     } else if (currentSection === 'EDUCATION') {
       const isDegree = /\b(bachelor|master|b\.?tech|m\.?tech|b\.?s\.?|m\.?s\.?|phd|degree|diploma|university|college|school|institute)\b/i.test(l);
       if (isDegree && l.length < 130) {
@@ -2142,7 +2195,20 @@ export default function RecruiterInbox({ defaultViewMode }) {
       ? 'leaderboard'
       : (tabParam === 'dashboard' || viewParam === 'dashboard' ? 'dashboard' : (defaultViewMode || 'stream'))
   const [inboxViewMode, setInboxViewMode] = useState(initialInboxMode)
-  const [minimalsSidebarOpen, setMinimalsSidebarOpen] = useState(true)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('smarthire_sidebar_collapsed') === 'true'
+    } catch (_) {
+      return false
+    }
+  })
+  const handleToggleSidebar = () => {
+    setSidebarCollapsed(prev => {
+      const next = !prev
+      try { localStorage.setItem('smarthire_sidebar_collapsed', String(next)) } catch (_) {}
+      return next
+    })
+  }
   const [streamFilter, setStreamFilter] = useState('all') // 'all', 'email_inbox', 'email_spam', 'careers_portal', 'vendor_bench'
   const [streamCandidates, setStreamCandidates] = useState(() => {
     try {
@@ -5148,6 +5214,33 @@ export default function RecruiterInbox({ defaultViewMode }) {
     const pagedItems = filteredList.slice((vendorTablePage - 1) * vendorTablePageSize, vendorTablePage * vendorTablePageSize)
     const totalPages = Math.ceil(filteredList.length / vendorTablePageSize) || 1
 
+    const handleExportHotlistsCsv = () => {
+      const headers = ['Sl. No', 'Candidate Name', 'Skill / Role', 'Total Exp', 'Location', 'Relocation', 'Visa Status', 'Vendor / Agency', 'Vendor Email', 'Candidate Email', 'Candidate Phone', 'Rate', 'Status'];
+      const rows = filteredList.map((item, idx) => [
+        idx + 1,
+        `"${(item.candidateName || '').replace(/"/g, '""')}"`,
+        `"${(item.role || '').replace(/"/g, '""')}"`,
+        `"${(item.experience || '').replace(/"/g, '""')}"`,
+        `"${(item.location || '').replace(/"/g, '""')}"`,
+        `"${(item.relocation || '').replace(/"/g, '""')}"`,
+        `"${(item.visa || '').replace(/"/g, '""')}"`,
+        `"${(item.vendorCompany || item.vendorName || '').replace(/"/g, '""')}"`,
+        `"${(item.vendorEmail || '').replace(/"/g, '""')}"`,
+        `"${(item.candidateEmail || '').replace(/"/g, '""')}"`,
+        `"${(item.candidatePhone || '').replace(/"/g, '""')}"`,
+        `"${(item.rate || '').replace(/"/g, '""')}"`,
+        `"${(item.status || 'Available').replace(/"/g, '""')}"`
+      ]);
+      const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `SmartHire_Vendor_Hotlist_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+
     return (
       <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px', boxSizing: 'border-box', backgroundColor: isLight ? '#F8FAFC' : '#0B0F19' }}>
         <div style={{ maxWidth: 1440, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -5177,11 +5270,11 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   Vendor Hotlists &amp; Bench Ingestion Hub
                 </h1>
                 <span style={{ fontSize: 11, fontWeight: 800, backgroundColor: '#CCFBF1', color: '#0F766E', padding: '2px 8px', borderRadius: 6, border: '1px solid #99F6E4' }}>
-                  Big Data Table
+                  Excel Grid View
                 </span>
               </div>
               <p style={{ fontSize: 13, color: C.textSecondary, margin: '4px 0 0' }}>
-                Consolidated candidate bench lists auto-parsed from vendor emails, C2C rate cards, and direct partner submissions.
+                Structured candidate bench lists auto-parsed from vendor emails, C2C rate cards, and direct partner submissions.
               </p>
             </div>
 
@@ -5205,6 +5298,33 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 }}
               >
                 <span>+ Add / Paste Hotlist</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleExportHotlistsCsv}
+                style={{
+                  backgroundColor: '#059669',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '9px 14px',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  boxShadow: '0 2px 6px rgba(5,150,105,0.2)'
+                }}
+                title="Download vendor hotlist as Excel / CSV file"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Export Excel</span>
               </button>
 
               <button
@@ -5409,281 +5529,183 @@ export default function RecruiterInbox({ defaultViewMode }) {
             </div>
           </div>
 
-          {/* Dynamic Big Data Table */}
+          {/* Excel-Style Grid Table matching Image 2 */}
           <div style={{
-            backgroundColor: isLight ? '#FFFFFF' : C.surface,
-            border: `1px solid ${C.border}`,
-            borderRadius: 10,
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #CBD5E1',
+            borderRadius: 8,
             overflow: 'hidden',
             boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
           }}>
-            <div style={{ overflowX: 'auto', maxHeight: 'calc(100vh - 360px)', minHeight: 420 }}>
-              <table style={{ width: '100%', minWidth: 1200, borderCollapse: 'collapse', textAlign: 'left', fontSize: 12.5 }}>
+            <div style={{ overflowX: 'auto', maxHeight: 'calc(100vh - 340px)', minHeight: 420 }}>
+              <table style={{
+                width: '100%',
+                minWidth: 1250,
+                borderCollapse: 'collapse',
+                textAlign: 'left',
+                fontSize: 12.5,
+                fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+              }}>
                 <thead>
                   <tr style={{
-                    backgroundColor: isLight ? '#F8FAFC' : '#1E293B',
-                    borderBottom: `1px solid ${C.border}`,
-                    color: '#64748B',
-                    fontSize: 11,
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
+                    backgroundColor: '#F1F5F9',
+                    borderBottom: '2px solid #CBD5E1',
                     position: 'sticky',
                     top: 0,
                     zIndex: 5
                   }}>
-                    <th style={{ padding: '10px 14px', width: 220 }}>Vendor / Sponsoring Agency</th>
-                    <th style={{ padding: '10px 14px', width: 200 }}>Candidate Profile</th>
-                    <th style={{ padding: '10px 14px', width: 220 }}>Role &amp; Primary Tech Stack</th>
-                    <th style={{ padding: '10px 14px', width: 200 }}>Candidate Direct Contact</th>
-                    <th style={{ padding: '10px 14px', width: 160 }}>Location &amp; Mobility</th>
-                    <th style={{ padding: '10px 12px', width: 110 }}>Rate &amp; Availability</th>
-                    <th style={{ padding: '10px 12px', width: 120 }}>Resume Doc</th>
-                    <th style={{ padding: '10px 14px', width: 240, textAlign: 'right' }}>Actions</th>
+                    <th style={{ padding: '9px 8px', width: 55, textAlign: 'center', border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                      Sl. No
+                    </th>
+                    <th style={{ padding: '9px 12px', width: 160, border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                      Name
+                    </th>
+                    <th style={{ padding: '9px 12px', width: 250, border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                      Skill
+                    </th>
+                    <th style={{ padding: '9px 10px', width: 95, textAlign: 'center', border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                      Total Exp
+                    </th>
+                    <th style={{ padding: '9px 12px', width: 135, border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                      Location
+                    </th>
+                    <th style={{ padding: '9px 12px', width: 135, border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                      Relocation
+                    </th>
+                    <th style={{ padding: '9px 10px', width: 95, textAlign: 'center', border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                      Visa Status
+                    </th>
+                    <th style={{ padding: '9px 12px', width: 180, border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                      Vendor / Agency
+                    </th>
+                    <th style={{ padding: '9px 10px', width: 85, textAlign: 'center', border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                      Rate
+                    </th>
+                    <th style={{ padding: '9px 12px', width: 195, textAlign: 'right', border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredList.length === 0 ? (
                     <tr>
-                      <td colSpan={8} style={{ padding: 48, textAlign: 'center', color: C.textSecondary }}>
+                      <td colSpan={10} style={{ padding: 48, textAlign: 'center', color: '#64748B', border: '1px solid #E2E8F0' }}>
                         No vendor bench candidates found matching your filters.
                       </td>
                     </tr>
                   ) : (
                     pagedItems.map((item, idx) => {
-                      const avatar = getCandidateAvatarColor(item.candidateName || 'Candidate')
-                      const initials = getInitials(item.candidateName || 'Candidate')
                       const skills = safeSkillArray(item.skills)
+                      const isEven = idx % 2 === 0
+                      const rowNum = (vendorTablePage - 1) * vendorTablePageSize + idx + 1
                       return (
                         <tr
                           key={item.id || idx}
                           style={{
-                            borderBottom: `1px solid ${C.border}`,
-                            transition: 'background-color 0.15s ease'
+                            backgroundColor: isEven ? '#FFFFFF' : '#F8FAFC',
+                            transition: 'background-color 0.1s ease',
+                            cursor: 'default'
                           }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#EFF6FF'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isEven ? '#FFFFFF' : '#F8FAFC'}
                         >
-                          {/* 1. Vendor / Sponsoring Agency */}
-                          <td style={{ padding: '12px 14px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                              <strong style={{ color: '#0F172A', fontSize: 13 }}>
-                                {item.vendorCompany || 'Vendor IT Solutions'}
-                              </strong>
-                              <div style={{ fontSize: 11.5, color: '#475569', fontWeight: 600 }}>
-                                {item.vendorName || 'Vendor Rep'}
-                              </div>
-                              <div style={{ fontSize: 11, color: '#64748B' }}>
-                                <a href={`mailto:${item.vendorEmail}`} style={{ color: '#2563EB', textDecoration: 'none' }}>
-                                  {item.vendorEmail}
+                          {/* 1. Sl. No */}
+                          <td style={{ padding: '7px 8px', textAlign: 'center', border: '1px solid #E2E8F0', verticalAlign: 'middle', fontWeight: 700, color: '#64748B', fontSize: 12 }}>
+                            {rowNum}
+                          </td>
+
+                          {/* 2. Name */}
+                          <td style={{ padding: '7px 12px', border: '1px solid #E2E8F0', verticalAlign: 'middle' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{ fontWeight: 800, color: '#0F172A', fontSize: 13 }}>
+                                {item.candidateName}
+                              </span>
+                              {item.attachmentName && (
+                                <a
+                                  href={item.storageUrl || `/uploads/candidate-docs/${item.attachmentName}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title={`Resume: ${item.attachmentName}`}
+                                  style={{ color: '#2563EB', display: 'inline-flex', verticalAlign: 'middle' }}
+                                >
+                                  <IconFileText />
+                                </a>
+                              )}
+                            </div>
+                            {item.candidateEmail && (
+                              <div style={{ fontSize: 11, color: '#64748B', marginTop: 1 }}>
+                                <a href={`mailto:${item.candidateEmail}`} style={{ color: '#2563EB', textDecoration: 'none' }}>
+                                  {item.candidateEmail}
                                 </a>
                               </div>
-                              {item.vendorPhone && (
-                                <div style={{ fontSize: 11, color: '#94A3B8' }}>
-                                  {item.vendorPhone}
-                                </div>
-                              )}
-                            </div>
-                          </td>
-
-                          {/* 2. Candidate Profile */}
-                          <td style={{ padding: '12px 14px' }}>
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                              <div style={{
-                                width: 34,
-                                height: 34,
-                                borderRadius: '50%',
-                                backgroundColor: avatar.bg,
-                                color: avatar.text,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontWeight: 800,
-                                fontSize: 12,
-                                flexShrink: 0
-                              }}>
-                                {initials}
-                              </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                                  <strong style={{ fontSize: 13.5, color: '#0F172A' }}>
-                                    {item.candidateName}
-                                  </strong>
-                                  {item.visa && (
-                                    <span style={{
-                                      fontSize: 9.5,
-                                      fontWeight: 700,
-                                      backgroundColor: isLight ? '#F1F5F9' : '#334155',
-                                      color: isLight ? '#475569' : '#CBD5E1',
-                                      padding: '1px 5px',
-                                      borderRadius: 4,
-                                      border: `1px solid ${isLight ? '#E2E8F0' : '#475569'}`
-                                    }}>
-                                      {String(item.visa).replace(/\s*\(.*?\)/g, '')}
-                                    </span>
-                                  )}
-                                </div>
-                                <div style={{ fontSize: 11, color: '#2563EB', fontWeight: 600, marginTop: 2 }}>
-                                  {item.experience || '8+ Years'} Experience
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-
-                          {/* 3. Role & Primary Tech Stack */}
-                          <td style={{ padding: '12px 14px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                              <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>
-                                {item.role}
-                              </div>
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                                {skills.slice(0, 4).map((sk, sidx) => (
-                                  <span
-                                    key={sidx}
-                                    style={{
-                                      fontSize: 10.5,
-                                      fontWeight: 600,
-                                      backgroundColor: isLight ? '#F1F5F9' : '#1E293B',
-                                      color: '#334155',
-                                      padding: '2px 6px',
-                                      borderRadius: 4,
-                                      border: `1px solid ${C.border}`
-                                    }}
-                                  >
-                                    {sk}
-                                  </span>
-                                ))}
-                                {skills.length > 4 && (
-                                  <span style={{ fontSize: 10, color: '#64748B', fontWeight: 700, alignSelf: 'center' }}>
-                                    +{skills.length - 4}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-
-                          {/* 4. Candidate Direct Contact */}
-                          <td style={{ padding: '12px 14px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                              {item.candidateEmail ? (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                  <a
-                                    href={`mailto:${item.candidateEmail}`}
-                                    style={{ fontSize: 11.5, color: '#2563EB', fontWeight: 600, textDecoration: 'none' }}
-                                    title="Email candidate directly"
-                                  >
-                                    {item.candidateEmail}
-                                  </a>
-                                  <button
-                                    type="button"
-                                    onClick={() => copyToClipboard(item.candidateEmail, 'candidate email')}
-                                    style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 1 }}
-                                    title="Copy email"
-                                  >
-                                    <IconCopy />
-                                  </button>
-                                </div>
-                              ) : (
-                                <span style={{ fontSize: 11, color: '#94A3B8' }}>Via Vendor Contact</span>
-                              )}
-
-                              {item.candidatePhone ? (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                  <a
-                                    href={`tel:${item.candidatePhone}`}
-                                    style={{ fontSize: 11.5, color: '#475569', textDecoration: 'none' }}
-                                  >
-                                    {item.candidatePhone}
-                                  </a>
-                                  <button
-                                    type="button"
-                                    onClick={() => copyToClipboard(item.candidatePhone, 'candidate phone')}
-                                    style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 1 }}
-                                    title="Copy phone"
-                                  >
-                                    <IconCopy />
-                                  </button>
-                                </div>
-                              ) : (
-                                <span style={{ fontSize: 11, color: '#94A3B8' }}>Phone on request</span>
-                              )}
-                            </div>
-                          </td>
-
-                          {/* 5. Location & Mobility */}
-                          <td style={{ padding: '12px 14px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                              <div style={{ fontSize: 12, fontWeight: 600, color: '#0F172A' }}>
-                                {item.location || 'Remote / US'}
-                              </div>
-                              {item.relocation && (
-                                <span style={{
-                                  fontSize: 10,
-                                  fontWeight: 700,
-                                  color: '#059669',
-                                  backgroundColor: '#ECFDF5',
-                                  padding: '1px 5px',
-                                  borderRadius: 4,
-                                  border: '1px solid #A7F3D0',
-                                  display: 'inline-block',
-                                  width: 'fit-content'
-                                }}>
-                                  {item.relocation}
-                                </span>
-                              )}
-                            </div>
-                          </td>
-
-                          {/* 6. Rate & Availability */}
-                          <td style={{ padding: '12px 12px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                              <strong style={{ fontSize: 12.5, color: '#0F172A' }}>
-                                {item.rate || '$75/hr C2C'}
-                              </strong>
-                              <span style={{
-                                fontSize: 9.5,
-                                fontWeight: 800,
-                                color: '#047857',
-                                backgroundColor: '#ECFDF5',
-                                padding: '1px 5px',
-                                borderRadius: 4,
-                                border: '1px solid #A7F3D0',
-                                width: 'fit-content'
-                              }}>
-                                {item.status || 'Available'}
-                              </span>
-                            </div>
-                          </td>
-
-                          {/* 7. Resume Doc */}
-                          <td style={{ padding: '12px 12px' }}>
-                            {item.attachmentName ? (
-                              <a
-                                href={item.storageUrl || `/uploads/candidate-docs/${item.attachmentName}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{
-                                  fontSize: 11,
-                                  fontWeight: 700,
-                                  color: '#2563EB',
-                                  textDecoration: 'none',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: 4
-                                }}
-                              >
-                                <IconFileText />
-                                <span style={{ maxWidth: 85, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.attachmentName}>
-                                  {item.attachmentName}
-                                </span>
-                              </a>
-                            ) : (
-                              <span style={{ fontSize: 11, color: '#94A3B8' }}>Via Email</span>
                             )}
                           </td>
 
-                          {/* 8. Row Actions */}
-                          <td style={{ padding: '12px 14px', textAlign: 'right' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
-                              {/* Blue: Push to Jobs in Hand */}
+                          {/* 3. Skill / Role */}
+                          <td style={{ padding: '7px 12px', border: '1px solid #E2E8F0', verticalAlign: 'middle' }}>
+                            <div style={{ fontWeight: 700, color: '#1E293B', fontSize: 12.5, lineHeight: 1.3 }}>
+                              {item.role || (skills[0] || 'IT Specialist')}
+                            </div>
+                            {skills.length > 1 && (
+                              <div style={{ fontSize: 11, color: '#64748B', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 240 }} title={skills.join(', ')}>
+                                {skills.slice(0, 3).join(' • ')}
+                                {skills.length > 3 && ` +${skills.length - 3}`}
+                              </div>
+                            )}
+                          </td>
+
+                          {/* 4. Total Exp */}
+                          <td style={{ padding: '7px 10px', textAlign: 'center', border: '1px solid #E2E8F0', verticalAlign: 'middle', fontWeight: 600, color: '#334155', fontSize: 12 }}>
+                            {item.experience || '8+ Years'}
+                          </td>
+
+                          {/* 5. Location */}
+                          <td style={{ padding: '7px 12px', border: '1px solid #E2E8F0', verticalAlign: 'middle', color: '#334155', fontSize: 12, fontWeight: 500 }}>
+                            {item.location || 'Remote / US'}
+                          </td>
+
+                          {/* 6. Relocation */}
+                          <td style={{ padding: '7px 12px', border: '1px solid #E2E8F0', verticalAlign: 'middle', color: '#059669', fontSize: 12, fontWeight: 600 }}>
+                            {item.relocation || 'Anywhere in US'}
+                          </td>
+
+                          {/* 7. Visa Status */}
+                          <td style={{ padding: '7px 10px', textAlign: 'center', border: '1px solid #E2E8F0', verticalAlign: 'middle' }}>
+                            <span style={{
+                              fontSize: 10.5,
+                              fontWeight: 800,
+                              backgroundColor: String(item.visa).toLowerCase().includes('citizen') ? '#ECFDF5' : (String(item.visa).toLowerCase().includes('opt') ? '#FFFBEB' : '#EFF6FF'),
+                              color: String(item.visa).toLowerCase().includes('citizen') ? '#047857' : (String(item.visa).toLowerCase().includes('opt') ? '#B45309' : '#1D4ED8'),
+                              border: `1px solid ${String(item.visa).toLowerCase().includes('citizen') ? '#A7F3D0' : (String(item.visa).toLowerCase().includes('opt') ? '#FDE68A' : '#BFDBFE')}`,
+                              padding: '2px 7px',
+                              borderRadius: 4,
+                              display: 'inline-block'
+                            }}>
+                              {item.visa || 'H-1B'}
+                            </span>
+                          </td>
+
+                          {/* 8. Vendor / Agency */}
+                          <td style={{ padding: '7px 12px', border: '1px solid #E2E8F0', verticalAlign: 'middle' }}>
+                            <div style={{ fontWeight: 700, color: '#0F172A', fontSize: 12 }}>
+                              {item.vendorCompany || item.vendorName || 'Staffing Partner'}
+                            </div>
+                            <div style={{ fontSize: 11, color: '#64748B', marginTop: 1 }}>
+                              <a href={`mailto:${item.vendorEmail}`} style={{ color: '#2563EB', textDecoration: 'none' }} title={`Email ${item.vendorName || 'Vendor'}`}>
+                                {item.vendorEmail || item.vendorName}
+                              </a>
+                              {item.vendorPhone && <span style={{ marginLeft: 4, color: '#94A3B8' }}>{item.vendorPhone}</span>}
+                            </div>
+                          </td>
+
+                          {/* 9. Rate */}
+                          <td style={{ padding: '7px 10px', textAlign: 'center', border: '1px solid #E2E8F0', verticalAlign: 'middle', fontWeight: 800, color: '#047857', fontSize: 12 }}>
+                            {item.rate || '$70/hr'}
+                          </td>
+
+                          {/* 10. Actions */}
+                          <td style={{ padding: '7px 12px', textAlign: 'right', border: '1px solid #E2E8F0', verticalAlign: 'middle' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 5 }}>
                               <button
                                 type="button"
                                 onClick={() => {
@@ -5710,21 +5732,20 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   backgroundColor: '#2563EB',
                                   color: '#FFFFFF',
                                   border: 'none',
-                                  borderRadius: 6,
-                                  padding: '5px 9px',
+                                  borderRadius: 4,
+                                  padding: '4px 8px',
                                   fontSize: 11,
                                   fontWeight: 700,
                                   cursor: 'pointer',
                                   display: 'inline-flex',
                                   alignItems: 'center',
-                                  gap: 3
+                                  gap: 2
                                 }}
-                                title="Submit candidate to active requisition"
+                                title="Match & push candidate to active requisition"
                               >
-                                <span>Push to Req ↗</span>
+                                Push ↗
                               </button>
 
-                              {/* Teal: Add to ATS */}
                               <button
                                 type="button"
                                 onClick={() => handlePushHotlistToATS(item)}
@@ -5732,48 +5753,51 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   backgroundColor: '#0D9488',
                                   color: '#FFFFFF',
                                   border: 'none',
-                                  borderRadius: 6,
-                                  padding: '5px 8px',
+                                  borderRadius: 4,
+                                  padding: '4px 8px',
                                   fontSize: 11,
                                   fontWeight: 700,
                                   cursor: 'pointer'
                                 }}
-                                title="Add profile into primary ATS Candidates Pool"
+                                title="Add candidate directly into main ATS Talent Pool"
                               >
                                 + ATS
                               </button>
 
-                              {/* Email Vendor */}
                               <button
                                 type="button"
                                 onClick={() => handleEmailVendor(item)}
                                 style={{
-                                  backgroundColor: isLight ? '#F1F5F9' : '#334155',
-                                  color: '#475569',
-                                  border: `1px solid ${C.border}`,
-                                  borderRadius: 6,
-                                  padding: '5px 8px',
+                                  backgroundColor: '#FFFFFF',
+                                  color: '#334155',
+                                  border: '1px solid #CBD5E1',
+                                  borderRadius: 4,
+                                  padding: '4px 8px',
                                   fontSize: 11,
                                   fontWeight: 600,
                                   cursor: 'pointer'
                                 }}
-                                title="Send email inquiry to vendor partner"
+                                title="Email sponsoring vendor rep"
                               >
                                 Email
                               </button>
 
-                              {/* Delete */}
                               <button
                                 type="button"
                                 onClick={() => handleDeleteHotlist(item.id, item.candidateName)}
                                 style={{
-                                  background: 'none',
-                                  border: 'none',
+                                  backgroundColor: '#FFFFFF',
+                                  border: '1px solid #FCA5A5',
                                   color: '#DC2626',
+                                  borderRadius: 4,
+                                  padding: '4px 6px',
+                                  fontSize: 11,
                                   cursor: 'pointer',
-                                  padding: 4
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
                                 }}
-                                title="Remove from vendor hotlists"
+                                title="Remove candidate from bench list"
                               >
                                 <IconTrash />
                               </button>
@@ -6071,310 +6095,395 @@ export default function RecruiterInbox({ defaultViewMode }) {
     <div style={{ display: 'flex', height: '100vh', width: '100vw', backgroundColor: C.bg, fontFamily: "'Plus Jakarta Sans','Inter',sans-serif", color: C.textPrimary, overflow: 'hidden' }}>
       
       {/* 1. Left Navigation Sidebar (Full Height, Matching media_1789073118530.png) */}
-      {minimalsSidebarOpen && (
-        <aside style={{
-          width: 240,
-          minWidth: 240,
-          backgroundColor: C.sidebar,
-          borderRight: `1px solid ${C.border}`,
+      {/* 1. Left Navigation Sidebar (1-Click Collapsible) */}
+      <aside style={{
+        width: sidebarCollapsed ? 68 : 240,
+        minWidth: sidebarCollapsed ? 68 : 240,
+        backgroundColor: C.sidebar,
+        borderRight: `1px solid ${C.border}`,
+        display: 'flex',
+        flexDirection: 'column',
+        padding: sidebarCollapsed ? '16px 8px' : '20px 16px',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        flexShrink: 0,
+        transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.2s cubic-bezier(0.4, 0, 0.2, 1), padding 0.2s ease',
+        boxSizing: 'border-box'
+      }}>
+        {/* Top Brand Logo & 1-Click Collapse Toggle */}
+        <div style={{
           display: 'flex',
-          flexDirection: 'column',
-          padding: '20px 16px',
-          overflowY: 'auto',
-          flexShrink: 0
+          alignItems: 'center',
+          justifyContent: sidebarCollapsed ? 'center' : 'space-between',
+          marginBottom: 24,
+          padding: sidebarCollapsed ? '0' : '0 4px',
+          borderRadius: 8
         }}>
-          {/* Top Brand Logo — clickable, navigates to Dashboard */}
           <div
             onClick={() => setInboxViewMode('dashboard')}
-            title="Go to Dashboard"
-            style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24, padding: '0 6px', cursor: 'pointer', borderRadius: 8, transition: 'opacity 0.15s' }}
+            title="SmartHire ATS — Dashboard"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              cursor: 'pointer',
+              minWidth: 0
+            }}
           >
+            {/* Clean ATS Briefcase SVG Icon (NO "M." letter) */}
             <div style={{
-              width: 34,
-              height: 34,
-              borderRadius: 8,
+              width: 36,
+              height: 36,
+              borderRadius: 9,
               background: 'linear-gradient(135deg, #2065D1 0%, #00A76F 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: '#FFF',
-              fontWeight: 900,
-              fontSize: 16
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(32, 101, 209, 0.25)'
             }}>
-              M.
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+              </svg>
             </div>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: 15, color: C.textPrimary, lineHeight: 1.2 }}>
-                SmartHire ATS
+            {!sidebarCollapsed && (
+              <div style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                <div style={{ fontWeight: 800, fontSize: 15, color: C.textPrimary, lineHeight: 1.2 }}>
+                  SmartHire ATS
+                </div>
+                <div style={{ fontSize: 11, color: C.textSecondary }}>
+                  Find · Evaluate · Hire
+                </div>
               </div>
-              <div style={{ fontSize: 11, color: C.textSecondary }}>
-                Find · Evaluate · Hire
-              </div>
-            </div>
+            )}
           </div>
 
-          {/* Navigation Links with Modern Hover & Click Animations */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {/* 1. Dashboard */}
+          {/* 1-Click Collapse Toggle Icon in Header */}
+          {!sidebarCollapsed && (
             <button
               type="button"
-              onMouseEnter={() => setHoveredNav('dashboard')}
-              onMouseLeave={() => setHoveredNav(null)}
-              onClick={() => setInboxViewMode('dashboard')}
+              onClick={handleToggleSidebar}
+              title="Collapse Sidebar (1-Click)"
               style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: C.textSecondary,
                 display: 'flex',
                 alignItems: 'center',
-                gap: 12,
-                padding: '10px 14px',
-                borderRadius: 8,
-                border: 'none',
-                background: inboxViewMode === 'dashboard'
-                  ? (isLight ? '#E0F2FE' : 'rgba(14,165,233,0.18)')
-                  : (hoveredNav === 'dashboard' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent'),
-                color: inboxViewMode === 'dashboard'
-                  ? (isLight ? '#0284C7' : '#38BDF8')
-                  : (hoveredNav === 'dashboard' ? C.textPrimary : C.textSecondary),
-                fontWeight: inboxViewMode === 'dashboard' ? 700 : (hoveredNav === 'dashboard' ? 600 : 500),
-                fontSize: 13.5,
-                cursor: 'pointer',
-                textAlign: 'left',
-                transform: hoveredNav === 'dashboard' && inboxViewMode !== 'dashboard' ? 'translateX(4px)' : 'none',
-                boxShadow: inboxViewMode === 'dashboard' ? '0 1px 3px rgba(2,132,199,0.12)' : 'none',
-                transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
+                justifyContent: 'center',
+                width: 28,
+                height: 28,
+                borderRadius: 6,
+                padding: 0,
+                transition: 'background 0.15s'
               }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isLight ? '#F1F5F9' : 'rgba(255,255,255,0.08)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
-              <IconHome /> <span>Dashboard</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="11 17 6 12 11 7"></polyline>
+                <polyline points="18 17 13 12 18 7"></polyline>
+              </svg>
             </button>
+          )}
+        </div>
 
-            {/* 2. Candidates (Primary Talent Pool) */}
-            <button
-              type="button"
-              onMouseEnter={() => setHoveredNav('candidates')}
-              onMouseLeave={() => setHoveredNav(null)}
-              onClick={() => { setInboxViewMode('stream'); setInboxSubMode('table'); }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '10px 14px',
-                borderRadius: 8,
-                border: 'none',
-                background: (inboxViewMode === 'stream')
-                  ? (isLight ? '#E0F2FE' : 'rgba(14,165,233,0.18)')
-                  : (hoveredNav === 'candidates' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent'),
-                color: (inboxViewMode === 'stream')
-                  ? (isLight ? '#0284C7' : '#38BDF8')
-                  : (hoveredNav === 'candidates' ? C.textPrimary : C.textSecondary),
-                fontWeight: (inboxViewMode === 'stream') ? 700 : (hoveredNav === 'candidates' ? 600 : 500),
-                fontSize: 13.5,
-                cursor: 'pointer',
-                textAlign: 'left',
-                transform: hoveredNav === 'candidates' && (inboxViewMode !== 'stream') ? 'translateX(4px)' : 'none',
-                boxShadow: (inboxViewMode === 'stream') ? '0 1px 3px rgba(2,132,199,0.12)' : 'none',
-                transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
-              }}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <IconUsers /> <span>Candidates</span>
-              </span>
+        {/* Navigation Links with Icon-Only Mode for Collapsed State */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {/* 1. Dashboard */}
+          <button
+            type="button"
+            title="Dashboard"
+            onMouseEnter={() => setHoveredNav('dashboard')}
+            onMouseLeave={() => setHoveredNav(null)}
+            onClick={() => setInboxViewMode('dashboard')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+              gap: 12,
+              padding: sidebarCollapsed ? '10px 0' : '10px 14px',
+              borderRadius: 8,
+              border: 'none',
+              background: inboxViewMode === 'dashboard'
+                ? (isLight ? '#E0F2FE' : 'rgba(14,165,233,0.18)')
+                : (hoveredNav === 'dashboard' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent'),
+              color: inboxViewMode === 'dashboard'
+                ? (isLight ? '#0284C7' : '#38BDF8')
+                : (hoveredNav === 'dashboard' ? C.textPrimary : C.textSecondary),
+              fontWeight: inboxViewMode === 'dashboard' ? 700 : (hoveredNav === 'dashboard' ? 600 : 500),
+              fontSize: 13.5,
+              cursor: 'pointer',
+              textAlign: 'left',
+              width: '100%',
+              boxShadow: inboxViewMode === 'dashboard' ? '0 1px 3px rgba(2,132,199,0.12)' : 'none',
+              transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+          >
+            <IconHome /> {!sidebarCollapsed && <span>Dashboard</span>}
+          </button>
+
+          {/* 2. Candidates (Primary Talent Pool) */}
+          <button
+            type="button"
+            title={`Candidates (${streamCandidates.length || 264})`}
+            onMouseEnter={() => setHoveredNav('candidates')}
+            onMouseLeave={() => setHoveredNav(null)}
+            onClick={() => { setInboxViewMode('stream'); setInboxSubMode('table'); }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarCollapsed ? 'center' : 'space-between',
+              padding: sidebarCollapsed ? '10px 0' : '10px 14px',
+              borderRadius: 8,
+              border: 'none',
+              position: 'relative',
+              background: (inboxViewMode === 'stream')
+                ? (isLight ? '#E0F2FE' : 'rgba(14,165,233,0.18)')
+                : (hoveredNav === 'candidates' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent'),
+              color: (inboxViewMode === 'stream')
+                ? (isLight ? '#0284C7' : '#38BDF8')
+                : (hoveredNav === 'candidates' ? C.textPrimary : C.textSecondary),
+              fontWeight: (inboxViewMode === 'stream') ? 700 : (hoveredNav === 'candidates' ? 600 : 500),
+              fontSize: 13.5,
+              cursor: 'pointer',
+              textAlign: 'left',
+              width: '100%',
+              boxShadow: (inboxViewMode === 'stream') ? '0 1px 3px rgba(2,132,199,0.12)' : 'none',
+              transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <IconUsers /> {!sidebarCollapsed && <span>Candidates</span>}
+            </span>
+            {!sidebarCollapsed ? (
               <span style={{ fontSize: 10.5, background: '#2563EB', color: '#FFFFFF', padding: '1px 7px', borderRadius: 10, fontWeight: 800 }}>
                 {streamCandidates.length || 264}
               </span>
-            </button>
+            ) : (
+              <span style={{
+                position: 'absolute',
+                top: 7,
+                right: 14,
+                width: 7,
+                height: 7,
+                borderRadius: '50%',
+                backgroundColor: '#2563EB'
+              }} />
+            )}
+          </button>
 
-            {/* 3. Messages */}
-            <button
-              type="button"
-              onMouseEnter={() => setHoveredNav('chat')}
-              onMouseLeave={() => setHoveredNav(null)}
-              onClick={() => setInboxViewMode('chat')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '10px 14px',
-                borderRadius: 8,
-                border: 'none',
-                background: inboxViewMode === 'chat'
-                  ? (isLight ? '#E0F2FE' : 'rgba(14,165,233,0.18)')
-                  : (hoveredNav === 'chat' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent'),
-                color: inboxViewMode === 'chat'
-                  ? (isLight ? '#0284C7' : '#38BDF8')
-                  : (hoveredNav === 'chat' ? C.textPrimary : C.textSecondary),
-                fontWeight: inboxViewMode === 'chat' ? 700 : (hoveredNav === 'chat' ? 600 : 500),
-                fontSize: 13.5,
-                cursor: 'pointer',
-                textAlign: 'left',
-                transform: hoveredNav === 'chat' && inboxViewMode !== 'chat' ? 'translateX(4px)' : 'none',
-                boxShadow: inboxViewMode === 'chat' ? '0 1px 3px rgba(2,132,199,0.12)' : 'none',
-                transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
-              }}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <IconChat /> <span>Messages</span>
+          {/* 3. Messages */}
+          <button
+            type="button"
+            title={`Messages ${totalUnread > 0 ? `(${totalUnread} unread)` : ''}`}
+            onMouseEnter={() => setHoveredNav('chat')}
+            onMouseLeave={() => setHoveredNav(null)}
+            onClick={() => setInboxViewMode('chat')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarCollapsed ? 'center' : 'space-between',
+              padding: sidebarCollapsed ? '10px 0' : '10px 14px',
+              borderRadius: 8,
+              border: 'none',
+              position: 'relative',
+              background: inboxViewMode === 'chat'
+                ? (isLight ? '#E0F2FE' : 'rgba(14,165,233,0.18)')
+                : (hoveredNav === 'chat' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent'),
+              color: inboxViewMode === 'chat'
+                ? (isLight ? '#0284C7' : '#38BDF8')
+                : (hoveredNav === 'chat' ? C.textPrimary : C.textSecondary),
+              fontWeight: inboxViewMode === 'chat' ? 700 : (hoveredNav === 'chat' ? 600 : 500),
+              fontSize: 13.5,
+              cursor: 'pointer',
+              textAlign: 'left',
+              width: '100%',
+              boxShadow: inboxViewMode === 'chat' ? '0 1px 3px rgba(2,132,199,0.12)' : 'none',
+              transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <IconChat /> {!sidebarCollapsed && <span>Messages</span>}
+            </span>
+            {totalUnread > 0 && (!sidebarCollapsed ? (
+              <span style={{ fontSize: 10.5, background: '#FF5630', color: '#FFF', padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>
+                {totalUnread}
               </span>
-              {totalUnread > 0 && (
-                <span style={{ fontSize: 10.5, background: '#FF5630', color: '#FFF', padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>
-                  {totalUnread}
-                </span>
-              )}
-            </button>
+            ) : (
+              <span style={{
+                position: 'absolute',
+                top: 7,
+                right: 14,
+                width: 7,
+                height: 7,
+                borderRadius: '50%',
+                backgroundColor: '#FF5630'
+              }} />
+            ))}
+          </button>
 
-            {/* 4. Vendor Hotlists */}
-            <button
-              type="button"
-              onMouseEnter={() => setHoveredNav('hotlists')}
-              onMouseLeave={() => setHoveredNav(null)}
-              onClick={() => {
-                setInboxViewMode('hotlists')
-                fetchVendorHotlists()
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '10px 14px',
-                borderRadius: 8,
-                border: 'none',
-                background: inboxViewMode === 'hotlists'
-                  ? (isLight ? '#CCFBF1' : 'rgba(13,148,136,0.18)')
-                  : (hoveredNav === 'hotlists' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent'),
-                color: inboxViewMode === 'hotlists'
-                  ? '#0D9488'
-                  : (hoveredNav === 'hotlists' ? C.textPrimary : C.textSecondary),
-                fontWeight: inboxViewMode === 'hotlists' ? 700 : (hoveredNav === 'hotlists' ? 600 : 500),
-                fontSize: 13.5,
-                cursor: 'pointer',
-                textAlign: 'left',
-                transform: hoveredNav === 'hotlists' && inboxViewMode !== 'hotlists' ? 'translateX(4px)' : 'none',
-                boxShadow: inboxViewMode === 'hotlists' ? '0 1px 3px rgba(13,148,136,0.15)' : 'none',
-                transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
-              }}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <IconBriefcase /> <span>Vendor Hotlists</span>
-              </span>
+          {/* 4. Vendor Hotlists */}
+          <button
+            type="button"
+            title={`Vendor Hotlists (${vendorHotlists.length || 0})`}
+            onMouseEnter={() => setHoveredNav('hotlists')}
+            onMouseLeave={() => setHoveredNav(null)}
+            onClick={() => {
+              setInboxViewMode('hotlists')
+              fetchVendorHotlists()
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarCollapsed ? 'center' : 'space-between',
+              padding: sidebarCollapsed ? '10px 0' : '10px 14px',
+              borderRadius: 8,
+              border: 'none',
+              position: 'relative',
+              background: inboxViewMode === 'hotlists'
+                ? (isLight ? '#CCFBF1' : 'rgba(13,148,136,0.18)')
+                : (hoveredNav === 'hotlists' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent'),
+              color: inboxViewMode === 'hotlists'
+                ? '#0D9488'
+                : (hoveredNav === 'hotlists' ? C.textPrimary : C.textSecondary),
+              fontWeight: inboxViewMode === 'hotlists' ? 700 : (hoveredNav === 'hotlists' ? 600 : 500),
+              fontSize: 13.5,
+              cursor: 'pointer',
+              textAlign: 'left',
+              width: '100%',
+              boxShadow: inboxViewMode === 'hotlists' ? '0 1px 3px rgba(13,148,136,0.15)' : 'none',
+              transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <IconBriefcase /> {!sidebarCollapsed && <span>Vendor Hotlists</span>}
+            </span>
+            {!sidebarCollapsed ? (
               <span style={{ fontSize: 10.5, background: '#0D9488', color: '#FFFFFF', padding: '1px 7px', borderRadius: 10, fontWeight: 800 }}>
                 {vendorHotlists.length || 0}
               </span>
-            </button>
+            ) : (
+              <span style={{
+                position: 'absolute',
+                top: 7,
+                right: 14,
+                width: 7,
+                height: 7,
+                borderRadius: '50%',
+                backgroundColor: '#0D9488'
+              }} />
+            )}
+          </button>
 
-
-            {/* 6. Scan Ingest */}
-            <button
-              type="button"
-              onMouseEnter={() => setHoveredNav('scaningest')}
-              onMouseLeave={() => setHoveredNav(null)}
-              onClick={() => {
-                setInboxViewMode('stream')
-                handleSyncEmailResumes()
-              }}
-              disabled={syncingEmailResumes}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                padding: '10px 14px',
-                borderRadius: 8,
-                border: 'none',
-                background: syncingEmailResumes
-                  ? 'rgba(37,99,235,0.12)'
-                  : (hoveredNav === 'scaningest' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent'),
-                color: syncingEmailResumes ? '#2563EB' : (hoveredNav === 'scaningest' ? C.textPrimary : C.textSecondary),
-                fontWeight: syncingEmailResumes ? 700 : (hoveredNav === 'scaningest' ? 600 : 500),
-                fontSize: 13.5,
-                cursor: syncingEmailResumes ? 'wait' : 'pointer',
-                textAlign: 'left',
-                transform: hoveredNav === 'scaningest' && !syncingEmailResumes ? 'translateX(4px)' : 'none',
-                transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
-              }}
-            >
-              <IconZap /> <span>{syncingEmailResumes ? 'Scanning Resumes...' : 'Scan Ingest'}</span>
-            </button>
-
-            {/* 7. Settings */}
-            <button
-              type="button"
-              onMouseEnter={() => setHoveredNav('settings')}
-              onMouseLeave={() => setHoveredNav(null)}
-              onClick={() => navigate('/ats')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                padding: '10px 14px',
-                borderRadius: 8,
-                border: 'none',
-                background: hoveredNav === 'settings' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent',
-                color: hoveredNav === 'settings' ? C.textPrimary : C.textSecondary,
-                fontWeight: hoveredNav === 'settings' ? 600 : 500,
-                fontSize: 13.5,
-                cursor: 'pointer',
-                textAlign: 'left',
-                transform: hoveredNav === 'settings' ? 'translateX(4px)' : 'none',
-                transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
-              }}
-            >
-              <IconSettings /> <span>Settings</span>
-            </button>
-          </div>
-
-          {/* Bottom Help Card matching media_1789727370931.png */}
-          <div style={{
-            marginTop: 'auto',
-            padding: '16px 14px',
-            backgroundColor: isLight ? '#F8FAFC' : '#1E293B',
-            borderRadius: 12,
-            border: `1px solid ${C.border}`,
-            textAlign: 'center',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 6
-          }}>
-            <div style={{
-              width: 34,
-              height: 34,
-              borderRadius: '50%',
-              backgroundColor: '#EFF6FF',
-              color: '#2563EB',
+          {/* 5. Scan Ingest */}
+          <button
+            type="button"
+            title="Scan Ingest"
+            onMouseEnter={() => setHoveredNav('scaningest')}
+            onMouseLeave={() => setHoveredNav(null)}
+            onClick={() => {
+              setInboxViewMode('stream')
+              handleSyncEmailResumes()
+            }}
+            disabled={syncingEmailResumes}
+            style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 15,
-              fontWeight: 800
-            }}>
-              ?
-            </div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: C.textPrimary }}>
-              Need Help?
-            </div>
-            <div style={{ fontSize: 11.5, color: C.textSecondary, marginBottom: 4 }}>
-              Reach out anytime.
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                window.location.href = 'mailto:omkesh@coolsofttech.com?subject=SmartHire%20Support%20Request'
-              }}
-              style={{
-                width: '100%',
-                backgroundColor: '#2563EB',
-                color: '#FFF',
-                border: 'none',
-                borderRadius: 8,
-                padding: '7px 12px',
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: 'pointer',
-                boxShadow: '0 2px 4px rgba(37, 99, 235, 0.25)'
-              }}
-            >
-              Contact Support
-            </button>
-          </div>
-        </aside>
-      )}
+              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+              gap: 12,
+              padding: sidebarCollapsed ? '10px 0' : '10px 14px',
+              borderRadius: 8,
+              border: 'none',
+              background: syncingEmailResumes
+                ? 'rgba(37,99,235,0.12)'
+                : (hoveredNav === 'scaningest' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent'),
+              color: syncingEmailResumes ? '#2563EB' : (hoveredNav === 'scaningest' ? C.textPrimary : C.textSecondary),
+              fontWeight: syncingEmailResumes ? 700 : (hoveredNav === 'scaningest' ? 600 : 500),
+              fontSize: 13.5,
+              cursor: syncingEmailResumes ? 'wait' : 'pointer',
+              textAlign: 'left',
+              width: '100%',
+              transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+          >
+            <IconZap /> {!sidebarCollapsed && <span>{syncingEmailResumes ? 'Scanning...' : 'Scan Ingest'}</span>}
+          </button>
+
+          {/* 6. Settings */}
+          <button
+            type="button"
+            title="Settings"
+            onMouseEnter={() => setHoveredNav('settings')}
+            onMouseLeave={() => setHoveredNav(null)}
+            onClick={() => navigate('/ats')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+              gap: 12,
+              padding: sidebarCollapsed ? '10px 0' : '10px 14px',
+              borderRadius: 8,
+              border: 'none',
+              background: hoveredNav === 'settings' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent',
+              color: hoveredNav === 'settings' ? C.textPrimary : C.textSecondary,
+              fontWeight: hoveredNav === 'settings' ? 600 : 500,
+              fontSize: 13.5,
+              cursor: 'pointer',
+              textAlign: 'left',
+              width: '100%',
+              transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+          >
+            <IconSettings /> {!sidebarCollapsed && <span>Settings</span>}
+          </button>
+        </div>
+
+        {/* Bottom 1-Click Sidebar Collapse / Expand Toggle */}
+        <div style={{ marginTop: 'auto', paddingTop: 16 }}>
+          <button
+            type="button"
+            onClick={handleToggleSidebar}
+            title={sidebarCollapsed ? "Expand Sidebar (1-Click)" : "Collapse Sidebar (1-Click)"}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+              gap: 10,
+              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
+              borderRadius: 8,
+              border: `1px solid ${C.border}`,
+              backgroundColor: isLight ? '#F8FAFC' : 'rgba(255,255,255,0.04)',
+              color: C.textSecondary,
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isLight ? '#F1F5F9' : 'rgba(255,255,255,0.08)'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isLight ? '#F8FAFC' : 'rgba(255,255,255,0.04)'}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              {sidebarCollapsed ? (
+                <>
+                  <polyline points="13 17 18 12 13 7"></polyline>
+                  <polyline points="6 17 11 12 6 7"></polyline>
+                </>
+              ) : (
+                <>
+                  <polyline points="11 17 6 12 11 7"></polyline>
+                  <polyline points="18 17 13 12 18 7"></polyline>
+                </>
+              )}
+            </svg>
+            {!sidebarCollapsed && <span>Collapse Sidebar</span>}
+          </button>
+        </div>
+      </aside>
 
       {/* 2. Main Right Container */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, minHeight: 0 }}>
@@ -6396,7 +6505,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <button
               type="button"
-              onClick={() => setMinimalsSidebarOpen(o => !o)}
+              onClick={handleToggleSidebar}
               style={{
                 background: 'transparent',
                 border: 'none',
@@ -6407,7 +6516,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 padding: 6,
                 borderRadius: 8
               }}
-              title="Toggle Sidebar"
+              title={sidebarCollapsed ? "Expand Sidebar (1-Click)" : "Collapse Sidebar (1-Click)"}
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="3" y1="12" x2="21" y2="12"></line>
