@@ -49,8 +49,74 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
    - **NEVER** add random decorative Unicode emojis or symbols (e.g. 🏛️, 🚗, 🧠, 🤖, ⭐, ⚡, 🎯, 🛡️, 👑, 🥇, 🥈, 🥉, 🏆, 🔥, etc.) to labels, dropdown options, table badges, card headers, or UI elements unless explicitly asked by the user.
    - The platform is an enterprise-grade B2B recruiting ATS (like Zoho Recruit, Workday, Linear). All UI elements must maintain clean, modern corporate aesthetics with subtle typography, sleek color palettes, and standard SVG line icons.
 
+9. **Excel-Style Tabular Structure for Hotlists & Data Views (MANDATORY)**:
+   - All vendor hotlists and bench candidate data must be displayed in an authentic Excel-style spreadsheet grid (`border-collapse: collapse`, `border: 1px solid #CBD5E1` on table, headers, and cells).
+   - Headers: solid `#F1F5F9` background, uppercase bold `#334155` typography with crisp grid borders.
+   - Rows: compact height (36px - 42px), alternating zebra striping (`#FFFFFF` & `#F8FAFC`), blue hover cell highlight (`#EFF6FF`).
+   - Columns: `Sl. No (#)`, `Candidate Name`, `Skill / Role`, `Total Exp`, `Location`, `Relocation`, `Visa Status`, `Vendor / Agency`, `Rate`, `Actions`.
+   - Never render large card-like blocks, bloated avatars, or multi-line card designs inside tabular cells. Keep it crisp, compact, and scannable.
+
+10. **Collapsible Navigation Sidebar & Clean Branding**:
+    - The left navigation sidebar must support 1-click collapse/expand between standard width (`240px`) and compact icon dock (`68px`), with smooth CSS transitions.
+    - Top bar hamburger button `☰` and sidebar toggle button must seamlessly switch states.
+    - Never include unrequested "Need Help? Contact Support" boxes at the bottom of the sidebar.
+    - The brand logo icon must NEVER include arbitrary letters like "M.". Use a sleek, modern ATS / Briefcase corporate SVG glyph.
+
+11. **Resume Bullet Point Integrity**:
+    - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
+    - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
+
 
 ## Recent Changes
+
+### 2026-09-24 — 1-Click Collapsible Sidebar Dock, Excel-Style Vendor Hotlists Grid, Clean ATS Branding & Resume Bullet Point Engine
+- **Context & Objectives**:
+  - User requested critical ATS design refinements and UI improvements:
+    1. **1-Click Collapsible Sidebar**: Support smooth collapsing of the left navigation sidebar into a compact 68px icon dock with tooltips and badge dots, freeing up 95%+ of the screen width for candidate and hotlist tables. Works with 1-click from sidebar toggle or top navbar hamburger button.
+    2. **Excel-Style Vendor Hotlists Table (Image 2)**: Replaced card-like bench list cells with an authentic Excel-style spreadsheet grid (`border-collapse: collapse`, `#CBD5E1` cell borders, compact 38px row height, alternating zebra striping `#FFFFFF` & `#F8FAFC`, hover blue highlight `#EFF6FF`). Columns: `Sl. No (#)`, `Candidate Name`, `Skill / Role`, `Total Exp`, `Location`, `Relocation`, `Visa Status`, `Vendor / Agency`, `Rate`, `Actions`. Added 1-click `Export Excel` button.
+    3. **Remove Unrequested UI Elements**: Removed the unrequested "M." letter from the logo (replaced with clean corporate ATS briefcase SVG icon) and completely removed the "Need Help? Contact Support" card at the bottom of the sidebar.
+    4. **Resume Responsibilities Bullet Points**: Formatted every responsibility line in resume view with distinct bullet points (`•`) and proper indentation.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-CirZ4-CM.js`).
+  - Git committed (`71ef04e`) and pushed to GitHub `origin/main`.
+  - Deployed to AWS Lightsail server (`34.194.119.199`), extracted into webroot `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Pruned old bundles (kept 4 latest), flushed PM2 logs, vacuumed journals, reloaded PM2 `smarthire-ats`.
+  - Verified live domain `https://smarthireus.com` returns HTTP 200 with bundle `index-CirZ4-CM.js`.
+  - Verified live `/api/recruiter/vendor-hotlists` returns JSON data with HTTP 200.
+
+### 2026-09-24 — Career Gap Calculation Fix, Monster Resume Styling, Vendor Hotlists Viewport Fix, Fast Scan Ingestion & Expired Requisition Cleanup
+- **Context & Objectives**:
+  - User requested 5 critical ATS improvements and fixes with screenshots from `smarthireus.com/inbox`:
+    1. **Career History & Gap Calculation**: Explain gap calculation logic (end-to-start) and eliminate fake 18-month gaps (e.g. between CCS Medical and Caesars Entertainment, both July 2018) and false gaps with degrees/education.
+    2. **Monster-Style Resume Formatting**: User reported resume formatting had raw text. Requested bold project lines (`font-weight: 800`), gray subtitle lines for location & dates, and rounded skill pill capsules (`border-radius: 20px`) with yellow keyword highlights (`#FEF08A`).
+    3. **Vendor Hotlists Screen Blank**: Clicking "Vendor Hotlists" displayed a blank white screen.
+    4. **Scan Ingest Hanging**: Left sidebar "Scanning Resumes..." hung indefinitely due to unconstrained IMAP socket timeouts.
+    5. **Closed Requisitions Recommended**: Expired positions (e.g. `Req #158988`, `Req #159023`, etc.) were still recommended in candidate rows and notification bells.
+- **Root Cause & Key Deliverables**:
+  - **Career Gap Engine & Education Filter (`RecruiterInbox.jsx`)**:
+    - Root cause: Character class regex `[–\-—to]+` split words containing `t` or `o` (`Oct` -> `Oc` and ` 2017 `), distorting end date to `Jan 2017`.
+    - Replaced with word-boundary regex: `/^(.*?)\s*(?:(?:\bto\b)|[–\-—])\s*(.*)$/i`.
+    - Added comprehensive education filter ignoring degree lines (`Bachelor`, `Master`, `B.Tech`, `University`, etc.) from work role extraction.
+    - Verified gap between CCS Medical (ended July 2018) and Caesars Entertainment (started July 2018) is now strictly 0 months.
+  - **Monster-Style Resume Formatting (`highlightResumeText`)**:
+    - Structured work experience entries: line 1 (Job Title & Company in bold uppercase), line 2 (Location & Dates in muted gray subtitle), followed by bullet points.
+    - Rendered technical skills as rounded pill badges (`border-radius: 20px`, white background, clean border) with `#FEF08A` yellow keyword highlights.
+  - **Vendor Hotlists Container Fix**:
+    - Discovered `{inboxViewMode === 'hotlists' && renderVendorHotlistsView()}` was wrapped inside `{inboxViewMode === 'stream' && (...)`. Moved both `leaderboard` and `hotlists` view modes outside `stream`, allowing the Big Data Table to render immediately.
+  - **Fast Scan Ingest & Timeout Protection**:
+    - Added 15s `AbortController` timeout to `handleSyncEmailResumes` in `RecruiterInbox.jsx`.
+    - Added attachment hint filter in `email-imap-scraper.js` skipping full RFC822 downloads for emails without document attachments, and reduced command timeouts to 8-10s.
+  - **Closed Requisition Match Elimination**:
+    - Marked 57 expired positions in `server/jobs.json` as `Closed` with `closeReason: "Deadline Expired"`.
+    - Swept `notifications.json` resetting stale notifications for closed jobs to `General Talent Pool`.
+    - Guarded `currentReqId`, `activeTargetJob`, and `drawerReqId` so candidate details and notifications only link to active open requisitions.
+- **Verification & Deployment**:
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-DwBSl0E-.js`).
+  - Git committed (`5937218`) and pushed to GitHub `origin/main`.
+  - Deployed to AWS Lightsail server (`34.194.119.199`), extracted into `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Pruned old bundles (kept 3 latest), vacuumed journals, flushed PM2 logs, reloaded PM2 `smarthire-ats`.
+  - Verified live domain `https://smarthireus.com` returns HTTP 200 with bundle `index-DwBSl0E-.js`.
+  - Verified live `/api/notifications` and `/api/recruiter/vendor-hotlists` endpoints.
 
 ### 2026-09-24 — COOLSOFT LLC Email Branding, Candidate Email Fix, Local Candidate Location Matching, Monster Profile Format & Vendor Hotlists Big Data Hub
 - **Context & Objectives**:
