@@ -598,15 +598,15 @@ export async function scrapeResumesFromIMAP({
           for (let rIdx = 0; rIdx < parsedResumes.length; rIdx++) {
             const r = parsedResumes[rIdx];
 
-            // Try matching this resume to a profile in the email body
+            // Try matching this resume to a profile in the email body by name tokens
             let matchedProfile = bodyProfiles.find(bp => {
               if (!bp.name) return false;
-              const firstPart = bp.name.split(' ')[0].toLowerCase();
-              return r.filename.toLowerCase().includes(firstPart);
+              const nameParts = bp.name.toLowerCase().split(/\s+/).filter(p => p.length >= 3);
+              return nameParts.some(part => r.filename.toLowerCase().includes(part));
             });
 
-            // Fallback: match by index if counts align
-            if (!matchedProfile && bodyProfiles.length > rIdx) {
+            // Fallback: only match by index if total counts match exactly
+            if (!matchedProfile && bodyProfiles.length === parsedResumes.length) {
               matchedProfile = bodyProfiles[rIdx];
             }
 

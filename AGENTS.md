@@ -52,6 +52,39 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-23 — Multi-Candidate Bench Email Ingestion, Default Newest Sort, Closed Job Match Elimination & Fast Scan Ingest
+- **Context & Objectives**:
+  - User reported 4 key issues with reference screenshot from Yahoo Mail:
+    1. **Multi-candidate bench emails not extracted**: Emails from vendors (e.g. Paul Wilson `kvict7797@gmail.com`) with multiple candidate resumes attached (`VENKATA.docx`, `Madhuri Charugundla.docx`, `MOUNIKA KUNDURU.docx`, `ANURAG.docx`, `DhirenRaval.pdf`) were either missing or only 1 person was stored under the vendor's name.
+    2. **New candidates not at top**: Candidates were sorted by matchScore by default, leaving older high-score candidates stuck at the top and pushing new ones down.
+    3. **Closed requisitions showing in matching**: Previously created candidates with stored `targetReqId` pointing to closed jobs (e.g. `159079`, `159078`) were still displaying the closed req name and match percentage.
+    4. **Notifications empty & Scan Ingest hanging**: Notification bell was not displaying notifications due to object/array schema mismatch, and clicking "Scan Ingest" hung because full RFC822 was downloaded for every email without timeouts.
+- **Root Cause & Key Deliverables**:
+  - **Multi-Candidate & Bench List Extractor (`email-imap-scraper.js`)**:
+    - Rewrote attachment and profile parser to support multiple resumes per email.
+    - Matches each resume attachment to candidate profile blocks in the email body or extracts candidate names directly from filenames/resume headers (`Venkata`, `Mounika Kunduru`, `Madhuri Charugundla`, `Anurag`, `Dhiren Raval`).
+    - Fixed `clean-mime.js` which previously restricted `'resume'` to only the first document and categorized all subsequent `.docx`/`.pdf` files as `'other'`.
+    - Ingested all 5 candidates independently with their respective resume attachments, skills, role, phone, and direct email.
+  - **Fast Scan Ingest & Timeout Guard**:
+    - Added 25-second timeout protection to `sendCommand` in IMAP scraper to prevent network hangs.
+    - Skips downloading full RFC822 payloads for emails without attachments, keeping them unread and speeding up scans from 2+ minutes to 3-5 seconds.
+    - Expanded search scope (`maxEmails: 150-180`) so recently received emails are not truncated.
+  - **Default "Newest First" Sorting**:
+    - Set default `sortOption` to `'date_desc'` in `RecruiterInbox.jsx`, evaluating `createdAt`, `receivedAt`, and `date` with fallback to `matchScore`. Newly ingested candidates immediately appear at row 1.
+  - **Closed Requisition Match Elimination**:
+    - Updated candidate table row in `RecruiterInbox.jsx` to verify if `targetReqId` corresponds to an active, unexpired job via `isJobActiveAndOpen`.
+    - If job is closed or unassigned, cleanly displays `Talent Pool` / `General Sourcing` / `No Active Requisition Match` with a neutral pill, completely eliminating fake matches.
+    - Cleaned up stored `targetReqId` in `candidates.json` for expired requisitions (`159079`, `159078`, `159077`, `159074`, `159073`).
+  - **Live Notifications Array Fix**:
+    - Fixed `RecruiterInbox.jsx` to handle both direct array `data` and `{ notifications: [...] }`.
+    - Live verified `/api/notifications` returns real-time candidate ingestion alerts.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-Bx6jvJTN.js`).
+  - Git committed and pushed to GitHub `origin/main`.
+  - Deployed to AWS Lightsail server (`34.194.119.199`), extracted into webroot `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Pruned old bundles (5 latest kept), deleted archives immediately (free disk: 52%, 8.9GB available).
+  - Reloaded PM2 `smarthire-ats`. Verified HTTP 200 on `https://smarthireus.com/assets/index-Bx6jvJTN.js`.
+
 ### 2026-09-22 — Closed/Banked Job Match Filtering, IMAP Unread Attachment Guard, Dynamic Candidate Notifications & Profile Photo Upload
 - **Context & Objectives**:
   - User requested 5 key refinements across ATS workflows:

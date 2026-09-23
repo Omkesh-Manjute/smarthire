@@ -8640,7 +8640,7 @@ app.get('/api/recruiter/email-streams', (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════════
 // CORE RESUME HARVESTER: INBOX & SPAM (BULK) SYNC WITH BEST-FIT AI MATCHING
 // ═══════════════════════════════════════════════════════════════════════════════
-async function syncEmailResumesInternal(recruiterEmail = 'omkesh@coolsofttech.com', scanFolders = ['INBOX', 'SPAM'], sendAutoAck = false, maxEmails = 25) {
+async function syncEmailResumesInternal(recruiterEmail = 'omkesh@coolsofttech.com', scanFolders = ['INBOX', 'SPAM'], sendAutoAck = false, maxEmails = 150) {
   const cfg = emailConfigsStore[recruiterEmail] || emailConfigsStore['omkesh@coolsofttech.com'] || {};
   const activeJobs = (jobsStore || []).filter(isJobActiveAndOpen);
   let incomingHarvestedResumes = [];
@@ -8974,7 +8974,8 @@ app.post('/api/recruiter/sync-email-resumes', express.json(), async (req, res) =
 
   isEmailSyncInProgress = true;
   try {
-    const result = await syncEmailResumesInternal(recruiterEmail, scanFolders, sendAutoAck, 25);
+    const scanLimit = req.body.maxEmails ? parseInt(req.body.maxEmails) : 150;
+    const result = await syncEmailResumesInternal(recruiterEmail, scanFolders, sendAutoAck, scanLimit);
     cleanupClosedRequisitionsFromCandidates();
     res.json({
       success: true,
@@ -9002,7 +9003,7 @@ setInterval(async () => {
   try {
     isEmailSyncInProgress = true;
     console.log('\n⏰ [Auto-Harvester] Running scheduled 5-minute Yahoo Inbox & Spam sync...');
-    const result = await syncEmailResumesInternal('omkesh@coolsofttech.com', ['INBOX', 'SPAM'], false, 30);
+    const result = await syncEmailResumesInternal('omkesh@coolsofttech.com', ['INBOX', 'SPAM'], false, 150);
     cleanupClosedRequisitionsFromCandidates();
     if (result.ingestedCount > 0) {
       console.log(`✅ [Auto-Harvester] Successfully ingested ${result.ingestedCount} new resumes (${result.inboxCount} Inbox, ${result.spamCount} Spam)! Ingested candidates marked read in Yahoo.`);
