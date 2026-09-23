@@ -52,6 +52,47 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-24 — COOLSOFT LLC Email Branding, Candidate Email Fix, Local Candidate Location Matching, Monster Profile Format & Vendor Hotlists Big Data Hub
+- **Context & Objectives**:
+  - User requested 5 critical ATS features and fixes with screenshots from `smarthireus.com/inbox` and Monster:
+    1. **Recruiter Signature Bug**: Recruiter emails & job assignments sent "SmartHire" branding instead of recruiter's actual signature ("COOLSOFT LLC").
+    2. **Candidate Email Dispatch Bug**: Candidate email dispatch failed with error: `Failed to send email: saveMessages is not defined` (Screenshot 1).
+    3. **Local Candidate Matching & Priority**: Check requisition JD for location requirements (`need local`, `local candidates only`, onsite/hybrid mode), match candidate city/state vs job location, boost score (+15 pts) for confirmed local candidates, show clear badges (`📍 Confirmed Local` vs `Non-Local / Relocation Needed`), and provide a dedicated toolbar filter and sort.
+    4. **Monster-Style Resume & Left Candidate Card Redesign**:
+       - Resume View (Screenshots 2-4): Distinct header card (Name, highlighted role tags e.g. `Senior <mark>Java</mark> <mark>Developer</mark>`, City/State/Country, Phone, Email), bold uppercase section titles (`SUMMARY`, `WORK EXPERIENCE`, `EDUCATION`, `SKILLS`, `CERTIFICATIONS`), rounded skill pills, and soft pastel yellow keyword highlights (`#FEF08A`).
+       - Left Candidate Card (Screenshot 5): Clean, scannable Monster format (Checkbox, Name ↗, Role, Location with local badge, Updated timestamp, Current company/role, Previous role, Top skills pills with `+X more`), keeping deep timeline/gap analysis cleanly inside the Analytics tab.
+    5. **Vendor Hotlists Hub**: Dedicated "Vendor Hotlists" navigation tab in left sidebar with a dynamic Big Data Table to manage multiple vendors and their candidate bench lists scraped from emails or pasted.
+- **Root Cause & Key Deliverables**:
+  - **Recruiter Signature & COOLSOFT LLC Branding**:
+    - Enforced `COOLSOFT LLC` branding in `server/index.js`, `RecruiterDashboard.jsx`, `Login.jsx`, and `RecruiterInbox.jsx`.
+    - Automatically appends standard corporate signature (`With Regards,\nOmkesh Manjute\nCOOLSOFT LLC | http://www.coolsofttech.com`) to outgoing emails and prevents double-signing.
+  - **Candidate Email Dispatch Bug (`saveMessages is not defined`)**:
+    - Fixed line 9117 of `server/index.js` where `saveMessages()` and invalid object indexing crashed the request handler.
+    - Replaced with standard `messagesStore.push(...)` and safe disk persistence to `MESSAGES_FILE`. Outgoing emails now send smoothly with direct SMTP dispatch, automatic append to Yahoo IMAP "Sent" folder, and instant mailto client fallback.
+  - **Local Location Matching Engine & Priority**:
+    - Added comprehensive `US_STATES_MAP`, bidirectional state abbreviations (TX <-> Texas), and city extraction.
+    - Built `evaluateCandidateLocationFit(candidate, job)` assessing local proximity, statewide matches (e.g. Austin, TX for Texas state reqs), remote eligibility, and non-local relocation flags.
+    - Integrated with `filteredCandidates` search toolbar (`Local Fit: All`, `Confirmed Local`, `Remote`, `Relocation Needed`) and added `local_first` sort option.
+    - Rendered `renderLocationBadge` in candidate table rows and left profile card.
+  - **Monster-Style Resume & Profile Card Refactor**:
+    - Redesigned left profile dossier into Monster candidate card format with selection checkbox, star favorite, external link, current position, previous position, education, and top skills chips.
+    - Kept deep employment gap alerts and multi-point career timeline cleanly inside the Analytics tab.
+    - Formatted resume viewer with top identity card, bold uppercase section dividers, and keyword highlights.
+  - **Vendor Hotlists Big Data Hub**:
+    - Added "Vendor Hotlists" button in left sidebar with live count badge.
+    - Created dynamic Big Data Table view (`inboxViewMode === 'hotlists'`) displaying Vendor/Agency, Candidate Profile, Role/Tech Stack, Candidate Direct Contact, Location & Mobility, Rate & Availability, and Resume Doc.
+    - Actions: `Push to Req ↗`, `+ ATS` (Push to primary candidate pool), `Email Vendor`, and `Delete`.
+    - Integrated with backend endpoints (`GET /api/recruiter/vendor-hotlists`, `POST /api/recruiter/vendor-hotlists`, `POST /api/recruiter/vendor-hotlists/push-to-candidates`, `DELETE /api/recruiter/vendor-hotlists/:id`).
+    - Added automated sync in `email-imap-scraper.js` saving scraped vendor bench candidates directly to `vendor_hotlists.json`.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-BDPbTRrF.js`).
+  - Root `node build.js`: 0 errors.
+  - Git committed (`f94dc00`) and pushed to GitHub `origin/main`.
+  - Deployed to AWS Lightsail server (`34.194.119.199`), extracted into webroot `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Updated `server/index.js`, `vendor_hotlists.json`, and `email-imap-scraper.js`.
+  - Pruned old bundles (5 latest kept), deleted archives immediately (free disk: 52%, 8.9GB available).
+  - Reloaded PM2 `smarthire-ats`. Verified HTTP 200 on `https://smarthireus.com/assets/index-BDPbTRrF.js` and confirmed live `/api/recruiter/vendor-hotlists` returns JSON data.
+
 ### 2026-09-23 — Multi-Candidate Bench Email Ingestion, Default Newest Sort, Closed Job Match Elimination & Fast Scan Ingest
 - **Context & Objectives**:
   - User reported 4 key issues with reference screenshot from Yahoo Mail:
