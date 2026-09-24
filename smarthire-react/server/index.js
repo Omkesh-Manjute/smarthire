@@ -2006,6 +2006,218 @@ app.put('/api/candidates/:id', authenticateToken, (req, res) => {
   }
 })
 
+// ─── GET /api/candidates/view-resume — Inline viewer for PDF and Word (.docx/.doc) ───
+app.get('/api/candidates/view-resume', async (req, res) => {
+  try {
+    const rawFile = req.query.file || req.query.fileName || req.query.url || '';
+    const candName = req.query.name || req.query.candidateName || 'Candidate Resume';
+    if (!rawFile) {
+      return res.status(400).send('<h3>No resume file specified.</h3>');
+    }
+
+    const cleanFn = path.basename(String(rawFile).replace(/\\/g, '/'));
+    const candidateDocsDir = path.resolve(__dirname, 'uploads/candidate-docs');
+    const directUploadDir = path.resolve(__dirname, 'uploads');
+
+    let resolvedPath = null;
+    const candidatesToCheck = [
+      path.join(candidateDocsDir, cleanFn),
+      path.join(directUploadDir, cleanFn),
+      path.resolve(__dirname, '..', rawFile.replace(/^\//, '')),
+      path.resolve(__dirname, rawFile.replace(/^\//, ''))
+    ];
+
+    for (const p of candidatesToCheck) {
+      if (fs.existsSync(p) && fs.statSync(p).isFile()) {
+        resolvedPath = p;
+        break;
+      }
+    }
+
+    if (!resolvedPath) {
+      // Check partial matches in candidateDocsDir
+      if (fs.existsSync(candidateDocsDir)) {
+        const files = fs.readdirSync(candidateDocsDir);
+        const match = files.find(f => f.includes(cleanFn) || cleanFn.includes(f));
+        if (match) resolvedPath = path.join(candidateDocsDir, match);
+      }
+    }
+
+    if (!resolvedPath) {
+      return res.status(404).send(`
+        <!DOCTYPE html>
+        <html>
+        <head><title>Resume Not Found - SmartHire ATS</title></head>
+        <body style="font-family: sans-serif; text-align: center; padding: 50px; background: #0F172A; color: #F8FAFC;">
+          <h2>Document Not Found on Server</h2>
+          <p style="color: #94A3B8;">The file <code>${cleanFn}</code> could not be located in ATS storage.</p>
+        </body>
+        </html>
+      `);
+    }
+
+    const lower = resolvedPath.toLowerCase();
+
+    // 1. PDF File -> Stream inline so browser PDF reader opens it in-page
+    if (lower.endsWith('.pdf')) {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(cleanFn)}"`);
+      return fs.createReadStream(resolvedPath).pipe(res);
+    }
+
+    // 2. Word (.docx / .doc) -> Convert to elegant HTML
+    let bodyHtml = '';
+    if (lower.endsWith('.docx') || lower.endsWith('.doc')) {
+      try {
+        const mammothRes = await mammoth.convertToHtml({ path: resolvedPath });
+        bodyHtml = mammothRes.value;
+      } catch (mErr) {
+        try {
+          const rawText = await mammoth.extractRawText({ path: resolvedPath });
+          bodyHtml = rawText.value.split('\n').map(l => `<p>${l}</p>`).join('');
+        } catch (mErr2) {
+          bodyHtml = `<p>Unable to convert document automatically. Please download using the button above.</p>`;
+        }
+      }
+    } else {
+      // Plain text or other format
+      const rawText = fs.readFileSync(resolvedPath, 'utf8');
+      bodyHtml = `<pre style="white-space: pre-wrap; font-family: monospace;">${rawText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`;
+    }
+
+    const downloadUrl = `/uploads/candidate-docs/${encodeURIComponent(path.basename(resolvedPath))}`;
+
+    const docViewerHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${candName} — Resume Preview | SmartHire ATS</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #0F172A;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #1E293B;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .top-bar {
+      width: 100%;
+      background: #1E293B;
+      border-bottom: 1px solid #334155;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    }
+    .cand-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #FFFFFF;
+    }
+    .cand-name {
+      font-size: 16px;
+      font-weight: 800;
+    }
+    .file-name {
+      font-size: 12px;
+      color: #94A3B8;
+      background: #0F172A;
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: 1px solid #334155;
+    }
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn {
+      padding: 7px 14px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: none;
+      transition: all 0.15s ease;
+    }
+    .btn-download {
+      background: #2563EB;
+      color: #FFFFFF;
+    }
+    .btn-download:hover { background: #1D4ED8; }
+    .btn-print {
+      background: #334155;
+      color: #F8FAFC;
+    }
+    .btn-print:hover { background: #475569; }
+    .page-container {
+      width: 100%;
+      max-width: 900px;
+      margin: 28px auto;
+      padding: 48px 56px;
+      background: #FFFFFF;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.45);
+      border-radius: 12px;
+      line-height: 1.6;
+      font-size: 14.5px;
+    }
+    .page-container h1, .page-container h2, .page-container h3 {
+      color: #0F172A;
+      margin-top: 1.2em;
+      margin-bottom: 0.4em;
+      border-bottom: 1px solid #E2E8F0;
+      padding-bottom: 4px;
+    }
+    .page-container p { margin: 0 0 10px; color: #334155; }
+    .page-container ul, .page-container ol { padding-left: 24px; margin-bottom: 12px; }
+    .page-container li { margin-bottom: 6px; color: #334155; }
+    .page-container strong { color: #0F172A; }
+    @media print {
+      .top-bar { display: none; }
+      body { background: #FFFFFF; }
+      .page-container { box-shadow: none; margin: 0; padding: 20px; max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <div class="cand-info">
+      <div class="cand-name">${candName}</div>
+      <div class="file-name">${cleanFn}</div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      <a class="btn btn-download" href="${downloadUrl}" download="${cleanFn}">📥 Download Original File</a>
+    </div>
+  </div>
+  <div class="page-container">
+    ${bodyHtml}
+  </div>
+</body>
+</html>`;
+
+    res.send(docViewerHtml);
+  } catch (err) {
+    console.error('❌ Error viewing resume:', err);
+    res.status(500).send('Error rendering resume: ' + err.message);
+  }
+});
+
 // ─── GET /api/candidates/:id — Returns a single candidate ────────────────────
 app.get('/api/candidates/:id', authenticateToken, (req, res) => {
   const candidate = candidatesStore.find(c => c.candidate_id === req.params.id)
@@ -10343,218 +10555,7 @@ app.post('/api/recruiter/vendor-hotlists/push-to-candidates', express.json(), (r
   });
 });
 
-// GET /api/candidates/view-resume
-// Inline viewer for PDF and Word (.docx/.doc) documents so users don't have to download to disk
-app.get('/api/candidates/view-resume', async (req, res) => {
-  try {
-    const rawFile = req.query.file || req.query.fileName || req.query.url || '';
-    const candName = req.query.name || req.query.candidateName || 'Candidate Resume';
-    if (!rawFile) {
-      return res.status(400).send('<h3>No resume file specified.</h3>');
-    }
 
-    const cleanFn = path.basename(String(rawFile).replace(/\\/g, '/'));
-    const candidateDocsDir = path.resolve(__dirname, 'uploads/candidate-docs');
-    const directUploadDir = path.resolve(__dirname, 'uploads');
-
-    let resolvedPath = null;
-    const candidatesToCheck = [
-      path.join(candidateDocsDir, cleanFn),
-      path.join(directUploadDir, cleanFn),
-      path.resolve(__dirname, '..', rawFile.replace(/^\//, '')),
-      path.resolve(__dirname, rawFile.replace(/^\//, ''))
-    ];
-
-    for (const p of candidatesToCheck) {
-      if (fs.existsSync(p) && fs.statSync(p).isFile()) {
-        resolvedPath = p;
-        break;
-      }
-    }
-
-    if (!resolvedPath) {
-      // Check partial matches in candidateDocsDir
-      if (fs.existsSync(candidateDocsDir)) {
-        const files = fs.readdirSync(candidateDocsDir);
-        const match = files.find(f => f.includes(cleanFn) || cleanFn.includes(f));
-        if (match) resolvedPath = path.join(candidateDocsDir, match);
-      }
-    }
-
-    if (!resolvedPath) {
-      return res.status(404).send(`
-        <!DOCTYPE html>
-        <html>
-        <head><title>Resume Not Found - SmartHire ATS</title></head>
-        <body style="font-family: sans-serif; text-align: center; padding: 50px; background: #0F172A; color: #F8FAFC;">
-          <h2>Document Not Found on Server</h2>
-          <p style="color: #94A3B8;">The file <code>${cleanFn}</code> could not be located in ATS storage.</p>
-        </body>
-        </html>
-      `);
-    }
-
-    const lower = resolvedPath.toLowerCase();
-
-    // 1. PDF File -> Stream inline so browser PDF reader opens it in-page
-    if (lower.endsWith('.pdf')) {
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(cleanFn)}"`);
-      return fs.createReadStream(resolvedPath).pipe(res);
-    }
-
-    // 2. Word (.docx / .doc) -> Convert to elegant HTML
-    let bodyHtml = '';
-    if (lower.endsWith('.docx') || lower.endsWith('.doc')) {
-      try {
-        const mammothRes = await mammoth.convertToHtml({ path: resolvedPath });
-        bodyHtml = mammothRes.value;
-      } catch (mErr) {
-        try {
-          const rawText = await mammoth.extractRawText({ path: resolvedPath });
-          bodyHtml = rawText.value.split('\n').map(l => `<p>${l}</p>`).join('');
-        } catch (mErr2) {
-          bodyHtml = `<p>Unable to convert document automatically. Please download using the button above.</p>`;
-        }
-      }
-    } else {
-      // Plain text or other format
-      const rawText = fs.readFileSync(resolvedPath, 'utf8');
-      bodyHtml = `<pre style="white-space: pre-wrap; font-family: monospace;">${rawText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`;
-    }
-
-    const downloadUrl = `/uploads/candidate-docs/${encodeURIComponent(path.basename(resolvedPath))}`;
-
-    const docViewerHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${candName} — Resume Preview | SmartHire ATS</title>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: #0F172A;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      color: #1E293B;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-    }
-    .top-bar {
-      width: 100%;
-      background: #1E293B;
-      border-bottom: 1px solid #334155;
-      padding: 12px 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-    }
-    .cand-info {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      color: #FFFFFF;
-    }
-    .cand-name {
-      font-size: 16px;
-      font-weight: 800;
-    }
-    .file-name {
-      font-size: 12px;
-      color: #94A3B8;
-      background: #0F172A;
-      padding: 3px 8px;
-      border-radius: 6px;
-      border: 1px solid #334155;
-    }
-    .actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .btn {
-      padding: 7px 14px;
-      border-radius: 6px;
-      font-size: 12.5px;
-      font-weight: 700;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      border: none;
-      transition: all 0.15s ease;
-    }
-    .btn-download {
-      background: #2563EB;
-      color: #FFFFFF;
-    }
-    .btn-download:hover { background: #1D4ED8; }
-    .btn-print {
-      background: #334155;
-      color: #F8FAFC;
-    }
-    .btn-print:hover { background: #475569; }
-    .page-container {
-      width: 100%;
-      max-width: 900px;
-      margin: 28px auto;
-      padding: 48px 56px;
-      background: #FFFFFF;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.45);
-      border-radius: 12px;
-      line-height: 1.6;
-      font-size: 14.5px;
-    }
-    .page-container h1, .page-container h2, .page-container h3 {
-      color: #0F172A;
-      margin-top: 1.2em;
-      margin-bottom: 0.4em;
-      border-bottom: 1px solid #E2E8F0;
-      padding-bottom: 4px;
-    }
-    .page-container p { margin: 0 0 10px; color: #334155; }
-    .page-container ul, .page-container ol { padding-left: 24px; margin-bottom: 12px; }
-    .page-container li { margin-bottom: 6px; color: #334155; }
-    .page-container strong { color: #0F172A; }
-    @media print {
-      .top-bar { display: none; }
-      body { background: #FFFFFF; }
-      .page-container { box-shadow: none; margin: 0; padding: 20px; max-width: 100%; }
-    }
-  </style>
-</head>
-<body>
-  <div class="top-bar">
-    <div class="cand-info">
-      <div class="cand-name">${candName}</div>
-      <div class="file-name">${cleanFn}</div>
-    </div>
-    <div class="actions">
-      <button class="btn btn-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
-      <a class="btn btn-download" href="${downloadUrl}" download="${cleanFn}">📥 Download Original File</a>
-    </div>
-  </div>
-  <div class="page-container">
-    ${bodyHtml}
-  </div>
-</body>
-</html>`;
-
-    res.send(docViewerHtml);
-  } catch (err) {
-    console.error('❌ Error viewing resume:', err);
-    res.status(500).send('Error rendering resume: ' + err.message);
-  }
-});
 
 // DELETE /api/recruiter/vendor-hotlists/:id
 app.delete('/api/recruiter/vendor-hotlists/:id', (req, res) => {
