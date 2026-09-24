@@ -921,9 +921,6 @@ export default function LinkedInCareersView({
                     }}>
                       Direct Client · Enterprise
                     </span>
-                    <div style={{ fontSize: 12, color: themeTokens.textSecondary }}>
-                      Req #{resolveReqId(selectedJob.id)}
-                    </div>
                   </div>
                 </div>
 

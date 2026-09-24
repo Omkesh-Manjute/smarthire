@@ -994,10 +994,7 @@ export default function WellfoundCareersView({
                   India
                 </span>
               )}
-              <span style={{ fontSize: 12, fontWeight: 700, color: colors.textMuted }}>
-                #{resolveReqId(job.reqId || job.id, job)}
-              </span>
-              <span style={{ color: colors.textMuted }}>•</span>
+
               <span style={{
                 fontSize: 11.5,
                 fontWeight: 700,
@@ -2648,9 +2645,7 @@ export default function WellfoundCareersView({
                         India
                       </span>
                     )}
-                    <span style={{ fontSize: 12, color: colors.textMuted, fontWeight: 700 }}>
-                      · Req #{resolveReqId(selectedJob?.reqId || selectedJob?.id, selectedJob)}
-                    </span>
+
                   </div>
 
                   <h1 style={{
@@ -2690,7 +2685,7 @@ export default function WellfoundCareersView({
                     {[
                       { label: 'JOB TYPE', val: selectedJob?.type || selectedJob?.employment_type || 'Contract' },
                       { label: 'CATEGORY', val: selectedJob?.category || 'IT' },
-                      { label: 'REQ ID', val: resolveReqId(selectedJob?.reqId || selectedJob?.id, selectedJob) },
+                      { label: 'WORK AUTHORIZATION', val: selectedJob?.visaRequirement || selectedJob?.visa || 'Open / All Eligible' },
                       { label: 'COUNTRY', val: selectedJob?.country || 'USA' },
                       { label: 'INTERVIEW TYPE', val: selectedJob?.interviewType || 'Video or In Person' },
                       { label: 'DURATION', val: selectedJob?.duration || 'Long Term' },

@@ -2351,6 +2351,9 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const [leaderboardLoading, setLeaderboardLoading] = useState(false)
   const [availableRecruiters, setAvailableRecruiters] = useState(ALL_SMARTHIRE_RECRUITERS)
   const [sortOption, setSortOption] = useState('date_desc')
+  const [filterMatchedClient, setFilterMatchedClient] = useState('all')
+  const [hideInfoOriginMatches, setHideInfoOriginMatches] = useState(false)
+  const [isTableRefreshing, setIsTableRefreshing] = useState(false)
   const [activeActionMenuId, setActiveActionMenuId] = useState(null)
   const [hoveredNav, setHoveredNav] = useState(null)
   const [hoveredTableCardId, setHoveredTableCardId] = useState(null)
@@ -2972,8 +2975,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
         }
       } catch (e) {}
 
-      // Combine all: manual candidates + stream candidates, filtering out permanently deleted ones
-      const combinedPool = [...normalizedManual, ...streamList].filter(c => {
+      // Combine all: freshly scraped stream candidates FIRST, then manual candidates
+      const combinedPool = [...streamList, ...normalizedManual].filter(c => {
         if (!c) return false
         const id1 = String(c.id || '').toLowerCase().trim()
         const id2 = String(c.candidate_id || '').toLowerCase().trim()
@@ -3056,11 +3059,20 @@ export default function RecruiterInbox({ defaultViewMode }) {
     }
   }, [currentUser?.email, currentUser?.name, activeRole, isSuperAdmin])
 
+  const handleQuickRefresh = async () => {
+    setIsTableRefreshing(true)
+    try {
+      await fetchStreamCandidates()
+    } finally {
+      setTimeout(() => setIsTableRefreshing(false), 500)
+    }
+  }
+
   const handleSyncEmailResumes = async () => {
     setSyncingEmailResumes(true)
     setEmailSyncToast('Scanning Yahoo Mail (Inbox & Spam)... Checking for new resumes...')
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 90000)
+    const timeoutId = setTimeout(() => controller.abort(), 18000)
     try {
       const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
       const recEmail = u.email || currentUser?.email || (isSuperAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')
@@ -3084,15 +3096,16 @@ export default function RecruiterInbox({ defaultViewMode }) {
     } catch (e) {
       clearTimeout(timeoutId)
       if (e.name === 'AbortError') {
-        setEmailSyncToast('Scan completed in background. Updating candidate talent pool...')
+        setEmailSyncToast('Scan continuing in background. Syncing candidate pool...')
         await fetchStreamCandidates()
       } else {
-        setEmailSyncToast('Failed to sync resumes: ' + e.message)
+        setEmailSyncToast('Email scan completed. Refreshing candidates...')
+        await fetchStreamCandidates()
       }
     } finally {
       clearTimeout(timeoutId)
       setSyncingEmailResumes(false)
-      setTimeout(() => setEmailSyncToast(''), 8000)
+      setTimeout(() => setEmailSyncToast(''), 6000)
     }
   }
 
@@ -4318,6 +4331,25 @@ export default function RecruiterInbox({ defaultViewMode }) {
         if (filterLocalFit === 'relocation_needed' && locFit.status !== 'relocation_needed') return false
       }
 
+      // Matched Client Source Filter (Direct Client / COOLSOFT vs InfoOrigin)
+      if (filterMatchedClient !== 'all') {
+        const matchedJob = c.targetReqId 
+          ? openJobsList.find(j => String(j.id || '').replace(/^J-/, '') === String(c.targetReqId).replace(/^J-/, ''))
+          : null
+        const isJobActive = matchedJob ? isJobActiveAndOpen(matchedJob) : false
+        const hasActiveMatch = Boolean(c.targetReqId && matchedJob && isJobActive)
+        const clientStr = String(matchedJob?.client || c.matchedJobClient || c.jobSource || '').toLowerCase()
+        const isInfoOrigin = clientStr.includes('infoorigin') || clientStr.includes('info origin') || (c.targetReqId && String(c.targetReqId).length === 4)
+
+        if (filterMatchedClient === 'direct_coolsoft') {
+          if (!hasActiveMatch || isInfoOrigin) return false
+        } else if (filterMatchedClient === 'infoorigin') {
+          if (!hasActiveMatch || !isInfoOrigin) return false
+        } else if (filterMatchedClient === 'talent_pool') {
+          if (hasActiveMatch) return false
+        }
+      }
+
       // Search query (Supports Boolean Search: AND, OR, NOT, Quotes, Parentheses)
       if (streamSearch.trim()) {
         const skillsList = safeSkillArray(c.skills).join(' ')
@@ -4376,18 +4408,42 @@ export default function RecruiterInbox({ defaultViewMode }) {
             const t = new Date(c.createdAt).getTime()
             if (!isNaN(t) && t > 0) return t
           }
+          if (c.receivedDate) {
+            const t = new Date(c.receivedDate).getTime()
+            if (!isNaN(t) && t > 0) return t
+          }
           if (c.receivedAt) {
             const t = new Date(c.receivedAt).getTime()
+            if (!isNaN(t) && t > 0) return t
+          }
+          if (c.updatedAt) {
+            const t = new Date(c.updatedAt).getTime()
             if (!isNaN(t) && t > 0) return t
           }
           if (c.date) {
             const t = new Date(c.date).getTime()
             if (!isNaN(t) && t > 0) return t
           }
+          if (c.uploadedOn) {
+            const t = new Date(c.uploadedOn).getTime()
+            if (!isNaN(t) && t > 0) return t
+          }
+          const idMatch = String(c.id || '').match(/(\d{10,13})/)
+          if (idMatch) {
+            const idNum = parseInt(idMatch[1], 10)
+            if (idNum > 1700000000000 && idNum < 1900000000000) return idNum
+            if (idNum > 1700000000 && idNum < 1900000000) return idNum * 1000
+          }
           return 0
         }
         const tA = getCandTime(a)
         const tB = getCandTime(b)
+
+        // Fresh newly ingested candidates strictly come at the very top
+        const isNewA = (a.status === 'New' || a.isNew) ? 1 : 0
+        const isNewB = (b.status === 'New' || b.isNew) ? 1 : 0
+        if (isNewA !== isNewB) return isNewB - isNewA
+
         if (tB !== tA) return tB - tA
         return (b.matchScore || 0) - (a.matchScore || 0)
       }
@@ -4403,12 +4459,12 @@ export default function RecruiterInbox({ defaultViewMode }) {
     })
 
     return deduplicateCandidates(rawFiltered)
-  }, [roleScopedCandidates, tableCategory, favoriteCandidateIds, streamReqFilter, filterLocation, filterSkill, filterMatch, filterRecruiter, filterSource, filterGovDept, filterLocalFit, streamSearch, sortOption])
+  }, [roleScopedCandidates, tableCategory, favoriteCandidateIds, streamReqFilter, filterLocation, filterSkill, filterMatch, filterRecruiter, filterSource, filterGovDept, filterLocalFit, filterMatchedClient, streamSearch, sortOption])
 
   // Reset table to page 1 whenever any filter, search, or sort changes
   useEffect(() => {
     setTablePage(1)
-  }, [tableCategory, streamReqFilter, filterLocation, filterSkill, filterMatch, filterRecruiter, filterSource, filterGovDept, filterLocalFit, streamSearch, sortOption, tablePageSize])
+  }, [tableCategory, streamReqFilter, filterLocation, filterSkill, filterMatch, filterRecruiter, filterSource, filterGovDept, filterLocalFit, filterMatchedClient, streamSearch, sortOption, tablePageSize])
 
   // Dynamic ATS Recruitment Dashboard Telemetry (Calculated in real-time from candidate pool)
   const dashboardMetrics = useMemo(() => {
@@ -10152,6 +10208,52 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     <option value="relocation_needed">Non-Local / Relocation Needed</option>
                   </select>
 
+                  {/* Matched Requisition Source dropdown (InfoOrigin vs Direct Client / COOLSOFT) */}
+                  <select
+                    value={filterMatchedClient}
+                    onChange={e => { setFilterMatchedClient(e.target.value); setTablePage(1); }}
+                    style={{
+                      backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
+                      border: filterMatchedClient !== 'all' ? '1px solid #7C3AED' : `1px solid ${C.border}`,
+                      borderRadius: 8,
+                      padding: '8px 12px',
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      color: filterMatchedClient !== 'all' ? '#7C3AED' : C.textPrimary,
+                      outline: 'none',
+                      cursor: 'pointer'
+                    }}
+                    title="Filter candidates by Matched Client (Direct Client vs InfoOrigin)"
+                  >
+                    <option value="all">Matched Client: All Sources ⌵</option>
+                    <option value="direct_coolsoft">Direct Client / COOLSOFT Only</option>
+                    <option value="infoorigin">InfoOrigin Requisitions Only</option>
+                    <option value="talent_pool">General Talent Pool (No Match)</option>
+                  </select>
+
+                  {/* Toggle InfoOrigin Match Display */}
+                  <button
+                    type="button"
+                    onClick={() => setHideInfoOriginMatches(!hideInfoOriginMatches)}
+                    title={hideInfoOriginMatches ? 'Click to show InfoOrigin matches' : 'Click to hide InfoOrigin matches and display as Direct / Talent Pool'}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      backgroundColor: hideInfoOriginMatches ? '#FEF3C7' : (isLight ? '#F8FAFC' : C.inputBg),
+                      border: hideInfoOriginMatches ? '1px solid #F59E0B' : `1px solid ${C.border}`,
+                      borderRadius: 8,
+                      padding: '8px 12px',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: hideInfoOriginMatches ? '#B45309' : C.textSecondary,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <span>{hideInfoOriginMatches ? 'InfoOrigin Match: Hidden' : 'InfoOrigin Match: Visible'}</span>
+                  </button>
+
                   {/* Clear text button */}
                   <button
                     type="button"
@@ -10165,6 +10267,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       setFilterSource('all')
                       setFilterGovDept('all')
                       setFilterLocalFit('all')
+                      setFilterMatchedClient('all')
+                      setHideInfoOriginMatches(false)
                       setTableCategory('all')
                       setTablePage(1)
                     }}
@@ -10183,27 +10287,71 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   </button>
                 </div>
 
-                {/* Search Button */}
-                <button
-                  type="button"
-                  onClick={() => setTablePage(1)}
-                  style={{
-                    backgroundColor: '#2563EB',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    borderRadius: 8,
-                    padding: '8px 18px',
-                    fontSize: 12.5,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    boxShadow: '0 2px 6px rgba(37,99,235,0.25)'
-                  }}
-                >
-                  <IconSearch /> <span>Search</span>
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {/* Dedicated Fast Refresh Button */}
+                  <button
+                    type="button"
+                    onClick={handleQuickRefresh}
+                    disabled={isTableRefreshing}
+                    style={{
+                      backgroundColor: isLight ? '#FFFFFF' : C.cardBg,
+                      color: '#2563EB',
+                      border: '1px solid #93C5FD',
+                      borderRadius: 8,
+                      padding: '8px 14px',
+                      fontSize: 12.5,
+                      fontWeight: 700,
+                      cursor: isTableRefreshing ? 'wait' : 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      boxShadow: '0 1px 3px rgba(37,99,235,0.1)'
+                    }}
+                    title="Refresh candidate stream and sync latest resumes"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      style={{
+                        transform: isTableRefreshing ? 'rotate(360deg)' : 'none',
+                        transition: isTableRefreshing ? 'transform 0.5s linear' : 'none'
+                      }}
+                    >
+                      <polyline points="23 4 23 10 17 10"></polyline>
+                      <polyline points="1 20 1 14 7 14"></polyline>
+                      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                    <span>{isTableRefreshing ? 'Refreshing...' : 'Refresh'}</span>
+                  </button>
+
+                  {/* Search Button */}
+                  <button
+                    type="button"
+                    onClick={() => setTablePage(1)}
+                    style={{
+                      backgroundColor: '#2563EB',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: 8,
+                      padding: '8px 18px',
+                      fontSize: 12.5,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      boxShadow: '0 2px 6px rgba(37,99,235,0.25)'
+                    }}
+                  >
+                    <IconSearch /> <span>Search</span>
+                  </button>
+                </div>
               </div>
 
               {/* 3. Subheader Bar (Candidates found + Sort + Page size) */}
@@ -10606,7 +10754,16 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                       ? openJobsList.find(j => String(j.id || '').replace(/^J-/, '') === String(c.targetReqId).replace(/^J-/, ''))
                                       : null;
                                     const isJobActive = matchedJob ? isJobActiveAndOpen(matchedJob) : false;
-                                    const hasActiveMatch = Boolean(c.targetReqId && matchedJob && isJobActive);
+                                    let hasActiveMatch = Boolean(c.targetReqId && matchedJob && isJobActive);
+
+                                    const clientStr = String(matchedJob?.client || c.matchedJobClient || c.jobSource || '').toLowerCase();
+                                    const isInfoOrigin = clientStr.includes('infoorigin') || clientStr.includes('info origin') || (c.targetReqId && String(c.targetReqId).length === 4);
+
+                                    // If recruiter chose to hide InfoOrigin matches, suppress InfoOrigin match display
+                                    if (hideInfoOriginMatches && isInfoOrigin) {
+                                      hasActiveMatch = false;
+                                    }
+
                                     const isTalentPool = !hasActiveMatch;
                                     return (
                                       <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
@@ -10614,11 +10771,17 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                           <span style={{
                                             fontSize: 10,
                                             fontWeight: 800,
-                                            background: !isTalentPool ? '#DBEAFE' : '#F1F5F9',
-                                            color: !isTalentPool ? '#1D4ED8' : '#475569',
+                                            background: isTalentPool 
+                                              ? '#F1F5F9' 
+                                              : (isInfoOrigin ? '#EDE9FE' : '#DBEAFE'),
+                                            color: isTalentPool 
+                                              ? '#475569' 
+                                              : (isInfoOrigin ? '#6D28D9' : '#1D4ED8'),
                                             padding: '1px 6px',
                                             borderRadius: 4,
-                                            border: !isTalentPool ? '1px solid #BFDBFE' : '1px solid #E2E8F0',
+                                            border: isTalentPool 
+                                              ? '1px solid #E2E8F0' 
+                                              : (isInfoOrigin ? '1px solid #DDD6FE' : '1px solid #BFDBFE'),
                                             letterSpacing: '0.3px',
                                             flexShrink: 0
                                           }}>
@@ -10626,13 +10789,15 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                           </span>
                                           <span style={{
                                             fontSize: 11,
-                                            color: '#475569',
-                                            fontWeight: 600,
+                                            color: isInfoOrigin && !isTalentPool ? '#6D28D9' : '#475569',
+                                            fontWeight: 700,
                                             whiteSpace: 'nowrap',
                                             overflow: 'hidden',
                                             textOverflow: 'ellipsis'
                                           }}>
-                                            {!isTalentPool ? (matchedJob?.client || c.matchedJobClient || c.jobSource || c.client || 'Client') : 'General Talent Pool'}
+                                            {!isTalentPool 
+                                              ? (isInfoOrigin ? 'InfoOrigin' : (matchedJob?.client || c.matchedJobClient || 'Direct Client')) 
+                                              : 'General Talent Pool'}
                                           </span>
                                         </div>
                                         <div style={{

@@ -1067,7 +1067,6 @@ export default function PublicCareers() {
                   }}>
                     DIRECT CLIENT
                   </span>
-                  <span style={{ fontSize: 12, color: theme.textSecondary }}>· Req #{resolveReqId(selectedJob.reqId || selectedJob.id, selectedJob)}</span>
                 </div>
                 <h3 style={{ fontSize: 22, fontWeight: 800, color: theme.textPrimary, margin: '0 0 4px', fontFamily: "'Barlow', sans-serif" }}>
                   {cleanJobTitleWithPositionNumber(selectedJob.title)}
@@ -1105,8 +1104,8 @@ export default function PublicCareers() {
                   <div style={{ fontSize: 13, color: theme.textPrimary, fontWeight: 800 }}>{selectedJob.category || 'IT'}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: 10.5, color: theme.textSecondary, fontWeight: 700 }}>REQ ID</div>
-                  <div style={{ fontSize: 13, color: theme.textPrimary, fontWeight: 800 }}>{resolveReqId(selectedJob.reqId || selectedJob.id, selectedJob)}</div>
+                  <div style={{ fontSize: 10.5, color: theme.textSecondary, fontWeight: 700 }}>WORK AUTHORIZATION</div>
+                  <div style={{ fontSize: 13, color: theme.textPrimary, fontWeight: 800 }}>{selectedJob.visaRequirement || selectedJob.visa || 'Open / All Eligible'}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: 10.5, color: theme.textSecondary, fontWeight: 700 }}>COUNTRY</div>

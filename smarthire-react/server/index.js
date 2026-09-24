@@ -9178,7 +9178,8 @@ async function syncEmailResumesInternal(recruiterEmail = 'omkesh@coolsofttech.co
     });
 
     if (!alreadyExists) {
-      const candId = `cand-email-${Date.now().toString().slice(-5)}-${Math.floor(Math.random()*900+100)}`;
+      const nowMs = Date.now();
+      const candId = `cand-email-${nowMs}-${Math.floor(Math.random()*900+100)}`;
       const newCand = {
         id: candId,
         candidate_id: candId,
@@ -9247,7 +9248,6 @@ async function syncEmailResumesInternal(recruiterEmail = 'omkesh@coolsofttech.co
     saveNotifications();
   }
 
-
   return {
     success: true,
     ingestedCount: ingested.length,
@@ -9258,6 +9258,7 @@ async function syncEmailResumesInternal(recruiterEmail = 'omkesh@coolsofttech.co
 }
 
 let isEmailSyncInProgress = false;
+let emailSyncLockTimestamp = 0;
 
 // Remove any associations with closed / expired / banked requisitions
 function cleanupClosedRequisitionsFromCandidates() {
@@ -9354,7 +9355,8 @@ function seedPaulWilsonBenchCandidates() {
       (c.name && c.name.toLowerCase() === cand.name.toLowerCase())
     );
     if (!exists) {
-      const candId = `cand-email-${Date.now().toString().slice(-5)}-${Math.floor(Math.random()*900+100)}`;
+      const nowMs = Date.now();
+      const candId = `cand-email-${nowMs}-${Math.floor(Math.random()*900+100)}`;
       const newCand = {
         id: candId,
         candidate_id: candId,
@@ -9416,25 +9418,28 @@ function seedPaulWilsonBenchCandidates() {
 // Scans multi-folders (INBOX + SPAM / BULK) with concurrency guard & fast targeted window
 app.post('/api/recruiter/sync-email-resumes', express.json(), async (req, res) => {
   const { recruiterEmail, scanFolders = ['INBOX', 'SPAM'], sendAutoAck = false } = req.body;
-  if (isEmailSyncInProgress) {
+  const now = Date.now();
+  // If lock is held for more than 40 seconds, auto-expire it to prevent permanent UI lockup
+  if (isEmailSyncInProgress && (now - emailSyncLockTimestamp < 40000)) {
     return res.json({
       success: true,
       inProgress: true,
-      message: 'Resume scan is currently running in the background. Fresh candidates will appear momentarily.',
+      message: 'Resume scan is currently processing new emails. Fresh candidates will appear momentarily.',
       count: 0
     });
   }
 
   isEmailSyncInProgress = true;
+  emailSyncLockTimestamp = now;
   try {
-    const scanLimit = req.body.maxEmails ? parseInt(req.body.maxEmails) : 150;
+    const scanLimit = req.body.maxEmails ? parseInt(req.body.maxEmails) : 40;
     const result = await syncEmailResumesInternal(recruiterEmail, scanFolders, sendAutoAck, scanLimit);
     cleanupClosedRequisitionsFromCandidates();
     res.json({
       success: true,
       message: result.ingestedCount > 0 
         ? `Successfully ingested ${result.ingestedCount} resume(s) (${result.inboxCount} from Inbox, ${result.spamCount} recovered from Spam folder)! Marked read in Yahoo.` 
-        : `Scan complete. All candidate resumes in Inbox and Spam are indexed.`,
+        : `Scan complete. Inbox and Spam are up to date (${result.inboxCount || 0} active resumes indexed).`,
       count: result.ingestedCount,
       inboxCount: result.inboxCount,
       spamCount: result.spamCount,
@@ -9452,11 +9457,13 @@ app.post('/api/recruiter/sync-email-resumes', express.json(), async (req, res) =
 // AUTOMATED 5-MINUTE BACKGROUND EMAIL HARVESTER & SPAM RECOVERY ENGINE
 // ═══════════════════════════════════════════════════════════════════════════════
 setInterval(async () => {
-  if (isEmailSyncInProgress) return;
+  const now = Date.now();
+  if (isEmailSyncInProgress && (now - emailSyncLockTimestamp < 40000)) return;
   try {
     isEmailSyncInProgress = true;
-    console.log('\n⏰ [Auto-Harvester] Running scheduled 5-minute Yahoo Inbox sync...');
-    const result = await syncEmailResumesInternal('omkesh@coolsofttech.com', ['INBOX'], false, 60);
+    emailSyncLockTimestamp = now;
+    console.log('\n⏰ [Auto-Harvester] Running scheduled 5-minute Yahoo Inbox & Spam sync...');
+    const result = await syncEmailResumesInternal('omkesh@coolsofttech.com', ['INBOX', 'SPAM'], false, 30);
     cleanupClosedRequisitionsFromCandidates();
     if (result.ingestedCount > 0) {
       console.log(`✅ [Auto-Harvester] Successfully ingested ${result.ingestedCount} new resumes (${result.inboxCount} Inbox, ${result.spamCount} Spam)! Ingested candidates marked read in Yahoo.`);
