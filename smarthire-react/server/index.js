@@ -928,6 +928,13 @@ const KNOWN_TITLE_MAP = [
 
 function resolveReqId(rawId = '', job = {}) {
   const strId = String(rawId || job?.reqId || job?.id || '').replace('J-', '').replace('REQ-', '').trim();
+  // 1. If InfoOrigin source or authentic 4-5 digit InfoOrigin Req ID (e.g. 7589, 7588), RETURN IT DIRECTLY!
+  if (job?.source === 'InfoOrigin' || job?.client === 'InfoOrigin' || job?.company === 'InfoOrigin' || strId.startsWith('IO-')) {
+    return strId;
+  }
+  if (/^[1-9]\d{3,4}$/.test(strId) && parseInt(strId, 10) < 50000) {
+    return strId;
+  }
   if (/^1[56]\d{4}$/.test(strId) || (/^\d{6}$/.test(strId) && !strId.startsWith('178'))) {
     return strId;
   }
@@ -3954,13 +3961,24 @@ app.get('/api/jobs', (_req, res) => {
     const cleanT = cleanJobTitleWithPositionNumber(job.title, job);
     const cleanI = resolveReqId(job.id || job.reqId || job.title, job);
     const pNum = job.positionNumber || extractPositionNumber(cleanT, job.description);
-    const dedupeKey = `req_${cleanI}`;
+    
+    // Normalize source branding
+    const jobSource = job.source === 'InfoOrigin' || job.client === 'InfoOrigin'
+      ? 'InfoOrigin'
+      : (job.source === 'COOLSOFT' || job.source === 'jobsinhand' || job.company === 'COOLSOFT LLC' ? 'COOLSOFT' : (job.source || 'COOLSOFT'));
+    const jobCompany = jobSource === 'InfoOrigin' ? 'InfoOrigin' : (job.company || 'COOLSOFT LLC');
+    const jobClient = jobSource === 'InfoOrigin' ? 'InfoOrigin' : (job.client || 'Verified Client');
+
+    const dedupeKey = `req_${jobSource}_${cleanI}`;
     if (!uniqueMap.has(dedupeKey)) {
       uniqueMap.set(dedupeKey, {
         ...job,
         id: cleanI,
         reqId: cleanI,
         title: cleanT,
+        source: jobSource,
+        company: jobCompany,
+        client: jobClient,
         positionNumber: pNum || ''
       });
     }
@@ -3973,9 +3991,29 @@ app.get('/api/jobs', (_req, res) => {
     const bNum = parseInt(String(b.reqId || b.id).replace(/\D/g, ''), 10) || 0;
     return bNum - aNum;
   });
+
+  const coolsoftCount = sorted.filter(j => j.source === 'COOLSOFT' || j.source === 'jobsinhand' || j.company === 'COOLSOFT LLC').length;
+  const infooriginCount = sorted.filter(j => j.source === 'InfoOrigin' || j.client === 'InfoOrigin').length;
+
+  const requestedSource = _req.query?.source;
+  let finalJobs = sorted;
+  if (requestedSource && requestedSource !== 'All') {
+    finalJobs = sorted.filter(j =>
+      (j.source || '').toLowerCase() === requestedSource.toLowerCase() ||
+      (j.client || '').toLowerCase() === requestedSource.toLowerCase() ||
+      (j.company || '').toLowerCase() === requestedSource.toLowerCase()
+    );
+  }
+
   res.json({
     success: true,
-    jobs: sorted
+    total: finalJobs.length,
+    counts: {
+      total: sorted.length,
+      coolsoft: coolsoftCount,
+      infoorigin: infooriginCount
+    },
+    jobs: finalJobs
   });
 });
 
@@ -7641,6 +7679,44 @@ app.post(['/api/jobs/scrape', '/api/jobs/ingestion/trigger'], async (req, res) =
     console.error('Ingestion error:', err);
     res.status(500).json({ success: false, message: 'Ingestion failed: ' + err.message });
   }
+});
+
+// Dedicated InfoOrigin Scraper Endpoint
+app.post('/api/jobs/scrape-infoorigin', async (req, res) => {
+  try {
+    console.log('⚡ [API] Manual InfoOrigin scrape trigger received...');
+    const { runInfoOriginIngestion } = await import('./jobs-ingestion/run-ingestion.js');
+    const result = await runInfoOriginIngestion();
+    await loadJobsFromDisk();
+    res.json(result);
+  } catch (err) {
+    console.error('InfoOrigin scrape error:', err);
+    res.status(500).json({ success: false, message: 'InfoOrigin scrape failed: ' + err.message });
+  }
+});
+
+app.get('/api/jobs/scrape-infoorigin', async (req, res) => {
+  try {
+    console.log('⚡ [API GET] Manual InfoOrigin scrape trigger received...');
+    const { runInfoOriginIngestion } = await import('./jobs-ingestion/run-ingestion.js');
+    const result = await runInfoOriginIngestion();
+    await loadJobsFromDisk();
+    res.json(result);
+  } catch (err) {
+    console.error('InfoOrigin scrape error:', err);
+    res.status(500).json({ success: false, message: 'InfoOrigin scrape failed: ' + err.message });
+  }
+});
+
+app.get('/api/jobs/sources-summary', (_req, res) => {
+  const coolsoftCount = jobsStore.filter(j => j && (j.source === 'COOLSOFT' || j.source === 'jobsinhand' || j.company === 'COOLSOFT LLC')).length;
+  const infooriginCount = jobsStore.filter(j => j && (j.source === 'InfoOrigin' || j.client === 'InfoOrigin')).length;
+  res.json({
+    success: true,
+    total: jobsStore.length,
+    coolsoft: coolsoftCount,
+    infoorigin: infooriginCount
+  });
 });
 
 app.get('/api/jobs/ingestion/status', (req, res) => {

@@ -3812,6 +3812,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   id: jId,
                   title: j.title || j.role || `Requisition #${jId}`,
                   client: j.client || j.department || 'Client',
+                  source: j.source || (j.client === 'InfoOrigin' ? 'InfoOrigin' : 'COOLSOFT'),
                   rate: j.rate || j.payRate || j.budget || '$75/hr',
                   location: j.location || 'Remote',
                   skills: safeSkillArray(j.skills).length > 0 ? safeSkillArray(j.skills) : ['Java', 'SQL']

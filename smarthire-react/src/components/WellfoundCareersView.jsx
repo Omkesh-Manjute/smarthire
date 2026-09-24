@@ -90,8 +90,14 @@ function LinkedInIcon({ size = 18, color = 'currentColor' }) {
   )
 }
 
-// ─── Dynamic Client Domain Resolver (Eliminates Repetitive "Direct Client") ─
 export const resolveClientDomainName = (job) => {
+  if (job?.source === 'InfoOrigin' || job?.client === 'InfoOrigin' || job?.company === 'InfoOrigin') {
+    return 'InfoOrigin'
+  }
+  if (job?.source === 'COOLSOFT' || job?.source === 'jobsinhand' || job?.company === 'COOLSOFT LLC' || job?.client === 'COOLSOFT' || job?.client === 'COOLSOFT LLC') {
+    return 'COOLSOFT LLC'
+  }
+
   const text = `${job?.title || ''} ${(job?.skills || []).join(' ')} ${job?.rawDescription || job?.description || ''}`.toLowerCase()
 
   if (/health|clinical|med|epic|cerner|dhhs|care|patient|hospital|physician/i.test(text)) {
@@ -166,9 +172,16 @@ function CompanyLogo({ job, size = 42 }) {
   const palette = LOGO_PALETTES[hash % LOGO_PALETTES.length]
   const cleanTitle = (job?.title || 'Engineer').replace(/[^a-zA-Z]/g, ' ').trim()
   const words = cleanTitle.split(/\s+/).filter(Boolean)
-  const letters = words.length >= 2 
-    ? (words[0][0] + words[1][0]).toUpperCase()
-    : cleanTitle.slice(0, 2).toUpperCase()
+  let letters = 'IT'
+  if (job?.source === 'InfoOrigin' || job?.client === 'InfoOrigin') {
+    letters = 'IO'
+  } else if (job?.source === 'COOLSOFT' || job?.source === 'jobsinhand' || job?.company === 'COOLSOFT LLC') {
+    letters = 'CS'
+  } else {
+    letters = words.length >= 2 
+      ? (words[0][0] + words[1][0]).toUpperCase()
+      : cleanTitle.slice(0, 2).toUpperCase()
+  }
 
   return (
     <div style={{
@@ -801,7 +814,21 @@ export default function WellfoundCareersView({
               flexWrap: 'wrap',
               gap: 6
             }}>
-              <span style={{ fontWeight: 600, color: colors.textPrimary }}>{domainName}</span>
+              <span style={{
+                fontSize: 11,
+                fontWeight: 800,
+                padding: '2px 7px',
+                borderRadius: 4,
+                backgroundColor: (job.source === 'InfoOrigin' || job.client === 'InfoOrigin' || job.company === 'InfoOrigin') ? '#EEF2FF' : '#EFF6FF',
+                color: (job.source === 'InfoOrigin' || job.client === 'InfoOrigin' || job.company === 'InfoOrigin') ? '#4F46E5' : '#1D4ED8',
+                border: `1px solid ${(job.source === 'InfoOrigin' || job.client === 'InfoOrigin' || job.company === 'InfoOrigin') ? '#C7D2FE' : '#BFDBFE'}`,
+                letterSpacing: '0.02em'
+              }}>
+                {domainName}
+              </span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: colors.textMuted }}>
+                #{resolveReqId(job.reqId || job.id, job)}
+              </span>
               <span style={{ color: colors.textMuted }}>•</span>
               <span style={{
                 fontSize: 11.5,
@@ -2309,7 +2336,26 @@ export default function WellfoundCareersView({
                 </div>
 
                 {/* ── 2. JOB TITLE & METADATA ROW ── */}
-                <div style={{ marginBottom: 24 }}>
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <span style={{
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      color: (selectedJob?.source === 'InfoOrigin' || selectedJob?.client === 'InfoOrigin' || selectedJob?.company === 'InfoOrigin') ? '#4F46E5' : '#1D4ED8',
+                      background: (selectedJob?.source === 'InfoOrigin' || selectedJob?.client === 'InfoOrigin' || selectedJob?.company === 'InfoOrigin') ? (isLight ? '#EEF2FF' : 'rgba(79, 70, 229, 0.2)') : (isLight ? '#EFF6FF' : 'rgba(29, 78, 216, 0.2)'),
+                      border: `1px solid ${(selectedJob?.source === 'InfoOrigin' || selectedJob?.client === 'InfoOrigin' || selectedJob?.company === 'InfoOrigin') ? '#C7D2FE' : '#BFDBFE'}`,
+                      padding: '2px 8px',
+                      borderRadius: 4
+                    }}>
+                      {(selectedJob?.source === 'InfoOrigin' || selectedJob?.client === 'InfoOrigin' || selectedJob?.company === 'InfoOrigin') ? 'INFO ORIGIN' : 'COOLSOFT LLC'}
+                    </span>
+                    <span style={{ fontSize: 12, color: colors.textMuted, fontWeight: 700 }}>
+                      · Req #{resolveReqId(selectedJob?.reqId || selectedJob?.id, selectedJob)}
+                    </span>
+                  </div>
+
                   <h1 style={{
                     fontSize: 'clamp(24px, 3vw, 32px)',
                     fontWeight: 900,
@@ -2320,6 +2366,51 @@ export default function WellfoundCareersView({
                   }}>
                     {selCleanTitle}
                   </h1>
+
+                {/* ── POSITION OVERVIEW GRID (MATCHING SCREENSHOT 2) ── */}
+                <div style={{
+                  margin: '18px 0 22px',
+                  background: isLight ? '#F8FAFC' : '#161F30',
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: 12,
+                  padding: '16px 18px'
+                }}>
+                  <div style={{
+                    fontSize: 12,
+                    fontWeight: 800,
+                    color: colors.textPrimary,
+                    marginBottom: 12,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
+                    Position Overview
+                  </div>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+                    gap: '12px 14px'
+                  }}>
+                    {[
+                      { label: 'JOB TYPE', val: selectedJob?.type || selectedJob?.employment_type || 'Contract' },
+                      { label: 'CATEGORY', val: selectedJob?.category || 'IT' },
+                      { label: 'REQ ID', val: resolveReqId(selectedJob?.reqId || selectedJob?.id, selectedJob) },
+                      { label: 'COUNTRY', val: selectedJob?.country || 'USA' },
+                      { label: 'INTERVIEW TYPE', val: selectedJob?.interviewType || 'Video or In Person' },
+                      { label: 'DURATION', val: selectedJob?.duration || 'Long Term' },
+                      { label: 'WORK PREFERENCE', val: selectedJob?.workMode || selectedJob?.work_mode || 'Onsite' },
+                      { label: 'WORK LOCATION', val: selLoc }
+                    ].map(item => (
+                      <div key={item.label}>
+                        <div style={{ fontSize: 10.5, color: colors.textMuted, fontWeight: 700, letterSpacing: '0.04em' }}>
+                          {item.label}
+                        </div>
+                        <div style={{ fontSize: 13, color: colors.textPrimary, fontWeight: 800, marginTop: 2 }}>
+                          {item.val}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
                   <div style={{
                     display: 'flex',

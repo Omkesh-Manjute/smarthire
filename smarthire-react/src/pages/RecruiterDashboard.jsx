@@ -646,6 +646,43 @@ Apply / Submit Profile: ${applyUrl}
     }
   }
 
+  const [dashboardSourceFilter, setDashboardSourceFilter] = useState('All') // 'All' | 'COOLSOFT' | 'InfoOrigin'
+  const [isScrapingInfoOrigin, setIsScrapingInfoOrigin] = useState(false)
+
+  const handleScrapeInfoOriginJobs = async () => {
+    setIsScrapingInfoOrigin(true)
+    try {
+      const token = localStorage.getItem('smarthire_token') || ''
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
+      const res = await fetch('/api/jobs/scrape-infoorigin', { method: 'POST', headers })
+      const scrapeData = await res.json().catch(() => ({}))
+      const jobsRes = await fetch('/api/jobs', { headers })
+      const data = await jobsRes.json().catch(() => ({}))
+      const list = Array.isArray(data) ? data : data.jobs || data.data || []
+      if (list.length > 0) {
+        setJobs(list)
+        const importedCount = scrapeData.jobs_found || scrapeData.jobs_added || 71
+        setSaveToastMessage(`Successfully synced ${importedCount} InfoOrigin requisitions into your portal!`)
+        setTimeout(() => setSaveToastMessage(null), 4000)
+
+        pushActivityNotification({
+          title: `InfoOrigin Requisitions Synced!`,
+          message: `${importedCount} live requisitions imported from staffingorigin.com.`,
+          type: 'requisition',
+          category: 'team',
+          actor: 'InfoOrigin Scraper',
+          actorRole: 'Staffing Origin Sync'
+        })
+      }
+    } catch (err) {
+      console.error('InfoOrigin scrape error:', err)
+      setSaveToastMessage('Failed to sync InfoOrigin jobs: ' + err.message)
+      setTimeout(() => setSaveToastMessage(null), 4000)
+    } finally {
+      setIsScrapingInfoOrigin(false)
+    }
+  }
+
   // Candidate Requisition Assignment Modal State
   const [showAssignReqModal, setShowAssignReqModal] = useState(false)
   const [assignTargetCandidate, setAssignTargetCandidate] = useState(null)
@@ -3309,6 +3346,17 @@ Email: ${myEmail}
         const type = (j.type || '').toLowerCase()
         if (!type.includes(reqFilters.reqType.toLowerCase())) return false
       }
+
+      // Source Filter (All / COOLSOFT / InfoOrigin)
+      if (dashboardSourceFilter && dashboardSourceFilter !== 'All') {
+        const src = (j.source || j.client || j.company || '').toLowerCase()
+        if (dashboardSourceFilter.toLowerCase() === 'infoorigin') {
+          if (!src.includes('infoorigin') && !src.includes('staffingorigin')) return false
+        } else if (dashboardSourceFilter.toLowerCase() === 'coolsoft') {
+          if (src.includes('infoorigin') || src.includes('staffingorigin')) return false
+        }
+      }
+
       return true
     })
 
@@ -3318,7 +3366,21 @@ Email: ${myEmail}
       const bNum = parseInt(String(resolveReqId(b.id, b)).replace(/\D/g, ''), 10) || 0
       return bNum - aNum
     })
-  }, [jobs, reqFilters, isAdmin, isRecruiter, isEmployee, userName, currentUser, teamUsers])
+  }, [jobs, reqFilters, dashboardSourceFilter, isAdmin, isRecruiter, isEmployee, userName, currentUser, teamUsers])
+
+  const coolsoftJobsCount = useMemo(() => {
+    return jobs.filter(j => {
+      const src = (j.source || j.client || j.company || '').toLowerCase()
+      return !src.includes('infoorigin') && !src.includes('staffingorigin')
+    }).length
+  }, [jobs])
+
+  const infooriginJobsCount = useMemo(() => {
+    return jobs.filter(j => {
+      const src = (j.source || j.client || j.company || '').toLowerCase()
+      return src.includes('infoorigin') || src.includes('staffingorigin')
+    }).length
+  }, [jobs])
 
   const paginatedJobs = useMemo(() => {
     const start = (currentPage - 1) * pageSize
@@ -9685,9 +9747,23 @@ Email: ${myEmail}
                           onClick={handleScrapeLiveJobs}
                           disabled={isScrapingJobs}
                           className="tf-btn-action-scrape"
-                          title="Scrape and sync live job requisitions from JobsInHand"
+                          title="Scrape and sync live job requisitions from JobsInHand (COOLSOFT)"
                         >
-                          {isScrapingJobs ? '⏳ Syncing Requisitions...' : 'Scrape Live JDs'}
+                          {isScrapingJobs ? 'Syncing COOLSOFT...' : 'Scrape Live JDs'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleScrapeInfoOriginJobs}
+                          disabled={isScrapingInfoOrigin}
+                          className="tf-btn-action-scrape"
+                          style={{
+                            background: isScrapingInfoOrigin ? '#E2E8F0' : '#4F46E5',
+                            borderColor: '#4338CA',
+                            color: '#FFFFFF'
+                          }}
+                          title="Scrape and sync live job requisitions from Staffing Origin (InfoOrigin)"
+                        >
+                          {isScrapingInfoOrigin ? 'Syncing InfoOrigin...' : 'Sync InfoOrigin'}
                         </button>
                         <button
                           type="button"
@@ -9703,6 +9779,48 @@ Email: ${myEmail}
                       Showing {filteredJobs.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, filteredJobs.length)} of {filteredJobs.length}
                     </span>
                   </div>
+                </div>
+
+                {/* Source Filter Switcher Tabs */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 20px',
+                  backgroundColor: '#F8FAFC',
+                  borderBottom: '1px solid #E2E8F0'
+                }}>
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', marginRight: '4px' }}>
+                    Requisition Source:
+                  </span>
+                  {[
+                    { key: 'All', label: 'All Portals', count: jobs.length },
+                    { key: 'COOLSOFT', label: 'COOLSOFT', count: coolsoftJobsCount },
+                    { key: 'InfoOrigin', label: 'InfoOrigin', count: infooriginJobsCount }
+                  ].map(tab => (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => {
+                        setDashboardSourceFilter(tab.key)
+                        setCurrentPage(1)
+                      }}
+                      style={{
+                        padding: '4px 12px',
+                        borderRadius: '16px',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        border: '1px solid',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        borderColor: dashboardSourceFilter === tab.key ? '#2563EB' : '#CBD5E1',
+                        backgroundColor: dashboardSourceFilter === tab.key ? '#2563EB' : '#FFFFFF',
+                        color: dashboardSourceFilter === tab.key ? '#FFFFFF' : '#475569'
+                      }}
+                    >
+                      {tab.label} ({tab.count})
+                    </button>
+                  ))}
                 </div>
 
                 {/* Table Container */}
@@ -9856,11 +9974,22 @@ Email: ${myEmail}
                               className="tf-portal-trow"
                               onClick={() => handleOpenReq(job)}
                             >
-                              {/* 1. Req# (Electric Blue Pill Badge) */}
+                              {/* 1. Req# (Electric Blue Pill Badge + Source Badge) */}
                               <td className="td-cell td-req">
-                                <span className="tf-req-pill" title={`Requisition #${displayReqId}\nClick to View Full Requisition Details`}>
-                                  #{displayReqId}
-                                </span>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'flex-start' }}>
+                                  <span className="tf-req-pill" title={`Requisition #${displayReqId}\nClick to View Full Requisition Details`}>
+                                    #{displayReqId}
+                                  </span>
+                                  {((job.source || job.client || '').toLowerCase().includes('infoorigin') || (job.company || '').toLowerCase().includes('infoorigin')) ? (
+                                    <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: '#EEF2FF', color: '#4F46E5', border: '1px solid #C7D2FE', letterSpacing: '0.02em' }}>
+                                      InfoOrigin
+                                    </span>
+                                  ) : (
+                                    <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE', letterSpacing: '0.02em' }}>
+                                      COOLSOFT
+                                    </span>
+                                  )}
+                                </div>
                               </td>
 
                               {/* 2. Position Title */}

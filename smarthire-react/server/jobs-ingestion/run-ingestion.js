@@ -21,6 +21,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { scrapeJobsInHand } from './jobsinhand-scraper.js';
+import { scrapeInfoOrigin } from './infoorigin-scraper.js';
 import { resolveReqId, extractPositionNumber, cleanJobTitleWithPositionNumber, formatJobDescription } from '../../src/utils/formatJobDescription.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -442,6 +443,94 @@ export async function runIngestion() {
   logger(`════════════════════════════════════════════`);
 
   return finalStatus;
+}
+
+// ─── InfoOrigin Dedicated Ingestion Pipeline ──────────────────────────────────
+export async function runInfoOriginIngestion() {
+  const runStart = new Date().toISOString();
+  logger(`════════════════════════════════════════════`);
+  logger(`🚀 Staffing Origin / InfoOrigin Ingestion Started`);
+  logger(`════════════════════════════════════════════`);
+  logger(`Run start: ${runStart}`);
+
+  try {
+    await connectMongo();
+
+    // Step 1: Scrape InfoOrigin
+    logger(`\n[Step 1] Fetching live requirements from staffingorigin.com...`);
+    const scrapeResult = await scrapeInfoOrigin(logger);
+
+    // Step 2: Load existing DB and merge
+    logger(`\n[Step 2] Merging and tagging jobs with proper source branding...`);
+    const existingJobs = await loadJobsDb();
+    logger(`  Existing jobs in DB: ${existingJobs.length}`);
+
+    // Ensure all existing JobsInHand jobs are branded under COOLSOFT
+    existingJobs.forEach(j => {
+      if (!j.source || j.source === 'jobsinhand') {
+        j.source = 'COOLSOFT';
+        j.originalSource = 'jobsinhand';
+      }
+      if (!j.company) {
+        j.company = 'COOLSOFT LLC';
+      }
+    });
+
+    const uniqueMap = new Map();
+    // Add existing jobs
+    existingJobs.forEach(j => {
+      const key = `job_${j.source || 'COOLSOFT'}_${j.reqId || j.id}`;
+      uniqueMap.set(key, j);
+    });
+
+    let newCount = 0;
+    scrapeResult.jobs.forEach(job => {
+      const key = `job_${job.source}_${job.reqId || job.id}`;
+      if (!uniqueMap.has(key)) {
+        newCount++;
+      }
+      uniqueMap.set(key, job);
+    });
+
+    const updatedJobs = Array.from(uniqueMap.values()).sort((a, b) => {
+      // Sort InfoOrigin first if newer, or numeric
+      const aNum = parseInt(String(a.reqId || a.id).replace(/\D/g, ''), 10) || 0;
+      const bNum = parseInt(String(b.reqId || b.id).replace(/\D/g, ''), 10) || 0;
+      return bNum - aNum;
+    });
+
+    await saveJobsDb(updatedJobs);
+    logger(`  ✅ Database updated with ${updatedJobs.length} total requisitions.`);
+
+    const coolsoftTotal = updatedJobs.filter(j => j.source === 'COOLSOFT' || j.source === 'jobsinhand').length;
+    const infooriginTotal = updatedJobs.filter(j => j.source === 'InfoOrigin').length;
+
+    logger(`\n📊 InfoOrigin Sync Summary:`);
+    logger(`  Total Ingested:    ${scrapeResult.jobs.length}`);
+    logger(`  New Added:         ${newCount}`);
+    logger(`  COOLSOFT Total:    ${coolsoftTotal}`);
+    logger(`  InfoOrigin Total:  ${infooriginTotal}`);
+    logger(`  Combined Total:    ${updatedJobs.length}`);
+
+    return {
+      status: 'success',
+      source: 'InfoOrigin',
+      jobs_found: scrapeResult.jobs.length,
+      jobs_added: newCount,
+      coolsoft_count: coolsoftTotal,
+      infoorigin_count: infooriginTotal,
+      total_jobs: updatedJobs.length
+    };
+  } catch (err) {
+    logger(`❌ FATAL ERROR in InfoOrigin ingestion: ${err.message}`);
+    return {
+      status: 'error',
+      source: 'InfoOrigin',
+      error: err.message
+    };
+  } finally {
+    await disconnectMongo();
+  }
 }
 
 // ─── CLI Entry Point ──────────────────────────────────────────────────────────

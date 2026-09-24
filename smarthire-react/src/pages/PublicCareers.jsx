@@ -732,7 +732,9 @@ export default function PublicCareers() {
       const titleMatch = (j.title || '').toLowerCase().includes(searchQuery.toLowerCase())
       const skillMatch = Array.isArray(j.skills) && j.skills.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()))
       const locMatch = (resolveJobLocation(j) || 'Remote, US').toLowerCase().includes(searchQuery.toLowerCase())
-      const qMatch = titleMatch || skillMatch || locMatch
+      const clientMatch = (j.client || j.source || j.company || '').toLowerCase().includes(searchQuery.toLowerCase())
+      const reqIdMatch = String(resolveReqId(j.reqId || j.id, j)).toLowerCase().includes(searchQuery.toLowerCase())
+      const qMatch = titleMatch || skillMatch || locMatch || clientMatch || reqIdMatch
 
       if ((deadlineFilter === 'Today' || selectedLocation === 'Today') && !isDeadlineToday(j.deadline)) return false
 
@@ -1014,13 +1016,29 @@ export default function PublicCareers() {
             boxShadow: '0 25px 60px rgba(0,0,0,0.4)',
             position: 'relative'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
               <div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    color: (selectedJob.source === 'InfoOrigin' || selectedJob.client === 'InfoOrigin') ? '#4f46e5' : '#00B8D9',
+                    background: (selectedJob.source === 'InfoOrigin' || selectedJob.client === 'InfoOrigin') ? '#eef2ff' : 'rgba(0, 184, 217, 0.1)',
+                    border: `1px solid ${(selectedJob.source === 'InfoOrigin' || selectedJob.client === 'InfoOrigin') ? '#c7d2fe' : 'rgba(0, 184, 217, 0.3)'}`,
+                    padding: '2px 8px',
+                    borderRadius: 4
+                  }}>
+                    {(selectedJob.source === 'InfoOrigin' || selectedJob.client === 'InfoOrigin') ? 'INFO ORIGIN' : 'COOLSOFT LLC'}
+                  </span>
+                  <span style={{ fontSize: 12, color: theme.textSecondary }}>· Req #{resolveReqId(selectedJob.reqId || selectedJob.id, selectedJob)}</span>
+                </div>
                 <h3 style={{ fontSize: 22, fontWeight: 800, color: theme.textPrimary, margin: '0 0 4px', fontFamily: "'Barlow', sans-serif" }}>
                   {cleanJobTitleWithPositionNumber(selectedJob.title)}
                 </h3>
                 <p style={{ fontSize: 13, color: '#00B8D9', margin: 0, fontWeight: 700 }}>
-                  {resolveJobLocation(selectedJob) || 'Remote, US'} · {selectedJob.work_mode || 'Contract'}
+                  {resolveJobLocation(selectedJob) || 'Remote, US'} · {selectedJob.work_mode || selectedJob.workMode || 'Contract'}
                 </p>
               </div>
               <button
@@ -1029,6 +1047,53 @@ export default function PublicCareers() {
               >
                 ✕
               </button>
+            </div>
+
+            {/* Position Overview (Matching Screenshot 2) */}
+            <div style={{
+              background: isLight ? '#F8FAFC' : 'rgba(255,255,255,0.04)',
+              border: `1px solid ${theme.border}`,
+              borderRadius: 10,
+              padding: '14px 18px',
+              marginBottom: 18
+            }}>
+              <div style={{ fontSize: 11.5, fontWeight: 800, color: theme.textPrimary, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Position Overview
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px 14px' }}>
+                <div>
+                  <div style={{ fontSize: 10.5, color: theme.textSecondary, fontWeight: 700 }}>JOB TYPE</div>
+                  <div style={{ fontSize: 13, color: theme.textPrimary, fontWeight: 800 }}>{selectedJob.type || selectedJob.employment_type || 'Contract'}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 10.5, color: theme.textSecondary, fontWeight: 700 }}>CATEGORY</div>
+                  <div style={{ fontSize: 13, color: theme.textPrimary, fontWeight: 800 }}>{selectedJob.category || 'IT'}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 10.5, color: theme.textSecondary, fontWeight: 700 }}>REQ ID</div>
+                  <div style={{ fontSize: 13, color: theme.textPrimary, fontWeight: 800 }}>{resolveReqId(selectedJob.reqId || selectedJob.id, selectedJob)}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 10.5, color: theme.textSecondary, fontWeight: 700 }}>COUNTRY</div>
+                  <div style={{ fontSize: 13, color: theme.textPrimary, fontWeight: 800 }}>{selectedJob.country || 'USA'}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 10.5, color: theme.textSecondary, fontWeight: 700 }}>INTERVIEW TYPE</div>
+                  <div style={{ fontSize: 13, color: theme.textPrimary, fontWeight: 800 }}>{selectedJob.interviewType || 'Video or In Person'}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 10.5, color: theme.textSecondary, fontWeight: 700 }}>DURATION</div>
+                  <div style={{ fontSize: 13, color: theme.textPrimary, fontWeight: 800 }}>{selectedJob.duration || 'Long Term'}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 10.5, color: theme.textSecondary, fontWeight: 700 }}>WORK PREFERENCE</div>
+                  <div style={{ fontSize: 13, color: theme.textPrimary, fontWeight: 800 }}>{selectedJob.workMode || selectedJob.work_mode || 'Onsite'}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 10.5, color: theme.textSecondary, fontWeight: 700 }}>WORK LOCATION</div>
+                  <div style={{ fontSize: 13, color: theme.textPrimary, fontWeight: 800 }}>{resolveJobLocation(selectedJob)}</div>
+                </div>
+              </div>
             </div>
 
             {/* Sourcing Recruiter Referral Attribution */}

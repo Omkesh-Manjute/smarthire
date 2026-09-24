@@ -78,7 +78,15 @@ export function resolveReqId(rawId = '', job = {}) {
   const strId = String(rawId || job?.reqId || job?.id || '').replace('J-', '').replace('REQ-', '').trim();
   const title = String(job?.title || '');
 
-  // 1. If strId is already a clean authentic 6-digit JobsInHand ID (e.g. 159023, 158999, 160001), RETURN IT DIRECTLY!
+  // 1. If InfoOrigin source or authentic 4-5 digit InfoOrigin Req ID (e.g. 7589, 7588), RETURN IT DIRECTLY!
+  if (job?.source === 'InfoOrigin' || job?.client === 'InfoOrigin' || job?.company === 'InfoOrigin' || strId.startsWith('IO-')) {
+    return strId;
+  }
+  if (/^[1-9]\d{3,4}$/.test(strId) && parseInt(strId, 10) < 50000) {
+    return strId;
+  }
+
+  // 1b. If strId is already a clean authentic 6-digit JobsInHand ID (e.g. 159023, 158999, 160001), RETURN IT DIRECTLY!
   if (/^1[56]\d{4}$/.test(strId)) {
     return strId;
   }

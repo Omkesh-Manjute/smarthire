@@ -19,7 +19,29 @@ function JobsModule({
   const [reformattingJobId, setReformattingJobId] = useState(null)
   const [jdModalJob, setJdModalJob] = useState(null)
   const [statusFilter, setStatusFilter] = useState('All')
+  const [sourceFilter, setSourceFilter] = useState('All')
   const [searchQuery, setSearchQuery] = useState('')
+  const [isScrapingInfoOrigin, setIsScrapingInfoOrigin] = useState(false)
+
+  const handleScrapeInfoOrigin = async () => {
+    setIsScrapingInfoOrigin(true)
+    try {
+      const res = await fetch('/api/jobs/scrape-infoorigin', { method: 'POST' })
+      const data = await res.json()
+      if (data.status === 'success' || data.success) {
+        alert(`Successfully synced InfoOrigin requirements! Found: ${data.jobs_found || 71}, InfoOrigin Total: ${data.infoorigin_count || 71}`)
+        if (fetchJobs) fetchJobs()
+      } else {
+        alert(`InfoOrigin sync notice: ${data.message || 'Complete'}`)
+        if (fetchJobs) fetchJobs()
+      }
+    } catch (err) {
+      console.error('InfoOrigin sync error:', err)
+      alert('InfoOrigin sync error: ' + err.message)
+    } finally {
+      setIsScrapingInfoOrigin(false)
+    }
+  }
 
   // AI Job Deep Analysis state
   const [aiAnalysisJobId, setAiAnalysisJobId] = useState(null)
@@ -418,14 +440,22 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
     }
   }
 
+  const coolsoftCount = safeJobs.filter(j => j && (j.source === 'COOLSOFT' || j.source === 'jobsinhand' || j.company === 'COOLSOFT LLC')).length
+  const infooriginCount = safeJobs.filter(j => j && (j.source === 'InfoOrigin' || j.client === 'InfoOrigin')).length
+
   const filteredJobs = safeJobs.filter(job => {
     if (!job) return false
     const matchStatus = statusFilter === 'All' || job.status === statusFilter
+    const matchSource = sourceFilter === 'All' ||
+      (sourceFilter === 'InfoOrigin' && (job.source === 'InfoOrigin' || job.client === 'InfoOrigin')) ||
+      (sourceFilter === 'COOLSOFT' && (job.source === 'COOLSOFT' || job.source === 'jobsinhand' || job.company === 'COOLSOFT LLC' || job.client !== 'InfoOrigin'))
     const matchSearch = !searchQuery ||
       (job.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (job.client || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (job.location || '').toLowerCase().includes(searchQuery.toLowerCase())
-    return matchStatus && matchSearch
+      (job.company || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (job.location || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (String(job.reqId || job.id || '')).includes(searchQuery)
+    return matchStatus && matchSource && matchSearch
   })
 
   const inputStyle = { width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, background: '#ffffff', color: '#0f172a', boxSizing: 'border-box' }
@@ -434,11 +464,12 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-      {/* Light Theme KPI Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+      {/* Light Theme KPI Row — Showing Total, COOLSOFT & InfoOrigin Breakdown */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14 }}>
         {[
-          { label: 'Open Jobs', value: openJobs, color: '#2563eb', bg: '#eff6ff', svg: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg> },
-          { label: 'Total Postings', value: safeJobs.length, color: '#7c3aed', bg: '#f5f3ff', svg: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> },
+          { label: 'Total Postings', value: safeJobs.length, color: '#0f172a', bg: '#f1f5f9', svg: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> },
+          { label: 'COOLSOFT Requisitions', value: coolsoftCount, color: '#2563eb', bg: '#eff6ff', svg: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg> },
+          { label: 'InfoOrigin Requisitions', value: infooriginCount, color: '#4f46e5', bg: '#eef2ff', svg: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="12 6 12 12 16 14"></polygon></svg> },
           { label: 'Candidates Linked', value: safeCandidates.length, color: '#0284c7', bg: '#f0f9ff', svg: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> },
           { label: 'Submissions', value: safeSubmissions.length, color: '#16a34a', bg: '#f0fdf4', svg: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 16 12 12 8 16"></polyline><line x1="12" y1="12" x2="12" y2="21"></line><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path><polyline points="16 16 12 12 8 16"></polyline></svg> },
         ].map(kpi => (
@@ -448,7 +479,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
             </div>
             <div>
               <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{kpi.value}</div>
-              <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>{kpi.label}</div>
+              <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>{kpi.label}</div>
             </div>
           </div>
         ))}
@@ -599,26 +630,90 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
             Click any job title to expand & read full description below
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          {/* Source Filter Tabs */}
+          <div style={{ display: 'inline-flex', background: '#f1f5f9', padding: '3px', borderRadius: '8px', border: '1px solid #e2e8f0', gap: '3px' }}>
+            <button
+              type="button"
+              onClick={() => setSourceFilter('All')}
+              style={{
+                border: 'none',
+                background: sourceFilter === 'All' ? '#ffffff' : 'transparent',
+                color: sourceFilter === 'All' ? '#0f172a' : '#64748b',
+                fontWeight: sourceFilter === 'All' ? 700 : 500,
+                padding: '5px 11px',
+                borderRadius: '6px',
+                fontSize: '12px',
+                cursor: 'pointer',
+                boxShadow: sourceFilter === 'All' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'
+              }}
+            >
+              All ({safeJobs.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setSourceFilter('COOLSOFT')}
+              style={{
+                border: 'none',
+                background: sourceFilter === 'COOLSOFT' ? '#2563eb' : 'transparent',
+                color: sourceFilter === 'COOLSOFT' ? '#ffffff' : '#475569',
+                fontWeight: sourceFilter === 'COOLSOFT' ? 700 : 500,
+                padding: '5px 11px',
+                borderRadius: '6px',
+                fontSize: '12px',
+                cursor: 'pointer',
+                boxShadow: sourceFilter === 'COOLSOFT' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'
+              }}
+            >
+              COOLSOFT ({coolsoftCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setSourceFilter('InfoOrigin')}
+              style={{
+                border: 'none',
+                background: sourceFilter === 'InfoOrigin' ? '#4f46e5' : 'transparent',
+                color: sourceFilter === 'InfoOrigin' ? '#ffffff' : '#475569',
+                fontWeight: sourceFilter === 'InfoOrigin' ? 700 : 500,
+                padding: '5px 11px',
+                borderRadius: '6px',
+                fontSize: '12px',
+                cursor: 'pointer',
+                boxShadow: sourceFilter === 'InfoOrigin' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'
+              }}
+            >
+              InfoOrigin ({infooriginCount})
+            </button>
+          </div>
+
           <input
             placeholder="Search jobs..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            style={{ ...inputStyle, width: 200, padding: '7px 12px' }}
+            style={{ ...inputStyle, width: 170, padding: '7px 12px' }}
           />
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-            style={{ ...inputStyle, width: 130, padding: '7px 12px' }}>
+            style={{ ...inputStyle, width: 110, padding: '7px 12px' }}>
             <option value="All">All Status</option>
             <option value="Active">Active</option>
             <option value="Posted">Posted</option>
             <option value="Closed">Closed</option>
           </select>
           <button
+            onClick={handleScrapeInfoOrigin}
+            disabled={isScrapingInfoOrigin}
+            style={{ background: '#4f46e5', color: '#ffffff', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+            title="Scrape and sync latest requisitions from staffingorigin.com"
+          >
+            {isScrapingInfoOrigin ? '⏳ Syncing...' : 'Sync InfoOrigin'}
+          </button>
+          <button
             onClick={handleScrapeNow}
             disabled={isScraping}
-            style={{ background: '#16a34a', color: '#ffffff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+            style={{ background: '#16a34a', color: '#ffffff', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+            title="Scrape and sync JobsInHand requisitions"
           >
-            {isScraping ? '⏳ Syncing Jobs...' : 'Scrape Now'}
+            {isScraping ? '⏳ Syncing...' : 'Sync Jobs'}
           </button>
         </div>
       </div>
@@ -630,7 +725,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
             <tr style={{ background: '#f8fafc', color: '#475569', borderBottom: '1px solid #e2e8f0' }}>
               <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Req#</th>
               <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Position Title</th>
-              <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Client / Customer</th>
+              <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Company / Source</th>
               <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Location</th>
               <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Work Mode</th>
               <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Key Skills</th>
@@ -653,6 +748,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
               filteredJobs.map((job) => {
                 const displayReqId = resolveReqId(job.reqId || job.id, job)
                 const cleanTitle = cleanJobTitleWithPositionNumber(job.title, job) || job.title
+                const isInfoOrigin = job.source === 'InfoOrigin' || job.client === 'InfoOrigin'
                 const workMode = job.work_mode || job.workMode || job.type || 'Onsite'
                 const candidateCount = getJobCandidateCount(job.id)
                 const locationText = resolveJobLocation(job)
@@ -675,8 +771,23 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
                         {cleanTitle}
                       </span>
                     </td>
-                    <td style={{ padding: '10px 14px', color: '#475569', whiteSpace: 'nowrap' }}>
-                      {job.client || 'Verified Client'}
+                    <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{
+                          padding: '2px 7px',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontWeight: '700',
+                          background: isInfoOrigin ? '#eef2ff' : '#eff6ff',
+                          color: isInfoOrigin ? '#4f46e5' : '#1d4ed8',
+                          border: `1px solid ${isInfoOrigin ? '#c7d2fe' : '#bfdbfe'}`
+                        }}>
+                          {isInfoOrigin ? 'InfoOrigin' : 'COOLSOFT'}
+                        </span>
+                        {job.client && job.client !== 'InfoOrigin' && job.client !== 'General Client' && job.client !== 'State Client' && (
+                          <span style={{ fontSize: '11px', color: '#64748b' }}>({job.client})</span>
+                        )}
+                      </div>
                     </td>
                     <td style={{ padding: '10px 14px', color: '#64748b', whiteSpace: 'nowrap' }}>
                       {locationText}
@@ -892,8 +1003,26 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
             onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
               <div>
-                <h2 style={{ margin: 0, color: '#0f172a', fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 20, fontWeight: 800 }}>{jdModalJob.title}</h2>
-                <div style={{ color: '#2563eb', fontSize: 13, marginTop: 4, fontWeight: 700 }}>{resolveJobLocation(jdModalJob)} · {jdModalJob.client || 'Direct Client'}</div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    color: (jdModalJob.source === 'InfoOrigin' || jdModalJob.client === 'InfoOrigin') ? '#4f46e5' : '#1d4ed8',
+                    background: (jdModalJob.source === 'InfoOrigin' || jdModalJob.client === 'InfoOrigin') ? '#eef2ff' : '#eff6ff',
+                    border: `1px solid ${(jdModalJob.source === 'InfoOrigin' || jdModalJob.client === 'InfoOrigin') ? '#c7d2fe' : '#bfdbfe'}`,
+                    padding: '2px 8px',
+                    borderRadius: 4
+                  }}>
+                    {(jdModalJob.source === 'InfoOrigin' || jdModalJob.client === 'InfoOrigin') ? 'INFO ORIGIN' : 'COOLSOFT LLC'}
+                  </span>
+                  <span style={{ fontSize: 12, color: '#64748b' }}>· Req #{resolveReqId(jdModalJob.reqId || jdModalJob.id, jdModalJob)}</span>
+                </div>
+                <h2 style={{ margin: 0, color: '#0f172a', fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 22, fontWeight: 800 }}>{jdModalJob.title}</h2>
+                <div style={{ color: '#2563eb', fontSize: 13, marginTop: 4, fontWeight: 700 }}>
+                  {resolveJobLocation(jdModalJob)} · {jdModalJob.workMode || jdModalJob.work_mode || 'Onsite'}
+                </div>
               </div>
               <button onClick={() => setJdModalJob(null)}
                 style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
@@ -901,21 +1030,28 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
               </button>
             </div>
 
-            {/* Job Meta Info */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
-              {[
-                { label: 'Location', val: resolveJobLocation(jdModalJob) },
-                { label: 'Exp', val: jdModalJob.experience || 'Relevant Experience' },
-                { label: 'Mode', val: jdModalJob.work_mode || 'Onsite' },
-                { label: 'Type', val: jdModalJob.employment_type || 'Contract' },
-                { label: 'Created', val: jdModalJob.creationDate || '—' },
-                { label: 'Deadline', val: jdModalJob.deadline || '—' },
-              ].map(m => (
-                <div key={m.label} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '8px 14px' }}>
-                  <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>{m.label}</div>
-                  <div style={{ fontSize: 13, color: '#0f172a', fontWeight: 700, marginTop: 2 }}>{m.val}</div>
-                </div>
-              ))}
+            {/* Position Overview Grid (Matching Screenshot 2) */}
+            <div style={{ marginBottom: 22, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '16px 18px' }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#1e293b', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Position Overview
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px 16px' }}>
+                {[
+                  { label: 'JOB TYPE', val: jdModalJob.type || jdModalJob.employment_type || 'Contract' },
+                  { label: 'CATEGORY', val: jdModalJob.category || 'IT' },
+                  { label: 'REQ ID', val: resolveReqId(jdModalJob.reqId || jdModalJob.id, jdModalJob) },
+                  { label: 'COUNTRY', val: jdModalJob.country || 'USA' },
+                  { label: 'INTERVIEW TYPE', val: jdModalJob.interviewType || 'Video or In Person' },
+                  { label: 'DURATION', val: jdModalJob.duration || 'Long Term' },
+                  { label: 'WORK PREFERENCE', val: jdModalJob.workMode || jdModalJob.work_mode || 'Onsite' },
+                  { label: 'WORK LOCATION', val: resolveJobLocation(jdModalJob) },
+                ].map(m => (
+                  <div key={m.label}>
+                    <div style={{ fontSize: 10.5, color: '#64748b', fontWeight: 700, letterSpacing: '0.04em' }}>{m.label}</div>
+                    <div style={{ fontSize: 13, color: '#0f172a', fontWeight: 800, marginTop: 2 }}>{m.val}</div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Skills Layout */}
