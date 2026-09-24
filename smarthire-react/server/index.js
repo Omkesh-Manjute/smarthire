@@ -4390,9 +4390,25 @@ app.post('/api/candidates/:id/finalize-rate', async (req, res) => {
 // POST /api/candidates/:id/push-to-req — Pushes candidate to target requisition
 app.post('/api/candidates/:id/push-to-req', async (req, res) => {
   const { id } = req.params;
-  const { targetReqId, payRate, status, comments, recruiterName, recruiterEmail } = req.body;
+  const { targetReqId, payRate, status, comments, recruiterName, recruiterEmail, email: bodyEmail, candidateName } = req.body;
 
-  let candidate = candidatesStore.find(c => String(c.id) === String(id) || String(c.candidate_id) === String(id) || (c.email && req.body.email && c.email.toLowerCase() === req.body.email.toLowerCase()));
+  // Search by ID first, then fallback to email, then name — handles all ID format mismatches
+  let candidate = candidatesStore.find(c =>
+    String(c.id) === String(id) ||
+    String(c.candidate_id) === String(id) ||
+    String(c._id) === String(id)
+  );
+
+  // Fallback 1: search by email (most reliable for inbox candidates)
+  if (!candidate && bodyEmail) {
+    candidate = candidatesStore.find(c => c.email && c.email.toLowerCase() === bodyEmail.toLowerCase());
+  }
+
+  // Fallback 2: search by name
+  if (!candidate && candidateName) {
+    candidate = candidatesStore.find(c => c.name && c.name.toLowerCase() === candidateName.toLowerCase());
+  }
+
   if (!candidate) {
     return res.status(404).json({ success: false, message: 'Candidate not found in unified pool.' });
   }

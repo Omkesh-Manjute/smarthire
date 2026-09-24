@@ -3499,14 +3499,17 @@ export default function RecruiterInbox({ defaultViewMode }) {
   }
 
   const handleConfirmPushToReq = async (e) => {
-    if (e) e.preventDefault()
+    if (e) { e.preventDefault(); e.stopPropagation() }
     if (!pushTargetCand || !pushSelectedReqId) return
+    if (isPushingToReq) return  // Guard: prevent double submit
     setIsPushingToReq(true)
 
     const cleanReqId = String(pushSelectedReqId).replace(/^J-/, '').replace(/^REQ-/, '').trim()
     const cand = pushTargetCand
     const candName = cand.name || 'Candidate'
-    const candId = cand.id || `875${Date.now().toString().slice(-4)}`
+    // CRITICAL FIX: Always use the original candidate ID — never generate a new one
+    // Without the original ID, the server cannot find the candidate in candidatesStore
+    const candId = cand.id || cand.candidate_id || cand._id || `cand-push-${Date.now()}`
     const dateStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
     const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
@@ -3568,7 +3571,10 @@ export default function RecruiterInbox({ defaultViewMode }) {
           status: pushPipelineStage,
           comments: pushSourcingNotes,
           recruiterName: myName,
-          recruiterEmail: myEmail
+          recruiterEmail: myEmail,
+          // Pass email as fallback identifier — server searches by email if ID not found
+          email: cand.email,
+          candidateName: candName
         })
       }).catch(() => {})
 
@@ -3615,13 +3621,21 @@ export default function RecruiterInbox({ defaultViewMode }) {
       return c
     }))
 
-    // Auto send JD if candidate has email
-    if (cand.email) {
+    // Auto send JD email ONLY ONCE — check dedup flag to prevent double email
+    // Double email happens when the form submits twice or state triggers re-render
+    if (cand.email && !window.__pushEmailSentFor?.[cand.email + cleanReqId]) {
+      // Mark as sent immediately before async call
+      window.__pushEmailSentFor = window.__pushEmailSentFor || {}
+      window.__pushEmailSentFor[cand.email + cleanReqId] = Date.now()
       autoSendJobDescriptionToCandidate({
         candidate: cand,
         job: targetJob,
         recruiterUser: { name: myName, email: myEmail, refCode: myRef }
       }).catch(() => {})
+      // Clear dedup key after 30 seconds to allow future re-sends
+      setTimeout(() => {
+        if (window.__pushEmailSentFor) delete window.__pushEmailSentFor[cand.email + cleanReqId]
+      }, 30000)
     }
 
     setIsPushingToReq(false)
