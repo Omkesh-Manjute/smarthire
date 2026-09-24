@@ -2417,6 +2417,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const [pushPipelineStage, setPushPipelineStage] = useState('Int-SubmittedToManager')
   const [pushSourcingNotes, setPushSourcingNotes] = useState('')
   const [isPushingToReq, setIsPushingToReq] = useState(false)
+  const [pushSendJdEmail, setPushSendJdEmail] = useState(false)
+  const isPushingRef = useRef(false)
 
   // Add Candidate Modal State
   const [addCandidateModalOpen, setAddCandidateModalOpen] = useState(false)
@@ -3495,20 +3497,22 @@ export default function RecruiterInbox({ defaultViewMode }) {
     setPushPayRate(defaultRate)
     setPushPipelineStage('Int-SubmittedToManager')
     setPushSourcingNotes('')
+    setPushSendJdEmail(false) // ALWAYS default to false (internal ATS assignment only)
+    isPushingRef.current = false
     setPushToReqModalOpen(true)
   }
 
   const handleConfirmPushToReq = async (e) => {
     if (e) { e.preventDefault(); e.stopPropagation() }
     if (!pushTargetCand || !pushSelectedReqId) return
-    if (isPushingToReq) return  // Guard: prevent double submit
+    // ATOMIC GUARD: Synchronous ref prevents duplicate execution on rapid clicks
+    if (isPushingRef.current || isPushingToReq) return
+    isPushingRef.current = true
     setIsPushingToReq(true)
 
     const cleanReqId = String(pushSelectedReqId).replace(/^J-/, '').replace(/^REQ-/, '').trim()
     const cand = pushTargetCand
-    const candName = cand.name || 'Candidate'
-    // CRITICAL FIX: Always use the original candidate ID — never generate a new one
-    // Without the original ID, the server cannot find the candidate in candidatesStore
+    const candName = cand.name || cand.candidateName || 'Candidate'
     const candId = cand.id || cand.candidate_id || cand._id || `cand-push-${Date.now()}`
     const dateStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
@@ -3527,8 +3531,17 @@ export default function RecruiterInbox({ defaultViewMode }) {
       id: candId,
       candidateId: candId,
       name: candName,
-      email: cand.email,
-      phone: cand.phone,
+      email: cand.email || cand.candidateEmail || '',
+      phone: cand.phone || cand.candidatePhone || '',
+      role: cand.role || cand.jobTitle || targetJob.title,
+      location: cand.location || 'Remote / US',
+      experience: cand.experience || '5+ Years',
+      visaStatus: cand.visaStatus || cand.visa || 'US Citizen',
+      skills: Array.isArray(cand.skills) ? cand.skills : [],
+      source: cand.source || 'Vendor Hotlist',
+      sourceCategory: cand.sourceCategory || 'vendor_bench',
+      vendorCompany: cand.vendorCompany || '',
+      vendorEmail: cand.vendorEmail || '',
       payRate: pushPayRate || '$75/hr C2C',
       payRateType: (pushPayRate || '').includes('C2C') ? 'C2C' : 'W2',
       assignedBy: myName,
@@ -3572,9 +3585,18 @@ export default function RecruiterInbox({ defaultViewMode }) {
           comments: pushSourcingNotes,
           recruiterName: myName,
           recruiterEmail: myEmail,
-          // Pass email as fallback identifier — server searches by email if ID not found
-          email: cand.email,
-          candidateName: candName
+          email: cand.email || cand.candidateEmail,
+          candidateName: candName,
+          phone: cand.phone || cand.candidatePhone,
+          role: cand.role || targetJob.title,
+          location: cand.location,
+          experience: cand.experience,
+          visaStatus: cand.visaStatus || cand.visa,
+          skills: cand.skills,
+          source: cand.source || 'Vendor Hotlist',
+          sourceCategory: cand.sourceCategory || 'vendor_bench',
+          vendorCompany: cand.vendorCompany,
+          vendorEmail: cand.vendorEmail
         })
       }).catch(() => {})
 
@@ -3604,11 +3626,13 @@ export default function RecruiterInbox({ defaultViewMode }) {
       }))
     } catch (e) {}
 
-    // Update candidate in streamCandidates state
-    setStreamCandidates(prev => prev.map(c => {
-      if (c.id === candId || c.email === cand.email) {
-        return {
+    // Update candidate in streamCandidates state (upsert: update if present, or prepend if from vendor hotlist)
+    setStreamCandidates(prev => {
+      const matchIndex = prev.findIndex(c => c.id === candId || (c.email && cand.email && c.email.toLowerCase() === cand.email.toLowerCase()))
+      if (matchIndex !== -1) {
+        return prev.map((c, i) => i === matchIndex ? {
           ...c,
+          ...newSubObj,
           targetReqId: cleanReqId,
           reqId: cleanReqId,
           matchedJobTitle: targetJob.title,
@@ -3616,15 +3640,14 @@ export default function RecruiterInbox({ defaultViewMode }) {
           matchedJobRate: pushPayRate || c.matchedJobRate,
           status: pushPipelineStage,
           pushedToJobsInHand: true
-        }
+        } : c)
+      } else {
+        return [newSubObj, ...prev]
       }
-      return c
-    }))
+    })
 
-    // Auto send JD email ONLY ONCE — check dedup flag to prevent double email
-    // Double email happens when the form submits twice or state triggers re-render
-    if (cand.email && !window.__pushEmailSentFor?.[cand.email + cleanReqId]) {
-      // Mark as sent immediately before async call
+    // Auto send JD email ONLY IF recruiter explicitly opted-in via checkbox
+    if (pushSendJdEmail && cand.email && !window.__pushEmailSentFor?.[cand.email + cleanReqId]) {
       window.__pushEmailSentFor = window.__pushEmailSentFor || {}
       window.__pushEmailSentFor[cand.email + cleanReqId] = Date.now()
       autoSendJobDescriptionToCandidate({
@@ -3632,12 +3655,12 @@ export default function RecruiterInbox({ defaultViewMode }) {
         job: targetJob,
         recruiterUser: { name: myName, email: myEmail, refCode: myRef }
       }).catch(() => {})
-      // Clear dedup key after 30 seconds to allow future re-sends
       setTimeout(() => {
         if (window.__pushEmailSentFor) delete window.__pushEmailSentFor[cand.email + cleanReqId]
-      }, 30000)
+      }, 60000)
     }
 
+    isPushingRef.current = false
     setIsPushingToReq(false)
     setPushToReqModalOpen(false)
     setAssignedToast(`✓ ${candName} pushed to Requisition #${cleanReqId} (${targetJob.title})!`)
@@ -6588,7 +6611,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   {/* Open in New Window Button (Satisfies 'new page ka pop up hoke') */}
                   {hotlistResumeModalItem.attachmentName && (
                     <a
-                      href={`/api/candidates/view-resume?file=${encodeURIComponent(hotlistResumeModalItem.attachmentName)}&name=${encodeURIComponent(hotlistResumeModalItem.candidateName)}`}
+                      href={`/api/candidates/view-resume?file=${encodeURIComponent(hotlistResumeModalItem.attachmentName || '')}&name=${encodeURIComponent(hotlistResumeModalItem.candidateName || '')}&storageUrl=${encodeURIComponent(hotlistResumeModalItem.storageUrl || '')}&candId=${encodeURIComponent(hotlistResumeModalItem.id || '')}&email=${encodeURIComponent(hotlistResumeModalItem.candidateEmail || '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
@@ -6612,7 +6635,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
                   {hotlistResumeModalItem.attachmentName && (
                     <a
-                      href={hotlistResumeModalItem.storageUrl || `/uploads/candidate-docs/${hotlistResumeModalItem.attachmentName}`}
+                      href={`/api/candidates/view-resume?download=true&file=${encodeURIComponent(hotlistResumeModalItem.attachmentName || '')}&name=${encodeURIComponent(hotlistResumeModalItem.candidateName || '')}&storageUrl=${encodeURIComponent(hotlistResumeModalItem.storageUrl || '')}&candId=${encodeURIComponent(hotlistResumeModalItem.id || '')}&email=${encodeURIComponent(hotlistResumeModalItem.candidateEmail || '')}`}
                       download={hotlistResumeModalItem.attachmentName}
                       style={{
                         padding: '7px 13px',
@@ -6696,7 +6719,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
               <div style={{ flex: 1, backgroundColor: isLight ? '#F1F5F9' : '#0F172A', position: 'relative', overflow: 'hidden' }}>
                 {hotlistResumeModalItem.attachmentName ? (
                   <iframe
-                    src={`/api/candidates/view-resume?file=${encodeURIComponent(hotlistResumeModalItem.attachmentName)}&name=${encodeURIComponent(hotlistResumeModalItem.candidateName)}`}
+                    src={`/api/candidates/view-resume?file=${encodeURIComponent(hotlistResumeModalItem.attachmentName || '')}&name=${encodeURIComponent(hotlistResumeModalItem.candidateName || '')}&storageUrl=${encodeURIComponent(hotlistResumeModalItem.storageUrl || '')}&candId=${encodeURIComponent(hotlistResumeModalItem.id || '')}&email=${encodeURIComponent(hotlistResumeModalItem.candidateEmail || '')}`}
                     title={`${hotlistResumeModalItem.candidateName} Resume`}
                     style={{
                       width: '100%',
@@ -14481,6 +14504,34 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     boxSizing: 'border-box'
                   }}
                 />
+              </div>
+
+              {/* Optional JD Email Outreach Checkbox */}
+              <div style={{
+                marginBottom: 18,
+                padding: '12px 14px',
+                background: isLight ? '#F8FAFC' : '#0F172A',
+                border: `1px solid ${C.border}`,
+                borderRadius: 8
+              }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', userSelect: 'none' }}>
+                  <input
+                    type="checkbox"
+                    checked={pushSendJdEmail}
+                    onChange={e => setPushSendJdEmail(e.target.checked)}
+                    style={{ marginTop: 2, width: 16, height: 16, accentColor: '#2563EB', cursor: 'pointer' }}
+                  />
+                  <div>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: C.textPrimary }}>
+                      Send Job Description (JD) outreach email to candidate
+                    </span>
+                    <div style={{ fontSize: 11.5, color: C.textSecondary, marginTop: 2 }}>
+                      {pushSendJdEmail
+                        ? `✉️ Will send official specifications for Req #${pushSelectedReqId} to ${pushTargetCand?.email || 'candidate'} from your configured email`
+                        : 'Unchecked: Internal ATS assignment only — no email will be sent to candidate'}
+                    </div>
+                  </div>
+                </label>
               </div>
 
               {/* Actions Footer */}

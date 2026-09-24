@@ -69,41 +69,6 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
-### 2026-09-25 — Full SEO Audit & AdSense Preparation (Privacy Policy Update)
-- **Context & Objectives**:
-  - User requested full SEO audit of smarthireus.com (keywords, indexing, AdSense readiness).
-  - Google Search Console showed: 10 pages "Discovered — currently not indexed", only 3 indexed — critical issue.
-  - User asked for AdSense guidance: when to apply, how to apply, and what to fix now.
-- **Key Findings from SEO Audit**:
-  - Root cause of indexing failure: React SPA — Googlebot cannot render JS on first crawl. Blog pages have no static HTML with correct meta tags.
-  - All 4 blog articles use `document.title = ...` (client-side JS) — Google sees same title for all blog pages.
-  - Only 4 blog articles exist — AdSense requires 15-20+ quality articles.
-  - `ads.txt` has placeholder `pub-XXXXXXXXXXXXXXXX` — needs real Publisher ID after approval.
-  - IT staffing niche has excellent AdSense CPC: $3-12 per click.
-  - SEO strengths: sitemap.xml (13 URLs), robots.txt (correct), JSON-LD schema, OG tags, Twitter Card, canonical, mobile viewport, HTTPS — all good.
-- **Key Deliverables**:
-  1. **Privacy Policy AdSense Section (`PrivacyPolicy.jsx`)**:
-     - Added new "Section 6: Advertising & Third-Party Cookies" as required by Google AdSense policies.
-     - Covers: DoubleClick cookie, interest-based advertising, opt-out links (Google Ads Settings, DAA, GA opt-out).
-     - Renumbered sections 6→7 (Data Security), 7→8 (User Rights), 8→9 (Contact DPO).
-     - This is MANDATORY for AdSense approval — Google requires advertising disclosure in Privacy Policy.
-  2. **Full SEO + AdSense Audit Report** (see artifact `seo_adsense_audit.md`):
-     - Keyword analysis with monthly search volumes and CPC values.
-     - AdSense timeline: apply in November 2026 after fixing indexing + adding 15 more blog articles.
-     - Step-by-step AdSense application guide.
-     - Revenue estimate: $120-375/month at 500 daily visitors; $480-1500/month at 2000+ visitors.
-- **Pending Actions (User Must Do)**:
-  1. Fix SPA indexing — pre-render blog pages as static HTML or add prerender middleware in Nginx.
-  2. Add 15+ more blog articles (topics listed in audit report).
-  3. Request indexing in Search Console for all blog URLs manually.
-  4. Apply for AdSense in November 2026 at adsense.google.com.
-  5. After AdSense approval: update `ads.txt` with real `pub-XXXXXXXXXXXXXXXX` Publisher ID.
-- **Verification & Deployment**:
-  - Production build: 0 errors, 0 warnings (bundle `index-BDml4efD.js`).
-  - Changes: `PrivacyPolicy.jsx` — AdSense advertising disclosure section added.
-  - PENDING: git push + Lightsail deployment (user to execute after review).
-
-
 ### 2026-09-25 — Requisition 159183 Set to Open & Deadline 10/06/2026, Vendor Hotlist Inline Resume Popup & New Window Preview
 - **Context & Objectives**:
   - The user requested three updates:
@@ -132,8 +97,35 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
   - Reloaded PM2 `smarthire-ats`, verified disk space (8.6GB available, 54% used).
   - Verified live endpoint `/api/jobs` for Req 159183 returning `status: "Open"`, `deadline: "2026-10-06"`.
   - Verified live endpoint `/api/candidates/view-resume` returning HTTP 200 with inline PDF and HTML Word preview.
+### 2026-09-25 — Vendor Hotlist Resume Viewer Fuzzy Matcher, Push to Jobs in Hand Candidate Upsert & Double Email Prevention
 - **Context & Objectives**:
-  - The user requested an "AI Match" button on each candidate card in the split-view where clicking a candidate opens the resume on the right and candidate card on the left (`ak button add karo AI match use click karene pe Live AI se scan analys hona cahiye okay har candiate ke card mai ana cahiye jaha hum candiate ko clcik karne ke bad open hota hai right mai resume and left mai ak chota sa button okay`).
+  - The user reported two critical issues:
+    1. **Vendor Sheet Resume Click Error**: Clicking candidate resume in Vendor Hotlists (e.g. Mounika Kunduru) resulted in "Document Not Found on Server - The file MOUNIKA KUNDURU.docx could not be located in ATS storage" because files on disk had timestamp prefixes and underscores (e.g. `1790016558407_MOUNIKA_KUNDURU__1_.docx`) while table data had spaces (`MOUNIKA KUNDURU.docx`).
+    2. **Push to Jobs in Hand & Double Email**: Clicking "Push to Jobs in Hand" sent two unwanted automated emails to candidate without recruiter consent, and candidate was not saved into ATS database because `/api/candidates/:id/push-to-req` returned 404 when candidate did not previously exist in `candidatesStore`.
+- **Key Deliverables**:
+  1. **Smart Fuzzy Resume Matcher & Dossier Fallback (`/api/candidates/view-resume`)**:
+     - Built intelligent tokenized keyword matcher scanning `uploads/candidate-docs` and `uploads` directories.
+     - Strips timestamp prefixes (`1790016558407_`), normalizes spaces, underscores, and punctuation, matching candidate name and email tokens (`mounika` + `kunduru`).
+     - Added dedicated `download=true` mode for direct attachment download using resolved server paths.
+     - Added rich HTML **Candidate Dossier Profile View** fallback for candidates without archived files on disk, eliminating blank error pages.
+     - Updated `RecruiterInbox.jsx` hotlist modal buttons (`Open in New Window`, `Download`) and `iframe src` to pass complete candidate metadata (`file`, `name`, `storageUrl`, `email`, `candId`).
+  2. **Push to Jobs in Hand Candidate Upserting (`POST /api/candidates/:id/push-to-req`)**:
+     - Upgraded server endpoint to UPSERT candidate if not already present in `candidatesStore`, permanently storing vendor bench candidates and manual candidates into ATS storage (`candidates.json`).
+     - In `RecruiterInbox.jsx`, updated `streamCandidates` state updater to prepend new candidates if not previously in stream list.
+  3. **Double Email Elimination & Explicit Opt-In Checkbox**:
+     - Added an explicit checkbox in Push to Jobs in Hand modal: `[ ] Send Job Description (JD) outreach email to candidate` (default: UNCHECKED `false`).
+     - If unchecked, internal ATS assignment only — 0 emails sent to candidate.
+     - Added synchronous `isPushingRef` guard preventing double submission on rapid clicks or enter key.
+     - Added in-memory client-side 60s deduplication cache (`sentJdDedupMap`) in `autoSendJdHelper.js`.
+     - Extended server-side SMTP email deduplication window to 60s in `/api/recruiter/send-email`.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-BAoGhTST.js`).
+  - Git committed and pushed to GitHub `origin/main`.
+  - Deployed bundle, `server/index.js`, and `autoSendJdHelper.js` to AWS Lightsail server (`34.194.119.199`).
+  - Reloaded PM2 `smarthire-ats`.
+  - Verified live endpoint `/api/candidates/view-resume` successfully resolves Mounika Kunduru docx preview.
+
+### 2026-09-25 — Requisition 159183 Set to Open & Deadline 10/06/2026, Vendor Hotlist Inline Resume Popup & New Window Preview
 - **Key Deliverables**:
   1. **Backend Real-Time Live AI Scan (`POST /api/candidates/live-ai-match` in `server/index.js`)**:
      - Resolves candidate profile (resume text, parsed skills, role, experience, location) and target client requisition.

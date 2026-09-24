@@ -2,14 +2,27 @@
  * Auto-Send Job Description to Candidate upon Requisition Assignment
  * Dispatches via logged-in recruiter's configured Yahoo/SMTP account
  */
+// In-memory client deduplication map (prevents any duplicate dispatches within 60s)
+const sentJdDedupMap = new Map();
+
 export async function autoSendJobDescriptionToCandidate({ candidate, job, recruiterUser, customNote = '' }) {
   if (!candidate || !candidate.email) {
     console.warn('Cannot auto-send JD: Candidate email is missing');
     return { success: false, message: 'Candidate email is missing' };
   }
 
-  const candName = candidate.name || candidate.extracted_profile?.name || 'Candidate';
   const candEmail = candidate.email.trim();
+  const rawReqId = String(job?.id || job?.reqId || candidate?.targetReqId || '159116').replace('J-', '').replace('REQ-', '').trim();
+  const dedupKey = `${candEmail.toLowerCase()}__${rawReqId}`;
+  const now = Date.now();
+
+  if (sentJdDedupMap.has(dedupKey) && (now - sentJdDedupMap.get(dedupKey) < 60000)) {
+    console.log(`ℹ️ [JD Email Dedup] Blocked duplicate email send to ${candEmail} for Req #${rawReqId}`);
+    return { success: true, message: 'JD email already sent (duplicate blocked)', deduplicated: true };
+  }
+  sentJdDedupMap.set(dedupKey, now);
+
+  const candName = candidate.name || candidate.extracted_profile?.name || 'Candidate';
 
   // Resolve recruiter details
   const myName = recruiterUser?.name || 'Technical Recruiter';

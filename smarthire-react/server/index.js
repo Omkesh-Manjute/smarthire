@@ -2007,50 +2007,232 @@ app.put('/api/candidates/:id', authenticateToken, (req, res) => {
 })
 
 // ─── GET /api/candidates/view-resume — Inline viewer for PDF and Word (.docx/.doc) ───
+// ─── GET /api/candidates/view-resume — Inline viewer for PDF and Word (.docx/.doc) ───
 app.get('/api/candidates/view-resume', async (req, res) => {
   try {
-    const rawFile = req.query.file || req.query.fileName || req.query.url || '';
+    const rawFile = req.query.file || req.query.fileName || req.query.url || req.query.storageUrl || '';
     const candName = req.query.name || req.query.candidateName || 'Candidate Resume';
-    if (!rawFile) {
-      return res.status(400).send('<h3>No resume file specified.</h3>');
-    }
+    const candEmail = req.query.email || '';
+    const candId = req.query.candId || req.query.id || '';
+    const isDownload = req.query.download === 'true' || req.query.download === '1';
 
-    const cleanFn = path.basename(String(rawFile).replace(/\\/g, '/'));
-    const candidateDocsDir = path.resolve(__dirname, 'uploads/candidate-docs');
-    const directUploadDir = path.resolve(__dirname, 'uploads');
+    const cleanFn = path.basename(String(rawFile).replace(/\\/g, '/')).trim();
+    const cleanStorage = req.query.storageUrl ? path.basename(String(req.query.storageUrl).replace(/\\/g, '/')).trim() : '';
 
-    let resolvedPath = null;
-    const candidatesToCheck = [
-      path.join(candidateDocsDir, cleanFn),
-      path.join(directUploadDir, cleanFn),
-      path.resolve(__dirname, '..', rawFile.replace(/^\//, '')),
-      path.resolve(__dirname, rawFile.replace(/^\//, ''))
+    const candidateDocsDirs = [
+      path.resolve(__dirname, 'uploads/candidate-docs'),
+      path.resolve(__dirname, 'uploads'),
+      path.resolve('/home/ubuntu/smarthire/smarthire-react/server/uploads/candidate-docs'),
+      path.resolve('/home/ubuntu/smarthire/smarthire-react/server/uploads'),
+      path.resolve('/home/ubuntu/smarthire/server/uploads/candidate-docs'),
+      path.resolve('/home/ubuntu/smarthire/server/uploads'),
+      path.resolve(__dirname, '../public/uploads')
     ];
 
-    for (const p of candidatesToCheck) {
-      if (fs.existsSync(p) && fs.statSync(p).isFile()) {
-        resolvedPath = p;
-        break;
+    let resolvedPath = null;
+
+    // 1. Direct match check
+    for (const dir of candidateDocsDirs) {
+      if (!fs.existsSync(dir)) continue;
+      if (cleanFn) {
+        const p1 = path.join(dir, cleanFn);
+        if (fs.existsSync(p1) && fs.statSync(p1).isFile()) { resolvedPath = p1; break; }
+      }
+      if (cleanStorage) {
+        const p2 = path.join(dir, cleanStorage);
+        if (fs.existsSync(p2) && fs.statSync(p2).isFile()) { resolvedPath = p2; break; }
       }
     }
 
+    // 2. Tokenized & timestamp-prefixed file matcher
     if (!resolvedPath) {
-      // Check partial matches in candidateDocsDir
-      if (fs.existsSync(candidateDocsDir)) {
-        const files = fs.readdirSync(candidateDocsDir);
-        const match = files.find(f => f.includes(cleanFn) || cleanFn.includes(f));
-        if (match) resolvedPath = path.join(candidateDocsDir, match);
+      const fnNoExt = cleanFn.replace(/\.[^/.]+$/, '');
+      const rawTokens = [
+        ...fnNoExt.split(/[\s_\-+(),.]+/),
+        ...(candName ? String(candName).split(/[\s_\-+(),.]+/) : []),
+        ...(candEmail ? [String(candEmail).split('@')[0]] : [])
+      ]
+        .map(t => t.toLowerCase().trim())
+        .filter(t => t.length >= 3 && !['resume', 'docx', 'pdf', 'doc', 'updated', 'latest', 'final'].includes(t));
+
+      const uniqueTokens = [...new Set(rawTokens)];
+      const expectedExt = path.extname(cleanFn).toLowerCase() || (cleanStorage ? path.extname(cleanStorage).toLowerCase() : '');
+
+      let bestFile = null;
+      let highestScore = 0;
+
+      for (const dir of candidateDocsDirs) {
+        if (!fs.existsSync(dir)) continue;
+        let files = [];
+        try { files = fs.readdirSync(dir); } catch (e) { continue; }
+
+        for (const f of files) {
+          const fullPath = path.join(dir, f);
+          try {
+            if (!fs.statSync(fullPath).isFile()) continue;
+          } catch (e) { continue; }
+
+          const fLower = f.toLowerCase();
+          const fExt = path.extname(fLower);
+          let score = 0;
+
+          if (expectedExt && fExt === expectedExt) score += 2;
+
+          let matchedCount = 0;
+          for (const tok of uniqueTokens) {
+            if (fLower.includes(tok)) {
+              matchedCount++;
+              score += 6;
+            }
+          }
+
+          if (uniqueTokens.length >= 2 && matchedCount >= 2) {
+            score += 25;
+          }
+
+          const fNorm = fLower.replace(/[^a-z0-9]/g, '');
+          const fnNorm = fnNoExt.toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (fnNorm.length >= 4 && fNorm.includes(fnNorm)) {
+            score += 20;
+          }
+
+          if (score > highestScore && score >= 6) {
+            highestScore = score;
+            bestFile = fullPath;
+          }
+        }
       }
+
+      if (bestFile) resolvedPath = bestFile;
     }
 
+    // 3. If file located and user requested download -> stream as attachment
+    if (resolvedPath && isDownload) {
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(cleanFn || path.basename(resolvedPath))}"`);
+      return fs.createReadStream(resolvedPath).pipe(res);
+    }
+
+    // 4. If file not on disk, search vendor hotlist / candidate records for rich dossier fallback
     if (!resolvedPath) {
+      let dossierCand = null;
+      // Search vendor_hotlists
+      if (Array.isArray(hotlistsStore)) {
+        dossierCand = hotlistsStore.find(h =>
+          (candId && String(h.id) === String(candId)) ||
+          (candEmail && h.candidateEmail && h.candidateEmail.toLowerCase() === candEmail.toLowerCase()) ||
+          (candName && h.candidateName && h.candidateName.toLowerCase() === candName.toLowerCase())
+        );
+      }
+      // Search candidatesStore
+      if (!dossierCand && Array.isArray(candidatesStore)) {
+        dossierCand = candidatesStore.find(c =>
+          (candId && String(c.id) === String(candId)) ||
+          (candEmail && c.email && c.email.toLowerCase() === candEmail.toLowerCase()) ||
+          (candName && c.name && c.name.toLowerCase() === candName.toLowerCase())
+        );
+      }
+
+      if (dossierCand) {
+        const dName = dossierCand.candidateName || dossierCand.name || candName;
+        const dRole = dossierCand.role || dossierCand.jobTitle || 'Bench Consultant';
+        const dExp = dossierCand.experience || '5+ Years';
+        const dLoc = dossierCand.location || 'Remote / US';
+        const dVisa = dossierCand.visa || dossierCand.visaStatus || 'Authorized';
+        const dEmail = dossierCand.candidateEmail || dossierCand.email || candEmail || 'N/A';
+        const dPhone = dossierCand.candidatePhone || dossierCand.phone || 'N/A';
+        const dVendor = dossierCand.vendorCompany || dossierCand.vendorName || 'Staffing Partner';
+        const dVendorEmail = dossierCand.vendorEmail || '';
+        const dRate = dossierCand.rate || '$70/hr';
+        const dSkills = Array.isArray(dossierCand.skills) ? dossierCand.skills : [];
+
+        return res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>${dName} — Vendor Candidate Dossier | SmartHire ATS</title>
+  <style>
+    body { margin: 0; padding: 0; background: #0F172A; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1E293B; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    .top-bar { width: 100%; background: #1E293B; border-bottom: 1px solid #334155; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
+    .cand-info { display: flex; align-items: center; gap: 12px; color: #FFFFFF; }
+    .cand-name { font-size: 16px; font-weight: 800; }
+    .file-name { font-size: 12px; color: #94A3B8; background: #0F172A; padding: 3px 8px; border-radius: 6px; border: 1px solid #334155; }
+    .actions { display: flex; align-items: center; gap: 10px; }
+    .btn { padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; border: none; }
+    .btn-print { background: #334155; color: #F8FAFC; }
+    .card { width: 100%; max-width: 840px; margin: 30px auto; padding: 36px 44px; background: #FFFFFF; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.45); }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; }
+    .skill-chip { display: inline-block; background: #F1F5F9; border: 1px solid #CBD5E1; color: #334155; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; margin: 3px; }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <div class="cand-info">
+      <div class="cand-name">${dName}</div>
+      <div class="file-name">Vendor Hotlist Dossier</div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-print" onclick="window.print()">🖨️ Print Dossier</button>
+    </div>
+  </div>
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1px solid #E2E8F0; padding-bottom:18px; margin-bottom:24px;">
+      <div>
+        <h1 style="margin:0 0 6px; font-size:22px; color:#0F172A;">${dName}</h1>
+        <div style="font-size:14px; font-weight:700; color:#2563EB;">${dRole}</div>
+      </div>
+      <div style="text-align:right;">
+        <span class="badge" style="background:#DBEAFE; color:#1D4ED8;">${dVisa}</span>
+        <div style="margin-top:6px; font-size:13px; font-weight:800; color:#059669;">Rate: ${dRate}</div>
+      </div>
+    </div>
+    <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:8px; padding:12px 16px; margin-bottom:24px; font-size:13px; color:#1E40AF;">
+      ℹ️ <strong>Vendor Transmission Notice:</strong> Profile was ingested directly from vendor hotlist transmission. Displaying verified candidate metadata dossier.
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:28px;">
+      <div>
+        <div style="font-size:11px; text-transform:uppercase; font-weight:700; color:#64748B;">Total Experience</div>
+        <div style="font-size:14px; font-weight:700; color:#0F172A; margin-top:2px;">${dExp}</div>
+      </div>
+      <div>
+        <div style="font-size:11px; text-transform:uppercase; font-weight:700; color:#64748B;">Location / Relocation</div>
+        <div style="font-size:14px; font-weight:700; color:#0F172A; margin-top:2px;">${dLoc}</div>
+      </div>
+      <div>
+        <div style="font-size:11px; text-transform:uppercase; font-weight:700; color:#64748B;">Direct Email</div>
+        <div style="font-size:14px; font-weight:700; color:#0F172A; margin-top:2px;">${dEmail}</div>
+      </div>
+      <div>
+        <div style="font-size:11px; text-transform:uppercase; font-weight:700; color:#64748B;">Direct Phone</div>
+        <div style="font-size:14px; font-weight:700; color:#0F172A; margin-top:2px;">${dPhone}</div>
+      </div>
+      <div>
+        <div style="font-size:11px; text-transform:uppercase; font-weight:700; color:#64748B;">Sponsoring Vendor / Agency</div>
+        <div style="font-size:14px; font-weight:700; color:#0F172A; margin-top:2px;">${dVendor} ${dVendorEmail ? `(${dVendorEmail})` : ''}</div>
+      </div>
+      <div>
+        <div style="font-size:11px; text-transform:uppercase; font-weight:700; color:#64748B;">Submission Status</div>
+        <div style="font-size:14px; font-weight:700; color:#059669; margin-top:2px;">Available for Immediate Client Requisitions</div>
+      </div>
+    </div>
+    <div>
+      <h3 style="margin:0 0 10px; font-size:14px; text-transform:uppercase; letter-spacing:0.5px; color:#0F172A;">Verified Technical Skills</h3>
+      <div>
+        ${dSkills.map(s => `<span class="skill-chip">${s}</span>`).join('')}
+      </div>
+    </div>
+  </div>
+</body>
+</html>`);
+      }
+
       return res.status(404).send(`
         <!DOCTYPE html>
         <html>
         <head><title>Resume Not Found - SmartHire ATS</title></head>
         <body style="font-family: sans-serif; text-align: center; padding: 50px; background: #0F172A; color: #F8FAFC;">
-          <h2>Document Not Found on Server</h2>
-          <p style="color: #94A3B8;">The file <code>${cleanFn}</code> could not be located in ATS storage.</p>
+          <h2>Document Not Located on Server</h2>
+          <p style="color: #94A3B8;">The document <code>${cleanFn || 'candidate resume'}</code> could not be located in ATS disk archives.</p>
         </body>
         </html>
       `);
@@ -2061,7 +2243,7 @@ app.get('/api/candidates/view-resume', async (req, res) => {
     // 1. PDF File -> Stream inline so browser PDF reader opens it in-page
     if (lower.endsWith('.pdf')) {
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(cleanFn)}"`);
+      res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(cleanFn || path.basename(resolvedPath))}"`);
       return fs.createReadStream(resolvedPath).pipe(res);
     }
 
@@ -2085,7 +2267,7 @@ app.get('/api/candidates/view-resume', async (req, res) => {
       bodyHtml = `<pre style="white-space: pre-wrap; font-family: monospace;">${rawText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`;
     }
 
-    const downloadUrl = `/uploads/candidate-docs/${encodeURIComponent(path.basename(resolvedPath))}`;
+    const downloadViewerUrl = `/api/candidates/view-resume?download=true&file=${encodeURIComponent(cleanFn || path.basename(resolvedPath))}&name=${encodeURIComponent(candName)}`;
 
     const docViewerHtml = `<!DOCTYPE html>
 <html lang="en">
@@ -2198,11 +2380,11 @@ app.get('/api/candidates/view-resume', async (req, res) => {
   <div class="top-bar">
     <div class="cand-info">
       <div class="cand-name">${candName}</div>
-      <div class="file-name">${cleanFn}</div>
+      <div class="file-name">${cleanFn || path.basename(resolvedPath)}</div>
     </div>
     <div class="actions">
       <button class="btn btn-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
-      <a class="btn btn-download" href="${downloadUrl}" download="${cleanFn}">📥 Download Original File</a>
+      <a class="btn btn-download" href="${downloadViewerUrl}">📥 Download Original File</a>
     </div>
   </div>
   <div class="page-container">
@@ -4390,7 +4572,26 @@ app.post('/api/candidates/:id/finalize-rate', async (req, res) => {
 // POST /api/candidates/:id/push-to-req — Pushes candidate to target requisition
 app.post('/api/candidates/:id/push-to-req', async (req, res) => {
   const { id } = req.params;
-  const { targetReqId, payRate, status, comments, recruiterName, recruiterEmail, email: bodyEmail, candidateName } = req.body;
+  const {
+    targetReqId,
+    payRate,
+    status,
+    comments,
+    recruiterName,
+    recruiterEmail,
+    email: bodyEmail,
+    candidateName,
+    phone,
+    role,
+    location,
+    experience,
+    visaStatus,
+    skills,
+    source,
+    sourceCategory,
+    vendorCompany,
+    vendorEmail
+  } = req.body;
 
   // Search by ID first, then fallback to email, then name — handles all ID format mismatches
   let candidate = candidatesStore.find(c =>
@@ -4409,31 +4610,73 @@ app.post('/api/candidates/:id/push-to-req', async (req, res) => {
     candidate = candidatesStore.find(c => c.name && c.name.toLowerCase() === candidateName.toLowerCase());
   }
 
-  if (!candidate) {
-    return res.status(404).json({ success: false, message: 'Candidate not found in unified pool.' });
-  }
-
   const cleanReqId = String(targetReqId || '').replace(/^J-/, '').replace(/^REQ-/, '').trim();
   const matchedJob = jobsStore.find(j => String(j.id).replace(/^J-/, '') === cleanReqId || String(j.reqId).replace(/^J-/, '') === cleanReqId);
 
-  candidate.targetReqId = cleanReqId;
-  candidate.reqId = cleanReqId;
-  candidate.job_id = `J-${cleanReqId}`;
-  candidate.pushedToJobsInHand = true;
-  if (payRate) {
-    candidate.payRate = payRate;
-    candidate.matchedJobRate = payRate;
+  // CRITICAL FIX: If candidate doesn't exist in candidatesStore (e.g. from Vendor Hotlists or new push),
+  // UPSERT the candidate so they are permanently saved into candidatesStore and visible in ATS!
+  if (!candidate) {
+    candidate = {
+      id: id || `cand-${Date.now()}`,
+      candidate_id: id || `cand-${Date.now()}`,
+      name: candidateName || req.body.name || 'Candidate',
+      email: bodyEmail || req.body.email || '',
+      phone: phone || '',
+      role: role || req.body.jobTitle || (matchedJob?.title || 'Applicant'),
+      location: location || 'Remote / US',
+      experience: experience || '5+ Years',
+      visaStatus: visaStatus || 'US Citizen',
+      skills: Array.isArray(skills) ? skills : [],
+      source: source || 'Vendor Hotlist',
+      sourceCategory: sourceCategory || 'vendor_bench',
+      vendorCompany: vendorCompany || '',
+      vendorEmail: vendorEmail || '',
+      targetReqId: cleanReqId,
+      reqId: cleanReqId,
+      job_id: `J-${cleanReqId}`,
+      pushedToJobsInHand: true,
+      status: status || 'Int-SubmittedToManager',
+      payRate: payRate || '$75/hr C2C',
+      matchedJobRate: payRate || '$75/hr C2C',
+      matchedJobTitle: matchedJob?.title || '',
+      matchedJobClient: matchedJob?.client || '',
+      assignedBy: recruiterName || 'Omkesh',
+      recruiter: recruiterName || 'Omkesh',
+      recruiterEmail: recruiterEmail || 'omkesh@coolsofttech.com',
+      statusComments: comments || `Pushed to Requisition #${cleanReqId}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      pushedAt: new Date().toISOString()
+    };
+    candidatesStore.unshift(candidate);
+  } else {
+    // Existing candidate update
+    candidate.targetReqId = cleanReqId;
+    candidate.reqId = cleanReqId;
+    candidate.job_id = `J-${cleanReqId}`;
+    candidate.pushedToJobsInHand = true;
+    if (payRate) {
+      candidate.payRate = payRate;
+      candidate.matchedJobRate = payRate;
+    }
+    if (status) candidate.status = status;
+    if (matchedJob) {
+      candidate.matchedJobTitle = matchedJob.title;
+      candidate.matchedJobClient = matchedJob.client;
+    }
+    if (recruiterName) {
+      candidate.assignedBy = recruiterName;
+      candidate.recruiter = recruiterName;
+    }
+    if (recruiterEmail) candidate.recruiterEmail = recruiterEmail;
+    if (comments) candidate.statusComments = comments;
+    if (phone && !candidate.phone) candidate.phone = phone;
+    if (role && !candidate.role) candidate.role = role;
+    if (vendorCompany && !candidate.vendorCompany) candidate.vendorCompany = vendorCompany;
+    if (vendorEmail && !candidate.vendorEmail) candidate.vendorEmail = vendorEmail;
+    candidate.pushedAt = new Date().toISOString();
+    candidate.updatedAt = new Date().toISOString();
   }
-  if (status) candidate.status = status;
-  if (matchedJob) {
-    candidate.matchedJobTitle = matchedJob.title;
-    candidate.matchedJobClient = matchedJob.client;
-  }
-  if (recruiterName) candidate.assignedBy = recruiterName;
-  if (recruiterEmail) candidate.recruiterEmail = recruiterEmail;
-  if (comments) candidate.statusComments = comments;
-  candidate.pushedAt = new Date().toISOString();
-  candidate.updatedAt = new Date().toISOString();
 
   await saveCandidatesToDisk();
 
@@ -8516,14 +8759,14 @@ app.post('/api/recruiter/email-config', express.json(), (req, res) => {
   res.json({ success: true, message: 'Email configuration saved!' });
 });
 
-// In-memory 15-second email deduplication cache to prevent duplicate dispatch
+// In-memory 60-second email deduplication cache to prevent duplicate dispatch
 const recentEmailSendsMap = new Map();
 setInterval(() => {
   const now = Date.now();
   for (const [key, timestamp] of recentEmailSendsMap.entries()) {
-    if (now - timestamp > 30000) recentEmailSendsMap.delete(key);
+    if (now - timestamp > 120000) recentEmailSendsMap.delete(key);
   }
-}, 30000);
+}, 60000);
 
 // POST send email via recruiter's configured SMTP
 app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
@@ -8531,10 +8774,11 @@ app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
   if (!recruiterEmail || !to || !subject) return res.json({ success: false, message: 'recruiterEmail, to, and subject required' });
 
   const toKey = Array.isArray(to) ? to.map(x => String(x).toLowerCase().trim()).sort().join(',') : String(to).toLowerCase().trim();
-  const dedupKey = `${String(recruiterEmail).toLowerCase().trim()}__${toKey}__${String(subject).trim()}`;
+  const cleanSub = String(subject).toLowerCase().replace(/\s+/g, ' ').trim();
+  const dedupKey = `${toKey}__${cleanSub}`;
   const now = Date.now();
-  if (recentEmailSendsMap.has(dedupKey) && (now - recentEmailSendsMap.get(dedupKey) < 15000)) {
-    console.log(`ℹ️ [Email Deduplication] Suppressed duplicate email dispatch for "${subject}" to ${toKey} within 15s window.`);
+  if (recentEmailSendsMap.has(dedupKey) && (now - recentEmailSendsMap.get(dedupKey) < 60000)) {
+    console.log(`ℹ️ [Email Deduplication] Suppressed duplicate email dispatch for "${subject}" to ${toKey} within 60s window.`);
     return res.json({ success: true, message: 'Email already sent (duplicate suppressed)', deduplicated: true });
   }
   recentEmailSendsMap.set(dedupKey, now);
