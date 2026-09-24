@@ -3347,6 +3347,14 @@ Email: ${myEmail}
         if (!type.includes(reqFilters.reqType.toLowerCase())) return false
       }
 
+      // India jobs only show in public Job Site, not in US ATS Dashboard
+      const isIndia = j && (
+        j.country === 'India' ||
+        j.countryId === '76415c4c-6968-454c-aabc-36c68a9b1f06' ||
+        /(?:pune|delhi|noida|hyderabad|bangalore|bengaluru|mumbai|gondia)\b/i.test(j.location || '')
+      )
+      if (isIndia) return false
+
       // Source Filter (All / COOLSOFT / InfoOrigin)
       if (dashboardSourceFilter && dashboardSourceFilter !== 'All') {
         const src = (j.source || j.client || j.company || '').toLowerCase()
@@ -3370,6 +3378,12 @@ Email: ${myEmail}
 
   const coolsoftJobsCount = useMemo(() => {
     return jobs.filter(j => {
+      const isIndia = j && (
+        j.country === 'India' ||
+        j.countryId === '76415c4c-6968-454c-aabc-36c68a9b1f06' ||
+        /(?:pune|delhi|noida|hyderabad|bangalore|bengaluru|mumbai|gondia)\b/i.test(j.location || '')
+      )
+      if (isIndia) return false
       const src = (j.source || j.client || j.company || '').toLowerCase()
       return !src.includes('infoorigin') && !src.includes('staffingorigin')
     }).length
@@ -3377,6 +3391,12 @@ Email: ${myEmail}
 
   const infooriginJobsCount = useMemo(() => {
     return jobs.filter(j => {
+      const isIndia = j && (
+        j.country === 'India' ||
+        j.countryId === '76415c4c-6968-454c-aabc-36c68a9b1f06' ||
+        /(?:pune|delhi|noida|hyderabad|bangalore|bengaluru|mumbai|gondia)\b/i.test(j.location || '')
+      )
+      if (isIndia) return false
       const src = (j.source || j.client || j.company || '').toLowerCase()
       return src.includes('infoorigin') || src.includes('staffingorigin')
     }).length

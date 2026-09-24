@@ -235,6 +235,7 @@ export default function PublicCareers() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedLocation, setSelectedLocation] = useState('All')
+  const [selectedCountry, setSelectedCountry] = useState('ALL') // 'ALL' | 'India' | 'USA'
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [deadlineFilter, setDeadlineFilter] = useState('All')
   const [chatEnabled, setChatEnabled] = useState(true)
@@ -728,10 +729,23 @@ export default function PublicCareers() {
         }
       }
 
+      // Country Filter (ALL / India / USA)
+      if (selectedCountry && selectedCountry !== 'ALL' && selectedCountry !== 'all') {
+        const isIndia = Boolean(
+          j.country === 'India' ||
+          j.countryId === '76415c4c-6968-454c-aabc-36c68a9b1f06' ||
+          /(?:pune|delhi|noida|hyderabad|bangalore|bengaluru|mumbai|gondia)\b/i.test(j.location || '')
+        )
+        if (selectedCountry.toUpperCase() === 'INDIA' && !isIndia) return false
+        if (selectedCountry.toUpperCase() === 'USA' && isIndia) return false
+      }
+
       // Keyword query match
       const titleMatch = (j.title || '').toLowerCase().includes(searchQuery.toLowerCase())
       const skillMatch = Array.isArray(j.skills) && j.skills.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()))
-      const locMatch = (resolveJobLocation(j) || 'Remote, US').toLowerCase().includes(searchQuery.toLowerCase())
+      const locMatch = (resolveJobLocation(j) || 'Remote, US').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (j.location || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (j.country || '').toLowerCase().includes(searchQuery.toLowerCase())
       const clientMatch = (j.client || j.source || j.company || '').toLowerCase().includes(searchQuery.toLowerCase())
       const reqIdMatch = String(resolveReqId(j.reqId || j.id, j)).toLowerCase().includes(searchQuery.toLowerCase())
       const qMatch = titleMatch || skillMatch || locMatch || clientMatch || reqIdMatch
@@ -744,9 +758,19 @@ export default function PublicCareers() {
       
       return qMatch
     })
-  }, [jobs, searchQuery, selectedLocation, selectedCategory, deadlineFilter])
+  }, [jobs, searchQuery, selectedLocation, selectedCountry, selectedCategory, deadlineFilter])
+
+  const isIndiaJob = (j) => Boolean(
+    j && (
+      j.country === 'India' ||
+      j.countryId === '76415c4c-6968-454c-aabc-36c68a9b1f06' ||
+      /(?:pune|delhi|noida|hyderabad|bangalore|bengaluru|mumbai|gondia)\b/i.test(j.location || '')
+    )
+  )
 
   const activeOpenJobs = useMemo(() => jobs.filter(j => !isJobExpired(j)), [jobs])
+  const indiaJobsCount = useMemo(() => activeOpenJobs.filter(isIndiaJob).length, [activeOpenJobs])
+  const usaJobsCount = useMemo(() => activeOpenJobs.filter(j => !isIndiaJob(j)).length, [activeOpenJobs])
   const todayDeadlineCount = useMemo(() => activeOpenJobs.filter(j => isDeadlineToday(j.deadline)).length, [activeOpenJobs])
   const remoteCount = useMemo(() => activeOpenJobs.filter(j => (j.location || j.work_mode || '').toLowerCase().includes('remote')).length, [activeOpenJobs])
   const hybridCount = useMemo(() => activeOpenJobs.filter(j => (j.location || j.work_mode || '').toLowerCase().includes('hybrid')).length, [activeOpenJobs])
@@ -962,6 +986,10 @@ export default function PublicCareers() {
         setSearchQuery={setSearchQuery}
         selectedLocation={selectedLocation}
         setSelectedLocation={setSelectedLocation}
+        selectedCountry={selectedCountry}
+        setSelectedCountry={setSelectedCountry}
+        indiaJobsCount={indiaJobsCount}
+        usaJobsCount={usaJobsCount}
         deadlineFilter={deadlineFilter}
         setDeadlineFilter={setDeadlineFilter}
         appliedJobs={appliedJobs}

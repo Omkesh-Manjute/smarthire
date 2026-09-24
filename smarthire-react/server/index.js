@@ -3992,17 +3992,46 @@ app.get('/api/jobs', (_req, res) => {
     return bNum - aNum;
   });
 
+  const isIndiaJob = (j) => Boolean(
+    j && (
+      j.country === 'India' ||
+      j.countryId === '76415c4c-6968-454c-aabc-36c68a9b1f06' ||
+      /(?:pune|delhi|noida|hyderabad|bangalore|bengaluru|mumbai|gondia)\b/i.test(j.location || '')
+    )
+  );
+
   const coolsoftCount = sorted.filter(j => j.source === 'COOLSOFT' || j.source === 'jobsinhand' || j.company === 'COOLSOFT LLC').length;
   const infooriginCount = sorted.filter(j => j.source === 'InfoOrigin' || j.client === 'InfoOrigin').length;
+  const indiaCount = sorted.filter(isIndiaJob).length;
+  const usaCount = sorted.filter(j => !isIndiaJob(j)).length;
 
   const requestedSource = _req.query?.source;
+  const requestedCountry = _req.query?.country;
+  const requestedScope = _req.query?.scope;
+
   let finalJobs = sorted;
-  if (requestedSource && requestedSource !== 'All') {
-    finalJobs = sorted.filter(j =>
+
+  // ATS Scope Exclusion: India jobs are restricted to the public Job Site only
+  if (requestedScope === 'ats' || _req.headers['x-ats-scope'] === 'true') {
+    finalJobs = finalJobs.filter(j => !isIndiaJob(j));
+  }
+
+  // Source Filter
+  if (requestedSource && requestedSource !== 'All' && requestedSource !== 'all') {
+    finalJobs = finalJobs.filter(j =>
       (j.source || '').toLowerCase() === requestedSource.toLowerCase() ||
       (j.client || '').toLowerCase() === requestedSource.toLowerCase() ||
       (j.company || '').toLowerCase() === requestedSource.toLowerCase()
     );
+  }
+
+  // Country Filter (Job Site Country Selection: ALL / India / USA)
+  if (requestedCountry && requestedCountry !== 'All' && requestedCountry !== 'all' && requestedCountry !== 'ALL') {
+    if (requestedCountry.toLowerCase() === 'india') {
+      finalJobs = finalJobs.filter(isIndiaJob);
+    } else if (requestedCountry.toLowerCase() === 'usa') {
+      finalJobs = finalJobs.filter(j => !isIndiaJob(j));
+    }
   }
 
   res.json({
@@ -4011,7 +4040,9 @@ app.get('/api/jobs', (_req, res) => {
     counts: {
       total: sorted.length,
       coolsoft: coolsoftCount,
-      infoorigin: infooriginCount
+      infoorigin: infooriginCount,
+      usa: usaCount,
+      india: indiaCount
     },
     jobs: finalJobs
   });
@@ -7728,13 +7759,24 @@ app.get('/api/jobs/scrape-infoorigin', async (req, res) => {
 });
 
 app.get('/api/jobs/sources-summary', (_req, res) => {
+  const isIndia = (j) => Boolean(
+    j && (
+      j.country === 'India' ||
+      j.countryId === '76415c4c-6968-454c-aabc-36c68a9b1f06' ||
+      /(?:pune|delhi|noida|hyderabad|bangalore|bengaluru|mumbai|gondia)\b/i.test(j.location || '')
+    )
+  );
   const coolsoftCount = jobsStore.filter(j => j && (j.source === 'COOLSOFT' || j.source === 'jobsinhand' || j.company === 'COOLSOFT LLC')).length;
   const infooriginCount = jobsStore.filter(j => j && (j.source === 'InfoOrigin' || j.client === 'InfoOrigin')).length;
+  const indiaCount = jobsStore.filter(isIndia).length;
+  const usaCount = jobsStore.filter(j => !isIndia(j)).length;
   res.json({
     success: true,
     total: jobsStore.length,
     coolsoft: coolsoftCount,
-    infoorigin: infooriginCount
+    infoorigin: infooriginCount,
+    usa: usaCount,
+    india: indiaCount
   });
 });
 

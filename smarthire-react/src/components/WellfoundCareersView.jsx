@@ -389,6 +389,10 @@ export default function WellfoundCareersView({
   setSearchQuery,
   selectedLocation = 'All',
   setSelectedLocation,
+  selectedCountry = 'ALL',
+  setSelectedCountry,
+  indiaJobsCount = 0,
+  usaJobsCount = 0,
   deadlineFilter = 'All',
   setDeadlineFilter,
   appliedJobs = [],
@@ -826,6 +830,20 @@ export default function WellfoundCareersView({
               }}>
                 {domainName}
               </span>
+              {Boolean(job.country === 'India' || job.countryId === '76415c4c-6968-454c-aabc-36c68a9b1f06' || /(?:pune|delhi|noida|hyderabad|bangalore|bengaluru|mumbai|gondia)\b/i.test(job.location || '')) && (
+                <span style={{
+                  fontSize: 10.5,
+                  fontWeight: 800,
+                  padding: '2px 7px',
+                  borderRadius: 4,
+                  backgroundColor: '#FEF3C7',
+                  color: '#92400E',
+                  border: '1px solid #FDE68A',
+                  letterSpacing: '0.02em'
+                }}>
+                  India
+                </span>
+              )}
               <span style={{ fontSize: 12, fontWeight: 700, color: colors.textMuted }}>
                 #{resolveReqId(job.reqId || job.id, job)}
               </span>
@@ -1173,19 +1191,63 @@ export default function WellfoundCareersView({
 
             <nav style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <button
-                onClick={handleBackToAllJobs}
+                onClick={() => {
+                  handleBackToAllJobs()
+                  if (setSelectedCountry) setSelectedCountry('ALL')
+                  if (setSelectedLocation) setSelectedLocation('All')
+                }}
                 style={{
-                  background: !selectedJobId ? (isLight ? '#F3F4F6' : '#1F2937') : 'transparent',
+                  background: (!selectedJobId && selectedCountry === 'ALL' && selectedLocation !== 'Remote') ? (isLight ? '#F3F4F6' : '#1F2937') : 'transparent',
                   border: 'none',
                   fontSize: 14,
-                  fontWeight: !selectedJobId ? 700 : 500,
-                  color: !selectedJobId ? colors.textPrimary : colors.textSecondary,
+                  fontWeight: (!selectedJobId && selectedCountry === 'ALL' && selectedLocation !== 'Remote') ? 700 : 500,
+                  color: (!selectedJobId && selectedCountry === 'ALL' && selectedLocation !== 'Remote') ? colors.textPrimary : colors.textSecondary,
                   padding: '6px 12px',
                   borderRadius: 6,
                   cursor: 'pointer'
                 }}
               >
-                Jobs
+                All Jobs
+              </button>
+              <button
+                onClick={() => {
+                  handleBackToAllJobs()
+                  if (setSelectedCountry) setSelectedCountry('India')
+                  const el = document.getElementById('wellfound-split-workspace')
+                  if (el) el.scrollIntoView({ behavior: 'smooth' })
+                }}
+                style={{
+                  background: selectedCountry === 'India' ? (isLight ? '#EEF2FF' : '#1E1B4B') : 'transparent',
+                  border: selectedCountry === 'India' ? '1px solid #C7D2FE' : 'none',
+                  fontSize: 14,
+                  fontWeight: selectedCountry === 'India' ? 700 : 500,
+                  color: selectedCountry === 'India' ? '#4F46E5' : colors.textSecondary,
+                  padding: '6px 12px',
+                  borderRadius: 6,
+                  cursor: 'pointer'
+                }}
+              >
+                India ({indiaJobsCount || 25})
+              </button>
+              <button
+                onClick={() => {
+                  handleBackToAllJobs()
+                  if (setSelectedCountry) setSelectedCountry('USA')
+                  const el = document.getElementById('wellfound-split-workspace')
+                  if (el) el.scrollIntoView({ behavior: 'smooth' })
+                }}
+                style={{
+                  background: selectedCountry === 'USA' ? (isLight ? '#F3F4F6' : '#1F2937') : 'transparent',
+                  border: 'none',
+                  fontSize: 14,
+                  fontWeight: selectedCountry === 'USA' ? 700 : 500,
+                  color: selectedCountry === 'USA' ? colors.textPrimary : colors.textSecondary,
+                  padding: '6px 12px',
+                  borderRadius: 6,
+                  cursor: 'pointer'
+                }}
+              >
+                USA
               </button>
               <button
                 onClick={() => {
@@ -1430,6 +1492,36 @@ export default function WellfoundCareersView({
                     fontFamily: 'inherit'
                   }}
                 />
+              </div>
+
+              {/* Vertical Divider */}
+              <div style={{ width: 1, height: 32, backgroundColor: colors.border }} />
+
+              {/* Country Selector Dropdown (StaffingOrigin style: ALL / India / USA) */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                <select
+                  value={selectedCountry}
+                  onChange={(e) => {
+                    if (setSelectedCountry) setSelectedCountry(e.target.value)
+                  }}
+                  style={{
+                    border: `1px solid ${selectedCountry === 'India' ? '#818CF8' : colors.border}`,
+                    outline: 'none',
+                    backgroundColor: selectedCountry === 'India' ? (isLight ? '#EEF2FF' : '#1E1B4B') : (isLight ? '#F8FAFC' : '#1E293B'),
+                    color: selectedCountry === 'India' ? '#4F46E5' : colors.textPrimary,
+                    fontSize: 13.5,
+                    fontWeight: 700,
+                    borderRadius: 20,
+                    padding: '8px 14px',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit'
+                  }}
+                  title="Filter by country"
+                >
+                  <option value="ALL">All Countries</option>
+                  <option value="India">India ({indiaJobsCount || 25})</option>
+                  <option value="USA">USA ({usaJobsCount || 117})</option>
+                </select>
               </div>
 
               {/* Black Pill Search Button */}
@@ -1737,21 +1829,64 @@ export default function WellfoundCareersView({
               borderBottom: `1px solid ${colors.borderLight}`
             }}>
               <button
-                onClick={() => setActiveCategoryFilter('all')}
+                onClick={() => {
+                  if (setSelectedCountry) setSelectedCountry('ALL')
+                  setActiveCategoryFilter('all')
+                }}
                 style={{
                   padding: '6px 16px',
                   borderRadius: 20,
                   fontSize: 13,
                   fontWeight: 600,
-                  border: `1px solid ${activeCategoryFilter === 'all' ? colors.buttonDark : colors.border}`,
-                  backgroundColor: activeCategoryFilter === 'all' ? colors.buttonDark : colors.cardBg,
-                  color: activeCategoryFilter === 'all' ? colors.buttonDarkText : colors.textPrimary,
+                  border: `1px solid ${(activeCategoryFilter === 'all' && selectedCountry === 'ALL') ? colors.buttonDark : colors.border}`,
+                  backgroundColor: (activeCategoryFilter === 'all' && selectedCountry === 'ALL') ? colors.buttonDark : colors.cardBg,
+                  color: (activeCategoryFilter === 'all' && selectedCountry === 'ALL') ? colors.buttonDarkText : colors.textPrimary,
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                   whiteSpace: 'nowrap'
                 }}
               >
-                All Requisitions ({filteredJobs.length})
+                All Requisitions ({jobs.length})
+              </button>
+              <button
+                onClick={() => {
+                  if (setSelectedCountry) setSelectedCountry(selectedCountry === 'India' ? 'ALL' : 'India')
+                  setActiveCategoryFilter('all')
+                }}
+                style={{
+                  padding: '6px 16px',
+                  borderRadius: 20,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  border: `1px solid ${selectedCountry === 'India' ? '#4F46E5' : '#C7D2FE'}`,
+                  backgroundColor: selectedCountry === 'India' ? '#4F46E5' : (isLight ? '#EEF2FF' : '#1E1B4B'),
+                  color: selectedCountry === 'India' ? '#FFFFFF' : '#4F46E5',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                India ({indiaJobsCount || 25})
+              </button>
+              <button
+                onClick={() => {
+                  if (setSelectedCountry) setSelectedCountry(selectedCountry === 'USA' ? 'ALL' : 'USA')
+                  setActiveCategoryFilter('all')
+                }}
+                style={{
+                  padding: '6px 16px',
+                  borderRadius: 20,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  border: `1px solid ${selectedCountry === 'USA' ? colors.buttonDark : colors.border}`,
+                  backgroundColor: selectedCountry === 'USA' ? colors.buttonDark : colors.cardBg,
+                  color: selectedCountry === 'USA' ? colors.buttonDarkText : colors.textPrimary,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                USA ({usaJobsCount || 117})
               </button>
               <button
                 onClick={() => setActiveCategoryFilter('dev')}
@@ -1844,17 +1979,19 @@ export default function WellfoundCareersView({
             <div className="wellfound-2col-workspace">
               {/* ── Left Column: Job Feeds ── */}
               <div>
-                {/* When User is filtering or searching, show flat list */}
-                {activeCategoryFilter !== 'all' || searchQuery ? (
+                {/* When User is filtering by country, category, or searching, show flat list */}
+                {activeCategoryFilter !== 'all' || searchQuery || (selectedCountry && selectedCountry !== 'ALL') ? (
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                       <h2 style={{ fontSize: 20, fontWeight: 800, color: colors.textPrimary, margin: 0, letterSpacing: '-0.02em' }}>
-                        {activeCategoryFilter === 'cloud' && 'Cloud & Infrastructure Jobs'}
-                        {activeCategoryFilter === 'dev' && 'Engineering Jobs'}
-                        {activeCategoryFilter === 'data' && 'Data & Analytics Jobs'}
-                        {activeCategoryFilter === 'health' && 'Public Health & State Jobs'}
-                        {activeCategoryFilter === 'mgmt' && 'Management & Governance Jobs'}
-                        {activeCategoryFilter === 'all' && `Search Results (${categoryFilteredJobs.length})`}
+                        {selectedCountry === 'India' && `India Open Positions (${categoryFilteredJobs.length} positions found)`}
+                        {selectedCountry === 'USA' && `USA Open Requisitions (${categoryFilteredJobs.length} positions found)`}
+                        {selectedCountry === 'ALL' && activeCategoryFilter === 'cloud' && 'Cloud & Infrastructure Jobs'}
+                        {selectedCountry === 'ALL' && activeCategoryFilter === 'dev' && 'Engineering Jobs'}
+                        {selectedCountry === 'ALL' && activeCategoryFilter === 'data' && 'Data & Analytics Jobs'}
+                        {selectedCountry === 'ALL' && activeCategoryFilter === 'health' && 'Public Health & State Jobs'}
+                        {selectedCountry === 'ALL' && activeCategoryFilter === 'mgmt' && 'Management & Governance Jobs'}
+                        {selectedCountry === 'ALL' && activeCategoryFilter === 'all' && `Search Results (${categoryFilteredJobs.length})`}
                       </h2>
                       <span style={{ fontSize: 13, color: colors.textSecondary }}>
                         Showing {categoryFilteredJobs.length} matches
@@ -2205,6 +2342,20 @@ export default function WellfoundCareersView({
                           <LocationIcon size={12} color={colors.textSecondary} />
                           <span>{loc}</span>
                         </span>
+
+                        {Boolean(job.country === 'India' || job.countryId === '76415c4c-6968-454c-aabc-36c68a9b1f06' || /(?:pune|delhi|noida|hyderabad|bangalore|bengaluru|mumbai|gondia)\b/i.test(job.location || '')) && (
+                          <span style={{
+                            fontSize: 10.5,
+                            fontWeight: 800,
+                            padding: '1px 6px',
+                            borderRadius: 4,
+                            backgroundColor: '#FEF3C7',
+                            color: '#92400E',
+                            border: '1px solid #FDE68A'
+                          }}>
+                            India
+                          </span>
+                        )}
                       </div>
 
                       {/* Bottom Row: Local Candidate Requirement Pill */}
@@ -2351,6 +2502,20 @@ export default function WellfoundCareersView({
                     }}>
                       {(selectedJob?.source === 'InfoOrigin' || selectedJob?.client === 'InfoOrigin' || selectedJob?.company === 'InfoOrigin') ? 'INFO ORIGIN' : 'COOLSOFT LLC'}
                     </span>
+                    {Boolean(selectedJob?.country === 'India' || selectedJob?.countryId === '76415c4c-6968-454c-aabc-36c68a9b1f06' || /(?:pune|delhi|noida|hyderabad|bangalore|bengaluru|mumbai|gondia)\b/i.test(selectedJob?.location || '')) && (
+                      <span style={{
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        letterSpacing: '0.05em',
+                        color: '#92400E',
+                        background: '#FEF3C7',
+                        border: '1px solid #FDE68A',
+                        padding: '2px 8px',
+                        borderRadius: 4
+                      }}>
+                        India
+                      </span>
+                    )}
                     <span style={{ fontSize: 12, color: colors.textMuted, fontWeight: 700 }}>
                       · Req #{resolveReqId(selectedJob?.reqId || selectedJob?.id, selectedJob)}
                     </span>

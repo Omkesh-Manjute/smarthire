@@ -106,7 +106,7 @@ export async function scrapeInfoOrigin(logger = console.log) {
   logger('🌐 Connecting to Staffing Origin / InfoOrigin API...');
   
   // 1. Fetch Countries
-  let countryMap = { '2': 'USA', '1': 'India' };
+  let countryMap = { '2': 'USA', '1': 'India', '76415c4c-6968-454c-aabc-36c68a9b1f06': 'India' };
   try {
     const countries = await fetchJson(API_COUNTRY_URL);
     if (Array.isArray(countries)) {
@@ -135,8 +135,14 @@ export async function scrapeInfoOrigin(logger = console.log) {
 
     const reqId = String(j.REQ_ID || j.REQUIREMENT_UUID);
     const title = (j.PSTN_TITLE || 'IT Specialist').trim();
-    const countryName = countryMap[j.COUNTRY] || (j.COUNTRY === '2' ? 'USA' : 'India');
-    const location = (j.PSTN_LCTN || countryName || 'USA').trim();
+    const rawLoc = (j.PSTN_LCTN || '').trim();
+    const isIndia = j.COUNTRY === '76415c4c-6968-454c-aabc-36c68a9b1f06' ||
+      j.COUNTRY === '1' ||
+      j.COUNTRY === 1 ||
+      String(countryMap[j.COUNTRY] || '').toLowerCase() === 'india' ||
+      /(?:pune|delhi|noida|hyderabad|bangalore|bengaluru|mumbai|gondia|gurgaon|gurugram|\bmh\b|\bdl\b|\bup\b|\bts\b|\bka\b)/i.test(rawLoc);
+    const countryName = isIndia ? 'India' : (countryMap[j.COUNTRY] || (j.COUNTRY === '2' ? 'USA' : 'USA'));
+    const location = (rawLoc || (isIndia ? 'India' : 'USA')).trim();
     const workMode = (j.WORK_LOCATION_PREFERENCE || 'Onsite').trim();
     const jobType = (j.PSTN_TYP || 'Contract').trim();
     const rate = (j.PSTN_RATE || 'Market Rate').trim();

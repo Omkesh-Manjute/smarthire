@@ -3802,7 +3802,14 @@ export default function RecruiterInbox({ defaultViewMode }) {
       .then(data => {
         const jList = Array.isArray(data) ? data : (data.jobs || [])
         if (jList && jList.length > 0) {
-          const activeOnly = jList.filter(isJobActiveAndOpen)
+          const activeOnly = jList.filter(isJobActiveAndOpen).filter(j => {
+            const isIndia = j && (
+              j.country === 'India' ||
+              j.countryId === '76415c4c-6968-454c-aabc-36c68a9b1f06' ||
+              /(?:pune|delhi|noida|hyderabad|bangalore|bengaluru|mumbai|gondia)\b/i.test(j.location || '')
+            )
+            return !isIndia
+          })
           setOpenJobsList(prev => {
             const merged = [...prev.filter(isJobActiveAndOpen)]
             activeOnly.forEach(j => {

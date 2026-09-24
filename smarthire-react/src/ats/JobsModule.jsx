@@ -112,7 +112,15 @@ function JobsModule({
   const [copiedLinkSuccess, setCopiedLinkSuccess] = useState(false)
   const [copyLinkToast, setCopyLinkToast] = useState('')
 
-  const allSafeJobs = Array.isArray(jobsList) ? jobsList : []
+  // India jobs only appear on the public Job Site; ATS Platform is strictly US requisitions
+  const allSafeJobs = (Array.isArray(jobsList) ? jobsList : []).filter(j => {
+    const isIndia = j && (
+      j.country === 'India' ||
+      j.countryId === '76415c4c-6968-454c-aabc-36c68a9b1f06' ||
+      /(?:pune|delhi|noida|hyderabad|bangalore|bengaluru|mumbai|gondia)\b/i.test(j.location || '')
+    )
+    return !isIndia
+  })
   // Recruiters see only their own jobs; Admin sees all
   const safeJobs = isSuperAdmin
     ? allSafeJobs
