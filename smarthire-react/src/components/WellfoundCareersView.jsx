@@ -925,15 +925,15 @@ export default function WellfoundCareersView({
         key={job.id}
         onClick={() => handleSelectJob(job.id)}
         style={{
-          display: 'flex',
+          display: 'grid',
+          gridTemplateColumns: 'minmax(270px, 2.3fr) minmax(170px, 1.3fr) minmax(160px, 1.2fr) minmax(130px, 1fr) minmax(105px, 0.7fr)',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '16px 20px',
+          gap: 12,
+          padding: '13px 18px',
           borderBottom: `1px solid ${colors.borderLight}`,
           backgroundColor: colors.cardBg,
           cursor: 'pointer',
-          transition: 'background-color 0.15s ease, transform 0.15s ease',
-          gap: 16
+          transition: 'background-color 0.15s ease',
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.backgroundColor = colors.hoverBg
@@ -942,14 +942,13 @@ export default function WellfoundCareersView({
           e.currentTarget.style.backgroundColor = colors.cardBg
         }}
       >
-        {/* Left: Company Logo & Info */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0, flex: 1 }}>
-          <CompanyLogo job={job} size={42} />
-
+        {/* Column 1: Monogram Logo + Role Title & Experience */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+          <CompanyLogo job={job} size={38} />
           <div style={{ minWidth: 0, flex: 1 }}>
             <h4 style={{
-              margin: '0 0 5px',
-              fontSize: 15.5,
+              margin: '0 0 3px',
+              fontSize: 14.5,
               fontWeight: 700,
               color: colors.textPrimary,
               whiteSpace: 'nowrap',
@@ -959,103 +958,123 @@ export default function WellfoundCareersView({
             }}>
               {cleanTitle}
             </h4>
-
-            <div style={{
-              fontSize: 13,
-              color: colors.textSecondary,
-              display: 'flex',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: 6
-            }}>
-              <span style={{
-                fontSize: 11,
-                fontWeight: 800,
-                padding: '2px 7px',
-                borderRadius: 4,
-                backgroundColor: isLight ? '#EFF6FF' : '#1E293B',
-                color: isLight ? '#1D4ED8' : '#60A5FA',
-                border: `1px solid ${isLight ? '#BFDBFE' : '#2563EB'}`,
-                letterSpacing: '0.02em'
-              }}>
-                {domainName}
-              </span>
-              {Boolean(job.country === 'India' || job.countryId === '76415c4c-6968-454c-aabc-36c68a9b1f06' || /(?:pune|delhi|noida|hyderabad|bangalore|bengaluru|mumbai|gondia)\b/i.test(job.location || '')) && (
-                <span style={{
-                  fontSize: 10.5,
-                  fontWeight: 800,
-                  padding: '2px 7px',
-                  borderRadius: 4,
-                  backgroundColor: '#FEF3C7',
-                  color: '#92400E',
-                  border: '1px solid #FDE68A',
-                  letterSpacing: '0.02em'
-                }}>
-                  India
-                </span>
-              )}
-
-              <span style={{
-                fontSize: 11.5,
-                fontWeight: 700,
-                padding: '2px 8px',
-                borderRadius: 4,
-                backgroundColor: workModeBadge.bg,
-                color: workModeBadge.text,
-                border: `1px solid ${workModeBadge.border}`
-              }}>
-                {workMode}
+            <div style={{ fontSize: 11.5, color: colors.textSecondary, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontWeight: 600, color: '#2563EB' }}>
+                {formatExperience ? formatExperience(job) : '5+ Years Exp'}
               </span>
               <span style={{ color: colors.textMuted }}>•</span>
-              <span>{loc}</span>
-              <span style={{ color: colors.textMuted }}>•</span>
-              <span style={{
-                fontSize: 11.5,
-                fontWeight: 600,
-                padding: '2px 8px',
-                borderRadius: 4,
-                backgroundColor: colors.badgeBg,
-                color: colors.textSecondary
-              }}>
-                {localReq.label}
-              </span>
-              {isExpired && (
-                <span style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: '#DC2626',
-                  backgroundColor: isLight ? '#FEE2E2' : '#450A0A',
-                  padding: '1px 6px',
-                  borderRadius: 4,
-                  marginLeft: 4
-                }}>
-                  Closed
-                </span>
-              )}
+              <span style={{ color: colors.textMuted }}>Contract / W2 / C2C</span>
             </div>
           </div>
         </div>
 
-        {/* Right: View Job Action Button Only (No save, No apply on page 1) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+        {/* Column 2: Client Domain & Country */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', minWidth: 0 }}>
+          <span style={{
+            fontSize: 11,
+            fontWeight: 800,
+            padding: '3px 8px',
+            borderRadius: 5,
+            backgroundColor: isLight ? '#EFF6FF' : '#1E293B',
+            color: isLight ? '#1D4ED8' : '#60A5FA',
+            border: `1px solid ${isLight ? '#BFDBFE' : '#2563EB'}`,
+            letterSpacing: '0.02em',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            maxWidth: 160
+          }} title={domainName}>
+            {domainName}
+          </span>
+          {Boolean(job.country === 'India' || job.countryId === '76415c4c-6968-454c-aabc-36c68a9b1f06' || /(?:pune|delhi|noida|hyderabad|bangalore|bengaluru|mumbai|gondia)\b/i.test(job.location || '')) && (
+            <span style={{
+              fontSize: 10,
+              fontWeight: 800,
+              padding: '2px 6px',
+              borderRadius: 4,
+              backgroundColor: '#FEF3C7',
+              color: '#92400E',
+              border: '1px solid #FDE68A',
+              letterSpacing: '0.02em',
+              whiteSpace: 'nowrap'
+            }}>
+              India
+            </span>
+          )}
+        </div>
+
+        {/* Column 3: Location & Work Mode */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+          <span style={{
+            fontSize: 11,
+            fontWeight: 700,
+            padding: '2px 7px',
+            borderRadius: 4,
+            backgroundColor: workModeBadge.bg,
+            color: workModeBadge.text,
+            border: `1px solid ${workModeBadge.border}`,
+            whiteSpace: 'nowrap',
+            flexShrink: 0
+          }}>
+            {workMode}
+          </span>
+          <span style={{ fontSize: 12.5, color: colors.textPrimary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 120 }} title={loc}>
+            {loc}
+          </span>
+        </div>
+
+        {/* Column 4: Engagement & Local Requirement */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+          <span style={{
+            fontSize: 11,
+            fontWeight: 600,
+            padding: '2px 8px',
+            borderRadius: 4,
+            backgroundColor: colors.badgeBg,
+            color: colors.textSecondary,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            maxWidth: 130
+          }} title={localReq.label}>
+            {localReq.label}
+          </span>
+          {isExpired && (
+            <span style={{
+              fontSize: 10,
+              fontWeight: 700,
+              color: '#DC2626',
+              backgroundColor: isLight ? '#FEE2E2' : '#450A0A',
+              padding: '1px 5px',
+              borderRadius: 4,
+              whiteSpace: 'nowrap'
+            }}>
+              Closed
+            </span>
+          )}
+        </div>
+
+        {/* Column 5: Action Button */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexShrink: 0 }}>
           <button
             onClick={(e) => {
               e.stopPropagation()
               handleSelectJob(job.id)
             }}
             style={{
-              padding: '8px 18px',
+              padding: '6px 14px',
               borderRadius: 6,
               border: `1px solid ${colors.border}`,
               backgroundColor: isLight ? '#FFFFFF' : '#1F2937',
               color: colors.textPrimary,
-              fontSize: 13,
+              fontSize: 12.5,
               fontWeight: 700,
               cursor: 'pointer',
               transition: 'all 0.15s ease',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 6
+              gap: 4,
+              whiteSpace: 'nowrap'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.borderColor = colors.textPrimary
@@ -1069,12 +1088,39 @@ export default function WellfoundCareersView({
             }}
           >
             <span>View Job</span>
-            <ChevronRightIcon size={13} color="currentColor" />
+            <ChevronRightIcon size={12} color="currentColor" />
           </button>
         </div>
       </div>
     )
   }
+
+  // ─── Crisp Table Column Headers ──────────────────────────────────────────
+  const renderTableHeader = () => (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'minmax(270px, 2.3fr) minmax(170px, 1.3fr) minmax(160px, 1.2fr) minmax(130px, 1fr) minmax(105px, 0.7fr)',
+      alignItems: 'center',
+      gap: 12,
+      padding: '10px 18px',
+      backgroundColor: isLight ? '#F1F5F9' : '#1E293B',
+      borderBottom: `1px solid ${colors.border}`,
+      fontSize: 11,
+      fontWeight: 800,
+      color: isLight ? '#475569' : '#94A3B8',
+      textTransform: 'uppercase',
+      letterSpacing: '0.06em',
+      userSelect: 'none',
+      borderTopLeftRadius: 10,
+      borderTopRightRadius: 10
+    }}>
+      <div>Role / Position Title</div>
+      <div>Client Domain</div>
+      <div>Location &amp; Mode</div>
+      <div>Engagement / Auth</div>
+      <div style={{ textAlign: 'right' }}>Action</div>
+    </div>
+  )
 
   // ─── Dedicated Reusable Google AdSense & Highlights Sidebar ───────────────
   const renderSidebarAds = () => (
@@ -2026,7 +2072,12 @@ export default function WellfoundCareersView({
                         </div>
                       ) : (
                         <>
-                          {paginatedJobs.map(job => renderJobRow(job))}
+                          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                            <div style={{ minWidth: 780 }}>
+                              {renderTableHeader()}
+                              {paginatedJobs.map(job => renderJobRow(job))}
+                            </div>
+                          </div>
 
                           {/* Authentic StaffingOrigin-style Pagination Controls (< 1 2 >) */}
                           {totalPages > 1 && (
@@ -2157,7 +2208,12 @@ export default function WellfoundCareersView({
                         </span>
                       </div>
                       <div style={{ border: `1px solid ${colors.border}`, borderRadius: 12, overflow: 'hidden' }}>
-                        {categorizedJobBuckets.trending.map(job => renderJobRow(job))}
+                        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                          <div style={{ minWidth: 780 }}>
+                            {renderTableHeader()}
+                            {categorizedJobBuckets.trending.map(job => renderJobRow(job))}
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -2183,7 +2239,12 @@ export default function WellfoundCareersView({
                         </button>
                       </div>
                       <div style={{ border: `1px solid ${colors.border}`, borderRadius: 12, overflow: 'hidden' }}>
-                        {categorizedJobBuckets.engineering.map(job => renderJobRow(job))}
+                        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                          <div style={{ minWidth: 780 }}>
+                            {renderTableHeader()}
+                            {categorizedJobBuckets.engineering.map(job => renderJobRow(job))}
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -2209,7 +2270,12 @@ export default function WellfoundCareersView({
                         </button>
                       </div>
                       <div style={{ border: `1px solid ${colors.border}`, borderRadius: 12, overflow: 'hidden' }}>
-                        {categorizedJobBuckets.dataAnalytics.map(job => renderJobRow(job))}
+                        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                          <div style={{ minWidth: 780 }}>
+                            {renderTableHeader()}
+                            {categorizedJobBuckets.dataAnalytics.map(job => renderJobRow(job))}
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -2235,7 +2301,12 @@ export default function WellfoundCareersView({
                         </button>
                       </div>
                       <div style={{ border: `1px solid ${colors.border}`, borderRadius: 12, overflow: 'hidden' }}>
-                        {categorizedJobBuckets.cloudDevops.map(job => renderJobRow(job))}
+                        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                          <div style={{ minWidth: 780 }}>
+                            {renderTableHeader()}
+                            {categorizedJobBuckets.cloudDevops.map(job => renderJobRow(job))}
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -2261,7 +2332,12 @@ export default function WellfoundCareersView({
                         </button>
                       </div>
                       <div style={{ border: `1px solid ${colors.border}`, borderRadius: 12, overflow: 'hidden' }}>
-                        {categorizedJobBuckets.managementPublic.map(job => renderJobRow(job))}
+                        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                          <div style={{ minWidth: 780 }}>
+                            {renderTableHeader()}
+                            {categorizedJobBuckets.managementPublic.map(job => renderJobRow(job))}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>

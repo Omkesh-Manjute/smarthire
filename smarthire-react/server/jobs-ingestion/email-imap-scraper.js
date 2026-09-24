@@ -43,6 +43,58 @@ const COMMON_SKILLS = [
 ];
 
 /**
+ * Robust candidate experience extractor from resume text, profile metadata, or role seniority
+ */
+export function extractCandidateExperience(resumeText = '', summary = '', rawProfile = null, role = '') {
+  const corpus = `${resumeText || ''} ${summary || ''} ${rawProfile?.rawText || ''} ${rawProfile?.summary || ''}`;
+  
+  if (corpus.trim().length > 30) {
+    const m1 = corpus.match(/(?:having|with|over|around|about|total|approx(?:imately)?|more than|at least)?\s*(\d{1,2}(?:\.\d)?)\+?\s*(?:\+|plus)?\s*(?:years?|yrs?)\s*(?:of)?\s*(?:professional|relevant|industry|work|hands-on|IT|software|technical)?\s*experience/i);
+    if (m1 && Number(m1[1]) >= 1 && Number(m1[1]) <= 35) {
+      return `${Math.round(Number(m1[1]))}+ Years`;
+    }
+
+    const m2 = corpus.match(/(\d{1,2})\+?\s*(?:years?|yrs?)\s+exp(?:erience)?\b/i);
+    if (m2 && Number(m2[1]) >= 1 && Number(m2[1]) <= 35) {
+      return `${Math.round(Number(m2[1]))}+ Years`;
+    }
+
+    const m3 = corpus.match(/(?:total\s+)?experience\s*[:\-]\s*(\d{1,2}(?:\.\d)?)\+?\s*(?:years?|yrs?)/i);
+    if (m3 && Number(m3[1]) >= 1 && Number(m3[1]) <= 35) {
+      return `${Math.round(Number(m3[1]))}+ Years`;
+    }
+
+    const years = (corpus.match(/\b(199\d|200\d|201\d|202[0-5])\b/g) || []).map(Number);
+    if (years.length >= 2) {
+      const validYears = years.filter(y => y >= 1995 && y <= 2024);
+      if (validYears.length > 0) {
+        const minYear = Math.min(...validYears);
+        const currentYear = new Date().getFullYear();
+        const diff = currentYear - minYear;
+        if (diff >= 1 && diff <= 35) {
+          return `${diff}+ Years`;
+        }
+      }
+    }
+  }
+
+  if (rawProfile && rawProfile.experience_years && Number(rawProfile.experience_years) > 0) {
+    return `${Math.round(Number(rawProfile.experience_years))}+ Years`;
+  }
+  if (rawProfile && rawProfile.exp && String(rawProfile.exp).trim().length > 0) {
+    return String(rawProfile.exp);
+  }
+
+  const roleLower = String(role || '').toLowerCase();
+  if (roleLower.includes('architect') || roleLower.includes('principal') || roleLower.includes('director')) return '12+ Years';
+  if (roleLower.includes('lead') || roleLower.includes('manager') || roleLower.includes('staff')) return '9+ Years';
+  if (roleLower.includes('sr.') || roleLower.includes('senior')) return '7+ Years';
+  if (roleLower.includes('junior') || roleLower.includes('entry') || roleLower.includes('associate')) return '2+ Years';
+  
+  return '6+ Years';
+}
+
+/**
  * Appends an outbound RFC822 message to the IMAP "Sent" folder with the \Seen flag
  * so that emails sent via SMTP appear in Yahoo Webmail Sent tab (mail.yahoo.com/d/folders/2).
  */
@@ -700,10 +752,13 @@ export async function scrapeResumesFromIMAP({
             }
             if (!candidateVisa) candidateVisa = detectedVisa || 'H-1B';
 
-            // 6. Resolve experience
-            const candidateExp = (matchedProfile && matchedProfile.exp)
-              ? matchedProfile.exp
-              : '5+ Years';
+            // 6. Resolve experience accurately from resume text and metadata
+            const candidateExp = extractCandidateExperience(
+              r.resumeText,
+              '',
+              matchedProfile,
+              candidateRole
+            );
 
             const primaryFileObj = {
               original_name: r.filename,
