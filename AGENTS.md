@@ -69,6 +69,29 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-24 — SmartHire Proctored Screening, Single-Take Continuous Recording, Anti-Cheat Security & Footer Cleanup
+- **Context & Objectives**:
+  - Implemented the user-requested ATS and candidate screening upgrades across the platform:
+    1. **Footer & Public Navigation Cleanup**: Removed unrequested screening links from the candidate section in `WellfoundCareersView.jsx` and updated recruiter platform links from `/ats` to `/` (SmartHire ATS Overview) to ensure external candidates and unauthenticated visitors are guided to the homepage instead of direct internal ATS routes.
+    2. **Brand Harmonization (PeekHire -> SmartHire)**: Replaced all occurrences and references of PeekHire with **SmartHire** (`SmartHire Video & Voice Screening`, `SmartHire Screen`, `SmartHire Screening Studio`) across components and backend handlers.
+    3. **Proctoring & Anti-Cheat Security Suite**:
+       - **Single-Use Link Lock**: Once an assessment link is started/submitted, it cannot be reused (`sessionData.status === 'submitted'` permanently locks the view with an informative single-use notice).
+       - **Multi-Tab Prevention**: Integrated dual-layer tab protection (`BroadcastChannel` + `localStorage` heartbeat) preventing candidates from opening the assessment in multiple tabs or windows simultaneously.
+       - **Screen Share Enforcement**: Mandatory desktop screen share (`displaySurface: 'monitor'`) required before beginning the assessment, with disconnect detection alerting for violations.
+       - **Fullscreen Enforcement & Tab-Switch Infractions**: Required fullscreen mode with full-screen lock overlay if minimized; logs every `visibilitychange`/`blur` event, with a modal warning on infractions and an auto-lockout overlay if 3 infractions occur.
+       - **Geolocation Capture**: Telemetry captures verified GPS coordinates (`navigator.geolocation`) and candidate IP on submission.
+    4. **Single-Take Continuous Interview Recording**:
+       - Completely replaced multi-stop recording with a seamless **single continuous video recording** across all questions.
+       - As the candidate answers each question, clicking "Save & Next Question" marks the timestamp and transcript while the video recorder continuously streams without stopping.
+       - Master video file is saved as a single unified recording, with interactive question jump points (`▶ Question 1`, `▶ Question 2`, etc.) in both candidate review and recruiter evaluation modal.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-CufJQhF8.js`).
+  - Git committed (`d49e65e`) and pushed to GitHub `origin/main`.
+  - Deployed to AWS Lightsail server (`34.194.119.199`), updated `server/index.js`, extracted into webroots `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Pruned old asset bundles (5 latest kept), flushed PM2 logs, reloaded PM2 `smarthire-ats` (pid 136592, online).
+  - Verified live domain `https://smarthireus.com` returns HTTP 200 with bundle `index-CufJQhF8.js`.
+  - Verified live `/screening` route returns HTTP 200.
+
 ### 2026-09-24 — StaffingOrigin (InfoOrigin) Live Job Ingestion, Multi-Source Branding & Dual-Sync Deployment
 - **Context & Objectives**:
   - Implemented live job scraper for StaffingOrigin (`https://staffingorigin.com/OpenPosition` / `https://infoorigin.infoapps.io/api-staffing/get/requirement`).
