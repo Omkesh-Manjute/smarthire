@@ -1304,7 +1304,7 @@ const screeningStorage = multer.diskStorage({
 
 const uploadScreeningMedia = multer({
   storage: screeningStorage,
-  limits: { fileSize: 80 * 1024 * 1024 }, // 80MB max
+  limits: { fileSize: 500 * 1024 * 1024 }, // 500MB max
 })
 
 // Transcribe audio/video using Groq Whisper API

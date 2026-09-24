@@ -6,50 +6,60 @@ function Pricing() {
 
   const plans = [
     {
-      name: 'Recruiter Starter',
-      priceMonthly: 99,
-      priceYearly: 79,
-      description: 'Ideal for independent recruiters & small staffing agencies starting out.',
+      name: 'Starter',
+      priceMonthly: 9,
+      priceYearly: 7,
+      description: 'For one person hiring for one role.',
       features: [
-        '50 AI Pre-Screening Chats / mo',
-        'Basic Resume Match Scoring',
-        '1 Active Scraped Job Pipeline',
-        'Standard Email Support',
-        'Secure Database Storage'
+        '1 active role',
+        'Unlimited applications',
+        '1 team member (you)',
+        'Candidate ratings and notes',
+        'Single continuous proctored recording',
+        'Standard email support'
       ],
-      cta: 'Start Starter Trial',
+      cta: 'Start free trial',
       popular: false
     },
     {
-      name: 'Talent Growth',
-      priceMonthly: 249,
-      priceYearly: 199,
-      description: 'Perfect for growing recruitment firms needing candidate verification.',
+      name: 'Pro',
+      priceMonthly: 29,
+      priceYearly: 24,
+      description: 'For a small team hiring across several roles.',
       features: [
-        '300 AI Pre-Screening Chats / mo',
-        'Advanced AI Profile Matching',
-        '5 Active Job Scraper Pipelines',
-        'Vision AI Document Verifications',
-        'Priority SLA Email Support',
-        'Full CSV & Reports Export'
+        '5 active roles',
+        'Unlimited applications',
+        'Up to 5 team members',
+        'Candidate ratings and notes',
+        'Custom pipeline stages',
+        'Anti-cheat tab & screen proctoring',
+        'Team comments & evaluation notes',
+        'Webhooks, REST API, and MCP',
+        'Priority email support'
       ],
-      cta: 'Start Growth Trial',
+      cta: 'Start free trial',
       popular: true
     },
     {
-      name: 'Enterprise Scale',
-      priceMonthly: 599,
-      priceYearly: 479,
-      description: 'Built for high-volume corporate HR and enterprise recruitment departments.',
+      name: 'Business',
+      priceMonthly: 89,
+      priceYearly: 69,
+      description: 'For teams hiring continuously and managing their own branding.',
       features: [
-        'Unlimited AI Pre-Screening Chats',
-        'Custom Pre-Screening Questions',
-        'Unlimited Job Pipelines',
-        'High-Volume Document Scanning',
-        'Dedicated Success Manager',
-        'Custom API Access & Webhooks'
+        'Unlimited active roles',
+        'Unlimited applications',
+        'Unlimited team members',
+        'Candidate ratings and notes',
+        'Custom pipeline stages',
+        'Team comments & shared reviews',
+        'Webhooks, REST API, and MCP',
+        'Hide SmartHire branding (White-label)',
+        'Candidate links on your custom domain',
+        'Emails from your own address',
+        'GPS location & proctoring audit reports',
+        'Priority 24/7 dedicated support'
       ],
-      cta: 'Contact Sales',
+      cta: 'Start free trial',
       popular: false
     }
   ]

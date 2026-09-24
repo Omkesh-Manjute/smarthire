@@ -1332,6 +1332,201 @@ function Homepage() {
               </div>
             </div>
 
+            {/* ═══════════════════════════════════════════════════════════════════
+                INTERACTIVE DUAL DEMO EXPERIENCE (Matching Screenshot 2)
+                ═══════════════════════════════════════════════════════════════════ */}
+            <div className="tf-dual-demo-wrap" style={{ margin: '40px auto 50px', maxWidth: '1060px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '28px', alignItems: 'stretch' }}>
+                
+                {/* 1. See Candidate Experience */}
+                <div style={{
+                  background: '#ffffff',
+                  border: '1.5px solid #e2e8f0',
+                  borderRadius: '16px',
+                  padding: '32px 28px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+                  position: 'relative'
+                }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                      <span style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        background: '#eff6ff',
+                        color: '#2563eb',
+                        fontWeight: '800',
+                        fontSize: '15px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>1</span>
+                      <h3 style={{ fontSize: '19px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
+                        See the Candidate Experience
+                      </h3>
+                    </div>
+                    <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.5, margin: '0 0 20px' }}>
+                      Open a real application page — exactly what candidates see when they apply to you.
+                    </p>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13.5px', color: '#334155' }}>
+                      <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✓</span> No account or email needed
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✓</span> Answer by video, audio, or text
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✓</span> Single continuous proctored recording
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✓</span> Walk through the whole application
+                      </li>
+                    </ul>
+                  </div>
+
+                  <Link
+                    to="/screening"
+                    style={{
+                      width: '100%',
+                      padding: '13px 20px',
+                      background: '#2563eb',
+                      color: '#ffffff',
+                      borderRadius: '10px',
+                      fontWeight: '700',
+                      fontSize: '14.5px',
+                      textAlign: 'center',
+                      textDecoration: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      boxShadow: '0 4px 14px rgba(37, 99, 235, 0.25)'
+                    }}
+                  >
+                    View Candidate Demo ↗
+                  </Link>
+                  <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '11.5px', color: '#94a3b8' }}>
+                    ⏱ takes around 2 min
+                  </div>
+                </div>
+
+                {/* 2. Try the App Yourself */}
+                <div style={{
+                  background: '#ffffff',
+                  border: '2px solid #2563eb',
+                  borderRadius: '16px',
+                  padding: '32px 28px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  boxShadow: '0 8px 30px rgba(37, 99, 235, 0.12)',
+                  position: 'relative'
+                }}>
+                  <div style={{
+                    position: 'absolute',
+                    top: '-12px',
+                    right: '24px',
+                    background: '#0f172a',
+                    color: '#ffffff',
+                    fontSize: '10.5px',
+                    fontWeight: '800',
+                    letterSpacing: '0.06em',
+                    padding: '3px 10px',
+                    borderRadius: '12px',
+                    textTransform: 'uppercase'
+                  }}>
+                    RECOMMENDED
+                  </div>
+
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                      <span style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        background: '#eff6ff',
+                        color: '#2563eb',
+                        fontWeight: '800',
+                        fontSize: '15px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>2</span>
+                      <h3 style={{ fontSize: '19px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
+                        Try the App Yourself
+                      </h3>
+                    </div>
+                    <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.5, margin: '0 0 20px' }}>
+                      Enter your corporate email and we'll set up your own demo workspace with sample data — yours for 3 hours.
+                    </p>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13.5px', color: '#334155' }}>
+                      <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✓</span> Full recruiter app, not just candidate side
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✓</span> Sample campaigns &amp; applications loaded
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✓</span> Try ratings, notes, and team discussion
+                      </li>
+                    </ul>
+
+                    {/* Email Input */}
+                    <div style={{ marginBottom: '14px' }}>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '6px' }}>
+                        Corporate Email Address *
+                      </label>
+                      <input
+                        type="email"
+                        placeholder="you@company.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '10px 14px',
+                          border: '1.5px solid #cbd5e1',
+                          borderRadius: '8px',
+                          fontSize: '13.5px',
+                          outline: 'none',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowLoginModal(true)}
+                    style={{
+                      width: '100%',
+                      padding: '13px 20px',
+                      background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                      color: '#ffffff',
+                      borderRadius: '10px',
+                      fontWeight: '700',
+                      fontSize: '14.5px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      boxShadow: '0 4px 16px rgba(37, 99, 235, 0.35)'
+                    }}
+                  >
+                    Start My App Demo ➔
+                  </button>
+                  <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '11.5px', color: '#94a3b8' }}>
+                    🔒 Yours for 3 hours • No credit card required
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
             {/* Split Screen Interactive Studio Mockup */}
             <div className="tf-screening-stage-grid">
               
@@ -2072,24 +2267,25 @@ function Homepage() {
               {/* Plan 1 */}
               <div className="tf-plan-card">
                 <div className="tf-plan-top">
-                  <h3 className="tf-plan-title">Recruiter Starter</h3>
-                  <p className="tf-plan-desc">For independent recruiters & boutique sourcing agencies.</p>
+                  <h3 className="tf-plan-title">Starter</h3>
+                  <p className="tf-plan-desc">For one person hiring for one role.</p>
                   <div className="tf-plan-price">
                     <span className="curr">$</span>
-                    <span className="val">{isYearly ? 79 : 99}</span>
+                    <span className="val">{isYearly ? 7 : 9}</span>
                     <span className="freq">/month</span>
                   </div>
-                  {isYearly && <span className="tf-billed-note">Billed annually ($948/yr)</span>}
+                  {isYearly && <span className="tf-billed-note">Billed annually ($84/yr)</span>}
                 </div>
 
                 <div className="tf-plan-divider" />
 
                 <ul className="tf-plan-perks">
-                  <li><span className="check">✓</span> 50 AI Pre-Screening Chats / mo</li>
-                  <li><span className="check">✓</span> Private Recruiter Talent Vault</li>
-                  <li><span className="check">✓</span> Basic Resume Skill Matching</li>
-                  <li><span className="check">✓</span> Digital RTR Document Collection</li>
-                  <li><span className="check">✓</span> Standard Email Support</li>
+                  <li><span className="check">✓</span> 1 active role</li>
+                  <li><span className="check">✓</span> Unlimited candidate applications</li>
+                  <li><span className="check">✓</span> 1 team member (you)</li>
+                  <li><span className="check">✓</span> Candidate ratings and notes</li>
+                  <li><span className="check">✓</span> Single continuous proctored recording</li>
+                  <li><span className="check">✓</span> Standard email support</li>
                 </ul>
 
                 <button 
@@ -2097,33 +2293,36 @@ function Homepage() {
                   onClick={() => isAuthenticated ? navigate('/ats') : setShowLoginModal(true)} 
                   className="tf-plan-btn outline"
                 >
-                  Start Starter Trial
+                  Start free trial
                 </button>
               </div>
 
               {/* Plan 2: Most Popular */}
               <div className="tf-plan-card tf-popular-plan">
-                <div className="tf-popular-banner">MOST POPULAR</div>
+                <div className="tf-popular-banner">RECOMMENDED</div>
                 <div className="tf-plan-top">
-                  <h3 className="tf-plan-title">Staffing Team</h3>
-                  <p className="tf-plan-desc">For high-volume staffing firms scaling client submissions.</p>
+                  <h3 className="tf-plan-title">Pro</h3>
+                  <p className="tf-plan-desc">For a small team hiring across several roles.</p>
                   <div className="tf-plan-price">
                     <span className="curr">$</span>
-                    <span className="val">{isYearly ? 199 : 249}</span>
+                    <span className="val">{isYearly ? 24 : 29}</span>
                     <span className="freq">/month</span>
                   </div>
-                  {isYearly && <span className="tf-billed-note">Billed annually ($2,388/yr)</span>}
+                  {isYearly && <span className="tf-billed-note">Billed annually ($288/yr)</span>}
                 </div>
 
                 <div className="tf-plan-divider" />
 
                 <ul className="tf-plan-perks">
-                  <li><span className="check">✓</span> <strong>Unlimited</strong> AI Candidate Pre-Screening</li>
-                  <li><span className="check">✓</span> Smart JD-Match Instant Alert Engine</li>
-                  <li><span className="check">✓</span> Multi-Role Hierarchy (10 seats) & Vault Privacy</li>
-                  <li><span className="check">✓</span> Biometric Liveness & Anti-Proxy Checks</li>
-                  <li><span className="check">✓</span> Candidate Direct Chat & Close Portal</li>
-                  <li><span className="check">✓</span> Priority 24/7 SLA Recruiter Support</li>
+                  <li><span className="check">✓</span> 5 active roles</li>
+                  <li><span className="check">✓</span> Unlimited candidate applications</li>
+                  <li><span className="check">✓</span> Up to 5 team members</li>
+                  <li><span className="check">✓</span> Candidate ratings and AI scorecards</li>
+                  <li><span className="check">✓</span> Custom pipeline stages</li>
+                  <li><span className="check">✓</span> Anti-cheat tab &amp; screen proctoring</li>
+                  <li><span className="check">✓</span> Team comments &amp; evaluation notes</li>
+                  <li><span className="check">✓</span> Webhooks, REST API, and MCP</li>
+                  <li><span className="check">✓</span> Priority email support</li>
                 </ul>
 
                 <button 
@@ -2131,32 +2330,37 @@ function Homepage() {
                   onClick={() => isAuthenticated ? navigate('/ats') : setShowLoginModal(true)} 
                   className="tf-plan-btn primary"
                 >
-                  Start Growth Trial
+                  Start free trial
                 </button>
               </div>
 
               {/* Plan 3 */}
               <div className="tf-plan-card">
                 <div className="tf-plan-top">
-                  <h3 className="tf-plan-title">Enterprise Scale</h3>
-                  <p className="tf-plan-desc">For enterprise staffing agencies & multi-branch VMS suppliers.</p>
+                  <h3 className="tf-plan-title">Business</h3>
+                  <p className="tf-plan-desc">For teams hiring continuously &amp; managing their own branding.</p>
                   <div className="tf-plan-price">
                     <span className="curr">$</span>
-                    <span className="val">{isYearly ? 479 : 599}</span>
+                    <span className="val">{isYearly ? 69 : 89}</span>
                     <span className="freq">/month</span>
                   </div>
-                  {isYearly && <span className="tf-billed-note">Billed annually ($5,748/yr)</span>}
+                  {isYearly && <span className="tf-billed-note">Billed annually ($828/yr)</span>}
                 </div>
 
                 <div className="tf-plan-divider" />
 
                 <ul className="tf-plan-perks">
-                  <li><span className="check">✓</span> Unlimited Recruiters, Managers & Private Vaults</li>
-                  <li><span className="check">✓</span> Custom Autonomous AI Interview Agents</li>
-                  <li><span className="check">✓</span> Executive Manager Audit & Commission Analytics</li>
-                  <li><span className="check">✓</span> Dedicated Success Manager & Onboarding</li>
-                  <li><span className="check">✓</span> Full Webhook & REST API Integration</li>
-                  <li><span className="check">✓</span> 99.9% Production Uptime Guarantee</li>
+                  <li><span className="check">✓</span> Unlimited active roles &amp; candidates</li>
+                  <li><span className="check">✓</span> Unlimited team members</li>
+                  <li><span className="check">✓</span> Candidate ratings and notes</li>
+                  <li><span className="check">✓</span> Custom pipeline stages &amp; custom questions</li>
+                  <li><span className="check">✓</span> Team comments &amp; shared reviews</li>
+                  <li><span className="check">✓</span> Webhooks, REST API, and MCP integrations</li>
+                  <li><span className="check">✓</span> Hide SmartHire branding (White-label)</li>
+                  <li><span className="check">✓</span> Candidate links on your custom domain</li>
+                  <li><span className="check">✓</span> Emails from your own corporate address</li>
+                  <li><span className="check">✓</span> Verified GPS location &amp; integrity audit</li>
+                  <li><span className="check">✓</span> Priority 24/7 dedicated support</li>
                 </ul>
 
                 <button 
@@ -2164,7 +2368,7 @@ function Homepage() {
                   onClick={() => isAuthenticated ? navigate('/ats') : setShowLoginModal(true)} 
                   className="tf-plan-btn outline"
                 >
-                  Contact Enterprise Sales
+                  Start free trial
                 </button>
               </div>
 

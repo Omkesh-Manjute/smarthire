@@ -593,7 +593,15 @@ export default function CandidateChat() {
         ? 'video/webm;codecs=vp9'
         : (MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : 'video/mp4')
 
-      const mediaRecorder = new MediaRecorder(stream, { mimeType })
+      let mediaRecorder
+      try {
+        mediaRecorder = new MediaRecorder(stream, {
+          mimeType,
+          videoBitsPerSecond: 900000 // 900 kbps for clean 720p HD with lightweight file size (~18MB for 5 min)
+        })
+      } catch (recErr) {
+        mediaRecorder = new MediaRecorder(stream, { mimeType })
+      }
       mediaRecorderRef.current = mediaRecorder
 
       mediaRecorder.ondataavailable = (event) => {
@@ -727,9 +735,21 @@ export default function CandidateChat() {
           method: 'POST',
           body: formData
         })
+
+        if (!upRes.ok) {
+          const errText = await upRes.text().catch(() => '')
+          throw new Error(
+            upRes.status === 413
+              ? 'Recording is too large for upload. The server limit has been raised; please try again.'
+              : `Media upload server error (${upRes.status}): ${errText.slice(0, 120) || upRes.statusText}`
+          )
+        }
+
         const upData = await upRes.json()
         if (upData.success) {
           uploadedMediaUrl = upData.mediaUrl
+        } else {
+          throw new Error(upData.message || 'Media upload rejected by server')
         }
       }
 
@@ -776,6 +796,11 @@ export default function CandidateChat() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       })
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '')
+        throw new Error(`Application submission failed (${res.status}): ${errText.slice(0, 120) || res.statusText}`)
+      }
 
       const data = await res.json()
       if (data.success) {
