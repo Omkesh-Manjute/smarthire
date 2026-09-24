@@ -69,7 +69,34 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
-### 2026-09-25 — Live AI Match Scan Button, Groq Llama 3.3 70B ATS Engine & Deep Fit Intelligence Modal
+### 2026-09-25 — Requisition 159183 Set to Open & Deadline 10/06/2026, Vendor Hotlist Inline Resume Popup & New Window Preview
+- **Context & Objectives**:
+  - The user requested three updates:
+    1. **Req 159183 Status & Deadline**: Req 159183 (`Application Data Developer Expert`) on `smarthireus.com/jobs?jobId=159183` was displaying a red `Closed` badge and deadline `8/4/2026`. Requested to mark it `Open` with submission deadline `10/06/2026`.
+    2. **Root Cause Analysis (Why candidates weren't matching this job)**: Explain why candidates weren't showing a match with this requisition in ATS data.
+    3. **Vendor Hotlist Composition & Inline Resume Preview**: Clarify if Vendor Hotlists lists only vendor submissions from emails, and replace forced file downloads with an inline popup modal and new window viewer.
+- **Key Deliverables**:
+  1. **Requisition 159183 Re-opened & Extended**:
+     - Updated `status: 'Open'` and `deadline: '2026-10-06'` across `jobs.json` and memory store `jobsStore`.
+     - Updated description texts (`description`, `rawDescription`, `fullDescription`) so `Submission deadline :10/06/2026` renders accurately on the job portal.
+     - Confirmed `isJobActiveAndOpen` evaluates to `true`, resolving the candidate matching omission.
+  2. **Vendor Hotlists Architecture Clarification**:
+     - Clarified that Vendor Hotlists strictly ingests profiles sent by third-party staffing vendors / agencies (e.g. Gracy Indus, ArunRaju @ HPTech, RealSoftTech) via IMAP scraper or manual batch paste, and does not include direct career portal applicants.
+  3. **Inline Resume Popup & New Window Preview (`/api/candidates/view-resume`)**:
+     - Created `GET /api/candidates/view-resume`:
+       - PDF documents: Streams with `Content-Disposition: inline` so browser renders inline without downloading.
+       - Word documents (`.docx`, `.doc`): Converted to responsive, styled HTML with `mammoth.convertToHtml` in an enterprise document reader format with Print and Download options.
+     - Updated `RecruiterInbox.jsx`:
+       - Clicking Candidate Name or Document Icon opens `hotlistResumeModalItem` inside the app with full candidate dossier and embedded iframe reader.
+       - Added `Resume ↗` action button in the table grid.
+       - Added `↗ Open in New Window` button allowing recruiters to pop out the resume in a dedicated tab.
+- **Verification & Deployment**:
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-DRWRNTMw.js`).
+  - Git committed (`f418670`, `8c6378d`) and pushed to GitHub `origin/main`.
+  - Deployed bundle, `server/index.js`, and `server/jobs.json` to AWS Lightsail (`34.194.119.199`).
+  - Reloaded PM2 `smarthire-ats`, verified disk space (8.6GB available, 54% used).
+  - Verified live endpoint `/api/jobs` for Req 159183 returning `status: "Open"`, `deadline: "2026-10-06"`.
+  - Verified live endpoint `/api/candidates/view-resume` returning HTTP 200 with inline PDF and HTML Word preview.
 - **Context & Objectives**:
   - The user requested an "AI Match" button on each candidate card in the split-view where clicking a candidate opens the resume on the right and candidate card on the left (`ak button add karo AI match use click karene pe Live AI se scan analys hona cahiye okay har candiate ke card mai ana cahiye jaha hum candiate ko clcik karne ke bad open hota hai right mai resume and left mai ak chota sa button okay`).
 - **Key Deliverables**:
