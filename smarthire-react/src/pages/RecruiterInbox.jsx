@@ -2489,6 +2489,14 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const [sidebarDocToast, setSidebarDocToast] = useState('')
   const [copiedToast, setCopiedToast] = useState('')
 
+  // Live AI Match Scan State
+  const [isLiveAiScanning, setIsLiveAiScanning] = useState(false)
+  const [liveAiMatchResult, setLiveAiMatchResult] = useState(null)
+  const [showLiveAiModal, setShowLiveAiModal] = useState(false)
+  const [liveAiCandidate, setLiveAiCandidate] = useState(null)
+  const [liveAiTargetReqId, setLiveAiTargetReqId] = useState('')
+  const [copiedQuestionsToast, setCopiedQuestionsToast] = useState(false)
+
 
   const copyToClipboard = (text, label) => {
     if (!text) return
@@ -3306,6 +3314,56 @@ export default function RecruiterInbox({ defaultViewMode }) {
       alert('Error sending email: ' + err.message)
     } finally {
       setEmailSending(false)
+    }
+  }
+
+  const handleRunLiveAiScan = async (cand, customReqId = null) => {
+    if (!cand) return
+    setIsLiveAiScanning(true)
+    setLiveAiCandidate(cand)
+    setShowLiveAiModal(true)
+
+    const targetReq = customReqId || cand.targetReqId || drawerReqId || openJobsList[0]?.id || ''
+    setLiveAiTargetReqId(targetReq)
+
+    try {
+      const matchedJob = openJobsList.find(j => String(j.id).replace(/^J-/, '') === String(targetReq).replace(/^J-/, '')) || openJobsList[0]
+
+      const skillsArr = Array.isArray(cand.skills)
+        ? cand.skills
+        : (typeof cand.skills === 'string' ? cand.skills.split(',').map(s => s.trim()) : (cand.extracted_profile?.skills || []))
+
+      const payload = {
+        candidateId: cand.id || cand.candidate_id || cand.canId,
+        candidateName: cand.name || cand.extracted_profile?.name || (cand.email ? cand.email.split('@')[0] : 'Candidate'),
+        candidateRole: cand.role || cand.extracted_profile?.role || (skillsArr[0] ? `${skillsArr[0]} Specialist` : 'Software Specialist'),
+        candidateSkills: skillsArr,
+        candidateExperience: cand.experience || cand.extracted_profile?.experience || '5+ Years',
+        candidateLocation: cand.location || cand.extracted_profile?.location || 'United States',
+        candidateResumeText: cand.resumeText || cand.resume_text || cand.extracted_profile?.resume_text || '',
+        reqId: targetReq,
+        jobTitle: matchedJob?.title || cand.matchedJobTitle || '',
+        jobSkills: matchedJob?.skills || [],
+        jobDescription: matchedJob?.description || ''
+      }
+
+      const res = await fetch('/api/candidates/live-ai-match', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+
+      const data = await res.json()
+      if (data && data.success && data.matchResult) {
+        setLiveAiMatchResult(data.matchResult)
+      } else {
+        alert(data?.message || 'Could not complete live AI scan.')
+      }
+    } catch (err) {
+      console.error('[Live AI Scan Error]:', err)
+      alert('Error running Live AI Scan: ' + err.message)
+    } finally {
+      setIsLiveAiScanning(false)
     }
   }
 
@@ -7948,6 +8006,29 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <button
                     type="button"
+                    onClick={() => handleRunLiveAiScan(activeCandidate)}
+                    disabled={isLiveAiScanning}
+                    style={{
+                      background: 'linear-gradient(135deg, #1E40AF 0%, #2563EB 50%, #4F46E5 100%)',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: 6,
+                      padding: '7px 14px',
+                      fontSize: 12,
+                      fontWeight: 800,
+                      cursor: isLiveAiScanning ? 'not-allowed' : 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      boxShadow: '0 2px 6px rgba(37,99,235,0.25)'
+                    }}
+                    title="Run real-time deep AI Match Scan & Fit Analysis"
+                  >
+                    <IconZap /> <span>{isLiveAiScanning ? 'AI Scanning...' : '⚡ AI Match Scan'}</span>
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => handleOpenPushModal(activeCandidate)}
                     style={{
                       background: '#2563EB',
@@ -8198,6 +8279,60 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       </div>
                     </div>
 
+                    {/* Live AI Match Scan Trigger Button (Prompt: left card mai ak chota sa button AI Match) */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                      <button
+                        type="button"
+                        onClick={() => handleRunLiveAiScan(activeCandidate)}
+                        disabled={isLiveAiScanning}
+                        style={{
+                          flex: 1,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 6,
+                          background: 'linear-gradient(135deg, #1E40AF 0%, #2563EB 50%, #4F46E5 100%)',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          borderRadius: 6,
+                          padding: '7px 12px',
+                          fontSize: 12,
+                          fontWeight: 800,
+                          cursor: isLiveAiScanning ? 'not-allowed' : 'pointer',
+                          boxShadow: '0 2px 6px rgba(37, 99, 235, 0.25)',
+                          transition: 'all 0.15s ease'
+                        }}
+                        title="Run real-time deep AI Match Scan & Fit Analysis against target requisition"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: isLiveAiScanning ? 'spin 1s linear infinite' : 'none' }}>
+                          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                        </svg>
+                        <span>{isLiveAiScanning ? 'Scanning Live AI...' : 'AI Match (Live Scan)'}</span>
+                      </button>
+                      {liveAiMatchResult && liveAiCandidate?.id === activeCandidate?.id && (
+                        <button
+                          type="button"
+                          onClick={() => setShowLiveAiModal(true)}
+                          style={{
+                            background: isLight ? '#EFF6FF' : 'rgba(37,99,235,0.15)',
+                            border: '1px solid #BFDBFE',
+                            color: '#1D4ED8',
+                            borderRadius: 6,
+                            padding: '7px 9px',
+                            fontSize: 11,
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 3
+                          }}
+                          title="View detailed AI match analysis"
+                        >
+                          <span>{liveAiMatchResult.score}% Fit</span> ↗
+                        </button>
+                      )}
+                    </div>
+
                     {/* Location & Local Verification Badge */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                       <div style={{ fontSize: 12, color: C.textSecondary, display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -8313,7 +8448,30 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     )}
 
                     {/* Quick Action Buttons */}
-                    <div style={{ display: 'flex', gap: 8, marginTop: 4, borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
+                    <div style={{ display: 'flex', gap: 6, marginTop: 4, borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
+                      <button
+                        type="button"
+                        onClick={() => handleRunLiveAiScan(activeCandidate)}
+                        disabled={isLiveAiScanning}
+                        style={{
+                          backgroundColor: '#1E40AF',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          borderRadius: 6,
+                          padding: '7px 9px',
+                          fontSize: 12,
+                          fontWeight: 800,
+                          cursor: isLiveAiScanning ? 'not-allowed' : 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 4
+                        }}
+                        title="Run real-time deep AI Match Scan"
+                      >
+                        <IconZap /> <span>AI Match</span>
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => handleOpenEmailModal(activeCandidate)}
@@ -8323,17 +8481,17 @@ export default function RecruiterInbox({ defaultViewMode }) {
                           color: '#FFFFFF',
                           border: 'none',
                           borderRadius: 6,
-                          padding: '7px 10px',
+                          padding: '7px 8px',
                           fontSize: 12,
                           fontWeight: 700,
                           cursor: 'pointer',
                           display: 'inline-flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          gap: 5
+                          gap: 4
                         }}
                       >
-                        <IconMail /> <span>Email Candidate</span>
+                        <IconMail /> <span>Email</span>
                       </button>
 
                       <button
@@ -13472,9 +13630,27 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#1D4ED8', display: 'flex', alignItems: 'center', gap: 6 }}>
                         AI Multi-Position Match Analyzer
                       </h4>
-                      <span style={{ fontSize: 11, fontWeight: 800, color: '#16A34A', background: '#DCFCE7', padding: '2px 8px', borderRadius: 12 }}>
-                        ● Live Evaluator
-                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRunLiveAiScan(candidateDetails, currentReqId)}
+                        disabled={isLiveAiScanning}
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 800,
+                          color: '#FFFFFF',
+                          background: 'linear-gradient(135deg, #1E40AF, #2563EB)',
+                          border: 'none',
+                          padding: '4px 10px',
+                          borderRadius: 12,
+                          cursor: isLiveAiScanning ? 'not-allowed' : 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4
+                        }}
+                        title="Run real-time deep AI Match Scan"
+                      >
+                        <IconZap /> <span>{isLiveAiScanning ? 'Scanning...' : '⚡ Run Live AI Scan'}</span>
+                      </button>
                     </div>
                     <p style={{ margin: '0 0 12px', fontSize: 11.5, color: C.textSecondary, lineHeight: 1.4 }}>
                       Select an open position below to evaluate candidate fit and update resume skill highlights:
@@ -13482,9 +13658,31 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
                     {/* Position Selector Dropdown */}
                     <div style={{ marginBottom: 14 }}>
-                      <label style={{ fontSize: 10.5, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase', marginBottom: 4, display: 'block' }}>
-                        Active Target Requisition:
-                      </label>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <label style={{ fontSize: 10.5, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase' }}>
+                          Active Target Requisition:
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => handleRunLiveAiScan(candidateDetails, currentReqId)}
+                          disabled={isLiveAiScanning}
+                          style={{
+                            background: '#EFF6FF',
+                            border: '1px solid #BFDBFE',
+                            color: '#1D4ED8',
+                            borderRadius: 4,
+                            padding: '2px 8px',
+                            fontSize: 10.5,
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 3
+                          }}
+                        >
+                          <IconZap /> <span>AI Scan This Req</span>
+                        </button>
+                      </div>
                       <select
                         value={currentReqId}
                         onChange={e => setDrawerReqId(e.target.value)}
@@ -14398,6 +14596,549 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── LIVE AI MATCH SCAN & INTERVIEW INTELLIGENCE MODAL ─── */}
+      {showLiveAiModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.72)',
+          backdropFilter: 'blur(5px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 999999,
+          padding: 16
+        }} onClick={() => setShowLiveAiModal(false)}>
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: isLight ? '#FFFFFF' : '#1E293B',
+              borderRadius: 14,
+              width: '100%',
+              maxWidth: 840,
+              maxHeight: '92vh',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 25px 60px -12px rgba(0,0,0,0.5)',
+              border: `1px solid ${C.border}`,
+              overflow: 'hidden'
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{
+              padding: '16px 22px',
+              borderBottom: `1px solid ${C.border}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: isLight ? '#F8FAFC' : '#0F172A',
+              flexShrink: 0
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 10,
+                  background: 'linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#FFFFFF'
+                }}>
+                  <IconZap />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: C.textPrimary, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span>Live AI Requisition Match &amp; Screening Scan</span>
+                    {liveAiMatchResult?.source === 'live_llm' ? (
+                      <span style={{ fontSize: 10.5, fontWeight: 800, color: '#1D4ED8', background: '#DBEAFE', padding: '2px 7px', borderRadius: 10, border: '1px solid #BFDBFE' }}>
+                        Groq Llama 3.3 70B
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: 10.5, fontWeight: 800, color: '#047857', background: '#D1FAE5', padding: '2px 7px', borderRadius: 10, border: '1px solid #A7F3D0' }}>
+                        ATS 5-Tier NLP Engine
+                      </span>
+                    )}
+                  </h3>
+                  <p style={{ margin: '2px 0 0', fontSize: 12, color: C.textSecondary }}>
+                    Candidate: <strong>{liveAiCandidate?.name || liveAiCandidate?.extracted_profile?.name || 'Candidate'}</strong> · Target: <strong>Req #{liveAiTargetReqId || liveAiMatchResult?.jobId} ({liveAiMatchResult?.jobTitle || 'Position'})</strong>
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {liveAiMatchResult && (
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{
+                      fontSize: 18,
+                      fontWeight: 900,
+                      color: liveAiMatchResult.score >= 80 ? '#16A34A' : liveAiMatchResult.score >= 65 ? '#D97706' : '#DC2626'
+                    }}>
+                      {liveAiMatchResult.score}% Fit
+                    </div>
+                    <div style={{
+                      fontSize: 10.5,
+                      fontWeight: 800,
+                      color: liveAiMatchResult.score >= 80 ? '#15803D' : liveAiMatchResult.score >= 65 ? '#B45309' : '#B91C1C'
+                    }}>
+                      {liveAiMatchResult.verdict || 'Match Verdict'}
+                    </div>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowLiveAiModal(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    fontSize: 20,
+                    color: C.textSecondary,
+                    cursor: 'pointer',
+                    padding: '4px 8px',
+                    borderRadius: 6
+                  }}
+                  title="Close modal (ESC)"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {isLiveAiScanning ? (
+                <div style={{
+                  padding: '48px 24px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  textAlign: 'center',
+                  gap: 16
+                }}>
+                  <div style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#FFFFFF',
+                    boxShadow: '0 0 24px rgba(37, 99, 235, 0.45)',
+                    animation: 'pulse 1.5s infinite ease-in-out'
+                  }}>
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 800, color: C.textPrimary }}>
+                      Scanning Candidate Resume with Live AI...
+                    </h4>
+                    <p style={{ margin: 0, fontSize: 12.5, color: C.textSecondary, maxWidth: 480, lineHeight: 1.5 }}>
+                      Extracting technical competencies, evaluating 5-Tier ATS alignment (Title, Required Skills, Preferred Skills, State/Location, Experience), and generating tailored recruiter interview questions.
+                    </p>
+                  </div>
+                </div>
+              ) : liveAiMatchResult ? (
+                <>
+                  {/* Position Quick Selector & Re-Scan bar */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                    padding: '10px 14px',
+                    background: isLight ? '#F1F5F9' : '#0F172A',
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 8
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                        Requisition:
+                      </span>
+                      <select
+                        value={liveAiTargetReqId || liveAiMatchResult?.jobId}
+                        onChange={e => {
+                          const newReq = e.target.value
+                          setLiveAiTargetReqId(newReq)
+                          handleRunLiveAiScan(liveAiCandidate, newReq)
+                        }}
+                        style={{
+                          flex: 1,
+                          maxWidth: 520,
+                          background: C.surface,
+                          border: `1px solid ${C.border}`,
+                          borderRadius: 6,
+                          padding: '6px 10px',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          color: C.textPrimary,
+                          outline: 'none',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {openJobsList.map(j => (
+                          <option key={j.id} value={j.id}>
+                            Req #{j.id} · {j.title} ({j.client})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleRunLiveAiScan(liveAiCandidate, liveAiTargetReqId || liveAiMatchResult?.jobId)}
+                      disabled={isLiveAiScanning}
+                      style={{
+                        background: '#2563EB',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: 6,
+                        padding: '6px 12px',
+                        fontSize: 11.5,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4
+                      }}
+                      title="Re-run real-time AI scan"
+                    >
+                      <IconZap /> <span>Re-Scan Fit</span>
+                    </button>
+                  </div>
+
+                  {/* Executive Summary Card */}
+                  <div style={{
+                    padding: '14px 16px',
+                    background: isLight ? 'linear-gradient(180deg, #EFF6FF 0%, #FFFFFF 100%)' : 'rgba(37,99,235,0.08)',
+                    border: '1.5px solid #3B82F6',
+                    borderRadius: 10,
+                    boxShadow: '0 2px 8px rgba(59,130,246,0.08)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: '#1D4ED8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                        Executive AI Fit Assessment
+                      </span>
+                      <span style={{
+                        fontSize: 11,
+                        fontWeight: 800,
+                        padding: '2px 8px',
+                        borderRadius: 12,
+                        background: liveAiMatchResult.score >= 80 ? '#DCFCE7' : liveAiMatchResult.score >= 65 ? '#FEF3C7' : '#FEE2E2',
+                        color: liveAiMatchResult.score >= 80 ? '#15803D' : liveAiMatchResult.score >= 65 ? '#B45309' : '#B91C1C'
+                      }}>
+                        {liveAiMatchResult.verdict}
+                      </span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: 13, color: C.textPrimary, lineHeight: 1.5 }}>
+                      {liveAiMatchResult.summary}
+                    </p>
+                  </div>
+
+                  {/* 5-Tier Evaluation Grid */}
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase', marginBottom: 8, letterSpacing: '0.3px' }}>
+                      5-Tier ATS Match Criteria Breakdown
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 }}>
+                      {/* Tier 1 */}
+                      <div style={{ padding: '10px 12px', background: isLight ? '#F8FAFC' : '#0F172A', border: `1px solid ${C.border}`, borderRadius: 8 }}>
+                        <div style={{ fontSize: 10, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase' }}>1. Title Match</div>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: liveAiMatchResult.dimensions?.titleMatch?.score >= 20 ? '#16A34A' : '#D97706', marginTop: 2 }}>
+                          {liveAiMatchResult.dimensions?.titleMatch?.verdict || 'Aligned'}
+                        </div>
+                        <div style={{ fontSize: 10.5, color: C.textSecondary, marginTop: 1 }}>{liveAiMatchResult.dimensions?.titleMatch?.score ?? 25}/25 pts</div>
+                      </div>
+
+                      {/* Tier 2 */}
+                      <div style={{ padding: '10px 12px', background: isLight ? '#F8FAFC' : '#0F172A', border: `1px solid ${C.border}`, borderRadius: 8 }}>
+                        <div style={{ fontSize: 10, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase' }}>2. Required Skills</div>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: '#2563EB', marginTop: 2 }}>
+                          {liveAiMatchResult.dimensions?.requiredSkills?.matchedCount ?? 0} / {liveAiMatchResult.dimensions?.requiredSkills?.totalCount ?? 0} Matched
+                        </div>
+                        <div style={{ fontSize: 10.5, color: C.textSecondary, marginTop: 1 }}>{liveAiMatchResult.dimensions?.requiredSkills?.score ?? 0}/35 pts</div>
+                      </div>
+
+                      {/* Tier 3 */}
+                      <div style={{ padding: '10px 12px', background: isLight ? '#F8FAFC' : '#0F172A', border: `1px solid ${C.border}`, borderRadius: 8 }}>
+                        <div style={{ fontSize: 10, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase' }}>3. Preferred Skills</div>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: '#7C3AED', marginTop: 2 }}>
+                          {liveAiMatchResult.dimensions?.preferredSkills?.matching?.length ?? 0} Matched
+                        </div>
+                        <div style={{ fontSize: 10.5, color: C.textSecondary, marginTop: 1 }}>{liveAiMatchResult.dimensions?.preferredSkills?.score ?? 5}/10 pts</div>
+                      </div>
+
+                      {/* Tier 4 */}
+                      <div style={{ padding: '10px 12px', background: isLight ? '#F8FAFC' : '#0F172A', border: `1px solid ${C.border}`, borderRadius: 8 }}>
+                        <div style={{ fontSize: 10, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase' }}>4. State / Location</div>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: '#16A34A', marginTop: 2 }}>
+                          {liveAiMatchResult.dimensions?.location?.verdict || 'US Resident'}
+                        </div>
+                        <div style={{ fontSize: 10.5, color: C.textSecondary, marginTop: 1 }}>{liveAiMatchResult.dimensions?.location?.candidateState || 'US'}</div>
+                      </div>
+
+                      {/* Tier 5 */}
+                      <div style={{ padding: '10px 12px', background: isLight ? '#F8FAFC' : '#0F172A', border: `1px solid ${C.border}`, borderRadius: 8 }}>
+                        <div style={{ fontSize: 10, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase' }}>5. Total Exp</div>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: '#16A34A', marginTop: 2 }}>
+                          {liveAiMatchResult.dimensions?.experience?.candidateYears ? `${liveAiMatchResult.dimensions.experience.candidateYears}+ Years` : (liveAiCandidate?.experience || '5+ Years')}
+                        </div>
+                        <div style={{ fontSize: 10.5, color: C.textSecondary, marginTop: 1 }}>{liveAiMatchResult.dimensions?.experience?.verdict || 'Fit'}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Skills Section: Matched vs Required Skills Not Matched */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    {/* Matched Skills */}
+                    <div style={{
+                      padding: '12px 14px',
+                      background: isLight ? '#F0FDF4' : 'rgba(22,163,74,0.06)',
+                      border: '1px solid #BBF7D0',
+                      borderRadius: 8
+                    }}>
+                      <div style={{ fontSize: 11.5, fontWeight: 800, color: '#15803D', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <IconCheckCircle color="#15803D" /> <span>Matching Skills ({liveAiMatchResult.matchingSkills?.length || 0})</span>
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                        {liveAiMatchResult.matchingSkills && liveAiMatchResult.matchingSkills.length > 0 ? (
+                          liveAiMatchResult.matchingSkills.map((sk, idx) => (
+                            <span key={idx} style={{
+                              fontSize: 11,
+                              fontWeight: 700,
+                              background: '#DCFCE7',
+                              color: '#15803D',
+                              border: '1px solid #86EFAC',
+                              padding: '2px 7px',
+                              borderRadius: 4
+                            }}>
+                              ✓ {sk}
+                            </span>
+                          ))
+                        ) : (
+                          <span style={{ fontSize: 11, color: C.textSecondary }}>No direct skill keywords matched.</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Required Skills Not Matched */}
+                    <div style={{
+                      padding: '12px 14px',
+                      background: isLight ? '#FEF2F2' : 'rgba(239,68,68,0.08)',
+                      border: '1.5px solid #FCA5A5',
+                      borderRadius: 8
+                    }}>
+                      <div style={{ fontSize: 11.5, fontWeight: 800, color: '#DC2626', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <IconXCircle color="#DC2626" /> <span>Required Skills Not Matched ({liveAiMatchResult.missingSkills?.length || 0})</span>
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                        {liveAiMatchResult.missingSkills && liveAiMatchResult.missingSkills.length > 0 ? (
+                          liveAiMatchResult.missingSkills.map((sk, idx) => (
+                            <span key={idx} style={{
+                              fontSize: 11,
+                              fontWeight: 800,
+                              background: '#FEE2E2',
+                              color: '#B91C1C',
+                              border: '1px solid #FCA5A5',
+                              padding: '2px 7px',
+                              borderRadius: 4
+                            }}>
+                              ✕ {sk}
+                            </span>
+                          ))
+                        ) : (
+                          <span style={{ fontSize: 11, color: '#16A34A', fontWeight: 700 }}>
+                            ✓ 100% of required job skills are present in resume!
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Candidate Strengths & Risk / Verification Factors */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    {/* Strengths */}
+                    <div style={{ padding: '12px 14px', background: isLight ? '#F8FAFC' : '#0F172A', border: `1px solid ${C.border}`, borderRadius: 8 }}>
+                      <div style={{ fontSize: 11, fontWeight: 800, color: C.textPrimary, textTransform: 'uppercase', marginBottom: 6 }}>
+                        Key Technical Strengths
+                      </div>
+                      <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: C.textPrimary, lineHeight: 1.5 }}>
+                        {(liveAiMatchResult.strengths || []).map((st, sIdx) => (
+                          <li key={sIdx} style={{ marginBottom: 4 }}>{st}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Risk Factors */}
+                    <div style={{ padding: '12px 14px', background: isLight ? '#FFFBEB' : 'rgba(245,158,11,0.06)', border: '1px solid #FDE68A', borderRadius: 8 }}>
+                      <div style={{ fontSize: 11, fontWeight: 800, color: '#B45309', textTransform: 'uppercase', marginBottom: 6 }}>
+                        Recruiter Verification Factors
+                      </div>
+                      <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: isLight ? '#78350F' : '#FDE68A', lineHeight: 1.5 }}>
+                        {(liveAiMatchResult.riskFactors || []).map((rf, rIdx) => (
+                          <li key={rIdx} style={{ marginBottom: 4 }}>{rf}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Tailored Recruiter Screening Questions */}
+                  {liveAiMatchResult.screeningQuestions && liveAiMatchResult.screeningQuestions.length > 0 && (
+                    <div style={{
+                      padding: '14px 16px',
+                      background: isLight ? '#F8FAFC' : '#0F172A',
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 10
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                        <div style={{ fontSize: 12, fontWeight: 800, color: C.textPrimary, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <IconZap /> <span>Tailored Recruiter Technical Screening Questions (3)</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const qText = (liveAiMatchResult.screeningQuestions || []).map((q, i) => {
+                              const qStr = typeof q === 'object' ? `${i + 1}. ${q.question}\n   [Listen For]: ${q.listenFor}` : `${i + 1}. ${q}`
+                              return qStr
+                            }).join('\n\n')
+                            copyToClipboard(qText, 'Screening Questions')
+                            setCopiedQuestionsToast(true)
+                            setTimeout(() => setCopiedQuestionsToast(false), 3000)
+                          }}
+                          style={{
+                            background: '#EFF6FF',
+                            color: '#2563EB',
+                            border: '1px solid #BFDBFE',
+                            borderRadius: 5,
+                            padding: '4px 10px',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {copiedQuestionsToast ? '✓ Copied Questions!' : 'Copy Questions'}
+                        </button>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {liveAiMatchResult.screeningQuestions.map((qObj, qIdx) => {
+                          const qText = typeof qObj === 'object' ? qObj.question : qObj
+                          const listenFor = typeof qObj === 'object' ? qObj.listenFor : null
+                          return (
+                            <div key={qIdx} style={{
+                              padding: '10px 12px',
+                              background: isLight ? '#FFFFFF' : '#1E293B',
+                              border: `1px solid ${C.border}`,
+                              borderRadius: 6
+                            }}>
+                              <div style={{ fontSize: 12.5, fontWeight: 700, color: C.textPrimary }}>
+                                Q{qIdx + 1}: {qText}
+                              </div>
+                              {listenFor && (
+                                <div style={{ fontSize: 11, color: C.textSecondary, marginTop: 4 }}>
+                                  <strong style={{ color: '#2563EB' }}>What to listen for:</strong> {listenFor}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : null}
+            </div>
+
+            {/* Modal Actions Footer */}
+            <div style={{
+              padding: '14px 22px',
+              borderTop: `1px solid ${C.border}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: isLight ? '#F8FAFC' : '#0F172A',
+              flexShrink: 0
+            }}>
+              <div style={{ fontSize: 11, color: C.textSecondary }}>
+                Powered by SmartHire Deep ATS Match &amp; Groq Llama 3.3 Reasoning
+              </div>
+
+              <div style={{ display: 'flex', gap: 10 }}>
+                {liveAiCandidate && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowLiveAiModal(false)
+                        handleOpenEmailModal(liveAiCandidate)
+                      }}
+                      style={{
+                        padding: '8px 14px',
+                        borderRadius: 6,
+                        border: `1px solid ${C.border}`,
+                        background: C.surface,
+                        fontSize: 12.5,
+                        fontWeight: 700,
+                        color: C.textPrimary,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5
+                      }}
+                    >
+                      <IconMail /> <span>Email Candidate</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowLiveAiModal(false)
+                        handleOpenPushModal(liveAiCandidate)
+                      }}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: 6,
+                        border: 'none',
+                        background: '#2563EB',
+                        fontSize: 12.5,
+                        fontWeight: 700,
+                        color: '#FFFFFF',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5
+                      }}
+                    >
+                      <span>Push to Jobs in Hand ↗</span>
+                    </button>
+                  </>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setShowLiveAiModal(false)}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 6,
+                    border: `1px solid ${C.border}`,
+                    background: 'transparent',
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    color: C.textSecondary,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

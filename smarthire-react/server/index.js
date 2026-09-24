@@ -9061,6 +9061,202 @@ function isJobActiveAndOpen(job) {
   return true;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// POST /api/candidates/live-ai-match
+// Real-time AI Scan & Deep Match Analysis across 5 dimensions + Recruiter Screening
+// ═══════════════════════════════════════════════════════════════════════════════
+app.post('/api/candidates/live-ai-match', async (req, res) => {
+  try {
+    const {
+      candidateId,
+      candidateName = 'Candidate',
+      candidateRole = 'Software Engineer',
+      candidateSkills = [],
+      candidateExperience = '5+ Years',
+      candidateLocation = 'United States',
+      candidateResumeText = '',
+      reqId,
+      jobTitle,
+      jobSkills = [],
+      jobDescription = ''
+    } = req.body;
+
+    // 1. Resolve Target Job
+    const cleanReqId = String(reqId || '').replace(/^J-/, '').trim();
+    let job = cleanReqId ? (jobsStore || []).find(j => String(j.id).replace(/^J-/, '').trim() === cleanReqId) : null;
+    if (!job && (jobTitle || (Array.isArray(jobSkills) && jobSkills.length > 0))) {
+      job = {
+        id: cleanReqId || 'REQ-AI',
+        title: jobTitle || 'Target Requisition',
+        skills: jobSkills,
+        description: jobDescription,
+        experience: '5+ years'
+      };
+    }
+
+    if (!job) {
+      // Pick first active open job as sensible fallback
+      job = (jobsStore || []).find(isJobActiveAndOpen) || {
+        id: '158756',
+        title: 'Enterprise Technical Specialist',
+        skills: ['Java', 'SQL', 'Cloud', 'React'],
+        description: 'Enterprise technical specialist role.',
+        experience: '5+ years'
+      };
+    }
+
+    // 2. Resolve Candidate
+    let candidate = null;
+    if (candidateId) {
+      const cId = String(candidateId).toLowerCase().trim();
+      candidate = (candidatesStore || []).find(c => {
+        const id1 = String(c.id || '').toLowerCase().trim();
+        const id2 = String(c.candidate_id || '').toLowerCase().trim();
+        const id3 = String(c.canId || '').toLowerCase().trim();
+        return id1 === cId || id2 === cId || id3 === cId;
+      });
+    }
+
+    const effectiveCandidate = candidate ? {
+      ...candidate,
+      role: candidate.role || candidateRole,
+      skills: (Array.isArray(candidate.skills) && candidate.skills.length > 0) ? candidate.skills : candidateSkills,
+      experience: candidate.experience || candidateExperience,
+      location: candidate.location || candidateLocation,
+      resumeText: candidate.resumeText || candidateResumeText
+    } : {
+      name: candidateName,
+      role: candidateRole,
+      skills: candidateSkills,
+      experience: candidateExperience,
+      location: candidateLocation,
+      resumeText: candidateResumeText
+    };
+
+    // 3. Rule-Based 5-Tier Pre-computation
+    const ruleMatch = evaluateCandidateJobMatch(effectiveCandidate, job);
+
+    // 4. Invoke LLM for Deep Semantic Evaluation & Recruiter Screening Insights
+    let llmMatch = null;
+    const groqKey = process.env.GROQ_API_KEY;
+    if (groqKey) {
+      try {
+        const systemPrompt = `You are SmartHire's Senior Technical Recruiting AI & Match Evaluator.
+Analyze the candidate's resume and qualifications against the requisition.
+Evaluate strictly across 5 dimensions:
+1. Title & Domain Alignment (Does candidate role match job domain?)
+2. Required Skills Match (Must-have skills from job)
+3. Missing Required Skills (What required skills are NOT mentioned in resume?)
+4. Experience & Seniority Fit (Years of experience vs job requirements)
+5. State & Location Fit
+
+You must respond in valid JSON format only:
+{
+  "matchScore": 85,
+  "aiVerdict": "STRONG FIT",
+  "aiSummary": "Candidate demonstrates 10+ years of enterprise experience with comprehensive coverage of required skills.",
+  "matchingRequiredSkills": ["skill1", "skill2"],
+  "missingRequiredSkills": ["missing skill 1"],
+  "matchingPreferredSkills": ["pref1"],
+  "keyStrengths": ["Strength 1", "Strength 2", "Strength 3"],
+  "riskFactors": ["Risk or verification point 1"],
+  "interviewQuestions": [
+    "Technical question 1",
+    "Technical question 2",
+    "Technical question 3"
+  ]
+}`;
+
+        const resumeSnippet = (effectiveCandidate.resumeText || '').slice(0, 3000);
+        const userPrompt = `CANDIDATE:
+Name: ${effectiveCandidate.name}
+Role: ${effectiveCandidate.role}
+Experience: ${effectiveCandidate.experience}
+Location: ${effectiveCandidate.location}
+Skills: ${(Array.isArray(effectiveCandidate.skills) ? effectiveCandidate.skills.join(', ') : effectiveCandidate.skills)}
+Resume Snippet:
+${resumeSnippet}
+
+TARGET REQUISITION:
+Req ID: ${job.id}
+Title: ${job.title}
+Client: ${job.client || 'Enterprise Client'}
+Required Skills: ${(Array.isArray(job.skills) ? job.skills.join(', ') : job.skills)}
+Preferred Skills: ${(Array.isArray(job.preferredSkills) ? job.preferredSkills.join(', ') : 'None specified')}
+Location: ${job.location || 'Remote'}
+Job Description Snippet:
+${(job.description || '').slice(0, 1500)}`;
+
+        const rawAi = await callGroqAI(systemPrompt, userPrompt, true);
+        if (rawAi) {
+          const cleaned = rawAi.replace(/```json/gi, '').replace(/```/g, '').trim();
+          const parsed = JSON.parse(cleaned);
+          if (parsed && typeof parsed.matchScore === 'number') {
+            llmMatch = parsed;
+          }
+        }
+      } catch (aiErr) {
+        console.warn('⚠️ Groq Live AI match warning:', aiErr.message);
+      }
+    }
+
+    // 5. Synthesize Final Match Output
+    const finalScore = llmMatch?.matchScore ? Math.round((llmMatch.matchScore * 0.6) + (ruleMatch.matchScore * 0.4)) : ruleMatch.matchScore;
+    const finalVerdict = llmMatch?.aiVerdict || (finalScore >= 80 ? 'STRONG FIT' : (finalScore >= 65 ? 'GOOD POTENTIAL WITH MINOR GAPS' : 'LOW FIT - ROLE MISMATCH'));
+    const finalSummary = llmMatch?.aiSummary || `Candidate has ${ruleMatch.matchingSkills.length} matching skills and ${ruleMatch.missingSkills.length} missing required skills. Calculated fit is ${finalScore}% based on 5-tier evaluation.`;
+
+    const responseMatch = {
+      matchScore: finalScore,
+      aiVerdict: finalVerdict,
+      aiSummary: finalSummary,
+      matchingRequiredSkills: llmMatch?.matchingRequiredSkills || ruleMatch.matchingRequiredSkills || ruleMatch.matchingSkills,
+      missingRequiredSkills: llmMatch?.missingRequiredSkills || ruleMatch.missingRequiredSkills || ruleMatch.missingSkills,
+      matchingPreferredSkills: llmMatch?.matchingPreferredSkills || ruleMatch.matchingPreferredSkills || [],
+      titleMatchStatus: ruleMatch.titleMatchStatus,
+      titleMatchLabel: ruleMatch.titleMatchLabel,
+      stateMatchStatus: ruleMatch.stateMatchStatus,
+      stateMatchLabel: ruleMatch.stateMatchLabel,
+      expMatchStatus: ruleMatch.expMatchStatus,
+      expMatchLabel: ruleMatch.expMatchLabel,
+      keyStrengths: llmMatch?.keyStrengths || [
+        `${effectiveCandidate.experience || '8+ Years'} recorded industry experience`,
+        `Direct proficiency in ${ruleMatch.matchingSkills.slice(0, 3).join(', ') || 'core enterprise stack'}`,
+        `${ruleMatch.titleMatchLabel || 'Aligned technical capability'}`
+      ],
+      riskFactors: llmMatch?.riskFactors || (ruleMatch.missingSkills.length > 0 ? [
+        `Missing required skills: ${ruleMatch.missingSkills.slice(0, 3).join(', ')}`,
+        ruleMatch.stateMatchStatus === 'relocation_needed' ? 'Candidate is out of state for this position' : 'Confirm recent hands-on version experience'
+      ] : ['Zero critical blockers detected']),
+      interviewQuestions: llmMatch?.interviewQuestions || [
+        `Can you describe your experience implementing solutions with ${ruleMatch.matchingSkills[0] || 'core technologies'}?`,
+        `How have you handled ${ruleMatch.missingSkills[0] || 'advanced integration'} requirements in previous engagements?`,
+        `Are you available for ${job.location || 'the position location'} and comfortable with the ${job.rate || 'bill rate'}?`
+      ],
+      evaluatedAt: new Date().toISOString(),
+      model: llmMatch ? 'Groq Llama 3.3 70B & Deep ATS NLP' : 'Deep ATS 5-Tier Rule Engine'
+    };
+
+    // Cache evaluation
+    if (candidateId) {
+      const candCacheKey = String(candidateId);
+      candidateMatchCache.set(candCacheKey, {
+        matchAnalysis: ruleMatch,
+        aiAnalysis: responseMatch,
+        targetJobId: String(job.id).replace(/^J-/, ''),
+        timestamp: Date.now()
+      });
+    }
+
+    res.json({
+      success: true,
+      match: responseMatch
+    });
+  } catch (err) {
+    console.error('❌ Error in /api/candidates/live-ai-match:', err);
+    res.status(500).json({ success: false, message: 'Server error during live AI match evaluation.' });
+  }
+});
+
 // GET /api/recruiter/email-streams
 // Strictly scoped to the logged-in recruiter (Indeed-style privacy) unless superadmin
 app.get('/api/recruiter/email-streams', (req, res) => {
