@@ -4732,8 +4732,30 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const currentReqId = String(drawerReqId || activeCandidate?.targetReqId || '').replace(/^J-/, '')
   const activeTargetJob = currentReqId ? (openJobsList.find(j => String(j.id) === currentReqId && isJobActiveAndOpen(j)) || null) : null
 
+  const normalizeSkillsArray = (rawSkills) => {
+    if (!rawSkills) return []
+    const list = Array.isArray(rawSkills) ? rawSkills : String(rawSkills).split(',')
+    const result = new Set()
+    list.forEach(item => {
+      if (!item) return
+      const str = String(item).trim()
+      if (!str || str === '-' || str === 'N/A' || str === 'none') return
+      if (str.includes('/') || str.includes(';') || (str.split(/\s+/).length > 3 && !str.toLowerCase().includes('applications') && !str.toLowerCase().includes('architecture'))) {
+        const parts = str.split(/[/;,]|\s{2,}|\b(?=SQL|GIT|AWS|GCP|Azure|React|Vue|Java|Node|Python|Docker|Kubernetes|Oracle|Spring|Kafka|Linux)\b/i)
+        parts.forEach(p => {
+          const cleaned = p.trim().replace(/^[-•*–]\s*/, '')
+          if (cleaned.length >= 2 && cleaned !== '-') result.add(cleaned)
+        })
+      } else {
+        result.add(str.replace(/^[-•*–]\s*/, ''))
+      }
+    })
+    return Array.from(result)
+  }
+
   const candSkillsList = activeCandidate ? (Array.isArray(activeCandidate.skills) ? activeCandidate.skills : (activeCandidate.skills ? String(activeCandidate.skills).split(',').map(s => s.trim()) : [])) : []
-  const reqSkillsList = activeTargetJob?.skills || (candSkillsList.length > 0 ? candSkillsList.slice(0, 5) : ['Java', 'SQL'])
+  const reqSkillsList = normalizeSkillsArray(activeTargetJob?.skills || (candSkillsList.length > 0 ? candSkillsList.slice(0, 5) : ['Java', 'SQL']))
+  const prefSkillsList = normalizeSkillsArray(activeTargetJob?.preferredSkills || [])
   const candResumeText = activeCandidate ? getFullResumeText(activeCandidate) : ''
   const candidateCorpus = (candResumeText + ' ' + candSkillsList.join(' ')).toLowerCase()
 
@@ -4742,26 +4764,93 @@ export default function RecruiterInbox({ defaultViewMode }) {
     return candidateCorpus.includes(sLower) || candSkillsList.some(cs => cs.toLowerCase().includes(sLower) || sLower.includes(cs.toLowerCase()))
   })
 
+  // Explicit Required Skills Not Matched!
   const dynamicMissingSkills = reqSkillsList.filter(sk => !dynamicMatchingSkills.includes(sk))
+
+  const dynamicMatchingPreferred = prefSkillsList.filter(sk => {
+    const sLower = sk.toLowerCase()
+    return candidateCorpus.includes(sLower) || candSkillsList.some(cs => cs.toLowerCase().includes(sLower) || sLower.includes(cs.toLowerCase()))
+  })
+
+  // 1. Title Alignment Evaluation
+  const titleAlignmentEvaluation = useMemo(() => {
+    if (!activeTargetJob) return { isAligned: true, label: 'Standard Role Alignment', status: 'aligned' }
+    const candRole = (activeCandidate?.role || activeCandidate?.fullRole || '').toLowerCase()
+    const jobTitle = (activeTargetJob?.title || '').toLowerCase()
+    const stopWords = new Set(['senior', 'lead', 'junior', 'staff', 'principal', 'developer', 'engineer', 'consultant', 'specialist', 'architect', 'manager', 'iii', 'ii', 'iv', 'with', 'and', 'for', 'role', 'position', 'profile', 'profiles'])
+    const jWords = jobTitle.split(/[\s,/\-_]+/).filter(w => w.length >= 3 && !stopWords.has(w))
+    const cWords = candRole.split(/[\s,/\-_]+/).filter(w => w.length >= 3 && !stopWords.has(w))
+    const matched = jWords.filter(w => candRole.includes(w) || cWords.some(cw => cw.includes(w) || w.includes(cw)))
+    const ratio = jWords.length > 0 ? (matched.length / jWords.length) : 0.5
+    if (ratio >= 0.5) {
+      return { isAligned: true, status: 'aligned', label: `Aligned Role: ${activeCandidate?.role || activeTargetJob.title}` }
+    } else if (ratio > 0) {
+      return { isAligned: true, status: 'partial', label: `Partial Role Fit (${matched.join(', ')})` }
+    } else {
+      return { isAligned: false, status: 'mismatch', label: `Role Title Mismatch (${activeCandidate?.role || 'Applicant'} vs ${activeTargetJob.title})` }
+    }
+  }, [activeCandidate?.role, activeCandidate?.fullRole, activeTargetJob])
+
+  // 2. Experience Alignment Evaluation
+  const experienceAlignmentEvaluation = useMemo(() => {
+    const candExpStr = String(activeCandidate?.experience || '')
+    const jobExpStr = String(activeTargetJob?.experience || '5+ years')
+    const candMatch = candExpStr.match(/(\d+)/)
+    const jobMatch = jobExpStr.match(/(\d+)/)
+    const candY = candMatch ? parseInt(candMatch[1], 10) : 5
+    const jobY = jobMatch ? parseInt(jobMatch[1], 10) : 5
+    if (candY >= jobY) {
+      return { status: 'exceeds', label: `${candY}+ Years (Req: ${jobY}+ Yrs) — Strong Seniority Fit`, isGood: true }
+    } else if (candY >= jobY - 1) {
+      return { status: 'meets', label: `${candY}+ Years (Req: ${jobY}+ Yrs) — Meets Requirements`, isGood: true }
+    } else {
+      return { status: 'below', label: `${candY} Years (Req: ${jobY}+ Yrs) — Below Preferred Seniority`, isGood: false }
+    }
+  }, [activeCandidate?.experience, activeTargetJob?.experience])
+
+  // 3. State & Location Fit Evaluation
+  const locationFitEvaluation = useMemo(() => {
+    const candLoc = activeCandidate?.location || ''
+    const jobLoc = activeTargetJob?.location || ''
+    const jobMode = (activeTargetJob?.workMode || activeTargetJob?.type || '').toLowerCase()
+    if (jobMode === 'remote' || (!jobLoc && !jobMode)) {
+      return { status: 'remote_ok', label: '100% Remote Eligible — US Nationwide', isGood: true }
+    }
+    const stateRegex = /\b([A-Z]{2})\b/
+    const candState = candLoc.match(stateRegex)?.[1]
+    const jobState = jobLoc.match(stateRegex)?.[1]
+    if (candState && jobState && candState === jobState) {
+      return { status: 'in_state', label: `Confirmed In-State Match (${candState})`, isGood: true }
+    } else if (candState && jobState && candState !== jobState) {
+      return { status: 'relocation_needed', label: `Relocation Needed (${candState} to ${jobState})`, isGood: false }
+    }
+    return { status: 'remote_ok', label: candLoc ? candLoc : 'Remote / US Eligible', isGood: true }
+  }, [activeCandidate?.location, activeTargetJob?.location, activeTargetJob?.workMode, activeTargetJob?.type])
+
   const calculatedFitScore = useMemo(() => {
     if (!activeCandidate) return 0
     const cleanCandTarget = String(activeCandidate.targetReqId || '').replace(/^J-/, '')
     if (cleanCandTarget === currentReqId && activeCandidate.matchScore) {
       return activeCandidate.matchScore
     }
-    if (activeTargetJob && reqSkillsList.length > 0) {
-      const skillsRatio = dynamicMatchingSkills.length / reqSkillsList.length
-      const roleStr = (activeCandidate.role || '').toLowerCase()
-      const titleWords = (activeTargetJob.title || '').toLowerCase().split(/[\s\-_/]+/).filter(w => w.length > 3)
-      const hasTitleOverlap = titleWords.some(w => roleStr.includes(w))
-      const titleBonus = hasTitleOverlap ? 15 : 0
+    if (activeTargetJob) {
+      const titlePts = titleAlignmentEvaluation.status === 'aligned' ? 25 : (titleAlignmentEvaluation.status === 'partial' ? 12 : 2)
+      const reqRatio = reqSkillsList.length > 0 ? (dynamicMatchingSkills.length / reqSkillsList.length) : 0.8
+      const reqPts = Math.round(reqRatio * 35)
+      const prefRatio = prefSkillsList.length > 0 ? (dynamicMatchingPreferred.length / prefSkillsList.length) : 0
+      const prefPts = prefSkillsList.length > 0 ? Math.round(prefRatio * 10) : (dynamicMatchingSkills.length >= 3 ? 5 : 0)
+      const locPts = locationFitEvaluation.status === 'in_state' ? 10 : (locationFitEvaluation.status === 'remote_ok' ? 8 : 4)
+      const expPts = experienceAlignmentEvaluation.status === 'exceeds' ? 10 : (experienceAlignmentEvaluation.status === 'meets' ? 7 : 3)
       const govCheck = detectGovDepartmentExperience(activeCandidate)
-      const govBonus = govCheck.hasGov ? 15 : 0
-      const calculated = Math.round((skillsRatio * 70) + titleBonus + govBonus)
-      return Math.min(99, Math.max(15, calculated))
+      const govBonus = govCheck.hasGov ? 10 : 0
+      let total = titlePts + reqPts + prefPts + locPts + expPts + govBonus
+      if (!titleAlignmentEvaluation.isAligned && reqRatio < 0.4) {
+        total = Math.min(38, total)
+      }
+      return Math.min(99, Math.max(25, total))
     }
     return activeCandidate.matchScore || 75
-  }, [activeCandidate, currentReqId, activeTargetJob, dynamicMatchingSkills.length, reqSkillsList.length])
+  }, [activeCandidate, currentReqId, activeTargetJob, dynamicMatchingSkills.length, reqSkillsList.length, dynamicMatchingPreferred.length, prefSkillsList.length, titleAlignmentEvaluation, locationFitEvaluation, experienceAlignmentEvaluation])
 
   const candidateWorkHistory = useMemo(() => {
     return extractCandidateWorkHistoryAndGaps(activeCandidate)
@@ -9090,10 +9179,10 @@ export default function RecruiterInbox({ defaultViewMode }) {
                             </div>
                           </div>
 
-                          {/* Matching vs Missing Skills Breakdown */}
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                            {/* Matching Skills */}
-                            <div style={{ border: '1px solid #BBF7D0', backgroundColor: isLight ? '#F0FDF4' : 'rgba(22,163,74,0.06)', borderRadius: 8, padding: 14 }}>
+                          {/* Matching vs Required Skills Not Matched Breakdown */}
+                          <div style={{ display: 'grid', gridTemplateColumns: prefSkillsList.length > 0 ? '1fr 1fr 1fr' : '1fr 1fr', gap: 14 }}>
+                            {/* Matching Required Skills */}
+                            <div style={{ border: '1.5px solid #BBF7D0', backgroundColor: isLight ? '#F0FDF4' : 'rgba(22,163,74,0.06)', borderRadius: 8, padding: 14 }}>
                               <div style={{ fontSize: 11, fontWeight: 800, color: '#16A34A', textTransform: 'uppercase', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                                 <IconCheckCircle color="#16A34A" /> <span>Matching Skills ({dynamicMatchingSkills.length})</span>
                               </div>
@@ -9110,8 +9199,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
                               </div>
                             </div>
 
-                            {/* Missing Skills / Required Skills Not Matched */}
-                            <div style={{ border: '1px solid #FECACA', backgroundColor: isLight ? '#FEF2F2' : 'rgba(239,68,68,0.06)', borderRadius: 8, padding: 14 }}>
+                            {/* Required Skills Not Matched */}
+                            <div style={{ border: '1.5px solid #FECACA', backgroundColor: isLight ? '#FEF2F2' : 'rgba(239,68,68,0.06)', borderRadius: 8, padding: 14 }}>
                               <div style={{ fontSize: 11, fontWeight: 800, color: '#DC2626', textTransform: 'uppercase', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                                 <IconXCircle color="#DC2626" /> <span>Required Skills Not Matched ({dynamicMissingSkills.length})</span>
                               </div>
@@ -9127,47 +9216,104 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                 )}
                               </div>
                             </div>
+
+                            {/* Preferred / Nice-to-Have Skills (if requisition defines preferred skills) */}
+                            {prefSkillsList.length > 0 && (
+                              <div style={{ border: '1.5px solid #BFDBFE', backgroundColor: isLight ? '#EFF6FF' : 'rgba(37,99,235,0.06)', borderRadius: 8, padding: 14 }}>
+                                <div style={{ fontSize: 11, fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  <span>★</span> <span>Preferred Skills ({dynamicMatchingPreferred.length}/{prefSkillsList.length})</span>
+                                </div>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                  {prefSkillsList.map((sk, i) => {
+                                    const hasPref = dynamicMatchingPreferred.includes(sk)
+                                    return (
+                                      <span key={i} style={{
+                                        background: hasPref ? '#DBEAFE' : (isLight ? '#F1F5F9' : '#1E293B'),
+                                        color: hasPref ? '#1D4ED8' : C.textSecondary,
+                                        border: `1px solid ${hasPref ? '#93C5FD' : C.border}`,
+                                        padding: '3px 8px',
+                                        borderRadius: 4,
+                                        fontSize: 11,
+                                        fontWeight: 700
+                                      }}>
+                                        {hasPref ? '✓' : '•'} {sk}
+                                      </span>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+                            )}
                           </div>
 
-                          {/* Title, State & Experience Alignment Criteria Overview */}
+                          {/* 5-Tier Match Criteria Summary (Title, Required Skills, Preferred, State/Location, Experience) */}
                           <div style={{
                             marginTop: 14,
-                            padding: '12px 14px',
+                            padding: '14px 16px',
                             backgroundColor: isLight ? '#F8FAFC' : 'rgba(255,255,255,0.02)',
                             border: `1px solid ${C.border}`,
                             borderRadius: 8,
                             display: 'grid',
-                            gridTemplateColumns: 'repeat(3, 1fr)',
+                            gridTemplateColumns: 'repeat(5, 1fr)',
                             gap: 12,
                             fontSize: 11.5
                           }}>
                             <div>
-                              <span style={{ color: C.textSecondary, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, display: 'block', marginBottom: 2 }}>Title Alignment</span>
-                              {(() => {
-                                const candRoleWords = (activeCandidate?.role || '').toLowerCase().split(/[\s,/-]+/).filter(w => w.length >= 3 && !['lead', 'senior', 'developer', 'engineer', 'specialist', 'profile', 'profiles'].includes(w))
-                                const jobTitleWords = (activeTargetJob?.title || '').toLowerCase().split(/[\s,/-]+/).filter(w => w.length >= 3 && !['lead', 'senior', 'developer', 'engineer', 'specialist'].includes(w))
-                                const hasTitleMatch = candRoleWords.some(w => jobTitleWords.includes(w))
-                                return hasTitleMatch ? (
-                                  <span style={{ color: '#16A34A', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                    ✓ Aligned Role
-                                  </span>
-                                ) : (
-                                  <span style={{ color: '#D97706', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                    ⚠️ Role Title Mismatch
-                                  </span>
-                                )
-                              })()}
-                            </div>
-                            <div>
-                              <span style={{ color: C.textSecondary, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, display: 'block', marginBottom: 2 }}>State &amp; Location Fit</span>
-                              <span style={{ color: '#2563EB', fontWeight: 700 }}>
-                                {activeCandidate?.location ? activeCandidate.location : 'Remote / US Eligible'}
+                              <span style={{ color: C.textSecondary, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, display: 'block', marginBottom: 3 }}>1. Title Match</span>
+                              <span style={{
+                                color: titleAlignmentEvaluation.status === 'aligned' ? '#16A34A' : titleAlignmentEvaluation.status === 'partial' ? '#D97706' : '#DC2626',
+                                fontWeight: 800,
+                                display: 'block',
+                                lineHeight: 1.3
+                              }}>
+                                {titleAlignmentEvaluation.label}
                               </span>
                             </div>
+
                             <div>
-                              <span style={{ color: C.textSecondary, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, display: 'block', marginBottom: 2 }}>Experience Level</span>
-                              <span style={{ color: '#16A34A', fontWeight: 700 }}>
-                                {activeCandidate?.experience || '8+ Years'} Verified
+                              <span style={{ color: C.textSecondary, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, display: 'block', marginBottom: 3 }}>2. Required Skills</span>
+                              <span style={{
+                                color: dynamicMissingSkills.length === 0 ? '#16A34A' : (dynamicMatchingSkills.length >= dynamicMissingSkills.length ? '#D97706' : '#DC2626'),
+                                fontWeight: 800,
+                                display: 'block',
+                                lineHeight: 1.3
+                              }}>
+                                {dynamicMatchingSkills.length} / {reqSkillsList.length} Matched
+                              </span>
+                            </div>
+
+                            <div>
+                              <span style={{ color: C.textSecondary, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, display: 'block', marginBottom: 3 }}>3. Preferred Skills</span>
+                              <span style={{
+                                color: dynamicMatchingPreferred.length > 0 ? '#2563EB' : C.textSecondary,
+                                fontWeight: 800,
+                                display: 'block',
+                                lineHeight: 1.3
+                              }}>
+                                {prefSkillsList.length > 0 ? `${dynamicMatchingPreferred.length} / ${prefSkillsList.length} Bonus` : 'None Required'}
+                              </span>
+                            </div>
+
+                            <div>
+                              <span style={{ color: C.textSecondary, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, display: 'block', marginBottom: 3 }}>4. State &amp; Location</span>
+                              <span style={{
+                                color: locationFitEvaluation.isGood ? '#16A34A' : '#D97706',
+                                fontWeight: 800,
+                                display: 'block',
+                                lineHeight: 1.3
+                              }}>
+                                {locationFitEvaluation.label}
+                              </span>
+                            </div>
+
+                            <div>
+                              <span style={{ color: C.textSecondary, fontWeight: 700, textTransform: 'uppercase', fontSize: 10, display: 'block', marginBottom: 3 }}>5. Experience Fit</span>
+                              <span style={{
+                                color: experienceAlignmentEvaluation.isGood ? '#16A34A' : '#D97706',
+                                fontWeight: 800,
+                                display: 'block',
+                                lineHeight: 1.3
+                              }}>
+                                {experienceAlignmentEvaluation.label}
                               </span>
                             </div>
                           </div>
@@ -13089,22 +13235,45 @@ export default function RecruiterInbox({ defaultViewMode }) {
         const candidateCorpus = (resumeText + ' ' + candidateSkills.join(' ')).toLowerCase()
 
         // Match against selected requisition's skills
-        const targetJobSkills = activeTargetJob?.skills || ['Java', 'SQL']
+        const targetJobSkills = normalizeSkillsArray(activeTargetJob?.skills || ['Java', 'SQL'])
+        const targetPrefSkills = normalizeSkillsArray(activeTargetJob?.preferredSkills || [])
+
         const dynamicMatchingSkills = targetJobSkills.filter(reqSkill => {
           if (!reqSkill) return false
           const s = reqSkill.toLowerCase().trim()
           return candidateCorpus.includes(s) || candidateSkills.some(cs => cs.toLowerCase().includes(s) || s.includes(cs.toLowerCase()))
         })
         const dynamicMissingSkills = targetJobSkills.filter(reqSkill => !dynamicMatchingSkills.includes(reqSkill))
-
-        // Dynamic match score calculation
-        const matchRatio = targetJobSkills.length > 0 ? (dynamicMatchingSkills.length / targetJobSkills.length) : 0.8
-        const dynamicMatchScore = Math.max(65, Math.min(99, Math.round(matchRatio * 100)))
+        const dynamicMatchingPref = targetPrefSkills.filter(prefSkill => {
+          if (!prefSkill) return false
+          const s = prefSkill.toLowerCase().trim()
+          return candidateCorpus.includes(s) || candidateSkills.some(cs => cs.toLowerCase().includes(s) || s.includes(cs.toLowerCase()))
+        })
 
         // Title alignment check
         const candRoleLower = (candidateDetails.role || candidateDetails.title || candidateName).toLowerCase()
         const targetTitleLower = (activeTargetJob?.title || '').toLowerCase()
-        const isTitleAligned = candRoleLower.split(' ').some(w => w.length > 3 && targetTitleLower.includes(w))
+        const stopWords = new Set(['senior', 'lead', 'junior', 'staff', 'principal', 'developer', 'engineer', 'consultant', 'specialist', 'architect', 'manager', 'iii', 'ii', 'iv', 'with', 'and', 'for', 'role', 'position'])
+        const jWords = targetTitleLower.split(/[\s,/\-_]+/).filter(w => w.length >= 3 && !stopWords.has(w))
+        const cWords = candRoleLower.split(/[\s,/\-_]+/).filter(w => w.length >= 3 && !stopWords.has(w))
+        const matchedTitleWords = jWords.filter(w => candRoleLower.includes(w) || cWords.some(cw => cw.includes(w) || w.includes(cw)))
+        const titleRatio = jWords.length > 0 ? (matchedTitleWords.length / jWords.length) : 0.5
+        const isTitleAligned = titleRatio >= 0.5
+
+        // Dynamic match score calculation across 5 tiers
+        const reqRatio = targetJobSkills.length > 0 ? (dynamicMatchingSkills.length / targetJobSkills.length) : 0.8
+        const titlePts = isTitleAligned ? 25 : (titleRatio > 0 ? 12 : 2)
+        const reqPts = Math.round(reqRatio * 35)
+        const prefPts = targetPrefSkills.length > 0 ? Math.round((dynamicMatchingPref.length / targetPrefSkills.length) * 10) : 5
+        const expMatch = String(experienceVal).match(/(\d+)/)
+        const jobExpMatch = String(activeTargetJob?.experience || '5+').match(/(\d+)/)
+        const expPts = (expMatch && jobExpMatch && parseInt(expMatch[1], 10) >= parseInt(jobExpMatch[1], 10)) ? 10 : 6
+        const locPts = 10
+        let totalScore = titlePts + reqPts + prefPts + expPts + locPts
+        if (!isTitleAligned && reqRatio < 0.4) {
+          totalScore = Math.min(38, totalScore)
+        }
+        const dynamicMatchScore = Math.max(25, Math.min(99, totalScore))
 
         const hasDl = candidateDetails.uploadedDocuments?.dl || candidateDetails.documents?.some(d => d.type === 'driving_license' || d.type === 'driving_licence');
         const hasSelfie = candidateDetails.uploadedDocuments?.selfie || candidateDetails.selfieUrl;
@@ -13366,36 +13535,93 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       </div>
                     </div>
 
-                    {/* Title Alignment */}
-                    <div style={{ fontSize: 11.5, fontWeight: 700, color: isTitleAligned ? '#15803D' : C.textSecondary, background: isTitleAligned ? '#DCFCE7' : C.inputBg, border: `1px solid ${isTitleAligned ? '#86EFAC' : C.border}`, padding: '6px 10px', borderRadius: 6, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span>{isTitleAligned ? '✓' : '•'}</span>
-                      <span>{isTitleAligned ? `Strong Role Fit: Candidate matches ${activeTargetJob?.title}` : `Transferable Profile: Candidate background aligns with ${activeTargetJob?.title}`}</span>
+                    {/* 5-Tier Quick Overview Grid */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(3, 1fr)',
+                      gap: 8,
+                      marginBottom: 12,
+                      padding: '10px 12px',
+                      backgroundColor: isLight ? '#F8FAFC' : 'rgba(255,255,255,0.03)',
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 8,
+                      fontSize: 11
+                    }}>
+                      <div>
+                        <span style={{ color: C.textSecondary, fontWeight: 700, textTransform: 'uppercase', fontSize: 9.5, display: 'block' }}>1. Title Match</span>
+                        <strong style={{ color: isTitleAligned ? '#16A34A' : '#D97706', fontSize: 11 }}>
+                          {isTitleAligned ? '✓ Aligned Role' : '⚠️ Title Mismatch'}
+                        </strong>
+                      </div>
+                      <div>
+                        <span style={{ color: C.textSecondary, fontWeight: 700, textTransform: 'uppercase', fontSize: 9.5, display: 'block' }}>2. State / Location</span>
+                        <strong style={{ color: '#2563EB', fontSize: 11 }}>
+                          {locationVal || 'Remote / US'}
+                        </strong>
+                      </div>
+                      <div>
+                        <span style={{ color: C.textSecondary, fontWeight: 700, textTransform: 'uppercase', fontSize: 9.5, display: 'block' }}>3. Experience</span>
+                        <strong style={{ color: '#16A34A', fontSize: 11 }}>
+                          {experienceVal} Verified
+                        </strong>
+                      </div>
                     </div>
 
-                    {/* Matching Skills */}
-                    {dynamicMatchingSkills && dynamicMatchingSkills.length > 0 && (
-                      <div style={{ marginBottom: 12 }}>
-                        <div style={{ fontSize: 11, fontWeight: 800, color: '#16A34A', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <span>✓</span> Matching Technical Skills (Highlighted Yellow in Resume):
-                        </div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                          {dynamicMatchingSkills.map((s, idx) => (
-                            <span key={idx} style={{ fontSize: 10.5, padding: '3px 9px', borderRadius: 5, background: '#DCFCE7', color: '#15803D', fontWeight: 700, border: '1px solid #86EFAC' }}>{s}</span>
-                          ))}
-                        </div>
+                    {/* Matching Required Skills */}
+                    <div style={{ marginBottom: 12, border: '1px solid #BBF7D0', backgroundColor: isLight ? '#F0FDF4' : 'rgba(22,163,74,0.06)', borderRadius: 7, padding: '10px 12px' }}>
+                      <div style={{ fontSize: 11, fontWeight: 800, color: '#16A34A', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <IconCheckCircle color="#16A34A" /> <span>Matching Skills ({dynamicMatchingSkills.length}):</span>
                       </div>
-                    )}
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                        {dynamicMatchingSkills.length > 0 ? (
+                          dynamicMatchingSkills.map((s, idx) => (
+                            <span key={idx} style={{ fontSize: 10.5, padding: '3px 8px', borderRadius: 4, background: '#DCFCE7', color: '#15803D', fontWeight: 700, border: '1px solid #86EFAC' }}>✓ {s}</span>
+                          ))
+                        ) : (
+                          <span style={{ fontSize: 11, color: C.textSecondary, fontStyle: 'italic' }}>No direct required skill matches found</span>
+                        )}
+                      </div>
+                    </div>
 
-                    {/* Missing Skills */}
-                    {dynamicMissingSkills && dynamicMissingSkills.length > 0 && (
-                      <div style={{ marginBottom: 14 }}>
-                        <div style={{ fontSize: 11, fontWeight: 800, color: '#DC2626', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <span>✗</span> Missing / Gap Skills:
+                    {/* Required Skills Not Matched */}
+                    <div style={{ marginBottom: 14, border: '1px solid #FECACA', backgroundColor: isLight ? '#FEF2F2' : 'rgba(239,68,68,0.06)', borderRadius: 7, padding: '10px 12px' }}>
+                      <div style={{ fontSize: 11, fontWeight: 800, color: '#DC2626', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <IconXCircle color="#DC2626" /> <span>Required Skills Not Matched ({dynamicMissingSkills.length}):</span>
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                        {dynamicMissingSkills.length > 0 ? (
+                          dynamicMissingSkills.map((s, idx) => (
+                            <span key={idx} style={{ fontSize: 10.5, padding: '3px 8px', borderRadius: 4, background: '#FEE2E2', color: '#B91C1C', fontWeight: 700, border: '1px solid #FECACA' }}>✗ {s}</span>
+                          ))
+                        ) : (
+                          <span style={{ fontSize: 11, color: '#16A34A', fontWeight: 700 }}>100% required skills covered</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Preferred Skills (if any) */}
+                    {targetPrefSkills.length > 0 && (
+                      <div style={{ marginBottom: 14, border: '1px solid #BFDBFE', backgroundColor: isLight ? '#EFF6FF' : 'rgba(37,99,235,0.06)', borderRadius: 7, padding: '10px 12px' }}>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: '#2563EB', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <span>★</span> <span>Preferred Skills ({dynamicMatchingPref.length}/{targetPrefSkills.length}):</span>
                         </div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                          {dynamicMissingSkills.map((s, idx) => (
-                            <span key={idx} style={{ fontSize: 10.5, padding: '3px 9px', borderRadius: 5, background: '#FEE2E2', color: '#B91C1C', fontWeight: 700, border: '1px solid #FECACA' }}>{s}</span>
-                          ))}
+                          {targetPrefSkills.map((s, idx) => {
+                            const isPMatched = dynamicMatchingPref.includes(s)
+                            return (
+                              <span key={idx} style={{
+                                fontSize: 10.5,
+                                padding: '3px 8px',
+                                borderRadius: 4,
+                                background: isPMatched ? '#DBEAFE' : (isLight ? '#F1F5F9' : '#1E293B'),
+                                color: isPMatched ? '#1D4ED8' : C.textSecondary,
+                                fontWeight: 700,
+                                border: `1px solid ${isPMatched ? '#93C5FD' : C.border}`
+                              }}>
+                                {isPMatched ? '✓' : '•'} {s}
+                              </span>
+                            )
+                          })}
                         </div>
                       </div>
                     )}

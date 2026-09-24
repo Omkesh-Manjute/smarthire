@@ -8778,6 +8778,107 @@ function evaluateCandidateLocationFit(candidate = {}, job = {}) {
   };
 }
 
+function normalizeSkillsArray(rawSkills) {
+  if (!rawSkills) return [];
+  const list = Array.isArray(rawSkills) ? rawSkills : String(rawSkills).split(',');
+  const result = new Set();
+  list.forEach(item => {
+    if (!item) return;
+    const str = String(item).trim();
+    if (!str || str === '-' || str === 'N/A' || str === 'none') return;
+    // Split composite strings like "Vue.Js SQL Database GIT" or "React / Redux / Node.js"
+    if (str.includes('/') || str.includes(';') || (str.split(/\s+/).length > 3 && !str.toLowerCase().includes('applications') && !str.toLowerCase().includes('architecture'))) {
+      const parts = str.split(/[/;,]|\s{2,}|\b(?=SQL|GIT|AWS|GCP|Azure|React|Vue|Java|Node|Python|Docker|Kubernetes|Oracle|Spring|Kafka|Linux)\b/i);
+      parts.forEach(p => {
+        const cleaned = p.trim().replace(/^[-•*–]\s*/, '');
+        if (cleaned.length >= 2 && cleaned !== '-') result.add(cleaned);
+      });
+    } else {
+      result.add(str.replace(/^[-•*–]\s*/, ''));
+    }
+  });
+  return Array.from(result);
+}
+
+function parseExperienceYears(expStr = '') {
+  if (!expStr) return 0;
+  const match = String(expStr).match(/(\d+)(?:\+)?\s*(?:years?|yrs?)/i) || String(expStr).match(/(\d+)/);
+  return match ? parseInt(match[1], 10) : 0;
+}
+
+function evaluateExperienceFit(candExp = '', jobExp = '') {
+  const candY = parseExperienceYears(candExp);
+  const jobY = parseExperienceYears(jobExp) || 5;
+
+  if (candY === 0) {
+    return { pts: 5, status: 'unknown', label: 'Experience Unspecified' };
+  }
+  if (candY >= jobY) {
+    return {
+      pts: 10,
+      status: 'exceeds',
+      label: `${candY}+ Years (Req: ${jobY}+ Yrs) — Strong Seniority Fit`
+    };
+  } else if (candY >= jobY - 1) {
+    return {
+      pts: 7,
+      status: 'meets',
+      label: `${candY}+ Years (Req: ${jobY}+ Yrs) — Meets Requirements`
+    };
+  } else {
+    return {
+      pts: 3,
+      status: 'below',
+      label: `${candY} Years (Req: ${jobY}+ Yrs) — Below Preferred Seniority`
+    };
+  }
+}
+
+function evaluateTitleMatch(candRole = '', jobTitle = '', candDomain = '', jobDomain = '') {
+  const cTitle = (candRole || '').toLowerCase();
+  const jTitle = (jobTitle || '').toLowerCase();
+
+  // Strict domain conflict (e.g. DBA vs Java Dev vs Cloud Engineer)
+  if (candDomain !== 'general_it' && jobDomain !== 'general_it' && candDomain !== jobDomain) {
+    return {
+      isTitleMatch: false,
+      titleMatchStatus: 'mismatch',
+      titlePts: 0,
+      titleMatchLabel: `Role Mismatch (${candDomain.replace('_', ' ').toUpperCase()} vs ${jobDomain.replace('_', ' ').toUpperCase()})`
+    };
+  }
+
+  const stopWords = new Set(['senior', 'lead', 'junior', 'staff', 'principal', 'developer', 'engineer', 'consultant', 'specialist', 'architect', 'manager', 'iii', 'ii', 'iv', 'with', 'and', 'for', 'role', 'position', 'profile', 'profiles']);
+  const jWords = jTitle.split(/[\s,/\-_]+/).filter(w => w.length >= 3 && !stopWords.has(w));
+  const cWords = cTitle.split(/[\s,/\-_]+/).filter(w => w.length >= 3 && !stopWords.has(w));
+
+  const matched = jWords.filter(w => cTitle.includes(w) || cWords.some(cw => cw.includes(w) || w.includes(cw)));
+  const ratio = jWords.length > 0 ? (matched.length / jWords.length) : 0.5;
+
+  if (ratio >= 0.5 || (candDomain === jobDomain && candDomain !== 'general_it')) {
+    return {
+      isTitleMatch: true,
+      titleMatchStatus: 'aligned',
+      titlePts: Math.round(15 + Math.min(10, ratio * 10)),
+      titleMatchLabel: `Aligned Role Title: ${candRole || jobTitle}`
+    };
+  } else if (ratio > 0) {
+    return {
+      isTitleMatch: true,
+      titleMatchStatus: 'partial',
+      titlePts: 10,
+      titleMatchLabel: `Partial Role Alignment (${matched.join(', ')})`
+    };
+  } else {
+    return {
+      isTitleMatch: false,
+      titleMatchStatus: 'mismatch',
+      titlePts: 2,
+      titleMatchLabel: `Role Title Mismatch (${candRole || 'Candidate'} vs ${jobTitle})`
+    };
+  }
+}
+
 function evaluateCandidateJobMatch(candidate, job) {
   if (!job) return { matchScore: 40, matchingSkills: [], missingSkills: [], isDomainMatch: false };
 
@@ -8788,104 +8889,136 @@ function evaluateCandidateJobMatch(candidate, job) {
   const candText = `${candTitle} ${candSkills.join(' ')} ${candidate.resumeText || ''}`.toLowerCase();
 
   const jobTitle = (job.title || '').toLowerCase();
-  const jobSkills = (Array.isArray(job.skills) ? job.skills : (job.skills ? String(job.skills).split(',') : []))
-    .map(s => String(s).trim())
-    .filter(Boolean);
-  const jobText = `${jobTitle} ${jobSkills.join(' ')} ${job.description || ''}`.toLowerCase();
+  const rawJobSkills = job.skills || [];
+  const reqSkills = normalizeSkillsArray(rawJobSkills);
+  const prefSkills = normalizeSkillsArray(job.preferredSkills || []);
 
   const candDomain = classifyTechnicalDomain(candTitle, candSkills, candidate.resumeText);
-  const jobDomain = classifyTechnicalDomain(jobTitle, jobSkills, job.description);
+  const jobDomain = classifyTechnicalDomain(jobTitle, reqSkills, job.description);
 
-  // Strict domain alignment: specific domains (e.g. database_admin vs cloud_devops) must match
+  // Strict domain alignment
   const isExactDomainMatch = candDomain === jobDomain;
   const isDomainMatch = isExactDomainMatch || (candDomain === 'general_it' && jobDomain === 'general_it');
 
-  // 1. Domain Match Points (0, 12, or 25)
-  let domainPts = 0;
-  if (isExactDomainMatch && candDomain !== 'general_it') {
-    domainPts = 25;
-  } else if (isDomainMatch) {
-    domainPts = 12;
-  } else {
-    domainPts = 0;
-  }
+  // Tier 1: Title & Domain Match (0 to 25 pts)
+  const titleEval = evaluateTitleMatch(candidate.role || candidate.fullRole, job.title, candDomain, jobDomain);
+  const domainBonus = (isExactDomainMatch && candDomain !== 'general_it') ? 5 : 0;
+  const tier1Pts = Math.min(25, titleEval.titlePts + domainBonus);
 
-  // 2. Core Requisition Skills Match (0 to 45 pts)
-  const matchingSkills = [];
-  const missingSkills = [];
+  // Tier 2: Required Skills Match (Must-Have) (0 to 35 pts)
+  const matchingRequiredSkills = [];
+  const missingRequiredSkills = []; // "Required Skills Not Matched"
 
-  if (jobSkills.length > 0) {
-    jobSkills.forEach(reqSkill => {
+  if (reqSkills.length > 0) {
+    reqSkills.forEach(reqSkill => {
       const rLower = reqSkill.toLowerCase().trim();
       const has = candSkills.some(cs => cs.includes(rLower) || rLower.includes(cs)) || candText.includes(rLower);
-      if (has) matchingSkills.push(reqSkill);
-      else missingSkills.push(reqSkill);
+      if (has) matchingRequiredSkills.push(reqSkill);
+      else missingRequiredSkills.push(reqSkill);
     });
   } else {
     const domainKws = DOMAIN_TAXONOMY[jobDomain] || [];
     domainKws.slice(0, 5).forEach(kw => {
-      if (candText.includes(kw)) matchingSkills.push(kw);
-      else missingSkills.push(kw);
+      if (candText.includes(kw)) matchingRequiredSkills.push(kw);
+      else missingRequiredSkills.push(kw);
     });
   }
 
-  const denom = jobSkills.length > 0 ? jobSkills.length : 5;
-  const matchRatio = matchingSkills.length / Math.max(1, denom);
-  const skillPts = Math.min(45, Math.round(matchRatio * 45));
+  const reqDenom = reqSkills.length > 0 ? reqSkills.length : 5;
+  const reqMatchRatio = matchingRequiredSkills.length / Math.max(1, reqDenom);
+  const tier2Pts = Math.round(reqMatchRatio * 35);
 
-  // 3. Title Overlap (0 to 20 pts)
-  let titlePts = 0;
-  const jobWords = jobTitle.split(/[\s,/-]+/).filter(w => w.length >= 3 && !['with', 'from', 'lead', 'senior', 'junior', 'developer', 'engineer', 'analyst', 'specialist', 'role', 'position'].includes(w));
-  if (jobWords.length > 0) {
-    const matchedWords = jobWords.filter(w => candTitle.includes(w) || candSkills.some(cs => cs.includes(w)));
-    titlePts = Math.round((matchedWords.length / jobWords.length) * 20);
+  // Tier 3: Preferred / Secondary Skills Match (0 to 10 pts)
+  const matchingPreferredSkills = [];
+  const missingPreferredSkills = [];
+
+  if (prefSkills.length > 0) {
+    prefSkills.forEach(pSkill => {
+      const pLower = pSkill.toLowerCase().trim();
+      const has = candSkills.some(cs => cs.includes(pLower) || pLower.includes(cs)) || candText.includes(pLower);
+      if (has) matchingPreferredSkills.push(pSkill);
+      else missingPreferredSkills.push(pSkill);
+    });
+  }
+  const prefDenom = prefSkills.length > 0 ? prefSkills.length : 1;
+  const prefRatio = prefSkills.length > 0 ? (matchingPreferredSkills.length / prefDenom) : 0;
+  const tier3Pts = prefSkills.length > 0 ? Math.round(prefRatio * 10) : (matchingRequiredSkills.length >= 3 ? 5 : 0);
+
+  // Tier 4: State & Location Fit (0 to 10 pts)
+  const locFit = evaluateCandidateLocationFit(candidate, job);
+  let tier4Pts = 10;
+  let stateMatchStatus = 'remote_ok';
+  let stateMatchLabel = '100% Remote Eligible — US Nationwide';
+
+  if (locFit.status === 'confirmed_local') {
+    tier4Pts = 10;
+    stateMatchStatus = 'in_state';
+    stateMatchLabel = locFit.label || '📍 In-State / Local Match';
+  } else if (locFit.status === 'relocation_needed') {
+    tier4Pts = locFit.needsLocal ? 0 : 4;
+    stateMatchStatus = 'relocation_needed';
+    stateMatchLabel = locFit.label || 'Non-Local / Relocation Needed';
   } else {
-    titlePts = isDomainMatch ? 12 : 0;
+    tier4Pts = 8;
+    stateMatchStatus = 'remote_ok';
+    stateMatchLabel = locFit.label || 'Remote / US Eligible';
   }
 
-  // 4. Bonus & Govt Experience (0 to 10 pts)
+  // Tier 5: Experience Level Fit (0 to 10 pts)
+  const expEval = evaluateExperienceFit(candidate.experience, job.experience);
+  const tier5Pts = expEval.pts;
+
+  // Bonus Points: Public Sector & Governance (0 to 10 pts)
   let bonusPts = 0;
-  if (candText.includes('state of') || candText.includes('department of') || candText.includes('county') || candText.includes('government')) {
-    bonusPts += 5;
+  if (candText.includes('state of') || candText.includes('department of') || candText.includes('county') || candText.includes('government') || candText.includes('health and human')) {
+    bonusPts += 7;
   }
-  if (candText.includes('agile') || candText.includes('scrum') || candText.includes('jira') || candText.includes('sql')) {
+  if (candText.includes('agile') || candText.includes('scrum') || candText.includes('jira')) {
     bonusPts += 3;
   }
 
-  // 5. Location Match (Score bonus or penalty based on JD local requirement)
-  const locFit = evaluateCandidateLocationFit(candidate, job);
-  let totalScore = domainPts + skillPts + titlePts + bonusPts + (locFit.scoreAdj || 0);
+  let totalScore = tier1Pts + tier2Pts + tier3Pts + tier4Pts + tier5Pts + bonusPts;
 
-  // Strict domain ceiling: If domains conflict (e.g. database_admin vs cloud_devops, or QA vs Java), ceiling at 40%
+  // Strict domain ceiling: Conflict between domain (e.g. database_admin vs cloud/java) caps at 38%
   if (!isDomainMatch) {
-    totalScore = Math.min(40, totalScore);
+    totalScore = Math.min(38, totalScore);
   }
 
-  // Strict skills ceiling: If candidate matches less than 35% of required skills, ceiling at 52%
-  if (jobSkills.length >= 3 && matchRatio < 0.35) {
-    totalScore = Math.min(52, totalScore);
+  // Strict required skills ceiling: If more required skills are missing than matched, cap at 50%
+  if (reqSkills.length >= 3 && reqMatchRatio < 0.4) {
+    totalScore = Math.min(50, totalScore);
   }
 
-  // Strict local requirement ceiling: If JD requires local and candidate is non-local, ceiling at 65%
+  // Strict local requirement ceiling: If job requires local and candidate is non-local, cap at 62%
   if (locFit.needsLocal && locFit.isLocal === false) {
-    totalScore = Math.min(65, totalScore);
+    totalScore = Math.min(62, totalScore);
   }
 
-  const finalScore = Math.min(98, Math.max(25, totalScore));
+  const finalScore = Math.min(99, Math.max(25, totalScore));
 
   return {
     matchScore: finalScore,
-    matchingSkills,
-    missingSkills,
+    matchingSkills: matchingRequiredSkills,
+    missingSkills: missingRequiredSkills, // Required Skills Not Matched!
+    matchingRequiredSkills,
+    missingRequiredSkills,
+    matchingPreferredSkills,
+    missingPreferredSkills,
     candDomain,
     jobDomain,
     isDomainMatch,
-    titleMatchScore: titlePts,
-    isTitleMatch: titlePts >= 10,
-    hasMissingRequiredSkills: missingSkills.length > matchingSkills.length,
+    titleMatchScore: titleEval.titlePts,
+    isTitleMatch: titleEval.isTitleMatch,
+    titleMatchStatus: titleEval.titleMatchStatus,
+    titleMatchLabel: titleEval.titleMatchLabel,
+    stateMatchStatus,
+    stateMatchLabel,
+    expMatchStatus: expEval.status,
+    expMatchLabel: expEval.label,
     locationFit: locFit,
     isLocal: locFit.isLocal,
-    isHighFit: finalScore >= 72
+    isHighFit: finalScore >= 72,
+    hasMissingRequiredSkills: missingRequiredSkills.length > 0
   };
 }
 
@@ -9033,7 +9166,18 @@ app.get('/api/recruiter/email-streams', (req, res) => {
 
     // Private email / spam harvester candidates from other recruiters are strictly hidden
     return false;
-  }).map(c => {
+  });
+
+  // Pre-classify active jobs once to avoid repeating heavy regex inside loop
+  const preclassifiedJobs = activeUnexpiredJobs.map(j => ({
+    job: j,
+    id: String(j.id || '').replace(/^J-/, '').trim(),
+    title: j.title || '',
+    domain: classifyTechnicalDomain(j.title || '', j.skills || [], j.description || ''),
+    titleWords: (j.title || '').toLowerCase().split(/[\s,/\-_]+/).filter(w => w.length >= 4)
+  }));
+
+  const scopedCandidates = filteredCandidates.map(c => {
     // Enrich with source category and AI match against active positions
     const src = (c.source || '').toLowerCase();
     let sourceCategory = 'email_inbox';
@@ -9054,6 +9198,9 @@ app.get('/api/recruiter/email-streams', (req, res) => {
       ? c.role 
       : (c.extracted_profile?.role || (cleanSkills.length > 0 ? `${cleanSkills[0]} Specialist` : 'Software Engineer'));
 
+    // Resolve accurate experience from candidate resume text / profile
+    const candidateExp = extractCandidateExperience(c.resumeText, c.summary, c.extracted_profile, cleanRole);
+
     // Check candidate target requisition
     const cleanReqKey = String(c.targetReqId || c.reqId || '').replace(/^J-/, '').replace(/^REQ-/, '').trim();
     let targetJob = cleanReqKey && jobMap.has(cleanReqKey) ? jobMap.get(cleanReqKey) : null;
@@ -9063,34 +9210,34 @@ app.get('/api/recruiter/email-streams', (req, res) => {
       targetJob = null;
     }
 
-    // Resolve accurate experience from candidate resume text / profile
-    const candidateExp = extractCandidateExperience(c.resumeText, c.summary, c.extracted_profile, cleanRole);
+    const candCacheKey = String(c.id || c.candidate_id || cleanEmail);
+    const cached = candidateMatchCache.get(candCacheKey);
+    let matchAnalysis = null;
 
-    const candCacheKey = `${c.id || c.candidate_id || cleanEmail}_${targetJob?.id || 'auto'}`;
-    let matchAnalysis = candidateMatchCache.get(candCacheKey);
+    if (cached && (Date.now() - cached.timestamp < 3600000)) {
+      targetJob = cached.targetJobId ? (jobMap.get(cached.targetJobId) || null) : null;
+      matchAnalysis = cached.matchAnalysis;
+    }
 
     if (!matchAnalysis) {
       if (targetJob) {
-        matchAnalysis = evaluateCandidateJobMatch({ ...c, role: cleanRole, skills: cleanSkills }, targetJob);
+        matchAnalysis = evaluateCandidateJobMatch({ ...c, role: cleanRole, skills: cleanSkills, experience: candidateExp }, targetJob);
       } else {
         // Fast Domain-First Filter: Find true best-fitting job among ACTIVE client requisitions
         const candDomain = classifyTechnicalDomain(cleanRole, cleanSkills, c.resumeText);
-        const candidateDomainJobs = activeUnexpiredJobs.filter(j => {
-          const jDomain = classifyTechnicalDomain(j.title || '', j.skills || [], j.description || '');
-          if (candDomain !== 'general_it' && jDomain !== 'general_it') {
-            return jDomain === candDomain;
+        const candidateDomainJobs = preclassifiedJobs.filter(pj => {
+          if (candDomain !== 'general_it' && pj.domain !== 'general_it') {
+            return pj.domain === candDomain;
           }
-          // Check title keyword overlap
-          const jWords = (j.title || '').toLowerCase().split(/[\s,/-]+/).filter(w => w.length >= 4);
-          return jWords.some(w => cleanRole.toLowerCase().includes(w));
+          return pj.titleWords.some(w => cleanRole.toLowerCase().includes(w));
         });
 
-        const poolToEvaluate = candidateDomainJobs.length > 0 ? candidateDomainJobs : activeUnexpiredJobs.slice(0, 30);
+        const poolToEvaluate = candidateDomainJobs.length > 0 ? candidateDomainJobs.map(pj => pj.job) : activeUnexpiredJobs.slice(0, 30);
         let bestJob = null;
         let bestMatch = { matchScore: 0, matchingSkills: [], missingSkills: [] };
 
         for (const j of poolToEvaluate) {
-          const scoreObj = evaluateCandidateJobMatch({ ...c, role: cleanRole, skills: cleanSkills }, j);
+          const scoreObj = evaluateCandidateJobMatch({ ...c, role: cleanRole, skills: cleanSkills, experience: candidateExp }, j);
           if (scoreObj.matchScore > bestMatch.matchScore) {
             bestMatch = scoreObj;
             bestJob = j;
@@ -9107,13 +9254,27 @@ app.get('/api/recruiter/email-streams', (req, res) => {
             matchScore: 50,
             matchingSkills: cleanSkills.slice(0, 3),
             missingSkills: [],
+            matchingRequiredSkills: cleanSkills.slice(0, 3),
+            missingRequiredSkills: [],
+            matchingPreferredSkills: [],
+            missingPreferredSkills: [],
             isDomainMatch: false,
             isTitleMatch: false,
-            hasMissingRequiredSkills: true
+            titleMatchStatus: 'mismatch',
+            titleMatchLabel: 'General Talent Pool',
+            stateMatchStatus: 'remote_ok',
+            stateMatchLabel: 'US Nationwide',
+            expMatchStatus: 'meets',
+            expMatchLabel: `${candidateExp} Recorded`,
+            hasMissingRequiredSkills: false
           };
         }
       }
-      candidateMatchCache.set(candCacheKey, matchAnalysis);
+      candidateMatchCache.set(candCacheKey, {
+        matchAnalysis,
+        targetJobId: targetJob ? String(targetJob.id).replace(/^J-/, '') : null,
+        timestamp: Date.now()
+      });
     }
 
     const cleanReqId = targetJob ? String(targetJob.id).replace(/^J-/, '') : null;
@@ -9161,11 +9322,21 @@ app.get('/api/recruiter/email-streams', (req, res) => {
       matchedJobRate: targetJob ? (targetJob.rate || targetJob.payRate || '$75/hr') : '$70/hr',
       matchingSkills: matchAnalysis.matchingSkills || [],
       missingSkills: matchAnalysis.missingSkills || [],
+      matchingRequiredSkills: matchAnalysis.matchingRequiredSkills || matchAnalysis.matchingSkills || [],
+      missingRequiredSkills: matchAnalysis.missingRequiredSkills || matchAnalysis.missingSkills || [],
+      matchingPreferredSkills: matchAnalysis.matchingPreferredSkills || [],
+      missingPreferredSkills: matchAnalysis.missingPreferredSkills || [],
       candDomain: matchAnalysis.candDomain,
       jobDomain: matchAnalysis.jobDomain,
       isDomainMatch: matchAnalysis.isDomainMatch,
       titleMatchScore: matchAnalysis.titleMatchScore,
       isTitleMatch: matchAnalysis.isTitleMatch,
+      titleMatchStatus: matchAnalysis.titleMatchStatus,
+      titleMatchLabel: matchAnalysis.titleMatchLabel,
+      stateMatchStatus: matchAnalysis.stateMatchStatus,
+      stateMatchLabel: matchAnalysis.stateMatchLabel,
+      expMatchStatus: matchAnalysis.expMatchStatus,
+      expMatchLabel: matchAnalysis.expMatchLabel,
       hasMissingRequiredSkills: matchAnalysis.hasMissingRequiredSkills,
       locationFit: matchAnalysis.locationFit,
       documents: cleanDocuments || c.documents,
