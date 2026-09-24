@@ -544,7 +544,7 @@ const renderSourceBadge = (c) => {
     )
   }
 
-  if (cat === 'careers_portal' || src.includes('career') || src.includes('/jobs')) {
+  if (cat === 'careers_portal' || cat === 'job_site' || src.includes('job') || src.includes('career') || src.includes('/jobs') || src.includes('public-submit')) {
     return (
       <span style={{
         fontSize: 11,
@@ -554,9 +554,13 @@ const renderSourceBadge = (c) => {
         border: '1px solid #A7F3D0',
         padding: '2px 8px',
         borderRadius: 6,
-        whiteSpace: 'nowrap'
+        whiteSpace: 'nowrap',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5
       }}>
-        Careers Portal
+        <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#059669' }}></span>
+        Job Site
       </span>
     )
   }

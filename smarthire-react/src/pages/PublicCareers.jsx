@@ -1052,13 +1052,13 @@ export default function PublicCareers() {
                     fontWeight: 800,
                     letterSpacing: '0.08em',
                     textTransform: 'uppercase',
-                    color: (selectedJob.source === 'InfoOrigin' || selectedJob.client === 'InfoOrigin') ? '#4f46e5' : '#00B8D9',
-                    background: (selectedJob.source === 'InfoOrigin' || selectedJob.client === 'InfoOrigin') ? '#eef2ff' : 'rgba(0, 184, 217, 0.1)',
-                    border: `1px solid ${(selectedJob.source === 'InfoOrigin' || selectedJob.client === 'InfoOrigin') ? '#c7d2fe' : 'rgba(0, 184, 217, 0.3)'}`,
+                    color: '#00B8D9',
+                    background: 'rgba(0, 184, 217, 0.1)',
+                    border: '1px solid rgba(0, 184, 217, 0.3)',
                     padding: '2px 8px',
                     borderRadius: 4
                   }}>
-                    {(selectedJob.source === 'InfoOrigin' || selectedJob.client === 'InfoOrigin') ? 'INFO ORIGIN' : 'COOLSOFT LLC'}
+                    DIRECT CLIENT
                   </span>
                   <span style={{ fontSize: 12, color: theme.textSecondary }}>· Req #{resolveReqId(selectedJob.reqId || selectedJob.id, selectedJob)}</span>
                 </div>

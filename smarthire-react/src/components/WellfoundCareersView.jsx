@@ -99,12 +99,8 @@ function LinkedInIcon({ size = 18, color = 'currentColor' }) {
 }
 
 export const resolveClientDomainName = (job) => {
-  if (job?.source === 'InfoOrigin' || job?.client === 'InfoOrigin' || job?.company === 'InfoOrigin') {
-    return 'InfoOrigin'
-  }
-  if (job?.source === 'COOLSOFT' || job?.source === 'jobsinhand' || job?.company === 'COOLSOFT LLC' || job?.client === 'COOLSOFT' || job?.client === 'COOLSOFT LLC') {
-    return 'COOLSOFT LLC'
-  }
+  if (job?.client_domain) return job.client_domain
+  if (job?.clientDomain) return job.clientDomain
 
   const text = `${job?.title || ''} ${(job?.skills || []).join(' ')} ${job?.rawDescription || job?.description || ''}`.toLowerCase()
 
@@ -180,16 +176,9 @@ function CompanyLogo({ job, size = 42 }) {
   const palette = LOGO_PALETTES[hash % LOGO_PALETTES.length]
   const cleanTitle = (job?.title || 'Engineer').replace(/[^a-zA-Z]/g, ' ').trim()
   const words = cleanTitle.split(/\s+/).filter(Boolean)
-  let letters = 'IT'
-  if (job?.source === 'InfoOrigin' || job?.client === 'InfoOrigin') {
-    letters = 'IO'
-  } else if (job?.source === 'COOLSOFT' || job?.source === 'jobsinhand' || job?.company === 'COOLSOFT LLC') {
-    letters = 'CS'
-  } else {
-    letters = words.length >= 2 
-      ? (words[0][0] + words[1][0]).toUpperCase()
-      : cleanTitle.slice(0, 2).toUpperCase()
-  }
+  const letters = words.length >= 2 
+    ? (words[0][0] + words[1][0]).toUpperCase()
+    : (cleanTitle.slice(0, 2).toUpperCase() || 'IT')
 
   return (
     <div style={{
@@ -224,12 +213,13 @@ function parseWellfoundJobDetails(job, cleanTitle, domainName, location, workMod
 
   let text = String(fullText || '').trim()
 
-  // Clean out common boilerplate and legal disclaimers
+  // Clean out common boilerplate, legal disclaimers, and partner branding
   text = text
     .replace(/Pursuant to the State of.*?policy of non-discrimination.*?$/is, '')
     .replace(/Equal Opportunity Employer.*?$/is, '')
     .replace(/We are an equal opportunity employer.*?$/is, '')
     .replace(/\bEEO\b.*?$/is, '')
+    .replace(/\b(InfoOrigin|COOLSOFT\s*(?:LLC)?)\b/gi, 'Direct Client')
 
   let summary = ''
   let responsibilities = []
@@ -273,6 +263,7 @@ function parseWellfoundJobDetails(job, cleanTitle, domainName, location, workMod
       engagementDetails = overviewMatch[1]
         .split('\n')
         .map(l => l.replace(/^[•\u2022\u2023\u25E6\u2043\u2219\*\-\d\.]\s*/, '').trim())
+        .map(l => l.replace(/\b(InfoOrigin|COOLSOFT\s*(?:LLC)?)\b/gi, 'Direct Client'))
         .filter(l => l.length > 3 && !l.toLowerCase().includes('position title'))
     }
   } else if (text.length > 30) {
@@ -427,14 +418,14 @@ const TRENDING_CLIENTS_POOL = [
     tag3: 'Hybrid / Onsite'
   },
   {
-    id: 'infoorigin-tech',
+    id: 'global-enterprise-tech',
     categoryKey: 'dev',
     countryKey: 'India',
-    avatar: 'IO',
+    avatar: 'GE',
     avatarGradient: 'linear-gradient(135deg, #4338CA 0%, #6366F1 100%)',
-    title: 'InfoOrigin Global Tech',
+    title: 'Global Enterprise Tech',
     subtitle: 'Cloud & IoT Enterprise Engineering',
-    description: 'High-growth technology teams across Pune, Noida, and US delivering mission-critical IoT & Full-Stack apps.',
+    description: 'High-growth technology teams delivering mission-critical IoT & Full-Stack applications across cloud environments.',
     tag1: { label: 'IoT & Cloud', bgLight: '#EDE9FE', bgDark: '#2E1065', color: '#6366F1' },
     tag2: 'Full Time',
     tag3: 'Pune / Noida'
@@ -982,9 +973,9 @@ export default function WellfoundCareersView({
                 fontWeight: 800,
                 padding: '2px 7px',
                 borderRadius: 4,
-                backgroundColor: (job.source === 'InfoOrigin' || job.client === 'InfoOrigin' || job.company === 'InfoOrigin') ? '#EEF2FF' : '#EFF6FF',
-                color: (job.source === 'InfoOrigin' || job.client === 'InfoOrigin' || job.company === 'InfoOrigin') ? '#4F46E5' : '#1D4ED8',
-                border: `1px solid ${(job.source === 'InfoOrigin' || job.client === 'InfoOrigin' || job.company === 'InfoOrigin') ? '#C7D2FE' : '#BFDBFE'}`,
+                backgroundColor: isLight ? '#EFF6FF' : '#1E293B',
+                color: isLight ? '#1D4ED8' : '#60A5FA',
+                border: `1px solid ${isLight ? '#BFDBFE' : '#2563EB'}`,
                 letterSpacing: '0.02em'
               }}>
                 {domainName}
@@ -2635,13 +2626,13 @@ export default function WellfoundCareersView({
                       fontWeight: 800,
                       letterSpacing: '0.08em',
                       textTransform: 'uppercase',
-                      color: (selectedJob?.source === 'InfoOrigin' || selectedJob?.client === 'InfoOrigin' || selectedJob?.company === 'InfoOrigin') ? '#4F46E5' : '#1D4ED8',
-                      background: (selectedJob?.source === 'InfoOrigin' || selectedJob?.client === 'InfoOrigin' || selectedJob?.company === 'InfoOrigin') ? (isLight ? '#EEF2FF' : 'rgba(79, 70, 229, 0.2)') : (isLight ? '#EFF6FF' : 'rgba(29, 78, 216, 0.2)'),
-                      border: `1px solid ${(selectedJob?.source === 'InfoOrigin' || selectedJob?.client === 'InfoOrigin' || selectedJob?.company === 'InfoOrigin') ? '#C7D2FE' : '#BFDBFE'}`,
+                      color: isLight ? '#1D4ED8' : '#60A5FA',
+                      background: isLight ? '#EFF6FF' : 'rgba(29, 78, 216, 0.2)',
+                      border: `1px solid ${isLight ? '#BFDBFE' : '#2563EB'}`,
                       padding: '2px 8px',
                       borderRadius: 4
                     }}>
-                      {(selectedJob?.source === 'InfoOrigin' || selectedJob?.client === 'InfoOrigin' || selectedJob?.company === 'InfoOrigin') ? 'INFO ORIGIN' : 'COOLSOFT LLC'}
+                      {selDomain || 'DIRECT CLIENT'}
                     </span>
                     {Boolean(selectedJob?.country === 'India' || selectedJob?.countryId === '76415c4c-6968-454c-aabc-36c68a9b1f06' || /(?:pune|delhi|noida|hyderabad|bangalore|bengaluru|mumbai|gondia)\b/i.test(selectedJob?.location || '')) && (
                       <span style={{
