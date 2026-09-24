@@ -10632,7 +10632,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                             overflow: 'hidden',
                                             textOverflow: 'ellipsis'
                                           }}>
-                                            {!isTalentPool ? (matchedJob?.client || c.matchedJobClient || 'Client') : 'General Talent Pool'}
+                                            {!isTalentPool ? (matchedJob?.client || c.matchedJobClient || c.jobSource || c.client || 'Client') : 'General Talent Pool'}
                                           </span>
                                         </div>
                                         <div style={{
