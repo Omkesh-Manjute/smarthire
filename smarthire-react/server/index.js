@@ -9249,7 +9249,8 @@ ${(job.description || '').slice(0, 1500)}`;
 
     res.json({
       success: true,
-      match: responseMatch
+      match: responseMatch,
+      matchResult: responseMatch
     });
   } catch (err) {
     console.error('❌ Error in /api/candidates/live-ai-match:', err);
