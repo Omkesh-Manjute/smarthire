@@ -29,6 +29,14 @@ function ChevronRightIcon({ size = 14, color = 'currentColor' }) {
   )
 }
 
+function ChevronLeftIcon({ size = 14, color = 'currentColor' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="15 18 9 12 15 6" />
+    </svg>
+  )
+}
+
 function ClockIcon({ size = 14, color = '#6B7280' }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -380,6 +388,107 @@ function parseWellfoundJobDetails(job, cleanTitle, domainName, location, workMod
   }
 }
 
+// Curated Pool of Trending Direct Clients for Daily Dynamic Rotation
+const TRENDING_CLIENTS_POOL = [
+  {
+    id: 'cloud-ai',
+    categoryKey: 'cloud',
+    avatar: 'EA',
+    avatarGradient: 'linear-gradient(135deg, #0F172A 0%, #334155 100%)',
+    title: 'Enterprise Cloud & AI',
+    subtitle: 'State & Enterprise Infrastructure',
+    description: 'Modernizing state cloud infrastructures with AWS, Azure microservices, and automated data pipelines.',
+    tag1: { label: 'Cloud Arch', bgLight: '#FCE7F3', bgDark: '#371B2B', color: '#BE185D' },
+    tag2: 'AWS / Azure',
+    tag3: 'Remote Available'
+  },
+  {
+    id: 'health-systems',
+    categoryKey: 'health',
+    avatar: 'SH',
+    avatarGradient: 'linear-gradient(135deg, #0284C7 0%, #38BDF8 100%)',
+    title: 'State Healthcare Systems',
+    subtitle: 'Public Sector Health Portals',
+    description: 'Leading healthcare systems, clinical integration, and large-scale public data exchange platforms.',
+    tag1: { label: 'Healthcare IT', bgLight: '#E0F2FE', bgDark: '#082F49', color: '#0284C7' },
+    tag2: 'Long-term',
+    tag3: 'Hybrid'
+  },
+  {
+    id: 'digital-platforms',
+    categoryKey: 'dev',
+    avatar: 'DP',
+    avatarGradient: 'linear-gradient(135deg, #047857 0%, #10B981 100%)',
+    title: 'Digital Platform Solutions',
+    subtitle: 'Enterprise Modernization',
+    description: 'Full-stack software engineering, modern React/Node interfaces, and resilient backend microservices.',
+    tag1: { label: 'Full Stack', bgLight: '#D1FAE5', bgDark: '#064E3B', color: '#047857' },
+    tag2: 'Enterprise',
+    tag3: 'Hybrid / Onsite'
+  },
+  {
+    id: 'infoorigin-tech',
+    categoryKey: 'dev',
+    countryKey: 'India',
+    avatar: 'IO',
+    avatarGradient: 'linear-gradient(135deg, #4338CA 0%, #6366F1 100%)',
+    title: 'InfoOrigin Global Tech',
+    subtitle: 'Cloud & IoT Enterprise Engineering',
+    description: 'High-growth technology teams across Pune, Noida, and US delivering mission-critical IoT & Full-Stack apps.',
+    tag1: { label: 'IoT & Cloud', bgLight: '#EDE9FE', bgDark: '#2E1065', color: '#6366F1' },
+    tag2: 'Full Time',
+    tag3: 'Pune / Noida'
+  },
+  {
+    id: 'cyber-ztna',
+    categoryKey: 'cloud',
+    avatar: 'CZ',
+    avatarGradient: 'linear-gradient(135deg, #991B1B 0%, #DC2626 100%)',
+    title: 'Cybersecurity & ZTNA Defense',
+    subtitle: 'Federal & Enterprise SecOps',
+    description: 'Zero-trust network architecture, identity governance, vulnerability intelligence, and defense systems.',
+    tag1: { label: 'ZTNA SecOps', bgLight: '#FEE2E2', bgDark: '#450A0A', color: '#DC2626' },
+    tag2: 'Zero Trust',
+    tag3: 'Direct Client'
+  },
+  {
+    id: 'data-ai',
+    categoryKey: 'data',
+    avatar: 'DA',
+    avatarGradient: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)',
+    title: 'Data & AI Innovation Labs',
+    subtitle: 'Enterprise Intelligence & ML Pipelines',
+    description: 'High-velocity predictive analytics, real-time Snowflake data lakes, and generative AI workflow orchestration.',
+    tag1: { label: 'Data Science', bgLight: '#F3E8FF', bgDark: '#3B0764', color: '#9333EA' },
+    tag2: 'Python / SQL',
+    tag3: 'Nationwide'
+  },
+  {
+    id: 'govtech-systems',
+    categoryKey: 'mgmt',
+    avatar: 'GT',
+    avatarGradient: 'linear-gradient(135deg, #D97706 0%, #F59E0B 100%)',
+    title: 'GovTech Systems & Public Sector',
+    subtitle: 'State IT Modernization',
+    description: 'Delivering modern digital citizen services, program governance, and cloud compliance for municipal authorities.',
+    tag1: { label: 'State Contracts', bgLight: '#FEF3C7', bgDark: '#451A03', color: '#D97706' },
+    tag2: 'Governance',
+    tag3: 'Direct Client'
+  },
+  {
+    id: 'devops-sre',
+    categoryKey: 'cloud',
+    avatar: 'ED',
+    avatarGradient: 'linear-gradient(135deg, #0E7490 0%, #06B6D4 100%)',
+    title: 'Enterprise Cloud & DevOps SRE',
+    subtitle: 'High Availability Infrastructure',
+    description: 'Scaling mission-critical Kubernetes clusters, automated CI/CD releases, and multi-region failover architecture.',
+    tag1: { label: 'DevOps / SRE', bgLight: '#CFFAFE', bgDark: '#164E63', color: '#0891B2' },
+    tag2: 'Kubernetes',
+    tag3: 'Remote USA'
+  }
+]
+
 export default function WellfoundCareersView({
   jobs = [],
   filteredJobs = [],
@@ -425,6 +534,8 @@ export default function WellfoundCareersView({
   const [heroTitleQuery, setHeroTitleQuery] = useState(searchQuery || '')
   const [heroLocationQuery, setHeroLocationQuery] = useState(selectedLocation === 'All' ? '' : selectedLocation)
   const [activeCategoryFilter, setActiveCategoryFilter] = useState('all')
+  const [currentPage, setCurrentPage] = useState(1)
+  const PAGE_SIZE = 15 // 15 requisitions per page matching authentic StaffingOrigin pagination
 
   // Selected Job for Page 2 (Job Detail View)
   const [selectedJobId, setSelectedJobId] = useState(() => {
@@ -524,6 +635,43 @@ export default function WellfoundCareersView({
     })
   }, [filteredJobs, activeCategoryFilter])
 
+  // Reset pagination to page 1 whenever active filter or search queries change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [activeCategoryFilter, selectedCountry, searchQuery, selectedLocation])
+
+  // Total pages and paginated slice of categoryFilteredJobs
+  const totalPages = Math.ceil(categoryFilteredJobs.length / PAGE_SIZE) || 1
+  const paginatedJobs = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE
+    return categoryFilteredJobs.slice(start, start + PAGE_SIZE)
+  }, [categoryFilteredJobs, currentPage, PAGE_SIZE])
+
+  // Daily Dynamic Client Rotation (rotates every midnight based on day of year)
+  const dailyTrendingClients = useMemo(() => {
+    const today = new Date()
+    const startOfYear = new Date(today.getFullYear(), 0, 0)
+    const diff = today - startOfYear + (startOfYear.getTimezoneOffset() - today.getTimezoneOffset()) * 60 * 1000
+    const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24))
+    const poolLen = TRENDING_CLIENTS_POOL.length
+    const idx1 = dayOfYear % poolLen
+    const idx2 = (dayOfYear + 1) % poolLen
+    const idx3 = (dayOfYear + 2) % poolLen
+    return [
+      TRENDING_CLIENTS_POOL[idx1],
+      TRENDING_CLIENTS_POOL[idx2],
+      TRENDING_CLIENTS_POOL[idx3]
+    ]
+  }, [])
+
+  const todayFormattedDate = useMemo(() => {
+    try {
+      return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date())
+    } catch (_) {
+      return 'Today'
+    }
+  }, [])
+
   // Selected Job object for Page 2
   const selectedJob = useMemo(() => {
     if (!selectedJobId) return null
@@ -553,6 +701,7 @@ export default function WellfoundCareersView({
         setSelectedLocation(heroLocationQuery.trim())
       }
     }
+    setCurrentPage(1)
     const feed = document.getElementById('wellfound-split-workspace')
     if (feed) {
       feed.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -560,8 +709,18 @@ export default function WellfoundCareersView({
   }
 
   // 1-Click Trending Filter Selection with Smooth Scroll
-  const handleTrendingCardClick = (categoryKey) => {
-    setActiveCategoryFilter(categoryKey)
+  const handleTrendingCardClick = (target) => {
+    if (typeof target === 'object' && target !== null) {
+      if (target.countryKey && setSelectedCountry) {
+        setSelectedCountry(target.countryKey)
+      }
+      if (target.categoryKey) {
+        setActiveCategoryFilter(target.categoryKey)
+      }
+    } else if (typeof target === 'string') {
+      setActiveCategoryFilter(target)
+    }
+    setCurrentPage(1)
     if (setSearchQuery) setSearchQuery('')
     const feed = document.getElementById('wellfound-split-workspace')
     if (feed) {
@@ -1547,22 +1706,35 @@ export default function WellfoundCareersView({
             </form>
           </section>
 
-          {/* ── 2. Trending Direct Clients 3-Card Grid ── */}
+          {/* ── 2. Trending Direct Clients 3-Card Grid (Dynamic Daily Rotation) ── */}
           <section style={{
             maxWidth: 1560,
             margin: '0 auto',
             padding: '10px 24px 28px'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <h2 style={{
-                fontSize: 21,
-                fontWeight: 800,
-                color: colors.textPrimary,
-                margin: 0,
-                letterSpacing: '-0.02em'
-              }}>
-                Trending direct clients hiring now
-              </h2>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <h2 style={{
+                  fontSize: 21,
+                  fontWeight: 800,
+                  color: colors.textPrimary,
+                  margin: 0,
+                  letterSpacing: '-0.02em'
+                }}>
+                  Trending direct clients hiring now
+                </h2>
+                <span style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  padding: '3px 10px',
+                  borderRadius: 12,
+                  backgroundColor: isLight ? '#EFF6FF' : '#1E293B',
+                  color: '#2563EB',
+                  border: `1px solid ${isLight ? '#BFDBFE' : '#3B82F6'}`
+                }}>
+                  Updated Daily • {todayFormattedDate}
+                </span>
+              </div>
               <span style={{ fontSize: 13, color: colors.textSecondary, fontWeight: 500 }}>
                 Click a client card to filter open opportunities
               </span>
@@ -1573,242 +1745,97 @@ export default function WellfoundCareersView({
               gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
               gap: 18
             }}>
-              {/* Card 1: Enterprise Cloud & AI */}
-              <div
-                onClick={() => handleTrendingCardClick('cloud')}
-                style={{
-                  border: `1.5px solid ${activeCategoryFilter === 'cloud' ? colors.activeBorder : colors.border}`,
-                  borderRadius: 14,
-                  backgroundColor: activeCategoryFilter === 'cloud' ? colors.activeBg : colors.cardBg,
-                  padding: 20,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                  boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-4px)'
-                  e.currentTarget.style.boxShadow = isLight ? '0 12px 24px rgba(0,0,0,0.08)' : '0 12px 24px rgba(0,0,0,0.4)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)'
-                  e.currentTarget.style.boxShadow = isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
-                }}
-              >
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+              {dailyTrendingClients.map((client) => {
+                const isSelected = activeCategoryFilter === client.categoryKey
+                return (
+                  <div
+                    key={client.id}
+                    onClick={() => handleTrendingCardClick(client)}
+                    style={{
+                      border: `1.5px solid ${isSelected ? colors.activeBorder : colors.border}`,
+                      borderRadius: 14,
+                      backgroundColor: isSelected ? colors.activeBg : colors.cardBg,
+                      padding: 20,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-4px)'
+                      e.currentTarget.style.boxShadow = isLight ? '0 12px 24px rgba(0,0,0,0.08)' : '0 12px 24px rgba(0,0,0,0.4)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)'
+                      e.currentTarget.style.boxShadow = isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
+                    }}
+                  >
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+                        <div style={{
+                          width: 42,
+                          height: 42,
+                          borderRadius: 10,
+                          background: client.avatarGradient,
+                          color: '#FFFFFF',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 900,
+                          fontSize: 15
+                        }}>
+                          {client.avatar}
+                        </div>
+                        <div>
+                          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: colors.textPrimary }}>
+                            {client.title}
+                          </h3>
+                          <div style={{ fontSize: 12, color: colors.textSecondary }}>{client.subtitle}</div>
+                        </div>
+                      </div>
+
+                      <p style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 1.5, margin: '0 0 12px' }}>
+                        {client.description}
+                      </p>
+
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+                        <span style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          padding: '3px 8px',
+                          borderRadius: 6,
+                          backgroundColor: isLight ? client.tag1.bgLight : client.tag1.bgDark,
+                          color: client.tag1.color
+                        }}>
+                          {client.tag1.label}
+                        </span>
+                        <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
+                          {client.tag2}
+                        </span>
+                        <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
+                          {client.tag3}
+                        </span>
+                      </div>
+                    </div>
+
                     <div style={{
-                      width: 42,
-                      height: 42,
-                      borderRadius: 10,
-                      background: 'linear-gradient(135deg, #0F172A 0%, #334155 100%)',
-                      color: '#FFFFFF',
+                      borderTop: `1px solid ${colors.borderLight}`,
+                      paddingTop: 10,
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: 900,
-                      fontSize: 15
+                      justifyContent: 'space-between',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color: colors.textPrimary
                     }}>
-                      EA
-                    </div>
-                    <div>
-                      <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: colors.textPrimary }}>
-                        Enterprise Cloud & AI
-                      </h3>
-                      <div style={{ fontSize: 12, color: colors.textSecondary }}>State & Enterprise Infrastructure</div>
+                      <span>View Open Positions</span>
+                      <ChevronRightIcon size={14} color={colors.textPrimary} />
                     </div>
                   </div>
-
-                  <p style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 1.5, margin: '0 0 12px' }}>
-                    Modernizing state cloud infrastructures with AWS, Azure microservices, and automated data pipelines.
-                  </p>
-
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: isLight ? '#FCE7F3' : '#371B2B', color: '#BE185D' }}>
-                      Cloud Arch
-                    </span>
-                    <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
-                      AWS / Azure
-                    </span>
-                    <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
-                      Remote Available
-                    </span>
-                  </div>
-                </div>
-
-                <div style={{
-                  borderTop: `1px solid ${colors.borderLight}`,
-                  paddingTop: 10,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: colors.textPrimary
-                }}>
-                  <span>View Open Positions</span>
-                  <ChevronRightIcon size={14} color={colors.textPrimary} />
-                </div>
-              </div>
-
-              {/* Card 2: State Healthcare Systems */}
-              <div
-                onClick={() => handleTrendingCardClick('health')}
-                style={{
-                  border: `1.5px solid ${activeCategoryFilter === 'health' ? colors.activeBorder : colors.border}`,
-                  borderRadius: 14,
-                  backgroundColor: activeCategoryFilter === 'health' ? colors.activeBg : colors.cardBg,
-                  padding: 20,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                  boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-4px)'
-                  e.currentTarget.style.boxShadow = isLight ? '0 12px 24px rgba(0,0,0,0.08)' : '0 12px 24px rgba(0,0,0,0.4)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)'
-                  e.currentTarget.style.boxShadow = isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
-                }}
-              >
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-                    <div style={{
-                      width: 42,
-                      height: 42,
-                      borderRadius: 10,
-                      background: 'linear-gradient(135deg, #0284C7 0%, #38BDF8 100%)',
-                      color: '#FFFFFF',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: 900,
-                      fontSize: 15
-                    }}>
-                      SH
-                    </div>
-                    <div>
-                      <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: colors.textPrimary }}>
-                        State Healthcare Systems
-                      </h3>
-                      <div style={{ fontSize: 12, color: colors.textSecondary }}>Public Sector Health Portals</div>
-                    </div>
-                  </div>
-
-                  <p style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 1.5, margin: '0 0 12px' }}>
-                    Leading healthcare systems, clinical integration, and large-scale public data exchange platforms.
-                  </p>
-
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: isLight ? '#E0F2FE' : '#082F49', color: '#0284C7' }}>
-                      Healthcare IT
-                    </span>
-                    <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
-                      Long-term
-                    </span>
-                  </div>
-                </div>
-
-                <div style={{
-                  borderTop: `1px solid ${colors.borderLight}`,
-                  paddingTop: 10,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: colors.textPrimary
-                }}>
-                  <span>View Open Positions</span>
-                  <ChevronRightIcon size={14} color={colors.textPrimary} />
-                </div>
-              </div>
-
-              {/* Card 3: Digital Platform Solutions */}
-              <div
-                onClick={() => handleTrendingCardClick('dev')}
-                style={{
-                  border: `1.5px solid ${activeCategoryFilter === 'dev' ? colors.activeBorder : colors.border}`,
-                  borderRadius: 14,
-                  backgroundColor: activeCategoryFilter === 'dev' ? colors.activeBg : colors.cardBg,
-                  padding: 20,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                  boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-4px)'
-                  e.currentTarget.style.boxShadow = isLight ? '0 12px 24px rgba(0,0,0,0.08)' : '0 12px 24px rgba(0,0,0,0.4)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)'
-                  e.currentTarget.style.boxShadow = isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none'
-                }}
-              >
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-                    <div style={{
-                      width: 42,
-                      height: 42,
-                      borderRadius: 10,
-                      background: 'linear-gradient(135deg, #047857 0%, #10B981 100%)',
-                      color: '#FFFFFF',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: 900,
-                      fontSize: 15
-                    }}>
-                      DP
-                    </div>
-                    <div>
-                      <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: colors.textPrimary }}>
-                        Digital Platform Solutions
-                      </h3>
-                      <div style={{ fontSize: 12, color: colors.textSecondary }}>Enterprise Modernization</div>
-                    </div>
-                  </div>
-
-                  <p style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 1.5, margin: '0 0 12px' }}>
-                    Full-stack software engineering, modern React/Node interfaces, and resilient backend microservices.
-                  </p>
-
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: isLight ? '#D1FAE5' : '#064E3B', color: '#047857' }}>
-                      Full Stack
-                    </span>
-                    <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
-                      Enterprise
-                    </span>
-                    <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, backgroundColor: colors.badgeBg, color: colors.textSecondary }}>
-                      Hybrid / Onsite
-                    </span>
-                  </div>
-                </div>
-
-                <div style={{
-                  borderTop: `1px solid ${colors.borderLight}`,
-                  paddingTop: 10,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: colors.textPrimary
-                }}>
-                  <span>View Open Positions</span>
-                  <ChevronRightIcon size={14} color={colors.textPrimary} />
-                </div>
-              </div>
+                )
+              })}
             </div>
           </section>
 
@@ -1994,7 +2021,7 @@ export default function WellfoundCareersView({
                         {selectedCountry === 'ALL' && activeCategoryFilter === 'all' && `Search Results (${categoryFilteredJobs.length})`}
                       </h2>
                       <span style={{ fontSize: 13, color: colors.textSecondary }}>
-                        Showing {categoryFilteredJobs.length} matches
+                        {categoryFilteredJobs.length > 0 ? `Showing ${(currentPage - 1) * PAGE_SIZE + 1}–${Math.min(currentPage * PAGE_SIZE, categoryFilteredJobs.length)} of ${categoryFilteredJobs.length} positions` : '0 matches'}
                       </span>
                     </div>
 
@@ -2010,7 +2037,121 @@ export default function WellfoundCareersView({
                           </div>
                         </div>
                       ) : (
-                        categoryFilteredJobs.map(job => renderJobRow(job))
+                        <>
+                          {paginatedJobs.map(job => renderJobRow(job))}
+
+                          {/* Authentic StaffingOrigin-style Pagination Controls (< 1 2 >) */}
+                          {totalPages > 1 && (
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '16px 20px',
+                              backgroundColor: isLight ? '#F8FAFC' : '#111827',
+                              borderTop: `1px solid ${colors.border}`,
+                              flexWrap: 'wrap',
+                              gap: 12
+                            }}>
+                              <div style={{ fontSize: 13, color: colors.textSecondary, fontWeight: 500 }}>
+                                Showing {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, categoryFilteredJobs.length)} of {categoryFilteredJobs.length} positions (Page {currentPage} of {totalPages})
+                              </div>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                {/* Previous Page Button */}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (currentPage > 1) {
+                                      setCurrentPage(prev => prev - 1)
+                                      const feed = document.getElementById('wellfound-split-workspace')
+                                      if (feed) feed.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                    }
+                                  }}
+                                  disabled={currentPage <= 1}
+                                  style={{
+                                    width: 36,
+                                    height: 36,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderRadius: 8,
+                                    border: `1px solid ${colors.border}`,
+                                    backgroundColor: isLight ? '#FFFFFF' : '#1F2937',
+                                    cursor: currentPage <= 1 ? 'not-allowed' : 'pointer',
+                                    opacity: currentPage <= 1 ? 0.35 : 1,
+                                    transition: 'all 0.15s ease'
+                                  }}
+                                  aria-label="Previous Page"
+                                >
+                                  <ChevronLeftIcon size={16} color={currentPage <= 1 ? colors.textMuted : colors.textPrimary} />
+                                </button>
+
+                                {/* Page Number Buttons */}
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => {
+                                  const isActive = pageNum === currentPage
+                                  return (
+                                    <button
+                                      key={pageNum}
+                                      type="button"
+                                      onClick={() => {
+                                        setCurrentPage(pageNum)
+                                        const feed = document.getElementById('wellfound-split-workspace')
+                                        if (feed) feed.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                      }}
+                                      style={{
+                                        minWidth: 36,
+                                        height: 36,
+                                        padding: '0 12px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        borderRadius: 8,
+                                        fontSize: 13.5,
+                                        fontWeight: isActive ? 800 : 600,
+                                        backgroundColor: isActive ? '#1E1B4B' : (isLight ? '#FFFFFF' : '#1F2937'),
+                                        color: isActive ? '#FFFFFF' : colors.textPrimary,
+                                        border: `1.5px solid ${isActive ? '#1E1B4B' : colors.border}`,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.15s ease'
+                                      }}
+                                    >
+                                      {pageNum}
+                                    </button>
+                                  )
+                                })}
+
+                                {/* Next Page Button */}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (currentPage < totalPages) {
+                                      setCurrentPage(prev => prev + 1)
+                                      const feed = document.getElementById('wellfound-split-workspace')
+                                      if (feed) feed.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                    }
+                                  }}
+                                  disabled={currentPage >= totalPages}
+                                  style={{
+                                    width: 36,
+                                    height: 36,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderRadius: 8,
+                                    border: `1px solid ${colors.border}`,
+                                    backgroundColor: isLight ? '#FFFFFF' : '#1F2937',
+                                    cursor: currentPage >= totalPages ? 'not-allowed' : 'pointer',
+                                    opacity: currentPage >= totalPages ? 0.35 : 1,
+                                    transition: 'all 0.15s ease'
+                                  }}
+                                  aria-label="Next Page"
+                                >
+                                  <ChevronRightIcon size={16} color={currentPage >= totalPages ? colors.textMuted : colors.textPrimary} />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>

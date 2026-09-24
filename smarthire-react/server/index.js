@@ -5020,8 +5020,16 @@ app.post('/api/jobs/ingestion/trigger', async (req, res) => {
   console.log('\n⚡ Manual ingestion trigger received. Starting pipeline...');
 
   try {
-    const { runIngestion } = await import('./jobs-ingestion/run-ingestion.js');
+    const { runIngestion, runInfoOriginIngestion } = await import('./jobs-ingestion/run-ingestion.js');
     const result = await runIngestion();
+
+    if (typeof runInfoOriginIngestion === 'function') {
+      try {
+        await runInfoOriginIngestion();
+      } catch (subErr) {
+        console.error('⚠️ [Manual Trigger] InfoOrigin ingestion sub-step error:', subErr.message);
+      }
+    }
 
     // Reload jobs from disk after ingestion
     loadJobsFromDisk();
@@ -5044,8 +5052,17 @@ app.get('/api/jobs/ingestion/run-now', async (_req, res) => {
 
   ingestionRunning = true;
   try {
-    const { runIngestion } = await import('./jobs-ingestion/run-ingestion.js');
+    const { runIngestion, runInfoOriginIngestion } = await import('./jobs-ingestion/run-ingestion.js');
     await runIngestion();
+
+    if (typeof runInfoOriginIngestion === 'function') {
+      try {
+        await runInfoOriginIngestion();
+      } catch (subErr) {
+        console.error('⚠️ [run-now] InfoOrigin ingestion sub-step error:', subErr.message);
+      }
+    }
+
     loadJobsFromDisk();
     loadReportsFromDisk();
   } catch (err) {
@@ -5062,11 +5079,20 @@ setInterval(async () => {
     console.log('⏰ [6-Min Cron] Skipping: Ingestion is currently running.');
     return;
   }
-  console.log('⏰ [6-Min Cron] Triggering automatic 6-minute job scraper ingestion...');
+  console.log('⏰ [6-Min Cron] Triggering automatic 6-minute job scraper ingestion (COOLSOFT + InfoOrigin)...');
   ingestionRunning = true;
   try {
-    const { runIngestion } = await import('./jobs-ingestion/run-ingestion.js');
+    const { runIngestion, runInfoOriginIngestion } = await import('./jobs-ingestion/run-ingestion.js');
     const result = await runIngestion();
+
+    if (typeof runInfoOriginIngestion === 'function') {
+      try {
+        await runInfoOriginIngestion();
+      } catch (subErr) {
+        console.error('⚠️ [6-Min Cron] InfoOrigin ingestion error:', subErr.message);
+      }
+    }
+
     await loadJobsFromDisk();
     await loadReportsFromDisk();
     console.log(`✅ [6-Min Cron] Scraper run complete. Status: ${result.status}, Added: ${result.jobs_added}`);
