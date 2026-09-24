@@ -310,7 +310,7 @@ export async function scrapeResumesFromIMAP({
       const fetchRange = `${fetchStart}:${totalMessages}`;
       console.log(`🔍 Fetching headers & bodies for range ${fetchRange}...`);
 
-      const fetchRes = await client.sendCommand(`FETCH ${fetchRange} (UID FLAGS BODY.PEEK[HEADER.FIELDS (FROM TO SUBJECT DATE CONTENT-TYPE)] BODY.PEEK[TEXT]<0.25000>)`);
+      const fetchRes = await client.sendCommand(`FETCH ${fetchRange} (UID FLAGS BODY.PEEK[HEADER.FIELDS (FROM TO SUBJECT DATE CONTENT-TYPE)])`, 12000);
 
       // Parse individual messages from fetch output
       const rawMessages = fetchRes.split(/\*\s+\d+\s+FETCH/i).filter(Boolean);
