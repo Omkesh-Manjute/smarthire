@@ -212,7 +212,7 @@ function Navigation() {
     { id: 'jobs', label: 'Jobs Hub', desc: 'Manage vacancies & scrape JDs' },
     { id: 'candidates', label: 'Candidates Directory', desc: 'Profiles, resumes & filters' },
     { id: 'pipeline', label: 'Visual Pipeline', desc: 'Kanban board & hiring stages' },
-    { id: 'screening', label: 'Video & Audio Screening', desc: 'PeekHire 1-way video & voice screening' },
+    { id: 'screening', label: 'Video & Audio Screening', desc: 'SmartHire 1-way video & voice screening' },
     { id: 'submissions', label: 'Submissions & RTR', desc: 'Client submissions & tracking' },
   ]
 
@@ -582,7 +582,7 @@ function Navigation() {
                         >
                           <div className="menu-link-text-wrap">
                             <span className="menu-link-title">Video & Voice Screening</span>
-                            <span className="menu-link-desc">PeekHire async video & voice interviews</span>
+                            <span className="menu-link-desc">SmartHire async video & voice interviews</span>
                           </div>
                         </button>
 

@@ -72,7 +72,7 @@ function AutomationModule() {
     { icon: 'LI', name: 'LinkedIn Publisher', description: 'Auto-publish job posts', status: 'Active', statusClass: 'pill-ok', detail: 'LinkedIn OAuth authorized. Last post: 2 hours ago. Post limit: 100/day.' },
     { icon: 'EM', name: 'Email Scanner', description: 'Yahoo/Gmail inbox monitoring', status: apiOnline ? 'Active' : 'Standby', statusClass: apiOnline ? 'pill-ok' : 'pill-warn', detail: 'IMAP polling every 5 minutes. Scanning for resumes in attachments.' },
     { icon: 'JH', name: 'JobsInHand Scraper', description: 'Auto-scrapes new job postings', status: 'Active', statusClass: 'pill-ok', detail: 'Cron job runs every 15 minutes. Last scrape: 8 minutes ago. Found: 12 new jobs.' },
-    { icon: 'PH', name: 'PeekHire Video Screening', description: 'Async video & voice screening', status: 'Active', statusClass: 'pill-ok', detail: 'PeekHire media sessions active. Automated Groq Whisper transcription & candidate evaluation.' },
+    { icon: 'SH', name: 'SmartHire Video Screening', description: 'Async video & voice screening', status: 'Active', statusClass: 'pill-ok', detail: 'SmartHire media sessions active. Automated Groq Whisper transcription & candidate evaluation.' },
   ]
 
   const cronJobs = [

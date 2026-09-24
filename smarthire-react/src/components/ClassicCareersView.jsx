@@ -1431,7 +1431,7 @@ export default function ClassicCareersView({
             <div style={{ display: 'flex', flexDirection: 'column', gap: 9, fontSize: 13, color: theme.textSecondary }}>
               <a href="#jobs-list" style={{ color: 'inherit', textDecoration: 'none' }}>Job Listings</a>
               <button onClick={() => handleSetLayoutView('zone')} style={{ background: 'none', border: 'none', padding: 0, textAlign: 'left', color: 'inherit', fontSize: 13, cursor: 'pointer' }}>Zone Modern View</button>
-              <Link to="/ats" style={{ color: 'inherit', textDecoration: 'none' }}>Recruiter Platform</Link>
+              <Link to="/" style={{ color: 'inherit', textDecoration: 'none' }}>Recruiter Platform</Link>
               <Link to="/blog" style={{ color: 'inherit', textDecoration: 'none' }}>Career Blog</Link>
             </div>
           </div>

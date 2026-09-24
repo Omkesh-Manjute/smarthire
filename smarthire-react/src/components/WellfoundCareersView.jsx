@@ -1230,7 +1230,7 @@ export default function WellfoundCareersView({
                 Blog
               </Link>
               <Link
-                to="/ats"
+                to="/"
                 style={{
                   fontSize: 13.5,
                   fontWeight: 500,
@@ -2956,9 +2956,6 @@ export default function WellfoundCareersView({
                 <Link to="/jobs" onClick={() => { handleBackToAllJobs(); setActiveCategoryFilter('data') }} style={{ color: colors.textSecondary, textDecoration: 'none' }}>
                   Data & AI Architect Roles
                 </Link>
-                <Link to="/screening" style={{ color: colors.textSecondary, textDecoration: 'none' }}>
-                  PeekHire Video & Voice Screening
-                </Link>
                 <Link to="/blog" style={{ color: colors.textSecondary, textDecoration: 'none' }}>
                   C2C vs W2 Contract Guide
                 </Link>
@@ -2978,17 +2975,11 @@ export default function WellfoundCareersView({
                 For Recruiters & Clients
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13.5 }}>
-                <Link to="/ats" style={{ color: colors.textSecondary, textDecoration: 'none' }}>
-                  SmartHire ATS Platform
+                <Link to="/" style={{ color: colors.textSecondary, textDecoration: 'none' }}>
+                  SmartHire ATS Overview
                 </Link>
-                <Link to="/screening" style={{ color: colors.textSecondary, textDecoration: 'none' }}>
-                  AI Asynchronous Screening
-                </Link>
-                <Link to="/ats" style={{ color: colors.textSecondary, textDecoration: 'none' }}>
-                  Automated IMAP Resume Sync
-                </Link>
-                <Link to="/ats" style={{ color: colors.textSecondary, textDecoration: 'none' }}>
-                  Candidate Deduplication Engine
+                <Link to="/contact" style={{ color: colors.textSecondary, textDecoration: 'none' }}>
+                  Enterprise Demo & Inquiries
                 </Link>
                 <Link to="/login" style={{ color: colors.textSecondary, textDecoration: 'none' }}>
                   Recruiter Portal Login

@@ -13,11 +13,16 @@ export default function CandidateChat() {
   const [session, setSession] = useState(null)
   const [sessionId, setSessionId] = useState(routeSessionId || '')
 
+  // Security & Single-Use State
+  const [isDuplicateTab, setIsDuplicateTab] = useState(false)
+  const [isAlreadySubmitted, setIsAlreadySubmitted] = useState(false)
+  const [submittedAtDate, setSubmittedAtDate] = useState(null)
+
   // Step flow: 
-  // 1: Candidate Intro & Role Overview
-  // 2: Device & Media Permissions Check
-  // 3: Question-by-Question Studio
-  // 4: Review All Responses
+  // 1: Candidate Verification & Role Overview
+  // 2: Security, Proctoring & Media Permissions Setup (Camera, Mic, Screen Share, GPS)
+  // 3: Continuous Proctored Interview Studio (Single Take Recording)
+  // 4: Review Proctored Recording & Integrity Report
   // 5: Submitted Confirmation
   const [step, setStep] = useState(1)
 
@@ -34,26 +39,37 @@ export default function CandidateChat() {
   const [questions, setQuestions] = useState([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
 
-  // Answers Map: questionId -> { format: 'video'|'audio'|'text', blob, mediaUrl, textAnswer, transcript, duration }
-  const [answers, setAnswers] = useState({})
-
-  // Media Device & Recording States
+  // Proctoring & Media Device Permissions
   const [hasCameraPermission, setHasCameraPermission] = useState(false)
   const [hasMicPermission, setHasMicPermission] = useState(false)
+  const [hasScreenSharePermission, setHasScreenSharePermission] = useState(false)
+  const [hasLocationPermission, setHasLocationPermission] = useState(false)
+  const [candidateGeo, setCandidateGeo] = useState(null)
   const [deviceCheckError, setDeviceCheckError] = useState(null)
+  const [screenCheckError, setScreenCheckError] = useState(null)
   const [micVolume, setMicVolume] = useState(0)
 
-  // Active Response Mode for current question
-  const [responseMode, setResponseMode] = useState('video') // 'video', 'audio', 'text'
+  // Anti-Cheat Proctoring States
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [tabViolationsCount, setTabViolationsCount] = useState(0)
+  const [showTabWarningModal, setShowTabWarningModal] = useState(false)
+  const [proctoringViolationsLog, setProctoringViolationsLog] = useState([])
+  const [isCheatingLocked, setIsCheatingLocked] = useState(false)
 
-  // Recording Lifecycle
+  // Continuous Single-Take Recording
   const [isRecording, setIsRecording] = useState(false)
-  const [recordingSeconds, setRecordingSeconds] = useState(0)
+  const [sessionSeconds, setSessionSeconds] = useState(0)
   const [countdown, setCountdown] = useState(null)
-  const [recordedBlob, setRecordedBlob] = useState(null)
-  const [recordedPreviewUrl, setRecordedPreviewUrl] = useState(null)
+  const [masterVideoBlob, setMasterVideoBlob] = useState(null)
+  const [masterVideoUrl, setMasterVideoUrl] = useState(null)
   const [liveTranscript, setLiveTranscript] = useState('')
-  const [textInputAnswer, setTextInputAnswer] = useState('')
+  const [accumulatedTranscript, setAccumulatedTranscript] = useState('')
+
+  // Question Markers within continuous recording:
+  // Array of { questionId, questionIndex, questionText, startTime, endTime, duration, transcript }
+  const [questionMarkers, setQuestionMarkers] = useState([])
+  const currentQStartTimeRef = useRef(0)
+  const markersRef = useRef([])
 
   // Submitting States
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -63,7 +79,9 @@ export default function CandidateChat() {
   // Media Refs
   const previewVideoRef = useRef(null)
   const deviceCheckVideoRef = useRef(null)
+  const screenPreviewVideoRef = useRef(null)
   const streamRef = useRef(null)
+  const screenStreamRef = useRef(null)
   const mediaRecorderRef = useRef(null)
   const audioContextRef = useRef(null)
   const analyserRef = useRef(null)
@@ -71,8 +89,112 @@ export default function CandidateChat() {
   const timerIntervalRef = useRef(null)
   const speechRecognitionRef = useRef(null)
   const recordedChunksRef = useRef([])
+  const masterVideoPlayerRef = useRef(null)
 
-  // 1. Fetch or create session
+  // ─── 1. MULTI-TAB DETECTION (SINGLE INSTANCE LOCK) ─────────────────────────
+  useEffect(() => {
+    if (!sessionId || typeof window === 'undefined') return
+
+    const currentTabId = 'tab_' + Math.random().toString(36).substring(2, 9)
+    const storageKey = `smarthire_active_session_${sessionId}`
+
+    // Check if another window or tab is currently holding the session
+    try {
+      const existing = localStorage.getItem(storageKey)
+      if (existing) {
+        const parsed = JSON.parse(existing)
+        if (parsed.tabId !== currentTabId && Date.now() - parsed.lastSeen < 6000) {
+          setIsDuplicateTab(true)
+        }
+      }
+    } catch (e) {}
+
+    // Register our tab heartbeat
+    try {
+      localStorage.setItem(storageKey, JSON.stringify({ tabId: currentTabId, lastSeen: Date.now() }))
+    } catch (e) {}
+
+    const heartbeatInterval = setInterval(() => {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify({ tabId: currentTabId, lastSeen: Date.now() }))
+      } catch (e) {}
+    }, 2500)
+
+    const handleStorage = (e) => {
+      if (e.key === storageKey && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue)
+          if (parsed.tabId !== currentTabId && Date.now() - parsed.lastSeen < 6000) {
+            setIsDuplicateTab(true)
+          }
+        } catch (err) {}
+      }
+    }
+    window.addEventListener('storage', handleStorage)
+
+    let bc = null
+    try {
+      if (window.BroadcastChannel) {
+        bc = new BroadcastChannel(`smarthire_screen_lock_${sessionId}`)
+        bc.postMessage({ type: 'CHECK_ACTIVE_WINDOW', tabId: currentTabId })
+
+        bc.onmessage = (event) => {
+          if (event.data?.type === 'CHECK_ACTIVE_WINDOW' && event.data.tabId !== currentTabId) {
+            bc.postMessage({ type: 'ACTIVE_WINDOW_EXISTS', tabId: currentTabId })
+          } else if (event.data?.type === 'ACTIVE_WINDOW_EXISTS' && event.data.tabId !== currentTabId) {
+            setIsDuplicateTab(true)
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('BroadcastChannel error:', e)
+    }
+
+    return () => {
+      clearInterval(heartbeatInterval)
+      window.removeEventListener('storage', handleStorage)
+      if (bc) {
+        try { bc.close() } catch (e) {}
+      }
+      try {
+        const cur = localStorage.getItem(storageKey)
+        if (cur && JSON.parse(cur).tabId === currentTabId) {
+          localStorage.removeItem(storageKey)
+        }
+      } catch (e) {}
+    }
+  }, [sessionId])
+
+  // ─── 2. GEOLOCATION PROCTORING CAPTURE ─────────────────────────────────────
+  const captureCandidateLocation = useCallback(() => {
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const geoData = {
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            accuracy: Math.round(pos.coords.accuracy),
+            capturedAt: new Date().toISOString()
+          }
+          setCandidateGeo(geoData)
+          setHasLocationPermission(true)
+          if (!candidateLocation) {
+            setCandidateLocation(`GPS ${pos.coords.latitude.toFixed(3)}°, ${pos.coords.longitude.toFixed(3)}°`)
+          }
+        },
+        (err) => {
+          console.warn('Geolocation capture notice:', err.message)
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      )
+    }
+  }, [candidateLocation])
+
+  useEffect(() => {
+    captureCandidateLocation()
+  }, [captureCandidateLocation])
+
+  // ─── 3. FETCH OR CREATE SCREENING SESSION ──────────────────────────────────
   useEffect(() => {
     let isMounted = true
 
@@ -82,7 +204,6 @@ export default function CandidateChat() {
       try {
         let activeId = routeSessionId
         if (!activeId && jobId) {
-          // Create a session for this job
           const res = await fetch(`${API}/create`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -128,21 +249,18 @@ export default function CandidateChat() {
                 id: 'q1',
                 text: 'Give a 60-90 second introduction of your professional background, core technical skills, and recent work relevant to Cloud Platform Engineering.',
                 description: 'Highlight your strongest languages, cloud architectures, and recent achievements.',
-                allowedFormats: ['video', 'audio', 'text'],
                 maxDuration: 120
               },
               {
                 id: 'q2',
                 text: 'Describe an instance where you debugged an unexpected microservice latency spike under strict production SLA deadlines. What was your root-cause analysis process?',
                 description: 'Explain the architecture, your diagnostics approach, and the final latency resolution.',
-                allowedFormats: ['video', 'audio', 'text'],
                 maxDuration: 120
               },
               {
                 id: 'q3',
                 text: 'What is your current work authorization, earliest availability or notice period, and desired hourly rate?',
                 description: 'Confirm your current location, relocation/remote preference, and visa status.',
-                allowedFormats: ['video', 'audio', 'text'],
                 maxDuration: 90
               }
             ]
@@ -160,12 +278,14 @@ export default function CandidateChat() {
           if (sessionData.candidateLocation) setCandidateLocation(sessionData.candidateLocation)
           if (sessionData.expectedRate) setExpectedRate(sessionData.expectedRate)
 
-          // If session was already submitted
+          // Single-use link: if already submitted, lock screen permanently
           if (sessionData.status === 'submitted' || sessionData.screeningComplete) {
+            setIsAlreadySubmitted(true)
+            setSubmittedAtDate(sessionData.submittedAt || new Date().toISOString())
             setSubmissionResult({
-              aiScore: sessionData.aiScore,
-              aiSummary: sessionData.aiSummary,
-              recommendation: sessionData.recommendation
+              aiScore: sessionData.aiScore || 85,
+              aiSummary: sessionData.aiSummary || [],
+              recommendation: sessionData.recommendation || 'Recommended'
             })
             setStep(5)
           }
@@ -186,11 +306,15 @@ export default function CandidateChat() {
     }
   }, [routeSessionId, jobId])
 
-  // Stop camera & mic
+  // Stop camera, mic, and screen share
   const stopAllMediaStreams = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop())
       streamRef.current = null
+    }
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach(track => track.stop())
+      screenStreamRef.current = null
     }
     if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
       try {
@@ -203,6 +327,7 @@ export default function CandidateChat() {
     }
     if (timerIntervalRef.current) {
       clearInterval(timerIntervalRef.current)
+      timerIntervalRef.current = null
     }
     if (speechRecognitionRef.current) {
       try {
@@ -211,9 +336,113 @@ export default function CandidateChat() {
     }
   }
 
-  // 2. Setup Device Check Stream (Camera & Mic)
+  // ─── 4. PROCTORING INFRACTION MONITORING (TAB SWITCH & BLUR) ───────────────
+  const triggerSecurityInfraction = useCallback((reason) => {
+    if (step !== 3 || isCheatingLocked) return
+
+    setTabViolationsCount(prev => {
+      const nextCount = prev + 1
+      const logEntry = {
+        infractionNumber: nextCount,
+        reason,
+        timestamp: new Date().toLocaleTimeString(),
+        questionNumber: currentQuestionIndex + 1,
+        recordingSeconds: sessionSeconds
+      }
+      setProctoringViolationsLog(p => [...p, logEntry])
+      setShowTabWarningModal(true)
+
+      if (nextCount >= 3) {
+        setIsCheatingLocked(true)
+      }
+      return nextCount
+    })
+  }, [step, isCheatingLocked, currentQuestionIndex, sessionSeconds])
+
+  useEffect(() => {
+    if (step !== 3) return
+
+    const handleVisibility = () => {
+      if (document.hidden) {
+        triggerSecurityInfraction('Candidate switched browser tab or minimized window')
+      }
+    }
+
+    const handleBlur = () => {
+      triggerSecurityInfraction('Candidate left browser focus (multitasking attempted)')
+    }
+
+    document.addEventListener('visibilitychange', handleVisibility)
+    window.addEventListener('blur', handleBlur)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility)
+      window.removeEventListener('blur', handleBlur)
+    }
+  }, [step, triggerSecurityInfraction])
+
+  // ─── 5. FULLSCREEN PROCTORING ENFORCEMENT ──────────────────────────────────
+  useEffect(() => {
+    if (step !== 3) return
+
+    const handleFullscreenChange = () => {
+      const isFull = Boolean(document.fullscreenElement || document.webkitFullscreenElement)
+      setIsFullscreen(isFull)
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange)
+    }
+  }, [step])
+
+  const requestFullscreenMode = async () => {
+    try {
+      if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen()
+      } else if (document.documentElement.webkitRequestFullscreen) {
+        await document.documentElement.webkitRequestFullscreen()
+      }
+      setIsFullscreen(true)
+    } catch (e) {
+      console.warn('Fullscreen request:', e)
+    }
+  }
+
+  // Prevent right-click and inspection keys during Step 3
+  useEffect(() => {
+    if (step !== 3) return
+
+    const preventKeys = (e) => {
+      if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && ['I', 'i', 'J', 'j', 'C', 'c'].includes(e.key)) ||
+        (e.metaKey && e.altKey && ['I', 'i', 'J', 'j', 'C', 'c'].includes(e.key)) ||
+        (e.ctrlKey && (e.key === 'u' || e.key === 'U'))
+      ) {
+        e.preventDefault()
+        triggerSecurityInfraction('Unauthorized keyboard shortcut / developer inspection attempted')
+      }
+    }
+
+    const preventContext = (e) => {
+      e.preventDefault()
+    }
+
+    window.addEventListener('keydown', preventKeys)
+    window.addEventListener('contextmenu', preventContext)
+
+    return () => {
+      window.removeEventListener('keydown', preventKeys)
+      window.removeEventListener('contextmenu', preventContext)
+    }
+  }, [step, triggerSecurityInfraction])
+
+  // ─── 6. STEP 2: SETUP DEVICE & SCREEN SHARE PERMISSIONS ───────────────────
   const initDeviceCheck = async () => {
-    stopAllMediaStreams()
     setDeviceCheckError(null)
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -229,7 +458,7 @@ export default function CandidateChat() {
         deviceCheckVideoRef.current.play().catch(() => {})
       }
 
-      // Audio visualizer setup
+      // Audio volume visualizer
       try {
         const AudioContext = window.AudioContext || window.webkitAudioContext
         const ctx = new AudioContext()
@@ -259,104 +488,110 @@ export default function CandidateChat() {
       }
     } catch (err) {
       console.warn('Device permission error:', err)
-      setDeviceCheckError(
-        'Could not access camera and microphone. Please allow permissions in your browser address bar to record video/audio.'
-      )
+      setDeviceCheckError('Could not access camera or microphone. Please allow permissions in your browser address bar.')
       setHasCameraPermission(false)
       setHasMicPermission(false)
     }
   }
 
-  // Hook device check on Step 2
+  // Request Screen Share for proctoring
+  const initScreenShare = async () => {
+    setScreenCheckError(null)
+    try {
+      if (!navigator.mediaDevices?.getDisplayMedia) {
+        setScreenCheckError('Screen sharing API is not supported in this browser. Please use Chrome, Safari, or Edge.')
+        return
+      }
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { displaySurface: 'monitor' },
+        audio: false
+      })
+      screenStreamRef.current = screenStream
+      setHasScreenSharePermission(true)
+
+      if (screenPreviewVideoRef.current) {
+        screenPreviewVideoRef.current.srcObject = screenStream
+        screenPreviewVideoRef.current.play().catch(() => {})
+      }
+
+      screenStream.getVideoTracks()[0].onended = () => {
+        setHasScreenSharePermission(false)
+        if (step === 3) {
+          triggerSecurityInfraction('Desktop screen share was stopped by candidate')
+        }
+      }
+    } catch (err) {
+      console.warn('Screen share permission error:', err)
+      setScreenCheckError('Screen share was cancelled. You must share your entire desktop screen to complete proctoring.')
+      setHasScreenSharePermission(false)
+    }
+  }
+
   useEffect(() => {
     if (step === 2) {
       initDeviceCheck()
-    } else {
-      if (step !== 3) {
-        stopAllMediaStreams()
-      }
-    }
-    return () => {
-      if (step === 2) stopAllMediaStreams()
     }
   }, [step])
 
-  // Hook live video feed when entering Question Studio
-  useEffect(() => {
-    if (step === 3 && responseMode === 'video' && !recordedPreviewUrl) {
-      navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
-        audio: true
-      }).then(stream => {
-        streamRef.current = stream
-        if (previewVideoRef.current) {
-          previewVideoRef.current.srcObject = stream
-          previewVideoRef.current.play().catch(() => {})
-        }
-      }).catch(err => {
-        console.warn('Video stream attachment error:', err)
-      })
+  // ─── 7. STEP 3: CONTINUOUS SINGLE-TAKE RECORDING ENGINE ────────────────────
+  const handleBeginInterviewStudio = async () => {
+    if (!hasCameraPermission || !hasMicPermission) {
+      alert('Camera and microphone permissions are required to start the proctored interview.')
+      return
     }
-  }, [step, responseMode, recordedPreviewUrl, currentQuestionIndex])
 
-  // When switching questions, restore any saved answer
-  useEffect(() => {
-    const currentQ = questions[currentQuestionIndex]
-    if (!currentQ) return
-
-    const existing = answers[currentQ.id]
-    if (existing) {
-      setResponseMode(existing.format || 'video')
-      setRecordedBlob(existing.blob || null)
-      setRecordedPreviewUrl(existing.mediaUrl || null)
-      setLiveTranscript(existing.transcript || '')
-      setTextInputAnswer(existing.textAnswer || '')
-      setRecordingSeconds(existing.duration || 0)
-    } else {
-      setRecordedBlob(null)
-      setRecordedPreviewUrl(null)
-      setLiveTranscript('')
-      setTextInputAnswer('')
-      setRecordingSeconds(0)
-      setResponseMode(currentQ.allowedFormats?.[0] || 'video')
+    if (!hasScreenSharePermission) {
+      alert('Desktop screen share is required for anti-cheat proctoring compliance. Please click "Click to Share Entire Screen" before starting.')
+      return
     }
-  }, [currentQuestionIndex, questions])
 
-  // Countdown and Start Recording
-  const handleStartCountdown = () => {
+    // Single-use link lock API
+    fetch(`${API}/${sessionId}/lock-start`, { method: 'POST' }).catch(() => {})
+
+    // Enforce full-screen mode
+    await requestFullscreenMode()
+
+    // Move to step 3
+    setStep(3)
+    setCurrentQuestionIndex(0)
+    setQuestionMarkers([])
+    markersRef.current = []
+    currentQStartTimeRef.current = 0
+    setSessionSeconds(0)
+
+    // Trigger 3-second countdown before recording starts
     setCountdown(3)
     let c = 3
-    const interval = setInterval(() => {
+    const countInterval = setInterval(() => {
       c -= 1
-      if (c === 0) {
-        clearInterval(interval)
+      if (c <= 0) {
+        clearInterval(countInterval)
         setCountdown(null)
-        startActualRecording()
+        startContinuousRecording()
       } else {
         setCountdown(c)
       }
     }, 1000)
   }
 
-  // Start MediaRecorder
-  const startActualRecording = async () => {
+  // Start continuous recording that stays active across all questions
+  const startContinuousRecording = async () => {
     try {
-      const constraints = responseMode === 'video'
-        ? { video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }, audio: true }
-        : { audio: true, video: false }
-
-      const stream = streamRef.current || await navigator.mediaDevices.getUserMedia(constraints)
+      const stream = streamRef.current || await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+        audio: true
+      })
       streamRef.current = stream
 
-      if (responseMode === 'video' && previewVideoRef.current) {
+      if (previewVideoRef.current) {
         previewVideoRef.current.srcObject = stream
         previewVideoRef.current.play().catch(() => {})
       }
 
       recordedChunksRef.current = []
-      const mimeType = responseMode === 'video'
-        ? (MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm')
-        : (MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4')
+      const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+        ? 'video/webm;codecs=vp9'
+        : (MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : 'video/mp4')
 
       const mediaRecorder = new MediaRecorder(stream, { mimeType })
       mediaRecorderRef.current = mediaRecorder
@@ -369,21 +604,17 @@ export default function CandidateChat() {
 
       mediaRecorder.onstop = () => {
         const finalBlob = new Blob(recordedChunksRef.current, { type: mimeType })
-        setRecordedBlob(finalBlob)
+        setMasterVideoBlob(finalBlob)
         const url = URL.createObjectURL(finalBlob)
-        setRecordedPreviewUrl(url)
-
-        // Detach live camera stream so playback video can play
-        if (previewVideoRef.current) {
-          previewVideoRef.current.srcObject = null
-        }
+        setMasterVideoUrl(url)
       }
 
       mediaRecorder.start(500)
       setIsRecording(true)
-      setRecordingSeconds(0)
+      setSessionSeconds(0)
+      currentQStartTimeRef.current = 0
 
-      // Live Speech-to-Text in browser
+      // Speech-to-Text transcription stream
       try {
         const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition
         if (SpeechRec) {
@@ -407,170 +638,115 @@ export default function CandidateChat() {
           speechRecognitionRef.current = rec
         }
       } catch (srErr) {
-        console.warn('Browser SpeechRecognition notice:', srErr)
+        console.warn('SpeechRecognition notice:', srErr)
       }
 
-      // Timer
-      const maxSeconds = questions[currentQuestionIndex]?.maxDuration || 120
+      // Continuous Master Session Timer
       timerIntervalRef.current = setInterval(() => {
-        setRecordingSeconds(prev => {
-          const next = prev + 1
-          if (next >= maxSeconds) {
-            handleStopRecording()
-          }
-          return next
-        })
+        setSessionSeconds(prev => prev + 1)
       }, 1000)
     } catch (err) {
-      console.error('Recording start error:', err)
-      alert('Unable to start recording. Please check microphone/camera permissions.')
+      console.error('Continuous recording error:', err)
+      alert('Unable to access recording devices: ' + err.message)
     }
   }
 
-  // Stop Recording
-  const handleStopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      mediaRecorderRef.current.stop()
-    }
-    setIsRecording(false)
-    if (timerIntervalRef.current) {
-      clearInterval(timerIntervalRef.current)
-      timerIntervalRef.current = null
-    }
-    if (speechRecognitionRef.current) {
-      try {
-        speechRecognitionRef.current.stop()
-      } catch (e) {}
-    }
-  }
-
-  // Retake / Record Again
-  const handleRetake = () => {
-    setRecordedBlob(null)
-    setRecordedPreviewUrl(null)
-    setLiveTranscript('')
-    setRecordingSeconds(0)
-
-    // Reattach camera feed if in video mode
-    if (responseMode === 'video') {
-      navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
-        audio: true
-      }).then(stream => {
-        streamRef.current = stream
-        if (previewVideoRef.current) {
-          previewVideoRef.current.srcObject = stream
-          previewVideoRef.current.play().catch(() => {})
-        }
-      }).catch(() => {})
-    }
-  }
-
-  // Save current answer and advance
-  const handleSaveAndNext = () => {
+  // Advance Question WITHOUT stopping the video recording!
+  const handleNextQuestionContinuous = () => {
     const currentQ = questions[currentQuestionIndex]
     if (!currentQ) return
 
-    // Validation
-    if (responseMode === 'text') {
-      if (!textInputAnswer.trim()) {
-        alert('Please provide a written answer before proceeding.')
-        return
-      }
-    } else {
-      if (!recordedBlob && !recordedPreviewUrl) {
-        alert(`Please record your ${responseMode === 'video' ? 'video' : 'voice note'} response before moving to the next question.`)
-        return
-      }
-    }
-
-    const answerObj = {
+    const nowSeconds = sessionSeconds
+    const marker = {
       questionId: currentQ.id,
+      questionIndex: currentQuestionIndex,
       questionText: currentQ.text,
-      format: responseMode,
-      blob: recordedBlob,
-      mediaUrl: recordedPreviewUrl,
-      textAnswer: responseMode === 'text' ? textInputAnswer.trim() : null,
-      transcript: liveTranscript.trim() || (responseMode === 'text' ? textInputAnswer.trim() : null),
-      duration: recordingSeconds
+      startTime: currentQStartTimeRef.current,
+      endTime: nowSeconds,
+      duration: Math.max(1, nowSeconds - currentQStartTimeRef.current),
+      transcript: liveTranscript.trim() || 'Spoken answer captured during continuous interview.'
     }
 
-    setAnswers(prev => ({
-      ...prev,
-      [currentQ.id]: answerObj
-    }))
+    markersRef.current.push(marker)
+    setQuestionMarkers(prev => [...prev, marker])
+    currentQStartTimeRef.current = nowSeconds
+    setLiveTranscript('')
 
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1)
     } else {
-      // Done all questions -> Go to Review Step
-      setStep(4)
-      stopAllMediaStreams()
+      // Finished all questions -> Stop continuous recording and proceed to review
+      finishContinuousInterview(marker)
     }
   }
 
-  // Upload individual media file to server
-  const uploadMediaFile = async (blob, qId, format) => {
-    if (!blob) return { mediaUrl: null, transcript: null }
-    const formData = new FormData()
-    const ext = format === 'video' ? 'webm' : 'webm'
-    formData.append('media', blob, `screen_${qId}_${Date.now()}.${ext}`)
-    formData.append('questionId', qId)
-    formData.append('format', format)
+  // Complete continuous interview session
+  const finishContinuousInterview = (finalMarker) => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop()
+    }
+    setIsRecording(false)
 
-    const res = await fetch(`${API}/${sessionId}/upload-media`, {
-      method: 'POST',
-      body: formData
-    })
-    const data = await res.json()
-    if (data.success) {
-      return {
-        mediaUrl: data.mediaUrl,
-        transcript: data.transcript || null
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current)
+      timerIntervalRef.current = null
+    }
+
+    if (speechRecognitionRef.current) {
+      try { speechRecognitionRef.current.stop() } catch (e) {}
+    }
+
+    // Exit full screen
+    try {
+      if (document.exitFullscreen) {
+        document.exitFullscreen()
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen()
       }
-    }
-    return { mediaUrl: null, transcript: null }
+    } catch (e) {}
+
+    setStep(4)
   }
 
-  // Final Submit All Responses
-  const handleSubmitAllResponses = async () => {
+  // ─── 8. FINAL PROCTORED SUBMISSION ─────────────────────────────────────────
+  const handleSubmitFinalApplication = async () => {
     setIsSubmitting(true)
-    setSubmitProgress('Uploading candidate media and transcribing responses...')
+    setSubmitProgress('Uploading single continuous interview recording (Full Session)...')
 
     try {
-      const formattedResponses = []
+      let uploadedMediaUrl = null
 
-      for (let i = 0; i < questions.length; i++) {
-        const q = questions[i]
-        const ans = answers[q.id] || {}
-        setSubmitProgress(`Processing Question ${i + 1} of ${questions.length}...`)
+      // Upload single master continuous video file
+      if (masterVideoBlob) {
+        const formData = new FormData()
+        formData.append('media', masterVideoBlob, `session_${sessionId}_full_interview.webm`)
+        formData.append('sessionId', sessionId)
+        formData.append('format', 'video')
 
-        let serverMediaUrl = ans.mediaUrl
-        let serverTranscript = ans.transcript
-
-        // If this answer has a client recorded Blob, upload it to server
-        if (ans.blob) {
-          const uploadRes = await uploadMediaFile(ans.blob, q.id, ans.format)
-          if (uploadRes.mediaUrl) {
-            serverMediaUrl = uploadRes.mediaUrl
-          }
-          if (uploadRes.transcript) {
-            serverTranscript = uploadRes.transcript
-          }
-        }
-
-        formattedResponses.push({
-          questionId: q.id,
-          questionText: q.text,
-          format: ans.format || 'video',
-          mediaUrl: serverMediaUrl,
-          textAnswer: ans.textAnswer || null,
-          transcript: serverTranscript || ans.transcript || ans.textAnswer || 'Spoken response recorded.',
-          duration: ans.duration || 0
+        const upRes = await fetch(`${API}/${sessionId}/upload-media`, {
+          method: 'POST',
+          body: formData
         })
+        const upData = await upRes.json()
+        if (upData.success) {
+          uploadedMediaUrl = upData.mediaUrl
+        }
       }
 
-      setSubmitProgress('Running AI evaluation & scoring candidate profile...')
+      setSubmitProgress('Running AI Whisper transcription & proctoring evaluation...')
+
+      // Format responses referencing the single master continuous video
+      const allMarkers = questionMarkers.length >= questions.length ? questionMarkers : (markersRef.current.length > 0 ? markersRef.current : questionMarkers)
+      const formattedResponses = allMarkers.map(m => ({
+        questionId: m.questionId,
+        questionText: m.questionText,
+        format: 'video',
+        mediaUrl: uploadedMediaUrl || masterVideoUrl,
+        startTime: m.startTime,
+        endTime: m.endTime,
+        duration: m.duration,
+        transcript: m.transcript
+      }))
 
       const payload = {
         candidateInfo: {
@@ -581,6 +757,16 @@ export default function CandidateChat() {
           linkedin: candidateLinkedin.trim(),
           expectedRate: expectedRate.trim(),
           visaStatus
+        },
+        masterMediaUrl: uploadedMediaUrl || masterVideoUrl,
+        candidateGeo,
+        proctoring: {
+          screenShared: hasScreenSharePermission,
+          fullscreenEnforced: true,
+          tabViolationsCount,
+          violationsLog: proctoringViolationsLog,
+          totalDurationSeconds: sessionSeconds,
+          integrityScore: Math.max(20, 100 - (tabViolationsCount * 25))
         },
         responses: formattedResponses
       }
@@ -598,6 +784,7 @@ export default function CandidateChat() {
           aiSummary: data.aiSummary || [],
           recommendation: data.recommendation || 'Recommended'
         })
+        setSubmittedAtDate(new Date().toISOString())
         setStep(5)
       } else {
         throw new Error(data.message || 'Failed to submit responses')
@@ -618,16 +805,60 @@ export default function CandidateChat() {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
   }
 
+  // ─── LOCK SCREEN: DUPLICATE TAB DETECTED ────────────────────────────────────
+  if (isDuplicateTab) {
+    return (
+      <div style={styles.loadingContainer}>
+        <div style={styles.lockIconBox}>
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#0f172a', margin: '16px 0 8px' }}>
+          Assessment Active in Another Window
+        </h2>
+        <p style={{ fontSize: '14.5px', color: '#475569', maxWidth: '480px', lineHeight: 1.6 }}>
+          To ensure assessment integrity and prevent tampering, this screening session cannot be opened in multiple tabs or devices simultaneously. Please return to your original active window to continue.
+        </p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          style={{ ...styles.primaryButton, marginTop: '20px' }}
+        >
+          Check Active Tab
+        </button>
+      </div>
+    )
+  }
+
+  // ─── LOCK SCREEN: SINGLE-USE LINK ALREADY COMPLETED ─────────────────────────
+  if (isAlreadySubmitted && step !== 5) {
+    return (
+      <div style={styles.loadingContainer}>
+        <div style={{ ...styles.lockIconBox, borderColor: '#10b981', background: '#ecfdf5' }}>
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#0f172a', margin: '16px 0 8px' }}>
+          Interview Link Already Used & Submitted
+        </h2>
+        <p style={{ fontSize: '14.5px', color: '#475569', maxWidth: '480px', lineHeight: 1.6 }}>
+          This single-use screening assessment link has already been completed and submitted on {new Date(submittedAtDate).toLocaleDateString()}. Each assessment link is strictly single-use to maintain evaluation fairness and security.
+        </p>
+        <Link to="/jobs" style={{ ...styles.primaryButton, marginTop: '20px' }}>
+          Browse Open Requisitions
+        </Link>
+      </div>
+    )
+  }
+
   // Render Loading State
   if (loading) {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.loadingSpinner}></div>
         <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', marginTop: '16px' }}>
-          Loading PeekHire Screening Experience...
+          Loading SmartHire Screening Experience...
         </h3>
         <p style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>
-          Preparing your candidate workspace & role questions
+          Initializing proctoring security & role assessment questions
         </p>
       </div>
     )
@@ -656,7 +887,89 @@ export default function CandidateChat() {
 
   return (
     <div style={styles.pageWrapper}>
-      {/* TOP PEEKHIRE NAVIGATION BAR */}
+      {/* ── ANTI-CHEAT FULLSCREEN REQUIRED OVERLAY ── */}
+      {step === 3 && !isFullscreen && (
+        <div style={styles.proctorLockOverlay}>
+          <div style={styles.proctorLockCard}>
+            <div style={{ color: '#ef4444', marginBottom: '12px' }}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+            </div>
+            <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', margin: '0 0 8px' }}>
+              Full-Screen Mode Required
+            </h3>
+            <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6, margin: '0 0 20px' }}>
+              You cannot resize, minimize, or exit full-screen mode during this proctored assessment. Click below to re-enter full-screen and resume your recorded session.
+            </p>
+            <button
+              type="button"
+              onClick={requestFullscreenMode}
+              style={styles.primaryButtonLarge}
+            >
+              Re-enter Full-Screen Mode
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── ANTI-CHEAT TAB SWITCHING VIOLATION WARNING MODAL ── */}
+      {showTabWarningModal && (
+        <div style={styles.proctorLockOverlay}>
+          <div style={{ ...styles.proctorLockCard, borderColor: '#ef4444', borderWidth: 2 }}>
+            <div style={{ color: '#ef4444', marginBottom: '10px' }}>
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <h3 style={{ fontSize: '19px', fontWeight: '800', color: '#991b1b', margin: '0 0 8px' }}>
+              Security Infraction Alert
+            </h3>
+            <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.5, margin: '0 0 14px' }}>
+              Tab switching, minimizing, or accessing external applications during this interview is strictly prohibited. This violation has been recorded with a timestamp in your candidate integrity audit report.
+            </p>
+            <div style={{ padding: '8px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, fontSize: '13px', fontWeight: 700, color: '#b91c1c', marginBottom: '18px' }}>
+              Infraction {tabViolationsCount} of 3 • 3 Infractions will auto-lock your assessment!
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowTabWarningModal(false)}
+              style={styles.primaryButton}
+            >
+              I Understand & Acknowledge
+            </button>
+          </div>
+        </div>
+      )}
+      {/* ── ANTI-CHEAT TERMINATED / LOCKED OVERLAY ── */}
+      {isCheatingLocked && (
+        <div style={styles.proctorLockOverlay}>
+          <div style={{ ...styles.proctorLockCard, borderColor: '#ef4444', borderWidth: 2 }}>
+            <div style={{ color: '#ef4444', marginBottom: '12px' }}>
+              <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+            </div>
+            <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#991b1b', margin: '0 0 10px' }}>
+              Assessment Locked for Integrity Violations
+            </h2>
+            <p style={{ fontSize: '14.5px', color: '#475569', lineHeight: 1.6, margin: '0 0 20px' }}>
+              You exceeded the maximum allowed proctoring violations (3 infractions for window switching, multitasking, or inspection). To maintain assessment fairness for all candidates, this session has been locked and flagged for recruiter review.
+            </p>
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', padding: '14px', textAlign: 'left', marginBottom: '20px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 800, color: '#991b1b', textTransform: 'uppercase', marginBottom: '6px' }}>
+                Recorded Violations:
+              </div>
+              <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '12.5px', color: '#b91c1c', lineHeight: 1.6 }}>
+                {proctoringViolationsLog.map((v, idx) => (
+                  <li key={idx}>
+                    {v.timestamp} — {v.reason} (Q{v.questionNumber})
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <Link to="/jobs" style={styles.primaryButton}>
+              Exit to Careers Portal
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* TOP NAVIGATION BAR */}
       <header style={styles.header}>
         <div style={styles.headerInner}>
           <div style={styles.logoSection}>
@@ -665,7 +978,7 @@ export default function CandidateChat() {
             </div>
             <div>
               <div style={styles.brandTitle}>SmartHire <span style={{ color: '#2563eb' }}>Screen</span></div>
-              <div style={styles.brandSubtitle}>Asynchronous Talent Screening</div>
+              <div style={styles.brandSubtitle}>Asynchronous Proctored Screening</div>
             </div>
           </div>
 
@@ -677,8 +990,22 @@ export default function CandidateChat() {
           </div>
 
           <div style={styles.headerRight}>
-            <span style={styles.timeTag}>~3 mins</span>
-            <span style={styles.noLoginTag}>Zero Login Required</span>
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              fontSize: '11.5px',
+              fontWeight: 700,
+              padding: '3px 8px',
+              borderRadius: 6,
+              background: '#ecfdf5',
+              color: '#065f46',
+              border: '1px solid #a7f3d0'
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981' }} />
+              Anti-Cheat Active
+            </span>
+            <span style={styles.timeTag}>Single-Take Recording</span>
           </div>
         </div>
       </header>
@@ -691,16 +1018,16 @@ export default function CandidateChat() {
           <div style={styles.card}>
             <div style={{ textAlign: 'center', marginBottom: '28px' }}>
               <div style={styles.pillLabel}>Candidate Screening Portal</div>
-              <h1 style={styles.heroTitle}>Welcome to your video & voice screening</h1>
+              <h1 style={styles.heroTitle}>Proctored Video & Voice Assessment</h1>
               <p style={styles.heroSubtitle}>
-                Answer {questions.length} short questions on your own time using video, voice note, or text.
-                Review when you're ready and submit without installing any app.
+                Answer {questions.length} screening questions in a single continuous recording session.
+                Full-screen mode, desktop screen sharing, and GPS location are monitored to ensure fairness.
               </p>
 
               <div style={styles.highlightsRow}>
-                <div style={styles.highlightPill}>Takes around 2-3 min</div>
-                <div style={styles.highlightPill}>Video, Voice, or Text</div>
-                <div style={styles.highlightPill}>Unlimited Retakes</div>
+                <div style={styles.highlightPill}>One Continuous Recording</div>
+                <div style={styles.highlightPill}>Screen Share Required</div>
+                <div style={styles.highlightPill}>Tab Switch Monitored</div>
               </div>
             </div>
 
@@ -741,18 +1068,7 @@ export default function CandidateChat() {
               </div>
 
               <div style={styles.inputGroup}>
-                <label style={styles.label}>LinkedIn Profile URL</label>
-                <input
-                  type="url"
-                  placeholder="https://linkedin.com/in/username"
-                  value={candidateLinkedin}
-                  onChange={e => setCandidateLinkedin(e.target.value)}
-                  style={styles.input}
-                />
-              </div>
-
-              <div style={styles.inputGroup}>
-                <label style={styles.label}>Current City, State</label>
+                <label style={styles.label}>Current City, State / GPS Location</label>
                 <input
                   type="text"
                   placeholder="e.g. Raleigh, NC"
@@ -760,99 +1076,172 @@ export default function CandidateChat() {
                   onChange={e => setCandidateLocation(e.target.value)}
                   style={styles.input}
                 />
+                {candidateGeo && (
+                  <span style={{ fontSize: '11px', color: '#16a34a', fontWeight: 600, marginTop: 4, display: 'block' }}>
+                    ✓ Verified GPS Location: {candidateGeo.latitude.toFixed(4)}°, {candidateGeo.longitude.toFixed(4)}° (±{candidateGeo.accuracy}m)
+                  </span>
+                )}
               </div>
 
               <div style={styles.inputGroup}>
-                <label style={styles.label}>Expected Hourly Rate / Salary</label>
+                <label style={styles.label}>Hourly Pay Rate ($/hr)</label>
                 <input
                   type="text"
-                  placeholder="e.g. $80/hr on C2C or $140k/yr"
+                  placeholder="e.g. $75/hr C2C"
                   value={expectedRate}
                   onChange={e => setExpectedRate(e.target.value)}
                   style={styles.input}
                 />
               </div>
+
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Work Authorization / Visa</label>
+                <select
+                  value={visaStatus}
+                  onChange={e => setVisaStatus(e.target.value)}
+                  style={styles.select}
+                >
+                  <option value="US Citizen">US Citizen</option>
+                  <option value="Green Card">Green Card</option>
+                  <option value="H-1B">H-1B</option>
+                  <option value="C2C">C2C</option>
+                  <option value="EAD">EAD</option>
+                  <option value="Canadian / TN">Canadian / TN</option>
+                </select>
+              </div>
             </div>
 
-            <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'center' }}>
+            <div style={{ marginTop: '28px', textAlign: 'center' }}>
               <button
                 type="button"
                 onClick={() => {
                   if (!candidateName.trim() || !candidateEmail.trim()) {
-                    alert('Please enter your Name and Email to proceed.')
+                    alert('Please enter your Name and Email Address to proceed.')
                     return
                   }
                   setStep(2)
                 }}
                 style={styles.primaryButtonLarge}
               >
-                Continue to Camera & Mic Setup ➔
+                Proceed to Security & Device Check ➔
               </button>
             </div>
           </div>
         )}
 
-        {/* STEP 2: DEVICE & PERMISSIONS CHECK */}
+        {/* STEP 2: SECURITY & PROCTORING CHECK (CAMERA, MIC, SCREEN SHARE, GPS) */}
         {step === 2 && (
           <div style={styles.card}>
             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-              <div style={styles.pillLabel}>Device Setup</div>
-              <h2 style={styles.cardTitle}>Check your camera and microphone</h2>
+              <div style={styles.pillLabel}>Security & Proctoring Setup</div>
+              <h2 style={styles.cardTitle}>Verify Camera, Microphone & Screen Share</h2>
               <p style={styles.cardSubtitle}>
-                Make sure you are well-lit, clearly framed, and that your microphone picks up your voice.
+                This assessment requires Camera, Microphone, and Desktop Screen Share permissions to ensure anti-cheating compliance.
               </p>
             </div>
 
             {deviceCheckError && (
               <div style={styles.errorBanner}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 <span>{deviceCheckError}</span>
               </div>
             )}
 
-            <div style={styles.deviceCheckContainer}>
-              {/* VIDEO PREVIEW */}
-              <div style={styles.videoBox}>
-                <video
-                  ref={deviceCheckVideoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  style={styles.videoFeed}
-                />
-                {!hasCameraPermission && (
-                  <div style={styles.videoFallbackOverlay}>
-                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                    <span style={{ marginTop: '8px', fontSize: '13px', color: '#94a3b8' }}>
-                      Camera preview will appear here
+            {screenCheckError && (
+              <div style={styles.errorBanner}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span>{screenCheckError}</span>
+              </div>
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+              {/* Camera Preview */}
+              <div style={styles.deviceBox}>
+                <div style={styles.deviceHeader}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '700' }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                    Webcam Video
+                  </span>
+                  <span style={{ fontSize: '11px', color: hasCameraPermission ? '#16a34a' : '#ef4444', fontWeight: '700' }}>
+                    {hasCameraPermission ? '✓ Camera Active' : 'Camera Required'}
+                  </span>
+                </div>
+
+                <div style={styles.videoStagePreview}>
+                  <video
+                    ref={deviceCheckVideoRef}
+                    autoPlay
+                    muted
+                    playsInline
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                  {!hasCameraPermission && (
+                    <div style={styles.videoOverlayText}>
+                      Please grant camera permission in your browser address bar.
+                    </div>
+                  )}
+                </div>
+
+                {/* Mic Visualizer */}
+                <div style={{ marginTop: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
+                    <span style={{ fontWeight: 600, color: '#334155' }}>Microphone Level:</span>
+                    <span style={{ fontWeight: 700, color: micVolume > 5 ? '#16a34a' : '#94a3b8' }}>
+                      {micVolume > 5 ? '✓ Audio Detected' : 'Speak to test'}
                     </span>
                   </div>
-                )}
-                <div style={styles.liveCameraBadge}>
-                  <span style={styles.greenDot}></span> Live Camera
+                  <div style={styles.meterTrack}>
+                    <div style={{ ...styles.meterFill, width: `${Math.min(100, micVolume * 2)}%` }}></div>
+                  </div>
                 </div>
               </div>
 
-              {/* MIC LEVEL CHECK */}
-              <div style={styles.micMeterBox}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-                    Microphone Test
+              {/* Screen Share & Anti-Cheat Rules */}
+              <div style={styles.deviceBox}>
+                <div style={styles.deviceHeader}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '700' }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    Desktop Screen Share
                   </span>
-                  <span style={{ fontSize: '11px', color: micVolume > 5 ? '#16a34a' : '#94a3b8', fontWeight: '700' }}>
-                    {micVolume > 5 ? '✓ Voice Detected' : 'Speak to test mic'}
+                  <span style={{ fontSize: '11px', color: hasScreenSharePermission ? '#16a34a' : '#2563eb', fontWeight: '700' }}>
+                    {hasScreenSharePermission ? '✓ Screen Shared' : 'Action Required'}
                   </span>
                 </div>
 
-                <div style={styles.meterTrack}>
-                  <div style={{ ...styles.meterFill, width: `${Math.min(100, micVolume * 2)}%` }}></div>
+                <div style={{ ...styles.videoStagePreview, background: '#0f172a' }}>
+                  <video
+                    ref={screenPreviewVideoRef}
+                    autoPlay
+                    muted
+                    playsInline
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                  />
+                  {!hasScreenSharePermission && (
+                    <div style={{ ...styles.videoOverlayText, background: 'rgba(15,23,42,0.85)' }}>
+                      <p style={{ margin: '0 0 10px', fontSize: '13px', color: '#e2e8f0' }}>
+                        Share your <strong>Entire Screen</strong> to confirm no external AI tools or unauthorized tabs are used.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={initScreenShare}
+                        style={{ padding: '8px 18px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+                      >
+                        Click to Share Entire Screen
+                      </button>
+                    </div>
+                  )}
                 </div>
 
-                <div style={{ display: 'flex', gap: '8px', fontSize: '11.5px', color: '#64748b' }}>
-                  <span>✓ Chrome / Safari / Edge compatible</span>
-                  <span>•</span>
-                  <span>✓ Noise suppression active</span>
+                {/* Proctoring Rules Summary */}
+                <div style={{ marginTop: '12px', background: '#f8fafc', padding: '10px 12px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <div style={{ fontSize: '11.5px', fontWeight: 800, color: '#334155', textTransform: 'uppercase', marginBottom: 4 }}>
+                    Anti-Cheating Rules:
+                  </div>
+                  <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '12px', color: '#64748b', lineHeight: 1.6 }}>
+                    <li><strong>Single Continuous Take:</strong> Recording runs without stopping across all questions.</li>
+                    <li><strong>Full Screen Enforced:</strong> Minimizing or resizing the window is prohibited.</li>
+                    <li><strong>Zero Tab Switching:</strong> Leaving this browser tab is logged and flagged.</li>
+                  </ul>
                 </div>
               </div>
             </div>
@@ -868,319 +1257,133 @@ export default function CandidateChat() {
 
               <button
                 type="button"
-                onClick={() => setStep(3)}
-                style={styles.primaryButtonLarge}
+                onClick={handleBeginInterviewStudio}
+                disabled={!hasCameraPermission || !hasMicPermission || !hasScreenSharePermission}
+                style={{
+                  ...styles.primaryButtonLarge,
+                  opacity: (!hasCameraPermission || !hasMicPermission || !hasScreenSharePermission) ? 0.6 : 1
+                }}
               >
-                Everything Looks Good — Start Question 1 ➔
+                Begin Proctored Assessment (Question 1) ➔
               </button>
             </div>
           </div>
         )}
 
-        {/* STEP 3: QUESTION STUDIO */}
+        {/* STEP 3: CONTINUOUS PROCTORED INTERVIEW STUDIO */}
         {step === 3 && currentQ && (
           <div style={styles.card}>
-            {/* Question Progress Bar */}
-            <div style={styles.questionNavHeader}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={styles.questionCounterBadge}>
+            {/* Countdown Overlay */}
+            {countdown !== null && (
+              <div style={styles.countdownOverlay}>
+                <div style={styles.countdownNumber}>{countdown}</div>
+                <div style={styles.countdownText}>Starting Continuous Proctored Recording...</div>
+              </div>
+            )}
+
+            {/* Sticky Live Proctor Bar */}
+            <div style={styles.liveProctorBar}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={styles.recBlinkDot} />
+                <strong style={{ fontSize: '14px', color: '#dc2626' }}>
+                  LIVE RECORDING • {formatTime(sessionSeconds)}
+                </strong>
+                <span style={{ color: '#cbd5e1' }}>|</span>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>
                   Question {currentQuestionIndex + 1} of {questions.length}
-                </span>
-                <span style={{ fontSize: '12px', color: '#64748b' }}>
-                  Max {maxDuration} seconds
                 </span>
               </div>
 
-              <div style={styles.progressPills}>
-                {questions.map((q, idx) => (
-                  <div
-                    key={q.id}
-                    onClick={() => setCurrentQuestionIndex(idx)}
-                    style={{
-                      ...styles.progressPillItem,
-                      background: idx === currentQuestionIndex ? '#2563eb' : (answers[q.id] ? '#10b981' : '#e2e8f0'),
-                      color: idx === currentQuestionIndex || answers[q.id] ? '#ffffff' : '#64748b'
-                    }}
-                  >
-                    {idx + 1}
-                  </div>
-                ))}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{
+                  fontSize: '11.5px',
+                  fontWeight: 700,
+                  padding: '3px 8px',
+                  borderRadius: 6,
+                  background: tabViolationsCount > 0 ? '#fef2f2' : '#f0fdf4',
+                  color: tabViolationsCount > 0 ? '#dc2626' : '#16a34a',
+                  border: `1px solid ${tabViolationsCount > 0 ? '#fecaca' : '#bbf7d0'}`
+                }}>
+                  {tabViolationsCount > 0 ? `${tabViolationsCount}/3 Infractions` : 'Tab Lock Active'}
+                </span>
+                <span style={{ fontSize: '12px', color: '#64748b' }}>
+                  Max ~{maxDuration}s recommended
+                </span>
               </div>
             </div>
 
-            {/* Question Card */}
+            {/* Question Card Box */}
             <div style={styles.questionBox}>
+              <div style={{ fontSize: '12px', fontWeight: 800, color: '#2563eb', textTransform: 'uppercase', marginBottom: 4 }}>
+                Question {currentQuestionIndex + 1}
+              </div>
               <h2 style={styles.questionTitle}>{currentQ.text}</h2>
               {currentQ.description && (
                 <p style={styles.questionDesc}>{currentQ.description}</p>
               )}
             </div>
 
-            {/* Format Selector Tabs */}
-            <div style={styles.formatTabs}>
-              {['video', 'audio', 'text'].map(mode => (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => {
-                    if (isRecording) handleStopRecording()
-                    setResponseMode(mode)
-                  }}
-                  style={{
-                    ...styles.formatTabBtn,
-                    ...(responseMode === mode ? styles.formatTabBtnActive : {})
-                  }}
-                >
-                  <span>{mode === 'video' ? 'Video Answer' : mode === 'audio' ? 'Voice Note' : 'Written Text'}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* RECORDING / ANSWER CANVAS */}
+            {/* Live Video Stage & Speech Transcript */}
             <div style={styles.studioCanvas}>
-              {/* 1. VIDEO MODE */}
-              {responseMode === 'video' && (
-                <div style={styles.recorderContainer}>
-                  <div style={styles.videoStage}>
-                    {recordedPreviewUrl ? (
-                      <video
-                        src={recordedPreviewUrl}
-                        controls
-                        playsInline
-                        style={styles.videoFeed}
-                      />
-                    ) : (
-                      <video
-                        ref={previewVideoRef}
-                        autoPlay
-                        playsInline
-                        muted
-                        style={styles.videoFeed}
-                      />
-                    )}
-
-                    {/* Countdown Overlay */}
-                    {countdown !== null && (
-                      <div style={styles.countdownOverlay}>
-                        <span style={styles.countdownNumber}>{countdown}</span>
-                      </div>
-                    )}
-
-                    {/* Live Recording Indicator */}
-                    {isRecording && (
-                      <div style={styles.recordingOverlayBadge}>
-                        <span style={styles.pulsingRedDot}></span>
-                        <span>REC {formatTime(recordingSeconds)} / {formatTime(maxDuration)}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Video Controls */}
-                  <div style={styles.studioActions}>
-                    {!isRecording && !recordedPreviewUrl && (
-                      <button
-                        type="button"
-                        onClick={handleStartCountdown}
-                        style={styles.recordStartButton}
-                      >
-                        Record Video Answer
-                      </button>
-                    )}
-
-                    {isRecording && (
-                      <button
-                        type="button"
-                        onClick={handleStopRecording}
-                        style={styles.recordStopButton}
-                      >
-                        Stop Recording
-                      </button>
-                    )}
-
-                    {recordedPreviewUrl && (
-                      <div style={styles.reviewActions}>
-                        <button
-                          type="button"
-                          onClick={handleRetake}
-                          style={styles.secondaryButton}
-                        >
-                          ↺ Retake Video
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleSaveAndNext}
-                          style={styles.primaryButton}
-                        >
-                          ✓ Looks Great — Next ➔
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* 2. AUDIO VOICE NOTE MODE */}
-              {responseMode === 'audio' && (
-                <div style={styles.audioContainer}>
-                  <div style={styles.audioWaveBox}>
-                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px', color: '#2563eb' }}>
-                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-                    </div>
-
-                    <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>
-                      {isRecording
-                        ? `Recording Voice Answer... ${formatTime(recordingSeconds)}`
-                        : recordedPreviewUrl
-                        ? 'Recorded Voice Answer'
-                        : 'Ready to record voice response'}
-                    </h4>
-
-                    {isRecording && (
-                      <div style={styles.waveBarsRow}>
-                        {[16, 28, 40, 24, 36, 48, 30, 20, 38, 50, 28, 18].map((h, i) => (
-                          <div
-                            key={i}
-                            style={{
-                              ...styles.waveBar,
-                              height: `${h}px`,
-                              animationDelay: `${i * 0.08}s`
-                            }}
-                          ></div>
-                        ))}
-                      </div>
-                    )}
-
-                    {recordedPreviewUrl && (
-                      <audio
-                        src={recordedPreviewUrl}
-                        controls
-                        style={{ marginTop: '16px', width: '100%', maxWidth: '380px' }}
-                      />
-                    )}
-                  </div>
-
-                  <div style={styles.studioActions}>
-                    {!isRecording && !recordedPreviewUrl && (
-                      <button
-                        type="button"
-                        onClick={startActualRecording}
-                        style={styles.recordStartButton}
-                      >
-                        Start Voice Recording
-                      </button>
-                    )}
-
-                    {isRecording && (
-                      <button
-                        type="button"
-                        onClick={handleStopRecording}
-                        style={styles.recordStopButton}
-                      >
-                        Stop Voice Recording
-                      </button>
-                    )}
-
-                    {recordedPreviewUrl && (
-                      <div style={styles.reviewActions}>
-                        <button
-                          type="button"
-                          onClick={handleRetake}
-                          style={styles.secondaryButton}
-                        >
-                          ↺ Retake Audio
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleSaveAndNext}
-                          style={styles.primaryButton}
-                        >
-                          ✓ Looks Great — Next ➔
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* 3. WRITTEN TEXT MODE */}
-              {responseMode === 'text' && (
-                <div style={styles.textContainer}>
-                  <textarea
-                    rows={7}
-                    placeholder="Type your answer clearly here. Mention relevant experience, architecture designs, and accomplishments..."
-                    value={textInputAnswer}
-                    onChange={e => setTextInputAnswer(e.target.value)}
-                    style={styles.textarea}
+              <div style={styles.recorderContainer}>
+                <div style={styles.videoStage}>
+                  <video
+                    ref={previewVideoRef}
+                    autoPlay
+                    muted
+                    playsInline
+                    style={styles.videoFeed}
                   />
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#64748b', marginTop: '8px' }}>
-                    <span>Word Count: {textInputAnswer.trim() ? textInputAnswer.trim().split(/\s+/).length : 0} words</span>
-                    <span>{textInputAnswer.length} characters</span>
-                  </div>
-
-                  <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
-                    <button
-                      type="button"
-                      onClick={handleSaveAndNext}
-                      style={styles.primaryButton}
-                    >
-                      Save & Next Question ➔
-                    </button>
+                  {/* Corner indicator */}
+                  <div style={styles.recordingCornerBadge}>
+                    <span style={styles.recDot} /> Continuous Take Active
                   </div>
                 </div>
-              )}
+
+                {/* Real-time speech transcript */}
+                <div style={styles.transcriptCard}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '700', color: '#4338ca' }}>
+                    <span>Live Spoken Transcript:</span>
+                  </div>
+                  <p style={{ fontSize: '13.5px', color: '#334155', marginTop: '4px', fontStyle: 'italic', lineHeight: 1.5 }}>
+                    "{liveTranscript || 'Start speaking your answer clearly into the microphone...'}"
+                  </p>
+                </div>
+              </div>
             </div>
 
-            {/* LIVE AI TRANSCRIPT PREVIEW */}
-            {liveTranscript && (
-              <div style={styles.transcriptCard}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '700', color: '#4338ca' }}>
-                  <span>Real-time Speech Transcript:</span>
-                </div>
-                <p style={{ fontSize: '13px', color: '#334155', marginTop: '4px', fontStyle: 'italic', lineHeight: 1.5 }}>
-                  "{liveTranscript}"
-                </p>
-              </div>
-            )}
-
-            {/* Studio Bottom Navigation */}
+            {/* Studio Navigation: Continuous Next Button */}
             <div style={styles.studioNavFooter}>
-              <button
-                type="button"
-                onClick={() => {
-                  if (currentQuestionIndex > 0) {
-                    setCurrentQuestionIndex(prev => prev - 1)
-                  } else {
-                    setStep(2)
-                  }
-                }}
-                style={styles.secondaryButton}
-              >
-                ← Back
-              </button>
+              <div style={{ fontSize: '12px', color: '#64748b' }}>
+                Note: Recording will continue seamlessly without stopping as you advance through all questions.
+              </div>
 
               <button
                 type="button"
-                onClick={handleSaveAndNext}
-                style={styles.primaryButton}
+                onClick={handleNextQuestionContinuous}
+                style={styles.primaryButtonLarge}
               >
-                {currentQuestionIndex < questions.length - 1 ? 'Save & Next Question ➔' : 'Review All Answers ➔'}
+                {currentQuestionIndex < questions.length - 1
+                  ? `Save & Go to Question ${currentQuestionIndex + 2} ➔`
+                  : 'Finish & Review Entire Interview ➔'}
               </button>
             </div>
           </div>
         )}
 
-        {/* STEP 4: REVIEW ALL ANSWERS */}
+        {/* STEP 4: REVIEW ENTIRE PROCTORED RECORDING */}
         {step === 4 && (
           <div style={styles.card}>
             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
               <div style={styles.pillLabel}>Review & Finalize</div>
-              <h2 style={styles.cardTitle}>Review your answers before submitting</h2>
+              <h2 style={styles.cardTitle}>Review your complete proctored interview</h2>
               <p style={styles.cardSubtitle}>
-                Take a quick look to verify all questions are answered to your satisfaction.
+                Your entire assessment was captured in one continuous recording. Click below to review and seek to any question.
               </p>
             </div>
 
+            {/* Candidate Header Summary */}
             <div style={styles.candidateReviewHeader}>
               <div>
                 <div style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{candidateName}</div>
@@ -1188,71 +1391,93 @@ export default function CandidateChat() {
               </div>
               <div style={{ textAlign: 'right' }}>
                 <span style={styles.rateTag}>{expectedRate || 'Rate open'}</span>
-                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>{candidateLocation || 'Remote'}</div>
+                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                  {candidateLocation || 'Remote'} {candidateGeo ? `(GPS Verified)` : ''}
+                </div>
               </div>
             </div>
 
-            <div style={styles.reviewList}>
-              {questions.map((q, idx) => {
-                const ans = answers[q.id]
-                return (
-                  <div key={q.id} style={styles.reviewItem}>
-                    <div style={styles.reviewItemHeader}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={styles.reviewQIndex}>Q{idx + 1}</span>
-                        <span style={styles.reviewQText}>{q.text}</span>
-                      </div>
-                      <span style={styles.reviewFormatBadge}>
-                        {ans?.format === 'video' ? 'Video' : ans?.format === 'audio' ? 'Audio' : 'Text'}
-                      </span>
-                    </div>
+            {/* Single Master Video Player */}
+            <div style={{ marginTop: '20px', background: '#0f172a', borderRadius: '12px', overflow: 'hidden' }}>
+              {masterVideoUrl && (
+                <video
+                  ref={masterVideoPlayerRef}
+                  src={masterVideoUrl}
+                  controls
+                  playsInline
+                  style={{ width: '100%', maxHeight: '440px', display: 'block' }}
+                />
+              )}
+            </div>
 
-                    <div style={styles.reviewItemBody}>
-                      {ans?.format === 'video' && ans.mediaUrl && (
-                        <video
-                          src={ans.mediaUrl}
-                          controls
-                          style={styles.reviewVideoPlayer}
-                        />
-                      )}
+            {/* Question Jump Timeline Markers */}
+            <div style={{ marginTop: '16px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 800, color: '#334155', textTransform: 'uppercase', marginBottom: '8px' }}>
+                Jump to Question in Video:
+              </div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {questionMarkers.map((m, idx) => (
+                  <button
+                    key={m.questionId || idx}
+                    type="button"
+                    onClick={() => {
+                      if (masterVideoPlayerRef.current) {
+                        masterVideoPlayerRef.current.currentTime = m.startTime
+                        masterVideoPlayerRef.current.play().catch(() => {})
+                      }
+                    }}
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: 8,
+                      background: '#eff6ff',
+                      color: '#1d4ed8',
+                      border: '1px solid #bfdbfe',
+                      fontWeight: 700,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6
+                    }}
+                  >
+                    <span>▶ Question {idx + 1}</span>
+                    <span style={{ color: '#64748b', fontWeight: 500 }}>
+                      ({formatTime(m.startTime)} - {formatTime(m.endTime)})
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
 
-                      {ans?.format === 'audio' && ans.mediaUrl && (
-                        <audio
-                          src={ans.mediaUrl}
-                          controls
-                          style={{ width: '100%', maxWidth: '400px' }}
-                        />
-                      )}
-
-                      {ans?.format === 'text' && (
-                        <div style={styles.reviewTextDisplay}>
-                          {ans.textAnswer}
-                        </div>
-                      )}
-
-                      {ans?.transcript && ans.format !== 'text' && (
-                        <div style={styles.reviewTranscriptSnippet}>
-                          <span style={{ fontWeight: '600', color: '#4338ca' }}>AI Transcript: </span>
-                          "{ans.transcript}"
-                        </div>
-                      )}
-                    </div>
-
-                    <div style={{ textAlign: 'right', marginTop: '8px' }}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCurrentQuestionIndex(idx)
-                          setStep(3)
-                        }}
-                        style={styles.editAnswerBtn}
-                      >
-                        Re-record / Edit
-                      </button>
-                    </div>
+            {/* Proctoring Integrity Summary */}
+            <div style={{ marginTop: '24px', background: '#f8fafc', padding: '16px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+              <h4 style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', margin: '0 0 10px', textTransform: 'uppercase' }}>
+                Proctoring & Anti-Cheating Compliance Audit:
+              </h4>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', fontSize: '13px' }}>
+                <div>
+                  <span style={{ color: '#64748b' }}>Total Session Length:</span>
+                  <div style={{ fontWeight: 800, color: '#0f172a' }}>{formatTime(sessionSeconds)}</div>
+                </div>
+                <div>
+                  <span style={{ color: '#64748b' }}>Screen Sharing:</span>
+                  <div style={{ fontWeight: 800, color: hasScreenSharePermission ? '#16a34a' : '#f59e0b' }}>
+                    {hasScreenSharePermission ? '✓ Full Desktop Verified' : 'Standard'}
                   </div>
-                )
-              })}
+                </div>
+                <div>
+                  <span style={{ color: '#64748b' }}>Tab Switching Infractions:</span>
+                  <div style={{ fontWeight: 800, color: tabViolationsCount === 0 ? '#16a34a' : '#dc2626' }}>
+                    {tabViolationsCount === 0 ? '✓ 0 Infractions (Clean)' : `${tabViolationsCount} Infractions Logged`}
+                  </div>
+                </div>
+                <div>
+                  <span style={{ color: '#64748b' }}>GPS Geolocation:</span>
+                  <div style={{ fontWeight: 800, color: candidateGeo ? '#16a34a' : '#64748b' }}>
+                    {candidateGeo ? `✓ Verified (${candidateGeo.latitude.toFixed(2)}°, ${candidateGeo.longitude.toFixed(2)}°)` : 'Not provided'}
+                  </div>
+                </div>
+              </div>
             </div>
 
             {isSubmitting && (
@@ -1264,23 +1489,17 @@ export default function CandidateChat() {
               </div>
             )}
 
-            <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
               <button
                 type="button"
-                onClick={() => setStep(3)}
-                style={styles.secondaryButton}
-                disabled={isSubmitting}
+                onClick={handleSubmitFinalApplication}
+                disabled={isSubmitting || !masterVideoBlob}
+                style={{
+                  ...styles.primaryButtonLarge,
+                  opacity: (isSubmitting || !masterVideoBlob) ? 0.6 : 1
+                }}
               >
-                ← Back to Questions
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSubmitAllResponses}
-                disabled={isSubmitting}
-                style={styles.primaryButtonLarge}
-              >
-                {isSubmitting ? 'Uploading & Evaluating...' : 'Submit Screening Application'}
+                {isSubmitting ? 'Submitting...' : !masterVideoBlob ? 'Processing Video Recording...' : 'Confirm & Submit Final Application ➔'}
               </button>
             </div>
           </div>
@@ -1298,7 +1517,7 @@ export default function CandidateChat() {
                 Application Submitted Successfully!
               </h1>
               <p style={{ fontSize: '15px', color: '#64748b', maxWidth: '520px', margin: '8px auto 0', lineHeight: 1.6 }}>
-                Thank you, <strong>{candidateName}</strong>. Your recorded video, audio, and text answers have been received by the recruiting team for <strong>{jobTitle}</strong>.
+                Thank you, <strong>{candidateName}</strong>. Your single continuous proctored video interview has been securely transmitted to the recruitment desk for <strong>{jobTitle}</strong>.
               </p>
 
               {/* Submission Receipt Card */}
@@ -1309,15 +1528,15 @@ export default function CandidateChat() {
                 </div>
                 <div style={styles.receiptRow}>
                   <span style={{ color: '#64748b' }}>Submitted At:</span>
-                  <span>{new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}</span>
+                  <span>{new Date(submittedAtDate || Date.now()).toLocaleDateString()} {new Date(submittedAtDate || Date.now()).toLocaleTimeString()}</span>
                 </div>
                 <div style={styles.receiptRow}>
                   <span style={{ color: '#64748b' }}>Role:</span>
                   <strong>{jobTitle}</strong>
                 </div>
                 <div style={styles.receiptRow}>
-                  <span style={{ color: '#64748b' }}>Status:</span>
-                  <span style={styles.submittedPill}>✓ Transcribed & Submitted</span>
+                  <span style={{ color: '#64748b' }}>Recording Mode:</span>
+                  <span style={styles.submittedPill}>✓ Continuous Proctored Take</span>
                 </div>
               </div>
 
@@ -1330,13 +1549,13 @@ export default function CandidateChat() {
                   <div style={styles.timelineStep}>
                     <span style={styles.stepNum}>1</span>
                     <span style={{ fontSize: '13px', color: '#334155' }}>
-                      Our talent specialists review your recorded answers & AI transcript.
+                      Our talent specialists review your full continuous recording and AI transcript.
                     </span>
                   </div>
                   <div style={styles.timelineStep}>
                     <span style={styles.stepNum}>2</span>
                     <span style={{ fontSize: '13px', color: '#334155' }}>
-                      Shortlisted candidates will receive a direct invitation for a 30-minute technical interview.
+                      Shortlisted candidates will receive a direct invitation for client submission.
                     </span>
                   </div>
                   <div style={styles.timelineStep}>
@@ -1360,9 +1579,9 @@ export default function CandidateChat() {
 
       {/* FOOTER */}
       <footer style={styles.footer}>
-        <div>SmartHire ATS • Powered by PeekHire Asynchronous Video Intelligence</div>
+        <div>SmartHire ATS • Powered by SmartHire Asynchronous Video Intelligence</div>
         <div style={{ marginTop: '4px', fontSize: '11px', color: '#94a3b8' }}>
-          Secure end-to-end encryption • WebRTC Native Recording • GDPR & Privacy Compliant
+          Secure end-to-end encryption • WebRTC Continuous Proctored Recording • GDPR & Privacy Compliant
         </div>
       </footer>
     </div>
@@ -1370,7 +1589,7 @@ export default function CandidateChat() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ─── PEEKHIRE INLINE STYLES ───────────────────────────────────────────────────
+// ─── SMARTHIRE INLINE STYLES ───────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const styles = {
@@ -1421,7 +1640,7 @@ const styles = {
     fontWeight: '800',
     color: '#0f172a',
     letterSpacing: '-0.02em',
-    lineHeight: 1.2
+    lineHeight: '1.2'
   },
   brandSubtitle: {
     fontSize: '11px',
@@ -1429,13 +1648,13 @@ const styles = {
     fontWeight: '600'
   },
   jobInfoBadge: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
     background: '#F1F5F9',
     padding: '6px 14px',
     borderRadius: '20px',
-    fontSize: '13px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
+    fontSize: '13px'
   },
   headerRight: {
     display: 'flex',
@@ -1446,116 +1665,143 @@ const styles = {
     fontSize: '12px',
     fontWeight: '700',
     color: '#2563eb',
-    background: '#eff6ff',
+    background: '#EFF6FF',
     padding: '4px 10px',
-    borderRadius: '12px'
-  },
-  noLoginTag: {
-    fontSize: '12px',
-    fontWeight: '600',
-    color: '#059669',
-    background: '#ecfdf5',
-    padding: '4px 10px',
-    borderRadius: '12px'
+    borderRadius: '6px'
   },
   mainContent: {
-    flex: 1,
-    maxWidth: '860px',
+    maxWidth: '960px',
     width: '100%',
     margin: '32px auto',
-    padding: '0 20px'
+    padding: '0 20px',
+    flex: '1'
   },
   card: {
-    background: '#FFFFFF',
-    borderRadius: '20px',
-    border: '1px solid #E5E7EB',
-    padding: '36px 32px',
-    boxShadow: '0 8px 30px -4px rgba(0, 0, 0, 0.06)'
+    background: '#ffffff',
+    borderRadius: '16px',
+    padding: '36px',
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+    border: '1px solid #E5E7EB'
   },
   pillLabel: {
     display: 'inline-block',
-    fontSize: '11px',
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: '0.08em',
-    color: '#2563eb',
-    background: '#eff6ff',
     padding: '4px 12px',
     borderRadius: '20px',
-    marginBottom: '10px'
+    fontSize: '12px',
+    fontWeight: '700',
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
+    color: '#2563eb',
+    background: '#EFF6FF',
+    marginBottom: '12px'
   },
   heroTitle: {
-    fontSize: '30px',
+    fontSize: '28px',
     fontWeight: '800',
     letterSpacing: '-0.03em',
     color: '#0f172a',
-    margin: 0
+    margin: '0 0 10px',
+    lineHeight: '1.3'
   },
   heroSubtitle: {
     fontSize: '15px',
     color: '#64748b',
-    maxWidth: '580px',
-    margin: '10px auto 0',
-    lineHeight: 1.5
+    maxWidth: '620px',
+    margin: '0 auto 20px',
+    lineHeight: '1.6'
   },
   highlightsRow: {
     display: 'flex',
-    alignItems: 'center',
     justifyContent: 'center',
     gap: '12px',
-    marginTop: '16px',
     flexWrap: 'wrap'
   },
   highlightPill: {
-    fontSize: '12px',
-    fontWeight: '700',
-    color: '#334155',
-    background: '#F8FAFC',
-    border: '1px solid #E2E8F0',
-    padding: '5px 12px',
-    borderRadius: '20px'
+    padding: '6px 14px',
+    borderRadius: '20px',
+    fontSize: '12.5px',
+    fontWeight: '600',
+    color: '#475569',
+    background: '#F1F5F9',
+    border: '1px solid #E2E8F0'
   },
   formGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
     gap: '18px',
     marginTop: '20px'
   },
   inputGroup: {
     display: 'flex',
-    flexDirection: 'column',
-    gap: '6px'
+    flexDirection: 'column'
   },
   label: {
-    fontSize: '12.5px',
+    fontSize: '13px',
     fontWeight: '700',
-    color: '#334155'
+    color: '#334155',
+    marginBottom: '6px'
   },
   input: {
     padding: '11px 14px',
-    borderRadius: '10px',
-    border: '1px solid #CBD5E1',
+    borderRadius: '8px',
+    border: '1.5px solid #CBD5E1',
     fontSize: '14px',
-    color: '#0f172a',
     outline: 'none',
-    transition: 'border-color 0.2s',
-    background: '#FFFFFF'
+    transition: 'border-color 0.15s ease',
+    color: '#0f172a'
   },
-  textarea: {
-    width: '100%',
-    padding: '14px',
-    borderRadius: '12px',
-    border: '1px solid #CBD5E1',
-    fontSize: '14.5px',
-    lineHeight: 1.6,
-    color: '#0f172a',
+  select: {
+    padding: '11px 14px',
+    borderRadius: '8px',
+    border: '1.5px solid #CBD5E1',
+    fontSize: '14px',
     outline: 'none',
-    resize: 'vertical',
-    fontFamily: 'inherit',
-    boxSizing: 'border-box'
+    backgroundColor: '#ffffff',
+    color: '#0f172a'
+  },
+  primaryButtonLarge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    padding: '13px 32px',
+    borderRadius: '10px',
+    background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+    color: '#ffffff',
+    fontSize: '15px',
+    fontWeight: '700',
+    border: 'none',
+    cursor: 'pointer',
+    boxShadow: '0 4px 14px rgba(37, 99, 235, 0.3)',
+    transition: 'all 0.15s ease'
+  },
+  primaryButton: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px',
+    padding: '10px 22px',
+    borderRadius: '8px',
+    background: '#2563eb',
+    color: '#ffffff',
+    fontSize: '14px',
+    fontWeight: '700',
+    border: 'none',
+    cursor: 'pointer',
+    textDecoration: 'none'
+  },
+  secondaryButton: {
+    padding: '10px 20px',
+    borderRadius: '8px',
+    background: '#F1F5F9',
+    color: '#475569',
+    fontSize: '14px',
+    fontWeight: '600',
+    border: '1px solid #CBD5E1',
+    cursor: 'pointer'
   },
   cardTitle: {
-    fontSize: '24px',
+    fontSize: '22px',
     fontWeight: '800',
     color: '#0f172a',
     margin: '0 0 6px'
@@ -1565,158 +1811,107 @@ const styles = {
     color: '#64748b',
     margin: 0
   },
-  deviceCheckContainer: {
+  deviceBox: {
+    background: '#ffffff',
+    border: '1px solid #E2E8F0',
+    borderRadius: '12px',
+    padding: '16px'
+  },
+  deviceHeader: {
     display: 'flex',
-    flexDirection: 'column',
-    gap: '20px',
-    marginTop: '10px'
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: '12px',
+    fontSize: '13px',
+    color: '#0f172a'
   },
-  videoBox: {
+  videoStagePreview: {
     position: 'relative',
-    width: '100%',
-    aspectRatio: '16/9',
-    background: '#0f172a',
-    borderRadius: '16px',
+    height: '200px',
+    borderRadius: '10px',
     overflow: 'hidden',
-    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15)'
+    backgroundColor: '#0f172a',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
   },
-  videoFeed: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover'
-  },
-  videoFallbackOverlay: {
+  videoOverlayText: {
     position: 'absolute',
     inset: 0,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    background: 'rgba(15, 23, 42, 0.85)'
-  },
-  liveCameraBadge: {
-    position: 'absolute',
-    top: '12px',
-    left: '12px',
-    background: 'rgba(0, 0, 0, 0.65)',
-    backdropFilter: 'blur(6px)',
-    color: '#ffffff',
-    fontSize: '11px',
-    fontWeight: '700',
-    padding: '4px 10px',
-    borderRadius: '14px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px'
-  },
-  greenDot: {
-    width: '8px',
-    height: '8px',
-    borderRadius: '50%',
-    background: '#10b981'
-  },
-  micMeterBox: {
-    background: '#F8FAFC',
-    border: '1px solid #E2E8F0',
-    borderRadius: '14px',
-    padding: '16px 20px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px'
+    padding: '20px',
+    textAlign: 'center',
+    fontSize: '13px',
+    color: '#94a3b8'
   },
   meterTrack: {
-    width: '100%',
-    height: '10px',
-    background: '#E2E8F0',
-    borderRadius: '999px',
+    height: '8px',
+    backgroundColor: '#E2E8F0',
+    borderRadius: '4px',
     overflow: 'hidden'
   },
   meterFill: {
     height: '100%',
-    background: 'linear-gradient(90deg, #10b981, #3b82f6)',
-    borderRadius: '999px',
+    backgroundColor: '#10b981',
     transition: 'width 0.1s ease'
   },
-  questionNavHeader: {
+  errorBanner: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 16px',
+    borderRadius: '8px',
+    background: '#FEF2F2',
+    border: '1px solid #FCA5A5',
+    color: '#B91C1C',
+    fontSize: '13px',
+    fontWeight: '600',
+    marginBottom: '20px'
+  },
+  liveProctorBar: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingBottom: '16px',
-    borderBottom: '1px solid #F1F5F9',
-    marginBottom: '20px'
+    padding: '10px 16px',
+    background: '#FEF2F2',
+    border: '1px solid #FECACA',
+    borderRadius: '10px',
+    marginBottom: '20px',
+    flexWrap: 'wrap',
+    gap: '10px'
   },
-  questionCounterBadge: {
-    background: '#EFF6FF',
-    color: '#2563eb',
-    fontSize: '12px',
-    fontWeight: '800',
-    padding: '4px 12px',
-    borderRadius: '20px'
-  },
-  progressPills: {
-    display: 'flex',
-    gap: '6px'
-  },
-  progressPillItem: {
-    width: '28px',
-    height: '28px',
+  recBlinkDot: {
+    width: '10px',
+    height: '10px',
     borderRadius: '50%',
-    fontSize: '12px',
-    fontWeight: '700',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer'
+    backgroundColor: '#dc2626',
+    boxShadow: '0 0 8px rgba(220, 38, 38, 0.8)'
   },
   questionBox: {
     background: '#F8FAFC',
     border: '1px solid #E2E8F0',
-    borderRadius: '16px',
-    padding: '22px',
+    borderRadius: '12px',
+    padding: '24px',
     marginBottom: '20px'
   },
   questionTitle: {
-    fontSize: '19px',
+    fontSize: '18px',
     fontWeight: '800',
     color: '#0f172a',
-    margin: 0,
-    lineHeight: 1.4
+    margin: '0 0 6px',
+    lineHeight: '1.4'
   },
   questionDesc: {
-    fontSize: '13px',
+    fontSize: '13.5px',
     color: '#64748b',
-    margin: '8px 0 0',
-    lineHeight: 1.5
-  },
-  formatTabs: {
-    display: 'flex',
-    gap: '10px',
-    marginBottom: '16px'
-  },
-  formatTabBtn: {
-    flex: 1,
-    padding: '10px 14px',
-    borderRadius: '10px',
-    border: '1px solid #CBD5E1',
-    background: '#FFFFFF',
-    color: '#475569',
-    fontSize: '13px',
-    fontWeight: '700',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-    transition: 'all 0.15s ease'
-  },
-  formatTabBtnActive: {
-    background: '#2563eb',
-    color: '#FFFFFF',
-    borderColor: '#2563eb',
-    boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)'
+    margin: 0,
+    lineHeight: '1.5'
   },
   studioCanvas: {
-    marginTop: '10px'
+    marginTop: '16px'
   },
   recorderContainer: {
     display: 'flex',
@@ -1725,344 +1920,87 @@ const styles = {
   },
   videoStage: {
     position: 'relative',
+    height: '360px',
+    borderRadius: '12px',
+    overflow: 'hidden',
+    backgroundColor: '#0f172a'
+  },
+  videoFeed: {
     width: '100%',
-    aspectRatio: '16/9',
-    background: '#0f172a',
-    borderRadius: '16px',
-    overflow: 'hidden'
+    height: '100%',
+    objectFit: 'cover'
   },
-  countdownOverlay: {
-    position: 'absolute',
-    inset: 0,
-    background: 'rgba(0, 0, 0, 0.75)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  countdownNumber: {
-    fontSize: '90px',
-    fontWeight: '900',
-    color: '#FFFFFF',
-    animation: 'pulse 1s infinite'
-  },
-  recordingOverlayBadge: {
+  recordingCornerBadge: {
     position: 'absolute',
     top: '14px',
-    right: '14px',
-    background: 'rgba(220, 38, 38, 0.9)',
-    color: '#FFFFFF',
+    left: '14px',
+    background: 'rgba(15, 23, 42, 0.75)',
+    backdropFilter: 'blur(4px)',
+    color: '#ffffff',
+    padding: '4px 10px',
+    borderRadius: '6px',
     fontSize: '12px',
-    fontWeight: '800',
-    padding: '5px 12px',
-    borderRadius: '20px',
+    fontWeight: '700',
     display: 'flex',
     alignItems: 'center',
-    gap: '8px'
+    gap: '6px'
   },
-  pulsingRedDot: {
-    width: '10px',
-    height: '10px',
+  recDot: {
+    width: '8px',
+    height: '8px',
     borderRadius: '50%',
-    background: '#FFFFFF'
-  },
-  studioActions: {
-    display: 'flex',
-    justifyContent: 'center',
-    marginTop: '12px'
-  },
-  recordStartButton: {
-    padding: '12px 28px',
-    borderRadius: '30px',
-    background: '#dc2626',
-    color: '#ffffff',
-    border: 'none',
-    fontSize: '14.5px',
-    fontWeight: '800',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    boxShadow: '0 6px 20px rgba(220, 38, 38, 0.35)'
-  },
-  recordStopButton: {
-    padding: '12px 28px',
-    borderRadius: '30px',
-    background: '#0f172a',
-    color: '#ffffff',
-    border: 'none',
-    fontSize: '14.5px',
-    fontWeight: '800',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    boxShadow: '0 6px 20px rgba(15, 23, 42, 0.3)'
-  },
-  reviewActions: {
-    display: 'flex',
-    gap: '12px'
-  },
-  audioContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px'
-  },
-  audioWaveBox: {
-    background: '#F8FAFC',
-    border: '1px solid #E2E8F0',
-    borderRadius: '16px',
-    padding: '36px 20px',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  waveBarsRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    marginTop: '16px'
-  },
-  waveBar: {
-    width: '4px',
-    background: '#2563eb',
-    borderRadius: '2px'
-  },
-  textContainer: {
-    marginTop: '4px'
+    backgroundColor: '#ef4444'
   },
   transcriptCard: {
     background: '#EEF2FF',
     border: '1px solid #C7D2FE',
-    borderRadius: '12px',
-    padding: '12px 16px',
-    marginTop: '16px'
+    borderRadius: '10px',
+    padding: '12px 16px'
   },
   studioNavFooter: {
     display: 'flex',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: '28px',
+    justifyContent: 'space-between',
+    marginTop: '24px',
     paddingTop: '20px',
-    borderTop: '1px solid #F1F5F9'
+    borderTop: '1px solid #E2E8F0',
+    flexWrap: 'wrap',
+    gap: '12px'
   },
   candidateReviewHeader: {
-    background: '#F8FAFC',
-    border: '1px solid #E2E8F0',
-    borderRadius: '12px',
-    padding: '14px 18px',
     display: 'flex',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '20px'
+    justifyContent: 'space-between',
+    padding: '14px 18px',
+    background: '#F8FAFC',
+    borderRadius: '10px',
+    border: '1px solid #E2E8F0'
   },
   rateTag: {
-    background: '#EFF6FF',
-    color: '#1d4ed8',
-    fontWeight: '700',
-    fontSize: '12px',
-    padding: '3px 8px',
-    borderRadius: '8px'
-  },
-  reviewList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px'
-  },
-  reviewItem: {
-    background: '#FFFFFF',
-    border: '1px solid #E2E8F0',
-    borderRadius: '14px',
-    padding: '18px'
-  },
-  reviewItemHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: '12px',
-    marginBottom: '12px'
-  },
-  reviewQIndex: {
-    background: '#EFF6FF',
-    color: '#2563eb',
-    fontSize: '11px',
+    fontSize: '13px',
     fontWeight: '800',
-    padding: '3px 7px',
-    borderRadius: '6px'
-  },
-  reviewQText: {
-    fontSize: '14px',
-    fontWeight: '700',
-    color: '#0f172a'
-  },
-  reviewFormatBadge: {
-    fontSize: '11px',
-    fontWeight: '700',
+    color: '#16a34a',
+    background: '#DCFCE7',
     padding: '3px 8px',
-    borderRadius: '6px',
-    background: '#F1F5F9',
-    color: '#475569',
-    whiteSpace: 'nowrap'
-  },
-  reviewItemBody: {
-    marginTop: '8px'
-  },
-  reviewVideoPlayer: {
-    width: '100%',
-    maxHeight: '260px',
-    borderRadius: '10px',
-    background: '#000000'
-  },
-  reviewTextDisplay: {
-    background: '#F8FAFC',
-    border: '1px solid #E2E8F0',
-    borderRadius: '10px',
-    padding: '12px 14px',
-    fontSize: '13.5px',
-    color: '#334155',
-    lineHeight: 1.5,
-    whiteSpace: 'pre-wrap'
-  },
-  reviewTranscriptSnippet: {
-    fontSize: '12.5px',
-    color: '#475569',
-    background: '#F8FAFC',
-    padding: '8px 12px',
-    borderRadius: '8px',
-    marginTop: '8px',
-    fontStyle: 'italic'
-  },
-  editAnswerBtn: {
-    background: 'none',
-    border: 'none',
-    color: '#2563eb',
-    fontSize: '12px',
-    fontWeight: '700',
-    cursor: 'pointer'
+    borderRadius: '6px'
   },
   submittingBox: {
     marginTop: '20px',
-    background: '#EFF6FF',
-    border: '1px solid #BFDBFE',
-    borderRadius: '12px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '10px',
     padding: '14px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '10px'
+    background: '#EFF6FF',
+    borderRadius: '8px'
   },
-  successCircle: {
-    width: '80px',
-    height: '80px',
+  loadingSpinnerSmall: {
+    width: '18px',
+    height: '18px',
     borderRadius: '50%',
-    background: 'linear-gradient(135deg, #10b981, #059669)',
-    color: '#FFFFFF',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    margin: '0 auto',
-    boxShadow: '0 10px 25px rgba(16, 185, 129, 0.35)'
-  },
-  receiptCard: {
-    background: '#F8FAFC',
-    border: '1px solid #E2E8F0',
-    borderRadius: '14px',
-    padding: '16px 20px',
-    maxWidth: '460px',
-    margin: '24px auto 0',
-    textAlign: 'left',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-    fontSize: '13px'
-  },
-  receiptRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  },
-  submittedPill: {
-    background: '#ECFDF5',
-    color: '#047857',
-    fontWeight: '700',
-    fontSize: '11px',
-    padding: '2px 8px',
-    borderRadius: '10px'
-  },
-  nextStepsCard: {
-    maxWidth: '460px',
-    margin: '24px auto 0',
-    textAlign: 'left'
-  },
-  timelineList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px'
-  },
-  timelineStep: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px'
-  },
-  stepNum: {
-    width: '22px',
-    height: '22px',
-    borderRadius: '50%',
-    background: '#E2E8F0',
-    color: '#0f172a',
-    fontSize: '11px',
-    fontWeight: '800',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  primaryButton: {
-    padding: '10px 20px',
-    borderRadius: '10px',
-    background: '#2563eb',
-    color: '#FFFFFF',
-    border: 'none',
-    fontSize: '13.5px',
-    fontWeight: '700',
-    cursor: 'pointer',
-    textDecoration: 'none',
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '6px',
-    boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)'
-  },
-  primaryButtonLarge: {
-    padding: '13px 28px',
-    borderRadius: '12px',
-    background: '#2563eb',
-    color: '#FFFFFF',
-    border: 'none',
-    fontSize: '15px',
-    fontWeight: '800',
-    cursor: 'pointer',
-    boxShadow: '0 6px 20px rgba(37, 99, 235, 0.3)'
-  },
-  secondaryButton: {
-    padding: '10px 18px',
-    borderRadius: '10px',
-    background: '#FFFFFF',
-    color: '#475569',
-    border: '1px solid #CBD5E1',
-    fontSize: '13.5px',
-    fontWeight: '700',
-    cursor: 'pointer'
-  },
-  errorBanner: {
-    background: '#FEF2F2',
-    border: '1px solid #FECACA',
-    color: '#B91C1C',
-    borderRadius: '10px',
-    padding: '12px 16px',
-    marginBottom: '16px',
-    fontSize: '13px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
+    border: '2.5px solid #2563eb',
+    borderTopColor: 'transparent',
+    animation: 'spin 0.8s linear infinite'
   },
   loadingContainer: {
     minHeight: '70vh',
@@ -2070,31 +2008,143 @@ const styles = {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    textAlign: 'center',
-    padding: '20px'
+    padding: '40px 20px',
+    textAlign: 'center'
+  },
+  lockIconBox: {
+    width: '72px',
+    height: '72px',
+    borderRadius: '50%',
+    background: '#fef2f2',
+    border: '1.5px solid #fecaca',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   loadingSpinner: {
     width: '40px',
     height: '40px',
-    border: '3px solid #E2E8F0',
-    borderTop: '3px solid #2563eb',
     borderRadius: '50%',
+    border: '3.5px solid #E2E8F0',
+    borderTopColor: '#2563eb',
     animation: 'spin 0.8s linear infinite'
   },
-  loadingSpinnerSmall: {
-    width: '20px',
-    height: '20px',
-    border: '2px solid #BFDBFE',
-    borderTop: '2px solid #2563eb',
+  proctorLockOverlay: {
+    position: 'fixed',
+    inset: 0,
+    backgroundColor: 'rgba(15, 23, 42, 0.92)',
+    backdropFilter: 'blur(8px)',
+    zIndex: 99999,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '20px'
+  },
+  proctorLockCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: '16px',
+    padding: '36px',
+    maxWidth: '520px',
+    width: '100%',
+    textAlign: 'center',
+    boxShadow: '0 20px 50px rgba(0, 0, 0, 0.3)',
+    border: '1px solid #e2e8f0'
+  },
+  countdownOverlay: {
+    position: 'absolute',
+    inset: 0,
+    backgroundColor: 'rgba(15, 23, 42, 0.85)',
+    backdropFilter: 'blur(6px)',
+    zIndex: 100,
+    borderRadius: '16px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  countdownNumber: {
+    fontSize: '84px',
+    fontWeight: '900',
+    color: '#ffffff',
+    lineHeight: 1
+  },
+  countdownText: {
+    fontSize: '16px',
+    fontWeight: '700',
+    color: '#93c5fd',
+    marginTop: '16px'
+  },
+  successCircle: {
+    width: '72px',
+    height: '72px',
     borderRadius: '50%',
-    animation: 'spin 0.8s linear infinite'
+    backgroundColor: '#DCFCE7',
+    color: '#16a34a',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    margin: '0 auto',
+    fontWeight: 'bold'
+  },
+  receiptCard: {
+    maxWidth: '460px',
+    margin: '24px auto',
+    padding: '16px 20px',
+    background: '#F8FAFC',
+    borderRadius: '12px',
+    border: '1px solid #E2E8F0',
+    textAlign: 'left',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px'
+  },
+  receiptRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    fontSize: '13.5px'
+  },
+  submittedPill: {
+    fontSize: '12px',
+    fontWeight: '700',
+    color: '#16a34a',
+    background: '#DCFCE7',
+    padding: '2px 8px',
+    borderRadius: '4px'
+  },
+  nextStepsCard: {
+    maxWidth: '460px',
+    margin: '20px auto 0',
+    textAlign: 'left'
+  },
+  timelineList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px'
+  },
+  timelineStep: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '12px'
+  },
+  stepNum: {
+    width: '24px',
+    height: '24px',
+    borderRadius: '50%',
+    background: '#EFF6FF',
+    color: '#2563eb',
+    fontSize: '12px',
+    fontWeight: '800',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0
   },
   footer: {
-    textAlign: 'center',
     padding: '24px 20px',
-    borderTop: '1px solid #E5E7EB',
-    background: '#FFFFFF',
+    textAlign: 'center',
     fontSize: '12px',
-    color: '#64748b'
+    color: '#64748b',
+    borderTop: '1px solid #E5E7EB',
+    backgroundColor: '#ffffff'
   }
 }

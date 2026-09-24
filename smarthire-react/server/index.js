@@ -1275,7 +1275,7 @@ const uploadDoc = multer({
 
 const uploadCandidateDoc = uploadDoc
 
-// ─── PeekHire Screening Video / Audio Storage ─────────────────────────────────
+// ─── SmartHire Screening Video / Audio Storage ────────────────────────────────
 const screeningUploadDir = path.join(uploadDir, 'screening')
 if (!fs.existsSync(screeningUploadDir)) {
   try {
@@ -6021,6 +6021,19 @@ app.get('/api/screening/:sessionId', (req, res) => {
   res.json({ success: true, session });
 });
 
+// Candidate begins screening session — mark in_progress for single-use lock
+app.post('/api/screening/:sessionId/lock-start', (req, res) => {
+  const session = getOrCreateScreeningSession(req.params.sessionId);
+  if (session.status === 'submitted' || session.screeningComplete) {
+    return res.status(400).json({ success: false, message: 'This screening session has already been completed and submitted.' });
+  }
+  session.status = 'in_progress';
+  session.isStarted = true;
+  session.startedAt = session.startedAt || new Date().toISOString();
+  saveScreeningToDisk();
+  res.json({ success: true, session });
+});
+
 // Candidate uploads video or audio response for a question
 app.post('/api/screening/:sessionId/upload-media', uploadScreeningMedia.single('media'), async (req, res) => {
   const session = getOrCreateScreeningSession(req.params.sessionId);
@@ -6054,7 +6067,7 @@ app.post('/api/screening/:sessionId/upload-media', uploadScreeningMedia.single('
   }
 });
 
-// Candidate submits all PeekHire screening responses
+// Candidate submits all SmartHire screening responses
 app.post('/api/screening/:sessionId/submit-response', async (req, res) => {
   const session = getOrCreateScreeningSession(req.params.sessionId);
   const { candidateInfo = {}, responses = [] } = req.body;
@@ -6078,6 +6091,9 @@ app.post('/api/screening/:sessionId/submit-response', async (req, res) => {
     session.candidateLinkedin = candidateInfo.linkedin || session.candidateLinkedin || '';
     session.expectedRate = candidateInfo.expectedRate || session.expectedRate || '';
     session.responses = responses;
+    session.masterMediaUrl = req.body.masterMediaUrl || (responses[0]?.mediaUrl) || null;
+    session.candidateGeo = req.body.candidateGeo || null;
+    session.proctoring = req.body.proctoring || null;
     session.aiScore = evaluation.aiScore;
     session.aiSummary = evaluation.aiSummary;
     session.recommendation = evaluation.recommendation;
@@ -6101,7 +6117,7 @@ app.post('/api/screening/:sessionId/submit-response', async (req, res) => {
         phone: session.candidatePhone,
         location: session.candidateLocation,
         jobTitle: session.jobTitle,
-        source: 'PeekHire Video Screening',
+        source: 'SmartHire Video Screening',
         createdAt: new Date().toISOString()
       };
 
@@ -6110,6 +6126,9 @@ app.post('/api/screening/:sessionId/submit-response', async (req, res) => {
       candidateRecord.screeningScore = evaluation.aiScore;
       candidateRecord.screeningSummary = evaluation.keyTakeaways;
       candidateRecord.screeningResponses = responses;
+      candidateRecord.masterMediaUrl = session.masterMediaUrl;
+      candidateRecord.proctoring = session.proctoring;
+      candidateRecord.candidateGeo = session.candidateGeo;
       candidateRecord.status = candidateRecord.status || 'Screened';
       candidateRecord.updatedAt = new Date().toISOString();
 

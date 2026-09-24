@@ -136,7 +136,7 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
 
       const data = await res.json()
       if (data.success) {
-        const fullLink = `${window.location.origin}/candidate-chat/${data.sessionId}`
+        const fullLink = `${window.location.origin}/screening/${data.sessionId}`
         setCreatedLinkResult({
           sessionId: data.sessionId,
           screeningUrl: fullLink,
@@ -253,7 +253,7 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <h1 style={styles.mainTitle}>Candidate Video & Audio Screening</h1>
-            <span style={styles.peekHireBadge}>PeekHire Powered</span>
+            <span style={styles.smartHireBadge}>SmartHire Powered</span>
           </div>
           <p style={styles.mainSubtitle}>
             Screen candidates asynchronously with 1-way video, voice notes, or text — review on your own schedule with AI transcripts & scorecards.
@@ -395,7 +395,7 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
             </div>
             <div style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>No screening sessions found</div>
             <p style={{ fontSize: '13px', color: '#64748b', maxWidth: '420px', margin: '6px auto 16px' }}>
-              Create a new PeekHire screening link and send it to candidates to collect asynchronous video, voice, and text answers.
+              Create a new SmartHire screening link and send it to candidates to collect asynchronous video, voice, and text answers.
             </p>
             <button
               type="button"
@@ -840,6 +840,39 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
                   )}
                 </div>
 
+                {/* Proctoring & Integrity Audit Card */}
+                {(reviewSession.proctoring || reviewSession.candidateGeo) && (
+                  <div style={styles.reviewSideCard}>
+                    <div style={styles.sideCardHeading}>Proctoring & Integrity Audit</div>
+                    <div style={styles.sideInfoRow}>
+                      <span style={{ color: '#64748b' }}>Desktop Screen Share:</span>
+                      <strong style={{ color: reviewSession.proctoring?.screenShared ? '#16a34a' : '#64748b' }}>
+                        {reviewSession.proctoring?.screenShared ? 'Verified Monitor' : 'Standard'}
+                      </strong>
+                    </div>
+                    <div style={styles.sideInfoRow}>
+                      <span style={{ color: '#64748b' }}>Fullscreen Lock:</span>
+                      <strong style={{ color: reviewSession.proctoring?.fullscreenEnforced ? '#16a34a' : '#64748b' }}>
+                        {reviewSession.proctoring?.fullscreenEnforced ? 'Enforced' : 'No'}
+                      </strong>
+                    </div>
+                    <div style={styles.sideInfoRow}>
+                      <span style={{ color: '#64748b' }}>Tab Violations:</span>
+                      <strong style={{ color: (reviewSession.proctoring?.tabViolationsCount || 0) > 0 ? '#dc2626' : '#16a34a' }}>
+                        {(reviewSession.proctoring?.tabViolationsCount || 0) === 0 ? '0 Infractions (Clean)' : `${reviewSession.proctoring.tabViolationsCount} Infractions Logged`}
+                      </strong>
+                    </div>
+                    {reviewSession.candidateGeo && (
+                      <div style={styles.sideInfoRow}>
+                        <span style={{ color: '#64748b' }}>GPS Geolocation:</span>
+                        <span style={{ fontSize: '11px', fontFamily: 'monospace', color: '#0f172a' }}>
+                          {reviewSession.candidateGeo.latitude?.toFixed(3)}°, {reviewSession.candidateGeo.longitude?.toFixed(3)}°
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* AI Screening Assessment Card */}
                 <div style={styles.reviewSideCard}>
                   <div style={styles.sideCardHeading}>AI Match & Insights</div>
@@ -938,13 +971,27 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
                     <button
                       key={resp.questionId || idx}
                       type="button"
-                      onClick={() => setActiveQuestionTab(idx)}
+                      onClick={() => {
+                        setActiveQuestionTab(idx)
+                        if (typeof resp.startTime === 'number') {
+                          const vid = document.getElementById('screening-review-video')
+                          if (vid) {
+                            vid.currentTime = resp.startTime
+                            vid.play().catch(() => {})
+                          }
+                        }
+                      }}
                       style={{
                         ...styles.qTabBtn,
                         ...(activeQuestionTab === idx ? styles.qTabBtnActive : {})
                       }}
                     >
                       <span>Q{idx + 1}: {resp.format === 'video' ? 'Video' : resp.format === 'audio' ? 'Audio' : 'Text'}</span>
+                      {typeof resp.startTime === 'number' && (
+                        <span style={{ fontSize: '11px', color: activeQuestionTab === idx ? '#1d4ed8' : '#64748b', marginLeft: '6px' }}>
+                          ({Math.floor(resp.startTime / 60)}:{String(Math.floor(resp.startTime % 60)).padStart(2, '0')})
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -966,11 +1013,11 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
                         </div>
 
                         {/* Player / Viewer */}
-                        {currentAns.format === 'video' && currentAns.mediaUrl && (
+                        {currentAns.format === 'video' && (currentAns.mediaUrl || reviewSession.masterMediaUrl) && (
                           <div style={styles.videoPlayerBox}>
                             <video
                               id="screening-review-video"
-                              src={currentAns.mediaUrl}
+                              src={currentAns.mediaUrl || reviewSession.masterMediaUrl}
                               controls
                               playbackRate={playbackSpeed}
                               style={styles.fullVideoElement}
@@ -1092,7 +1139,7 @@ const styles = {
     margin: 0,
     letterSpacing: '-0.02em'
   },
-  peekHireBadge: {
+  smartHireBadge: {
     fontSize: '11px',
     fontWeight: '800',
     color: '#2563eb',

@@ -927,7 +927,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                     { id: 'jobs', label: 'Jobs Hub (ATS Module)', desc: 'Post new positions, scrape JDs, and link openings.' },
                     { id: 'candidates', label: 'Candidate List (ATS Module)', desc: 'Review, search, filter, and modify candidate talent profiles.' },
                     { id: 'pipeline', label: 'Visual Pipeline (ATS Module)', desc: 'Kanban board of candidates across hiring stages.' },
-                    { id: 'screening', label: 'Video & Audio Screening (ATS Module)', desc: 'PeekHire asynchronous 1-way video, audio, and text candidate screening.' },
+                    { id: 'screening', label: 'Video & Audio Screening (ATS Module)', desc: 'SmartHire asynchronous 1-way video, audio, and text candidate screening.' },
                     { id: 'submissions', label: 'Client Submissions & RTR (ATS Module)', desc: 'Package and submit shortlisted candidate profiles to clients.' },
                     { id: 'automation', label: 'Automation Rules (ATS Module)', desc: 'Configure background jobs, webhooks, and automation triggers.' },
                     { id: 'inbox', label: 'Real-time Inbox (ATS Module)', desc: '1-on-1 direct candidate messaging platform.' }

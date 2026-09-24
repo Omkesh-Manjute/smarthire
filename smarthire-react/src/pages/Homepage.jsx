@@ -289,7 +289,7 @@ function Homepage() {
                 </h1>
 
                 <p className="tf-hero-subtitle">
-                  Empower your staffing agency from candidate sourcing to client placement. Featuring PeekHire async video, voice & text AI screening, private recruiter vaults, sub-second requisition sync, and digital RTR compliance.
+                  Empower your staffing agency from candidate sourcing to client placement. Featuring SmartHire async video, voice & text AI screening, private recruiter vaults, sub-second requisition sync, and digital RTR compliance.
                 </p>
 
                 <div className="tf-hero-actions">
@@ -645,7 +645,7 @@ function Homepage() {
                 <div className="tf-feature-tag">Instant Talent Match Chimes</div>
               </div>
 
-              {/* Feature 3: PeekHire Asynchronous Video, Audio & Text AI Screening */}
+              {/* Feature 3: SmartHire Asynchronous Video, Audio & Text AI Screening */}
               <div className="tf-feature-box">
                 <div className="tf-feature-icon-wrap emerald-bg">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -653,7 +653,7 @@ function Homepage() {
                     <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
                   </svg>
                 </div>
-                <h3 className="tf-feature-title">PeekHire Video, Voice & Text AI Screening</h3>
+                <h3 className="tf-feature-title">SmartHire Video, Voice & Text AI Screening</h3>
                 <p className="tf-feature-desc">
                   Zero-login candidate screening portal. Candidates record 1-way video answers, voice notes, or written synthesis on their schedule. Automatic Whisper AI transcripts, speech-to-text, and objective fit scoring.
                 </p>
@@ -1280,7 +1280,7 @@ function Homepage() {
                   <div className="tf-big-stat-col">
                     <span className="tf-stat-large">100%</span>
                     <p className="tf-stat-subtext">
-                      PeekHire asynchronous video & voice notes with AI Whisper transcription before submission.
+                      SmartHire asynchronous video & voice notes with AI Whisper transcription before submission.
                     </p>
                   </div>
 
@@ -1298,13 +1298,13 @@ function Homepage() {
         </section>
 
         {/* =========================================================================
-            SECTION: PEEKHIRE ASYNCHRONOUS CANDIDATE SCREENING (VIDEO · AUDIO · TEXT)
+            SECTION: SMARTHIRE ASYNCHRONOUS CANDIDATE SCREENING (VIDEO · AUDIO · TEXT)
             ========================================================================= */}
         <section className="tf-screening-showcase-section" id="screening">
           <div className="tf-container">
             {/* Section Header */}
             <div className="tf-section-header text-center">
-              <span className="tf-eyebrow-amber">PEEKHIRE AI CANDIDATE SCREENING</span>
+              <span className="tf-eyebrow-amber">SMARTHIRE AI CANDIDATE SCREENING</span>
               <h2 className="tf-section-title">
                 Screen 10x More Candidates with{' '}
                 <span className="tf-highlight-box">Asynchronous Video, Audio & Text AI</span>
@@ -1345,7 +1345,7 @@ function Homepage() {
                   </div>
                   <div className="tf-studio-title-pill">
                     <span className="tf-live-record-pulse" />
-                    <strong>PeekHire Candidate Portal</strong> · Live Studio
+                    <strong>SmartHire Candidate Portal</strong> · Live Studio
                   </div>
                   <span className="tf-studio-step-badge">Question 2 of 3</span>
                 </div>
@@ -1578,7 +1578,7 @@ function Homepage() {
                   <span className="tf-check-badge">✔</span> Multi-Role Hierarchy
                 </span>
                 <span className="tf-check-item">
-                  <span className="tf-check-badge">✔</span> PeekHire Video & Voice Screening
+                  <span className="tf-check-badge">✔</span> SmartHire Video & Voice Screening
                 </span>
                 <span className="tf-check-item">
                   <span className="tf-check-badge">✔</span> Smart JD Chimes
@@ -3584,7 +3584,7 @@ function Homepage() {
         }
 
         /* =========================================================================
-           SECTION: PEEKHIRE ASYNCHRONOUS SCREENING STUDIO
+           SECTION: SMARTHIRE ASYNCHRONOUS SCREENING STUDIO
            ========================================================================= */
         .tf-screening-showcase-section {
           padding: 95px 0;
