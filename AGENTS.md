@@ -69,6 +69,39 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-24 — StaffingOrigin (InfoOrigin) Live Job Ingestion, Multi-Source Branding & Dual-Sync Deployment
+- **Context & Objectives**:
+  - Implemented live job scraper for StaffingOrigin (`https://staffingorigin.com/OpenPosition` / `https://infoorigin.infoapps.io/api-staffing/get/requirement`).
+  - Branded all 71 StaffingOrigin jobs under **InfoOrigin** (`client: "InfoOrigin"`, `company: "InfoOrigin"`, `source: "InfoOrigin"`), preserving authentic 4-digit Req IDs (`7589`, `7588`, etc.).
+  - Tagged earlier JobsInHand positions as **COOLSOFT** (`COOLSOFT LLC`), maintaining 71 COOLSOFT positions (Total: 142 active jobs).
+  - Added source counters and filter tabs (`All Portals: 142`, `COOLSOFT: 71`, `InfoOrigin: 71`) in `JobsModule.jsx`, `RecruiterDashboard.jsx`, and `PublicCareers.jsx`.
+  - Built 8-box Position Overview grid matching Screenshot 2 (Job Type, Category, Req ID, Country, Interview Type, Duration, Work Preference, Work Location) and formatted bulleted Job Description.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-DrHZpujQ.js`).
+  - Git committed (`ca0ebab`) and pushed to GitHub `origin/main`.
+  - Deployed production bundle to AWS Lightsail server (`34.194.119.199`), extracted to `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Updated `server/index.js`, `jobs.json`, `infoorigin-scraper.js`, and `run-ingestion.js` on Lightsail.
+  - Pruned old asset bundles, flushed PM2 logs, reloaded PM2 `smarthire-ats` (pid 135376).
+  - Verified live domain `https://smarthireus.com` returns HTTP 200 with bundle `index-DrHZpujQ.js`.
+  - Verified live endpoint `/api/jobs/sources-summary`: `{"success":true,"total":142,"coolsoft":71,"infoorigin":71}`.
+  - Verified `/api/jobs?source=infoorigin` returns 71 jobs (Req #7589: Applinx Web Developer) and `/api/jobs?source=coolsoft` returns 71 jobs.
+
+### 2026-09-24 — Multi-Role Privacy Scoping for Vendor Hotlists, Candidate Counters & Manager Team Oversight
+- **Context & Objectives**:
+  - Enforced strict role-based privacy scoping and data segregation across the ATS platform:
+    1. **Vendor Hotlists Role Scoping**: Standard recruiters and sourcing specialists only see vendor hotlists they personally ingested. SuperAdmin and Omkesh maintain complete platform oversight. Managers see hotlists belonging to themselves and their reportee teams.
+    2. **Candidate Counters & Metric Scoping**: Sidebar candidate badge and the 5 KPI metric cards (`Total Candidates`, `Active`, `Resume Emails`, `In Review`, `Spam / Recovered`) are now strictly calculated from `roleScopedCandidates`, displaying authentic, role-appropriate counts instead of global hardcoded values.
+    3. **Career Gap & Work History Fixes**: Verified gap calculation logic (end-to-start) and eliminated false 18-month gap between CCS Medical and Caesars Entertainment (both July 2018). Filtered out degrees from being parsed as employment projects.
+    4. **Monster Resume Styling**: Bold uppercase project lines, gray subtitle lines for location & dates, bullet points for all responsibilities, and rounded pill capsules for technical skills with yellow highlights.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-BwpSjs0h.js`).
+  - Git committed (`7fece2c`) and pushed to GitHub `origin/main`.
+  - Deployed to AWS Lightsail server (`34.194.119.199`), extracted into webroot `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Pruned old bundles, deleted archives immediately (free disk: 53%, 8.8GB available).
+  - Reloaded PM2 `smarthire-ats`, flushed PM2 logs, vacuumed journals.
+  - Verified live domain `https://smarthireus.com` returns HTTP 200 with bundle `index-BwpSjs0h.js`.
+  - Verified live `/api/recruiter/vendor-hotlists` returns scoped results for standard recruiters vs superadmins with HTTP 200.
+
 ### 2026-09-24 — 1-Click Collapsible Sidebar Dock, Excel-Style Vendor Hotlists Grid, Clean ATS Branding & Resume Bullet Point Engine
 - **Context & Objectives**:
   - User requested critical ATS design refinements and UI improvements:
