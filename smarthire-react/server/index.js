@@ -9113,7 +9113,7 @@ app.get('/api/recruiter/email-streams', (req, res) => {
   }
 
   // 3. Filter candidates strictly for this recruiter AND require real attachment
-  const scopedCandidates = (candidatesStore || []).filter(c => {
+  const filteredCandidates = (candidatesStore || []).filter(c => {
     if (!c) return false;
 
     // STRICT: Only include candidates that have an actual resume attachment
