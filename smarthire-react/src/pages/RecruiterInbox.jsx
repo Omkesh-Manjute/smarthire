@@ -2396,6 +2396,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const [newHotlistVendorPhone, setNewHotlistVendorPhone] = useState('')
   const [isSubmittingHotlist, setIsSubmittingHotlist] = useState(false)
   const [hotlistToast, setHotlistToast] = useState('')
+  const [hotlistResumeModalItem, setHotlistResumeModalItem] = useState(null)
   const [leaderboardData, setLeaderboardData] = useState([])
   const [leaderboardPeriod, setLeaderboardPeriod] = useState('month')
   const [leaderboardLoading, setLeaderboardLoading] = useState(false)
@@ -5989,19 +5990,47 @@ export default function RecruiterInbox({ defaultViewMode }) {
                           {/* 2. Name */}
                           <td style={{ padding: '7px 12px', border: '1px solid #E2E8F0', verticalAlign: 'middle' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <span style={{ fontWeight: 800, color: '#0F172A', fontSize: 13 }}>
-                                {item.candidateName}
-                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setHotlistResumeModalItem(item)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  padding: 0,
+                                  cursor: 'pointer',
+                                  textAlign: 'left',
+                                  fontWeight: 800,
+                                  color: '#0F172A',
+                                  fontSize: 13,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 6
+                                }}
+                                title="Click to view candidate resume & details"
+                              >
+                                <span style={{ textDecoration: 'underline', textDecorationColor: '#CBD5E1' }}>
+                                  {item.candidateName}
+                                </span>
+                              </button>
                               {item.attachmentName && (
-                                <a
-                                  href={item.storageUrl || `/uploads/candidate-docs/${item.attachmentName}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  title={`Resume: ${item.attachmentName}`}
-                                  style={{ color: '#2563EB', display: 'inline-flex', verticalAlign: 'middle' }}
+                                <button
+                                  type="button"
+                                  onClick={() => setHotlistResumeModalItem(item)}
+                                  title={`Preview Resume: ${item.attachmentName}`}
+                                  style={{
+                                    background: '#EFF6FF',
+                                    border: '1px solid #BFDBFE',
+                                    color: '#2563EB',
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: '2px 5px',
+                                    borderRadius: 4
+                                  }}
                                 >
                                   <IconFileText />
-                                </a>
+                                </button>
                               )}
                             </div>
                             {item.candidateEmail && (
@@ -6078,6 +6107,28 @@ export default function RecruiterInbox({ defaultViewMode }) {
                           {/* 10. Actions */}
                           <td style={{ padding: '7px 12px', textAlign: 'right', border: '1px solid #E2E8F0', verticalAlign: 'middle' }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 5 }}>
+                              {item.attachmentName && (
+                                <button
+                                  type="button"
+                                  onClick={() => setHotlistResumeModalItem(item)}
+                                  style={{
+                                    backgroundColor: '#EFF6FF',
+                                    color: '#1D4ED8',
+                                    border: '1px solid #BFDBFE',
+                                    borderRadius: 4,
+                                    padding: '4px 8px',
+                                    fontSize: 11,
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 3
+                                  }}
+                                  title="Preview Candidate Resume in popup viewer"
+                                >
+                                  Resume ↗
+                                </button>
+                              )}
                               <button
                                 type="button"
                                 onClick={() => {
@@ -6436,6 +6487,219 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal: Vendor Hotlist Candidate Resume Popup Preview */}
+        {hotlistResumeModalItem && (
+          <div
+            onClick={() => setHotlistResumeModalItem(null)}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(15, 23, 42, 0.75)',
+              backdropFilter: 'blur(6px)',
+              zIndex: 99999,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 16
+            }}
+          >
+            <div
+              onClick={e => e.stopPropagation()}
+              style={{
+                backgroundColor: isLight ? '#FFFFFF' : '#1E293B',
+                borderRadius: 14,
+                width: '100%',
+                maxWidth: 1050,
+                height: '92vh',
+                boxShadow: '0 25px 60px -12px rgba(0,0,0,0.5)',
+                border: `1px solid ${C.border}`,
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden'
+              }}
+            >
+              {/* Header */}
+              <div style={{
+                padding: '14px 22px',
+                borderBottom: `1px solid ${C.border}`,
+                background: isLight ? '#F8FAFC' : '#0F172A',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexShrink: 0
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 10,
+                    background: 'linear-gradient(135deg, #0D9488 0%, #14B8A6 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#FFFFFF'
+                  }}>
+                    <IconFileText />
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: C.textPrimary }}>
+                        {hotlistResumeModalItem.candidateName}
+                      </h3>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: '#0F766E', background: '#CCFBF1', padding: '2px 8px', borderRadius: 6, border: '1px solid #99F6E4' }}>
+                        {hotlistResumeModalItem.role || 'IT Specialist'}
+                      </span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: '#1D4ED8', background: '#DBEAFE', padding: '2px 8px', borderRadius: 6, border: '1px solid #BFDBFE' }}>
+                        {hotlistResumeModalItem.vendorCompany || hotlistResumeModalItem.vendorName || 'Vendor Bench'}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 11.5, color: C.textSecondary, marginTop: 2, display: 'flex', gap: 12 }}>
+                      {hotlistResumeModalItem.candidateEmail && <span>✉️ {hotlistResumeModalItem.candidateEmail}</span>}
+                      {hotlistResumeModalItem.candidatePhone && <span>📞 {hotlistResumeModalItem.candidatePhone}</span>}
+                      {hotlistResumeModalItem.experience && <span>⏳ {hotlistResumeModalItem.experience}</span>}
+                      {hotlistResumeModalItem.location && <span>📍 {hotlistResumeModalItem.location}</span>}
+                      {hotlistResumeModalItem.visa && <span>🛂 {hotlistResumeModalItem.visa}</span>}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {/* Open in New Window Button (Satisfies 'new page ka pop up hoke') */}
+                  {hotlistResumeModalItem.attachmentName && (
+                    <a
+                      href={`/api/candidates/view-resume?file=${encodeURIComponent(hotlistResumeModalItem.attachmentName)}&name=${encodeURIComponent(hotlistResumeModalItem.candidateName)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        padding: '7px 13px',
+                        borderRadius: 6,
+                        border: '1px solid #BFDBFE',
+                        background: '#EFF6FF',
+                        color: '#2563EB',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        textDecoration: 'none',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6
+                      }}
+                      title="Open full resume in a separate browser tab/window"
+                    >
+                      <span>↗ Open in New Window</span>
+                    </a>
+                  )}
+
+                  {hotlistResumeModalItem.attachmentName && (
+                    <a
+                      href={hotlistResumeModalItem.storageUrl || `/uploads/candidate-docs/${hotlistResumeModalItem.attachmentName}`}
+                      download={hotlistResumeModalItem.attachmentName}
+                      style={{
+                        padding: '7px 13px',
+                        borderRadius: 6,
+                        border: `1px solid ${C.border}`,
+                        background: C.surface,
+                        color: C.textPrimary,
+                        fontSize: 12,
+                        fontWeight: 700,
+                        textDecoration: 'none',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6
+                      }}
+                      title="Download original file to your device"
+                    >
+                      <span>📥 Download</span>
+                    </a>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const candObj = {
+                        id: hotlistResumeModalItem.id || `vh-${Date.now()}`,
+                        name: hotlistResumeModalItem.candidateName,
+                        role: hotlistResumeModalItem.role,
+                        email: hotlistResumeModalItem.candidateEmail || hotlistResumeModalItem.vendorEmail,
+                        phone: hotlistResumeModalItem.candidatePhone || hotlistResumeModalItem.vendorPhone,
+                        location: hotlistResumeModalItem.location || 'Remote / US',
+                        experience: hotlistResumeModalItem.experience || '8+ Years',
+                        visaStatus: hotlistResumeModalItem.visa || 'US Citizen',
+                        skills: hotlistResumeModalItem.skills || [],
+                        source: `Vendor Hotlist (${hotlistResumeModalItem.vendorCompany || hotlistResumeModalItem.vendorName})`,
+                        sourceCategory: 'vendor_bench',
+                        recruiterEmail: currentUser?.email || 'omkesh@coolsofttech.com',
+                        vendorEmail: hotlistResumeModalItem.vendorEmail,
+                        vendorCompany: hotlistResumeModalItem.vendorCompany
+                      }
+                      setHotlistResumeModalItem(null)
+                      setPushTargetCand(candObj)
+                      setPushToReqModalOpen(true)
+                    }}
+                    style={{
+                      padding: '7px 14px',
+                      borderRadius: 6,
+                      border: 'none',
+                      background: '#2563EB',
+                      color: '#FFFFFF',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6
+                    }}
+                  >
+                    <span>Push to Requisition ↗</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setHotlistResumeModalItem(null)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      fontSize: 20,
+                      color: C.textSecondary,
+                      cursor: 'pointer',
+                      padding: '4px 8px',
+                      borderRadius: 6
+                    }}
+                    title="Close preview (ESC)"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              {/* Body: Embedded In-App Resume Reader */}
+              <div style={{ flex: 1, backgroundColor: isLight ? '#F1F5F9' : '#0F172A', position: 'relative', overflow: 'hidden' }}>
+                {hotlistResumeModalItem.attachmentName ? (
+                  <iframe
+                    src={`/api/candidates/view-resume?file=${encodeURIComponent(hotlistResumeModalItem.attachmentName)}&name=${encodeURIComponent(hotlistResumeModalItem.candidateName)}`}
+                    title={`${hotlistResumeModalItem.candidateName} Resume`}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      border: 'none',
+                      display: 'block'
+                    }}
+                  />
+                ) : (
+                  <div style={{ padding: 40, textAlign: 'center', color: C.textSecondary }}>
+                    <h3>No document attachment linked with this bench candidate.</h3>
+                    <p style={{ maxWidth: 500, margin: '10px auto' }}>
+                      Profile was ingested directly via text table rate card. Skills: {safeSkillArray(hotlistResumeModalItem.skills).join(', ')}.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
