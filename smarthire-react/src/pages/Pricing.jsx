@@ -7,15 +7,17 @@ function Pricing() {
   const plans = [
     {
       name: 'Starter',
-      priceMonthly: 9,
-      priceYearly: 7,
-      description: 'For one person hiring for one role.',
+      priceMonthly: 20,
+      priceYearly: 16,
+      description: 'For solo recruiters & boutique staffing desks.',
       features: [
-        '1 active role',
-        'Unlimited applications',
-        '1 team member (you)',
-        'Candidate ratings and notes',
-        'Single continuous proctored recording',
+        'Full ATS Pipeline & Candidate Management',
+        'AI Video & Voice Screening (Single continuous take)',
+        'Automated Resume & Email Parser (PDF, Word, TXT)',
+        'Groq AI Auto-Match Score & Fit Verdict',
+        'Candidate Status Auto-Notifications',
+        'Location Tracker & Anti-Cheat Tab Lock',
+        '2 active roles & unlimited applications',
         'Standard email support'
       ],
       cta: 'Start free trial',
@@ -23,41 +25,38 @@ function Pricing() {
     },
     {
       name: 'Pro',
-      priceMonthly: 29,
-      priceYearly: 24,
-      description: 'For a small team hiring across several roles.',
+      priceMonthly: 49,
+      priceYearly: 39,
+      description: 'For recruiting teams hiring across several client requisitions.',
       features: [
-        '5 active roles',
-        'Unlimited applications',
-        'Up to 5 team members',
-        'Candidate ratings and notes',
-        'Custom pipeline stages',
-        'Anti-cheat tab & screen proctoring',
-        'Team comments & evaluation notes',
-        'Webhooks, REST API, and MCP',
-        'Priority email support'
+        'Everything in Starter included',
+        '10 active requisitions & up to 5 team members',
+        'Multi-Role Recruiter Hierarchy (Admin, Manager, Recruiter)',
+        'Candidate Screening Studio with Screen Share',
+        'Anti-cheat tab & window blur monitoring',
+        'Automated Vendor Hotlists Ingestion (Excel Grid)',
+        'Monster / Workday Resume Formatter',
+        'Automated 6-min Job Ingestion Engine',
+        'Priority recruiter email & chat support'
       ],
       cta: 'Start free trial',
       popular: true
     },
     {
       name: 'Business',
-      priceMonthly: 89,
-      priceYearly: 69,
-      description: 'For teams hiring continuously and managing their own branding.',
+      priceMonthly: 99,
+      priceYearly: 79,
+      description: 'For scaling staffing agencies & enterprise operations.',
       features: [
-        'Unlimited active roles',
-        'Unlimited applications',
-        'Unlimited team members',
-        'Candidate ratings and notes',
-        'Custom pipeline stages',
-        'Team comments & shared reviews',
-        'Webhooks, REST API, and MCP',
-        'Hide SmartHire branding (White-label)',
-        'Candidate links on your custom domain',
-        'Emails from your own address',
-        'GPS location & proctoring audit reports',
-        'Priority 24/7 dedicated support'
+        'Everything in Pro included',
+        'Unlimited active roles & unlimited recruiter seats',
+        'Full Anti-Cheat Lockout Engine (Screen share lock)',
+        'Verified GPS Geolocation & Telemetry Audit Trail',
+        'White-label Branding (Custom domain & email)',
+        'Custom AI Questions & Audio Voice Scoring',
+        'Webhooks, REST API, & ATS export integrations',
+        'Automated Daily Trending Direct Clients Engine',
+        'Dedicated account manager & 24/7 SLA priority support'
       ],
       cta: 'Start free trial',
       popular: false
@@ -124,6 +123,51 @@ function Pricing() {
             </div>
           </div>
 
+            {/* Standalone ATS vs SmartHire All-in-One Comparison Callout */}
+            <div style={{
+              background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+              borderRadius: '16px',
+              padding: '24px 28px',
+              margin: '0 auto 40px',
+              maxWidth: '920px',
+              border: '1px solid #334155',
+              boxShadow: '0 10px 30px rgba(15, 23, 42, 0.15)',
+              color: '#f8fafc',
+              textAlign: 'left'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px', marginBottom: '16px' }}>
+                <div>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#2563eb', color: '#ffffff', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Why Pay Separately?
+                  </div>
+                  <h3 style={{ fontSize: '19px', fontWeight: '800', margin: '8px 0 4px', color: '#ffffff' }}>
+                    Standalone Video Screening Alone Costs $49+/mo. SmartHire Unifies Everything.
+                  </h3>
+                  <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0, lineHeight: 1.5 }}>
+                    In other platforms, you pay separately for ATS ($85+/mo) + Video Screening ($49+/mo) + Resume Parser ($35+/mo) + Location Proctoring ($25+/mo). SmartHire bundles everything starting at just $20/mo!
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ borderRight: '1px solid rgba(255,255,255,0.08)', paddingRight: '12px' }}>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: '700' }}>Standalone Video Tools</div>
+                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#f87171' }}>$49 - $99<span style={{ fontSize: '12px', fontWeight: '500' }}>/mo</span></div>
+                  <div style={{ fontSize: '11.5px', color: '#cbd5e1', marginTop: '2px' }}>Only video screening (No ATS, No parser)</div>
+                </div>
+                <div style={{ borderRight: '1px solid rgba(255,255,255,0.08)', paddingRight: '12px' }}>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: '700' }}>Legacy Standalone ATS</div>
+                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#f87171' }}>$85 - $150<span style={{ fontSize: '12px', fontWeight: '500' }}>/mo</span></div>
+                  <div style={{ fontSize: '11.5px', color: '#cbd5e1', marginTop: '2px' }}>Requires expensive 3rd-party add-ons</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#6ee7b7', textTransform: 'uppercase', fontWeight: '800' }}>SmartHire Unified ATS</div>
+                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#10b981' }}>From $20<span style={{ fontSize: '12px', fontWeight: '600' }}>/mo</span></div>
+                  <div style={{ fontSize: '11.5px', color: '#e2e8f0', marginTop: '2px', fontWeight: '600' }}>Full ATS + Video + AI Parser + Anti-Cheat</div>
+                </div>
+              </div>
+            </div>
+
           {/* Cards Grid */}
           <div className="plans-grid">
             {plans.map((plan, index) => {
@@ -173,7 +217,7 @@ function Pricing() {
           <div className="usp-container-block">
             <div className="text-center">
               <span className="pricing-eyebrow">OUR SPECIAL VALUE</span>
-              <h2 className="usp-section-title">Why Staffing Agencies Choose VerifyHire</h2>
+              <h2 className="usp-section-title">Why Staffing Agencies Choose SmartHire ATS</h2>
               <p className="pricing-subtitle">
                 We combine recruitment marketing, AI verification, and automation workflows into a unified agentic platform.
               </p>

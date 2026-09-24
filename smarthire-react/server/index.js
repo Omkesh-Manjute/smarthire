@@ -49,6 +49,19 @@ try {
   messagesStore = [];
 }
 
+// ─── Client Inquiries & Demo Requests Persistence Store ──────────────────────
+const INQUIRIES_FILE = path.join(__dirname, 'inquiries.json');
+let inquiriesStore = [];
+try {
+  if (fs.existsSync(INQUIRIES_FILE)) {
+    inquiriesStore = JSON.parse(fs.readFileSync(INQUIRIES_FILE, 'utf8'));
+  } else {
+    fs.writeFileSync(INQUIRIES_FILE, JSON.stringify([], null, 2));
+  }
+} catch (e) {
+  inquiriesStore = [];
+}
+
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
@@ -8125,6 +8138,77 @@ app.post('/api/messages/:candidateId', authenticateToken, (req, res) => {
 
   const thread = messagesStore.filter(m => m && m.candidateId === candidateId);
   res.json({ success: true, message: msg, thread });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CLIENT INQUIRIES & DEMO REQUESTS API ENDPOINTS
+// ═══════════════════════════════════════════════════════════════════════════════
+app.get('/api/inquiries', (_req, res) => {
+  res.json({ success: true, inquiries: inquiriesStore });
+});
+
+app.post('/api/inquiries', (req, res) => {
+  const { name, email, phone, company, subject, message, category, priority } = req.body || {};
+  if (!email || !name) {
+    return res.status(400).json({ success: false, message: 'Name and email are required.' });
+  }
+
+  const id = req.body.id || `INQ-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const inquiryRecord = {
+    id,
+    name: String(name || '').trim(),
+    email: String(email || '').trim(),
+    phone: String(phone || '').trim() || '—',
+    company: String(company || '').trim() || 'Direct Client / Partner',
+    category: category || 'Enterprise Inquiry',
+    subject: subject || (category ? `${category} from ${name}` : `Inquiry from ${name}`),
+    message: message || `Client inquiry submitted from SmartHire portal.\nProspect: ${name}\nEmail: ${email}\nPhone: ${phone || 'N/A'}.`,
+    priority: priority || 'High',
+    status: 'New',
+    createdAt: new Date().toISOString()
+  };
+
+  inquiriesStore.unshift(inquiryRecord);
+  try {
+    fs.writeFileSync(INQUIRIES_FILE, JSON.stringify(inquiriesStore, null, 2));
+  } catch (e) {
+    console.error('Error writing inquiries.json:', e);
+  }
+
+  // Also push a live notification into messagesStore for the recruiter notification bell
+  const notifMsg = {
+    id: 'MSG-' + Date.now(),
+    candidateId: id,
+    sender: 'client_inquiry',
+    text: `New Client Demo / Contact Inquiry from ${inquiryRecord.name} (${inquiryRecord.email}): "${inquiryRecord.subject || inquiryRecord.category}"`,
+    candidateName: inquiryRecord.name,
+    jobTitle: inquiryRecord.category || 'Client Inquiry',
+    timestamp: new Date().toISOString(),
+    read: false
+  };
+  messagesStore.push(notifMsg);
+  try { fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messagesStore, null, 2)); } catch(e) {}
+
+  res.json({
+    success: true,
+    message: 'Our team will reach you soon.',
+    inquiry: inquiryRecord
+  });
+});
+
+app.patch('/api/inquiries/:id/status', (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  const item = inquiriesStore.find(i => i.id === id);
+  if (!item) {
+    return res.status(404).json({ success: false, message: 'Inquiry not found.' });
+  }
+  item.status = status || item.status;
+  item.updatedAt = new Date().toISOString();
+  try {
+    fs.writeFileSync(INQUIRIES_FILE, JSON.stringify(inquiriesStore, null, 2));
+  } catch (e) {}
+  res.json({ success: true, inquiry: item });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════

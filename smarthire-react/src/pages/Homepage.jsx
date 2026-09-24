@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import SiteLayout from '../components/SiteLayout'
 import { loginWithGoogle, loginWithEmail, resetPasswordWithEmail } from '../lib/firebase'
-import { getUserProfileByEmailFirestore } from '../lib/atsFirestore'
+import { getUserProfileByEmailFirestore, saveInquiryFirestore } from '../lib/atsFirestore'
 
 function Homepage() {
   const navigate = useNavigate()
@@ -32,6 +32,124 @@ function Homepage() {
   // Forgot Password State
   const [forgotEmail, setForgotEmail] = useState('')
   const [forgotStatus, setForgotStatus] = useState({ loading: false, msg: '', error: false })
+
+  // Demo Access Inquiry Modal States
+  const [showDemoModal, setShowDemoModal] = useState(false)
+  const [demoModalType, setDemoModalType] = useState('candidate') // 'candidate' | 'recruiter'
+  const [demoName, setDemoName] = useState('')
+  const [demoEmail, setDemoEmail] = useState('')
+  const [demoPhone, setDemoPhone] = useState('')
+  const [demoCompany, setDemoCompany] = useState('')
+  const [demoRole, setDemoRole] = useState('')
+  const [demoSubmitting, setDemoSubmitting] = useState(false)
+  const [demoSuccess, setDemoSuccess] = useState(false)
+
+  // Enterprise Support / Contact Us Modal States
+  const [showContactModal, setShowContactModal] = useState(false)
+  const [contactName, setContactName] = useState('')
+  const [contactEmail, setContactEmail] = useState('')
+  const [contactPhone, setContactPhone] = useState('')
+  const [contactCompany, setContactCompany] = useState('')
+  const [contactTopic, setContactTopic] = useState('General Support')
+  const [contactMessage, setContactMessage] = useState('')
+  const [contactSubmitting, setContactSubmitting] = useState(false)
+  const [contactSuccess, setContactSuccess] = useState(false)
+
+  const handleDemoSubmit = async (e) => {
+    if (e && e.preventDefault) e.preventDefault()
+    if (!demoName.trim() || !demoEmail.trim()) {
+      alert('Please enter your full name and corporate email address.')
+      return
+    }
+    setDemoSubmitting(true)
+    const inqId = `INQ-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`
+    const payload = {
+      id: inqId,
+      name: demoName.trim(),
+      email: demoEmail.trim(),
+      phone: demoPhone.trim() || '—',
+      company: demoCompany.trim() || 'Direct Client / Staffing Partner',
+      category: demoModalType === 'candidate' ? 'Candidate Demo Request' : 'Recruiter App Demo Request',
+      subject: `Demo Request (${demoModalType === 'candidate' ? 'Candidate Screening Experience' : 'Recruiter ATS Workspace'}) from ${demoName.trim()}`,
+      message: `Prospective client requested private demo access.\n\nType: ${demoModalType === 'candidate' ? 'Candidate Experience' : 'Recruiter App Demo'}\nProspect: ${demoName.trim()}\nEmail: ${demoEmail.trim()}\nPhone: ${demoPhone.trim() || 'N/A'}\nCompany: ${demoCompany.trim() || 'N/A'}\nHiring Role: ${demoRole.trim() || 'General IT Staffing'}\nRequested At: ${new Date().toLocaleString()}`,
+      priority: 'Urgent',
+      status: 'New',
+      createdAt: new Date().toISOString()
+    }
+
+    try {
+      await fetch('/api/inquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).catch(err => console.warn('Inquiry endpoint warning:', err))
+
+      await saveInquiryFirestore(payload).catch(err => console.warn('Firestore inquiry warning:', err))
+
+      try {
+        const raw = localStorage.getItem('smarthire_inquiries')
+        const existing = raw ? JSON.parse(raw) : []
+        const merged = [payload, ...existing.filter(i => i.id !== payload.id)]
+        localStorage.setItem('smarthire_inquiries', JSON.stringify(merged))
+        window.dispatchEvent(new CustomEvent('smarthire_inquiry_added', { detail: payload }))
+      } catch (err) {}
+
+      setDemoSuccess(true)
+    } catch (err) {
+      console.error('Demo request error:', err)
+      setDemoSuccess(true)
+    } finally {
+      setDemoSubmitting(false)
+    }
+  }
+
+  const handleContactSubmit = async (e) => {
+    if (e && e.preventDefault) e.preventDefault()
+    if (!contactName.trim() || !contactEmail.trim() || !contactMessage.trim()) {
+      alert('Please fill out your name, email, and message.')
+      return
+    }
+    setContactSubmitting(true)
+    const inqId = `INQ-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`
+    const payload = {
+      id: inqId,
+      name: contactName.trim(),
+      email: contactEmail.trim(),
+      phone: contactPhone.trim() || '—',
+      company: contactCompany.trim() || 'Direct Client / Partner',
+      category: `Support: ${contactTopic}`,
+      subject: `Support & Inquiry: ${contactTopic} - ${contactName.trim()}`,
+      message: contactMessage.trim(),
+      priority: 'High',
+      status: 'New',
+      createdAt: new Date().toISOString()
+    }
+
+    try {
+      await fetch('/api/inquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).catch(err => console.warn('Inquiry endpoint warning:', err))
+
+      await saveInquiryFirestore(payload).catch(err => console.warn('Firestore inquiry warning:', err))
+
+      try {
+        const raw = localStorage.getItem('smarthire_inquiries')
+        const existing = raw ? JSON.parse(raw) : []
+        const merged = [payload, ...existing.filter(i => i.id !== payload.id)]
+        localStorage.setItem('smarthire_inquiries', JSON.stringify(merged))
+        window.dispatchEvent(new CustomEvent('smarthire_inquiry_added', { detail: payload }))
+      } catch (err) {}
+
+      setContactSuccess(true)
+    } catch (err) {
+      console.error('Contact request error:', err)
+      setContactSuccess(true)
+    } finally {
+      setContactSubmitting(false)
+    }
+  }
 
   // Open login modal if URL contains #login
   useEffect(() => {
@@ -1313,9 +1431,14 @@ function Homepage() {
                 Eliminate scheduling phone ping-pong. Send one shareable link — candidates record their answers on their own schedule with webcam video, audio waveforms, or technical written synthesis. Groq Whisper AI transcribes and scores responses in seconds.
               </p>
               <div className="tf-screening-cta-row">
-                <Link to="/screening" className="tf-btn tf-btn-primary">
+                <button 
+                  type="button" 
+                  onClick={() => { setDemoModalType('candidate'); setDemoSuccess(false); setShowDemoModal(true); }} 
+                  className="tf-btn tf-btn-primary"
+                  style={{ cursor: 'pointer', border: 'none' }}
+                >
                   <span>Try Live Candidate Studio →</span>
-                </Link>
+                </button>
                 {isAuthenticated ? (
                   <Link to="/ats?tab=screening" className="tf-btn tf-btn-outline">
                     <span>Recruiter Screening Center ↗</span>
@@ -1387,8 +1510,9 @@ function Homepage() {
                     </ul>
                   </div>
 
-                  <Link
-                    to="/screening"
+                  <button
+                    type="button"
+                    onClick={() => { setDemoModalType('candidate'); setDemoSuccess(false); setShowDemoModal(true); }}
                     style={{
                       width: '100%',
                       padding: '13px 20px',
@@ -1398,7 +1522,8 @@ function Homepage() {
                       fontWeight: '700',
                       fontSize: '14.5px',
                       textAlign: 'center',
-                      textDecoration: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -1407,7 +1532,7 @@ function Homepage() {
                     }}
                   >
                     View Candidate Demo ↗
-                  </Link>
+                  </button>
                   <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '11.5px', color: '#94a3b8' }}>
                     ⏱ takes around 2 min
                   </div>
@@ -1499,7 +1624,16 @@ function Homepage() {
 
                   <button
                     type="button"
-                    onClick={() => setShowLoginModal(true)}
+                    onClick={() => {
+                      if (isAuthenticated) {
+                        navigate('/ats')
+                      } else {
+                        setDemoModalType('recruiter')
+                        if (email) setDemoEmail(email)
+                        setDemoSuccess(false)
+                        setShowDemoModal(true)
+                      }
+                    }}
                     style={{
                       width: '100%',
                       padding: '13px 20px',
@@ -1756,9 +1890,14 @@ function Homepage() {
               </p>
 
               <div className="tf-support-cta-wrap">
-                <a href="mailto:support@smarthire.com" className="tf-btn tf-btn-primary">
+                <button 
+                  type="button" 
+                  onClick={() => { setContactSuccess(false); setShowContactModal(true); }} 
+                  className="tf-btn tf-btn-primary"
+                  style={{ cursor: 'pointer', border: 'none' }}
+                >
                   <span style={{marginRight: 8, display: "inline-flex", verticalAlign: "middle" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg></span> Contact us
-                </a>
+                </button>
               </div>
 
               {/* Feature checkmark pills */}
@@ -2238,10 +2377,10 @@ function Homepage() {
         <section className="tf-pricing-section" id="pricing">
           <div className="tf-container">
             <div className="tf-section-header text-center">
-              <span className="tf-eyebrow-amber">TRANSPARENT STAFFING PRICING</span>
+              <span className="tf-eyebrow-amber">UNIFIED ATS &amp; VIDEO SCREENING</span>
               <h2 className="tf-section-title">Predictable investment built for high-margin staffing</h2>
               <p className="tf-section-subtitle">
-                Choose the plan that matches your recruiting velocity. Zero hidden fees, full ATS access, and unlimited candidate verification.
+                Why pay separately for standalone video screening tools and outdated ATS systems? SmartHire unifies full ATS workflow, AI video screening, resume parsing, and location tracking in one platform starting at $20/mo.
               </p>
 
               {/* Monthly / Yearly Toggle */}
@@ -2261,31 +2400,81 @@ function Homepage() {
               </div>
             </div>
 
+            {/* Standalone ATS vs SmartHire All-in-One Market Comparison Callout */}
+            <div style={{
+              background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+              borderRadius: '16px',
+              padding: '24px 28px',
+              margin: '0 auto 36px',
+              maxWidth: '960px',
+              border: '1px solid #334155',
+              boxShadow: '0 10px 30px rgba(15, 23, 42, 0.15)',
+              color: '#f8fafc'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px', marginBottom: '16px' }}>
+                <div>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#2563eb', color: '#ffffff', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Why Pay Separately?
+                  </div>
+                  <h3 style={{ fontSize: '19px', fontWeight: '800', margin: '8px 0 4px', color: '#ffffff' }}>
+                    Standalone Video Screening Alone Costs $49+/mo. SmartHire Unifies Everything.
+                  </h3>
+                  <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0, lineHeight: 1.5 }}>
+                    In other platforms, you pay separately for ATS ($85+/mo) + Video Screening ($49+/mo) + Resume Parser ($35+/mo) + Location Proctoring ($25+/mo). SmartHire bundles everything starting at just $20/mo!
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ borderRight: '1px solid rgba(255,255,255,0.08)', paddingRight: '12px' }}>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: '700' }}>Standalone Video Tools</div>
+                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#f87171' }}>$49 - $99<span style={{ fontSize: '12px', fontWeight: '500' }}>/mo</span></div>
+                  <div style={{ fontSize: '11.5px', color: '#cbd5e1', marginTop: '2px' }}>Only video screening (No ATS, No parser)</div>
+                </div>
+                <div style={{ borderRight: '1px solid rgba(255,255,255,0.08)', paddingRight: '12px' }}>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: '700' }}>Legacy Standalone ATS</div>
+                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#f87171' }}>$85 - $150<span style={{ fontSize: '12px', fontWeight: '500' }}>/mo</span></div>
+                  <div style={{ fontSize: '11.5px', color: '#cbd5e1', marginTop: '2px' }}>Requires expensive 3rd-party add-ons</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#6ee7b7', textTransform: 'uppercase', fontWeight: '800' }}>SmartHire Unified ATS</div>
+                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#10b981' }}>From $20<span style={{ fontSize: '12px', fontWeight: '600' }}>/mo</span></div>
+                  <div style={{ fontSize: '11.5px', color: '#e2e8f0', marginTop: '2px', fontWeight: '600' }}>Full ATS + Video + AI Parser + Anti-Cheat</div>
+                </div>
+              </div>
+            </div>
+
             {/* 3 Pricing Cards Grid */}
             <div className="tf-plans-grid">
               
-              {/* Plan 1 */}
+              {/* Plan 1: Starter */}
               <div className="tf-plan-card">
                 <div className="tf-plan-top">
                   <h3 className="tf-plan-title">Starter</h3>
-                  <p className="tf-plan-desc">For one person hiring for one role.</p>
+                  <p className="tf-plan-desc">For solo recruiters &amp; boutique staffing desks.</p>
                   <div className="tf-plan-price">
                     <span className="curr">$</span>
-                    <span className="val">{isYearly ? 7 : 9}</span>
+                    <span className="val">{isYearly ? 16 : 20}</span>
                     <span className="freq">/month</span>
                   </div>
-                  {isYearly && <span className="tf-billed-note">Billed annually ($84/yr)</span>}
+                  {isYearly ? (
+                    <span className="tf-billed-note">Billed annually ($192/yr) — Starts at $20/mo</span>
+                  ) : (
+                    <span className="tf-billed-note">Starts at $20/month flat</span>
+                  )}
                 </div>
 
                 <div className="tf-plan-divider" />
 
                 <ul className="tf-plan-perks">
-                  <li><span className="check">✓</span> 1 active role</li>
-                  <li><span className="check">✓</span> Unlimited candidate applications</li>
-                  <li><span className="check">✓</span> 1 team member (you)</li>
-                  <li><span className="check">✓</span> Candidate ratings and notes</li>
-                  <li><span className="check">✓</span> Single continuous proctored recording</li>
-                  <li><span className="check">✓</span> Standard email support</li>
+                  <li><span className="check">✓</span> <strong>Full ATS Pipeline &amp; Candidate Management</strong></li>
+                  <li><span className="check">✓</span> <strong>AI Video &amp; Voice Screening</strong> (Single continuous take)</li>
+                  <li><span className="check">✓</span> <strong>Automated Resume &amp; Email Parser</strong> (PDF, Word, TXT)</li>
+                  <li><span className="check">✓</span> <strong>Groq AI Auto-Match Score &amp; Fit Verdict</strong></li>
+                  <li><span className="check">✓</span> <strong>Candidate Status Auto-Notifications</strong></li>
+                  <li><span className="check">✓</span> <strong>Location Tracker &amp; Anti-Cheat Tab Lock</strong></li>
+                  <li><span className="check">✓</span> 2 Active Requisitions &amp; Unlimited Submissions</li>
+                  <li><span className="check">✓</span> Standard Email Support</li>
                 </ul>
 
                 <button 
@@ -2297,32 +2486,32 @@ function Homepage() {
                 </button>
               </div>
 
-              {/* Plan 2: Most Popular */}
+              {/* Plan 2: Pro (Most Popular) */}
               <div className="tf-plan-card tf-popular-plan">
                 <div className="tf-popular-banner">RECOMMENDED</div>
                 <div className="tf-plan-top">
                   <h3 className="tf-plan-title">Pro</h3>
-                  <p className="tf-plan-desc">For a small team hiring across several roles.</p>
+                  <p className="tf-plan-desc">For recruiting teams hiring across several client requisitions.</p>
                   <div className="tf-plan-price">
                     <span className="curr">$</span>
-                    <span className="val">{isYearly ? 24 : 29}</span>
+                    <span className="val">{isYearly ? 39 : 49}</span>
                     <span className="freq">/month</span>
                   </div>
-                  {isYearly && <span className="tf-billed-note">Billed annually ($288/yr)</span>}
+                  {isYearly && <span className="tf-billed-note">Billed annually ($468/yr)</span>}
                 </div>
 
                 <div className="tf-plan-divider" />
 
                 <ul className="tf-plan-perks">
-                  <li><span className="check">✓</span> 5 active roles</li>
-                  <li><span className="check">✓</span> Unlimited candidate applications</li>
-                  <li><span className="check">✓</span> Up to 5 team members</li>
-                  <li><span className="check">✓</span> Candidate ratings and AI scorecards</li>
-                  <li><span className="check">✓</span> Custom pipeline stages</li>
-                  <li><span className="check">✓</span> Anti-cheat tab &amp; screen proctoring</li>
-                  <li><span className="check">✓</span> Team comments &amp; evaluation notes</li>
-                  <li><span className="check">✓</span> Webhooks, REST API, and MCP</li>
-                  <li><span className="check">✓</span> Priority email support</li>
+                  <li><span className="check">✓</span> <strong>Everything in Starter included</strong></li>
+                  <li><span className="check">✓</span> <strong>10 Active Requisitions &amp; Up to 5 Team Members</strong></li>
+                  <li><span className="check">✓</span> <strong>Multi-Role Recruiter Hierarchy</strong> (Admin, Manager, Recruiter)</li>
+                  <li><span className="check">✓</span> <strong>Candidate Screening Studio with Screen Share</strong></li>
+                  <li><span className="check">✓</span> <strong>Anti-Cheat Tab &amp; Window Blur Monitoring</strong></li>
+                  <li><span className="check">✓</span> <strong>Automated Vendor Hotlists Ingestion</strong> (Excel Grid)</li>
+                  <li><span className="check">✓</span> <strong>Monster / Workday Resume Formatter</strong></li>
+                  <li><span className="check">✓</span> <strong>Automated 6-min Job Ingestion Engine</strong></li>
+                  <li><span className="check">✓</span> Priority Recruiter Email &amp; Chat Support</li>
                 </ul>
 
                 <button 
@@ -2334,33 +2523,31 @@ function Homepage() {
                 </button>
               </div>
 
-              {/* Plan 3 */}
+              {/* Plan 3: Business */}
               <div className="tf-plan-card">
                 <div className="tf-plan-top">
                   <h3 className="tf-plan-title">Business</h3>
-                  <p className="tf-plan-desc">For teams hiring continuously &amp; managing their own branding.</p>
+                  <p className="tf-plan-desc">For scaling staffing agencies &amp; enterprise operations.</p>
                   <div className="tf-plan-price">
                     <span className="curr">$</span>
-                    <span className="val">{isYearly ? 69 : 89}</span>
+                    <span className="val">{isYearly ? 79 : 99}</span>
                     <span className="freq">/month</span>
                   </div>
-                  {isYearly && <span className="tf-billed-note">Billed annually ($828/yr)</span>}
+                  {isYearly && <span className="tf-billed-note">Billed annually ($948/yr)</span>}
                 </div>
 
                 <div className="tf-plan-divider" />
 
                 <ul className="tf-plan-perks">
-                  <li><span className="check">✓</span> Unlimited active roles &amp; candidates</li>
-                  <li><span className="check">✓</span> Unlimited team members</li>
-                  <li><span className="check">✓</span> Candidate ratings and notes</li>
-                  <li><span className="check">✓</span> Custom pipeline stages &amp; custom questions</li>
-                  <li><span className="check">✓</span> Team comments &amp; shared reviews</li>
-                  <li><span className="check">✓</span> Webhooks, REST API, and MCP integrations</li>
-                  <li><span className="check">✓</span> Hide SmartHire branding (White-label)</li>
-                  <li><span className="check">✓</span> Candidate links on your custom domain</li>
-                  <li><span className="check">✓</span> Emails from your own corporate address</li>
-                  <li><span className="check">✓</span> Verified GPS location &amp; integrity audit</li>
-                  <li><span className="check">✓</span> Priority 24/7 dedicated support</li>
+                  <li><span className="check">✓</span> <strong>Everything in Pro included</strong></li>
+                  <li><span className="check">✓</span> <strong>Unlimited Active Roles &amp; Unlimited Recruiter Seats</strong></li>
+                  <li><span className="check">✓</span> <strong>Full Anti-Cheat Lockout Engine</strong> (Screen share lock)</li>
+                  <li><span className="check">✓</span> <strong>Verified GPS Geolocation &amp; Telemetry Audit Trail</strong></li>
+                  <li><span className="check">✓</span> <strong>White-label Branding</strong> (Custom domain links &amp; email)</li>
+                  <li><span className="check">✓</span> <strong>Custom AI Questions &amp; Audio Voice Scoring</strong></li>
+                  <li><span className="check">✓</span> <strong>Webhooks, REST API, &amp; ATS Export Integrations</strong></li>
+                  <li><span className="check">✓</span> <strong>Automated Daily Trending Direct Clients Engine</strong></li>
+                  <li><span className="check">✓</span> Dedicated Account Manager &amp; 24/7 SLA Priority Support</li>
                 </ul>
 
                 <button 
@@ -2683,6 +2870,297 @@ function Homepage() {
                 </div>
               )}
 
+            </div>
+          </div>
+        )}
+
+        {/* =========================================================================
+            1. CANDIDATE / RECRUITER DEMO ACCESS INQUIRY MODAL
+            ========================================================================= */}
+        {showDemoModal && (
+          <div className="tf-modal-backdrop" onClick={() => setShowDemoModal(false)} style={{ zIndex: 9999 }}>
+            <div className="tf-modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 520 }}>
+              <div className="tf-modal-head">
+                <div className="tf-modal-logo">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.5">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                  </svg>
+                  <span style={{ fontWeight: 800, fontSize: 16 }}>
+                    {demoModalType === 'candidate' ? 'Candidate Demo Access' : 'Recruiter App Demo'}
+                  </span>
+                </div>
+                <button type="button" className="tf-close-btn" onClick={() => setShowDemoModal(false)}>✕</button>
+              </div>
+
+              {demoSuccess ? (
+                <div style={{ padding: '24px 20px', textAlign: 'center' }}>
+                  <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#dcfce7', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 28, fontWeight: 800 }}>
+                    ✓
+                  </div>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', margin: '0 0 10px' }}>
+                    Demo Request Received!
+                  </h3>
+                  <div style={{ background: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: 12, padding: '16px', margin: '0 0 20px', textAlign: 'left' }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: '#059669', marginBottom: 6 }}>
+                      Our team will reach you soon.
+                    </div>
+                    <div style={{ fontSize: 13, color: '#475569', lineHeight: 1.6 }}>
+                      Thank you, <strong>{demoName}</strong>. Your private demo credentials and screening access link are being prepared. One of our talent solution architects will contact you promptly at <strong>{demoEmail}</strong>.
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowDemoModal(false)}
+                    style={{ background: '#2563eb', color: '#fff', padding: '10px 24px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
+                  >
+                    Got it, Close
+                  </button>
+                </div>
+              ) : (
+                <div style={{ padding: '20px 24px' }}>
+                  <p style={{ fontSize: 13.5, color: '#64748b', margin: '0 0 16px', lineHeight: 1.5 }}>
+                    {demoModalType === 'candidate'
+                      ? 'Experience the asynchronous video, audio, and written screening flow firsthand. Enter your corporate details below to receive your private demo access credentials.'
+                      : 'Request your private 3-hour demo workspace loaded with sample campaigns, candidate pipelines, and automated AI match scorecards.'
+                    }
+                  </p>
+
+                  <form onSubmit={handleDemoSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>Full Name *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Sarah Jenkins"
+                        value={demoName}
+                        onChange={(e) => setDemoName(e.target.value)}
+                        style={{ width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 13.5, outline: 'none', boxSizing: 'border-box' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>Corporate Email Address *</label>
+                      <input
+                        type="email"
+                        required
+                        placeholder="e.g. sarah@company.com"
+                        value={demoEmail}
+                        onChange={(e) => setDemoEmail(e.target.value)}
+                        style={{ width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 13.5, outline: 'none', boxSizing: 'border-box' }}
+                      />
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>Phone Number</label>
+                        <input
+                          type="tel"
+                          placeholder="+1 (555) 000-0000"
+                          value={demoPhone}
+                          onChange={(e) => setDemoPhone(e.target.value)}
+                          style={{ width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 13.5, outline: 'none', boxSizing: 'border-box' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>Company / Organization</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Apex Staffing"
+                          value={demoCompany}
+                          onChange={(e) => setDemoCompany(e.target.value)}
+                          style={{ width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 13.5, outline: 'none', boxSizing: 'border-box' }}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>Primary Hiring Role / Specialization</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Java Full Stack, Cloud Engineer, Healthcare PM"
+                        value={demoRole}
+                        onChange={(e) => setDemoRole(e.target.value)}
+                        style={{ width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 13.5, outline: 'none', boxSizing: 'border-box' }}
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={demoSubmitting}
+                      style={{
+                        marginTop: 6,
+                        width: '100%',
+                        padding: '12px',
+                        background: '#2563eb',
+                        color: '#fff',
+                        borderRadius: 8,
+                        border: 'none',
+                        fontWeight: 800,
+                        fontSize: 14,
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)'
+                      }}
+                    >
+                      {demoSubmitting ? 'Submitting Demo Request...' : 'Request Private Demo Access ➔'}
+                    </button>
+                    <div style={{ textAlign: 'center', fontSize: 11, color: '#94a3b8' }}>
+                      🔒 Zero spam • Your request is logged directly in Client Inquiries
+                    </div>
+                  </form>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* =========================================================================
+            2. ENTERPRISE SUPPORT / CONTACT US MODAL
+            ========================================================================= */}
+        {showContactModal && (
+          <div className="tf-modal-backdrop" onClick={() => setShowContactModal(false)} style={{ zIndex: 9999 }}>
+            <div className="tf-modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 540 }}>
+              <div className="tf-modal-head">
+                <div className="tf-modal-logo">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.5">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                    <polyline points="22,6 12,13 2,6"/>
+                  </svg>
+                  <span style={{ fontWeight: 800, fontSize: 16 }}>Contact Enterprise Support &amp; Sales</span>
+                </div>
+                <button type="button" className="tf-close-btn" onClick={() => setShowContactModal(false)}>✕</button>
+              </div>
+
+              {contactSuccess ? (
+                <div style={{ padding: '24px 20px', textAlign: 'center' }}>
+                  <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#dcfce7', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 28, fontWeight: 800 }}>
+                    ✓
+                  </div>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', margin: '0 0 10px' }}>
+                    Inquiry Submitted Successfully!
+                  </h3>
+                  <div style={{ background: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: 12, padding: '16px', margin: '0 0 20px', textAlign: 'left' }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: '#059669', marginBottom: 6 }}>
+                      Our team will reach you soon.
+                    </div>
+                    <div style={{ fontSize: 13, color: '#475569', lineHeight: 1.6 }}>
+                      Thank you, <strong>{contactName}</strong>. Your message has been routed to our enterprise ATS solutions desk. We will reach out to you within 2 hours.
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowContactModal(false)}
+                    style={{ background: '#2563eb', color: '#fff', padding: '10px 24px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
+                  >
+                    Close
+                  </button>
+                </div>
+              ) : (
+                <div style={{ padding: '20px 24px' }}>
+                  <p style={{ fontSize: 13.5, color: '#64748b', margin: '0 0 16px', lineHeight: 1.5 }}>
+                    Need help configuring private recruiter vaults, setting custom AI screening questions, or custom pricing plans? Fill out the details below:
+                  </p>
+
+                  <form onSubmit={handleContactSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>Full Name *</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Your full name"
+                          value={contactName}
+                          onChange={(e) => setContactName(e.target.value)}
+                          style={{ width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 13.5, outline: 'none', boxSizing: 'border-box' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>Corporate Email *</label>
+                        <input
+                          type="email"
+                          required
+                          placeholder="you@company.com"
+                          value={contactEmail}
+                          onChange={(e) => setContactEmail(e.target.value)}
+                          style={{ width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 13.5, outline: 'none', boxSizing: 'border-box' }}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>Phone Number</label>
+                        <input
+                          type="tel"
+                          placeholder="+1 (555) 000-0000"
+                          value={contactPhone}
+                          onChange={(e) => setContactPhone(e.target.value)}
+                          style={{ width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 13.5, outline: 'none', boxSizing: 'border-box' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>Company Name</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Global Tech LLC"
+                          value={contactCompany}
+                          onChange={(e) => setContactCompany(e.target.value)}
+                          style={{ width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 13.5, outline: 'none', boxSizing: 'border-box' }}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>Inquiry Topic</label>
+                      <select
+                        value={contactTopic}
+                        onChange={(e) => setContactTopic(e.target.value)}
+                        style={{ width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 13.5, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
+                      >
+                        <option value="General Support & Setup">General Support &amp; Setup</option>
+                        <option value="Custom Pricing & Enterprise Plans">Custom Pricing &amp; Enterprise Plans ($20+)</option>
+                        <option value="Proctored Video Screening Demo">Proctored Video &amp; Voice Screening Demo</option>
+                        <option value="ATS Data Migration & Vaults">ATS Data Migration &amp; Private Vaults</option>
+                        <option value="API & Webhook Integrations">API &amp; Webhook Integrations</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>Message / Requirement *</label>
+                      <textarea
+                        required
+                        rows={3}
+                        placeholder="Tell us how we can help your recruiting team..."
+                        value={contactMessage}
+                        onChange={(e) => setContactMessage(e.target.value)}
+                        style={{ width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 13.5, outline: 'none', boxSizing: 'border-box', resize: 'vertical' }}
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={contactSubmitting}
+                      style={{
+                        marginTop: 6,
+                        width: '100%',
+                        padding: '12px',
+                        background: '#2563eb',
+                        color: '#fff',
+                        borderRadius: 8,
+                        border: 'none',
+                        fontWeight: 800,
+                        fontSize: 14,
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)'
+                      }}
+                    >
+                      {contactSubmitting ? 'Sending Message...' : 'Submit Inquiry ➔'}
+                    </button>
+                    <div style={{ textAlign: 'center', fontSize: 11, color: '#94a3b8' }}>
+                      🔒 Logged directly to Client &amp; Enterprise Inquiries
+                    </div>
+                  </form>
+                </div>
+              )}
             </div>
           </div>
         )}

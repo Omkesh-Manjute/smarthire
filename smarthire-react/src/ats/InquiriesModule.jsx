@@ -25,10 +25,21 @@ export default function InquiriesModule() {
     const loadFirestoreInquiries = async () => {
       try {
         setLoading(true)
-        const cloudInquiries = await getInquiriesFirestore()
-        if (isMounted && Array.isArray(cloudInquiries) && cloudInquiries.length > 0) {
+        const cloudInquiries = await getInquiriesFirestore().catch(() => [])
+        let apiInquiries = []
+        try {
+          const res = await fetch('/api/inquiries')
+          const data = await res.json()
+          if (data && data.success && Array.isArray(data.inquiries)) {
+            apiInquiries = data.inquiries
+          }
+        } catch (e) {}
+
+        const fetchedAll = [...(Array.isArray(cloudInquiries) ? cloudInquiries : []), ...apiInquiries]
+
+        if (isMounted) {
           setInquiries(prev => {
-            const combined = [...cloudInquiries]
+            const combined = [...fetchedAll]
             prev.forEach(localItem => {
               if (!combined.some(c => c.id === localItem.id)) {
                 combined.push(localItem)
@@ -42,7 +53,7 @@ export default function InquiriesModule() {
           })
         }
       } catch (err) {
-        console.warn('Failed to fetch Firestore inquiries:', err)
+        console.warn('Failed to fetch inquiries:', err)
       } finally {
         if (isMounted) setLoading(false)
       }
@@ -333,6 +344,9 @@ export default function InquiriesModule() {
                       <div style={{ fontWeight: '700', color: '#0f172a' }}>{inq.name}</div>
                       <div style={{ fontSize: '11px', color: '#64748b' }}>{inq.company || 'Enterprise Partner'}</div>
                       <div style={{ fontSize: '11px', color: '#0284c7' }}>{inq.email}</div>
+                      {inq.phone && inq.phone !== '—' && (
+                        <div style={{ fontSize: '11px', color: '#475569', marginTop: '2px' }}>📞 {inq.phone}</div>
+                      )}
                     </td>
 
                     {/* Category & Topic */}
@@ -562,6 +576,17 @@ export default function InquiriesModule() {
                     </button>
                   </div>
                 </div>
+
+                {selectedInquiry.phone && selectedInquiry.phone !== '—' && (
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <div style={{ color: '#64748b', fontSize: '10.5px', textTransform: 'uppercase', fontWeight: '700' }}>Contact Phone</div>
+                    <div style={{ fontWeight: '700', color: '#0f172a', fontSize: '13px', marginTop: '2px' }}>
+                      <a href={'tel:' + selectedInquiry.phone} style={{ color: '#059669', textDecoration: 'none' }}>
+                        📞 {selectedInquiry.phone}
+                      </a>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {selectedInquiry.subject && (
