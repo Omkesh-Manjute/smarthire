@@ -11,9 +11,10 @@ function PrivacyPolicy() {
     { id: 'how-we-use-data', title: '3. How We Use Data' },
     { id: 'ai-processing', title: '4. AI Matching & Screening Telemetry' },
     { id: 'data-sharing', title: '5. Information Sharing & Disclosures' },
-    { id: 'security-retention', title: '6. Data Security & Retention' },
-    { id: 'user-rights', title: '7. Your Rights (GDPR & CCPA)' },
-    { id: 'contact-dpo', title: '8. Contact Data Protection Officer' }
+    { id: 'advertising-cookies', title: '6. Advertising & Third-Party Cookies' },
+    { id: 'security-retention', title: '7. Data Security & Retention' },
+    { id: 'user-rights', title: '8. Your Rights (GDPR & CCPA)' },
+    { id: 'contact-dpo', title: '9. Contact Data Protection Officer' }
   ]
 
   const scrollToSection = (id) => {
@@ -514,9 +515,37 @@ function PrivacyPolicy() {
                 </ul>
               </section>
 
-              {/* Section 6: Data Security & Retention */}
+              {/* Section 6: Advertising & Third-Party Cookies */}
+              <section id="advertising-cookies" className="tf-legal-section">
+                <h2 className="tf-section-heading">6. Advertising & Third-Party Cookies</h2>
+                <p>
+                  SmartHire uses <strong>Google AdSense</strong>, a third-party advertising service provided by Google LLC, to display advertisements on our public blog and career pages. Google AdSense may use cookies and similar tracking technologies to serve ads based on your prior visits to this website or other websites on the internet.
+                </p>
+                <p>
+                  <strong>How Google Uses Advertising Cookies:</strong>
+                </p>
+                <ul style={{ paddingLeft: '20px' }}>
+                  <li><strong>DoubleClick Cookie:</strong> Google uses the DoubleClick cookie to serve relevant ads across the web and measure ad campaign effectiveness.</li>
+                  <li><strong>Interest-Based Advertising:</strong> Google may use information about your browsing behavior (from this and other websites) to show you personalized advertisements.</li>
+                  <li><strong>No PII Sharing:</strong> We do not share any personally identifiable candidate information (name, resume, contact details) with Google's advertising network.</li>
+                </ul>
+                <p>
+                  <strong>Opt-Out Options:</strong> You may opt out of personalized advertising by visiting{' '}
+                  <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer" style={{ color: '#2563EB' }}>Google Ads Settings</a>{' '}
+                  or the{' '}
+                  <a href="https://www.aboutads.info" target="_blank" rel="noopener noreferrer" style={{ color: '#2563EB' }}>Digital Advertising Alliance opt-out page</a>.
+                  You can also opt out of Google Analytics by installing the{' '}
+                  <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer" style={{ color: '#2563EB' }}>Google Analytics Opt-out Browser Add-on</a>.
+                </p>
+                <p>
+                  For more information about how Google uses data from advertising partners, see:{' '}
+                  <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener noreferrer" style={{ color: '#2563EB' }}>How Google uses data when you use our partners' sites or apps</a>.
+                </p>
+              </section>
+
+              {/* Section 7: Data Security & Retention */}
               <section id="security-retention" className="tf-legal-section">
-                <h2 className="tf-section-heading">6. Data Security & Retention</h2>
+                <h2 className="tf-section-heading">7. Data Security & Retention</h2>
                 <p>
                   We implement comprehensive organizational, physical, and technical safeguards including:
                 </p>
@@ -527,9 +556,9 @@ function PrivacyPolicy() {
                 </ul>
               </section>
 
-              {/* Section 7: User Rights */}
+              {/* Section 8: User Rights */}
               <section id="user-rights" className="tf-legal-section">
-                <h2 className="tf-section-heading">7. Your Rights (GDPR, CCPA & Global Rights)</h2>
+                <h2 className="tf-section-heading">8. Your Rights (GDPR, CCPA & Global Rights)</h2>
                 <p>Under applicable privacy laws, candidates and enterprise users maintain the following rights:</p>
                 
                 <div className="tf-grid-2">
@@ -552,9 +581,9 @@ function PrivacyPolicy() {
                 </div>
               </section>
 
-              {/* Section 8: Contact DPO */}
+              {/* Section 9: Contact DPO */}
               <section id="contact-dpo" className="tf-legal-section">
-                <h2 className="tf-section-heading">8. Contact Our Data Protection Officer (DPO)</h2>
+                <h2 className="tf-section-heading">9. Contact Our Data Protection Officer (DPO)</h2>
                 <p>
                   If you have any questions, data subject access requests (DSARs), or privacy concerns regarding this policy, please reach out to our dedicated privacy office:
                 </p>
