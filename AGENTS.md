@@ -69,6 +69,156 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
+### 2026-09-25 — Live AI Match Scan Button, Groq Llama 3.3 70B ATS Engine & Deep Fit Intelligence Modal
+- **Context & Objectives**:
+  - The user requested an "AI Match" button on each candidate card in the split-view where clicking a candidate opens the resume on the right and candidate card on the left (`ak button add karo AI match use click karene pe Live AI se scan analys hona cahiye okay har candiate ke card mai ana cahiye jaha hum candiate ko clcik karne ke bad open hota hai right mai resume and left mai ak chota sa button okay`).
+- **Key Deliverables**:
+  1. **Backend Real-Time Live AI Scan (`POST /api/candidates/live-ai-match` in `server/index.js`)**:
+     - Resolves candidate profile (resume text, parsed skills, role, experience, location) and target client requisition.
+     - Performs 5-Tier ATS evaluation (Title Alignment, Required Skills, Preferred Skills, State/Location Match, Total Exp).
+     - Connects to Groq Llama 3.3 70B AI engine (`callGroqAI`) with structured JSON schema returning:
+       - Match Score (0–100%) and Verdict (`STRONG FIT`, `GOOD POTENTIAL`, `POOR FIT / ROLE MISMATCH`).
+       - Executive 2–3 sentence fit assessment.
+       - Matching Skills vs Required Skills Not Matched.
+       - Key Candidate Strengths & Recruiter Verification Factors.
+       - 3 tailored recruiter technical screening interview questions with "what to listen for" cues.
+     - Caches scan results in `candidateMatchCache`.
+  2. **Left Candidate Card "AI Match" Action (`RecruiterInbox.jsx`)**:
+     - Added compact, sleek `⚡ AI Match (Live Scan)` button directly in the Monster-style candidate card on the left panel (below Candidate Name & Role and in the Quick Action buttons row).
+     - Added `⚡ Run Live AI Scan` button in the Candidate Full Profile Drawer (`showFullProfileModal`) inside the AI Match Analyzer card.
+     - Added `⚡ AI Match Scan` button to the Tobu Top Sticky Bar.
+  3. **Live AI Match Intelligence Modal (`RecruiterInbox.jsx`)**:
+     - Displays full AI scan breakdown with animated radar scanner state while processing.
+     - Requisition Switcher: allows switching to any open client requisition and re-scanning fit on the fly.
+     - 5-Tier criteria breakdown cards (Title Match, Required Skills, Preferred Skills, State/Location, Total Exp).
+     - Matched Skills (emerald badges) vs Required Skills Not Matched (crimson badges).
+     - Key Technical Strengths & Recruiter Verification Factors.
+     - Tailored Recruiter Technical Screening Questions with one-click "Copy Questions" button.
+     - Quick Action Footer: "Email Candidate", "Push to Jobs in Hand ↗", and "Close".
+- **Verification & Deployment**:
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-D1Zyvy5u.js`).
+  - Git committed (`5a419d0`, `4293715`) and pushed to GitHub `origin/main`.
+  - Deployed bundle and `server/index.js` to AWS Lightsail server (`34.194.119.199`).
+  - Reloaded PM2 `smarthire-ats`, verified disk space (8.6GB available, 54% used).
+  - Verified live domain `https://smarthireus.com` returns HTTP 200 with bundle `index-D1Zyvy5u.js`.
+  - Verified live API endpoint `/api/candidates/live-ai-match` via curl returning instant Groq Llama 3.3 70B evaluation with matched/missing skills and custom screening questions.
+
+### 2026-09-24 — Real-Time Email/Spam Scraper Fix, InfoOrigin Match Filter & Toggle, Hang-Free Refresh, Candidate Sorting & Job Portal Req Removal
+- **Context & Objectives**:
+  - The user reported 5 core issues/requests:
+    1. **Email & Spam Scraper Not Ingesting**: Background harvester and manual sync failed to pull resumes from Inbox and Spam folders due to missing Bulk folder configuration, sequential TLS payload timeouts, and an unhandled `recruiterEmail` reference error in `email-imap-scraper.js`.
+    2. **InfoOrigin Match Confusion & Dropdown Filter**: Recruiters experienced confusion distinguishing InfoOrigin matches from Direct Client / COOLSOFT matches. Requested a dropdown filter and toggle to control whether InfoOrigin matching is shown or hidden.
+    3. **New Candidates Always On Top**: Newly ingested candidates must strictly appear at the very top of the Candidates table.
+    4. **Refresh Button Hanging**: The Scan Ingest / Refresh action hung due to 90s frontend timeouts and server lock flags without auto-expiry.
+    5. **Remove Requisition Numbers from Public Job Portal**: On `/jobs` and `/careers`, external visitors should never see internal ATS requisition numbers (`Req #...`).
+- **Key Deliverables**:
+  1. **Email & Spam Scraper Engine Overhaul (`email-imap-scraper.js` & `server/index.js`)**:
+     - Configured Yahoo IMAP's authentic `Bulk` spam folder into `Auto-Harvester` scheduled sync (`['INBOX', 'SPAM']`), running every 5 minutes.
+     - Resolved bulk timeout bottleneck: now fetches headers first in 200ms (`UID FLAGS BODY.PEEK[HEADER.FIELDS]`), then fetches full RFC822 payloads only for recruitment emails with attachments.
+     - Fixed `ReferenceError: recruiterEmail is not defined` on line 795, ensuring vendor hotlists sync completes seamlessly.
+     - Ingested 24 new resumes directly from Spam (`poojakom28@gmail.com`, `saikrishna.goud.us@gmail.com`, `lithin9699@gmail.com`, etc.), raising active candidate pool to 87.
+     - Added 40-second auto-expiring lock on `isEmailSyncInProgress` to prevent permanent server lockouts.
+  2. **InfoOrigin Matching Filter & Toggle (`RecruiterInbox.jsx`)**:
+     - Added `Matched Client` dropdown filter: `All Sources`, `Direct Client / COOLSOFT Only`, `InfoOrigin Requisitions Only`, `General Talent Pool`.
+     - Added `InfoOrigin Match: Visible / Hidden` toggle button, enabling recruiters to suppress InfoOrigin matches with 1 click.
+     - In `AI MATCHED REQUIREMENT` column, color-coded badges: purple badge for InfoOrigin (`Req #7591 · InfoOrigin`), blue badge for Direct Client (`Req #158979 · Direct Client`), and slate badge for Talent Pool.
+  3. **Candidate Sorting & Newest Priority (`RecruiterInbox.jsx`)**:
+     - Stream candidates (freshly scraped resumes) placed first in `combinedPool = [...streamList, ...normalizedManual]`.
+     - `getCandTime` upgraded to parse `createdAt`, `receivedDate`, `receivedAt`, `updatedAt`, `date`, `uploadedOn`, and regex epoch IDs (`cand-email-(\d+)`).
+     - Candidates with `status === 'New'` are given top priority so fresh resumes always stay at the top.
+  4. **Dedicated Hang-Free Refresh Button (`RecruiterInbox.jsx`)**:
+     - Added dedicated `↻ Refresh` button beside Search with a smooth spinning SVG, instantly refreshing candidates and counters in ~500ms.
+     - Reduced `handleSyncEmailResumes` timeout from 90s to 18s with graceful error handling so the UI never hangs.
+  5. **Job Portal Req Number Removal (`WellfoundCareersView.jsx`, `PublicCareers.jsx`, `LinkedInCareersView.jsx`)**:
+     - Removed `#{resolveReqId(job.reqId)}` from job card headers on Page 1.
+     - Removed `· Req #{resolveReqId(selectedJob.reqId)}` from details header on Page 2.
+     - Replaced `REQ ID` in the 8-box Position Overview grid with `WORK AUTHORIZATION` (`Open / All Eligible`).
+     - Verified 0 occurrences of `Req #[0-9]*` on live `/jobs` and `/careers`.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-Cv1TjDNf.js`).
+  - Git committed (`bff4eb5`, `6466aa1`) and pushed to GitHub `origin/main`.
+  - Deployed bundle, `server/index.js`, and `email-imap-scraper.js` to AWS Lightsail (`34.194.119.199`).
+  - Reloaded PM2 `smarthire-ats`, verified disk space (8.6GB available, 54% used).
+  - Verified live domain `https://smarthireus.com` returns HTTP 200 with bundle `index-Cv1TjDNf.js`.
+  - Verified live sync endpoint `/api/recruiter/sync-email-resumes` returns HTTP 200 without hanging.
+- **Context & Objectives**:
+  - The user requested 3 core enhancements to lead generation and pricing transparency on `smarthireus.com`:
+    1. **Demo Access Restriction & Corporate Lead Capture**: Clicking "View Candidate Demo", "Start My App Demo", or "Try Live Candidate Studio" must NOT directly open the test or screening environment. Instead, require corporate email and contact details. Submissions must be saved into **Client Inquiries** (`InquiriesModule.jsx` / `smarthire_inquiries`), and a confirmation message must be displayed: `"Our team will reach you soon."`
+    2. **Contact Us Interactive Modal**: Replaced `mailto:support@smarthire.com` with an enterprise modal form collecting visitor details (Full Name, Work Email, Phone Number, Company, Topic, and Project/Team Message). On submission, persists to Client Inquiries and displays `"Our team will reach you soon."`
+    3. **Unified ATS + Video Screening Pricing Restructuring**:
+       - Highlighted market comparison: Standalone video screening tools alone charge $9–$49/mo, while standalone ATS platforms charge $85–$150/mo. SmartHire unifies ATS + Proctored Screening + AI Matching in one seamless platform for 75%+ cost savings.
+       - Detailed all high-value features in the pricing tier cards: Resume Parser (PDF/Word/TXT), Auto Notifications, Groq AI Auto Match & Fit Verdict, Proctored Video & Voice Screening, Location Tracker & Anti-Cheat Tab Monitor, Monster-style Resume Formatter, Excel-style Vendor Hotlists Grid.
+       - Pricing plans start at **$20/mo**: Starter `$20/mo` ($16/mo yearly), Pro `$49/mo` ($39/mo yearly, Recommended), Business `$99/mo` ($79/mo yearly).
+- **Key Deliverables**:
+  1. **Backend Lead Persistence (`server/index.js`)**:
+     - Added `inquiries.json` store and routes: `GET /api/inquiries`, `POST /api/inquiries`, `PATCH /api/inquiries/:id/status`.
+     - When an inquiry is submitted, an internal ATS notification is dispatched to `messagesStore` so recruiters see an instant notification.
+  2. **Client Inquiries ATS Center (`InquiriesModule.jsx`)**:
+     - Fetches inquiries from both `/api/inquiries` and Firestore (`getInquiriesFirestore`).
+     - Added phone number (`📞 {inq.phone}`) display to inquiries table rows and details modal.
+  3. **Interactive Modals & Landing Page (`Homepage.jsx`)**:
+     - Built `showDemoModal` and `showContactModal` with clean enterprise styling, phone/email validation, and real-time dispatch.
+     - Confirmation state states: `"Our team will reach you soon."`
+  4. **Pricing Comparison & Plan Matrix (`Homepage.jsx` & `Pricing.jsx`)**:
+     - Market comparison callout box showing standalone video tool vs legacy ATS vs SmartHire.
+     - Starter plan at $20/mo with full feature breakdown.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-BSPUARZ8.js`).
+  - Git committed (`29fbae2`) and pushed to GitHub `origin/main`.
+  - Deployed bundle and backend updates to AWS Lightsail server (`34.194.119.199`), extracted to `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Reloaded PM2 `smarthire-ats`, verified clean 8.6GB disk space.
+  - Verified live domain `https://smarthireus.com` returns HTTP 200 with bundle `index-BSPUARZ8.js`.
+  - Verified live API endpoints `/api/inquiries` with test submission returning `{"success":true,"message":"Our team will reach you soon."}`.
+
+### 2026-09-24 — Public Job Site Vendor Anonymization (InfoOrigin/COOLSOFT Removed) & Full Internal ATS Sourcing Tracking
+- **Context & Objectives**:
+  - The user requested complete removal of vendor/partner agency names ("InfoOrigin" and "COOLSOFT") from the public Job Site (`/jobs` and `/careers`) so external candidates see clean enterprise direct client branding.
+  - Retained full partner/vendor requisition mapping everywhere internally ("baki jagha same okay"):
+    - When a candidate applies from the public job site, internal ATS recruiters see `SOURCE: Job Site` in the Candidate table (`RecruiterInbox.jsx`).
+    - The `AI MATCHED REQUIREMENT` column displays the exact matched partner requisition (e.g. `Req #7591 InfoOrigin` or `Req #158979 COOLSOFT`), ensuring recruiters know the source and client immediately.
+- **Key Deliverables**:
+  1. **Public Site Anonymization (`WellfoundCareersView.jsx` & `PublicCareers.jsx`)**:
+     - Stripped hardcoded vendor names from `resolveClientDomainName()`, replacing them with authentic domain categorizations (`State Healthcare Systems`, `Enterprise Cloud Platform`, `Enterprise Data & Analytics`, or `Enterprise Direct Client`).
+     - Removed `'IO'` and `'CS'` overrides from `CompanyLogo()`; logos derive clean 2-letter role monograms from the job title.
+     - Replaced partner badge in Page 2 details header (`INFO ORIGIN` / `COOLSOFT LLC`) with `{selDomain || 'DIRECT CLIENT'}`.
+     - Sanitized job description text and `engagementDetails` via regex, auto-replacing any partner references with `Direct Client`.
+     - Cleaned `index.html` JSON-LD schema organization links from `coolsoft-llc` to `smarthire-ats`.
+  2. **Internal ATS Sourcing & Candidate Origin Tracking (`server/index.js`, `PublicCareers.jsx`, `RecruiterInbox.jsx`)**:
+     - Candidate submissions through `/api/screening/public-submit` and `/api/screening/public-submit-file` record:
+       - `source: 'Job Site'`, `sourceCategory: 'careers_portal'`, `sourceLabel: 'Job Site'`, `appliedFrom: 'Job Site Application'`.
+       - `jobSource: job.source || (job.client === 'InfoOrigin' ? 'InfoOrigin' : 'COOLSOFT')`.
+       - `matchedJobClient: job.client || job.source || 'COOLSOFT'`.
+     - `RecruiterInbox.jsx` displays the clean emerald `Job Site` badge in the `SOURCE` column, and shows `Req #{c.targetReqId} {c.matchedJobClient || c.jobSource}` in `AI MATCHED REQUIREMENT`.
+- **Verification & Deployment**:
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-DeK4vb8g.js`).
+  - Git committed (`7922604`, `69f008d`) and pushed to GitHub `origin/main`.
+  - Deployed bundle and `index.html` to `/var/www/html/` and `/home/ubuntu/smarthire/dist/` on AWS Lightsail server (`34.194.119.199`).
+  - Reloaded PM2 `smarthire-ats`, verified disk space (8.7GB available, 54% used).
+  - Verified live domain `https://smarthireus.com` returns HTTP 200 with bundle `index-DeK4vb8g.js`.
+  - Verified live `/jobs` and `/` return 0 occurrences of "InfoOrigin" and "COOLSOFT".
+
+### 2026-09-24 — StaffingOrigin India Jobs Scraping, Public Job Site Country Filter & ATS Segregation
+- **Context & Objectives**:
+  - Ingested India requisitions from `https://staffingorigin.com/OpenPosition` (Pune, MH; Delhi, DL; Noida, UP; Hyderabad, TS; Bangalore, KA).
+  - Enforced strict platform role and scope segregation: India jobs are exclusively displayed on the public **Job Site** (`/jobs` and `/careers`), and filtered out from the internal ATS platform (`JobsModule.jsx`, `RecruiterDashboard.jsx`, and `RecruiterInbox.jsx`) so recruiters maintain 100% US client and candidate focus.
+  - Implemented the StaffingOrigin-style Country Filter on the Job Site (`WellfoundCareersView.jsx` and `PublicCareers.jsx`):
+    - Country dropdown selector in the Hero search pill: `ALL` (144), `India` (25), `USA` (119).
+    - Quick-filter country ribbon pills: `All Requisitions (144)`, `India (25)`, `USA (119)`.
+    - Top nav quick tabs: `All Jobs`, `India (25)`, `USA`, `Remote`.
+    - Dynamic header counter: `India Open Positions (25 positions found)` matching StaffingOrigin screenshot.
+    - Badged all India requisitions with `India` tags and authentic locations (`Pune, MH • India`, etc.).
+  - Updated backend `/api/jobs` and `/api/jobs/sources-summary` to support `country=India/USA`, ATS scope exclusion (`scope=ats`), and country breakdown counts.
+
+### 2026-09-24 — Screening 500MB Upload Limit Fix, Tab Switch Recording Audit, Dual Interactive Demo & Accessible Pricing
+- **Context & Objectives**:
+  - Resolved candidate screening video upload failure (`Error submitting responses: Unexpected token '<', "<html>... is not valid JSON"`) caused by unconstrained video size exceeding NGINX (100MB cap) and Multer (80MB cap).
+  - Raised NGINX `client_max_body_size` to `500M;` on Lightsail server.
+  - Raised backend Multer upload limit to `500MB` in `server/index.js`.
+  - Added `videoBitsPerSecond: 900000` (900 kbps) to `MediaRecorder` in `CandidateChat.jsx` for clean 720p HD with lightweight file size (~18MB for 5 min) and added robust HTTP status checking (`!upRes.ok`, `!res.ok`) to return human-readable error messages.
+  - Verified tab switching behavior: background `MediaStream` and `MediaRecorder` never stop recording during tab switches or window blurs; violations are tracked in `tabViolationsCount` and sent to backend recruiter audit.
+  - Implemented PeekHire-style dual interactive demo cards on `Homepage.jsx` ("See the Candidate Experience" + "Try the App Yourself (Recommended)").
+  - Reduced pricing plans to accessible rates matching Screenshot 3: Starter `$9/mo` ($7/mo yearly), Pro `$29/mo` ($24/mo yearly, Recommended), Business `$89/mo` ($69/mo yearly) on both `Pricing.jsx` and `Homepage.jsx`.
+
 ### 2026-09-24 — SmartHire Proctored Screening, Single-Take Continuous Recording, Anti-Cheat Security & Footer Cleanup
 - **Context & Objectives**:
   - Implemented the user-requested ATS and candidate screening upgrades across the platform:
@@ -91,6 +241,27 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
   - Pruned old asset bundles (5 latest kept), flushed PM2 logs, reloaded PM2 `smarthire-ats` (pid 136592, online).
   - Verified live domain `https://smarthireus.com` returns HTTP 200 with bundle `index-CufJQhF8.js`.
   - Verified live `/screening` route returns HTTP 200.
+
+### 2026-09-24 — Daily Trending Clients Dynamic Rotation, StaffingOrigin-Style Pagination (< 1 2 >) & Automated 6-Min Dual Ingestion Cron
+- **Context & Objectives**:
+  - Addressed user questions and delivered 3 core upgrades across Job Site and backend pipeline:
+    1. **Page 2 Clarification & Authentic Pagination `< 1 2 >`**:
+       - Clarified that all 6 jobs from StaffingOrigin Page 2 (Req #6859 Cloud Computing Engineer, #6823 Solution Architect, #6816 Technical Lead, #6601 Motion & Graphic Designer, #6462 Full Stack Developer, #5590 Lead Data Scientist) were already fetched and active in the database (total 25 India jobs).
+       - Implemented authentic `< 1 2 >` pagination matching StaffingOrigin on `WellfoundCareersView.jsx` (15 jobs per page). Page 1 shows jobs 1-15, and clicking `2` displays jobs 16-25 including all Page 2 jobs from the user screenshot.
+    2. **Scraper Automation Schedule & Zero Duplicate Guarantee**:
+       - Verified automated background schedule: runs every **6 minutes** (`INGESTION_INTERVAL_MS = 6 * 60 * 1000`) continuously via PM2 on AWS Lightsail.
+       - Integrated `runInfoOriginIngestion()` directly into the 6-minute background scheduler alongside `runIngestion()`.
+       - Enforced primary-key deduplication: every requisition is keyed by `job_${job.source}_${job.reqId}`. Repeated scraper runs update existing jobs in-place and strictly never add duplicates.
+    3. **Daily Dynamic Rotation for "Trending direct clients hiring now"**:
+       - Built a curated 8-client pool with rich domains (Enterprise Cloud & AI, State Healthcare Systems, Digital Platform Solutions, InfoOrigin Global Tech, Cybersecurity & ZTNA Defense, Data & AI Innovation Labs, GovTech Systems & Public Sector, Enterprise Cloud & DevOps SRE).
+       - Rotates dynamically every midnight (`dayOfYear % pool.length`), presenting a fresh trio of trending direct clients each day.
+       - Added live "Updated Daily • {todayFormattedDate}" badge and interactive 1-click filtering with smooth scrolling.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-C7PeRaed.js`).
+  - Git committed (`3fa6f5b`) and pushed to GitHub `origin/main`.
+  - Deployed production bundle to AWS Lightsail server (`34.194.119.199`), extracted to `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Updated `server/index.js` on Lightsail, reloaded PM2 `smarthire-ats`, pruned old bundles, vacuumed journals (8.7GB free disk).
+  - Verified live domain `https://smarthireus.com` returns HTTP 200 with new bundle `index-C7PeRaed.js`.
 
 ### 2026-09-24 — StaffingOrigin (InfoOrigin) Live Job Ingestion, Multi-Source Branding & Dual-Sync Deployment
 - **Context & Objectives**:
