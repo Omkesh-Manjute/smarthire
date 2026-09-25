@@ -2936,11 +2936,24 @@ export default function RecruiterInbox({ defaultViewMode }) {
       const token = localStorage.getItem('smarthire_token') || ''
       const authHeaders = { 'Authorization': `Bearer ${token}` }
 
-      const [streamRes, apiCandsRes, firestoreCandsRes] = await Promise.allSettled([
-        fetch(`/api/recruiter/email-streams?${params.toString()}`, { headers: authHeaders }),
-        fetch('/api/candidates', { headers: authHeaders }),
-        getAllCandidates()
-      ])
+      const controller = new AbortController()
+      const fetchTimer = setTimeout(() => {
+        try { controller.abort() } catch (e) {}
+      }, 10000)
+
+      let streamRes, apiCandsRes, firestoreCandsRes
+      try {
+        const results = await Promise.allSettled([
+          fetch(`/api/recruiter/email-streams?${params.toString()}`, { headers: authHeaders, signal: controller.signal }),
+          fetch('/api/candidates', { headers: authHeaders, signal: controller.signal }),
+          getAllCandidates()
+        ])
+        streamRes = results[0]
+        apiCandsRes = results[1]
+        firestoreCandsRes = results[2]
+      } finally {
+        clearTimeout(fetchTimer)
+      }
 
       let streamList = []
       let countsData = null
@@ -4414,14 +4427,14 @@ export default function RecruiterInbox({ defaultViewMode }) {
       if (!c) return false
 
       // Table Category filtering (KPI cards / Mailbox)
-      // When viewing 'all' (default view), exclude spam / recovered candidates from main table
-      if (tableCategory === 'all' && (c.sourceCategory === 'email_spam' || c.isSpamRecovery)) return false
-      if (tableCategory === 'active' && (c.status === 'Archived' || c.status === 'Rejected' || c.status === 'Closed' || c.isSpamRecovery || c.sourceCategory === 'email_spam')) return false
-      if (tableCategory === 'review' && c.status !== 'In Review' && c.status !== 'Review') return false
-      if (tableCategory === 'inbox' && c.sourceCategory !== 'email_inbox') return false
-      if (tableCategory === 'spam' && c.sourceCategory !== 'email_spam' && !c.isSpamRecovery) return false
-      if (tableCategory === 'careers' && c.sourceCategory !== 'careers_portal') return false
-      if (tableCategory === 'vendor' && c.sourceCategory !== 'vendor_bench') return false
+      // When viewing 'all' (default view), include all candidates in the primary pool
+      if (tableCategory === 'all') { /* show all */ }
+      else if (tableCategory === 'active' && (c.status === 'Archived' || c.status === 'Rejected' || c.status === 'Closed')) return false
+      else if (tableCategory === 'review' && c.status !== 'In Review' && c.status !== 'Review') return false
+      else if (tableCategory === 'inbox' && c.sourceCategory !== 'email_inbox') return false
+      else if (tableCategory === 'spam' && c.sourceCategory !== 'email_spam' && !c.isSpamRecovery) return false
+      else if (tableCategory === 'careers' && c.sourceCategory !== 'careers_portal') return false
+      else if (tableCategory === 'vendor' && c.sourceCategory !== 'vendor_bench') return false
       if (tableCategory === 'favorites') {
         const candId = c.id || c.email
         if (!favoriteCandidateIds.has(candId)) return false
@@ -10662,8 +10675,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 {/* 5 Metric KPI Cards matching screenshot */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                   {[
-                    { color: '#2563EB', count: roleScopedCandidates.filter(c => c.sourceCategory !== 'email_spam' && !c.isSpamRecovery).length, label: 'Total Candidates', filter: 'all' },
-                    { color: '#16A34A', count: roleScopedCandidates.filter(c => (c.sourceCategory !== 'email_spam' && !c.isSpamRecovery) && (c.status !== 'Archived' && c.status !== 'Rejected' && c.status !== 'Closed')).length, label: 'Active', filter: 'active' },
+                    { color: '#2563EB', count: roleScopedCandidates.length, label: 'Total Candidates', filter: 'all' },
+                    { color: '#16A34A', count: roleScopedCandidates.filter(c => c.status !== 'Archived' && c.status !== 'Rejected' && c.status !== 'Closed').length, label: 'Active', filter: 'active' },
                     { color: '#D97706', count: roleScopedCandidates.filter(c => c.sourceCategory === 'email_inbox').length, label: 'Resume Emails', filter: 'inbox' },
                     { color: '#0284C7', count: roleScopedCandidates.filter(c => c.status === 'In Review' || c.status === 'Review').length, label: 'In Review', filter: 'review' },
                     { color: '#DC2626', count: roleScopedCandidates.filter(c => c.sourceCategory === 'email_spam' || c.isSpamRecovery).length, label: 'Spam / Recovered', filter: 'spam' }

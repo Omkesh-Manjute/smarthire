@@ -9,6 +9,10 @@ import mammoth from 'mammoth';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// In-memory sets to prevent repeated timeouts on heavy attachments across sync intervals
+const failedPayloadUids = new Set();
+const processedEmailUids = new Set();
+
 /**
  * Normalize folder name specifically for Yahoo / standard IMAP servers.
  * In Yahoo IMAP, Spam folder is strictly named "Bulk".
@@ -461,15 +465,17 @@ export async function scrapeResumesFromIMAP({
                                     lowerChunk.includes('.pdf') ||
                                     lowerChunk.includes('.doc') ||
                                     lowerChunk.includes('multipart');
-          if (uid && hasAttachmentHint) {
+          const uidKey = `${folder}_${uid}`;
+          if (uid && hasAttachmentHint && !failedPayloadUids.has(uidKey)) {
             try {
               console.log(`📥 Fetching full RFC822 payload for UID ${uid} (${senderName})...`);
-              const fullRes = await client.sendCommand(`UID FETCH ${uid} (BODY.PEEK[])`, 10000);
+              const fullRes = await client.sendCommand(`UID FETCH ${uid} (BODY.PEEK[])`, 4000);
               if (fullRes && fullRes.length > msgChunk.length) {
                 fullPayload = fullRes;
               }
             } catch (fetchErr) {
-              console.warn(`⚠️ Could not fetch full body for UID ${uid}:`, fetchErr.message);
+              failedPayloadUids.add(uidKey);
+              console.warn(`⚠️ Could not fetch full body for UID ${uid} (cached to prevent repeated timeouts):`, fetchErr.message);
             }
           }
 

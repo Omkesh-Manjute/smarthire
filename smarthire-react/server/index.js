@@ -635,20 +635,18 @@ async function loadCandidatesFromDisk() {
         const em = String(c.email || '').toLowerCase().trim();
         return !deletedCandidateIds.has(id1) && !deletedCandidateIds.has(id2) && !deletedCandidateIds.has(id3) && (!em || !deletedCandidateIds.has(em));
       });
-      // Filter out corrupted bulk-spam harvest records from 2026-09-23
+      // Filter out corrupted bulk records where role was misparsed as a phone number
       const beforeCount = candidatesStore.length;
       candidatesStore = candidatesStore.filter(c => {
         if (!c) return false;
-        const isSpam = c.isSpamRecovery || c.sourceCategory === 'email_spam';
-        const noteHasSpam = c.notes && String(c.notes).includes('⚠️ RECOVERED FROM YAHOO SPAM FOLDER');
         const roleIsPhone = c.role && (/^[\d+\s().-]+$/.test(c.role) || c.role.includes('@'));
-        if (noteHasSpam && (isSpam || roleIsPhone)) {
+        if (roleIsPhone) {
           return false;
         }
         return true;
       });
       if (candidatesStore.length !== beforeCount) {
-        console.log(`🧹 Pruned ${beforeCount - candidatesStore.length} corrupted spam-recovery records from candidatesStore.`);
+        console.log(`🧹 Pruned ${beforeCount - candidatesStore.length} corrupted records from candidatesStore.`);
         saveCandidatesToDisk();
       }
       console.log(`📂 Loaded ${candidatesStore.length} candidate(s) from disk.`)
@@ -2007,7 +2005,7 @@ app.put('/api/candidates/:id', authenticateToken, (req, res) => {
 })
 
 // ─── GET /api/candidates/view-resume — Inline viewer for PDF and Word (.docx/.doc) ───
-// ─── GET /api/candidates/view-resume — Inline viewer for PDF and Word (.docx/.doc) ───
+const docxHtmlCache = new Map();
 app.get('/api/candidates/view-resume', async (req, res) => {
   try {
     const rawFile = req.query.file || req.query.fileName || req.query.url || req.query.storageUrl || '';
@@ -2221,6 +2219,11 @@ app.get('/api/candidates/view-resume', async (req, res) => {
         ${dSkills.map(s => `<span class="skill-chip">${s}</span>`).join('')}
       </div>
     </div>
+    ${dossierCand.resumeText ? `
+    <div style="margin-top:24px; padding-top:20px; border-top:1px solid #E2E8F0;">
+      <h3 style="margin:0 0 14px; font-size:14px; text-transform:uppercase; letter-spacing:0.5px; color:#0F172A;">Candidate Profile & Resume Text</h3>
+      <div style="font-size:13.5px; line-height:1.75; color:#334155; white-space:pre-wrap; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">${dossierCand.resumeText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+    </div>` : ''}
   </div>
 </body>
 </html>`);
@@ -2247,18 +2250,24 @@ app.get('/api/candidates/view-resume', async (req, res) => {
       return fs.createReadStream(resolvedPath).pipe(res);
     }
 
-    // 2. Word (.docx / .doc) -> Convert to elegant HTML
+    // 2. Word (.docx / .doc) -> Convert to elegant HTML with in-memory caching
     let bodyHtml = '';
     if (lower.endsWith('.docx') || lower.endsWith('.doc')) {
-      try {
-        const mammothRes = await mammoth.convertToHtml({ path: resolvedPath });
-        bodyHtml = mammothRes.value;
-      } catch (mErr) {
+      if (docxHtmlCache.has(resolvedPath)) {
+        bodyHtml = docxHtmlCache.get(resolvedPath);
+      } else {
         try {
-          const rawText = await mammoth.extractRawText({ path: resolvedPath });
-          bodyHtml = rawText.value.split('\n').map(l => `<p>${l}</p>`).join('');
-        } catch (mErr2) {
-          bodyHtml = `<p>Unable to convert document automatically. Please download using the button above.</p>`;
+          const mammothRes = await mammoth.convertToHtml({ path: resolvedPath });
+          bodyHtml = mammothRes.value;
+          docxHtmlCache.set(resolvedPath, bodyHtml);
+        } catch (mErr) {
+          try {
+            const rawText = await mammoth.extractRawText({ path: resolvedPath });
+            bodyHtml = rawText.value.split('\n').map(l => `<p>${l}</p>`).join('');
+            docxHtmlCache.set(resolvedPath, bodyHtml);
+          } catch (mErr2) {
+            bodyHtml = `<p>Unable to convert document automatically. Please download using the button above.</p>`;
+          }
         }
       }
     } else {
@@ -9358,14 +9367,14 @@ function evaluateCandidateJobMatch(candidate, job) {
   const candSkills = (Array.isArray(candidate.skills) ? candidate.skills : String(candidate.skills || '').split(','))
     .map(s => String(s).trim().toLowerCase())
     .filter(Boolean);
-  const candText = `${candTitle} ${candSkills.join(' ')} ${candidate.resumeText || ''}`.toLowerCase();
+  const candText = `${candTitle} ${candSkills.join(' ')} ${(candidate.resumeText || '').slice(0, 4000)}`.toLowerCase();
 
   const jobTitle = (job.title || '').toLowerCase();
   const rawJobSkills = job.skills || [];
   const reqSkills = normalizeSkillsArray(rawJobSkills);
   const prefSkills = normalizeSkillsArray(job.preferredSkills || []);
 
-  const candDomain = classifyTechnicalDomain(candTitle, candSkills, candidate.resumeText);
+  const candDomain = classifyTechnicalDomain(candTitle, candSkills, (candidate.resumeText || '').slice(0, 2000));
   const jobDomain = classifyTechnicalDomain(jobTitle, reqSkills, job.description);
 
   // Strict domain alignment
@@ -9883,17 +9892,52 @@ app.get('/api/recruiter/email-streams', (req, res) => {
     const cached = candidateMatchCache.get(candCacheKey);
     let matchAnalysis = null;
 
-    if (cached && (Date.now() - cached.timestamp < 3600000)) {
+    if (cached && (Date.now() - cached.timestamp < 86400000)) {
       targetJob = cached.targetJobId ? (jobMap.get(cached.targetJobId) || null) : null;
       matchAnalysis = cached.matchAnalysis;
     }
 
     if (!matchAnalysis) {
-      if (targetJob) {
+      // 0ms FAST PATH: If candidate already has pre-saved matchScore and targetReqId/matchedJobTitle, use it directly!
+      if (c.matchScore && (c.targetReqId || c.matchedJobTitle)) {
+        const cleanReqKey = String(c.targetReqId || c.reqId || '').replace(/^J-/, '').replace(/^REQ-/, '').trim();
+        targetJob = cleanReqKey && jobMap.has(cleanReqKey) ? jobMap.get(cleanReqKey) : null;
+        if (targetJob && !isJobActiveAndOpen(targetJob)) {
+          targetJob = null;
+        }
+        matchAnalysis = {
+          matchScore: c.matchScore,
+          matchingSkills: Array.isArray(c.matchingSkills) && c.matchingSkills.length > 0 ? c.matchingSkills : cleanSkills.slice(0, 3),
+          missingSkills: Array.isArray(c.missingSkills) ? c.missingSkills : [],
+          matchingRequiredSkills: Array.isArray(c.matchingRequiredSkills) && c.matchingRequiredSkills.length > 0 ? c.matchingRequiredSkills : cleanSkills.slice(0, 3),
+          missingRequiredSkills: Array.isArray(c.missingRequiredSkills) ? c.missingRequiredSkills : [],
+          matchingPreferredSkills: [],
+          missingPreferredSkills: [],
+          isDomainMatch: true,
+          isTitleMatch: true,
+          titleMatchStatus: 'match',
+          titleMatchLabel: targetJob ? targetJob.title : (c.matchedJobTitle || 'Verified Requisition Fit'),
+          stateMatchStatus: 'remote_ok',
+          stateMatchLabel: 'US Nationwide',
+          expMatchStatus: 'meets',
+          expMatchLabel: `${candidateExp} Recorded`,
+          hasMissingRequiredSkills: false
+        };
+        candidateMatchCache.set(candCacheKey, {
+          matchAnalysis,
+          targetJobId: targetJob ? String(targetJob.id).replace(/^J-/, '') : null,
+          timestamp: Date.now()
+        });
+      } else if (targetJob) {
         matchAnalysis = evaluateCandidateJobMatch({ ...c, role: cleanRole, skills: cleanSkills, experience: candidateExp }, targetJob);
+        candidateMatchCache.set(candCacheKey, {
+          matchAnalysis,
+          targetJobId: String(targetJob.id).replace(/^J-/, ''),
+          timestamp: Date.now()
+        });
       } else {
         // Fast Domain-First Filter: Find true best-fitting job among ACTIVE client requisitions
-        const candDomain = classifyTechnicalDomain(cleanRole, cleanSkills, c.resumeText);
+        const candDomain = classifyTechnicalDomain(cleanRole, cleanSkills, (c.resumeText || '').slice(0, 2000));
         const candidateDomainJobs = preclassifiedJobs.filter(pj => {
           if (candDomain !== 'general_it' && pj.domain !== 'general_it') {
             return pj.domain === candDomain;
@@ -9901,7 +9945,7 @@ app.get('/api/recruiter/email-streams', (req, res) => {
           return pj.titleWords.some(w => cleanRole.toLowerCase().includes(w));
         });
 
-        const poolToEvaluate = candidateDomainJobs.length > 0 ? candidateDomainJobs.map(pj => pj.job) : activeUnexpiredJobs.slice(0, 30);
+        const poolToEvaluate = candidateDomainJobs.length > 0 ? candidateDomainJobs.slice(0, 5).map(pj => pj.job) : activeUnexpiredJobs.slice(0, 5);
         let bestJob = null;
         let bestMatch = { matchScore: 0, matchingSkills: [], missingSkills: [] };
 
@@ -9938,12 +9982,12 @@ app.get('/api/recruiter/email-streams', (req, res) => {
             hasMissingRequiredSkills: false
           };
         }
+        candidateMatchCache.set(candCacheKey, {
+          matchAnalysis,
+          targetJobId: targetJob ? String(targetJob.id).replace(/^J-/, '') : null,
+          timestamp: Date.now()
+        });
       }
-      candidateMatchCache.set(candCacheKey, {
-        matchAnalysis,
-        targetJobId: targetJob ? String(targetJob.id).replace(/^J-/, '') : null,
-        timestamp: Date.now()
-      });
     }
 
     const cleanReqId = targetJob ? String(targetJob.id).replace(/^J-/, '') : null;

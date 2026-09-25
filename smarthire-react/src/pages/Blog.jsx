@@ -4,6 +4,8 @@ import C2cW2Article from './blog-articles/C2cW2Article'
 import UsItMarket2026Article from './blog-articles/UsItMarket2026Article'
 import H1b2026Article from './blog-articles/H1b2026Article'
 import IndiaVsUsaJobs2026Article from './blog-articles/IndiaVsUsaJobs2026Article'
+import HighestPayingCertifications2026Article from './blog-articles/HighestPayingCertifications2026Article'
+import AiEntryLevelJobs2026Article from './blog-articles/AiEntryLevelJobs2026Article'
 
 /* ─── SEO Helper Hook ─────────────────────────────────────────────── */
 function useSEO({ title, description, url, image, ldJson }) {
@@ -60,6 +62,36 @@ function useSEO({ title, description, url, image, ldJson }) {
 
 /* ─── Blog Post Catalog ───────────────────────────────────────────── */
 export const BLOG_POSTS = [
+  {
+    slug: 'highest-paying-it-certifications-2026',
+    aliases: ['highest-paying-it-certifications-2026-real-salary-data', 'it-certifications-2026'],
+    title: "10 Highest-Paying IT Certifications in 2026 (Ranked by Real Salary Data)",
+    metaTitle: "10 Highest-Paying IT Certifications in 2026 (Real Salary Data) | SmartHire",
+    metaDescription: "The 10 highest-paying IT certifications in 2026, ranked by real salary data: cloud architect, CISSP, AWS Security, AI security and more, with cost and ROI.",
+    excerpt: "Certifications will not replace experience, but the right one can unlock a senior salary band or clear ATS filters. Discover the top 10 highest-paying IT certifications in 2026 ranked by verified compensation data.",
+    category: "IT Career Guide",
+    readTime: "10 min read",
+    date: "September 19, 2026",
+    author: "SmartHire Editorial Team",
+    tags: ["IT Certifications", "Cloud Architect", "AWS", "GCP", "CISSP", "Cybersecurity", "IT Salaries 2026", "Tech Careers"],
+    image: "/images/blog/highest-paying-it-certifications-2026-hero.webp",
+    component: HighestPayingCertifications2026Article
+  },
+  {
+    slug: 'ai-entry-level-it-jobs-2026',
+    aliases: ['ai-entry-level-it-jobs', 'is-ai-killing-entry-level-it-jobs-2026'],
+    title: "Is AI Killing Entry-Level IT Jobs in 2026? Here Is What the Data Actually Shows",
+    metaTitle: "Is AI Killing Entry-Level IT Jobs in 2026? The Real Data | SmartHire",
+    metaDescription: "Is AI really taking entry-level IT jobs in 2026? Stanford, BLS and Indeed data show what is actually happening to junior developers, and how freshers can still break in.",
+    excerpt: "Stanford ADP payroll research reveals a 19% hiring gap for developers aged 22-25. Here is the factual breakdown of AI's real impact on junior tech hiring and how freshers can still break in.",
+    category: "Market Trends",
+    readTime: "9 min read",
+    date: "September 19, 2026",
+    author: "SmartHire Editorial Team",
+    tags: ["AI IT Jobs", "Junior Developers", "Entry-Level Tech", "Stanford Research", "BLS Projections", "AI Displacement", "Freshers Guide"],
+    image: "/images/blog/ai-entry-level-it-jobs-2026-hero.webp",
+    component: AiEntryLevelJobs2026Article
+  },
   {
     slug: 'india-vs-usa-it-jobs-2026',
     aliases: ['india-vs-usa-it-jobs', 'software-engineer-salary-india-vs-usa-2026'],
