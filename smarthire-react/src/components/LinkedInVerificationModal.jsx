@@ -378,7 +378,7 @@ export default function LinkedInVerificationModal({
             <div style={{ display: 'flex', gap: 8 }}>
               <input
                 type="password"
-                placeholder="Paste li_at cookie value here..."
+                placeholder="Paste li_at cookie value here (starts with AQED...)"
                 value={cookieInput}
                 onChange={e => setCookieInput(e.target.value)}
                 style={{ flex: 1, padding: '7px 10px', fontSize: 12, border: '1px solid #CBD5E1', borderRadius: 4 }}
@@ -391,6 +391,18 @@ export default function LinkedInVerificationModal({
               >
                 {savingSession ? 'Saving...' : 'Save Session'}
               </button>
+            </div>
+
+            {/* Quick 20-second step guide */}
+            <div style={{ marginTop: 10, fontSize: 11.5, color: '#475569', backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 6, padding: '8px 12px' }}>
+              <div style={{ fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>How to get your `li_at` cookie (Takes 20 seconds):</div>
+              <ol style={{ margin: 0, paddingLeft: 18, lineHeight: 1.6 }}>
+                <li>Open <strong>linkedin.com</strong> in your browser (where you are already logged in).</li>
+                <li>Press <strong>F12</strong> (or Right-Click anywhere → <strong>Inspect</strong>).</li>
+                <li>Click the <strong>Application</strong> tab at the top (if not visible, click the <code>»</code> arrows).</li>
+                <li>In the left sidebar, click <strong>Storage</strong> → <strong>Cookies</strong> → <strong>https://www.linkedin.com</strong>.</li>
+                <li>Look for <strong>li_at</strong> in the list, double-click its <strong>Value</strong> column, copy the string (starts with <code>AQED...</code>), and paste it above.</li>
+              </ol>
             </div>
           </div>
         )}
