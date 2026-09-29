@@ -7212,16 +7212,16 @@ app.post('/api/candidates/:id/verify-linkedin', express.json(), async (req, res)
       discrepancies: comparisonResult.discrepancies || [],
       comparisons: comparisonResult.comparisons || {},
       extractedProfile: {
-        name: extractionResult.extractedData?.name || '',
-        headline: extractionResult.extractedData?.headline || '',
-        location: extractionResult.extractedData?.location || '',
-        companies: extractionResult.extractedData?.companies || [],
-        jobTitles: extractionResult.extractedData?.jobTitles || [],
-        experiences: extractionResult.extractedData?.experiences || [],
-        skills: extractionResult.extractedData?.skills || [],
-        projects: extractionResult.extractedData?.projects || [],
-        education: extractionResult.extractedData?.education || [],
-        certifications: extractionResult.extractedData?.certifications || []
+        name: extractedData?.name || '',
+        headline: extractedData?.headline || '',
+        location: extractedData?.location || '',
+        companies: extractedData?.companies || [],
+        jobTitles: extractedData?.jobTitles || [],
+        experiences: extractedData?.experiences || [],
+        skills: extractedData?.skills || [],
+        projects: extractedData?.projects || [],
+        education: extractedData?.education || [],
+        certifications: extractedData?.certifications || []
       }
     };
 

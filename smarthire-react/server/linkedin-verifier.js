@@ -466,7 +466,7 @@ ${(linkedInData.rawBodyText || '').slice(0, 3000)}
 `;
 
   const body = JSON.stringify({
-    model: 'llama-3.3-70b-versatile',
+    model: 'openai/gpt-oss-120b',
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }
@@ -565,7 +565,7 @@ Given unstructured text copied from a LinkedIn profile or resume, extract the ca
 }`;
 
   const body = JSON.stringify({
-    model: 'llama-3.3-70b-versatile',
+    model: 'openai/gpt-oss-120b',
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: rawText.slice(0, 10000) }
