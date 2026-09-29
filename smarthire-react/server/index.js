@@ -10721,11 +10721,53 @@ app.get('/api/recruiter/vendor-hotlists', (req, res) => {
 
   const uniqueVendors = [...new Set(list.map(i => i.vendorCompany || i.vendorName || i.vendorEmail).filter(Boolean))];
 
+  // Dynamic Requisition Matching across Active Client Openings for Vendor Hotlists
+  const activeJobs = (jobsStore || []).filter(isJobActiveAndOpen);
+
+  const enrichedList = list.map(item => {
+    // If item already has a verified AI match with targetReqId and matchScore, retain it
+    if (item.matchScore && item.targetReqId && item.matchedJobTitle) {
+      return item;
+    }
+
+    let bestJob = null;
+    let bestMatch = { matchScore: 0, matchingSkills: [] };
+
+    const cleanRole = item.role || '';
+    const cleanSkills = Array.isArray(item.skills) ? item.skills : (item.skills ? String(item.skills).split(',').map(s => s.trim()) : []);
+    const cleanExp = item.experience || '7+ Years';
+
+    for (const j of activeJobs) {
+      const scoreObj = evaluateCandidateJobMatch({
+        role: cleanRole,
+        skills: cleanSkills,
+        experience: cleanExp,
+        location: item.location || 'Remote / US'
+      }, j);
+      if (scoreObj && scoreObj.matchScore > bestMatch.matchScore) {
+        bestMatch = scoreObj;
+        bestJob = j;
+      }
+    }
+
+    const hasMatch = bestJob && bestMatch.matchScore >= 45;
+    const finalScore = bestJob && bestMatch.matchScore > 0 ? bestMatch.matchScore : Math.min(65, 40 + cleanSkills.length * 3);
+
+    return {
+      ...item,
+      matchScore: finalScore,
+      targetReqId: hasMatch ? String(bestJob.id || '').replace(/^J-/, '') : null,
+      matchedJobTitle: hasMatch ? bestJob.title : 'General Talent Pool',
+      matchedJobClient: hasMatch ? (bestJob.client || 'Enterprise Client') : 'Talent Pool',
+      matchingSkills: bestMatch.matchingSkills || []
+    };
+  });
+
   res.json({
     success: true,
-    hotlists: list,
-    totalCount: list.length,
-    filteredCount: list.length,
+    hotlists: enrichedList,
+    totalCount: enrichedList.length,
+    filteredCount: enrichedList.length,
     vendorsCount: uniqueVendors.length,
     uniqueVendors
   });

@@ -6131,21 +6131,102 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
                           {/* 4. Dedicated Match % Column */}
                           <td style={{ padding: '7px 10px', textAlign: 'center', border: '1px solid #E2E8F0', verticalAlign: 'middle' }}>
-                            <span style={{
-                              fontSize: 11,
-                              fontWeight: 800,
-                              backgroundColor: '#ECFDF5',
-                              color: '#047857',
-                              border: '1px solid #A7F3D0',
-                              padding: '2px 8px',
-                              borderRadius: 9999,
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 4
-                            }}>
-                              <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#059669' }} />
-                              {item.matchScore || 94}% Match
-                            </span>
+                            {(() => {
+                              let score = Number(item.matchScore);
+                              let targetReq = item.targetReqId;
+                              let matchedTitle = item.matchedJobTitle;
+
+                              // Dynamic fallback matching against openJobsList if score not precomputed
+                              if ((!score || isNaN(score) || score <= 0) && Array.isArray(openJobsList) && openJobsList.length > 0) {
+                                const candRole = String(item.role || '').toLowerCase();
+                                const candSkills = (Array.isArray(item.skills) ? item.skills : (item.skills || '').split(/[,|•\n]+/))
+                                  .map(s => String(s).trim().toLowerCase())
+                                  .filter(Boolean);
+
+                                let bestJob = null;
+                                let maxScore = 0;
+
+                                for (const job of openJobsList) {
+                                  if (!isJobActiveAndOpen(job)) continue;
+                                  const jobTitle = String(job.title || '').toLowerCase();
+                                  const jobSkills = (job.skills || []).map(s => String(s).toLowerCase());
+                                  const jobDesc = String(job.description || '').toLowerCase();
+
+                                  let s = 30; // base score
+                                  // Title token alignment
+                                  const tokens = candRole.split(/[\s/,-]+/).filter(t => t.length > 2);
+                                  let matchedTokens = 0;
+                                  tokens.forEach(t => {
+                                    if (jobTitle.includes(t)) matchedTokens += 1;
+                                    else if (jobSkills.some(js => js.includes(t))) matchedTokens += 0.5;
+                                  });
+                                  if (tokens.length > 0) {
+                                    s += Math.min(38, Math.round((matchedTokens / tokens.length) * 38));
+                                  }
+
+                                  // Skills overlap
+                                  let matchedCount = 0;
+                                  candSkills.forEach(sk => {
+                                    if (sk.length > 2 && (jobDesc.includes(sk) || jobSkills.some(js => js.includes(sk)))) {
+                                      matchedCount += 1;
+                                    }
+                                  });
+                                  if (candSkills.length > 0) {
+                                    s += Math.min(32, matchedCount * 8);
+                                  }
+
+                                  if (s > maxScore) {
+                                    maxScore = s;
+                                    bestJob = job;
+                                  }
+                                }
+
+                                if (bestJob && maxScore >= 50) {
+                                  score = Math.min(97, maxScore);
+                                  targetReq = String(bestJob.id || '').replace(/^J-/, '');
+                                  matchedTitle = bestJob.title;
+                                } else {
+                                  score = Math.max(35, Math.min(65, 40 + candSkills.length * 3));
+                                  matchedTitle = 'General Bench Pool';
+                                }
+                              }
+
+                              const finalScore = Math.max(30, Math.min(99, Math.round(score || 50)));
+                              const isHigh = finalScore >= 85;
+                              const isMedium = finalScore >= 70;
+                              const isFair = finalScore >= 50;
+
+                              const bg = isHigh ? '#ECFDF5' : (isMedium ? '#F0FDF4' : (isFair ? '#FFFBEB' : '#F1F5F9'));
+                              const color = isHigh ? '#047857' : (isMedium ? '#15803D' : (isFair ? '#B45309' : '#475569'));
+                              const border = isHigh ? '#A7F3D0' : (isMedium ? '#BBF7D0' : (isFair ? '#FDE68A' : '#E2E8F0'));
+                              const dotColor = isHigh ? '#059669' : (isMedium ? '#16A34A' : (isFair ? '#D97706' : '#94A3B8'));
+
+                              const tooltipText = targetReq && matchedTitle && matchedTitle !== 'General Bench Pool'
+                                ? `Matches Req #${targetReq}: ${matchedTitle} (${finalScore}% Match)`
+                                : `${finalScore}% Fit • General Bench Profile`;
+
+                              return (
+                                <span
+                                  style={{
+                                    fontSize: 11,
+                                    fontWeight: 800,
+                                    backgroundColor: bg,
+                                    color: color,
+                                    border: `1px solid ${border}`,
+                                    padding: '2px 8px',
+                                    borderRadius: 9999,
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 4,
+                                    cursor: 'default'
+                                  }}
+                                  title={tooltipText}
+                                >
+                                  <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: dotColor }} />
+                                  {finalScore}% Match
+                                </span>
+                              );
+                            })()}
                           </td>
 
                           {/* 5. Total Exp */}
@@ -11540,10 +11621,29 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                       : null;
                                     let isJobActive = matchedJob ? isJobActiveAndOpen(matchedJob) : false;
                                     let hasActiveMatch = Boolean(c.targetReqId && matchedJob && isJobActive);
-                                    if (!hasActiveMatch && (c.matchScore >= 50 || c.targetReqId)) {
+
+                                    let score = Number(c.matchScore);
+                                    if (!score || isNaN(score) || score <= 0) {
+                                      const candSkills = (Array.isArray(c.skills) ? c.skills : (c.skills || '').split(/[,|•\n]+/)).map(s => String(s).trim().toLowerCase()).filter(Boolean);
+                                      const candRole = String(c.role || c.title || '').toLowerCase();
+                                      const targetJ = matchedJob || (openJobsList.length > 0 ? openJobsList[0] : null);
+                                      if (targetJ) {
+                                        const jStr = (targetJ.title + ' ' + (targetJ.skills || []).join(' ') + ' ' + (targetJ.description || '')).toLowerCase();
+                                        let s = 35;
+                                        if (candRole && candRole.length > 2 && jStr.includes(candRole)) s += 35;
+                                        let mCount = 0;
+                                        candSkills.forEach(sk => { if (sk.length > 2 && jStr.includes(sk)) mCount++; });
+                                        s += Math.min(25, mCount * 7);
+                                        score = Math.min(96, s);
+                                      } else {
+                                        score = 50;
+                                      }
+                                    }
+
+                                    if (!hasActiveMatch && (score >= 50 || c.targetReqId)) {
                                       hasActiveMatch = true;
                                     }
-                                    return renderMatchBadge(c.matchScore || 85, hasActiveMatch);
+                                    return renderMatchBadge(score, hasActiveMatch);
                                   })()}
                                 </td>
 
