@@ -15,7 +15,8 @@ import {
   getLinkedInSessionStatus,
   saveLinkedInSession,
   extractLinkedInProfileData,
-  compareResumeWithLinkedIn
+  compareResumeWithLinkedIn,
+  extractProfileFromRawText
 } from './linkedin-verifier.js'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'smarthire_secure_jwt_secret_key_2026';
@@ -7161,15 +7162,35 @@ app.post('/api/candidates/:id/verify-linkedin', express.json(), async (req, res)
   try {
     console.log(`🔍 [LinkedIn Verifier] Verifying candidate: ${candidate.name} with URL: ${targetUrl}`);
 
-    // 1. Playwright Authorized Session Extraction
-    const extractionResult = await extractLinkedInProfileData(targetUrl, console.log);
+    // 1. Data Retrieval: either directly provided profileText or Playwright extraction
+    let extractedData = null;
 
-    if (extractionResult.needsSessionSetup) {
-      return res.status(200).json({
-        success: false,
-        needsSessionSetup: true,
-        message: extractionResult.message
+    if (req.body.profileText && req.body.profileText.trim().length > 15) {
+      console.log(`🔍 [LinkedIn Verifier] Parsing provided profile text via Groq AI (${req.body.profileText.length} chars)...`);
+      extractedData = await extractProfileFromRawText({
+        rawText: req.body.profileText.trim(),
+        groqApiKey: process.env.GROQ_API_KEY
       });
+    } else {
+      const extractionResult = await extractLinkedInProfileData(targetUrl, console.log);
+
+      if (extractionResult.needsSessionSetup) {
+        return res.status(200).json({
+          success: false,
+          needsSessionSetup: true,
+          message: extractionResult.message
+        });
+      }
+
+      if (extractionResult.cloudflareBlocked) {
+        return res.status(200).json({
+          success: false,
+          cloudflareBlocked: true,
+          message: extractionResult.message
+        });
+      }
+
+      extractedData = extractionResult.extractedData || {};
     }
 
     // 2. Groq LLM Semantic Comparison against Candidate ATS Resume
@@ -7177,7 +7198,7 @@ app.post('/api/candidates/:id/verify-linkedin', express.json(), async (req, res)
     const comparisonResult = await compareResumeWithLinkedIn({
       candidate,
       resumeText: candidate.resumeText || candidate.summary || '',
-      linkedInData: extractionResult.extractedData || {},
+      linkedInData: extractedData,
       groqApiKey: groqKey
     });
 

@@ -38,6 +38,8 @@ export default function LinkedInVerificationModal({
   const [savingSession, setSavingSession] = useState(false)
   const [verificationResult, setVerificationResult] = useState(candidate.linkedinVerification || null)
   const [firebaseSaved, setFirebaseSaved] = useState(false)
+  const [showDirectPaste, setShowDirectPaste] = useState(false)
+  const [profileTextInput, setProfileTextInput] = useState('')
 
   // Fetch session status on mount
   useEffect(() => {
@@ -91,23 +93,40 @@ export default function LinkedInVerificationModal({
     setLoading(true)
     setError('')
     setFirebaseSaved(false)
-    setLoadingStep('Initializing authorized Playwright browser session...')
+    setLoadingStep('Initializing verification engine...')
+
+    const textToSubmit = typeof overrideText === 'string' ? overrideText : profileTextInput
 
     try {
-      setTimeout(() => setLoadingStep('Navigating to profile and reading permitted background details...'), 2000)
-      setTimeout(() => setLoadingStep('Extracting companies, titles, dates, skills, and projects...'), 4500)
-      setTimeout(() => setLoadingStep('Running Groq AI cross-examination against candidate resume...'), 7000)
+      if (textToSubmit && textToSubmit.trim().length > 15) {
+        setLoadingStep('Extracting structured profile attributes with Groq AI...')
+      } else {
+        setTimeout(() => setLoadingStep('Navigating to profile and reading permitted background details...'), 2000)
+        setTimeout(() => setLoadingStep('Extracting companies, titles, dates, skills, and projects...'), 4500)
+      }
+      setTimeout(() => setLoadingStep('Running Groq AI cross-examination against candidate resume...'), 6500)
 
       const candId = candidate.id || candidate.candidate_id
       const res = await fetch(`/api/candidates/${encodeURIComponent(candId)}/verify-linkedin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          linkedinUrl: linkedinUrl.trim()
+          linkedinUrl: linkedinUrl.trim(),
+          profileText: textToSubmit ? textToSubmit.trim() : undefined
         })
       })
 
-      const data = await res.json()
+      const rawResponse = await res.text()
+      let data
+      try {
+        data = JSON.parse(rawResponse)
+      } catch (parseErr) {
+        throw new Error(
+          res.status === 504
+            ? 'LinkedIn verification connection timed out. Please click "↗ Open in LinkedIn" and paste candidate profile text below for instant AI verification.'
+            : `Server returned an invalid response (${res.status}).`
+        )
+      }
 
       if (!data.success) {
         if (data.needsSessionSetup) {
@@ -116,11 +135,18 @@ export default function LinkedInVerificationModal({
           setLoading(false)
           return
         }
+        if (data.cloudflareBlocked) {
+          setShowDirectPaste(true)
+          setError(data.message || 'LinkedIn Cloudflare security blocked direct datacenter access. Please open profile in new tab and paste text below.')
+          setLoading(false)
+          return
+        }
         throw new Error(data.message || 'Verification failed on server.')
       }
 
       const result = data.verification
       setVerificationResult(result)
+      setShowDirectPaste(false)
 
       // Dual Persistence: Write audit record directly to Firebase Firestore
       try {
@@ -329,6 +355,63 @@ export default function LinkedInVerificationModal({
             {loading ? 'Verifying...' : (v ? 'Re-verify with LinkedIn' : 'Verify with LinkedIn')}
           </button>
 
+          {linkedinUrl && (
+            <a
+              href={linkedinUrl.startsWith('http') ? linkedinUrl : `https://${linkedinUrl}`}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                padding: '8px 12px',
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#0A66C2',
+                backgroundColor: '#F0F9FF',
+                border: '1px solid #BAE6FD',
+                borderRadius: 6,
+                textDecoration: 'none'
+              }}
+              title="Open candidate profile in new tab (bypasses datacenter Cloudflare restrictions)"
+            >
+              <span>Open in LinkedIn</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+            </a>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setShowDirectPaste(p => !p)}
+            style={{
+              backgroundColor: showDirectPaste ? '#EFF6FF' : '#FFFFFF',
+              color: showDirectPaste ? '#1D4ED8' : '#475569',
+              border: `1px solid ${showDirectPaste ? '#93C5FD' : '#CBD5E1'}`,
+              borderRadius: 6,
+              padding: '8px 12px',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6
+            }}
+            title="Paste profile content directly for 100% reliable instant verification"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+              <polyline points="10 9 9 9 8 9" />
+            </svg>
+            <span>Paste Profile Text</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setShowSessionConfig(p => !p)}
@@ -365,6 +448,66 @@ export default function LinkedInVerificationModal({
             )}
           </button>
         </div>
+
+        {/* Direct Profile Text Paste Box (Bypasses Datacenter Cloudflare Block) */}
+        {showDirectPaste && (
+          <div style={{ padding: '14px 24px', backgroundColor: '#F0F9FF', borderBottom: '1px solid #BAE6FD' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: '#0369A1' }}>
+                Instant AI Verification (Bypasses Datacenter Security Blocks)
+              </div>
+              {linkedinUrl && (
+                <a
+                  href={linkedinUrl.startsWith('http') ? linkedinUrl : `https://${linkedinUrl}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ fontSize: 11.5, color: '#0284C7', fontWeight: 600, textDecoration: 'underline' }}
+                >
+                  Click to open candidate profile in new tab ↗
+                </a>
+              )}
+            </div>
+            <p style={{ fontSize: 11.5, color: '#475569', margin: '0 0 8px' }}>
+              Open the candidate&apos;s profile in your browser, copy their experience / headline / skills text (or Ctrl+A, Ctrl+C), and paste it below. Groq AI will parse and cross-examine with their resume in &lt;2 seconds!
+            </p>
+            <textarea
+              placeholder="Paste candidate LinkedIn profile text, experience, or skills here..."
+              value={profileTextInput}
+              onChange={e => setProfileTextInput(e.target.value)}
+              disabled={loading}
+              rows={4}
+              style={{
+                width: '100%',
+                padding: '8px 10px',
+                fontSize: 12,
+                border: '1px solid #93C5FD',
+                borderRadius: 4,
+                boxSizing: 'border-box',
+                fontFamily: 'inherit',
+                marginBottom: 8
+              }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => handleRunVerification(null, profileTextInput)}
+                disabled={loading || !profileTextInput.trim()}
+                style={{
+                  backgroundColor: loading || !profileTextInput.trim() ? '#94A3B8' : '#0284C7',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: 4,
+                  padding: '7px 16px',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: loading || !profileTextInput.trim() ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {loading ? 'Analyzing with AI...' : 'Run Instant AI Verification'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Optional Session Config Box */}
         {showSessionConfig && (

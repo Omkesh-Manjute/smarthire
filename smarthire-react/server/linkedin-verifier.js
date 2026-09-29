@@ -152,12 +152,42 @@ export async function extractLinkedInProfileData(profileUrl, logger = console.lo
     });
 
     logger(`[LinkedIn Verifier] Navigating to profile: ${cleanUrl}`);
-    const response = await page.goto(cleanUrl, {
-      timeout: 35000,
-      waitUntil: 'domcontentloaded'
-    });
+    let response = null;
+    try {
+      response = await page.goto(cleanUrl, {
+        timeout: 10000,
+        waitUntil: 'domcontentloaded'
+      });
+    } catch (navErr) {
+      logger(`[LinkedIn Verifier] Navigation notice: ${navErr.message}`);
+      if (
+        navErr.message.includes('ERR_TOO_MANY_REDIRECTS') ||
+        navErr.message.includes('timeout') ||
+        navErr.message.includes('net::ERR_')
+      ) {
+        return {
+          needsSessionSetup: false,
+          cloudflareBlocked: true,
+          message: 'LinkedIn Cloudflare security blocked direct AWS datacenter IP access. Please use the "↗ Open in LinkedIn" option to paste profile details for instant AI verification.',
+          extractedData: null,
+          rawText: ''
+        };
+      }
+      throw navErr;
+    }
 
-    await page.waitForTimeout(2500);
+    if (response && (response.status() === 999 || response.status() === 403)) {
+      logger(`[LinkedIn Verifier] Cloudflare blocked server IP with status ${response.status()}`);
+      return {
+        needsSessionSetup: false,
+        cloudflareBlocked: true,
+        message: 'LinkedIn Cloudflare security blocked direct AWS datacenter IP access (Status 999). Please click "↗ Open in LinkedIn" and paste candidate profile text below for instant AI verification.',
+        extractedData: null,
+        rawText: ''
+      };
+    }
+
+    await page.waitForTimeout(1500);
 
     const currentUrl = page.url();
     const pageTitle = await page.title();
@@ -485,3 +515,104 @@ ${(linkedInData.rawBodyText || '').slice(0, 3000)}
     req.end();
   });
 }
+
+/**
+ * Extracts structured LinkedIn profile attributes from raw user-supplied text
+ */
+export async function extractProfileFromRawText({ rawText, groqApiKey = process.env.GROQ_API_KEY }) {
+  if (!rawText || rawText.trim().length < 15) {
+    throw new Error('Please provide profile text containing at least experience, title, or skills.');
+  }
+
+  const systemPrompt = `You are an expert LinkedIn profile information extractor.
+Given unstructured text copied from a LinkedIn profile or resume, extract the candidate's professional profile into a STRICT JSON object with these keys:
+{
+  "name": "Full Name",
+  "headline": "Professional headline or current job title",
+  "location": "City, State/Country",
+  "companies": ["Company 1", "Company 2"],
+  "jobTitles": ["Title 1", "Title 2"],
+  "experiences": [
+    {
+      "company": "Company Name",
+      "title": "Job Title",
+      "dates": "Start - End Date",
+      "description": "Responsibilities and summary"
+    }
+  ],
+  "skills": ["Skill 1", "Skill 2"],
+  "projects": [
+    {
+      "name": "Project Name",
+      "dates": "Dates",
+      "description": "Details"
+    }
+  ],
+  "education": [
+    {
+      "school": "University / School",
+      "degree": "Degree / Major",
+      "dates": "Graduation or dates"
+    }
+  ],
+  "certifications": [
+    {
+      "name": "Certification Name",
+      "issuer": "Issuing Org",
+      "date": "Date"
+    }
+  ]
+}`;
+
+  const body = JSON.stringify({
+    model: 'llama-3.3-70b-versatile',
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: rawText.slice(0, 10000) }
+    ],
+    response_format: { type: 'json_object' },
+    temperature: 0.1
+  });
+
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'api.groq.com',
+      port: 443,
+      path: '/openai/v1/chat/completions',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${groqApiKey}`,
+        'Content-Length': Buffer.byteLength(body)
+      },
+      timeout: 30000
+    };
+
+    const req = https.request(options, res => {
+      const chunks = [];
+      res.on('data', c => chunks.push(c));
+      res.on('end', () => {
+        try {
+          const raw = Buffer.concat(chunks).toString('utf-8');
+          const data = JSON.parse(raw);
+          if (data.error) return reject(new Error(`Groq API error: ${data.error.message}`));
+          const content = data.choices?.[0]?.message?.content;
+          const parsed = JSON.parse(content);
+          parsed.rawBodyText = rawText.slice(0, 5000);
+          resolve(parsed);
+        } catch (err) {
+          reject(new Error(`Failed to parse extracted profile text: ${err.message}`));
+        }
+      });
+    });
+
+    req.on('error', reject);
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('Profile text extraction timed out.'));
+    });
+    req.write(body);
+    req.end();
+  });
+}
+
