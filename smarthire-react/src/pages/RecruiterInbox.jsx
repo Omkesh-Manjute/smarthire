@@ -523,6 +523,27 @@ const renderSourceBadge = (c) => {
   const cat = String(c.sourceCategory || '').toLowerCase()
   const folder = String(c.folder || '').toLowerCase()
 
+  if (cat === 'mobile_app' || src.includes('mobile') || src.includes('app')) {
+    return (
+      <span style={{
+        fontSize: 11,
+        fontWeight: 700,
+        color: '#2563EB',
+        backgroundColor: '#EFF6FF',
+        border: '1px solid #BFDBFE',
+        padding: '2px 8px',
+        borderRadius: 6,
+        whiteSpace: 'nowrap',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5
+      }}>
+        <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#2563EB' }}></span>
+        Mobile App
+      </span>
+    )
+  }
+
   if (c.isSpamRecovery || cat === 'email_spam' || folder.includes('spam') || src.includes('spam')) {
     return (
       <span style={{
@@ -2839,17 +2860,19 @@ export default function RecruiterInbox({ defaultViewMode }) {
     setMessages([])
     await fetchMessages(thread.candidateId)
     fetchCandidateDetails(thread.candidateId, thread)
-    setThreads(prev => prev.map(t => t.candidateId === thread.candidateId ? { ...t, unreadCount: 0 } : t))
-    if (!thread.isLeadChannel && !thread.isTeamMember) {
-      try {
-        await fetch('/api/messages/' + thread.candidateId + '/read', { 
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
-          }
-        })
-      } catch (e) {}
-    }
+    setThreads(prev => prev.map(t => (
+      String(t.candidateId || '').toLowerCase().trim() === String(thread.candidateId || '').toLowerCase().trim()
+        ? { ...t, unreadCount: 0 }
+        : t
+    )))
+    try {
+      await fetch('/api/messages/' + encodeURIComponent(thread.candidateId) + '/read', { 
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+        }
+      })
+    } catch (e) {}
   }, [fetchMessages, fetchCandidateDetails])
 
   const handleSend = async (textOverride) => {
@@ -4416,11 +4439,14 @@ export default function RecruiterInbox({ defaultViewMode }) {
         return (subName && candAssigned.includes(subName)) || (subEmail && candEmail.includes(subEmail))
       })
 
-      const isCareersPortal = candCategory === 'careers_portal' || candSource.includes('career') || candSource.includes('/jobs')
+      const isCareersPortal = candCategory === 'careers_portal' || candCategory === 'mobile_app' || candSource.includes('mobile') || candSource.includes('career') || candSource.includes('/jobs')
 
       return isMine || isAssignedReq || isReporteeCand || isCareersPortal
     })
   }, [streamCandidates, isSuperAdmin, isManager, currentUser?.name, currentUser?.email, openJobsList, teamUsersList])
+
+  const mobileAppCount = useMemo(() => (roleScopedCandidates || []).filter(c => (c.sourceCategory === 'mobile_app') || (c.source || '').toLowerCase().includes('mobile')).length, [roleScopedCandidates])
+  const jobSitesCount = useMemo(() => (roleScopedCandidates || []).filter(c => (c.sourceCategory === 'careers_portal') || (c.source || '').toLowerCase().includes('career') || (c.source || '').toLowerCase().includes('job site')).length, [roleScopedCandidates])
 
   const filteredCandidates = useMemo(() => {
     const rawFiltered = roleScopedCandidates.filter(c => {
@@ -4493,10 +4519,11 @@ export default function RecruiterInbox({ defaultViewMode }) {
       if (filterSource !== 'all') {
         const src = (c.source || '').toLowerCase()
         const cat = (c.sourceCategory || '').toLowerCase()
+        if (filterSource === 'mobile' && cat !== 'mobile_app' && !src.includes('mobile') && !src.includes('app')) return false
+        if (filterSource === 'careers' && cat !== 'careers_portal' && !src.includes('career') && !src.includes('job site') && !src.includes('indeed') && !src.includes('linkedin') && !src.includes('/jobs')) return false
         if (filterSource === 'email' && cat !== 'email_inbox' && !src.includes('inbox') && !src.includes('monster') && !src.includes('dice')) return false
         if (filterSource === 'spam' && cat !== 'email_spam' && !c.isSpamRecovery && !src.includes('spam')) return false
         if (filterSource === 'manual' && cat !== 'manual_entry' && !src.includes('manual') && !src.includes('direct')) return false
-        if (filterSource === 'careers' && cat !== 'careers_portal' && !src.includes('career') && !src.includes('/jobs')) return false
         if (filterSource === 'vendor' && cat !== 'vendor_bench' && !src.includes('vendor') && !src.includes('bench')) return false
       }
 
@@ -5998,13 +6025,10 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     <th style={{ padding: '9px 10px', width: 95, textAlign: 'center', border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                       Visa Status
                     </th>
-                    <th style={{ padding: '9px 12px', width: 180, border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                    <th style={{ padding: '9px 12px', width: 200, border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                       Vendor / Agency
                     </th>
-                    <th style={{ padding: '9px 10px', width: 85, textAlign: 'center', border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                      Rate
-                    </th>
-                    <th style={{ padding: '9px 12px', width: 195, textAlign: 'right', border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                    <th style={{ padding: '9px 12px', width: 160, textAlign: 'right', border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                       Actions
                     </th>
                   </tr>
@@ -6012,7 +6036,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 <tbody>
                   {filteredList.length === 0 ? (
                     <tr>
-                      <td colSpan={10} style={{ padding: 48, textAlign: 'center', color: '#64748B', border: '1px solid #E2E8F0' }}>
+                      <td colSpan={9} style={{ padding: 48, textAlign: 'center', color: '#64748B', border: '1px solid #E2E8F0' }}>
                         No vendor bench candidates found matching your filters.
                       </td>
                     </tr>
@@ -6149,92 +6173,28 @@ export default function RecruiterInbox({ defaultViewMode }) {
                             </div>
                           </td>
 
-                          {/* 9. Rate */}
-                          <td style={{ padding: '7px 10px', textAlign: 'center', border: '1px solid #E2E8F0', verticalAlign: 'middle', fontWeight: 800, color: '#047857', fontSize: 12 }}>
-                            {item.rate || '$70/hr'}
-                          </td>
-
-                          {/* 10. Actions */}
+                          {/* 9. Actions (Clean & Uncluttered: View Dossier + Email Vendor + Delete) */}
                           <td style={{ padding: '7px 12px', textAlign: 'right', border: '1px solid #E2E8F0', verticalAlign: 'middle' }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 5 }}>
-                              {item.attachmentName && (
-                                <button
-                                  type="button"
-                                  onClick={() => setHotlistResumeModalItem(item)}
-                                  style={{
-                                    backgroundColor: '#EFF6FF',
-                                    color: '#1D4ED8',
-                                    border: '1px solid #BFDBFE',
-                                    borderRadius: 4,
-                                    padding: '4px 8px',
-                                    fontSize: 11,
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: 3
-                                  }}
-                                  title="Preview Candidate Resume in popup viewer"
-                                >
-                                  Resume ↗
-                                </button>
-                              )}
                               <button
                                 type="button"
-                                onClick={() => {
-                                  const candObj = {
-                                    id: item.id || `vh-${Date.now()}`,
-                                    name: item.candidateName,
-                                    role: item.role,
-                                    email: item.candidateEmail || item.vendorEmail,
-                                    phone: item.candidatePhone || item.vendorPhone,
-                                    location: item.location || 'Remote / US',
-                                    experience: item.experience || '8+ Years',
-                                    visaStatus: item.visa || 'US Citizen',
-                                    skills: item.skills || [],
-                                    source: `Vendor Hotlist (${item.vendorCompany || item.vendorName})`,
-                                    sourceCategory: 'vendor_bench',
-                                    recruiterEmail: currentUser?.email || 'omkesh@coolsofttech.com',
-                                    vendorEmail: item.vendorEmail,
-                                    vendorCompany: item.vendorCompany
-                                  }
-                                  setPushTargetCand(candObj)
-                                  setPushToReqModalOpen(true)
-                                }}
+                                onClick={() => setHotlistResumeModalItem(item)}
                                 style={{
-                                  backgroundColor: '#2563EB',
-                                  color: '#FFFFFF',
-                                  border: 'none',
+                                  backgroundColor: '#EFF6FF',
+                                  color: '#1D4ED8',
+                                  border: '1px solid #BFDBFE',
                                   borderRadius: 4,
-                                  padding: '4px 8px',
+                                  padding: '4px 9px',
                                   fontSize: 11,
                                   fontWeight: 700,
                                   cursor: 'pointer',
                                   display: 'inline-flex',
                                   alignItems: 'center',
-                                  gap: 2
+                                  gap: 3
                                 }}
-                                title="Match & push candidate to active requisition"
+                                title="View candidate dossier, resume preview, rate & push actions"
                               >
-                                Push ↗
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => handlePushHotlistToATS(item)}
-                                style={{
-                                  backgroundColor: '#0D9488',
-                                  color: '#FFFFFF',
-                                  border: 'none',
-                                  borderRadius: 4,
-                                  padding: '4px 8px',
-                                  fontSize: 11,
-                                  fontWeight: 700,
-                                  cursor: 'pointer'
-                                }}
-                                title="Add candidate directly into main ATS Talent Pool"
-                              >
-                                + ATS
+                                Dossier ↗
                               </button>
 
                               <button
@@ -6599,7 +6559,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     <IconFileText />
                   </div>
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: C.textPrimary }}>
                         {hotlistResumeModalItem.candidateName}
                       </h3>
@@ -6608,6 +6568,9 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       </span>
                       <span style={{ fontSize: 11, fontWeight: 700, color: '#1D4ED8', background: '#DBEAFE', padding: '2px 8px', borderRadius: 6, border: '1px solid #BFDBFE' }}>
                         {hotlistResumeModalItem.vendorCompany || hotlistResumeModalItem.vendorName || 'Vendor Bench'}
+                      </span>
+                      <span style={{ fontSize: 11.5, fontWeight: 800, color: '#047857', background: '#ECFDF5', padding: '2px 8px', borderRadius: 6, border: '1px solid #A7F3D0' }}>
+                        Rate: {hotlistResumeModalItem.rate || '$70/hr'}
                       </span>
                     </div>
                     <div style={{ fontSize: 11.5, color: C.textSecondary, marginTop: 2, display: 'flex', gap: 12 }}>
@@ -6707,6 +6670,30 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     }}
                   >
                     <span>Push to Requisition ↗</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handlePushHotlistToATS(hotlistResumeModalItem);
+                      setHotlistResumeModalItem(null);
+                    }}
+                    style={{
+                      padding: '7px 14px',
+                      borderRadius: 6,
+                      border: 'none',
+                      background: '#0D9488',
+                      color: '#FFFFFF',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4
+                    }}
+                    title="Add candidate directly into main ATS Talent Pool"
+                  >
+                    <span>+ Add to ATS</span>
                   </button>
 
                   <button
@@ -6961,6 +6948,91 @@ export default function RecruiterInbox({ defaultViewMode }) {
               }} />
             )}
           </button>
+
+          {/* Sub-channel: Mobile App */}
+          {!sidebarCollapsed && (
+            <button
+              type="button"
+              title={`Mobile App Submissions (${mobileAppCount})`}
+              onMouseEnter={() => setHoveredNav('mobile_app')}
+              onMouseLeave={() => setHoveredNav(null)}
+              onClick={() => { setInboxViewMode('stream'); setInboxSubMode('table'); setFilterSource('mobile'); setTablePage(1); }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '6px 12px 6px 36px',
+                borderRadius: 6,
+                border: 'none',
+                background: (inboxViewMode === 'stream' && filterSource === 'mobile')
+                  ? (isLight ? '#EFF6FF' : 'rgba(37,99,235,0.18)')
+                  : (hoveredNav === 'mobile_app' ? (isLight ? '#F8FAFC' : 'rgba(255,255,255,0.04)') : 'transparent'),
+                color: (inboxViewMode === 'stream' && filterSource === 'mobile')
+                  ? '#2563EB'
+                  : (hoveredNav === 'mobile_app' ? C.textPrimary : C.textSecondary),
+                fontWeight: (inboxViewMode === 'stream' && filterSource === 'mobile') ? 700 : 500,
+                fontSize: 12,
+                cursor: 'pointer',
+                textAlign: 'left',
+                width: '100%',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                  <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                </svg>
+                <span>Mobile App</span>
+              </span>
+              <span style={{ fontSize: 10, background: '#EFF6FF', color: '#2563EB', padding: '1px 6px', borderRadius: 8, fontWeight: 700, border: '1px solid #BFDBFE' }}>
+                {mobileAppCount}
+              </span>
+            </button>
+          )}
+
+          {/* Sub-channel: Job Sites */}
+          {!sidebarCollapsed && (
+            <button
+              type="button"
+              title={`Job Sites / Careers Portal (${jobSitesCount})`}
+              onMouseEnter={() => setHoveredNav('job_sites')}
+              onMouseLeave={() => setHoveredNav(null)}
+              onClick={() => { setInboxViewMode('stream'); setInboxSubMode('table'); setFilterSource('careers'); setTablePage(1); }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '6px 12px 6px 36px',
+                borderRadius: 6,
+                border: 'none',
+                background: (inboxViewMode === 'stream' && filterSource === 'careers')
+                  ? (isLight ? '#ECFDF5' : 'rgba(5,150,105,0.18)')
+                  : (hoveredNav === 'job_sites' ? (isLight ? '#F8FAFC' : 'rgba(255,255,255,0.04)') : 'transparent'),
+                color: (inboxViewMode === 'stream' && filterSource === 'careers')
+                  ? '#059669'
+                  : (hoveredNav === 'job_sites' ? C.textPrimary : C.textSecondary),
+                fontWeight: (inboxViewMode === 'stream' && filterSource === 'careers') ? 700 : 500,
+                fontSize: 12,
+                cursor: 'pointer',
+                textAlign: 'left',
+                width: '100%',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="2" y1="12" x2="22" y2="12"></line>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
+                <span>Job Sites</span>
+              </span>
+              <span style={{ fontSize: 10, background: '#ECFDF5', color: '#059669', padding: '1px 6px', borderRadius: 8, fontWeight: 700, border: '1px solid #A7F3D0' }}>
+                {jobSitesCount}
+              </span>
+            </button>
+          )}
 
           {/* 3. Messages */}
           <button
@@ -10905,10 +10977,11 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     title="Filter candidates by acquisition channel"
                   >
                     <option value="all">Source: All ⌵</option>
+                    <option value="mobile">Applied via Mobile App</option>
+                    <option value="careers">Job Sites / Careers Portal</option>
                     <option value="email">Email Ingest</option>
                     <option value="spam">Spam Recovered</option>
                     <option value="manual">Manual Entry</option>
-                    <option value="careers">Careers Portal</option>
                     <option value="vendor">Vendor Bench</option>
                   </select>
 
@@ -11507,14 +11580,39 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                 {/* 5. AI Matched Requirement */}
                                 <td style={{ padding: '8px 10px', maxWidth: 230 }}>
                                   {(() => {
-                                    const matchedJob = c.targetReqId 
+                                    let matchedJob = c.targetReqId 
                                       ? openJobsList.find(j => String(j.id || '').replace(/^J-/, '') === String(c.targetReqId).replace(/^J-/, ''))
                                       : null;
-                                    const isJobActive = matchedJob ? isJobActiveAndOpen(matchedJob) : false;
+                                    let isJobActive = matchedJob ? isJobActiveAndOpen(matchedJob) : false;
                                     let hasActiveMatch = Boolean(c.targetReqId && matchedJob && isJobActive);
 
+                                    // Dynamic fallback match: if no active req matched yet or target req is closed/missing, find best fit in openJobsList
+                                    if (!hasActiveMatch && Array.isArray(openJobsList) && openJobsList.length > 0) {
+                                      const candSkills = (Array.isArray(c.skills) ? c.skills : (c.skills || '').split(/[,|•\n]+/)).map(s => String(s).trim().toLowerCase()).filter(Boolean);
+                                      const candRole = String(c.role || c.title || '').toLowerCase();
+                                      let bestJob = null;
+                                      let bestScore = 0;
+                                      for (const job of openJobsList) {
+                                        if (!isJobActiveAndOpen(job)) continue;
+                                        const jobStr = (job.title + ' ' + (job.skills || []).join(' ') + ' ' + (job.description || '')).toLowerCase();
+                                        let score = 0;
+                                        if (candRole && candRole.length > 2 && jobStr.includes(candRole)) score += 40;
+                                        candSkills.forEach(sk => {
+                                          if (sk.length > 2 && jobStr.includes(sk)) score += 10;
+                                        });
+                                        if (score > bestScore) {
+                                          bestScore = score;
+                                          bestJob = job;
+                                        }
+                                      }
+                                      if (bestJob && bestScore >= 10) {
+                                        matchedJob = bestJob;
+                                        hasActiveMatch = true;
+                                      }
+                                    }
+
                                     const clientStr = String(matchedJob?.client || c.matchedJobClient || c.jobSource || '').toLowerCase();
-                                    const isInfoOrigin = clientStr.includes('infoorigin') || clientStr.includes('info origin') || (c.targetReqId && String(c.targetReqId).length === 4);
+                                    const isInfoOrigin = clientStr.includes('infoorigin') || clientStr.includes('info origin') || (matchedJob?.id && String(matchedJob.id).length === 4);
 
                                     // If recruiter chose to hide InfoOrigin matches, suppress InfoOrigin match display
                                     if (hideInfoOriginMatches && isInfoOrigin) {
@@ -11522,6 +11620,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                     }
 
                                     const isTalentPool = !hasActiveMatch;
+                                    const displayReqId = matchedJob ? String(matchedJob.id || '').replace(/^J-/, '') : (c.targetReqId || '');
+
                                     return (
                                       <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
@@ -11542,7 +11642,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                             letterSpacing: '0.3px',
                                             flexShrink: 0
                                           }}>
-                                            {!isTalentPool ? `Req #${c.targetReqId}` : 'No Match Req Found'}
+                                            {!isTalentPool ? (displayReqId ? `Req #${displayReqId}` : 'Active Req') : 'No Match Req Found'}
                                           </span>
                                           <span style={{
                                             fontSize: 11,
@@ -11575,11 +11675,14 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                 {/* 6. Match % */}
                                 <td style={{ padding: '8px 8px' }}>
                                   {(() => {
-                                    const matchedJob = c.targetReqId 
+                                    let matchedJob = c.targetReqId 
                                       ? openJobsList.find(j => String(j.id || '').replace(/^J-/, '') === String(c.targetReqId).replace(/^J-/, ''))
                                       : null;
-                                    const isJobActive = matchedJob ? isJobActiveAndOpen(matchedJob) : false;
-                                    const hasActiveMatch = Boolean(c.targetReqId && matchedJob && isJobActive);
+                                    let isJobActive = matchedJob ? isJobActiveAndOpen(matchedJob) : false;
+                                    let hasActiveMatch = Boolean(c.targetReqId && matchedJob && isJobActive);
+                                    if (!hasActiveMatch && (c.matchScore >= 50 || c.targetReqId)) {
+                                      hasActiveMatch = true;
+                                    }
                                     return renderMatchBadge(c.matchScore || 85, hasActiveMatch);
                                   })()}
                                 </td>
@@ -11664,34 +11767,6 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                                       </svg>
                                       <span>Message</span>
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => handleOpenPushModal(c)}
-                                      style={{
-                                        backgroundColor: '#2563EB',
-                                        color: '#FFFFFF',
-                                        border: 'none',
-                                        borderRadius: 6,
-                                        padding: '5px 9px',
-                                        fontSize: 11.5,
-                                        fontWeight: 700,
-                                        cursor: 'pointer',
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: 3,
-                                        whiteSpace: 'nowrap',
-                                        boxShadow: '0 1px 2px rgba(37,99,235,0.2)',
-                                        transition: 'all 0.15s ease'
-                                      }}
-                                      title="Push Candidate to Jobs in Hand / Active Requisition"
-                                    >
-                                      <span>Push</span>
-                                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                        <line x1="7" y1="17" x2="17" y2="7"></line>
-                                        <polyline points="7 7 17 7 17 17"></polyline>
-                                      </svg>
                                     </button>
 
                                     <button

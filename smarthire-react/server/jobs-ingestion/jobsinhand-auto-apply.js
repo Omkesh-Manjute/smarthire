@@ -80,7 +80,11 @@ export async function executeDirectWebFormApply({
       signal: AbortSignal.timeout(10000)
     });
     const htmlText = await getRes.text();
-    const cookies = getRes.headers.get('set-cookie') || '';
+    // Handle all cookies properly across redirects/ASP.NET session
+    const cookieArray = typeof getRes.headers.getSetCookie === 'function' 
+      ? getRes.headers.getSetCookie() 
+      : (getRes.headers.get('set-cookie') ? [getRes.headers.get('set-cookie')] : []);
+    const cookieHeader = cookieArray.map(c => c.split(';')[0]).join('; ');
 
     const viewStateMatch = htmlText.match(/id="__VIEWSTATE"\s+value="([^"]+)"/i);
     const viewStateGenMatch = htmlText.match(/id="__VIEWSTATEGENERATOR"\s+value="([^"]+)"/i);
@@ -98,18 +102,55 @@ export async function executeDirectWebFormApply({
     if (eventVal) formData.append('__EVENTVALIDATION', eventVal);
     if (prevPage) formData.append('__PREVIOUSPAGE', prevPage);
 
-    formData.append('firstName', firstName);
-    formData.append('lastName', lastName);
-    formData.append('email', email);
-    formData.append('phone', phoneFormatted);
-    formData.append('address1', streetAddress);
-    formData.append('address2', '');
-    formData.append('city', city);
-    formData.append('ctl00$Contentpage1$ddl_state1', state);
-    formData.append('zip', zip);
-    formData.append('ctl00$Contentpage1$securityClearance', 'No');
+    // Extract dynamic form field names from HTML if present
+    const inputMatches = [...htmlText.matchAll(/<input[^>]+name="([^"]+)"[^>]*>/gi)];
+    const inputNames = inputMatches.map(m => m[1]);
 
-    const submitBtnMatch = htmlText.match(/name="([^"]*(?:btnNext|Next|Submit)[^"]*)"/i);
+    const firstNameField = inputNames.find(n => /first.*name|txt.*fname|txt.*first/i.test(n)) || 'ctl00$Contentpage1$txt_firstname';
+    const lastNameField = inputNames.find(n => /last.*name|txt.*lname|txt.*last/i.test(n)) || 'ctl00$Contentpage1$txt_lastname';
+    const emailField = inputNames.find(n => /email|txt.*mail/i.test(n)) || 'ctl00$Contentpage1$txt_email';
+    const phoneField = inputNames.find(n => /phone|txt.*phone|txt.*cell/i.test(n)) || 'ctl00$Contentpage1$txt_phone';
+    const addressField = inputNames.find(n => /address1|street|txt.*addr/i.test(n)) || 'ctl00$Contentpage1$txt_address1';
+    const cityField = inputNames.find(n => /city|txt.*city/i.test(n)) || 'ctl00$Contentpage1$txt_city';
+    const zipField = inputNames.find(n => /zip|postal|txt.*zip/i.test(n)) || 'ctl00$Contentpage1$txt_zip';
+    const rateField = inputNames.find(n => /rate|txt.*rate|salary/i.test(n)) || 'ctl00$Contentpage1$txt_rate';
+    const fileField = inputNames.find(n => /resume|file.*upload|upl.*resume/i.test(n)) || 'ctl00$Contentpage1$fileUploadResume';
+
+    // Populate both detected ASP.NET names and standard fallback names for maximum compatibility
+    const fieldMap = {
+      [firstNameField]: firstName,
+      'firstName': firstName,
+      'ctl00$Contentpage1$txt_firstname': firstName,
+      [lastNameField]: lastName,
+      'lastName': lastName,
+      'ctl00$Contentpage1$txt_lastname': lastName,
+      [emailField]: email,
+      'email': email,
+      'ctl00$Contentpage1$txt_email': email,
+      [phoneField]: phoneFormatted,
+      'phone': phoneFormatted,
+      'ctl00$Contentpage1$txt_phone': phoneFormatted,
+      [addressField]: streetAddress,
+      'address1': streetAddress,
+      'address2': '',
+      [cityField]: city,
+      'city': city,
+      'ctl00$Contentpage1$txt_city': city,
+      'ctl00$Contentpage1$ddl_state1': state,
+      'state': state,
+      [zipField]: zip,
+      'zip': zip,
+      'ctl00$Contentpage1$txt_zip': zip,
+      [rateField]: finalRate || '$75/hr',
+      'rate': finalRate || '$75/hr',
+      'ctl00$Contentpage1$securityClearance': 'No'
+    };
+
+    for (const [k, v] of Object.entries(fieldMap)) {
+      formData.append(k, v);
+    }
+
+    const submitBtnMatch = htmlText.match(/name="([^"]*(?:btnNext|Next|Submit|btnSubmit)[^"]*)"/i);
     const submitBtnName = submitBtnMatch ? submitBtnMatch[1] : 'ctl00$Contentpage1$btnNext';
     formData.append(submitBtnName, 'Next');
 
@@ -120,7 +161,10 @@ export async function executeDirectWebFormApply({
           ? 'application/pdf'
           : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
         const blob = new Blob([fileBuffer], { type: mimeType });
-        formData.append('ctl00$Contentpage1$fileUploadResume', blob, path.basename(resumeFilePath));
+        formData.append(fileField, blob, path.basename(resumeFilePath));
+        if (fileField !== 'ctl00$Contentpage1$fileUploadResume') {
+          formData.append('ctl00$Contentpage1$fileUploadResume', blob, path.basename(resumeFilePath));
+        }
       } catch (fErr) {
         console.warn('⚠️ Could not attach resume blob:', fErr.message);
       }
@@ -129,8 +173,9 @@ export async function executeDirectWebFormApply({
     const postRes = await fetch(targetUrl, {
       method: 'POST',
       headers: {
-        'Cookie': cookies,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        'Cookie': cookieHeader,
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Referer': targetUrl
       },
       body: formData,
       signal: AbortSignal.timeout(12000)

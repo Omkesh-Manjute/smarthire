@@ -627,6 +627,12 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
   const handleMarkAllRead = () => {
     const updated = notifications.map(n => ({ ...n, isRead: true }))
     saveNotifications(updated)
+    try {
+      fetch('/api/messages/mark-all-read', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}` }
+      }).catch(() => {})
+    } catch (_) {}
   }
 
   // Clear all

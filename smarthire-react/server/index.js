@@ -6258,8 +6258,8 @@ app.post('/api/parse-resume', upload.single('resume'), async (req, res) => {
   }
 });
 
-// Multipart file upload application endpoint (Public Careers Portal)
-app.post('/api/screening/public-submit-file', upload.single('resume'), async (req, res) => {
+// Multipart file upload application endpoint (Public Careers Portal & Mobile App)
+const handlePublicApplication = async (req, res) => {
   try {
     const {
       jobId,
@@ -6271,8 +6271,13 @@ app.post('/api/screening/public-submit-file', upload.single('resume'), async (re
       currentLocation,
       relocatePref,
       expectedRate,
-      recruiterRef
+      recruiterRef,
+      source: customSource,
+      sourceCategory: customSourceCat
     } = req.body;
+
+    const appliedSource = customSource || 'Job Site';
+    const appliedCategory = customSourceCat || (appliedSource.toLowerCase().includes('mobile') ? 'mobile_app' : 'careers_portal');
 
     if (!jobId || !candidateName || !candidateEmail) {
       return res.status(400).json({ success: false, message: 'Job ID, Name, and Email are required.' });
@@ -6370,10 +6375,10 @@ app.post('/api/screening/public-submit-file', upload.single('resume'), async (re
       jobExperience: job.experience || 'Any',
       jobLocation: job.location || 'Any',
       jobClient: job.client || job.source || 'General Client',
-      source: 'Job Site',
-      sourceCategory: 'careers_portal',
-      sourceLabel: 'Job Site Application',
-      appliedFrom: 'Job Site Application',
+      source: appliedSource,
+      sourceCategory: appliedCategory,
+      sourceLabel: appliedSource === 'Mobile App' ? 'Mobile App Application' : 'Job Site Application',
+      appliedFrom: appliedSource === 'Mobile App' ? 'Mobile App Application' : 'Job Site Application',
       targetPayRate: job.targetPayRate || null,
       maxPayRate: job.maxPayRate || null,
       candidateName: finalCandidateName,
@@ -6468,10 +6473,10 @@ app.post('/api/screening/public-submit-file', upload.single('resume'), async (re
         createdBy: recruiterEmailResolved || '',
         recruiterEmail: recruiterEmailResolved || '',
         submittedBy: recruiterEmailResolved || '',
-        source: 'Job Site',
-        sourceCategory: 'careers_portal',
-        sourceLabel: 'Job Site',
-        appliedFrom: 'Job Site Application',
+        source: appliedSource,
+        sourceCategory: appliedCategory,
+        sourceLabel: appliedSource,
+        appliedFrom: appliedSource === 'Mobile App' ? 'Mobile App Application' : 'Job Site Application',
         extracted_profile: {
           name: finalCandidateName,
           email: candidateEmail.trim(),
@@ -6514,7 +6519,10 @@ app.post('/api/screening/public-submit-file', upload.single('resume'), async (re
     console.error('File application submit error:', err);
     res.status(500).json({ success: false, message: err.message });
   }
-});
+};
+
+app.post('/api/screening/public-submit-file', upload.single('resume'), handlePublicApplication);
+app.post('/api/applications', upload.single('resume'), handlePublicApplication);
 
 // Get all screening sessions (recruiter dashboard)
 app.get('/api/screening/sessions', authenticateToken, (req, res) => {
@@ -8504,8 +8512,9 @@ app.get('/api/messages', authenticateToken, (req, res) => {
       if (m.candidateName) threadsMap[m.candidateId].candidateName = m.candidateName;
       if (m.jobTitle) threadsMap[m.candidateId].jobTitle = m.jobTitle;
     }
-    // Count unread candidate messages
-    if (m.sender === 'candidate' && !m.read) {
+    // Count unread incoming messages
+    const isIncoming = m.sender !== 'recruiter' && m.sender !== 'system_sent';
+    if (isIncoming && !m.read) {
       threadsMap[m.candidateId].unreadCount++;
     }
   });
@@ -8564,15 +8573,26 @@ app.get('/api/messages', authenticateToken, (req, res) => {
   res.json({ success: true, threads: sortedThreads });
 });
 
-// Mark all messages in a thread as read
+// Mark all messages in a thread as read (universal match across candidateId, id, and sender types)
 app.patch('/api/messages/:candidateId/read', authenticateToken, (req, res) => {
   const { candidateId } = req.params;
+  const targetId = String(candidateId || '').trim().toLowerCase();
   messagesStore = messagesStore.map(m => {
-    if (m && m.candidateId === candidateId && m.sender === 'candidate') {
+    if (!m) return m;
+    const mCandId = String(m.candidateId || '').trim().toLowerCase();
+    const mId = String(m.id || '').trim().toLowerCase();
+    if (mCandId === targetId || mId === targetId) {
       return { ...m, read: true };
     }
     return m;
   });
+  try { fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messagesStore, null, 2)); } catch(e) {}
+  res.json({ success: true });
+});
+
+// Mark all messages across all threads as read
+app.post('/api/messages/mark-all-read', authenticateToken, (req, res) => {
+  messagesStore = messagesStore.map(m => m ? { ...m, read: true } : m);
   try { fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messagesStore, null, 2)); } catch(e) {}
   res.json({ success: true });
 });
@@ -9059,6 +9079,22 @@ const DOMAIN_TAXONOMY = {
   legal_public: ['attorney', 'legal', 'compliance', 'regulatory', 'public health', 'counsel', 'lawyer', 'paralegal']
 };
 
+// Cross-domain affinity map so related engineering clusters are not falsely penalized with 38% caps
+const COMPATIBLE_DOMAINS = {
+  java_backend: ['dotnet_backend', 'python_backend', 'cloud_devops', 'database_admin', 'frontend', 'general_it'],
+  dotnet_backend: ['java_backend', 'cloud_devops', 'database_admin', 'general_it'],
+  python_backend: ['data_analytics', 'cloud_devops', 'java_backend', 'database_admin', 'general_it'],
+  data_analytics: ['python_backend', 'cloud_devops', 'database_admin', 'general_it'],
+  database_admin: ['data_analytics', 'cloud_devops', 'java_backend', 'general_it'],
+  cloud_devops: ['data_analytics', 'java_backend', 'python_backend', 'database_admin', 'network_security', 'general_it'],
+  frontend: ['java_backend', 'dotnet_backend', 'general_it'],
+  ba_pm: ['general_it', 'data_analytics', 'enterprise_erp'],
+  enterprise_erp: ['ba_pm', 'database_admin', 'general_it'],
+  network_security: ['cloud_devops', 'cybersecurity', 'general_it'],
+  cybersecurity: ['network_security', 'cloud_devops', 'general_it'],
+  general_it: ['java_backend', 'dotnet_backend', 'python_backend', 'data_analytics', 'cloud_devops', 'frontend', 'ba_pm', 'database_admin']
+};
+
 /**
  * Intelligent candidate experience extractor from resume text, profile metadata, or role seniority
  */
@@ -9377,13 +9413,15 @@ function evaluateCandidateJobMatch(candidate, job) {
   const candDomain = classifyTechnicalDomain(candTitle, candSkills, (candidate.resumeText || '').slice(0, 2000));
   const jobDomain = classifyTechnicalDomain(jobTitle, reqSkills, job.description);
 
-  // Strict domain alignment
+  // Strict domain alignment with cross-domain compatibility
   const isExactDomainMatch = candDomain === jobDomain;
-  const isDomainMatch = isExactDomainMatch || (candDomain === 'general_it' && jobDomain === 'general_it');
+  const isCompatibleDomain = (COMPATIBLE_DOMAINS[candDomain] && COMPATIBLE_DOMAINS[candDomain].includes(jobDomain)) ||
+    (COMPATIBLE_DOMAINS[jobDomain] && COMPATIBLE_DOMAINS[jobDomain].includes(candDomain));
+  const isDomainMatch = isExactDomainMatch || isCompatibleDomain || candDomain === 'general_it' || jobDomain === 'general_it';
 
   // Tier 1: Title & Domain Match (0 to 25 pts)
   const titleEval = evaluateTitleMatch(candidate.role || candidate.fullRole, job.title, candDomain, jobDomain);
-  const domainBonus = (isExactDomainMatch && candDomain !== 'general_it') ? 5 : 0;
+  const domainBonus = isExactDomainMatch && candDomain !== 'general_it' ? 5 : (isCompatibleDomain ? 3 : 0);
   const tier1Pts = Math.min(25, titleEval.titlePts + domainBonus);
 
   // Tier 2: Required Skills Match (Must-Have) (0 to 35 pts)
@@ -9859,9 +9897,11 @@ app.get('/api/recruiter/email-streams', (req, res) => {
     // Enrich with source category and AI match against active positions
     const src = (c.source || '').toLowerCase();
     let sourceCategory = 'email_inbox';
-    if (c.isSpamRecovery || src.includes('spam') || src.includes('junk')) {
+    if (c.sourceCategory === 'mobile_app' || src.includes('mobile') || src.includes('app')) {
+      sourceCategory = 'mobile_app';
+    } else if (c.isSpamRecovery || src.includes('spam') || src.includes('junk')) {
       sourceCategory = 'email_spam';
-    } else if (src.includes('career') || src.includes('job site') || src.includes('/jobs')) {
+    } else if (src.includes('career') || src.includes('job site') || src.includes('indeed') || src.includes('linkedin') || src.includes('/jobs')) {
       sourceCategory = 'careers_portal';
     } else if (src.includes('vendor') || src.includes('bench') || src.includes('employer')) {
       sourceCategory = 'vendor_bench';
@@ -9936,20 +9976,12 @@ app.get('/api/recruiter/email-streams', (req, res) => {
           timestamp: Date.now()
         });
       } else {
-        // Fast Domain-First Filter: Find true best-fitting job among ACTIVE client requisitions
-        const candDomain = classifyTechnicalDomain(cleanRole, cleanSkills, (c.resumeText || '').slice(0, 2000));
-        const candidateDomainJobs = preclassifiedJobs.filter(pj => {
-          if (candDomain !== 'general_it' && pj.domain !== 'general_it') {
-            return pj.domain === candDomain;
-          }
-          return pj.titleWords.some(w => cleanRole.toLowerCase().includes(w));
-        });
-
-        const poolToEvaluate = candidateDomainJobs.length > 0 ? candidateDomainJobs.slice(0, 5).map(pj => pj.job) : activeUnexpiredJobs.slice(0, 5);
+        // High-Speed Full Requisition Scan (<1ms): Evaluate candidate against ALL active client requisitions
         let bestJob = null;
         let bestMatch = { matchScore: 0, matchingSkills: [], missingSkills: [] };
 
-        for (const j of poolToEvaluate) {
+        for (const pj of preclassifiedJobs) {
+          const j = pj.job;
           const scoreObj = evaluateCandidateJobMatch({ ...c, role: cleanRole, skills: cleanSkills, experience: candidateExp }, j);
           if (scoreObj.matchScore > bestMatch.matchScore) {
             bestMatch = scoreObj;
@@ -9957,18 +9989,18 @@ app.get('/api/recruiter/email-streams', (req, res) => {
           }
         }
 
-        // Strict Requisition Fit Threshold: requires >= 72% AND domain match to be assigned
-        if (bestJob && bestMatch.matchScore >= 72 && bestMatch.isDomainMatch) {
+        // Requisition Fit Threshold: >= 60% match assigns the best-fitting active client requisition
+        if (bestJob && bestMatch.matchScore >= 60 && bestMatch.isDomainMatch) {
           targetJob = bestJob;
           matchAnalysis = bestMatch;
         } else {
           targetJob = null;
           matchAnalysis = {
-            matchScore: 50,
-            matchingSkills: cleanSkills.slice(0, 3),
-            missingSkills: [],
-            matchingRequiredSkills: cleanSkills.slice(0, 3),
-            missingRequiredSkills: [],
+            matchScore: bestMatch.matchScore > 35 ? bestMatch.matchScore : 50,
+            matchingSkills: bestMatch.matchingSkills?.length ? bestMatch.matchingSkills : cleanSkills.slice(0, 3),
+            missingSkills: bestMatch.missingSkills || [],
+            matchingRequiredSkills: bestMatch.matchingRequiredSkills || cleanSkills.slice(0, 3),
+            missingRequiredSkills: bestMatch.missingRequiredSkills || [],
             matchingPreferredSkills: [],
             missingPreferredSkills: [],
             isDomainMatch: false,
