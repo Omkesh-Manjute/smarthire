@@ -10532,6 +10532,17 @@ app.post('/api/recruiter/send-direct-email', express.json(), async (req, res) =>
   if (bcc && bcc.trim()) mailtoQuery += `&bcc=${encodeURIComponent(bcc.trim())}`;
   const mailtoUrl = `mailto:${encodeURIComponent(to)}?${mailtoQuery}`;
 
+  // Deduplication check: suppress duplicate dispatches within 60s
+  const toKey = Array.isArray(to) ? to.map(x => String(x).toLowerCase().trim()).sort().join(',') : String(to).toLowerCase().trim();
+  const cleanSub = String(subject).toLowerCase().replace(/\s+/g, ' ').trim();
+  const dedupKey = `direct__${toKey}__${cleanSub}`;
+  const now = Date.now();
+  if (recentEmailSendsMap.has(dedupKey) && (now - recentEmailSendsMap.get(dedupKey) < 60000)) {
+    console.log(`ℹ️ [Direct Email Dedup] Suppressed duplicate email dispatch for "${subject}" to ${toKey} within 60s window.`);
+    return res.json({ success: true, message: 'Email already sent (duplicate suppressed)', deduplicated: true, serverDispatched: true, mailtoUrl });
+  }
+  recentEmailSendsMap.set(dedupKey, now);
+
   // Attempt server-side dispatch via configured SMTP if password available
   let serverDispatched = false;
   let serverError = null;

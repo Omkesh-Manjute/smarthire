@@ -2440,6 +2440,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const [isPushingToReq, setIsPushingToReq] = useState(false)
   const [pushSendJdEmail, setPushSendJdEmail] = useState(false)
   const isPushingRef = useRef(false)
+  const isSendingDirectEmailRef = useRef(false)
 
   // Add Candidate Modal State
   const [addCandidateModalOpen, setAddCandidateModalOpen] = useState(false)
@@ -3265,11 +3266,13 @@ export default function RecruiterInbox({ defaultViewMode }) {
   }
 
   const handleSendDirectEmail = async () => {
+    if (isSendingDirectEmailRef.current) return
     const targetCand = activeCandidate || emailModalCandidate
     if (!emailTo || !emailSubject || !emailBody) {
       alert('Please fill out Recipient, Subject, and Body.')
       return
     }
+    isSendingDirectEmailRef.current = true
     setEmailSending(true)
     setEmailSuccessToast('')
     try {
@@ -3352,6 +3355,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
     } catch (err) {
       alert('Error sending email: ' + err.message)
     } finally {
+      isSendingDirectEmailRef.current = false
       setEmailSending(false)
     }
   }
@@ -6007,28 +6011,31 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     <th style={{ padding: '9px 8px', width: 55, textAlign: 'center', border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                       Sl. No
                     </th>
-                    <th style={{ padding: '9px 12px', width: 160, border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                      Name
+                    <th style={{ padding: '9px 12px', width: 180, border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                      Candidate Name
                     </th>
-                    <th style={{ padding: '9px 12px', width: 250, border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                      Skill
+                    <th style={{ padding: '9px 12px', width: 230, border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                      Skill / Role
                     </th>
                     <th style={{ padding: '9px 10px', width: 95, textAlign: 'center', border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                      Match %
+                    </th>
+                    <th style={{ padding: '9px 10px', width: 90, textAlign: 'center', border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                       Total Exp
                     </th>
-                    <th style={{ padding: '9px 12px', width: 135, border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                    <th style={{ padding: '9px 12px', width: 130, border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                       Location
                     </th>
-                    <th style={{ padding: '9px 12px', width: 135, border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                    <th style={{ padding: '9px 12px', width: 110, textAlign: 'center', border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                       Relocation
                     </th>
                     <th style={{ padding: '9px 10px', width: 95, textAlign: 'center', border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                       Visa Status
                     </th>
-                    <th style={{ padding: '9px 12px', width: 200, border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                      Vendor / Agency
+                    <th style={{ padding: '9px 12px', width: 190, border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                      Vendor / Partner
                     </th>
-                    <th style={{ padding: '9px 12px', width: 160, textAlign: 'right', border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                    <th style={{ padding: '9px 12px', width: 150, textAlign: 'right', border: '1px solid #CBD5E1', color: '#334155', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                       Actions
                     </th>
                   </tr>
@@ -6036,7 +6043,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 <tbody>
                   {filteredList.length === 0 ? (
                     <tr>
-                      <td colSpan={9} style={{ padding: 48, textAlign: 'center', color: '#64748B', border: '1px solid #E2E8F0' }}>
+                      <td colSpan={10} style={{ padding: 48, textAlign: 'center', color: '#64748B', border: '1px solid #E2E8F0' }}>
                         No vendor bench candidates found matching your filters.
                       </td>
                     </tr>
@@ -6061,9 +6068,22 @@ export default function RecruiterInbox({ defaultViewMode }) {
                             {rowNum}
                           </td>
 
-                          {/* 2. Name */}
+                          {/* 2. Candidate Name with SINGLE status dot */}
                           <td style={{ padding: '7px 12px', border: '1px solid #E2E8F0', verticalAlign: 'middle' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                              {(() => {
+                                const isRecent = !item.createdAt || (Date.now() - new Date(item.createdAt).getTime() < 7 * 86400000);
+                                return (
+                                  <span style={{
+                                    width: 7,
+                                    height: 7,
+                                    borderRadius: '50%',
+                                    backgroundColor: isRecent ? '#10B981' : '#F59E0B',
+                                    display: 'inline-block',
+                                    flexShrink: 0
+                                  }} title={isRecent ? 'Fresh Candidate (< 7 days)' : 'Candidate (~1 month old)'} />
+                                );
+                              })()}
                               <button
                                 type="button"
                                 onClick={() => setHotlistResumeModalItem(item)}
@@ -6080,35 +6100,15 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   alignItems: 'center',
                                   gap: 6
                                 }}
-                                title="Click to view candidate resume & details"
+                                title="Click to view candidate resume"
                               >
                                 <span style={{ textDecoration: 'underline', textDecorationColor: '#CBD5E1' }}>
                                   {item.candidateName}
                                 </span>
                               </button>
-                              {item.attachmentName && (
-                                <button
-                                  type="button"
-                                  onClick={() => setHotlistResumeModalItem(item)}
-                                  title={`Preview Resume: ${item.attachmentName}`}
-                                  style={{
-                                    background: '#EFF6FF',
-                                    border: '1px solid #BFDBFE',
-                                    color: '#2563EB',
-                                    cursor: 'pointer',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    padding: '2px 5px',
-                                    borderRadius: 4
-                                  }}
-                                >
-                                  <IconFileText />
-                                </button>
-                              )}
                             </div>
                             {item.candidateEmail && (
-                              <div style={{ fontSize: 11, color: '#64748B', marginTop: 1 }}>
+                              <div style={{ fontSize: 11, color: '#64748B', marginTop: 2, paddingLeft: 14 }}>
                                 <a href={`mailto:${item.candidateEmail}`} style={{ color: '#2563EB', textDecoration: 'none' }}>
                                   {item.candidateEmail}
                                 </a>
@@ -6122,29 +6122,64 @@ export default function RecruiterInbox({ defaultViewMode }) {
                               {item.role || (skills[0] || 'IT Specialist')}
                             </div>
                             {skills.length > 1 && (
-                              <div style={{ fontSize: 11, color: '#64748B', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 240 }} title={skills.join(', ')}>
+                              <div style={{ fontSize: 11, color: '#64748B', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 220 }} title={skills.join(', ')}>
                                 {skills.slice(0, 3).join(' • ')}
                                 {skills.length > 3 && ` +${skills.length - 3}`}
                               </div>
                             )}
                           </td>
 
-                          {/* 4. Total Exp */}
+                          {/* 4. Dedicated Match % Column */}
+                          <td style={{ padding: '7px 10px', textAlign: 'center', border: '1px solid #E2E8F0', verticalAlign: 'middle' }}>
+                            <span style={{
+                              fontSize: 11,
+                              fontWeight: 800,
+                              backgroundColor: '#ECFDF5',
+                              color: '#047857',
+                              border: '1px solid #A7F3D0',
+                              padding: '2px 8px',
+                              borderRadius: 9999,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4
+                            }}>
+                              <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#059669' }} />
+                              {item.matchScore || 94}% Match
+                            </span>
+                          </td>
+
+                          {/* 5. Total Exp */}
                           <td style={{ padding: '7px 10px', textAlign: 'center', border: '1px solid #E2E8F0', verticalAlign: 'middle', fontWeight: 600, color: '#334155', fontSize: 12 }}>
                             {item.experience || '8+ Years'}
                           </td>
 
-                          {/* 5. Location */}
+                          {/* 6. Location */}
                           <td style={{ padding: '7px 12px', border: '1px solid #E2E8F0', verticalAlign: 'middle', color: '#334155', fontSize: 12, fontWeight: 500 }}>
                             {item.location || 'Remote / US'}
                           </td>
 
-                          {/* 6. Relocation */}
-                          <td style={{ padding: '7px 12px', border: '1px solid #E2E8F0', verticalAlign: 'middle', color: '#059669', fontSize: 12, fontWeight: 600 }}>
-                            {item.relocation || 'Anywhere in US'}
+                          {/* 7. Relocation */}
+                          <td style={{ padding: '7px 12px', textAlign: 'center', border: '1px solid #E2E8F0', verticalAlign: 'middle' }}>
+                            {(() => {
+                              const rel = String(item.relocation || 'Open').trim();
+                              const isOpen = rel.toLowerCase().includes('open') || rel.toLowerCase().includes('yes') || rel.toLowerCase().includes('anywhere');
+                              return (
+                                <span style={{
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  backgroundColor: isOpen ? '#ECFDF5' : '#F1F5F9',
+                                  color: isOpen ? '#047857' : '#475569',
+                                  border: `1px solid ${isOpen ? '#A7F3D0' : '#E2E8F0'}`,
+                                  padding: '2px 8px',
+                                  borderRadius: 9999
+                                }}>
+                                  {isOpen ? 'Open' : 'No'}
+                                </span>
+                              );
+                            })()}
                           </td>
 
-                          {/* 7. Visa Status */}
+                          {/* 8. Visa Status */}
                           <td style={{ padding: '7px 10px', textAlign: 'center', border: '1px solid #E2E8F0', verticalAlign: 'middle' }}>
                             <span style={{
                               fontSize: 10.5,
@@ -6160,10 +6195,10 @@ export default function RecruiterInbox({ defaultViewMode }) {
                             </span>
                           </td>
 
-                          {/* 8. Vendor / Agency */}
+                          {/* 9. Vendor / Partner (stripped 'Agency') */}
                           <td style={{ padding: '7px 12px', border: '1px solid #E2E8F0', verticalAlign: 'middle' }}>
                             <div style={{ fontWeight: 700, color: '#0F172A', fontSize: 12 }}>
-                              {item.vendorCompany || item.vendorName || 'Staffing Partner'}
+                              {String(item.vendorCompany || item.vendorName || 'Staffing Partner').replace(/\s+Agency$/i, '').trim()}
                             </div>
                             <div style={{ fontSize: 11, color: '#64748B', marginTop: 1 }}>
                               <a href={`mailto:${item.vendorEmail}`} style={{ color: '#2563EB', textDecoration: 'none' }} title={`Email ${item.vendorName || 'Vendor'}`}>
@@ -6173,9 +6208,9 @@ export default function RecruiterInbox({ defaultViewMode }) {
                             </div>
                           </td>
 
-                          {/* 9. Actions (Clean & Uncluttered: View Dossier + Email Vendor + Delete) */}
+                          {/* 10. Actions: Resume + Email */}
                           <td style={{ padding: '7px 12px', textAlign: 'right', border: '1px solid #E2E8F0', verticalAlign: 'middle' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 5 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
                               <button
                                 type="button"
                                 onClick={() => setHotlistResumeModalItem(item)}
@@ -6183,18 +6218,19 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   backgroundColor: '#EFF6FF',
                                   color: '#1D4ED8',
                                   border: '1px solid #BFDBFE',
-                                  borderRadius: 4,
-                                  padding: '4px 9px',
+                                  borderRadius: 5,
+                                  padding: '4px 8px',
                                   fontSize: 11,
                                   fontWeight: 700,
                                   cursor: 'pointer',
                                   display: 'inline-flex',
                                   alignItems: 'center',
-                                  gap: 3
+                                  gap: 4
                                 }}
-                                title="View candidate dossier, resume preview, rate & push actions"
+                                title="View candidate resume"
                               >
-                                Dossier ↗
+                                <IconFileText />
+                                <span>Resume</span>
                               </button>
 
                               <button
@@ -6210,7 +6246,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   fontWeight: 600,
                                   cursor: 'pointer'
                                 }}
-                                title="Email sponsoring vendor rep"
+                                title="Email sponsoring vendor partner"
                               >
                                 Email
                               </button>
@@ -6803,33 +6839,17 @@ export default function RecruiterInbox({ defaultViewMode }) {
               minWidth: 0
             }}
           >
-            {/* Clean ATS Briefcase SVG Icon (NO "M." letter) */}
-            <div style={{
-              width: 36,
-              height: 36,
-              borderRadius: 9,
-              background: 'linear-gradient(135deg, #2065D1 0%, #00A76F 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#FFF',
-              flexShrink: 0,
-              boxShadow: '0 2px 6px rgba(32, 101, 209, 0.25)'
-            }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
-                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
-              </svg>
-            </div>
-            {!sidebarCollapsed && (
+            {!sidebarCollapsed ? (
               <div style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                <div style={{ fontWeight: 800, fontSize: 15, color: C.textPrimary, lineHeight: 1.2 }}>
+                <div style={{ fontWeight: 900, fontSize: 17, color: C.textPrimary, letterSpacing: '-0.3px', lineHeight: 1.2 }}>
                   SmartHire ATS
                 </div>
-                <div style={{ fontSize: 11, color: C.textSecondary }}>
+                <div style={{ fontSize: 11, color: C.textSecondary, fontWeight: 600 }}>
                   Find · Evaluate · Hire
                 </div>
               </div>
+            ) : (
+              <div style={{ fontWeight: 900, fontSize: 16, color: '#2563EB' }}>SH</div>
             )}
           </div>
 
@@ -7284,56 +7304,12 @@ export default function RecruiterInbox({ defaultViewMode }) {
             </button>
           </div>
 
-          {/* Center: Search pill bar matching screenshot */}
-          <div style={{
-            position: 'relative',
-            width: '100%',
-            maxWidth: 480,
-            display: 'flex',
-            alignItems: 'center'
-          }}>
-            <span style={{
-              position: 'absolute',
-              left: 16,
-              color: '#94A3B8',
-              display: 'flex',
-              alignItems: 'center',
-              pointerEvents: 'none'
-            }}>
-              <IconSearch />
-            </span>
-            <input
-              placeholder="Search candidates or Boolean (e.g. Java AND Spring NOT Python)..."
-              value={streamSearch}
-              onChange={e => {
-                setStreamSearch(e.target.value)
-                setTablePage(1)
-              }}
-              style={{
-                width: '100%',
-                backgroundColor: isLight ? '#F1F5F9' : '#1E293B',
-                border: `1px solid ${C.border}`,
-                borderRadius: 9999,
-                padding: '9px 65px 9px 42px',
-                fontSize: 13,
-                color: C.textPrimary,
-                outline: 'none',
-                boxSizing: 'border-box'
-              }}
-            />
-            <span style={{
-              position: 'absolute',
-              right: 14,
-              fontSize: 11,
-              fontWeight: 700,
-              color: '#94A3B8',
-              backgroundColor: isLight ? '#E2E8F0' : '#334155',
-              padding: '2px 6px',
-              borderRadius: 4,
-              border: `1px solid ${isLight ? '#CBD5E1' : '#475569'}`,
-              pointerEvents: 'none'
-            }}>
-              ⌘K
+          {/* Breadcrumb Navigation (replacing duplicate top search bar) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: C.textSecondary }}>
+            <span>{inboxViewMode === 'hotlists' ? 'Vendor Hotlists' : 'Candidates'}</span>
+            <span style={{ color: '#CBD5E1' }}>/</span>
+            <span style={{ color: C.textPrimary, fontWeight: 700 }}>
+              {inboxViewMode === 'hotlists' ? 'Bench Ingestion Hub' : (filterSource === 'mobile' ? 'Mobile App Submissions' : filterSource === 'careers' ? 'Job Sites Portal' : 'Talent Cloud')}
             </span>
           </div>
 
@@ -11340,21 +11316,22 @@ export default function RecruiterInbox({ defaultViewMode }) {
                             }}
                           />
                         </th>
-                        <th style={{ padding: '8px 10px', width: 220, minWidth: 200, maxWidth: 240, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Candidate</th>
-                        <th style={{ padding: '8px 10px', width: 170, minWidth: 150, maxWidth: 190, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Role / Current Title</th>
-                        <th style={{ padding: '8px 8px', width: 115, minWidth: 105, maxWidth: 125, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Status</th>
-                        <th style={{ padding: '8px 10px', width: 200, minWidth: 180, maxWidth: 230, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>AI Matched Requirement</th>
-                        <th style={{ padding: '8px 8px', width: 80, minWidth: 75, maxWidth: 90, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Match ⇕</th>
-                        <th style={{ padding: '8px 10px', width: 150, minWidth: 130, maxWidth: 180, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Key Skills</th>
-                        <th style={{ padding: '8px 8px', width: 90, minWidth: 80, maxWidth: 100, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Received ⇕</th>
-                        <th style={{ padding: '8px 8px', width: 95, minWidth: 85, maxWidth: 105, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Source</th>
-                        <th style={{ padding: '8px 10px', width: 280, minWidth: 260, textAlign: 'right', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Actions</th>
+                        <th style={{ padding: '8px 10px', width: 200, minWidth: 180, maxWidth: 220, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Candidate</th>
+                        <th style={{ padding: '8px 10px', width: 180, minWidth: 160, maxWidth: 200, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Current Role & Experience</th>
+                        <th style={{ padding: '8px 10px', width: 210, minWidth: 190, maxWidth: 240, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>AI Matched Requirement</th>
+                        <th style={{ padding: '8px 8px', width: 85, minWidth: 80, maxWidth: 95, textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Match %</th>
+                        <th style={{ padding: '8px 10px', width: 140, minWidth: 120, maxWidth: 160, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Key Skills</th>
+                        <th style={{ padding: '8px 10px', width: 120, minWidth: 105, maxWidth: 140, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Location</th>
+                        <th style={{ padding: '8px 10px', width: 95, minWidth: 85, maxWidth: 110, textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Relocation</th>
+                        <th style={{ padding: '8px 8px', width: 85, minWidth: 75, maxWidth: 95, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Received</th>
+                        <th style={{ padding: '8px 8px', width: 90, minWidth: 80, maxWidth: 100, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Source</th>
+                        <th style={{ padding: '8px 10px', width: 220, minWidth: 200, textAlign: 'right', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredCandidates.length === 0 ? (
                         <tr>
-                          <td colSpan={10} style={{ padding: 40, textAlign: 'center', color: C.textSecondary }}>
+                          <td colSpan={11} style={{ padding: 40, textAlign: 'center', color: C.textSecondary }}>
                             No candidates found matching your filters.
                           </td>
                         </tr>
@@ -11399,25 +11376,23 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   />
                                 </td>
 
-                                {/* 2. Candidate: Initials Avatar + Name + Subtitle (Email & Phone) + Visa */}
-                                <td style={{ padding: '10px 10px' }}>
-                                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                                    <div style={{
-                                      width: 36,
-                                      height: 36,
-                                      borderRadius: '50%',
-                                      backgroundColor: avatarStyle.bg,
-                                      color: avatarStyle.text,
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      fontWeight: 800,
-                                      fontSize: 12.5,
-                                      flexShrink: 0,
-                                      marginTop: 2
-                                    }}>
-                                      {initials}
-                                    </div>
+                                {/* 2. Candidate: SINGLE Status Dot + Name + Email (No initials box) */}
+                                <td style={{ padding: '8px 10px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                                    {(() => {
+                                      const rawTime = c.createdAt || c.timestamp;
+                                      const isFresh = !rawTime || (Date.now() - new Date(rawTime).getTime() < 7 * 86400000);
+                                      return (
+                                        <span style={{
+                                          width: 8,
+                                          height: 8,
+                                          borderRadius: '50%',
+                                          backgroundColor: isFresh ? '#10B981' : '#F59E0B',
+                                          marginTop: 5,
+                                          flexShrink: 0
+                                        }} title={isFresh ? 'Fresh Candidate (< 7 days)' : 'Candidate (~1 month old)'} />
+                                      );
+                                    })()}
                                     <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
                                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                                         <span
@@ -11426,78 +11401,30 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                             setInboxSubMode('card')
                                           }}
                                           style={{
-                                            fontSize: 13.5,
+                                            fontSize: 13,
                                             fontWeight: 800,
-                                            color: isHovered ? '#2563EB' : '#0F172A',
+                                            color: '#0F172A',
                                             cursor: 'pointer',
                                             whiteSpace: 'nowrap',
                                             overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                            transition: 'color 0.15s ease'
+                                            textOverflow: 'ellipsis'
                                           }}
                                           title={candName}
                                         >
                                           {candName}
                                         </span>
-                                        {c.visaStatus && (
-                                          <span style={{
-                                            fontSize: 9.5,
-                                            fontWeight: 700,
-                                            background: isLight ? '#F1F5F9' : '#334155',
-                                            color: isLight ? '#475569' : '#CBD5E1',
-                                            padding: '1px 5px',
-                                            borderRadius: 4,
-                                            border: `1px solid ${isLight ? '#E2E8F0' : '#475569'}`,
-                                            whiteSpace: 'nowrap'
-                                          }}>
-                                            {String(c.visaStatus).replace(/\s*\(.*?\)/g, '')}
-                                          </span>
-                                        )}
-                                        {(() => {
-                                          const candTime = c.createdAt ? new Date(c.createdAt).getTime() : 0;
-                                          const isNew = candTime > 0 && (Date.now() - candTime < 24 * 60 * 60 * 1000);
-                                          if (!isNew) return null;
-                                          return (
-                                            <span style={{
-                                              fontSize: 9,
-                                              fontWeight: 800,
-                                              background: '#ECFDF5',
-                                              color: '#059669',
-                                              padding: '1px 5px',
-                                              borderRadius: 4,
-                                              border: '1px solid #A7F3D0',
-                                              letterSpacing: '0.4px',
-                                              flexShrink: 0
-                                            }}>
-                                              NEW
-                                            </span>
-                                          );
-                                        })()}
                                       </div>
-                                      {/* Zoho Recruit style: Email & Phone right under name */}
-                                      <div style={{
-                                        fontSize: 11,
-                                        color: '#64748B',
-                                        marginTop: 2,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 6,
-                                        whiteSpace: 'nowrap',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis'
-                                      }}>
-                                        {c.email && (
-                                          <span title={c.email} style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                            {c.email}
-                                          </span>
-                                        )}
-                                      </div>
+                                      {c.email && (
+                                        <div style={{ fontSize: 11, color: '#64748B', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={c.email}>
+                                          {c.email}
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                 </td>
 
-                                {/* 3. Role / Current Title + Company & Experience */}
-                                <td style={{ padding: '10px 10px', maxWidth: 190 }}>
+                                {/* 3. Role & Experience */}
+                                <td style={{ padding: '8px 10px', maxWidth: 190 }}>
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                     <div style={{
                                       fontSize: 12.5,
@@ -11509,76 +11436,18 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                     }} title={c.role && c.role !== 'Senior Specialist' ? c.role : (skillsArr.length > 0 ? `${skillsArr[0]} Developer` : 'Full Stack Developer')}>
                                       {c.role && c.role !== 'Senior Specialist' ? c.role : (skillsArr.length > 0 ? `${skillsArr[0]} Developer` : 'Full Stack Developer')}
                                     </div>
-                                    <div style={{
-                                      fontSize: 11,
-                                      color: '#64748B',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: 6,
-                                      whiteSpace: 'nowrap',
-                                      overflow: 'hidden',
-                                      textOverflow: 'ellipsis'
-                                    }}>
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: '#2563EB' }}>
                                       {(() => {
-                                        const expToShow = (c.experience && c.experience !== '5+ Years')
+                                        return (c.experience && c.experience !== '5+ Years')
                                           ? c.experience
                                           : extractCandidateExperience(c.resumeText, c.summary, c.extracted_profile, c.role)
-                                        return (
-                                          <span style={{ fontWeight: 600, color: '#2563EB' }}>
-                                            {expToShow}
-                                          </span>
-                                        )
                                       })()}
-                                      {c.experience && (c.currentCompany || c.location) && <span style={{ color: '#CBD5E1' }}>•</span>}
-                                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }} title={c.currentCompany || c.location || 'United States'}>
-                                        {c.currentCompany ? c.currentCompany.split(',')[0] : (c.location || 'United States')}
-                                      </span>
                                     </div>
-                                    {/* Public Sector / Gov Dept Badge */}
-                                    {(() => {
-                                      const g = detectGovDepartmentExperience(c)
-                                      if (!g.hasGov) return null
-                                      return (
-                                        <div style={{ marginTop: 2 }}>
-                                          <span style={{
-                                            fontSize: 9.5,
-                                            fontWeight: 700,
-                                            backgroundColor: '#ECFDF5',
-                                            color: '#065F46',
-                                            border: '1px solid #A7F3D0',
-                                            borderRadius: 4,
-                                            padding: '1px 5px',
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: 3,
-                                            maxWidth: 175,
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                            whiteSpace: 'nowrap'
-                                          }} title={`Verified Public Sector Experience: ${g.primaryDept}`}>
-                                            {g.shortName}
-                                          </span>
-                                        </div>
-                                      )
-                                    })()}
-                                    {/* Local Proximity / Location Verification Badge */}
-                                    {(() => {
-                                      const matchedJob = c.targetReqId 
-                                        ? openJobsList.find(j => String(j.id || '').replace(/^J-/, '') === String(c.targetReqId).replace(/^J-/, ''))
-                                        : null;
-                                      const locFit = evaluateCandidateLocationFit(c, matchedJob);
-                                      return renderLocationBadge(locFit);
-                                    })()}
                                   </div>
                                 </td>
 
-                                {/* 4. Zoho Recruit Status Pill */}
-                                <td style={{ padding: '10px 8px' }}>
-                                  {renderZohoStatusBadge(c.status || 'Active')}
-                                </td>
-
-                                {/* 5. AI Matched Requirement */}
-                                <td style={{ padding: '8px 10px', maxWidth: 230 }}>
+                                {/* 4. AI Matched Requirement */}
+                                <td style={{ padding: '8px 10px', maxWidth: 220 }}>
                                   {(() => {
                                     let matchedJob = c.targetReqId 
                                       ? openJobsList.find(j => String(j.id || '').replace(/^J-/, '') === String(c.targetReqId).replace(/^J-/, ''))
@@ -11614,7 +11483,6 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                     const clientStr = String(matchedJob?.client || c.matchedJobClient || c.jobSource || '').toLowerCase();
                                     const isInfoOrigin = clientStr.includes('infoorigin') || clientStr.includes('info origin') || (matchedJob?.id && String(matchedJob.id).length === 4);
 
-                                    // If recruiter chose to hide InfoOrigin matches, suppress InfoOrigin match display
                                     if (hideInfoOriginMatches && isInfoOrigin) {
                                       hasActiveMatch = false;
                                     }
@@ -11628,17 +11496,11 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                           <span style={{
                                             fontSize: 10,
                                             fontWeight: 800,
-                                            background: isTalentPool 
-                                              ? '#F1F5F9' 
-                                              : (isInfoOrigin ? '#EDE9FE' : '#DBEAFE'),
-                                            color: isTalentPool 
-                                              ? '#475569' 
-                                              : (isInfoOrigin ? '#6D28D9' : '#1D4ED8'),
+                                            background: isTalentPool ? '#F1F5F9' : (isInfoOrigin ? '#EDE9FE' : '#DBEAFE'),
+                                            color: isTalentPool ? '#475569' : (isInfoOrigin ? '#6D28D9' : '#1D4ED8'),
                                             padding: '1px 6px',
                                             borderRadius: 4,
-                                            border: isTalentPool 
-                                              ? '1px solid #E2E8F0' 
-                                              : (isInfoOrigin ? '1px solid #DDD6FE' : '1px solid #BFDBFE'),
+                                            border: isTalentPool ? '1px solid #E2E8F0' : (isInfoOrigin ? '1px solid #DDD6FE' : '1px solid #BFDBFE'),
                                             letterSpacing: '0.3px',
                                             flexShrink: 0
                                           }}>
@@ -11652,9 +11514,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                             overflow: 'hidden',
                                             textOverflow: 'ellipsis'
                                           }}>
-                                            {!isTalentPool 
-                                              ? (isInfoOrigin ? 'InfoOrigin' : (matchedJob?.client || c.matchedJobClient || 'Direct Client')) 
-                                              : 'General Talent Pool'}
+                                            {!isTalentPool ? (isInfoOrigin ? 'InfoOrigin' : (matchedJob?.client || c.matchedJobClient || 'Direct Client')) : 'General Talent Pool'}
                                           </span>
                                         </div>
                                         <div style={{
@@ -11672,8 +11532,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   })()}
                                 </td>
 
-                                {/* 6. Match % */}
-                                <td style={{ padding: '8px 8px' }}>
+                                {/* 5. Match % */}
+                                <td style={{ padding: '8px 8px', textAlign: 'center' }}>
                                   {(() => {
                                     let matchedJob = c.targetReqId 
                                       ? openJobsList.find(j => String(j.id || '').replace(/^J-/, '') === String(c.targetReqId).replace(/^J-/, ''))
@@ -11687,16 +11547,16 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   })()}
                                 </td>
 
-                                {/* 7. Key Skills */}
+                                {/* 6. Key Skills */}
                                 <td style={{ padding: '8px 10px' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', maxWidth: 170 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', maxWidth: 150 }}>
                                     {skillsArr.slice(0, 3).map((sk, sIdx) => (
                                       <span
                                         key={sIdx}
                                         style={{
-                                          fontSize: 10.5,
+                                          fontSize: 10,
                                           fontWeight: 600,
-                                          backgroundColor: '#F1F5F9',
+                                          backgroundColor: '#F8FAFC',
                                           border: '1px solid #E2E8F0',
                                           color: '#334155',
                                           padding: '2px 6px',
@@ -11721,7 +11581,33 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   </div>
                                 </td>
 
-                                {/* 8. Received Date */}
+                                {/* 7. Location (NEW Column) */}
+                                <td style={{ padding: '8px 10px', fontSize: 11.5, color: '#334155', fontWeight: 600, maxWidth: 130, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={c.location || 'Remote / US'}>
+                                  {c.location || 'Remote / US'}
+                                </td>
+
+                                {/* 8. Relocation (NEW Column) */}
+                                <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                                  {(() => {
+                                    const rel = String(c.relocation || 'Open').trim();
+                                    const isOpen = rel.toLowerCase().includes('open') || rel.toLowerCase().includes('yes') || rel.toLowerCase().includes('anywhere');
+                                    return (
+                                      <span style={{
+                                        fontSize: 10.5,
+                                        fontWeight: 700,
+                                        backgroundColor: isOpen ? '#ECFDF5' : '#F1F5F9',
+                                        color: isOpen ? '#047857' : '#475569',
+                                        border: `1px solid ${isOpen ? '#A7F3D0' : '#E2E8F0'}`,
+                                        padding: '2px 7px',
+                                        borderRadius: 9999
+                                      }}>
+                                        {isOpen ? 'Open' : 'No'}
+                                      </span>
+                                    );
+                                  })()}
+                                </td>
+
+                                {/* 9. Received Date */}
                                 <td style={{ padding: '8px 8px', fontSize: 11.5, color: '#475569', whiteSpace: 'nowrap' }}>
                                   {(() => {
                                     const raw = c.createdAt || c.resumeUploadDate || c.timestamp
@@ -11735,13 +11621,13 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   })()}
                                 </td>
 
-                                {/* 9. Source Badge */}
+                                {/* 10. Source Badge */}
                                 <td style={{ padding: '8px 8px' }}>
                                   {renderSourceBadge(c)}
                                 </td>
 
-                                {/* 10. Actions: [ Message ] + [ Push ↗ ] + ⋮ */}
-                                <td style={{ padding: '10px 10px', textAlign: 'right', position: 'relative' }} onClick={e => e.stopPropagation()}>
+                                {/* 11. Actions: Message + Resume + ⋮ */}
+                                <td style={{ padding: '8px 10px', textAlign: 'right', position: 'relative' }} onClick={e => e.stopPropagation()}>
                                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                                     <button
                                       type="button"
@@ -11751,22 +11637,48 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                         color: '#166534',
                                         border: '1px solid #BBF7D0',
                                         borderRadius: 6,
-                                        padding: '5px 9px',
-                                        fontSize: 11.5,
+                                        padding: '4px 8px',
+                                        fontSize: 11,
                                         fontWeight: 700,
                                         cursor: 'pointer',
                                         display: 'inline-flex',
                                         alignItems: 'center',
                                         gap: 4,
-                                        whiteSpace: 'nowrap',
-                                        transition: 'all 0.15s ease'
+                                        whiteSpace: 'nowrap'
                                       }}
                                       title="Message Candidate"
                                     >
-                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                                       </svg>
                                       <span>Message</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedCandidate(c)
+                                        setInboxSubMode('card')
+                                        setActiveTobuTab('resume')
+                                      }}
+                                      style={{
+                                        backgroundColor: '#EFF6FF',
+                                        color: '#1D4ED8',
+                                        border: '1px solid #BFDBFE',
+                                        borderRadius: 6,
+                                        padding: '4px 8px',
+                                        fontSize: 11,
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 4,
+                                        whiteSpace: 'nowrap'
+                                      }}
+                                      title="View Candidate Resume"
+                                    >
+                                      <IconFileText />
+                                      <span>Resume</span>
                                     </button>
 
                                     <button
@@ -11785,96 +11697,78 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                     >
                                       ⋮
                                     </button>
+
+                                    {/* Action Popover Menu */}
+                                    {isActionMenuOpen && (
+                                      <div
+                                        onClick={e => e.stopPropagation()}
+                                        style={{
+                                          position: 'absolute',
+                                          top: 'calc(100% + 4px)',
+                                          right: 0,
+                                          backgroundColor: '#FFFFFF',
+                                          border: '1px solid #E2E8F0',
+                                          borderRadius: 8,
+                                          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                                          zIndex: 50,
+                                          minWidth: 175,
+                                          padding: '4px 0',
+                                          display: 'flex',
+                                          flexDirection: 'column',
+                                          textAlign: 'left'
+                                        }}
+                                      >
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setActiveActionMenuId(null)
+                                            handleOpenPushModal(c)
+                                          }}
+                                          style={{
+                                            padding: '8px 14px',
+                                            fontSize: 12,
+                                            fontWeight: 600,
+                                            color: '#0F172A',
+                                            background: 'none',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            textAlign: 'left',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 8
+                                          }}
+                                          onMouseEnter={e => e.currentTarget.style.backgroundColor = '#F8FAFC'}
+                                          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        >
+                                          <span>Push to Requisition ↗</span>
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setActiveActionMenuId(null)
+                                            handleRunLiveAiScan(c)
+                                          }}
+                                          style={{
+                                            padding: '8px 14px',
+                                            fontSize: 12,
+                                            fontWeight: 600,
+                                            color: '#2563EB',
+                                            background: 'none',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            textAlign: 'left',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 8
+                                          }}
+                                          onMouseEnter={e => e.currentTarget.style.backgroundColor = '#EFF6FF'}
+                                          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        >
+                                          <span>Run AI Match Scan</span>
+                                        </button>
+                                      </div>
+                                    )}
                                   </div>
-
-                                  {/* Action Popover Menu */}
-                                  {isActionMenuOpen && (
-                                    <div style={{
-                                      position: 'absolute',
-                                      right: 14,
-                                      top: '80%',
-                                      backgroundColor: isLight ? '#FFFFFF' : C.surface,
-                                      border: `1px solid ${C.border}`,
-                                      borderRadius: 8,
-                                      boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-                                      padding: '6px 0',
-                                      zIndex: 20,
-                                      minWidth: 180,
-                                      textAlign: 'left'
-                                    }}>
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setActiveActionMenuId(null)
-                                          handleOpenPushModal(c)
-                                        }}
-                                        style={{
-                                          width: '100%',
-                                          background: 'none',
-                                          border: 'none',
-                                          padding: '8px 14px',
-                                          fontSize: 12,
-                                          fontWeight: 700,
-                                          color: '#2563EB',
-                                          cursor: 'pointer',
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          gap: 8,
-                                          textAlign: 'left'
-                                        }}
-                                      >
-                                        <span>Push to Jobs in Hand ↗</span>
-                                      </button>
-
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setActiveActionMenuId(null)
-                                          handleOpenEmailModal(c)
-                                        }}
-                                        style={{
-                                          width: '100%',
-                                          background: 'none',
-                                          border: 'none',
-                                          padding: '8px 14px',
-                                          fontSize: 12,
-                                          fontWeight: 600,
-                                          color: C.textPrimary,
-                                          cursor: 'pointer',
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          gap: 8,
-                                          textAlign: 'left'
-                                        }}
-                                      >
-                                        <span>Draft Custom Email</span>
-                                      </button>
-
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setActiveActionMenuId(null)
-                                          handleDeleteCandidate(c)
-                                        }}
-                                        style={{
-                                          width: '100%',
-                                          background: 'none',
-                                          border: 'none',
-                                          padding: '8px 14px',
-                                          fontSize: 12,
-                                          fontWeight: 600,
-                                          color: '#EF4444',
-                                          cursor: 'pointer',
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          gap: 8,
-                                          textAlign: 'left'
-                                        }}
-                                      >
-                                        <span>Delete Candidate</span>
-                                      </button>
-                                    </div>
-                                  )}
                                 </td>
                               </tr>
                             )

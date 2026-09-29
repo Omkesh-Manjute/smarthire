@@ -118,6 +118,12 @@ export async function appendEmailToSentFolder({
     return false;
   }
 
+  // Yahoo SMTP natively saves sent emails into the Sent folder.
+  // Skipping manual IMAP append avoids duplicate copies of sent emails.
+  if (String(host).includes('yahoo') || String(host).includes('bizmail')) {
+    return true;
+  }
+
   const cleanPass = String(password).replace(/\s+/g, '');
   const cleanHost = host.includes('bizmail') ? 'imap.mail.yahoo.com' : host;
 
@@ -630,12 +636,9 @@ export async function scrapeResumesFromIMAP({
 
           const hasResumeAttachment = parsedResumes.length > 0;
 
-          // User requirement: If email has NO attachment, keep it UNREAD! Do not mark as read or ingest into candidate stream!
+          // If email has NO resume attachment, skip candidate ingestion and preserve user's read/unread status
           if (!hasResumeAttachment) {
-            if (uid) {
-              await client.sendCommand(`UID STORE ${uid} -FLAGS (\\Seen)`).catch(() => {});
-            }
-            console.log(`ℹ️ Email from ${senderEmail} ("${subject}") has no resume attachment. Kept UNREAD in inbox.`);
+            console.log(`ℹ️ Email from ${senderEmail} ("${subject}") has no resume attachment. Skipped without modifying read status.`);
             continue;
           }
 
