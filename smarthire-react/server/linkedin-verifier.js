@@ -116,8 +116,8 @@ export async function extractLinkedInProfileData(profileUrl, logger = console.lo
         if (sessionData.li_at) {
           sessionCookies.push({
             name: 'li_at',
-            value: sessionData.li_at,
-            domain: '.www.linkedin.com',
+            value: sessionData.li_at.trim(),
+            domain: '.linkedin.com',
             path: '/',
             httpOnly: true,
             secure: true,
@@ -127,7 +127,10 @@ export async function extractLinkedInProfileData(profileUrl, logger = console.lo
         if (Array.isArray(sessionData.cookies)) {
           sessionData.cookies.forEach(c => {
             if (!sessionCookies.some(sc => sc.name === c.name)) {
-              sessionCookies.push(c);
+              sessionCookies.push({
+                ...c,
+                domain: c.domain?.includes('linkedin.com') ? c.domain : '.linkedin.com'
+              });
             }
           });
         }
@@ -161,12 +164,13 @@ export async function extractLinkedInProfileData(profileUrl, logger = console.lo
 
     // Check if redirected to authwall or checkpoint
     const isAuthWall = currentUrl.includes('/authwall') || currentUrl.includes('/checkpoint') || currentUrl.includes('/login');
-    if (isAuthWall && sessionCookies.length === 0) {
-      logger('[LinkedIn Verifier] LinkedIn authwall encountered without session cookie.');
-      // Return clear notification that session setup is required
+    if (isAuthWall) {
+      logger(`[LinkedIn Verifier] LinkedIn authwall/login encountered (${currentUrl}).`);
       return {
         needsSessionSetup: true,
-        message: 'LinkedIn requires an authorized session to view full profile details. Please provide your authorized session token or cookie in settings.',
+        message: sessionCookies.length > 0
+          ? 'Authorized recruiter session cookie has expired or was rejected by LinkedIn. Please paste a fresh li_at cookie in "Setup Session" above.'
+          : 'LinkedIn requires an authorized recruiter session to inspect full profile details. Please paste your recruiter li_at cookie in "Setup Session" above.',
         extractedData: null,
         rawText: ''
       };
