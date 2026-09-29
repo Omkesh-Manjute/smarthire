@@ -2,6 +2,13 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { saveMessageFirestore, getMessagesFirestore, saveRequisitionCandidates, saveCandidate, getAllCandidates, deduplicateCandidates, deleteCandidateFirestore } from '../lib/atsFirestore'
 import { autoSendJobDescriptionToCandidate } from '../utils/autoSendJdHelper'
+import LinkedInVerificationModal from '../components/LinkedInVerificationModal'
+
+const IconLinkedIn = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 8.76a1.64 1.64 0 0 0 0-3.28 1.64 1.64 0 0 0 0 3.28m1.4 9.74v-8.37H5.06v8.37h2.8z"/>
+  </svg>
+)
 
 const POLL_INTERVAL = 3000
 
@@ -2521,6 +2528,27 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const [liveAiCandidate, setLiveAiCandidate] = useState(null)
   const [liveAiTargetReqId, setLiveAiTargetReqId] = useState('')
   const [copiedQuestionsToast, setCopiedQuestionsToast] = useState(false)
+
+  // LinkedIn Verification State
+  const [showLinkedInModal, setShowLinkedInModal] = useState(false)
+  const [linkedInCandidate, setLinkedInCandidate] = useState(null)
+
+  const handleOpenLinkedInModal = (cand) => {
+    if (!cand) return
+    setLinkedInCandidate(cand)
+    setShowLinkedInModal(true)
+  }
+
+  const handleLinkedInVerificationComplete = (updatedCand) => {
+    if (!updatedCand) return
+    setStreamCandidates(prev => prev.map(c => 
+      (c.id === updatedCand.id || c.candidate_id === updatedCand.id) ? updatedCand : c
+    ))
+    if (selectedCandidate && (selectedCandidate.id === updatedCand.id || selectedCandidate.candidate_id === updatedCand.id)) {
+      setSelectedCandidate(updatedCand)
+    }
+    setLinkedInCandidate(updatedCand)
+  }
 
 
   const copyToClipboard = (text, label) => {
@@ -8509,6 +8537,39 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
                   <button
                     type="button"
+                    onClick={() => handleOpenLinkedInModal(activeCandidate)}
+                    style={{
+                      background: activeCandidate?.linkedinVerification
+                        ? (activeCandidate.linkedinVerification.overallStatus === 'MATCH'
+                            ? 'linear-gradient(135deg, #059669 0%, #10B981 100%)'
+                            : (activeCandidate.linkedinVerification.overallStatus === 'CONFLICT'
+                                ? 'linear-gradient(135deg, #DC2626 0%, #EF4444 100%)'
+                                : 'linear-gradient(135deg, #D97706 0%, #F59E0B 100%)'))
+                        : 'linear-gradient(135deg, #0077B5 0%, #0A66C2 100%)',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: 6,
+                      padding: '7px 14px',
+                      fontSize: 12,
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      boxShadow: '0 2px 6px rgba(10, 102, 194, 0.25)'
+                    }}
+                    title="Verify candidate companies, titles, dates and skills against authorized LinkedIn profile"
+                  >
+                    <IconLinkedIn />
+                    <span>
+                      {activeCandidate?.linkedinVerification
+                        ? `LinkedIn: ${activeCandidate.linkedinVerification.overallStatus === 'MATCH' ? '✅ Verified' : (activeCandidate.linkedinVerification.overallStatus === 'CONFLICT' ? '❌ Conflict' : '⚠ Partial')} (${activeCandidate.linkedinVerification.confidenceScore}%)`
+                        : 'Check with LinkedIn'}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => handleOpenPushModal(activeCandidate)}
                     style={{
                       background: '#2563EB',
@@ -8811,6 +8872,51 @@ export default function RecruiterInbox({ defaultViewMode }) {
                           <span>{liveAiMatchResult.score}% Fit</span> ↗
                         </button>
                       )}
+                    </div>
+
+                    {/* LinkedIn Verification Trigger Button */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenLinkedInModal(activeCandidate)}
+                        style={{
+                          flex: 1,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 6,
+                          background: activeCandidate?.linkedinVerification
+                            ? (activeCandidate.linkedinVerification.overallStatus === 'MATCH'
+                                ? '#ECFDF5'
+                                : (activeCandidate.linkedinVerification.overallStatus === 'CONFLICT' ? '#FEF2F2' : '#FFFBEB'))
+                            : '#EFF6FF',
+                          color: activeCandidate?.linkedinVerification
+                            ? (activeCandidate.linkedinVerification.overallStatus === 'MATCH'
+                                ? '#047857'
+                                : (activeCandidate.linkedinVerification.overallStatus === 'CONFLICT' ? '#B91C1C' : '#B45309'))
+                            : '#0A66C2',
+                          border: `1px solid ${
+                            activeCandidate?.linkedinVerification
+                              ? (activeCandidate.linkedinVerification.overallStatus === 'MATCH'
+                                  ? '#A7F3D0'
+                                  : (activeCandidate.linkedinVerification.overallStatus === 'CONFLICT' ? '#FECACA' : '#FDE68A'))
+                              : '#BFDBFE'
+                          }`,
+                          borderRadius: 6,
+                          padding: '6px 12px',
+                          fontSize: 11.5,
+                          fontWeight: 800,
+                          cursor: 'pointer'
+                        }}
+                        title="Verify candidate companies, dates & skills on LinkedIn"
+                      >
+                        <IconLinkedIn />
+                        <span>
+                          {activeCandidate?.linkedinVerification
+                            ? `LinkedIn ${activeCandidate.linkedinVerification.overallStatus === 'MATCH' ? '✅ Verified' : (activeCandidate.linkedinVerification.overallStatus === 'CONFLICT' ? '❌ Conflict' : '⚠ Partial')} (${activeCandidate.linkedinVerification.confidenceScore}%)`
+                            : 'Check with LinkedIn'}
+                        </span>
+                      </button>
                     </div>
 
                     {/* Location & Local Verification Badge */}
@@ -11865,6 +11971,31 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                           onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                                         >
                                           <span>Run AI Match Scan</span>
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setActiveActionMenuId(null)
+                                            handleOpenLinkedInModal(c)
+                                          }}
+                                          style={{
+                                            padding: '8px 14px',
+                                            fontSize: 12,
+                                            fontWeight: 600,
+                                            color: '#0A66C2',
+                                            background: 'none',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            textAlign: 'left',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 8
+                                          }}
+                                          onMouseEnter={e => e.currentTarget.style.backgroundColor = '#EFF6FF'}
+                                          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        >
+                                          <IconLinkedIn />
+                                          <span>Check with LinkedIn ↗</span>
                                         </button>
                                       </div>
                                     )}
@@ -15590,6 +15721,15 @@ export default function RecruiterInbox({ defaultViewMode }) {
           </div>
         </div>
       )}
+
+      {/* ─── LINKEDIN PLAYWRIGHT & AI VERIFICATION MODAL ─── */}
+      <LinkedInVerificationModal
+        isOpen={showLinkedInModal}
+        onClose={() => setShowLinkedInModal(false)}
+        candidate={linkedInCandidate || activeCandidate}
+        onVerificationComplete={handleLinkedInVerificationComplete}
+        currentUser={currentUser}
+      />
     </div>
   )
 }

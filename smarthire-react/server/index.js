@@ -11,6 +11,12 @@ import dotenv from 'dotenv'
 import https from 'https'
 import { pdfConverter } from 'pdf-image-converter'
 import jwt from 'jsonwebtoken'
+import {
+  getLinkedInSessionStatus,
+  saveLinkedInSession,
+  extractLinkedInProfileData,
+  compareResumeWithLinkedIn
+} from './linkedin-verifier.js'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'smarthire_secure_jwt_secret_key_2026';
 
@@ -7104,6 +7110,140 @@ Page Text: ${profileText.substring(0, 3000)}`;
   }
   saveScreeningToDisk();
 }
+
+// ─── Playwright & AI LinkedIn Verification Endpoints ────────────────────────
+app.get('/api/linkedin/session-status', (req, res) => {
+  try {
+    const status = getLinkedInSessionStatus();
+    res.json({ success: true, ...status });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/linkedin/session-setup', express.json(), (req, res) => {
+  try {
+    const result = saveLinkedInSession(req.body);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/candidates/:id/verify-linkedin', express.json(), async (req, res) => {
+  const candId = req.params.id;
+  const candidate = (candidatesStore || []).find(c => 
+    String(c.id) === String(candId) || 
+    String(c.candidate_id) === String(candId) || 
+    (c.email && c.email.toLowerCase() === String(candId).toLowerCase())
+  );
+
+  if (!candidate) {
+    return res.status(404).json({ success: false, message: 'Candidate not found.' });
+  }
+
+  // Determine LinkedIn URL from request body or candidate profile
+  let targetUrl = (req.body.linkedinUrl || candidate.linkedinUrl || '').trim();
+  
+  // Auto-detect from resume text or contact if not provided
+  if (!targetUrl && candidate.resumeText) {
+    const liMatch = candidate.resumeText.match(/(?:https?:\/\/)?(?:www\.)?linkedin\.com\/in\/[a-zA-Z0-9_-]+/i);
+    if (liMatch) targetUrl = liMatch[0];
+  }
+
+  if (!targetUrl) {
+    return res.status(400).json({
+      success: false,
+      message: 'LinkedIn profile URL is required. Please provide a valid LinkedIn URL (e.g. https://www.linkedin.com/in/username).'
+    });
+  }
+
+  try {
+    console.log(`🔍 [LinkedIn Verifier] Verifying candidate: ${candidate.name} with URL: ${targetUrl}`);
+
+    // 1. Playwright Authorized Session Extraction
+    const extractionResult = await extractLinkedInProfileData(targetUrl, console.log);
+
+    if (extractionResult.needsSessionSetup) {
+      return res.status(200).json({
+        success: false,
+        needsSessionSetup: true,
+        message: extractionResult.message
+      });
+    }
+
+    // 2. Groq LLM Semantic Comparison against Candidate ATS Resume
+    const groqKey = process.env.GROQ_API_KEY;
+    const comparisonResult = await compareResumeWithLinkedIn({
+      candidate,
+      resumeText: candidate.resumeText || candidate.summary || '',
+      linkedInData: extractionResult.extractedData || {},
+      groqApiKey: groqKey
+    });
+
+    const verificationPayload = {
+      verifiedAt: new Date().toISOString(),
+      linkedinUrl: targetUrl,
+      overallStatus: comparisonResult.overallStatus, // 'MATCH' | 'PARTIAL_MATCH' | 'CONFLICT' | 'NOT_FOUND'
+      confidenceScore: comparisonResult.confidenceScore,
+      summary: comparisonResult.summary,
+      evidence: comparisonResult.evidence || [],
+      discrepancies: comparisonResult.discrepancies || [],
+      comparisons: comparisonResult.comparisons || {},
+      extractedProfile: {
+        name: extractionResult.extractedData?.name || '',
+        headline: extractionResult.extractedData?.headline || '',
+        location: extractionResult.extractedData?.location || '',
+        companies: extractionResult.extractedData?.companies || [],
+        jobTitles: extractionResult.extractedData?.jobTitles || [],
+        experiences: extractionResult.extractedData?.experiences || [],
+        skills: extractionResult.extractedData?.skills || [],
+        projects: extractionResult.extractedData?.projects || [],
+        education: extractionResult.extractedData?.education || [],
+        certifications: extractionResult.extractedData?.certifications || []
+      }
+    };
+
+    // 3. Persist to Candidate Record in ATS storage
+    candidate.linkedinVerification = verificationPayload;
+    candidate.linkedinUrl = targetUrl;
+    candidate.linkedinVerifiedAt = verificationPayload.verifiedAt;
+    candidate.linkedinStatus = verificationPayload.overallStatus;
+    await saveCandidatesToDisk();
+
+    console.log(`✅ [LinkedIn Verifier] Verification complete for ${candidate.name}: ${verificationPayload.overallStatus} (${verificationPayload.confidenceScore}%)`);
+
+    res.json({
+      success: true,
+      verification: verificationPayload,
+      candidate
+    });
+  } catch (err) {
+    console.error(`❌ [LinkedIn Verifier] Verification failed for ${candidate.name}:`, err.message);
+    res.status(500).json({
+      success: false,
+      message: err.message || 'LinkedIn verification encountered an unexpected error.'
+    });
+  }
+});
+
+app.get('/api/candidates/:id/linkedin-verification', (req, res) => {
+  const candId = req.params.id;
+  const candidate = (candidatesStore || []).find(c => 
+    String(c.id) === String(candId) || 
+    String(c.candidate_id) === String(candId)
+  );
+
+  if (!candidate) {
+    return res.status(404).json({ success: false, message: 'Candidate not found.' });
+  }
+
+  res.json({
+    success: true,
+    verification: candidate.linkedinVerification || null,
+    linkedinUrl: candidate.linkedinUrl || null
+  });
+});
 
 // Helper to parse numeric rate from bill rate string
 function parseBillRate(rateStr) {
