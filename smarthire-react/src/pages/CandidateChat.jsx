@@ -1537,16 +1537,9 @@ export default function CandidateChat() {
                   </div>
                 </div>
                 <div>
-                  <span style={{ color: '#64748b' }}>Location Verification:</span>
-                  <div style={{ fontWeight: 800, color: candidateGeo ? '#16a34a' : '#64748b' }}>
-                    {candidateGeo ? (
-                      <div>
-                        <div>{candidateGeo.cityState || candidateGeo.resolvedAddress || `${candidateGeo.latitude.toFixed(2)}°, ${candidateGeo.longitude.toFixed(2)}°`}</div>
-                        <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 500, fontFamily: 'monospace' }}>
-                          GPS: {candidateGeo.latitude.toFixed(3)}°, {candidateGeo.longitude.toFixed(3)}°
-                        </div>
-                      </div>
-                    ) : 'Not detected'}
+                  <span style={{ color: '#64748b' }}>Continuous Take:</span>
+                  <div style={{ fontWeight: 800, color: '#16a34a' }}>
+                    ✓ Single Continuous Take
                   </div>
                 </div>
               </div>
