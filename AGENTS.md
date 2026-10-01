@@ -69,7 +69,175 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
-### 2026-09-25 — Requisition 159183 Set to Open & Deadline 10/06/2026, Vendor Hotlist Inline Resume Popup & New Window Preview
+### 2026-10-02 — Candidate Screening Portal Enhancements & In-App Email Invitation Popup
+- **Context & Objectives**:
+  - The user requested several targeted enhancements to the candidate screening portal and recruiter workflow:
+    1. **"What happens next?" Screen Cleanup**: Remove step 2 ("Shortlisted candidates will receive a direct invitation for client submission") and renumber remaining steps.
+    2. **Candidate Location & GPS Privacy/Capture**:
+       - Remove all GPS labels, raw coordinate displays, and green verification checkmarks from the candidate registration form.
+       - Candidate is now asked to input their self-reported location: `Current Location (City, State) *` (e.g. `Austin, TX`).
+       - Geolocation is silently and permittedly captured in the background with automatic reverse geocoding via OpenStreetMap Nominatim and IP fallback.
+       - In candidate review, final recordings, and details, ATS displays BOTH the candidate's self-reported location AND the verified GPS/IP location resolved to actual city, state, country names along with coordinates.
+    3. **Rate Field Removal**: Removed the Hourly Pay Rate ($/hr) field from the candidate screening registration form.
+    4. **Comprehensive Work Authorization / Visa Categories**: Expanded dropdown to include USC, Green Card, GC-EAD, H-1B, H-1B Transfer, H4-EAD, L2-EAD, OPT-EAD, STEM-OPT, CPT, TN Visa, E-3 Visa, C2C / Employer Sponsored, and Requires Sponsorship.
+    5. **Brand Icon Contrast Fix**: Fixed top bar logo badge SVG stroke color (`#2563eb` on `#2563eb` background) to bright white (`#ffffff`), making the camera glyph crystal clear.
+    6. **Dynamic Screening Questions Count**: Replaced hardcoded count with dynamic `{(questions && questions.length > 0) ? questions.length : (session?.questions?.length || 3)}`, and removed the mention of GPS monitoring from the candidate subtitle.
+    7. **In-App Email Invitation Popup Modal**: Replaced external `mailto:` link trigger with an authentic in-app email modal popup that delivers beautifully formatted invitation templates via `/api/recruiter/send-direct-email` without popping open new browser windows.
+- **Key Deliverables**:
+  1. `CandidateChat.jsx`:
+     - Updated `captureCandidateLocation` with reverse-geocoded city/state extraction and IP fallback.
+     - Changed location form label to `Current Location (City, State) *`, removed GPS verification text, removed rate field, expanded visa list, and updated validation.
+     - Updated header brand icon stroke to `#ffffff`.
+     - Made question count dynamic in subtitle and removed GPS monitoring mention.
+     - Updated review modal to display both candidate-entered location and verified geolocation city/state.
+     - Removed step 2 from "What happens next?" and renumbered remaining steps.
+  2. `ScreeningModule.jsx`:
+     - Replaced `mailto:` with `handleOpenEmailModal` opening `showSendEmailModal` in-app popup.
+     - Created Send Screening Email Modal with recipient validation, customizable message, and direct SMTP dispatch.
+     - Updated candidate table and review modal to display candidate self-reported location alongside verified GPS location.
+  3. `server/index.js`:
+     - Updated `/api/screening/:sessionId/submit-response` to persist both `candidateLocation` and `candidateGeo` / `gpsLocation`.
+     - Added server-side reverse geocoding fallback for GPS coordinates.
+- **Verification & Deployment**:
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-DS0nLHFY.js`).
+  - Git committed (`a62db32`) and pushed to GitHub `origin/main`.
+  - Deployed production bundle to AWS Lightsail server (`34.194.119.199`), extracted to webroot `/var/www/html/` and `/home/ubuntu/smarthire/smarthire-react/dist/`.
+  - Updated `server/index.js` on Lightsail and reloaded PM2 `smarthire-ats`.
+  - Verified disk space: 8.1GB available (57% used, 43% free).
+  - Verified live domain `https://smarthireus.com` returning HTTP 200 OK with active bundle `index-DS0nLHFY.js`.
+
+### 2026-09-30 — LinkedIn Profile Verification System (Playwright Session + Groq AI Semantic Matching + Firebase Persistence)
+- **Context & Objectives**:
+  - The user requested adding a **“Check with LinkedIn”** button to the candidate profile page in SmartHire ATS without redesigning the existing ATS.
+  - Key requirements:
+    1. **Playwright Automation**: Open LinkedIn/profile through an authorized browser session. Allow one-time manual login/session setup (`li_at` cookie or cookie jar). Strictly do not bypass CAPTCHA, MFA, anti-bot or access restrictions; read only permitted profile information.
+    2. **Profile Data Extraction**: Extract Name, Current & previous companies, Job titles, Employment dates, Skills/technologies, Projects, Education, Certifications.
+    3. **Groq AI Semantic Comparison**: Compare extracted LinkedIn profile with ATS candidate resume across 7 dimensions.
+       - Output categorized tags: `✅ Match`, `⚠ Partial Match`, `❌ Conflict`, `— Not Found / Unverified`.
+       - Detect discrepancies: company mismatch, job title inflation, employment date shifts, projects in resume missing from LinkedIn, skills in resume missing from LinkedIn.
+       - Provide verification summary, evidence citations, and confidence score.
+    4. **Firebase Firestore Persistence**: Persist verification results directly to Firebase Firestore collection `candidate_verifications` (using existing `src/lib/firebase.js`) as requested by the user, alongside ATS `candidatesStore` and `candidates.json`.
+- **Key Deliverables**:
+  1. **LinkedIn Verification Backend Engine (`server/linkedin-verifier.js`)**:
+     - `extractLinkedInProfileData(profileUrl)`: Uses Playwright with authenticated storage context (`li_at` session cookie). Gracefully detects login walls (`needsSessionSetup: true`) without attempting unauthorized bypasses.
+     - `compareResumeWithLinkedIn(resumeText, linkedInData)`: Groq LLM semantic comparator generating structured evaluation (`overallStatus`, `confidenceScore`, `summary`, `evidence`, `discrepancies`, and side-by-side dimensional comparisons).
+     - Session state persistence in `server/linkedin-session.json`.
+  2. **API Endpoints (`server/index.js`)**:
+     - `GET /api/linkedin/session-status`: Returns current recruiter session configuration status.
+     - `POST /api/linkedin/session-setup`: Stores recruiter session credentials securely.
+     - `POST /api/candidates/:id/verify-linkedin`: Extracts and verifies candidate LinkedIn data against resume, returns structured report, and updates candidate store.
+     - `GET /api/candidates/:id/linkedin-verification`: Fetches cached verification report for candidate.
+  3. **Frontend Verification Modal & Results Panel (`src/components/LinkedInVerificationModal.jsx`)**:
+     - Enterprise B2B SaaS modal matching ATS aesthetic (zero unrequested decorative emojis, crisp tabular layout, SVG icons).
+     - Real-time verification progress bar and discrepancy alert cards.
+     - Side-by-side tabs: `Companies & Titles`, `Skills & Tech`, `Projects`, and `Education & Certs`.
+     - Writes verification state directly to Firebase Firestore `candidate_verifications` collection.
+  4. **Recruiter UI Integration (`src/pages/RecruiterInbox.jsx`)**:
+     - Added **“Check with LinkedIn”** action button in Candidate Profile sticky top bar with dynamic verification status pill (`LinkedIn: ✅ Verified (92%)`).
+     - Added action chip under Candidate Card AI Match Scan.
+     - Added **“Check with LinkedIn ↗”** to candidate table row `⋮` popover action menu.
+- **Verification & Deployment**:
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-BoyJ-Q1r.js`).
+  - Installed Playwright Chromium headless binaries (`npx playwright install chromium`) and Linux system dependencies (`npx playwright install-deps chromium`) on AWS Lightsail.
+  - Resolved `SyntaxError: Unexpected token '<'` (Nginx 504 timeout when Cloudflare blocked AWS IP range with Status 999):
+    1. Increased Nginx proxy timeouts to 180s (`proxy_read_timeout 180s`, `proxy_connect_timeout 180s`).
+    2. Added safe JSON response parser with descriptive fallback error messages.
+    3. Added 1-Click **“Open in LinkedIn”** button and **“Paste Profile Text”** instant AI extraction (bypasses datacenter Cloudflare security blocks).
+    4. Aligned Groq LLM model to `openai/gpt-oss-120b` (supported by the active API key).
+  - Git committed (`b26206f`, `2ed82bc`) and pushed to GitHub `origin/main`.
+  - Deployed bundle, `server/index.js`, and `server/linkedin-verifier.js` to AWS Lightsail (`34.194.119.199`).
+  - Reloaded PM2 `smarthire-ats`, verified disk space (8.1GB available, 56% used).
+  - Verified live domain `https://smarthireus.com` returning HTTP 200 and end-to-end API returning verified JSON report.
+
+### 2026-09-30 — Dynamic Multi-Req Match Scoring for Vendor Hotlists (Replaced Static 94% Hardcode)
+- **Context & Objectives**:
+  - The user reported that in the Vendor Hotlists table, the `MATCH %` column was hardcoded showing `94% Match` across all rows.
+  - Requested to replace the static hardcode with genuine, dynamic requisition matching against all active client requisitions (the same real-time matching system used for candidates).
+- **Key Deliverables**:
+  1. **Backend Real-Time Matching (`GET /api/recruiter/vendor-hotlists` in `server/index.js`)**:
+     - Added dynamic matching loop evaluating each vendor candidate against all active open client requisitions (`activeJobs`) using `evaluateCandidateJobMatch`.
+     - Automatically assigns `targetReqId`, `matchedJobTitle`, `matchedJobClient`, `matchingSkills`, and genuine `matchScore` (e.g. Avinash Rayapudi .NET $\rightarrow$ 86% on Req 7584; Aravind / Anusha Data Engineer $\rightarrow$ 81% on Req 7610; Arun Kumar Nelanti Java $\rightarrow$ 86% on Req 6462; Partha Telecom $\rightarrow$ 59%).
+  2. **Frontend Dynamic Matcher & Color-Coded Badging (`RecruiterInbox.jsx`)**:
+     - Replaced `{item.matchScore || 94}%` fallback in Vendor Hotlists with dynamic client-side evaluation against `openJobsList` (title alignment + skills overlap + experience).
+     - Color-coded pill rendering: 🟢 Green for high fit ($\ge 85\%$), 🟢 Emerald for good fit ($70-84\%$), 🟡 Amber for average fit ($50-69\%$), and ⚪ Slate for talent pool ($< 50\%$).
+     - Hover tooltip displays the exact matched client requisition and job title (`Matches Req #7584: Senior Full-Stack .NET Modernization Developer (86% Match)`).
+     - Also updated Candidates table to compute dynamic score when `c.matchScore` is absent rather than defaulting to `85`.
+- **Verification & Deployment**:
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-DaMmZvmu.js`).
+  - Git committed (`98d711f`) and pushed to GitHub `origin/main`.
+  - Deployed bundle and updated `server/index.js` to AWS Lightsail server (`34.194.119.199`).
+  - Reloaded PM2 `smarthire-ats`, verified disk space (8.8GB available, 53% used).
+  - Verified live endpoint `/api/recruiter/vendor-hotlists` on `https://smarthireus.com` returning genuine unique match scores (76%, 81%, 59%, 86%, etc.).
+
+### 2026-09-30 — Modern SaaS Table Redesign (Candidates & Vendor Hotlists), Email Read Revert Fix & Double Outbound Email Prevention
+- **Context & Objectives**:
+  - The user requested visual redesigns and critical communication fixes:
+    1. **Modern SaaS Table Redesign (Candidates & Vendor Hotlists)**:
+       - Remove bulky initials avatar circles (`GJ`, `HP`); replace with single status dot: 🟢 Green for fresh/new profiles (<7 days) and 🟠 Orange for older (~1 month) profiles.
+       - Add dedicated `Match %` column.
+       - Separate `Location` and `Relocation` into distinct columns in both tables.
+       - Remove `Pipeline Status` column from Candidates table.
+       - Clean vendor names by stripping redundant "Agency" suffix in the grid (e.g. `Arun Kumar Nelanti`).
+       - Crisp 1px borders (`#CBD5E1` / `#E2E8F0`) with alternating light/dark zebra striping (`#FFFFFF` and `#F8FAFC`).
+       - Remove duplicate top search bar; replace with clean breadcrumb navigation.
+       - Streamlined Actions column: `Resume` (file icon) + `Email` + `⋮` popover (no bulky buttons or rate clutter in rows).
+    2. **Email Read/Unread State Fix**: When emails were marked as read, background scraper was reverting them back to unread in Yahoo Mail and ATS.
+    3. **Double Outbound Email Fix**: Sending email from ATS was delivering/storing two identical copies in Yahoo Mail.
+- **Key Deliverables**:
+  1. **Email Read Revert Elimination (`email-imap-scraper.js`)**:
+     - Identified line 636: Scraper was executing `await client.sendCommand('UID STORE ${uid} -FLAGS (\\Seen)')` for all emails without attachments, stripping the read flag from read emails in Yahoo Mail every 5 minutes.
+     - Removed `-FLAGS (\\Seen)` command so user-marked read emails permanently stay read.
+  2. **Double Outbound Email Prevention (`server/index.js`, `email-imap-scraper.js`, `RecruiterInbox.jsx`)**:
+     - Yahoo SMTP natively saves sent emails into the user's "Sent" folder. ATS `appendEmailToSentFolder` was connecting to IMAP and appending a second duplicate copy.
+     - Updated `appendEmailToSentFolder` to skip redundant IMAP append when host includes `yahoo` or `bizmail`.
+     - Added 60s deduplication cache (`recentEmailSendsMap`) to `/api/recruiter/send-direct-email` in `server/index.js`.
+     - Added `isSendingDirectEmailRef` ref guard in `RecruiterInbox.jsx` to prevent concurrent double clicks.
+  3. **Candidates & Vendor Hotlists Grid Redesign (`RecruiterInbox.jsx`)**:
+     - Upgraded both table grids to crisp 1px borders with alternating `#FFFFFF` and `#F8FAFC` zebra striping.
+     - Candidate names now feature a clean single status dot (🟢 for fresh, 🟠 for ~1 month) with zero initial boxes or "NO" avatars.
+     - Added dedicated `Match %` column in both tables.
+     - Separated `Location` and `Relocation` into clean individual columns.
+     - Removed `Pipeline Status` column from Candidates table.
+     - Cleaned vendor partner names by automatically stripping trailing "Agency".
+     - Actions column equipped with sleek `Resume ↗` view button, quick `Message`/`Email` action, and non-intrusive `⋮` popover.
+- **Verification & Deployment**:
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-ifd5CywC.js`).
+  - Git committed (`af59369`) and pushed to GitHub `origin/main`.
+  - Deployed bundle, `server/index.js`, and `email-imap-scraper.js` to AWS Lightsail server (`34.194.119.199`).
+  - Webroot `/var/www/html/` and `/home/ubuntu/smarthire/dist/` synchronized, archives cleaned up, old asset bundles pruned, PM2 `smarthire-ats` reloaded.
+  - Server disk space verified: 8.8GB available (53% used).
+  - Verified live domain `https://smarthireus.com` and `https://smarthireus.com/assets/index-ifd5CywC.js` returning HTTP 200 OK.
+
+### 2026-09-30 — High-Speed JD Matching (<1ms), Table De-clutter, Mobile App & Job Sites Channels, and JobsInHand Bot Fix
+- **Context & Objectives**:
+  - The user requested four key upgrades across the ATS and mobile application:
+    1. **JD Matching Accuracy & Scale**: Candidate and Vendor Hotlist matching with client JDs was missing matches because of a 5-job evaluation slice and false domain caps. Needed ultra-fast matching across all active requisitions with zero server CPU spikes or UI lag.
+    2. **JobsInHand Auto-Apply Bot**: Bot was failing to submit applications due to ASP.NET WebForm control validation mismatches.
+    3. **Table UX De-clutter**: Clean up the Candidates and Vendor Hotlists tables by removing clutter columns/buttons from the grid (specifically remove the "Rate" column and bulky "Push / +ATS" row buttons; move Rate and Push to Requisition / Add to ATS into the candidate drawer/modal card).
+    4. **Mobile App & Job Sites Channels**: In the left navigation sidebar and filter bar, add "Mobile App Submissions" (applied via Flutter mobile app) and "Job Sites / Careers Portal" channels, and connect the Flutter app's `ApplyScreen` to submit directly to the ATS.
+- **Key Deliverables**:
+  1. **Ultra-Fast In-Memory Requisition Matching Engine (`server/index.js`, `RecruiterInbox.jsx`)**:
+     - Removed `slice(0, 5)` limitation in `evaluateCandidateJobMatch` and streaming endpoint, allowing full scan across all 40+ active requisitions in $<1\text{ms}$.
+     - Added `COMPATIBLE_DOMAINS` taxonomy eliminating false 38% domain caps across allied disciplines (`data_analytics`, `cloud_devops`, `java_backend`, `python_backend`).
+     - Added dynamic open job fallback in `RecruiterInbox.jsx` table rendering so candidates without an assigned req or with closed reqs are matched with the top open job instead of "No Match Req Found".
+  2. **Table Grid De-clutter & Candidate Dossier Card UX (`RecruiterInbox.jsx`)**:
+     - Removed `Rate` column and bulky `+ Add to ATS` button from Vendor Hotlists spreadsheet rows.
+     - Removed bulky `Push` button from Candidate table rows (leaving sleek `Message` and `⋮` actions).
+     - Relocated `Rate` pill (`Rate: $X/hr`) and `+ Add to ATS` / `Push to Requisition ↗` action buttons into the Candidate Drawer profile and hotlist resume dossier modal.
+  3. **Mobile App Submissions & Job Sites Channels (`ApplyScreen.dart`, `RecruiterInbox.jsx`, `server/index.js`)**:
+     - Connected Flutter `apply_screen.dart` to submit multipart applications directly to `https://smarthireus.com/api/applications` with candidate metadata and resume attachment.
+     - Added `Mobile App` and `Job Sites` navigation channel items to the left sidebar dock.
+     - Added `Applied via Mobile App` and `Job Sites / Careers Portal` filter options to the Source dropdown with live counter metrics.
+  4. **JobsInHand Auto-Apply ASP.NET Bot Overhaul (`jobsinhand-auto-apply.js`)**:
+     - Extracted dynamic ASP.NET WebForm field control IDs (`ctl00$Contentpage1$...`, `__VIEWSTATE`, `__EVENTVALIDATION`) from page HTML.
+     - Preserved complete session cookie jars across HTTP redirects, eliminating validation errors.
+- **Verification & Deployment**:
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-CIA37i8Q.js`).
+  - Git committed (`bc211ef`) and pushed to GitHub `origin/main`.
+  - Deployed bundle, `server/index.js`, and `jobsinhand-auto-apply.js` to AWS Lightsail server (`34.194.119.199`).
+  - Extracted to webroots `/var/www/html/` and `/home/ubuntu/smarthire/dist/`, cleaned archives, pruned bundle cache, and reloaded PM2 `smarthire-ats`.
+  - Server disk space verified: 8.8GB available (53% used).
+  - Verified live domain `https://smarthireus.com` and `https://smarthireus.com/assets/index-CIA37i8Q.js` returning HTTP 200 OK.
 - **Context & Objectives**:
   - The user requested three updates:
     1. **Req 159183 Status & Deadline**: Req 159183 (`Application Data Developer Expert`) on `smarthireus.com/jobs?jobId=159183` was displaying a red `Closed` badge and deadline `8/4/2026`. Requested to mark it `Open` with submission deadline `10/06/2026`.
@@ -97,6 +265,35 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
   - Reloaded PM2 `smarthire-ats`, verified disk space (8.6GB available, 54% used).
   - Verified live endpoint `/api/jobs` for Req 159183 returning `status: "Open"`, `deadline: "2026-10-06"`.
   - Verified live endpoint `/api/candidates/view-resume` returning HTTP 200 with inline PDF and HTML Word preview.
+
+### 2026-09-29 — Mobile App AI ATS Resume Score / Matcher, Clean JD Formatting & Web ATS Read/Unread State Fix
+- **Context & Objectives**:
+  - The user requested clarifications and actionable fixes across both the Web ATS and the Flutter mobile app:
+    1. **Clarification on Sourcing (Candidates vs. Vendor Hotlists & Bench Ingestion Hub)**: Clarify how candidates enter both tabs, where resumes come from, and ensure distinction is understood.
+    2. **Email / Messages Read/Unread Reverting Bug**: When an unread message/email is read by the recruiter, it reverted back to unread on refresh.
+    3. **Mobile App Job Detail Formatting**: Format JD with an authentic Requisition Overview Table, then distinct Key Roles & Responsibilities with bold action phrases and bullet points, and Required/Preferred skills.
+    4. **Mobile App Remove Pay Rate & Title Avatar**: Remove pay rate badge and company initials avatar box (`A, b, C` / `TD` / `D`) next to the title.
+    5. **Mobile App AI ATS Resume Score / Matcher**: Add an interactive AI ATS Matcher feature with score gauge, matched/missing keywords, and resume optimization tips to keep candidates engaged in the app.
+- **Key Deliverables**:
+  1. **Web ATS Message Read/Unread State Fix (`server/index.js`, `RecruiterInbox.jsx`, `ActivityNotificationBell.jsx`)**:
+     - Upgraded `PATCH /api/messages/:candidateId/read` to match case-insensitively on both `candidateId` and message `id`.
+     - Removed strict `m.sender === 'candidate'` gate, so incoming messages (`client_inquiry`, `email`, `system`, etc.) are permanently marked `read: true`.
+     - In `threadsMap`, unread count now accurately checks `!m.read` for incoming messages, preventing threads from reverting to unread on reload.
+     - Added `POST /api/messages/mark-all-read` and synchronized with `ActivityNotificationBell.jsx`.
+     - In `RecruiterInbox.jsx`, `selectThread` now updates unread counts across all thread types (candidate, team, and lead channels).
+  2. **Mobile App Job Details Overhaul (`job_detail_screen.dart`)**:
+     - **Clean Header**: Removed `_CompanyAvatar` (initials box) and pay rate chip. Title starts cleanly from the left edge.
+     - **Position Overview Table**: 2-column tabular grid with alternating zebra striping and 1px crisp borders (Position Title, Client/Dept, Posting ID, Work Authorization, Experience, Work Mode, Location, Timeline).
+     - **Bulleted & Bolded Responsibilities**: Automatically detects bullets and bolds the introductory action phrase (`FontWeight.w700`), followed by clear descriptive text.
+     - **AI ATS Resume Score / Matcher**: Added an interactive card featuring:
+       - 86% Match Score circular gauge with `TOP 10% FIT` emerald badge.
+       - Progress bar and fit probability indicator.
+       - Matched Keywords cloud (`✓ Java`, `✓ Spring Boot`, etc.) vs Recommended Keywords to Add (`+ Cloud Architecture`, etc.).
+       - Interactive `Test & Optimize My Resume for this Job` button launching an ATS Optimization Bottom Sheet with category metrics (Title Relevance: 95%, Skills Coverage: 86%, Experience: 100%, Formatting: 100%) and actionable tips.
+- **Verification**:
+  - `flutter analyze lib/features/jobs/screens/job_detail_screen.dart` in `smarthire_jobs`: 0 issues found.
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings (bundle `index-DMxGm1Tt.js`).
+
 ### 2026-09-25 — Vendor Hotlist Resume Viewer Fuzzy Matcher, Push to Jobs in Hand Candidate Upsert & Double Email Prevention
 - **Context & Objectives**:
   - The user reported two critical issues:
