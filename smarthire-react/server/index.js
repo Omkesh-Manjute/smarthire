@@ -6703,9 +6703,33 @@ app.post('/api/screening/:sessionId/submit-response', async (req, res) => {
     session.candidateLocation = candidateInfo.location || session.candidateLocation || '';
     session.candidateLinkedin = candidateInfo.linkedin || session.candidateLinkedin || '';
     session.expectedRate = candidateInfo.expectedRate || session.expectedRate || '';
+    session.visaStatus = candidateInfo.visaStatus || session.visaStatus || 'US Citizen';
     session.responses = responses;
     session.masterMediaUrl = req.body.masterMediaUrl || (responses[0]?.mediaUrl) || null;
     session.candidateGeo = req.body.candidateGeo || null;
+    session.gpsLocation = session.candidateGeo;
+
+    // Server-side reverse geocoding if client coordinates were not resolved to city/state
+    if (session.candidateGeo && session.candidateGeo.latitude && !session.candidateGeo.cityState) {
+      try {
+        const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${session.candidateGeo.latitude}&lon=${session.candidateGeo.longitude}&zoom=12&addressdetails=1`, {
+          headers: { 'User-Agent': 'SmartHire-ATS-Geocoder/1.0' }
+        });
+        if (geoRes.ok) {
+          const geoData = await geoRes.json();
+          const addr = geoData.address || {};
+          const city = addr.city || addr.town || addr.village || addr.municipality || addr.county || '';
+          const state = addr.state || '';
+          const country = addr.country || '';
+          session.candidateGeo.cityState = [city, state].filter(Boolean).join(', ');
+          session.candidateGeo.resolvedAddress = session.candidateGeo.cityState ? `${session.candidateGeo.cityState}, ${country}` : (geoData.display_name || '');
+          session.gpsLocation = session.candidateGeo;
+        }
+      } catch (e) {
+        console.warn('Backend geocoding notice:', e.message);
+      }
+    }
+
     session.proctoring = req.body.proctoring || null;
     session.aiScore = evaluation.aiScore;
     session.aiSummary = evaluation.aiSummary;
@@ -6742,6 +6766,10 @@ app.post('/api/screening/:sessionId/submit-response', async (req, res) => {
       candidateRecord.masterMediaUrl = session.masterMediaUrl;
       candidateRecord.proctoring = session.proctoring;
       candidateRecord.candidateGeo = session.candidateGeo;
+      candidateRecord.gpsLocation = session.candidateGeo;
+      candidateRecord.location = session.candidateLocation;
+      candidateRecord.candidateLocation = session.candidateLocation;
+      candidateRecord.visaStatus = session.visaStatus;
       candidateRecord.status = candidateRecord.status || 'Screened';
       candidateRecord.updatedAt = new Date().toISOString();
 

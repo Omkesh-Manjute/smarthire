@@ -42,6 +42,86 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
   const [createdLinkResult, setCreatedLinkResult] = useState(null)
   const [copySuccess, setCopySuccess] = useState(false)
 
+  // Direct Email Screening Invitation Modal States
+  const [showSendEmailModal, setShowSendEmailModal] = useState(false)
+  const [emailModalTo, setEmailModalTo] = useState('')
+  const [emailModalSubject, setEmailModalSubject] = useState('')
+  const [emailModalBody, setEmailModalBody] = useState('')
+  const [isSendingEmail, setIsSendingEmail] = useState(false)
+  const [emailSuccessToast, setEmailSuccessToast] = useState('')
+  const [emailErrorToast, setEmailErrorToast] = useState('')
+
+  const handleOpenEmailModal = (linkData) => {
+    const jobTitle = linkData?.jobTitle || 'Open Position'
+    const screeningUrl = linkData?.screeningUrl || ''
+    setEmailModalTo('')
+    setEmailModalSubject(`Interview Screening Invitation: ${jobTitle} — SmartHire Assessment`)
+    setEmailModalBody(
+`Dear Candidate,
+
+Thank you for your interest in the ${jobTitle} position with our team.
+
+We invite you to complete a short asynchronous video & audio assessment. This interactive screening takes approximately 5–8 minutes and allows our recruitment team to evaluate your technical background directly.
+
+Screening Link:
+${screeningUrl}
+
+Instructions:
+• Please complete the assessment from a desktop or laptop computer with a working camera, microphone, and desktop screen sharing support.
+• The session is conducted in a secure, continuous proctored environment.
+• No login or account setup is required — simply open the link above to get started.
+
+If you have any questions or experience any technical difficulties, please reply directly to this email.
+
+Best regards,
+SmartHire Recruitment Team`
+    )
+    setEmailSuccessToast('')
+    setEmailErrorToast('')
+    setShowSendEmailModal(true)
+  }
+
+  const handleSendScreeningEmail = async (e) => {
+    if (e) e.preventDefault()
+    if (!emailModalTo || !emailModalTo.trim()) {
+      setEmailErrorToast('Please enter candidate email address.')
+      return
+    }
+    setIsSendingEmail(true)
+    setEmailSuccessToast('')
+    setEmailErrorToast('')
+    try {
+      const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
+      const recEmail = u.email || 'recruiter@coolsofttech.com'
+      const res = await fetch('/api/recruiter/send-direct-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recruiterEmail: recEmail,
+          to: emailModalTo.trim(),
+          subject: emailModalSubject.trim(),
+          body: emailModalBody.trim(),
+          candidateName: 'Candidate',
+          candidateId: 'screening-invite'
+        })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setEmailSuccessToast(`Email successfully dispatched to ${emailModalTo.trim()}!`)
+        setTimeout(() => {
+          setShowSendEmailModal(false)
+          setEmailSuccessToast('')
+        }, 1800)
+      } else {
+        setEmailErrorToast(data.message || 'Failed to send email. Please verify configuration.')
+      }
+    } catch (err) {
+      setEmailErrorToast('Network error while dispatching email: ' + err.message)
+    } finally {
+      setIsSendingEmail(false)
+    }
+  }
+
   // Candidate Review Drawer / Modal States
   const [reviewSession, setReviewSession] = useState(null)
   const [activeQuestionTab, setActiveQuestionTab] = useState(0)
@@ -447,8 +527,21 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
                             <div style={{ fontSize: '13.5px', fontWeight: '800', color: '#0f172a' }}>
                               {candName}
                             </div>
-                            <div style={{ fontSize: '11.5px', color: '#64748b' }}>
-                              {candEmail}
+                            <div style={{ fontSize: '11.5px', color: '#64748b', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                              <span>{candEmail}</span>
+                              {(session.candidateLocation || session.candidateGeo?.cityState) && (
+                                <>
+                                  <span style={{ color: '#cbd5e1' }}>•</span>
+                                  <span style={{ color: '#334155', fontWeight: 600 }}>
+                                    {session.candidateLocation || session.candidateGeo?.cityState}
+                                  </span>
+                                </>
+                              )}
+                              {session.candidateGeo && (
+                                <span style={{ fontSize: '10.5px', color: '#16a34a', fontWeight: 700, background: '#ecfdf5', padding: '1px 5px', borderRadius: 4 }}>
+                                  GPS: {session.candidateGeo.cityState || `${session.candidateGeo.latitude?.toFixed(2)}°, ${session.candidateGeo.longitude?.toFixed(2)}°`}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -737,12 +830,21 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
                   </div>
 
                   <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center', gap: '12px' }}>
-                    <a
-                      href={`mailto:?subject=${encodeURIComponent(`Interview Screening: ${createdLinkResult.jobTitle}`)}&body=${encodeURIComponent(`Hi,\n\nPlease complete your short asynchronous screening (takes ~2-3 mins) using the link below:\n\n${createdLinkResult.screeningUrl}\n\nBest regards,\nSmartHire Talent Team`)}`}
-                      style={styles.emailCandidateBtn}
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEmailModal(createdLinkResult)}
+                      style={{
+                        ...styles.emailCandidateBtn,
+                        background: '#2563eb',
+                        color: '#ffffff',
+                        border: 'none',
+                        cursor: 'pointer',
+                        gap: '6px'
+                      }}
                     >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L1 7"/></svg>
                       Email Candidate Now
-                    </a>
+                    </button>
                     <button
                       type="button"
                       onClick={() => setShowCreateModal(false)}
@@ -754,6 +856,107 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── SEND SCREENING EMAIL MODAL (IN-APP POPUP) ────────────────────── */}
+      {showSendEmailModal && (
+        <div style={styles.modalOverlay} onClick={() => !isSendingEmail && setShowSendEmailModal(false)}>
+          <div style={{ ...styles.modalCard, maxWidth: '600px' }} onClick={e => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L1 7"/></svg>
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
+                    Send Screening Invitation
+                  </h3>
+                  <div style={{ fontSize: '12px', color: '#64748b' }}>
+                    Deliver assessment link directly to candidate's email inbox
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => !isSendingEmail && setShowSendEmailModal(false)}
+                style={styles.modalCloseBtn}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSendScreeningEmail} style={styles.modalBody}>
+              {emailSuccessToast && (
+                <div style={{ padding: '10px 14px', borderRadius: 8, background: '#ecfdf5', color: '#065f46', border: '1px solid #a7f3d0', fontSize: '13px', fontWeight: 700, marginBottom: 16 }}>
+                  ✓ {emailSuccessToast}
+                </div>
+              )}
+              {emailErrorToast && (
+                <div style={{ padding: '10px 14px', borderRadius: 8, background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', fontSize: '13px', fontWeight: 600, marginBottom: 16 }}>
+                  ✕ {emailErrorToast}
+                </div>
+              )}
+
+              <div style={styles.modalFormGroup}>
+                <label style={styles.modalLabel}>Candidate Email Address *</label>
+                <input
+                  type="email"
+                  placeholder="e.g. candidate@example.com"
+                  value={emailModalTo}
+                  onChange={e => setEmailModalTo(e.target.value)}
+                  style={styles.modalInput}
+                  required
+                />
+              </div>
+
+              <div style={styles.modalFormGroup}>
+                <label style={styles.modalLabel}>Email Subject</label>
+                <input
+                  type="text"
+                  value={emailModalSubject}
+                  onChange={e => setEmailModalSubject(e.target.value)}
+                  style={styles.modalInput}
+                  required
+                />
+              </div>
+
+              <div style={styles.modalFormGroup}>
+                <label style={styles.modalLabel}>Invitation Message & Instructions</label>
+                <textarea
+                  rows={9}
+                  value={emailModalBody}
+                  onChange={e => setEmailModalBody(e.target.value)}
+                  style={{ ...styles.modalInput, fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.5 }}
+                  required
+                />
+              </div>
+
+              <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowSendEmailModal(false)}
+                  disabled={isSendingEmail}
+                  style={styles.cancelBtn}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSendingEmail}
+                  style={{
+                    ...styles.primaryButton,
+                    opacity: isSendingEmail ? 0.7 : 1,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6
+                  }}
+                >
+                  {isSendingEmail ? 'Dispatching...' : 'Send Screening Email ➔'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -823,12 +1026,12 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
                     <span>{reviewSession.candidatePhone || 'N/A'}</span>
                   </div>
                   <div style={styles.sideInfoRow}>
-                    <span style={{ color: '#64748b' }}>Location:</span>
-                    <span>{reviewSession.candidateLocation || 'Remote'}</span>
+                    <span style={{ color: '#64748b' }}>Candidate Location:</span>
+                    <strong style={{ color: '#0f172a' }}>{reviewSession.candidateLocation || 'Not specified'}</strong>
                   </div>
                   <div style={styles.sideInfoRow}>
-                    <span style={{ color: '#64748b' }}>Rate Expectation:</span>
-                    <strong style={{ color: '#1d4ed8' }}>{reviewSession.expectedRate || 'Negotiable'}</strong>
+                    <span style={{ color: '#64748b' }}>Work Authorization:</span>
+                    <span style={{ fontWeight: 700, color: '#2563eb' }}>{reviewSession.visaStatus || reviewSession.candidateInfo?.visaStatus || 'US Citizen'}</span>
                   </div>
                   {reviewSession.candidateLinkedin && (
                     <div style={styles.sideInfoRow}>
@@ -865,9 +1068,14 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
                     {reviewSession.candidateGeo && (
                       <div style={styles.sideInfoRow}>
                         <span style={{ color: '#64748b' }}>GPS Geolocation:</span>
-                        <span style={{ fontSize: '11px', fontFamily: 'monospace', color: '#0f172a' }}>
-                          {reviewSession.candidateGeo.latitude?.toFixed(3)}°, {reviewSession.candidateGeo.longitude?.toFixed(3)}°
-                        </span>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '12px', fontWeight: 800, color: '#16a34a' }}>
+                            {reviewSession.candidateGeo.cityState || reviewSession.candidateGeo.resolvedAddress || `${reviewSession.candidateGeo.latitude?.toFixed(3)}°, ${reviewSession.candidateGeo.longitude?.toFixed(3)}°`}
+                          </div>
+                          <div style={{ fontSize: '10.5px', fontFamily: 'monospace', color: '#64748b' }}>
+                            {reviewSession.candidateGeo.latitude?.toFixed(4)}°, {reviewSession.candidateGeo.longitude?.toFixed(4)}°
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>

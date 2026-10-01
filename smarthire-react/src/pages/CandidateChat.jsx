@@ -169,26 +169,72 @@ export default function CandidateChat() {
   const captureCandidateLocation = useCallback(() => {
     if (typeof navigator !== 'undefined' && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
+        async (pos) => {
+          const lat = pos.coords.latitude
+          const lon = pos.coords.longitude
+          const acc = Math.round(pos.coords.accuracy)
+          let resolvedAddress = ''
+          let cityState = ''
+          try {
+            const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=12&addressdetails=1`, {
+              headers: { 'Accept': 'application/json' }
+            })
+            if (geoRes.ok) {
+              const data = await geoRes.json()
+              const addr = data.address || {}
+              const city = addr.city || addr.town || addr.village || addr.municipality || addr.county || ''
+              const state = addr.state || ''
+              const country = addr.country || ''
+              cityState = [city, state].filter(Boolean).join(', ')
+              resolvedAddress = cityState ? `${cityState}, ${country}` : (data.display_name || '')
+            }
+          } catch (e) {
+            console.warn('Geocoding resolve notice:', e)
+          }
+
           const geoData = {
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-            accuracy: Math.round(pos.coords.accuracy),
-            capturedAt: new Date().toISOString()
+            latitude: lat,
+            longitude: lon,
+            accuracy: acc,
+            cityState,
+            resolvedAddress,
+            capturedAt: new Date().toISOString(),
+            method: 'gps'
           }
           setCandidateGeo(geoData)
           setHasLocationPermission(true)
-          if (!candidateLocation) {
-            setCandidateLocation(`GPS ${pos.coords.latitude.toFixed(3)}°, ${pos.coords.longitude.toFixed(3)}°`)
-          }
+          // Intentionally do NOT overwrite candidateLocation with coordinates.
+          // Candidate enters their actual current location in the input field.
         },
-        (err) => {
+        async (err) => {
           console.warn('Geolocation capture notice:', err.message)
+          // Silent fallback via IP geolocation if candidate denies GPS or browser times out
+          try {
+            const ipRes = await fetch('https://ipapi.co/json/')
+            if (ipRes.ok) {
+              const ipData = await ipRes.json()
+              if (ipData && (ipData.city || ipData.latitude)) {
+                const cityState = [ipData.city, ipData.region_code || ipData.region].filter(Boolean).join(', ')
+                const resolvedAddress = [ipData.city, ipData.region, ipData.country_name].filter(Boolean).join(', ')
+                setCandidateGeo({
+                  latitude: ipData.latitude || 0,
+                  longitude: ipData.longitude || 0,
+                  accuracy: 5000,
+                  cityState,
+                  resolvedAddress,
+                  capturedAt: new Date().toISOString(),
+                  method: 'ip'
+                })
+              }
+            }
+          } catch (ipErr) {
+            console.warn('IP fallback notice:', ipErr)
+          }
         },
         { enableHighAccuracy: true, timeout: 10000 }
       )
     }
-  }, [candidateLocation])
+  }, [])
 
   useEffect(() => {
     captureCandidateLocation()
@@ -999,7 +1045,7 @@ export default function CandidateChat() {
         <div style={styles.headerInner}>
           <div style={styles.logoSection}>
             <div style={styles.logoBadge}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
             </div>
             <div>
               <div style={styles.brandTitle}>SmartHire <span style={{ color: '#2563eb' }}>Screen</span></div>
@@ -1045,8 +1091,8 @@ export default function CandidateChat() {
               <div style={styles.pillLabel}>Candidate Screening Portal</div>
               <h1 style={styles.heroTitle}>Proctored Video & Voice Assessment</h1>
               <p style={styles.heroSubtitle}>
-                Answer {questions.length} screening questions in a single continuous recording session.
-                Full-screen mode, desktop screen sharing, and GPS location are monitored to ensure fairness.
+                Answer {(questions && questions.length > 0) ? questions.length : (session?.questions?.length || 3)} screening questions in a single continuous recording session.
+                Full-screen mode and desktop screen sharing are monitored to ensure fairness.
               </p>
 
               <div style={styles.highlightsRow}>
@@ -1093,45 +1139,39 @@ export default function CandidateChat() {
               </div>
 
               <div style={styles.inputGroup}>
-                <label style={styles.label}>Current City, State / GPS Location</label>
+                <label style={styles.label}>Current Location (City, State) <span style={{ color: '#ef4444' }}>*</span></label>
                 <input
                   type="text"
-                  placeholder="e.g. Raleigh, NC"
+                  placeholder="e.g. Austin, TX"
                   value={candidateLocation}
                   onChange={e => setCandidateLocation(e.target.value)}
                   style={styles.input}
-                />
-                {candidateGeo && (
-                  <span style={{ fontSize: '11px', color: '#16a34a', fontWeight: 600, marginTop: 4, display: 'block' }}>
-                    ✓ Verified GPS Location: {candidateGeo.latitude.toFixed(4)}°, {candidateGeo.longitude.toFixed(4)}° (±{candidateGeo.accuracy}m)
-                  </span>
-                )}
-              </div>
-
-              <div style={styles.inputGroup}>
-                <label style={styles.label}>Hourly Pay Rate ($/hr)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. $75/hr C2C"
-                  value={expectedRate}
-                  onChange={e => setExpectedRate(e.target.value)}
-                  style={styles.input}
+                  required
                 />
               </div>
 
-              <div style={styles.inputGroup}>
-                <label style={styles.label}>Work Authorization / Visa</label>
+              <div style={{ ...styles.inputGroup, gridColumn: 'span 2' }}>
+                <label style={styles.label}>Work Authorization / Visa <span style={{ color: '#ef4444' }}>*</span></label>
                 <select
                   value={visaStatus}
                   onChange={e => setVisaStatus(e.target.value)}
                   style={styles.select}
                 >
-                  <option value="US Citizen">US Citizen</option>
-                  <option value="Green Card">Green Card</option>
-                  <option value="H-1B">H-1B</option>
-                  <option value="C2C">C2C</option>
-                  <option value="EAD">EAD</option>
-                  <option value="Canadian / TN">Canadian / TN</option>
+                  <option value="US Citizen">US Citizen (USC)</option>
+                  <option value="Green Card">Green Card (Permanent Resident)</option>
+                  <option value="GC-EAD">GC-EAD</option>
+                  <option value="H-1B">H-1B Visa</option>
+                  <option value="H-1B Transfer">H-1B Transfer</option>
+                  <option value="H4-EAD">H4-EAD</option>
+                  <option value="L2-EAD">L2-EAD</option>
+                  <option value="OPT-EAD">OPT-EAD</option>
+                  <option value="STEM-OPT">STEM-OPT EAD</option>
+                  <option value="CPT">CPT</option>
+                  <option value="TN Visa (Canada / Mexico)">TN Visa (Canada / Mexico)</option>
+                  <option value="E-3 Visa (Australia)">E-3 Visa (Australian Citizen)</option>
+                  <option value="C2C / Employer Sponsored">C2C / Employer Sponsored</option>
+                  <option value="Requires Visa Sponsorship">Requires Visa Sponsorship</option>
+                  <option value="Other">Other</option>
                 </select>
               </div>
             </div>
@@ -1140,8 +1180,8 @@ export default function CandidateChat() {
               <button
                 type="button"
                 onClick={() => {
-                  if (!candidateName.trim() || !candidateEmail.trim()) {
-                    alert('Please enter your Name and Email Address to proceed.')
+                  if (!candidateName.trim() || !candidateEmail.trim() || !candidateLocation.trim()) {
+                    alert('Please enter your Name, Email Address, and Current Location (City, State) to proceed.')
                     return
                   }
                   setStep(2)
@@ -1415,9 +1455,9 @@ export default function CandidateChat() {
                 <div style={{ fontSize: '13px', color: '#64748b' }}>{candidateEmail} • {candidatePhone || 'No phone'}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <span style={styles.rateTag}>{expectedRate || 'Rate open'}</span>
-                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-                  {candidateLocation || 'Remote'} {candidateGeo ? `(GPS Verified)` : ''}
+                <span style={styles.submittedPill}>{visaStatus}</span>
+                <div style={{ fontSize: '12px', color: '#475569', marginTop: '4px', fontWeight: 600 }}>
+                  Location: {candidateLocation || 'Remote'}
                 </div>
               </div>
             </div>
@@ -1497,9 +1537,16 @@ export default function CandidateChat() {
                   </div>
                 </div>
                 <div>
-                  <span style={{ color: '#64748b' }}>GPS Geolocation:</span>
+                  <span style={{ color: '#64748b' }}>Location Verification:</span>
                   <div style={{ fontWeight: 800, color: candidateGeo ? '#16a34a' : '#64748b' }}>
-                    {candidateGeo ? `✓ Verified (${candidateGeo.latitude.toFixed(2)}°, ${candidateGeo.longitude.toFixed(2)}°)` : 'Not provided'}
+                    {candidateGeo ? (
+                      <div>
+                        <div>{candidateGeo.cityState || candidateGeo.resolvedAddress || `${candidateGeo.latitude.toFixed(2)}°, ${candidateGeo.longitude.toFixed(2)}°`}</div>
+                        <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 500, fontFamily: 'monospace' }}>
+                          GPS: {candidateGeo.latitude.toFixed(3)}°, {candidateGeo.longitude.toFixed(3)}°
+                        </div>
+                      </div>
+                    ) : 'Not detected'}
                   </div>
                 </div>
               </div>
@@ -1579,12 +1626,6 @@ export default function CandidateChat() {
                   </div>
                   <div style={styles.timelineStep}>
                     <span style={styles.stepNum}>2</span>
-                    <span style={{ fontSize: '13px', color: '#334155' }}>
-                      Shortlisted candidates will receive a direct invitation for client submission.
-                    </span>
-                  </div>
-                  <div style={styles.timelineStep}>
-                    <span style={styles.stepNum}>3</span>
                     <span style={{ fontSize: '13px', color: '#334155' }}>
                       Check your email ({candidateEmail}) for updates from our recruitment desk.
                     </span>
