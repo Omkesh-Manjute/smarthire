@@ -131,6 +131,7 @@ SmartHire Recruitment Team`
   const [isSavingReview, setIsSavingReview] = useState(false)
   const [playbackSpeed, setPlaybackSpeed] = useState(1)
   const [isReEvaluating, setIsReEvaluating] = useState(false)
+  const [isGeneratingAIQuestions, setIsGeneratingAIQuestions] = useState(false)
 
   // Auto-fill campaign title & questions when job is selected
   useEffect(() => {
@@ -314,6 +315,360 @@ SmartHire Recruitment Team`
       alert('Error during AI transcription: ' + err.message)
     } finally {
       setIsReEvaluating(false)
+    }
+  }
+
+  // Handle AI Question Auto-Generation from Requisition & Skills
+  const handleGenerateAIQuestions = async () => {
+    if (!selectedJobId) {
+      alert('Please select a Job Requisition first so AI knows the target role & required skills.')
+      return
+    }
+    const job = jobsList.find(j => j.id === selectedJobId)
+    setIsGeneratingAIQuestions(true)
+    try {
+      const res = await fetch(`${API}/generate-questions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+        },
+        body: JSON.stringify({
+          jobId: selectedJobId,
+          jobTitle: job?.title,
+          skills: job?.skills || [],
+          questionCount: 4
+        })
+      })
+      const data = await res.json()
+      if (data.success && Array.isArray(data.questions) && data.questions.length > 0) {
+        setQuestions(data.questions)
+        alert(`✨ Successfully generated ${data.questions.length} role-tailored technical questions using Groq AI!`)
+      } else {
+        alert(data.message || 'Failed to auto-generate interview questions.')
+      }
+    } catch (err) {
+      console.error(err)
+      alert('Error generating questions: ' + err.message)
+    } finally {
+      setIsGeneratingAIQuestions(false)
+    }
+  }
+
+  // Handle PDF Screening Dossier Export
+  const handleExportPDFReport = (session) => {
+    if (!session) return
+
+    const candidateName = session.candidateName || 'Candidate'
+    const jobTitle = session.jobTitle || 'Open Position'
+    const email = session.candidateEmail || 'N/A'
+    const phone = session.candidatePhone || 'N/A'
+    const location = session.candidateLocation || 'N/A'
+    const visa = session.visaStatus || session.candidateInfo?.visaStatus || 'US Citizen'
+    const score = session.aiScore || 85
+    const recommendation = session.recommendation || 'Recommended'
+    const takeaways = session.keyTakeaways || 'Candidate completed all screening questions.'
+    const summaries = Array.isArray(session.aiSummary) ? session.aiSummary : []
+    const responses = session.responses || []
+    const proctoring = session.proctoring || {}
+    const geo = session.candidateGeo || session.gpsLocation || null
+    const dateStr = session.submittedAt ? new Date(session.submittedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleDateString()
+
+    const scoreColor = score >= 85 ? '#059669' : score >= 70 ? '#2563eb' : score >= 50 ? '#d97706' : '#dc2626'
+    const scoreBg = score >= 85 ? '#ecfdf5' : score >= 70 ? '#eff6ff' : score >= 50 ? '#fffbeb' : '#fef2f2'
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SmartHire Screening Dossier - ${candidateName}</title>
+  <style>
+    @media print {
+      body { margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+      .no-print { display: none !important; }
+      .page-break { page-break-after: always; }
+      @page { margin: 15mm; size: A4 portrait; }
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #0f172a;
+      background: #ffffff;
+      line-height: 1.5;
+      padding: 36px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 18px;
+      margin-bottom: 22px;
+    }
+    .brand-title {
+      font-size: 24px;
+      font-weight: 900;
+      color: #1e3a8a;
+      letter-spacing: -0.02em;
+    }
+    .brand-sub {
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 2px;
+    }
+    .report-meta {
+      text-align: right;
+      font-size: 12px;
+      color: #64748b;
+    }
+    .section-title {
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #334155;
+      margin: 22px 0 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+    .info-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      margin-bottom: 7px;
+    }
+    .info-label {
+      color: #64748b;
+      font-weight: 600;
+    }
+    .info-value {
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .score-banner {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      background: ${scoreBg};
+      border: 1.5px solid ${scoreColor}40;
+      border-radius: 10px;
+      padding: 16px 22px;
+      margin-bottom: 18px;
+    }
+    .score-circle {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 3px solid ${scoreColor};
+      color: ${scoreColor};
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 19px;
+      font-weight: 900;
+    }
+    .takeaway-box {
+      font-size: 13.5px;
+      color: #1e293b;
+      background: #f8fafc;
+      border-left: 4px solid #2563eb;
+      padding: 12px 16px;
+      border-radius: 4px;
+      margin-bottom: 18px;
+      font-style: italic;
+    }
+    .bullet-list {
+      margin: 0 0 18px;
+      padding-left: 20px;
+      font-size: 13px;
+      color: #334155;
+    }
+    .bullet-list li {
+      margin-bottom: 6px;
+    }
+    .q-box {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+      background: #ffffff;
+      page-break-inside: avoid;
+    }
+    .q-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .q-badge {
+      font-size: 11px;
+      font-weight: 800;
+      color: #2563eb;
+      text-transform: uppercase;
+    }
+    .q-time {
+      font-size: 11.5px;
+      color: #64748b;
+      font-weight: 700;
+    }
+    .q-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0 0 10px;
+    }
+    .transcript-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 12px 14px;
+      font-size: 13px;
+      color: #1e293b;
+      line-height: 1.6;
+    }
+    .footer {
+      margin-top: 36px;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 14px;
+      text-align: center;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+    .print-bar {
+      position: sticky;
+      top: 0;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 12px 24px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .print-btn {
+      background: #2563eb;
+      color: #ffffff;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="print-bar no-print">
+    <div style="font-weight: 700; font-size: 14px;">SmartHire ATS — Candidate Screening Dossier</div>
+    <div>
+      <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+      <button class="print-btn" style="background: #475569; margin-left: 8px;" onclick="window.close()">Close</button>
+    </div>
+  </div>
+
+  <div class="header">
+    <div>
+      <div class="brand-title">SmartHire ATS</div>
+      <div class="brand-sub">Asynchronous Video Screening & AI Proctoring Dossier</div>
+    </div>
+    <div class="report-meta">
+      <div>Report ID: <strong>${session.sessionId || session.id || 'SCR-2026'}</strong></div>
+      <div>Date: <strong>${dateStr}</strong></div>
+      <div>Status: <strong>${session.status ? session.status.toUpperCase() : 'SUBMITTED'}</strong></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="info-card">
+      <div class="info-row"><span class="info-label">Candidate Name:</span><span class="info-value">${candidateName}</span></div>
+      <div class="info-row"><span class="info-label">Email:</span><span class="info-value">${email}</span></div>
+      <div class="info-row"><span class="info-label">Phone:</span><span class="info-value">${phone}</span></div>
+      <div class="info-row"><span class="info-label">Reported Location:</span><span class="info-value">${location}</span></div>
+      <div class="info-row"><span class="info-label">Work Authorization:</span><span class="info-value" style="color: #2563eb;">${visa}</span></div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-row"><span class="info-label">Requisition / Position:</span><span class="info-value">${jobTitle}</span></div>
+      <div class="info-row"><span class="info-label">Desktop Screen Share:</span><span class="info-value" style="color: ${proctoring.screenShared ? '#16a34a' : '#64748b'}">${proctoring.screenShared ? 'Verified Monitor' : 'Standard'}</span></div>
+      <div class="info-row"><span class="info-label">Fullscreen Enforced:</span><span class="info-value" style="color: ${proctoring.fullscreenEnforced ? '#16a34a' : '#64748b'}">${proctoring.fullscreenEnforced ? 'Yes (Enforced)' : 'No'}</span></div>
+      <div class="info-row"><span class="info-label">Tab Violations:</span><span class="info-value" style="color: ${(proctoring.tabViolationsCount || 0) > 0 ? '#dc2626' : '#16a34a'}">${(proctoring.tabViolationsCount || 0) === 0 ? '0 (Clean)' : proctoring.tabViolationsCount}</span></div>
+      ${geo ? `<div class="info-row"><span class="info-label">GPS Geolocation:</span><span class="info-value" style="color: #16a34a;">${geo.cityState || geo.resolvedAddress || `${geo.latitude?.toFixed(3)}°, ${geo.longitude?.toFixed(3)}°`}</span></div>` : ''}
+    </div>
+  </div>
+
+  <div class="score-banner">
+    <div class="score-circle">${score}%</div>
+    <div>
+      <div style="font-size: 17px; font-weight: 900; color: #0f172a;">${recommendation}</div>
+      <div style="font-size: 12px; color: #64748b; font-weight: 600;">Overall AI Requisition Match & Technical Verification Score</div>
+    </div>
+  </div>
+
+  <div class="section-title">AI Executive Summary & Assessment</div>
+  <div class="takeaway-box">"${takeaways}"</div>
+
+  ${summaries.length > 0 ? `
+    <ul class="bullet-list">
+      ${summaries.map(s => `<li>${s}</li>`).join('')}
+    </ul>
+  ` : ''}
+
+  <div class="section-title">Interview Questions & Candidate Spoken Transcripts (${responses.length})</div>
+  ${responses.map((resp, i) => `
+    <div class="q-box">
+      <div class="q-header">
+        <span class="q-badge">Question ${i + 1} • ${resp.format ? resp.format.toUpperCase() : 'VIDEO'}</span>
+        ${typeof resp.startTime === 'number' ? `<span class="q-time">Timestamp: ${Math.floor(resp.startTime / 60)}:${String(Math.floor(resp.startTime % 60)).padStart(2, '0')}</span>` : ''}
+      </div>
+      <div class="q-title">${resp.questionText || `Question ${i + 1}`}</div>
+      <div class="transcript-box">
+        ${resp.transcript && !resp.transcript.includes('Spoken answer captured')
+          ? `<strong>Candidate Answer (AI Speech-to-Text):</strong><br/>"${resp.transcript}"`
+          : `<em>(No spoken answer transcribed for this question or candidate skipped)</em>`}
+      </div>
+    </div>
+  `).join('')}
+
+  ${session.recruiterNotes || session.recruiterRating ? `
+    <div class="section-title">Recruiter Scorecard</div>
+    <div class="info-card">
+      ${session.recruiterRating ? `<div class="info-row"><span class="info-label">Recruiter Rating:</span><span class="info-value">${'★'.repeat(session.recruiterRating)}${'☆'.repeat(5 - session.recruiterRating)} (${session.recruiterRating}/5)</span></div>` : ''}
+      ${session.recruiterNotes ? `<div style="font-size: 13px; color: #334155; margin-top: 6px;"><strong>Recruiter Notes:</strong> ${session.recruiterNotes}</div>` : ''}
+    </div>
+  ` : ''}
+
+  <div class="footer">
+    SmartHire Applicant Tracking & Candidate Verification Platform • Confidential Recruitment Document
+  </div>
+</body>
+</html>
+    `
+
+    const printWin = window.open('', '_blank', 'width=980,height=800')
+    if (printWin) {
+      printWin.document.open()
+      printWin.document.write(htmlContent)
+      printWin.document.close()
     }
   }
 
@@ -652,16 +1007,31 @@ SmartHire Recruitment Team`
 
                       {/* Actions */}
                       <td style={{ ...styles.td, textAlign: 'right' }}>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleOpenReview(session)
-                          }}
-                          style={styles.reviewButton}
-                        >
-                          Review
-                        </button>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          {(session.status === 'submitted' || session.status === 'shortlisted' || session.status === 'reviewed' || (session.responses && session.responses.length > 0)) && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleExportPDFReport(session)
+                              }}
+                              style={styles.pdfReportTableBtn}
+                              title="Export PDF Candidate Screening Dossier"
+                            >
+                              PDF
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleOpenReview(session)
+                            }}
+                            style={styles.reviewButton}
+                          >
+                            Review
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )
@@ -755,24 +1125,47 @@ SmartHire Recruitment Team`
                   <div style={styles.modalFormGroup}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                       <label style={styles.modalLabel}>Screening Questions ({questions.length})</label>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setQuestions(prev => [
-                            ...prev,
-                            {
-                              id: `q${prev.length + 1}`,
-                              text: `New Question ${prev.length + 1}`,
-                              description: 'Provide brief context for candidate.',
-                              allowedFormats: ['video', 'audio', 'text'],
-                              maxDuration: 120
-                            }
-                          ])
-                        }}
-                        style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
-                      >
-                        + Add Question
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <button
+                          type="button"
+                          onClick={handleGenerateAIQuestions}
+                          disabled={isGeneratingAIQuestions}
+                          style={{
+                            background: '#eff6ff',
+                            border: '1px solid #bfdbfe',
+                            color: '#1d4ed8',
+                            borderRadius: '6px',
+                            padding: '4px 10px',
+                            fontSize: '11.5px',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                          title="Generate role-specific technical questions automatically using Groq AI"
+                        >
+                          {isGeneratingAIQuestions ? 'Generating...' : '✨ AI Generate Questions'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setQuestions(prev => [
+                              ...prev,
+                              {
+                                id: `q${prev.length + 1}`,
+                                text: `New Question ${prev.length + 1}`,
+                                description: 'Provide brief context for candidate.',
+                                allowedFormats: ['video', 'audio', 'text'],
+                                maxDuration: 120
+                              }
+                            ])
+                          }}
+                          style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
+                        >
+                          + Add Question
+                        </button>
+                      </div>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -997,9 +1390,6 @@ SmartHire Recruitment Team`
             {/* Modal Header */}
             <div style={styles.reviewHeader}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={styles.avatarCircleLarge}>
-                  {(reviewSession.candidateName || 'CA').slice(0, 2).toUpperCase()}
-                </div>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
@@ -1021,24 +1411,22 @@ SmartHire Recruitment Team`
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                {/* Download Full Video */}
-                {(reviewSession.masterMediaUrl || (reviewSession.responses && reviewSession.responses[0]?.mediaUrl)) && (
-                  <a
-                    href={reviewSession.masterMediaUrl || reviewSession.responses[0]?.mediaUrl}
-                    download={`Interview_${(reviewSession.candidateName || 'Candidate').replace(/\s+/g, '_')}_Full.webm`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={styles.downloadTopBtn}
-                    title="Download candidate full interview recording"
-                  >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                      <polyline points="7 10 12 15 17 10"></polyline>
-                      <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg>
-                    Download Video
-                  </a>
-                )}
+                {/* PDF Screening Dossier Export */}
+                <button
+                  type="button"
+                  onClick={() => handleExportPDFReport(reviewSession)}
+                  style={styles.exportPdfTopBtn}
+                  title="Export candidate screening dossier to PDF or print"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                  </svg>
+                  Export PDF Report
+                </button>
 
                 {/* AI Re-evaluation & Transcription Button */}
                 <button
@@ -1938,9 +2326,10 @@ const styles = {
   reviewModalCard: {
     background: '#ffffff',
     borderRadius: '20px',
-    width: '100%',
-    maxWidth: '1080px',
-    maxHeight: '92vh',
+    width: '96vw',
+    maxWidth: '1360px',
+    height: '94vh',
+    maxHeight: '94vh',
     display: 'flex',
     flexDirection: 'column',
     boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.3)',
@@ -1948,12 +2337,13 @@ const styles = {
     overflow: 'hidden'
   },
   reviewHeader: {
-    padding: '18px 24px',
+    padding: '16px 24px',
     borderBottom: '1px solid #e2e8f0',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    background: '#f8fafc'
+    background: '#f8fafc',
+    flexShrink: 0
   },
   shortlistTopBtn: {
     padding: '8px 16px',
@@ -1968,10 +2358,11 @@ const styles = {
   reviewBodySplit: {
     flex: 1,
     display: 'flex',
-    overflowY: 'auto'
+    overflow: 'hidden'
   },
   reviewLeftCol: {
-    width: '340px',
+    width: '360px',
+    flexShrink: 0,
     borderRight: '1px solid #e2e8f0',
     background: '#f8fafc',
     padding: '20px',
@@ -1982,7 +2373,7 @@ const styles = {
   },
   reviewRightCol: {
     flex: 1,
-    padding: '24px',
+    padding: '0 28px 28px 28px',
     display: 'flex',
     flexDirection: 'column',
     overflowY: 'auto'
@@ -2068,23 +2459,25 @@ const styles = {
     display: 'flex',
     gap: '8px',
     alignItems: 'center',
-    background: '#f1f5f9',
-    padding: '6px',
-    borderRadius: '10px',
-    border: '1px solid #e2e8f0',
+    background: '#ffffff',
+    padding: '16px 0 12px 0',
+    borderBottom: '1px solid #e2e8f0',
     marginBottom: '16px',
     overflowX: 'auto',
     flexWrap: 'wrap',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    position: 'sticky',
+    top: 0,
+    zIndex: 20
   },
   qTabBtn: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '6px',
-    padding: '7px 14px',
-    borderRadius: '7px',
-    border: '1px solid transparent',
-    background: 'transparent',
+    padding: '8px 16px',
+    borderRadius: '8px',
+    border: '1px solid #cbd5e1',
+    background: '#f8fafc',
     color: '#475569',
     fontSize: '12.5px',
     fontWeight: '600',
@@ -2096,7 +2489,7 @@ const styles = {
     background: '#2563eb',
     color: '#ffffff',
     borderColor: '#1d4ed8',
-    boxShadow: '0 1px 3px rgba(37, 99, 235, 0.25)',
+    boxShadow: '0 2px 4px rgba(37, 99, 235, 0.25)',
     fontWeight: '700'
   },
   playerWrapper: {
@@ -2159,6 +2552,33 @@ const styles = {
     alignItems: 'center',
     gap: '6px',
     transition: 'background 0.15s ease'
+  },
+  exportPdfTopBtn: {
+    padding: '7px 14px',
+    borderRadius: '8px',
+    background: '#0f172a',
+    color: '#ffffff',
+    border: 'none',
+    fontSize: '12px',
+    fontWeight: '700',
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    transition: 'background 0.15s ease'
+  },
+  pdfReportTableBtn: {
+    padding: '5px 10px',
+    borderRadius: '6px',
+    background: '#f8fafc',
+    color: '#334155',
+    border: '1px solid #cbd5e1',
+    fontSize: '11.5px',
+    fontWeight: '700',
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    transition: 'all 0.15s ease'
   },
   downloadTopBtn: {
     padding: '7px 14px',

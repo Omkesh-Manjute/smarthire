@@ -69,7 +69,38 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 
 ## Recent Changes
 
-### 2026-10-02 — Candidate Screening Portal Enhancements & In-App Email Invitation Popup
+### 2026-10-02 — Sticky Non-Hiding Question Tabs, Initials Removal, Top Download Cleanup, Widescreen Modal (1360px), PDF Dossier Export & AI Question Auto-Generation
+- **Context & Objectives**:
+  - The user requested targeted UX fixes and two high-impact features in candidate screening:
+    1. **Question Buttons Hiding / Disappearing**: Fixed question navigation buttons (`Q1: Video`, `Q2: Video`, etc.) that were scrolling off or getting cut off by locking `reviewBodySplit` overflow to `hidden`, padding `reviewRightCol` `0 28px 28px 28px`, and pinning `qTabRow` with `position: 'sticky'`, `top: 0`, solid `#ffffff` background, and `zIndex: 20`.
+    2. **Initials Avatar Removal**: Removed the initials circle avatar (`SA`) before the candidate name in the modal header.
+    3. **Top Download Button Cleanup**: Removed redundant top header download button (player controls bar already has it).
+    4. **Widescreen Modal Expansion**: Enlarged `reviewModalCard` to `width: '96vw'`, `maxWidth: '1360px'`, `height: '94vh'`, `maxHeight: '94vh'` for full widescreen breathing room.
+    5. **Feature 5 — PDF Candidate Screening Report Export**: Added 1-click printable/PDF dossier generation (`handleExportPDFReport`) in modal header and submissions table, formatting candidate metadata, AI fit score, proctoring audit, geolocation, and verbatim question-by-question spoken transcripts.
+    6. **Feature 4 — Auto-Generated Interview Questions from Requisition & Resume**: Implemented `POST /api/screening/generate-questions` with Groq LLM and added "✨ AI Generate Questions" in Campaign Builder to auto-create 4 tailored role-specific screening questions.
+
+### 2026-10-02 — Dynamic AI Speech-to-Text (FFmpeg + Groq Whisper), Genuine Per-Question AI Evaluation, Video Download & Tab UX Fix
+- **Context & Objectives**:
+  - The user reported critical issues in the candidate video screening review portal:
+    1. **AI Speech-to-Text Transcript Missing**: Transcript was displaying the placeholder `"Spoken answer captured during continuous interview."` instead of what the candidate actually spoke.
+    2. **Question Tabs Collapsing / Overlapping**: The question navigation tabs (`Q1: Video (0:00)`, `Q2: Video (1:42)`, etc.) were squished with an awkward border cutting horizontally through the text and poor dark-blue-on-blue contrast.
+    3. **AI Match & Insights Dynamic Evaluation**: Candidate evaluation previously evaluated placeholder text (literally stating "Communication cannot be assessed because only placeholder text is available"). Needed genuine dynamic extraction of candidate audio, accurate per-question transcription, and multi-factor analysis comparing spoken answers against the job requisition.
+    4. **Video Download Capability**: Recruiters needed the ability to download the candidate interview recording directly.
+- **Root Cause & Technical Fixes**:
+  - **Whisper 25MB File Limit**: Candidates recording 5-10 minute videos produce 50MB-120MB WebM files. Groq Whisper API has a strict 25MB limit and was rejecting raw video files with HTTP 413, falling back to placeholder strings.
+  - **FFmpeg 16kHz Mono Audio Extraction**: Installed `ffmpeg` on the AWS Lightsail production server. Upgraded `transcribeScreeningMediaFile` in `server/index.js` to automatically extract and compress video audio to 16kHz 64kbps MP3 (reducing a 68MB video to 4.1MB, well within the 25MB Whisper limit).
+  - **Verbose JSON Segments Mapping**: Used Groq Whisper `whisper-large-v3-turbo` with `response_format: 'verbose_json'` to extract timestamped segments (`start`, `end`, `text`). Created `distributeTranscriptionToQuestions` to map speech segments to each question's exact `startTime` and `endTime`.
+  - **Genuine Dynamic Groq LLM Evaluation**: Evaluates candidate's actual words against requisition requirements across technical accuracy, articulation, and domain fit, updating scores and key takeaways in real time.
+  - **On-Demand Re-evaluation (`POST /api/screening/:sessionId/re-evaluate`)**: Allows recruiters to re-run Whisper transcription and Groq evaluation on any existing candidate recording with 1 click.
+  - **Video Download**: Added "Download Video" buttons to both the individual question player controls bar and the top modal header.
+  - **Modern Segmented Question Tabs**: Replaced border-collapsing tabs with an authentic modern segmented pill control (`#f1f5f9` container, crisp `#2563eb` active state, and high-contrast timestamps).
+- **Verification & Deployment**:
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-BJREG40u.js`).
+  - Git committed (`5d25c1c`) and pushed to GitHub `origin/main`.
+  - Deployed bundle and updated `server/index.js` to AWS Lightsail server (`34.194.119.199`).
+  - Reloaded PM2 `smarthire-ats`, verified disk space (7.6GB available, 59% used).
+  - Verified live domain `https://smarthireus.com` returning HTTP 200 with bundle `index-BJREG40u.js`.
+  - Tested `/api/screening/SCR-1790882969550-924/re-evaluate` on live candidate Sai Teja Goud Naguluri: successfully extracted 5,666 characters of genuine spoken transcript, mapped to all 5 questions, and generated dynamic AI fit score (71%) and technical insights.
 - **Context & Objectives**:
   - The user requested several targeted enhancements to the candidate screening portal and recruiter workflow:
     1. **"What happens next?" Screen Cleanup**: Remove step 2 ("Shortlisted candidates will receive a direct invitation for client submission") and renumber remaining steps.

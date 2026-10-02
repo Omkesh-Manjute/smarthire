@@ -6020,6 +6020,80 @@ Return ONLY this JSON object. Do not include markdown code block syntax (like \`
 // ─── AI SCREENING CHATBOT ENDPOINTS ──────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// Auto-generate interview questions from Job Requisition and Candidate Resume using Groq AI
+app.post('/api/screening/generate-questions', authenticateToken, async (req, res) => {
+  const { jobId, jobTitle, skills, resumeText, questionCount = 4 } = req.body;
+  
+  let targetJob = null;
+  if (jobId) {
+    targetJob = jobsStore.find(j => j.id === jobId);
+  }
+  
+  const title = jobTitle || targetJob?.title || 'Software Engineer';
+  const jobSkills = (skills && skills.length > 0) ? skills : (targetJob?.skills || []);
+  const client = targetJob?.client || 'Enterprise Client';
+  const desc = targetJob?.description || '';
+
+  try {
+    const groqApiKey = process.env.GROQ_API_KEY;
+    if (!groqApiKey) {
+      return res.status(500).json({ success: false, message: 'Groq API Key not configured' });
+    }
+
+    const systemPrompt = `You are a Principal Technical Interviewer and ATS Assessment Architect.
+Your task is to generate ${questionCount} concise, sharp, high-signal asynchronous screening interview questions for the role: "${title}".
+Client Domain: ${client}.
+Key Skills Required: ${jobSkills.join(', ')}.
+Job Details: ${desc ? desc.slice(0, 500) : 'Enterprise IT role'}.
+${resumeText ? `Candidate Resume Context:\n${resumeText.slice(0, 1500)}` : ''}
+
+Guidelines:
+1. Question 1 should be a punchy technical self-introduction assessing primary domain alignment.
+2. Question 2-3 should be deep technical problem-solving, architectural, or hands-on implementation scenarios focusing on core tools (${jobSkills.slice(0, 4).join(', ') || 'production architecture'}).
+${resumeText ? '3. Tailor questions to probe their listed resume claims or project gaps.' : '3. Focus on production debugging, scaling, or performance tuning.'}
+4. The final question should address availability, remote/relocation preference, work authorization, and rate expectations.
+
+Return a clean, valid JSON array containing exactly ${questionCount} question objects:
+[
+  {
+    "id": "q1",
+    "text": "Specific question text for candidate to answer in 60-90 seconds",
+    "description": "Short recruiter evaluation guideline or tip",
+    "allowedFormats": ["video", "audio", "text"],
+    "maxDuration": 120
+  }
+]
+Output ONLY raw JSON array starting with '[' and ending with ']'.`;
+
+    const raw = await callGroqAI(systemPrompt, `Generate ${questionCount} interview questions for ${title}`, true);
+    let parsed = [];
+    try {
+      parsed = JSON.parse(cleanJsonResponseText(raw));
+    } catch (e) {
+      const match = raw.match(/\[[\s\S]*\]/);
+      if (match) parsed = JSON.parse(match[0]);
+      else throw e;
+    }
+
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      throw new Error('Failed to parse questions array');
+    }
+
+    parsed = parsed.map((q, idx) => ({
+      id: q.id || `q${idx + 1}`,
+      text: q.text || `Question ${idx + 1}`,
+      description: q.description || 'Answer thoroughly with specific production examples.',
+      allowedFormats: q.allowedFormats || ['video', 'audio', 'text'],
+      maxDuration: q.maxDuration || 120
+    }));
+
+    res.json({ success: true, questions: parsed });
+  } catch (err) {
+    console.error('Error generating AI interview questions:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // Create a new screening session
 app.post('/api/screening/create', authenticateToken, (req, res) => {
   const { jobId, targetPayRate, maxPayRate, questions, allowedFormats, maxDuration, campaignTitle } = req.body;
