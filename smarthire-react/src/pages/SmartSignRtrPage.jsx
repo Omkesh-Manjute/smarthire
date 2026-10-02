@@ -122,7 +122,7 @@ export default function SmartSignRtrPage() {
 
   // Main UI Mode:
   // If token is provided and != 'manage', candidate signing view is active.
-  // Otherwise recruiter Dropbox Sign portal is active.
+  // Otherwise recruiter SmartHire Sign portal is active.
   const isCandidateSigningView = Boolean(token && token !== 'manage' && token !== 'dashboard')
 
   // Recruiter Portal State
@@ -142,6 +142,11 @@ export default function SmartSignRtrPage() {
   const [documentTitle, setDocumentTitle] = useState(PREBUILT_TEMPLATES[0].doc.title)
   const [documentContent, setDocumentContent] = useState(PREBUILT_TEMPLATES[0].doc.content)
   const [uploadedFileName, setUploadedFileName] = useState('')
+  const [uploadedImageUrl, setUploadedImageUrl] = useState(null)
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false)
+  const [uploadStatusText, setUploadStatusText] = useState('')
+  const [draggingFieldId, setDraggingFieldId] = useState(null)
+  const [dragOffset, setDragOffset] = useState({ startX: 0, startY: 0, initialFieldX: 0, initialFieldY: 0 })
   const [signers, setSigners] = useState([
     {
       id: 's-1',
@@ -155,7 +160,7 @@ export default function SmartSignRtrPage() {
 
   // Field Placement Canvas State
   const [placedFields, setPlacedFields] = useState(PREBUILT_TEMPLATES[0].doc.defaultFields || [])
-  const [selectedFieldId, setSelectedFieldId] = useState(null)
+  const [selectedFieldId, setSelectedFieldId] = useState(PREBUILT_TEMPLATES[0].doc.defaultFields?.[0]?.id || null)
   const [zoomLevel, setZoomLevel] = useState(100)
   const [emailSubject, setEmailSubject] = useState('')
   const [emailMessage, setEmailMessage] = useState('')
@@ -180,6 +185,9 @@ export default function SmartSignRtrPage() {
 
   const canvasRef = useRef(null)
   const docContainerRef = useRef(null)
+  const docScrollContainerRef = useRef(null)
+  const homeFileInputRef = useRef(null)
+  const wizardFileInputRef = useRef(null)
 
   // 1. Fetch Agreements for Recruiter Portal
   const fetchAgreements = async () => {
@@ -253,18 +261,79 @@ export default function SmartSignRtrPage() {
     return true
   })
 
+  // Document File Upload & Extraction Handler (Supports PDF, Word DOCX/DOC, TXT, Images)
+  const handleDocumentFileUpload = async (file) => {
+    if (!file) return
+
+    try {
+      setIsUploadingDoc(true)
+      setUploadStatusText(`Extracting & formatting ${file.name}...`)
+
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const authToken = localStorage.getItem('token') || ''
+      const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
+
+      const res = await fetch('/api/rtr/upload-document', {
+        method: 'POST',
+        headers,
+        body: formData
+      })
+
+      const data = await res.json()
+      if (data.success) {
+        setUploadedFileName(data.fileName)
+        setDocumentTitle(data.title || data.fileName.replace(/\.[^/.]+$/, ''))
+        setDocumentContent(data.text || '')
+        setUploadedImageUrl(data.isImage ? data.fileUrl : null)
+
+        // Calculate responsive Y coordinate for bottom signature block
+        const textLen = (data.text || '').length
+        const estimatedY = Math.max(500, Math.min(1800, Math.round(textLen * 0.45) + 160))
+
+        const initialFields = [
+          { id: `sig-${Date.now()}`, type: 'signature', label: 'Signature', required: true, x: 60, y: estimatedY + 70, width: 230, height: 52, signerIndex: 0 },
+          { id: `date-${Date.now()}`, type: 'date', label: 'Date signed', required: true, x: 380, y: estimatedY + 70, width: 210, height: 52, signerIndex: 0 },
+          { id: `name-${Date.now()}`, type: 'name', label: 'Full name', required: true, x: 60, y: estimatedY, width: 230, height: 46, signerIndex: 0 },
+          { id: `title-${Date.now()}`, type: 'title', label: 'Title', required: false, x: 380, y: estimatedY, width: 210, height: 46, signerIndex: 0 }
+        ]
+        setPlacedFields(initialFields)
+        setSelectedFieldId(initialFields[0].id)
+
+        setWizardOpen(true)
+        setWizardStep(2) // Move to add signers
+        showToast(`✓ Document loaded: ${data.fileName}`)
+      } else {
+        alert(data.message || 'Failed to process document file.')
+      }
+    } catch (err) {
+      console.error('File upload error:', err)
+      alert('Error uploading document. Please verify the file is a valid PDF, DOCX, DOC, TXT, or Image.')
+    } finally {
+      setIsUploadingDoc(false)
+      setUploadStatusText('')
+    }
+  }
+
   // Start Send For Signature Wizard
   const handleStartSendWorkflow = (tpl = null) => {
     if (tpl) {
       setSelectedTemplate(tpl)
       setDocumentTitle(tpl.doc.title)
       setDocumentContent(tpl.doc.content)
+      setUploadedImageUrl(null)
+      setUploadedFileName('')
       setPlacedFields(tpl.doc.defaultFields || [])
+      setSelectedFieldId(tpl.doc.defaultFields?.[0]?.id || null)
     } else {
       setSelectedTemplate(PREBUILT_TEMPLATES[0])
       setDocumentTitle(PREBUILT_TEMPLATES[0].doc.title)
       setDocumentContent(PREBUILT_TEMPLATES[0].doc.content)
+      setUploadedImageUrl(null)
+      setUploadedFileName('')
       setPlacedFields(PREBUILT_TEMPLATES[0].doc.defaultFields || [])
+      setSelectedFieldId(PREBUILT_TEMPLATES[0].doc.defaultFields?.[0]?.id || null)
     }
     setWizardStep(1)
     setWizardOpen(true)
@@ -299,36 +368,87 @@ export default function SmartSignRtrPage() {
     }
   }
 
-  // Place Fields Canvas Actions (Screenshot 4 & 5)
+  // Interactive Field Placement Canvas Actions
   const handleAddField = (type, label) => {
+    const scale = zoomLevel / 100
+    const scrollY = docScrollContainerRef.current ? Math.round(docScrollContainerRef.current.scrollTop / scale) + 80 : 360
+    const count = placedFields.length
+    const defaultWidth = type === 'signature' ? 230 : (type === 'checkbox' ? 130 : 210)
+    const defaultHeight = type === 'signature' ? 52 : (type === 'checkbox' ? 40 : 46)
+
     const newField = {
       id: `field-${Date.now()}`,
       type,
       label,
-      required: true,
-      x: 80,
-      y: 350 + (placedFields.length * 45) % 400,
+      required: type === 'signature' || type === 'date' || type === 'name',
+      x: 60 + ((count % 2) * 280),
+      y: Math.max(40, scrollY + ((count * 35) % 180)),
+      width: defaultWidth,
+      height: defaultHeight,
       signerIndex: selectedSignerIndex
     }
-    setPlacedFields([...placedFields, newField])
+
+    setPlacedFields(prev => [...prev, newField])
     setSelectedFieldId(newField.id)
-    showToast(`Added ${label} field to document`)
+    showToast(`✓ Added ${label} field box — drag to position on document`)
   }
 
   const handleAutoPlaceFields = () => {
+    const textLen = (documentContent || '').length
+    const targetY = Math.max(500, Math.min(1800, Math.round(textLen * 0.45) + 120))
+
     const autoFields = [
-      { id: `auto-sig-${Date.now()}`, type: 'signature', label: 'Signature', required: true, x: 60, y: 720, signerIndex: 0 },
-      { id: `auto-date-${Date.now()}`, type: 'date', label: 'Date signed', required: true, x: 440, y: 720, signerIndex: 0 },
-      { id: `auto-name-${Date.now()}`, type: 'name', label: 'Full name', required: true, x: 60, y: 660, signerIndex: 0 },
-      { id: `auto-title-${Date.now()}`, type: 'title', label: 'Title', required: false, x: 440, y: 660, signerIndex: 0 }
+      { id: `auto-sig-${Date.now()}`, type: 'signature', label: 'Signature', required: true, x: 60, y: targetY + 70, width: 230, height: 52, signerIndex: 0 },
+      { id: `auto-date-${Date.now()}`, type: 'date', label: 'Date signed', required: true, x: 380, y: targetY + 70, width: 210, height: 52, signerIndex: 0 },
+      { id: `auto-name-${Date.now()}`, type: 'name', label: 'Full name', required: true, x: 60, y: targetY, width: 230, height: 46, signerIndex: 0 },
+      { id: `auto-title-${Date.now()}`, type: 'title', label: 'Title', required: false, x: 380, y: targetY, width: 210, height: 46, signerIndex: 0 }
     ]
     setPlacedFields(autoFields)
+    setSelectedFieldId(autoFields[0].id)
+
+    if (docScrollContainerRef.current) {
+      docScrollContainerRef.current.scrollTo({ top: (targetY - 80) * (zoomLevel / 100), behavior: 'smooth' })
+    }
     showToast('✨ Auto-placed standard signature and date fields')
   }
 
   const handleRemoveField = (id) => {
     setPlacedFields(placedFields.filter(f => f.id !== id))
     if (selectedFieldId === id) setSelectedFieldId(null)
+  }
+
+  // Mouse Drag handlers for field repositioning
+  const handleFieldMouseDown = (e, fieldId) => {
+    e.stopPropagation()
+    setSelectedFieldId(fieldId)
+    const field = placedFields.find(f => f.id === fieldId)
+    if (!field) return
+
+    setDraggingFieldId(fieldId)
+    setDragOffset({
+      startX: e.clientX,
+      startY: e.clientY,
+      initialFieldX: field.x ?? 60,
+      initialFieldY: field.y ?? 400
+    })
+  }
+
+  const handleCanvasMouseMove = (e) => {
+    if (!draggingFieldId) return
+    const scale = zoomLevel / 100
+    const deltaX = (e.clientX - dragOffset.startX) / scale
+    const deltaY = (e.clientY - dragOffset.startY) / scale
+
+    const newX = Math.max(10, Math.min(680, Math.round(dragOffset.initialFieldX + deltaX)))
+    const newY = Math.max(10, Math.round(dragOffset.initialFieldY + deltaY))
+
+    setPlacedFields(prev => prev.map(f => f.id === draggingFieldId ? { ...f, x: newX, y: newY } : f))
+  }
+
+  const handleCanvasMouseUp = () => {
+    if (draggingFieldId) {
+      setDraggingFieldId(null)
+    }
   }
 
   // Submit and Create Agreement (Step 4)
@@ -344,6 +464,7 @@ export default function SmartSignRtrPage() {
       const payload = {
         documentTitle: documentTitle || 'Right to Represent Agreement',
         documentContent,
+        documentImageUrl: uploadedImageUrl || null,
         placedFields,
         signers,
         candidateName: primarySigner.name,
@@ -371,9 +492,6 @@ export default function SmartSignRtrPage() {
       }
     } catch (e) {
       alert('Network error creating agreement.')
-    } finally {
-      setIsSending(false)
-    }
   }
 
   // Send Email Reminder
@@ -628,7 +746,17 @@ export default function SmartSignRtrPage() {
               whiteSpace: 'pre-wrap'
             }}
           >
-            {candidateAgreement?.documentContent || DEFAULT_FDOT_DOCUMENT.content}
+            {candidateAgreement?.documentImageUrl ? (
+              <div style={{ marginBottom: 28, textAlign: 'center' }}>
+                <img
+                  src={candidateAgreement.documentImageUrl}
+                  alt="Agreement Document"
+                  style={{ maxWidth: '100%', height: 'auto', borderRadius: 4 }}
+                />
+              </div>
+            ) : (
+              <div>{candidateAgreement?.documentContent || DEFAULT_FDOT_DOCUMENT.content}</div>
+            )}
 
             {/* Render Placed Signature Fields on Document */}
             <div style={{ marginTop: 40, borderTop: '2px solid #E2E8F0', paddingTop: 24 }}>
@@ -845,7 +973,7 @@ export default function SmartSignRtrPage() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // RENDER: DROPBOX SIGN RECRUITER PLATFORM
+  // RENDER: SMARTHIRE SIGN RECRUITER PLATFORM
   // ═══════════════════════════════════════════════════════════════════════════
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', display: 'flex', flexDirection: 'column', fontFamily: 'Inter, system-ui, sans-serif' }}>
@@ -859,13 +987,24 @@ export default function SmartSignRtrPage() {
       {/* Main Top Navigation matching Screenshot 1 & 2 */}
       <header style={{ height: 64, borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 28px', backgroundColor: '#FFFFFF', position: 'sticky', top: 0, zIndex: 30 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
-          {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => setActiveTab('home')}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="#0061FE">
-              <path d="M6 2l6 4-6 4-6-4 6-4zm12 0l6 4-6 4-6-4 6-4zm-6 8l6 4-6 4-6-4 6-4zm12 0l6 4-6 4-6-4 6-4zM6 14l6 4-6 4-6-4 6-4zm6 4.5l6-4 6 4-6 4-6-4z"/>
-            </svg>
-            <div style={{ fontSize: 17, fontWeight: 900, color: '#1E293B', letterSpacing: '-0.3px' }}>
-              Dropbox <span style={{ color: '#0061FE' }}>Sign</span>
+          {/* SmartHire Sign Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => setActiveTab('home')}>
+            <div style={{ width: 34, height: 34, borderRadius: 8, backgroundColor: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(37, 99, 235, 0.28)' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <path d="M16 13H8"/>
+                <path d="M16 17H8"/>
+                <path d="M10 9H8"/>
+              </svg>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div style={{ fontSize: 17, fontWeight: 900, color: '#0F172A', letterSpacing: '-0.3px', lineHeight: 1.15 }}>
+                SmartHire <span style={{ color: '#2563EB' }}>Sign</span>
+              </div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#64748B', letterSpacing: '0.4px', textTransform: 'uppercase' }}>
+                Enterprise RTR Platform
+              </div>
             </div>
           </div>
 
@@ -1104,40 +1243,93 @@ export default function SmartSignRtrPage() {
 
               {/* Big Dropzone matching Screenshot 1 */}
               <div
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (e.dataTransfer.files?.[0]) {
+                    handleDocumentFileUpload(e.dataTransfer.files[0]);
+                  }
+                }}
                 style={{
-                  border: '1.5px dashed #CBD5E1',
+                  border: '2px dashed #94A3B8',
                   borderRadius: 12,
-                  padding: '48px 24px',
+                  padding: '44px 24px',
                   textAlign: 'center',
                   backgroundColor: '#FFFFFF',
                   marginBottom: 36,
-                  cursor: 'pointer'
+                  transition: 'border-color 0.2s, background-color 0.2s',
+                  position: 'relative'
                 }}
-                onClick={() => handleStartSendWorkflow()}
               >
-                <div style={{ width: 44, height: 44, margin: '0 auto 12px', border: '2px solid #64748B', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <div style={{ width: 48, height: 48, margin: '0 auto 12px', border: '2px solid #2563EB', borderRadius: 10, backgroundColor: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 19V5M5 12l7-7 7 7"/>
                   </svg>
                 </div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#334155', marginBottom: 14 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#1E293B', marginBottom: 4 }}>
                   Drop documents to get signed here
                 </div>
-                <button
-                  type="button"
-                  style={{
-                    backgroundColor: '#F8FAFC',
-                    border: '1px solid #CBD5E1',
-                    borderRadius: 8,
-                    padding: '8px 18px',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: '#0F172A',
-                    cursor: 'pointer'
+                <div style={{ fontSize: 12.5, color: '#64748B', marginBottom: 18 }}>
+                  Supports Word (.docx, .doc), PDF (.pdf), Text (.txt, .rtf, .md), and Scanned Images (.png, .jpg, .jpeg)
+                </div>
+
+                <input
+                  ref={homeFileInputRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx,.txt,.rtf,.md,.png,.jpg,.jpeg,.webp"
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) {
+                      handleDocumentFileUpload(e.target.files[0]);
+                    }
                   }}
-                >
-                  Upload v
-                </button>
+                  style={{ display: 'none' }}
+                />
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+                  <button
+                    type="button"
+                    disabled={isUploadingDoc}
+                    onClick={() => homeFileInputRef.current?.click()}
+                    style={{
+                      backgroundColor: '#2563EB',
+                      border: 'none',
+                      borderRadius: 8,
+                      padding: '9px 22px',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color: '#FFFFFF',
+                      cursor: isUploadingDoc ? 'wait' : 'pointer',
+                      boxShadow: '0 2px 6px rgba(37, 99, 235, 0.25)'
+                    }}
+                  >
+                    {isUploadingDoc ? 'Analyzing Document...' : 'Upload Document 📁'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleStartSendWorkflow(PREBUILT_TEMPLATES[0])}
+                    style={{
+                      backgroundColor: '#F8FAFC',
+                      border: '1px solid #CBD5E1',
+                      borderRadius: 8,
+                      padding: '9px 18px',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: '#334155',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Use Sample SOW & RTR
+                  </button>
+                </div>
+
+                {isUploadingDoc && (
+                  <div style={{ marginTop: 16, display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 14px', borderRadius: 20, backgroundColor: '#EFF6FF', color: '#1D4ED8', fontSize: 12, fontWeight: 600 }}>
+                    <div style={{ width: 14, height: 14, border: '2px solid #BFDBFE', borderTopColor: '#2563EB', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                    <span>{uploadStatusText || 'Extracting document text & layout...'}</span>
+                  </div>
+                )}
               </div>
 
               {/* Template Recommendation Card matching Screenshot 1 */}
@@ -1239,7 +1431,7 @@ export default function SmartSignRtrPage() {
                 </div>
               </div>
 
-              {/* Authentic Dropbox Sign Table (Screenshot 2) */}
+              {/* Authentic SmartHire Sign Table (Screenshot 2) */}
               <div style={{ border: '1px solid #E2E8F0', borderRadius: 10, overflow: 'hidden', backgroundColor: '#FFFFFF' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
                   <thead>
@@ -1493,32 +1685,81 @@ export default function SmartSignRtrPage() {
                 </div>
 
                 {/* Upload Custom File Box */}
-                <div style={{ border: '1.5px dashed #CBD5E1', borderRadius: 10, padding: '32px 20px', textAlign: 'center', backgroundColor: '#F8FAFC', marginBottom: 24 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 600, color: '#334155', marginBottom: 8 }}>
-                    Or upload custom document (PDF, Word DOCX, TXT):
+                <div
+                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (e.dataTransfer.files?.[0]) {
+                      handleDocumentFileUpload(e.dataTransfer.files[0]);
+                    }
+                  }}
+                  style={{
+                    border: '2px dashed #94A3B8',
+                    borderRadius: 10,
+                    padding: '36px 20px',
+                    textAlign: 'center',
+                    backgroundColor: '#F8FAFC',
+                    marginBottom: 24,
+                    position: 'relative'
+                  }}
+                >
+                  <div style={{ width: 44, height: 44, borderRadius: 10, backgroundColor: '#EFF6FF', color: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/>
+                      <line x1="12" y1="18" x2="12" y2="12"/>
+                      <line x1="9" y1="15" x2="15" y2="15"/>
+                    </svg>
                   </div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#1E293B', marginBottom: 4 }}>
+                    Drag & Drop any Agreement, SOW, or Contract here
+                  </div>
+                  <div style={{ fontSize: 12, color: '#64748B', marginBottom: 16 }}>
+                    Supports Word (.docx, .doc), PDF (.pdf), Text (.txt, .rtf, .md), and Scanned Images (.png, .jpg, .jpeg)
+                  </div>
+
                   <input
+                    ref={wizardFileInputRef}
                     type="file"
-                    accept=".pdf,.doc,.docx,.txt"
+                    accept=".pdf,.doc,.docx,.txt,.rtf,.md,.png,.jpg,.jpeg,.webp"
                     onChange={(e) => {
-                      const f = e.target.files[0]
-                      if (f) {
-                        setUploadedFileName(f.name)
-                        setDocumentTitle(f.name.replace(/\.[^/.]+$/, ''))
-                        const reader = new FileReader()
-                        reader.onload = () => {
-                          if (typeof reader.result === 'string') {
-                            setDocumentContent(reader.result)
-                          }
-                        }
-                        reader.readAsText(f)
+                      if (e.target.files?.[0]) {
+                        handleDocumentFileUpload(e.target.files[0]);
                       }
                     }}
-                    style={{ fontSize: 12 }}
+                    style={{ display: 'none' }}
                   />
-                  {uploadedFileName && (
-                    <div style={{ fontSize: 12, color: '#16A34A', fontWeight: 700, marginTop: 8 }}>
-                      ✓ Selected file: {uploadedFileName}
+
+                  <button
+                    type="button"
+                    disabled={isUploadingDoc}
+                    onClick={() => wizardFileInputRef.current?.click()}
+                    style={{
+                      backgroundColor: '#2563EB',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: 8,
+                      padding: '9px 22px',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: isUploadingDoc ? 'wait' : 'pointer',
+                      boxShadow: '0 2px 6px rgba(37, 99, 235, 0.25)'
+                    }}
+                  >
+                    {isUploadingDoc ? 'Processing Document...' : 'Choose File from Computer'}
+                  </button>
+
+                  {isUploadingDoc && (
+                    <div style={{ marginTop: 14, display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 14px', borderRadius: 20, backgroundColor: '#EFF6FF', color: '#1D4ED8', fontSize: 12, fontWeight: 600 }}>
+                      <div style={{ width: 14, height: 14, border: '2px solid #BFDBFE', borderTopColor: '#2563EB', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                      <span>{uploadStatusText || 'Extracting & formatting document...'}</span>
+                    </div>
+                  )}
+
+                  {uploadedFileName && !isUploadingDoc && (
+                    <div style={{ fontSize: 12.5, color: '#16A34A', fontWeight: 700, marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                      <span>✓</span> <span>Loaded: {uploadedFileName}</span>
                     </div>
                   )}
                 </div>
@@ -1812,69 +2053,197 @@ export default function SmartSignRtrPage() {
                   </div>
                 </div>
 
-                {/* Scrollable Document Canvas (Screenshot 4 & 5) */}
-                <div style={{ flex: 1, overflow: 'auto', padding: '28px 24px', display: 'flex', justifyContent: 'center' }}>
+                {/* Scrollable Document Canvas (Screenshots 4 & 5) */}
+                <div
+                  ref={docScrollContainerRef}
+                  style={{
+                    flex: 1,
+                    overflow: 'auto',
+                    padding: '28px 24px',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    position: 'relative'
+                  }}
+                >
                   <div
+                    onMouseMove={handleCanvasMouseMove}
+                    onMouseUp={handleCanvasMouseUp}
+                    onMouseLeave={handleCanvasMouseUp}
+                    onClick={() => setSelectedFieldId(null)}
                     style={{
                       width: 780 * (zoomLevel / 100),
-                      minHeight: 960,
+                      minHeight: 1100 * (zoomLevel / 100),
                       backgroundColor: '#FFFFFF',
-                      boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
+                      boxShadow: '0 6px 24px rgba(0,0,0,0.08)',
                       borderRadius: 4,
-                      padding: 40 * (zoomLevel / 100),
+                      padding: 44 * (zoomLevel / 100),
                       border: '1px solid #CBD5E1',
                       position: 'relative',
                       fontSize: 13 * (zoomLevel / 100),
                       lineHeight: 1.65,
                       color: '#0F172A',
                       whiteSpace: 'pre-wrap',
-                      transformOrigin: 'top center'
+                      boxSizing: 'border-box'
                     }}
                   >
-                    {/* The authentic SOW Document from Screenshot 4 & 5 */}
-                    {documentContent}
+                    {/* Render Image or Document Text */}
+                    {uploadedImageUrl ? (
+                      <div style={{ marginBottom: 24, textAlign: 'center' }}>
+                        <img
+                          src={uploadedImageUrl}
+                          alt="Document Page"
+                          style={{ maxWidth: '100%', height: 'auto', display: 'inline-block', borderRadius: 4, pointerEvents: 'none' }}
+                        />
+                      </div>
+                    ) : (
+                      <div style={{ userSelect: 'text' }}>{documentContent}</div>
+                    )}
 
-                    {/* Placed Fields rendered visually on top */}
-                    <div style={{ marginTop: 40, borderTop: '2px dashed #94A3B8', paddingTop: 20 }}>
-                      <div style={{ fontSize: 12, fontWeight: 800, color: '#0061FE', marginBottom: 12 }}>
-                        Placed Form Fields ({placedFields.length}) — Click to configure:
+                    {/* OVERLAID DRAGGABLE FORM FIELDS ON CANVAS */}
+                    {placedFields.map((field) => {
+                      const isSelected = selectedFieldId === field.id
+                      const isDragging = draggingFieldId === field.id
+                      const scale = zoomLevel / 100
+                      const fX = (field.x ?? 60) * scale
+                      const fY = (field.y ?? 400) * scale
+                      const fW = (field.width ?? 220) * scale
+                      const fH = (field.height ?? 48) * scale
+
+                      const signer = signers[field.signerIndex || 0] || signers[0] || { name: 'Candidate' }
+
+                      let borderColor = isSelected ? '#2563EB' : '#0284C7'
+                      let bgColor = isSelected ? '#EFF6FF' : '#F0F9FF'
+                      let icon = '📝'
+                      let tagLabel = field.label
+
+                      if (field.type === 'signature') {
+                        borderColor = isSelected ? '#2563EB' : '#D97706'
+                        bgColor = isSelected ? '#EFF6FF' : 'rgba(254, 243, 199, 0.95)'
+                        icon = '✍️'
+                      } else if (field.type === 'initials') {
+                        borderColor = isSelected ? '#2563EB' : '#7C3AED'
+                        bgColor = isSelected ? '#EFF6FF' : '#F5F3FF'
+                        icon = 'Aa'
+                      } else if (field.type === 'date') {
+                        borderColor = isSelected ? '#2563EB' : '#059669'
+                        bgColor = isSelected ? '#EFF6FF' : '#ECFDF5'
+                        icon = '📅'
+                      } else if (field.type === 'name') {
+                        borderColor = isSelected ? '#2563EB' : '#0284C7'
+                        bgColor = isSelected ? '#EFF6FF' : '#F0F9FF'
+                        icon = '👤'
+                      } else if (field.type === 'textbox') {
+                        borderColor = isSelected ? '#2563EB' : '#475569'
+                        bgColor = isSelected ? '#EFF6FF' : '#F8FAFC'
+                        icon = '🔤'
+                      } else if (field.type === 'checkbox') {
+                        borderColor = isSelected ? '#2563EB' : '#0D9488'
+                        bgColor = isSelected ? '#EFF6FF' : '#F0FDFA'
+                        icon = '☑'
+                      }
+
+                      return (
+                        <div
+                          key={field.id}
+                          onMouseDown={(e) => handleFieldMouseDown(e, field.id)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedFieldId(field.id)
+                          }}
+                          style={{
+                            position: 'absolute',
+                            left: fX,
+                            top: fY,
+                            width: fW,
+                            minHeight: fH,
+                            backgroundColor: bgColor,
+                            border: isSelected ? '2.5px solid #2563EB' : `2px dashed ${borderColor}`,
+                            borderRadius: 6,
+                            padding: '4px 8px',
+                            boxShadow: isSelected ? '0 4px 16px rgba(37, 99, 235, 0.35)' : '0 2px 6px rgba(0,0,0,0.06)',
+                            cursor: 'move',
+                            userSelect: 'none',
+                            zIndex: isSelected ? 30 : 15,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                            boxSizing: 'border-box'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <span style={{ fontSize: 10, color: '#64748B', cursor: 'grab' }}>⠿</span>
+                              <span style={{ fontSize: 11 * scale, fontWeight: 800, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                                {icon} {tagLabel} {field.required ? '*' : ''}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleRemoveField(field.id)
+                              }}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#EF4444',
+                                fontSize: 12,
+                                cursor: 'pointer',
+                                padding: '0 2px',
+                                lineHeight: 1
+                              }}
+                              title="Delete field"
+                            >
+                              ✕
+                            </button>
+                          </div>
+
+                          <div style={{ fontSize: 9.5 * scale, color: '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            Signer: {signer.name || 'Candidate'}
+                          </div>
+                        </div>
+                      )
+                    })}
+
+                    {/* Placed Fields Summary Section at bottom */}
+                    <div style={{ marginTop: 48, paddingTop: 20, borderTop: '2px dashed #CBD5E1' }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span>✦</span> Required Document Signatures ({placedFields.length} fields placed)
+                      </div>
+                      <div style={{ fontSize: 11.5, color: '#64748B', marginBottom: 12 }}>
+                        Fields appear on the document canvas above. Click any field below to navigate directly to it, or drag it on the document:
                       </div>
 
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-                        {placedFields.map(field => {
-                          const isSelected = selectedFieldId === field.id
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
+                        {placedFields.map(f => {
+                          const isSel = selectedFieldId === f.id
                           return (
                             <div
-                              key={field.id}
-                              onClick={() => setSelectedFieldId(field.id)}
+                              key={f.id}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setSelectedFieldId(f.id)
+                                if (docScrollContainerRef.current) {
+                                  docScrollContainerRef.current.scrollTo({ top: (f.y - 120) * (zoomLevel / 100), behavior: 'smooth' })
+                                }
+                              }}
                               style={{
-                                border: isSelected ? '2px solid #0061FE' : '1.5px dashed #0284C7',
-                                backgroundColor: isSelected ? '#EFF6FF' : '#F0F9FF',
+                                border: isSel ? '2px solid #2563EB' : '1px solid #E2E8F0',
+                                backgroundColor: isSel ? '#EFF6FF' : '#F8FAFC',
                                 borderRadius: 6,
-                                padding: '8px 14px',
-                                display: 'inline-flex',
+                                padding: '8px 12px',
+                                display: 'flex',
                                 alignItems: 'center',
-                                gap: 8,
-                                cursor: 'pointer',
-                                boxShadow: isSelected ? '0 2px 8px rgba(0, 97, 254, 0.25)' : 'none'
+                                justifyContent: 'space-between',
+                                cursor: 'pointer'
                               }}
                             >
-                              <span style={{ fontSize: 12, fontWeight: 700, color: '#0369A1' }}>
-                                [{field.label}{field.required ? ' *' : ''}]
+                              <div style={{ fontSize: 12, fontWeight: 700, color: isSel ? '#1D4ED8' : '#334155' }}>
+                                {f.label} {f.required && <span style={{ color: '#EF4444' }}>*</span>}
+                              </div>
+                              <span style={{ fontSize: 10.5, color: '#64748B' }}>
+                                X: {f.x}, Y: {f.y}
                               </span>
-                              <span style={{ fontSize: 10, color: '#64748B' }}>
-                                ({signers[field.signerIndex || 0]?.name || 'Signer 1'})
-                              </span>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleRemoveField(field.id)
-                                }}
-                                style={{ background: 'none', border: 'none', color: '#DC2626', fontSize: 12, cursor: 'pointer', padding: 0 }}
-                              >
-                                ✕
-                              </button>
                             </div>
                           )
                         })}
@@ -1887,7 +2256,7 @@ export default function SmartSignRtrPage() {
                 <div style={{ height: 56, backgroundColor: '#FFFFFF', borderTop: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px' }}>
                   <button
                     type="button"
-                    onClick={() => showToast('Preview mode enabled')}
+                    onClick={() => showToast('Preview mode active')}
                     style={{ background: 'none', border: 'none', color: '#475569', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
                   >
                     👁 Preview
@@ -1913,7 +2282,7 @@ export default function SmartSignRtrPage() {
               </div>
 
               {/* Right Inspector Sidebar (Screenshot 4 & 5) */}
-              <div style={{ width: 220, borderLeft: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', padding: 20, display: 'flex', flexDirection: 'column' }}>
+              <div style={{ width: 230, borderLeft: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', padding: 20, display: 'flex', flexDirection: 'column' }}>
                 {selectedFieldId ? (
                   (() => {
                     const f = placedFields.find(x => x.id === selectedFieldId)
@@ -1943,10 +2312,52 @@ export default function SmartSignRtrPage() {
                                 const updated = placedFields.map(x => x.id === f.id ? { ...x, required: e.target.checked } : x)
                                 setPlacedFields(updated)
                               }}
-                              style={{ accentColor: '#0061FE' }}
+                              style={{ accentColor: '#2563EB' }}
                             />
                             Required field
                           </label>
+                        </div>
+
+                        {/* Quick Placement Alignments */}
+                        <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: 12, marginBottom: 14 }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', marginBottom: 6 }}>Position Shortcuts:</div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const contentLen = (documentContent || '').length
+                                const targetY = Math.max(500, Math.min(1800, Math.round(contentLen * 0.45) + 120))
+                                const updated = placedFields.map(x => x.id === f.id ? { ...x, y: targetY + 60 } : x)
+                                setPlacedFields(updated)
+                                if (docScrollContainerRef.current) {
+                                  docScrollContainerRef.current.scrollTo({ top: (targetY - 60) * (zoomLevel / 100), behavior: 'smooth' })
+                                }
+                              }}
+                              style={{ backgroundColor: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 6, padding: '5px 8px', fontSize: 11, fontWeight: 600, color: '#334155', cursor: 'pointer', textAlign: 'left' }}
+                            >
+                              ↓ Move to Signature Block
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = placedFields.map(x => x.id === f.id ? { ...x, x: 60 } : x)
+                                setPlacedFields(updated)
+                              }}
+                              style={{ backgroundColor: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 6, padding: '5px 8px', fontSize: 11, fontWeight: 600, color: '#334155', cursor: 'pointer', textAlign: 'left' }}
+                            >
+                              ← Align Left (60px)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = placedFields.map(x => x.id === f.id ? { ...x, x: 380 } : x)
+                                setPlacedFields(updated)
+                              }}
+                              style={{ backgroundColor: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 6, padding: '5px 8px', fontSize: 11, fontWeight: 600, color: '#334155', cursor: 'pointer', textAlign: 'left' }}
+                            >
+                              → Align Right (380px)
+                            </button>
+                          </div>
                         </div>
 
                         <button
@@ -1963,7 +2374,7 @@ export default function SmartSignRtrPage() {
                   <div style={{ textAlign: 'center', color: '#94A3B8', marginTop: 40 }}>
                     <div style={{ fontSize: 24, marginBottom: 8 }}>✎</div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 4 }}>Nothing selected</div>
-                    <div style={{ fontSize: 11.5, color: '#94A3B8' }}>Select a field to make changes</div>
+                    <div style={{ fontSize: 11.5, color: '#94A3B8' }}>Select or click a field to configure</div>
                   </div>
                 )}
               </div>
@@ -2090,3 +2501,5 @@ export default function SmartSignRtrPage() {
     </div>
   )
 }
+}
+

@@ -1299,6 +1299,7 @@ if (!fs.existsSync(candidateDocsDir)) {
     console.warn('candidateDocsDir creation warning:', e.message)
   }
 }
+app.use('/candidate-docs', express.static(candidateDocsDir))
 
 const candidateDocsStorage = multer.diskStorage({
   destination: (_req, _file, callback) => callback(null, candidateDocsDir),
@@ -11674,11 +11675,91 @@ function saveRtrAgreements() {
   }
 }
 
+// 0. POST /api/rtr/upload-document — Upload & Parse Any Document File (PDF, Word, Text, Image)
+app.post('/api/rtr/upload-document', uploadDoc.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No document file uploaded.' });
+    }
+
+    const filePath = req.file.path;
+    const originalName = req.file.originalname || 'Document';
+    const ext = path.extname(originalName).toLowerCase();
+    const mimeType = (req.file.mimetype || '').toLowerCase();
+    const cleanTitle = originalName.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
+
+    let extractedText = '';
+    let isImage = false;
+    const fileUrl = `/candidate-docs/${path.basename(filePath)}`;
+
+    if (ext === '.pdf' || mimeType === 'application/pdf') {
+      try {
+        const dataBuffer = fs.readFileSync(filePath);
+        const pdfData = await pdfParse(dataBuffer);
+        extractedText = pdfData.text || '';
+        if (!extractedText.trim()) {
+          extractedText = `${cleanTitle}\n\n[Scanned PDF document loaded. Place signature and text fields on the document below.]`;
+        }
+      } catch (err) {
+        console.error('[SmartSign] PDF parse error:', err.message);
+        extractedText = `${cleanTitle}\n\n[PDF document loaded. Place signature and text fields on the document below.]`;
+      }
+    } else if (ext === '.docx' || mimeType.includes('wordprocessingml')) {
+      try {
+        const result = await mammoth.extractRawText({ path: filePath });
+        extractedText = result.value || '';
+      } catch (err) {
+        console.error('[SmartSign] DOCX parse error:', err.message);
+        extractedText = `${cleanTitle}\n\n[Word Document processed. Place signature and text fields on the document below.]`;
+      }
+    } else if (ext === '.doc' || mimeType.includes('msword')) {
+      try {
+        const result = await mammoth.extractRawText({ path: filePath });
+        extractedText = result.value || '';
+      } catch (err) {
+        extractedText = `${cleanTitle}\n\n[Word Document (.doc) processed. Place signature and text fields on the document below.]`;
+      }
+    } else if (['.txt', '.rtf', '.md'].includes(ext) || mimeType.startsWith('text/')) {
+      try {
+        extractedText = fs.readFileSync(filePath, 'utf-8');
+      } catch (e) {
+        extractedText = `${cleanTitle}`;
+      }
+    } else if (['.png', '.jpg', '.jpeg', '.webp'].includes(ext) || mimeType.startsWith('image/')) {
+      isImage = true;
+      extractedText = `${cleanTitle}\n\n[Image Document: ${originalName}]`;
+    } else {
+      try {
+        extractedText = fs.readFileSync(filePath, 'utf-8');
+      } catch (e) {
+        extractedText = `${cleanTitle}`;
+      }
+    }
+
+    // Clean up text formatting: convert carriage returns and collapse excessive blank lines
+    extractedText = extractedText.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+
+    res.json({
+      success: true,
+      fileName: originalName,
+      title: cleanTitle,
+      text: extractedText,
+      isImage,
+      fileUrl,
+      message: 'Document successfully parsed and ready for signature placement.'
+    });
+  } catch (error) {
+    console.error('[SmartSign] Error uploading RTR document:', error);
+    res.status(500).json({ success: false, message: 'Failed to process document: ' + error.message });
+  }
+});
+
 // 1. POST /api/rtr/create — Recruiter requests RTR signature
 app.post('/api/rtr/create', authenticateToken, async (req, res) => {
   const {
     documentTitle,
     documentContent,
+    documentImageUrl,
     placedFields = [],
     signers = [],
     candidateId,
@@ -11709,6 +11790,7 @@ app.post('/api/rtr/create', authenticateToken, async (req, res) => {
     token,
     documentTitle: documentTitle || `RTR - ${primarySignerName}`,
     documentContent: documentContent || '',
+    documentImageUrl: documentImageUrl || null,
     placedFields: Array.isArray(placedFields) ? placedFields : [],
     signers: Array.isArray(signers) && signers.length > 0 ? signers : [{ name: primarySignerName, email: primarySignerEmail }],
     candidateId: candidateId || `cand-${Date.now()}`,
