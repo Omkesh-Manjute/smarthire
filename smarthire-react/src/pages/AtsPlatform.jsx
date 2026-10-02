@@ -86,6 +86,25 @@ const renderAtsIcon = (id, size = 16, color = 'currentColor') => {
           <line x1="16" y1="17" x2="8" y2="17" />
         </svg>
       )
+    case 'submittal':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="9" y1="15" x2="15" y2="15" />
+          <line x1="9" y1="11" x2="15" y2="11" />
+          <line x1="9" y1="7" x2="11" y2="7" />
+        </svg>
+      )
+    case 'rtr':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <path d="M12 19l7-7 3 3-7 7-3-3z" />
+          <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
+          <path d="M2 2l7.586 7.586" />
+          <circle cx="11" cy="11" r="2" />
+        </svg>
+      )
     case 'analytics':
       return (
         <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -165,6 +184,8 @@ const ALL_MODULES = [
   { id: 'pipeline',    label: 'Pipeline',        category: 'talent', adminOnly: true },
   { id: 'screening',   label: 'AI Screening',    category: 'talent' },
   { id: 'submissions', label: 'Submissions',     category: 'talent', adminOnly: true },
+  { id: 'submittal',   label: 'Submittal Pack',  category: 'talent', isLink: '/submittal-pack' },
+  { id: 'rtr',         label: 'SmartSign RTR',   category: 'talent', isLink: '/sign-rtr' },
   { id: 'reports',     label: 'Reports',         category: 'main', adminOnly: true },
   { id: 'analytics',   label: 'Analytics',       category: 'main' },
   { id: 'inquiries',   label: 'Client Inquiries',category: 'admin', adminOnly: true },
@@ -195,17 +216,17 @@ export default function AtsPlatform() {
   const DEFAULT_PERMISSIONS = {
     superadmin: {
       ats: true, home: true, candidates: true, pipeline: true, screening: true,
-      submissions: true, reports: true, analytics: true, audit: true, automation: true,
+      submissions: true, submittal: true, rtr: true, reports: true, analytics: true, audit: true, automation: true,
       inbox: true, settings: true, users: true,
     },
     manager: {
       ats: true, home: true, candidates: true, pipeline: true, screening: true,
-      submissions: true, reports: true, analytics: true, audit: true, automation: false,
+      submissions: true, submittal: true, rtr: true, reports: true, analytics: true, audit: true, automation: false,
       inbox: true, settings: false, users: false,
     },
     recruiter: {
       ats: true, home: true, candidates: true, pipeline: false, screening: true,
-      submissions: false, reports: false, analytics: true, audit: true, automation: false,
+      submissions: false, submittal: true, rtr: true, reports: false, analytics: true, audit: true, automation: false,
       inbox: true, settings: false, users: false,
     }
   }

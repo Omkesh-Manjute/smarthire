@@ -18,6 +18,8 @@ import Pricing from './pages/Pricing'
 import PublicCareers from './pages/PublicCareers'
 import RecruiterInbox from './pages/RecruiterInbox'
 import Blog from './pages/Blog'
+import SmartSignRtrPage from './pages/SmartSignRtrPage'
+import SubmittalPackPage from './pages/SubmittalPackPage'
 
 function ProtectedRoute({ children }) {
   const isAuth = localStorage.getItem('verifyhire_authenticated') === 'true' || localStorage.getItem('smarthire_authenticated') === 'true'
@@ -74,6 +76,9 @@ function App() {
         <Route path="/inbox" element={<ProtectedRoute><RecruiterInbox /></ProtectedRoute>} />
         <Route path="/messages" element={<ProtectedRoute><RecruiterInbox defaultViewMode="chat" /></ProtectedRoute>} />
         <Route path="/linkedin-posts" element={<SuperAdminRoute><LinkedInPosts /></SuperAdminRoute>} />
+        <Route path="/submittal-pack" element={<ProtectedRoute><SubmittalPackPage /></ProtectedRoute>} />
+        <Route path="/sign-rtr/:token" element={<SmartSignRtrPage />} />
+        <Route path="/sign-rtr" element={<SmartSignRtrPage />} />
         <Route path="/candidate-chat/:sessionId" element={<CandidateChat />} />
         <Route path="/candidate-chat/job/:jobId" element={<CandidateChat />} />
         <Route path="/screening" element={<CandidateChat />} />

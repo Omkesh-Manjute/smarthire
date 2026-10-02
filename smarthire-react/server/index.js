@@ -12,6 +12,8 @@ import https from 'https'
 import { exec } from 'child_process'
 import { promisify } from 'util'
 import os from 'os'
+import crypto from 'crypto'
+import zlib from 'zlib'
 const execAsync = promisify(exec)
 import { pdfConverter } from 'pdf-image-converter'
 import jwt from 'jsonwebtoken'
@@ -1211,6 +1213,28 @@ app.use((req, res, next) => {
   }
   next();
 })
+app.use((req, res, next) => {
+  const enc = req.headers['accept-encoding'] || '';
+  if (!enc.includes('gzip')) return next();
+
+  const originalSend = res.send;
+  res.send = function (body) {
+    if (body && (typeof body === 'string' || Buffer.isBuffer(body)) && body.length > 1400) {
+      const buf = Buffer.isBuffer(body) ? body : Buffer.from(body);
+      res.setHeader('Content-Encoding', 'gzip');
+      res.removeHeader('Content-Length');
+      zlib.gzip(buf, (err, zipped) => {
+        if (err) return originalSend.call(this, body);
+        res.setHeader('Content-Length', zipped.length);
+        originalSend.call(this, zipped);
+      });
+    } else {
+      originalSend.call(this, body);
+    }
+  };
+  next();
+});
+
 app.use(express.json({ limit: '50mb' }))
 app.use(express.urlencoded({ limit: '50mb', extended: true }))
 app.use('/uploads', express.static(uploadDir))
@@ -1992,6 +2016,53 @@ app.get('/api/health', (_req, res) => {
   })
 })
 
+// Strict Candidate Deduplication across all Stores & Endpoints
+function deduplicateCandidatesArray(list) {
+  if (!Array.isArray(list)) return [];
+  const seenIds = new Set();
+  const seenEmails = new Set();
+  const seenPhones = new Set();
+  const seenNames = new Set();
+  const result = [];
+  const GENERIC_NAMES = new Set(['candidate', 'applicant', 'consultant', 'general applicant', 'test', 'unknown', 'new candidate']);
+
+  for (const c of list) {
+    if (!c || typeof c !== 'object') continue;
+
+    const ids = [c.id, c.canId, c.candidateId, c.candidate_id, c._id]
+      .filter(Boolean)
+      .map(v => String(v).trim().toLowerCase())
+      .filter(v => v.length > 0);
+
+    const email = String(c.email || c.candidateEmail || c.extracted_profile?.email || '').toLowerCase().trim();
+
+    const rawPhone = String(c.phone || c.candidatePhone || c.extracted_profile?.phone || '').replace(/\D/g, '');
+    const phone = rawPhone.length >= 7 ? rawPhone.slice(-10) : '';
+
+    const rawName = String(c.name || c.candidateName || c.extracted_profile?.name || '').trim();
+    const cleanName = rawName.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
+    const isValidName = cleanName.length >= 3 && !GENERIC_NAMES.has(cleanName);
+
+    let isDup = false;
+    for (const id of ids) {
+      if (seenIds.has(id)) { isDup = true; break; }
+    }
+    if (!isDup && email && seenEmails.has(email)) isDup = true;
+    if (!isDup && phone && seenPhones.has(phone)) isDup = true;
+    if (!isDup && isValidName && seenNames.has(cleanName) && (!email || email.includes('unknown'))) isDup = true;
+
+    if (isDup) continue;
+
+    for (const id of ids) seenIds.add(id);
+    if (email) seenEmails.add(email);
+    if (phone) seenPhones.add(phone);
+    if (isValidName) seenNames.add(cleanName);
+
+    result.push(c);
+  }
+  return result;
+}
+
 // ─── GET /api/candidates — Returns all stored candidates with Hierarchy RBAC ──
 app.get('/api/candidates', authenticateToken, async (req, res) => {
   if (!candidatesStore || candidatesStore.length === 0) {
@@ -2058,10 +2129,12 @@ app.get('/api/candidates', authenticateToken, async (req, res) => {
     });
   }
 
+  const deduped = deduplicateCandidatesArray(filtered);
+
   res.json({
     success: true,
-    count: filtered.length,
-    candidates: filtered,
+    count: deduped.length,
+    candidates: deduped,
   });
 });
 
@@ -10537,8 +10610,16 @@ app.get('/api/recruiter/email-streams', (req, res) => {
 
     const { legalDocs: _unusedLd, resumeData: _unusedRd, ...cleanCandidate } = c;
 
+    const isFullResumeRequested = req.query.full === 'true';
+    const optResumeText = isFullResumeRequested 
+      ? (c.resumeText || '') 
+      : ((c.resumeText && c.resumeText.length > 2000) ? c.resumeText.slice(0, 2000) : (c.resumeText || ''));
+
     return {
       ...cleanCandidate,
+      resumeText: optResumeText,
+      resumeSnippet: (c.resumeText || '').slice(0, 350),
+      hasFullResume: Boolean(c.resumeText && c.resumeText.length > 0),
       name: cleanName,
       email: cleanEmail,
       role: cleanRole,
@@ -10577,6 +10658,7 @@ app.get('/api/recruiter/email-streams', (req, res) => {
     };
   });
 
+  const dedupedScopedCandidates = deduplicateCandidatesArray(scopedCandidates);
 
   res.json({
     success: true,
@@ -10587,15 +10669,15 @@ app.get('/api/recruiter/email-streams', (req, res) => {
       privateMode: !isSuper
     },
     counts: {
-      candidatesTotal: scopedCandidates.length,
-      inboxResumes: scopedCandidates.filter(c => c.sourceCategory === 'email_inbox').length,
-      spamResumes: scopedCandidates.filter(c => c.sourceCategory === 'email_spam').length,
-      careersResumes: scopedCandidates.filter(c => c.sourceCategory === 'careers_portal').length,
-      vendorResumes: scopedCandidates.filter(c => c.sourceCategory === 'vendor_bench').length,
+      candidatesTotal: dedupedScopedCandidates.length,
+      inboxResumes: dedupedScopedCandidates.filter(c => c.sourceCategory === 'email_inbox').length,
+      spamResumes: dedupedScopedCandidates.filter(c => c.sourceCategory === 'email_spam').length,
+      careersResumes: dedupedScopedCandidates.filter(c => c.sourceCategory === 'careers_portal').length,
+      vendorResumes: dedupedScopedCandidates.filter(c => c.sourceCategory === 'vendor_bench').length,
       requirements: requirementsEmailStore.length,
       vendors: vendorSubmittalsStore.length
     },
-    candidates: scopedCandidates,
+    candidates: dedupedScopedCandidates,
     requirements: requirementsEmailStore,
     vendors: vendorSubmittalsStore
   });
@@ -11149,9 +11231,14 @@ function saveVendorHotlists() {
   }
 }
 
+// In-memory cache for vendor hotlist match scores (24h TTL)
+const vendorMatchCache = new Map();
+
 // GET /api/recruiter/vendor-hotlists - list vendor hotlists with role-based privacy scoping
 app.get('/api/recruiter/vendor-hotlists', (req, res) => {
-  loadVendorHotlists();
+  if (!vendorHotlistsStore || vendorHotlistsStore.length === 0) {
+    loadVendorHotlists();
+  }
   const search = (req.query.q || '').toLowerCase().trim();
   const vendorFilter = (req.query.vendor || '').toLowerCase().trim();
   const visaFilter = (req.query.visa || '').toLowerCase().trim();
@@ -11218,6 +11305,12 @@ app.get('/api/recruiter/vendor-hotlists', (req, res) => {
       return item;
     }
 
+    const cacheKey = String(item.id || `${item.candidateName}-${item.vendorCompany}`);
+    const cached = vendorMatchCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp < 86400000)) {
+      return { ...item, ...cached.data };
+    }
+
     let bestJob = null;
     let bestMatch = { matchScore: 0, matchingSkills: [] };
 
@@ -11238,16 +11331,27 @@ app.get('/api/recruiter/vendor-hotlists', (req, res) => {
       }
     }
 
-    const hasMatch = bestJob && bestMatch.matchScore >= 45;
+    const hasMatch = bestJob && bestMatch.matchScore >= 50 && bestMatch.isDomainMatch;
     const finalScore = bestJob && bestMatch.matchScore > 0 ? bestMatch.matchScore : Math.min(65, 40 + cleanSkills.length * 3);
 
-    return {
-      ...item,
+    const matchData = {
       matchScore: finalScore,
       targetReqId: hasMatch ? String(bestJob.id || '').replace(/^J-/, '') : null,
       matchedJobTitle: hasMatch ? bestJob.title : 'General Talent Pool',
       matchedJobClient: hasMatch ? (bestJob.client || 'Enterprise Client') : 'Talent Pool',
-      matchingSkills: bestMatch.matchingSkills || []
+      matchingSkills: bestMatch.matchingSkills || [],
+      missingSkills: bestMatch.missingSkills || [],
+      isDomainMatch: bestMatch.isDomainMatch || false,
+      titleMatchStatus: bestMatch.titleMatchStatus || 'match',
+      stateMatchStatus: bestMatch.stateMatchStatus || 'remote_ok',
+      expMatchStatus: bestMatch.expMatchStatus || 'meets'
+    };
+
+    vendorMatchCache.set(cacheKey, { data: matchData, timestamp: Date.now() });
+
+    return {
+      ...item,
+      ...matchData
     };
   });
 
@@ -11445,6 +11549,360 @@ app.delete('/api/recruiter/vendor-hotlists/:id', (req, res) => {
     return res.json({ success: true, message: 'Hotlist candidate removed' });
   }
   res.json({ success: false, message: 'Hotlist entry not found' });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SMARTSIGN RTR (RIGHT TO REPRESENT) DIGITAL E-SIGNATURE SYSTEM
+// ═══════════════════════════════════════════════════════════════════════════════
+const RTR_AGREEMENTS_FILE = path.resolve(__dirname, 'rtr_agreements.json');
+let rtrAgreementsStore = [];
+
+function loadRtrAgreements() {
+  try {
+    if (fs.existsSync(RTR_AGREEMENTS_FILE)) {
+      rtrAgreementsStore = JSON.parse(fs.readFileSync(RTR_AGREEMENTS_FILE, 'utf8'));
+    }
+  } catch (e) {
+    rtrAgreementsStore = [];
+  }
+}
+loadRtrAgreements();
+
+function saveRtrAgreements() {
+  try {
+    fs.writeFileSync(RTR_AGREEMENTS_FILE, JSON.stringify(rtrAgreementsStore, null, 2), 'utf8');
+  } catch (e) {
+    console.error('Error saving rtr_agreements.json:', e);
+  }
+}
+
+// 1. POST /api/rtr/create — Recruiter requests RTR signature
+app.post('/api/rtr/create', authenticateToken, async (req, res) => {
+  const {
+    candidateId,
+    candidateName,
+    candidateEmail,
+    candidatePhone,
+    jobId,
+    jobTitle,
+    clientName,
+    payRate = '$75/hr C2C',
+    exclusivityDays = 60,
+    recruiterName = req.user?.name || 'Omkesh',
+    recruiterEmail = req.user?.email || 'omkesh@coolsofttech.com',
+    customNotes = ''
+  } = req.body;
+
+  if (!candidateName || !jobTitle) {
+    return res.status(400).json({ success: false, message: 'Candidate name and job title are required' });
+  }
+
+  const token = `RTR-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+  const agreement = {
+    id: token,
+    token,
+    candidateId: candidateId || `cand-${Date.now()}`,
+    candidateName: candidateName.trim(),
+    candidateEmail: candidateEmail?.trim() || '',
+    candidatePhone: candidatePhone || '',
+    jobId: String(jobId || '102').replace(/^J-/, ''),
+    jobTitle: jobTitle.trim(),
+    clientName: clientName?.trim() || 'Enterprise Client',
+    payRate: payRate || '$75/hr',
+    exclusivityDays: parseInt(exclusivityDays) || 60,
+    recruiterName,
+    recruiterEmail,
+    customNotes,
+    status: 'PENDING',
+    signingUrl: `/sign-rtr/${token}`,
+    fullSigningUrl: `https://smarthireus.com/sign-rtr/${token}`,
+    createdAt: new Date().toISOString(),
+    signedAt: null,
+    signatureData: null
+  };
+
+  rtrAgreementsStore.unshift(agreement);
+  saveRtrAgreements();
+
+  res.json({
+    success: true,
+    token,
+    agreement,
+    signingUrl: agreement.signingUrl,
+    fullSigningUrl: agreement.fullSigningUrl,
+    message: 'RTR agreement link generated successfully!'
+  });
+});
+
+// 2. GET /api/rtr/:token — Public view for Candidate signing page
+app.get('/api/rtr/:token', (req, res) => {
+  loadRtrAgreements();
+  const agreement = rtrAgreementsStore.find(a => a.token === req.params.token || a.id === req.params.token);
+  if (!agreement) {
+    return res.status(404).json({ success: false, message: 'RTR Agreement link not found or expired' });
+  }
+  res.json({ success: true, agreement });
+});
+
+// 3. POST /api/rtr/:token/sign — Candidate submits digital e-signature
+app.post('/api/rtr/:token/sign', express.json({ limit: '10mb' }), async (req, res) => {
+  loadRtrAgreements();
+  const agreement = rtrAgreementsStore.find(a => a.token === req.params.token || a.id === req.params.token);
+  if (!agreement) {
+    return res.status(404).json({ success: false, message: 'RTR Agreement link not found or expired' });
+  }
+  if (agreement.status === 'SIGNED') {
+    return res.status(400).json({ success: false, message: 'This RTR Agreement has already been signed.', agreement });
+  }
+
+  const { signatureData, signMethod = 'draw', candidateLegalName } = req.body;
+  if (!signatureData) {
+    return res.status(400).json({ success: false, message: 'Signature data is required' });
+  }
+
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+  const userAgent = req.headers['user-agent'] || 'Unknown Device';
+  const timestamp = new Date().toISOString();
+  const certHash = crypto.createHash('sha256').update(`${agreement.token}-${timestamp}-${ip}`).digest('hex');
+
+  agreement.status = 'SIGNED';
+  agreement.signedAt = timestamp;
+  agreement.signedLegalName = candidateLegalName || agreement.candidateName;
+  agreement.signatureData = signatureData;
+  agreement.signMethod = signMethod;
+  agreement.audit = {
+    ip,
+    userAgent,
+    timestamp,
+    certHash
+  };
+
+  saveRtrAgreements();
+
+  // Also update candidate in candidatesStore
+  const cand = (candidatesStore || []).find(c => 
+    c.id === agreement.candidateId || 
+    c.candidate_id === agreement.candidateId || 
+    (c.email && agreement.candidateEmail && c.email.toLowerCase() === agreement.candidateEmail.toLowerCase())
+  );
+  if (cand) {
+    cand.rtrStatus = 'SIGNED';
+    cand.rtrSignedAt = timestamp;
+    cand.rtrToken = agreement.token;
+    cand.rtrAudit = agreement.audit;
+    cand.documents = cand.documents || {};
+    cand.documents.rtr = {
+      name: `RTR_${agreement.candidateName.replace(/\s+/g, '_')}_Signed.pdf`,
+      type: 'application/pdf',
+      signedAt: timestamp,
+      status: 'verified',
+      certHash
+    };
+    saveCandidatesToDisk().catch(() => {});
+  }
+
+  res.json({
+    success: true,
+    message: 'Right to Represent (RTR) electronically signed successfully!',
+    agreement,
+    certHash
+  });
+});
+
+// 4. GET /api/rtr/list — Recruiter view of all RTR agreements
+app.get('/api/rtr/list', authenticateToken, (req, res) => {
+  loadRtrAgreements();
+  const recruiterEmail = (req.query.recruiterEmail || req.user?.email || '').toLowerCase().trim();
+  const isSuper = req.user?.role === 'superadmin' || req.user?.role === 'admin' || recruiterEmail.includes('omkesh');
+
+  let list = rtrAgreementsStore;
+  if (!isSuper && recruiterEmail) {
+    list = list.filter(a => (a.recruiterEmail || '').toLowerCase().trim() === recruiterEmail);
+  }
+
+  res.json({
+    success: true,
+    agreements: list,
+    counts: {
+      total: list.length,
+      signed: list.filter(a => a.status === 'SIGNED').length,
+      pending: list.filter(a => a.status === 'PENDING').length
+    }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SUBMITTAL PACK & COVERSHEET GENERATOR MODULE
+// ═══════════════════════════════════════════════════════════════════════════════
+// 1. GET /api/submittal-pack/templates — Available client submittal formats
+app.get('/api/submittal-pack/templates', (_req, res) => {
+  res.json({
+    success: true,
+    templates: [
+      {
+        id: 'standard',
+        name: 'Standard US Direct Client Format',
+        description: 'Clean enterprise submittal coversheet with candidate metadata and skills matrix.'
+      },
+      {
+        id: 'texas_dir',
+        name: 'State Government / Texas DIR Matrix',
+        description: 'Official Texas DIR & Public Sector matrix comparing vendor claims against contract specs.'
+      },
+      {
+        id: 'msp_vms',
+        name: 'MSP / VMS Submission Matrix (Fieldglass & Beeline)',
+        description: 'Streamlined format optimized for rapid paste into Fieldglass, Beeline, and Vector VMS portals.'
+      },
+      {
+        id: 'prime_vendor',
+        name: 'Prime Vendor C2C Presentation',
+        description: 'B2B Submittal format highlighting agency endorsement, rate transparency, and verified work authorization.'
+      },
+      {
+        id: 'custom',
+        name: 'Custom Recruiter Template',
+        description: 'Flexible template customizable for agency-specific requirements.'
+      }
+    ]
+  });
+});
+
+// 2. POST /api/submittal-pack/generate — Auto-populate Coversheet Matrix & Formatted Resume
+app.post('/api/submittal-pack/generate', authenticateToken, async (req, res) => {
+  const { candidateId, jobId, templateId = 'standard', overrides = {} } = req.body;
+
+  let cand = (candidatesStore || []).find(c => c.id === candidateId || c.candidate_id === candidateId || c._id === candidateId);
+  if (!cand && Array.isArray(vendorHotlistsStore)) {
+    const v = vendorHotlistsStore.find(vh => vh.id === candidateId);
+    if (v) {
+      cand = {
+        name: v.candidateName,
+        role: v.role,
+        skills: v.skills,
+        experience: v.experience,
+        location: v.location,
+        visaStatus: v.visa,
+        vendorCompany: v.vendorCompany,
+        rate: v.rate,
+        email: v.candidateEmail,
+        phone: v.candidatePhone
+      };
+    }
+  }
+
+  const job = (jobsStore || []).find(j => String(j.id || '').replace(/^J-/, '') === String(jobId || '').replace(/^J-/, '')) || {
+    id: jobId || 'REQ-101',
+    title: 'Senior Software Engineer',
+    client: 'Enterprise Client',
+    skills: ['Java', 'SQL', 'Cloud', 'Microservices'],
+    location: 'Remote / US',
+    rate: '$75/hr'
+  };
+
+  const candName = overrides.candidateLegalName || cand?.name || cand?.extracted_profile?.name || 'Candidate Legal Name';
+  const candRole = overrides.candidateRole || cand?.role || job.title || 'Senior Consultant';
+  const candLoc = overrides.candidateLocation || cand?.location || 'Austin, TX';
+  const candReloc = overrides.willingToRelocate !== undefined ? overrides.willingToRelocate : 'Yes (Open to Relocation)';
+  const candVisa = overrides.visaStatus || cand?.visaStatus || cand?.visa || 'US Citizen / Green Card / H-1B';
+  const candVisaExpiry = overrides.visaExpiry || 'Valid / Active';
+  const candExp = overrides.totalExperience || cand?.experience || '8+ Years';
+  const candRelExp = overrides.relevantExperience || `${parseInt(candExp) > 2 ? parseInt(candExp) - 1 : candExp}+ Years`;
+  const candRate = overrides.proposedRate || cand?.rate || job.rate || '$75/hr C2C';
+  const candEdu = overrides.highestEducation || cand?.education || 'B.S. / M.S. in Computer Science';
+  const candNotice = overrides.noticePeriod || 'Immediate / 2 Weeks';
+  const candInterview = overrides.interviewAvailability || 'Flexible with 24 Hours Notice (Video)';
+  const candLinkedin = overrides.linkedinUrl || cand?.linkedinUrl || 'Verified LinkedIn Profile';
+
+  // Build Key Skills Matrix (Req vs Cand)
+  const reqSkillsList = Array.isArray(job.skills) ? job.skills : String(job.skills || 'Java, SQL, Cloud').split(',').map(s => s.trim());
+  const candSkillsList = Array.isArray(cand?.skills) ? cand.skills : String(cand?.skills || '').split(',').map(s => s.trim());
+
+  const skillsMatrix = reqSkillsList.map(reqSk => {
+    const hasSkill = candSkillsList.some(cs => cs.toLowerCase().includes(reqSk.toLowerCase()) || reqSk.toLowerCase().includes(cs.toLowerCase()));
+    return {
+      skill: reqSk,
+      requiredExp: '5+ Years',
+      candidateExp: hasSkill ? `${Math.min(parseInt(candExp) || 7, 7)}+ Years` : '3+ Years',
+      selfRating: hasSkill ? 'Expert (9/10)' : 'Proficient (7/10)'
+    };
+  });
+
+  // Pre-formatted plain text coversheet (ready to 1-click copy into email / portal)
+  const formattedCoversheetText = `=====================================================
+CANDIDATE SUBMISSION COVERSHEET — ${job.client || 'ENTERPRISE CLIENT'}
+REQUISITION: #${String(job.id).replace(/^J-/, '')} - ${job.title}
+AGENCY: CoolSoft LLC / SmartHire Recruiting Partner
+=====================================================
+
+Candidate Full Legal Name:  ${candName}
+Target Position:            ${candRole}
+Client Requisition ID:      #${String(job.id).replace(/^J-/, '')} (${job.client || 'Enterprise Client'})
+Current Location:           ${candLoc}
+Relocation Preference:      ${candReloc}
+Work Authorization / Visa:  ${candVisa} (Expiry: ${candVisaExpiry})
+Total Professional Exp:     ${candExp}
+Relevant Technology Exp:    ${candRelExp}
+Proposed Billing / Pay Rate: ${candRate}
+Highest Education / Degree: ${candEdu}
+Availability / Notice:      ${candNotice}
+Interview Availability:     ${candInterview}
+LinkedIn Verification:      ${candLinkedin}
+
+-----------------------------------------------------
+TECHNICAL COMPETENCY & SKILLS MATRIX:
+-----------------------------------------------------
+${skillsMatrix.map(sm => `• ${sm.skill.padEnd(24)} | Req: ${sm.requiredExp.padEnd(10)} | Candidate: ${sm.candidateExp.padEnd(10)} | ${sm.selfRating}`).join('\n')}
+
+-----------------------------------------------------
+PROFESSIONAL REFERENCES:
+-----------------------------------------------------
+Reference 1: Available upon request (Managerial Level)
+Reference 2: Available upon request (Technical Lead Level)
+=====================================================`;
+
+  // Formatted Clean Submittal Resume (with clean bullet points & agency letterhead)
+  const rawResume = cand?.resumeText || (cand?.summary ? `${cand.summary}\n\nExperience:\n- Enterprise software development\n- Scalable architecture\n- Cloud engineering` : '');
+  const cleanBulletResume = rawResume
+    .split('\n')
+    .map(line => {
+      const trimmed = line.trim();
+      if (!trimmed) return '';
+      if (/^(responsibilities|duties|accomplishments|achievements):/i.test(trimmed)) {
+        return `\n${trimmed}`;
+      }
+      if (/^[•\-\*]\s*/.test(trimmed)) {
+        return `• ${trimmed.replace(/^[•\-\*]\s*/, '')}`;
+      }
+      return trimmed;
+    })
+    .join('\n');
+
+  res.json({
+    success: true,
+    coversheet: {
+      candidateLegalName: candName,
+      targetRole: candRole,
+      jobId: String(job.id).replace(/^J-/, ''),
+      jobTitle: job.title,
+      clientName: job.client || 'Enterprise Client',
+      currentLocation: candLoc,
+      willingToRelocate: candReloc,
+      visaStatus: candVisa,
+      visaExpiry: candVisaExpiry,
+      totalExperience: candExp,
+      relevantExperience: candRelExp,
+      proposedRate: candRate,
+      highestEducation: candEdu,
+      noticePeriod: candNotice,
+      interviewAvailability: candInterview,
+      linkedinUrl: candLinkedin,
+      skillsMatrix
+    },
+    formattedCoversheetText,
+    formattedSubmittalResume: cleanBulletResume || `${candName}\n${candRole}\n\nSummary:\nHigh-impact technology consultant with ${candExp} delivering mission-critical applications.\n\nKey Competencies:\n${skillsMatrix.map(s => s.skill).join(' • ')}\n\nEducation:\n${candEdu}`,
+    templateId
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════

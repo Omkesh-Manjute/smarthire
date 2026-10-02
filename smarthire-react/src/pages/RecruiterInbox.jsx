@@ -2550,6 +2550,20 @@ export default function RecruiterInbox({ defaultViewMode }) {
     setLinkedInCandidate(updatedCand)
   }
 
+  const handleOpenSubmittalPack = (cand) => {
+    if (!cand) return
+    const candidateId = cand.id || cand.candidate_id || ''
+    const reqId = cand.targetReqId || ''
+    navigate(`/submittal-pack?candidateId=${encodeURIComponent(candidateId)}&reqId=${encodeURIComponent(reqId)}`)
+  }
+
+  const handleOpenSmartSignRtr = (cand) => {
+    if (!cand) return
+    const candidateId = cand.id || cand.candidate_id || ''
+    const reqId = cand.targetReqId || ''
+    navigate(`/sign-rtr?candidateId=${encodeURIComponent(candidateId)}&reqId=${encodeURIComponent(reqId)}`)
+  }
+
 
   const copyToClipboard = (text, label) => {
     if (!text) return
@@ -7300,7 +7314,73 @@ export default function RecruiterInbox({ defaultViewMode }) {
             <IconZap /> {!sidebarCollapsed && <span>{syncingEmailResumes ? 'Scanning...' : 'Scan Ingest'}</span>}
           </button>
 
-          {/* 6. Settings */}
+          {/* 6. Submittal Pack */}
+          <button
+            type="button"
+            title="Submittal Pack & Client Formatting"
+            onMouseEnter={() => setHoveredNav('submittal_pack')}
+            onMouseLeave={() => setHoveredNav(null)}
+            onClick={() => navigate('/submittal-pack')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+              gap: 12,
+              padding: sidebarCollapsed ? '10px 0' : '10px 14px',
+              borderRadius: 8,
+              border: 'none',
+              background: hoveredNav === 'submittal_pack' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent',
+              color: hoveredNav === 'submittal_pack' ? '#0F766E' : C.textSecondary,
+              fontWeight: hoveredNav === 'submittal_pack' ? 600 : 500,
+              fontSize: 13.5,
+              cursor: 'pointer',
+              textAlign: 'left',
+              width: '100%',
+              transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="9" y1="15" x2="15" y2="15" />
+              <line x1="9" y1="11" x2="15" y2="11" />
+            </svg>
+            {!sidebarCollapsed && <span>Submittal Pack</span>}
+          </button>
+
+          {/* 7. SmartSign RTR */}
+          <button
+            type="button"
+            title="SmartSign RTR Digital Signatures"
+            onMouseEnter={() => setHoveredNav('smartsign_rtr')}
+            onMouseLeave={() => setHoveredNav(null)}
+            onClick={() => navigate('/sign-rtr')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+              gap: 12,
+              padding: sidebarCollapsed ? '10px 0' : '10px 14px',
+              borderRadius: 8,
+              border: 'none',
+              background: hoveredNav === 'smartsign_rtr' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent',
+              color: hoveredNav === 'smartsign_rtr' ? '#4338CA' : C.textSecondary,
+              fontWeight: hoveredNav === 'smartsign_rtr' ? 600 : 500,
+              fontSize: 13.5,
+              cursor: 'pointer',
+              textAlign: 'left',
+              width: '100%',
+              transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <path d="M12 19l7-7 3 3-7 7-3-3z" />
+              <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
+            </svg>
+            {!sidebarCollapsed && <span>SmartSign RTR</span>}
+          </button>
+
+          {/* 8. Settings */}
           <button
             type="button"
             title="Settings"
@@ -8592,6 +8672,60 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
                   <button
                     type="button"
+                    onClick={() => handleOpenSubmittalPack(activeCandidate)}
+                    style={{
+                      background: '#0F766E',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: 6,
+                      padding: '7px 14px',
+                      fontSize: 12,
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      boxShadow: '0 2px 6px rgba(15, 118, 110, 0.25)'
+                    }}
+                    title="Format Client Coversheet & Branded Submittal Pack"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="9" y1="15" x2="15" y2="15" />
+                      <line x1="9" y1="11" x2="15" y2="11" />
+                    </svg>
+                    <span>Submittal Pack</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenSmartSignRtr(activeCandidate)}
+                    style={{
+                      background: '#4338CA',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: 6,
+                      padding: '7px 14px',
+                      fontSize: 12,
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      boxShadow: '0 2px 6px rgba(67, 56, 202, 0.25)'
+                    }}
+                    title="Generate and send SmartSign Right to Represent (RTR) digital agreement"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 19l7-7 3 3-7 7-3-3z" />
+                      <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
+                    </svg>
+                    <span>Request RTR</span>
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => {
                       handleOpenEmailModal(activeCandidate)
                       setActiveTobuTab('emails')
@@ -8916,6 +9050,64 @@ export default function RecruiterInbox({ defaultViewMode }) {
                             ? `LinkedIn ${activeCandidate.linkedinVerification.overallStatus === 'MATCH' ? '✅ Verified' : (activeCandidate.linkedinVerification.overallStatus === 'CONFLICT' ? '❌ Conflict' : '⚠ Partial')} (${activeCandidate.linkedinVerification.confidenceScore}%)`
                             : 'Check with LinkedIn'}
                         </span>
+                      </button>
+                    </div>
+
+                    {/* Quick Action Chips: Submittal Pack & SmartSign RTR */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenSubmittalPack(activeCandidate)}
+                        style={{
+                          flex: 1,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 6,
+                          background: isLight ? '#F0FDF4' : 'rgba(15,118,110,0.15)',
+                          color: '#0F766E',
+                          border: '1px solid #99F6E4',
+                          borderRadius: 6,
+                          padding: '6px 10px',
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                        title="Format Client Submittal Pack & Coversheet"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                          <polyline points="14 2 14 8 20 8" />
+                          <line x1="9" y1="15" x2="15" y2="15" />
+                        </svg>
+                        <span>Submittal Pack</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleOpenSmartSignRtr(activeCandidate)}
+                        style={{
+                          flex: 1,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 6,
+                          background: isLight ? '#EEF2FF' : 'rgba(67,56,202,0.15)',
+                          color: '#4338CA',
+                          border: '1px solid #C7D2FE',
+                          borderRadius: 6,
+                          padding: '6px 10px',
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                        title="Request SmartSign Right to Represent (RTR)"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 19l7-7 3 3-7 7-3-3z" />
+                          <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
+                        </svg>
+                        <span>Request RTR</span>
                       </button>
                     </div>
 
@@ -11611,19 +11803,20 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                 </td>
 
                                 {/* 3. Role & Experience */}
-                                <td style={{ padding: '8px 10px', maxWidth: 190 }}>
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                <td style={{ padding: '8px 10px', maxWidth: 190, minWidth: 160 }}>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, overflow: 'hidden' }}>
                                     <div style={{
                                       fontSize: 12.5,
                                       fontWeight: 700,
                                       color: '#1E293B',
                                       whiteSpace: 'nowrap',
                                       overflow: 'hidden',
-                                      textOverflow: 'ellipsis'
-                                    }} title={c.role && c.role !== 'Senior Specialist' ? c.role : (skillsArr.length > 0 ? `${skillsArr[0]} Developer` : 'Full Stack Developer')}>
-                                      {c.role && c.role !== 'Senior Specialist' ? c.role : (skillsArr.length > 0 ? `${skillsArr[0]} Developer` : 'Full Stack Developer')}
+                                      textOverflow: 'ellipsis',
+                                      minWidth: 0
+                                    }} title={safeString(c.role && c.role !== 'Senior Specialist' ? c.role : (skillsArr.length > 0 ? `${skillsArr[0]} Developer` : 'Full Stack Developer'))}>
+                                      {safeString(c.role && c.role !== 'Senior Specialist' ? c.role : (skillsArr.length > 0 ? `${skillsArr[0]} Developer` : 'Full Stack Developer'))}
                                     </div>
-                                    <div style={{ fontSize: 11, fontWeight: 700, color: '#2563EB' }}>
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: '#2563EB', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
                                       {(() => {
                                         return (c.experience && c.experience !== '5+ Years')
                                           ? c.experience
@@ -11634,7 +11827,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                 </td>
 
                                 {/* 4. AI Matched Requirement */}
-                                <td style={{ padding: '8px 10px', maxWidth: 220 }}>
+                                <td style={{ padding: '8px 10px', maxWidth: 220, minWidth: 190 }}>
                                   {(() => {
                                     let matchedJob = c.targetReqId 
                                       ? openJobsList.find(j => String(j.id || '').replace(/^J-/, '') === String(c.targetReqId).replace(/^J-/, ''))
@@ -11678,8 +11871,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                     const displayReqId = matchedJob ? String(matchedJob.id || '').replace(/^J-/, '') : (c.targetReqId || '');
 
                                     return (
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, overflow: 'hidden' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, overflow: 'hidden' }}>
                                           <span style={{
                                             fontSize: 10,
                                             fontWeight: 800,
@@ -11691,7 +11884,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                             letterSpacing: '0.3px',
                                             flexShrink: 0
                                           }}>
-                                            {!isTalentPool ? (displayReqId ? `Req #${displayReqId}` : 'Active Req') : 'No Match Req Found'}
+                                            {!isTalentPool ? (displayReqId ? `Req #${displayReqId}` : 'Active Req') : 'Talent Pool'}
                                           </span>
                                           <span style={{
                                             fontSize: 11,
@@ -11699,9 +11892,10 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                             fontWeight: 700,
                                             whiteSpace: 'nowrap',
                                             overflow: 'hidden',
-                                            textOverflow: 'ellipsis'
+                                            textOverflow: 'ellipsis',
+                                            minWidth: 0
                                           }}>
-                                            {!isTalentPool ? (isInfoOrigin ? 'InfoOrigin' : (matchedJob?.client || c.matchedJobClient || 'Direct Client')) : 'General Talent Pool'}
+                                            {!isTalentPool ? (isInfoOrigin ? 'InfoOrigin' : safeString(matchedJob?.client || c.matchedJobClient || 'Direct Client')) : 'General Talent Pool'}
                                           </span>
                                         </div>
                                         <div style={{
@@ -11710,9 +11904,10 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                           color: '#0F172A',
                                           whiteSpace: 'nowrap',
                                           overflow: 'hidden',
-                                          textOverflow: 'ellipsis'
-                                        }} title={!isTalentPool ? (matchedJob?.title || c.matchedJobTitle || c.role || 'Open Position') : 'No Active Requisition Match'}>
-                                          {!isTalentPool ? (matchedJob?.title || c.matchedJobTitle || c.role || 'Open Position') : 'No Active Requisition Match'}
+                                          textOverflow: 'ellipsis',
+                                          minWidth: 0
+                                        }} title={!isTalentPool ? safeString(matchedJob?.title || c.matchedJobTitle || c.role || 'Open Position') : 'No Active Requisition Match'}>
+                                          {!isTalentPool ? safeString(matchedJob?.title || c.matchedJobTitle || c.role || 'Open Position') : 'No Active Requisition Match'}
                                         </div>
                                       </div>
                                     );
@@ -11996,6 +12191,63 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                         >
                                           <IconLinkedIn />
                                           <span>Check with LinkedIn ↗</span>
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setActiveActionMenuId(null)
+                                            handleOpenSubmittalPack(c)
+                                          }}
+                                          style={{
+                                            padding: '8px 14px',
+                                            fontSize: 12,
+                                            fontWeight: 600,
+                                            color: '#0F766E',
+                                            background: 'none',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            textAlign: 'left',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 8
+                                          }}
+                                          onMouseEnter={e => e.currentTarget.style.backgroundColor = '#F0FDF4'}
+                                          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        >
+                                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                            <polyline points="14 2 14 8 20 8" />
+                                            <line x1="9" y1="15" x2="15" y2="15" />
+                                          </svg>
+                                          <span>Format Submittal Pack ↗</span>
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setActiveActionMenuId(null)
+                                            handleOpenSmartSignRtr(c)
+                                          }}
+                                          style={{
+                                            padding: '8px 14px',
+                                            fontSize: 12,
+                                            fontWeight: 600,
+                                            color: '#4338CA',
+                                            background: 'none',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            textAlign: 'left',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 8
+                                          }}
+                                          onMouseEnter={e => e.currentTarget.style.backgroundColor = '#EEF2FF'}
+                                          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        >
+                                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M12 19l7-7 3 3-7 7-3-3z" />
+                                            <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
+                                          </svg>
+                                          <span>Request RTR Signature ↗</span>
                                         </button>
                                       </div>
                                     )}
