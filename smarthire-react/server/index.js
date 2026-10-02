@@ -11634,7 +11634,29 @@ app.post('/api/rtr/create', authenticateToken, async (req, res) => {
   });
 });
 
-// 2. GET /api/rtr/:token — Public view for Candidate signing page
+// 2. GET /api/rtr/list — Recruiter view of all RTR agreements (Must precede /:token)
+app.get('/api/rtr/list', authenticateToken, (req, res) => {
+  loadRtrAgreements();
+  const recruiterEmail = (req.query.recruiterEmail || req.user?.email || '').toLowerCase().trim();
+  const isSuper = req.user?.role === 'superadmin' || req.user?.role === 'admin' || recruiterEmail.includes('omkesh');
+
+  let list = rtrAgreementsStore;
+  if (!isSuper && recruiterEmail) {
+    list = list.filter(a => (a.recruiterEmail || '').toLowerCase().trim() === recruiterEmail);
+  }
+
+  res.json({
+    success: true,
+    agreements: list,
+    counts: {
+      total: list.length,
+      signed: list.filter(a => a.status === 'SIGNED').length,
+      pending: list.filter(a => a.status === 'PENDING').length
+    }
+  });
+});
+
+// 3. GET /api/rtr/:token — Public view for Candidate signing page
 app.get('/api/rtr/:token', (req, res) => {
   loadRtrAgreements();
   const agreement = rtrAgreementsStore.find(a => a.token === req.params.token || a.id === req.params.token);
@@ -11706,28 +11728,6 @@ app.post('/api/rtr/:token/sign', express.json({ limit: '10mb' }), async (req, re
     message: 'Right to Represent (RTR) electronically signed successfully!',
     agreement,
     certHash
-  });
-});
-
-// 4. GET /api/rtr/list — Recruiter view of all RTR agreements
-app.get('/api/rtr/list', authenticateToken, (req, res) => {
-  loadRtrAgreements();
-  const recruiterEmail = (req.query.recruiterEmail || req.user?.email || '').toLowerCase().trim();
-  const isSuper = req.user?.role === 'superadmin' || req.user?.role === 'admin' || recruiterEmail.includes('omkesh');
-
-  let list = rtrAgreementsStore;
-  if (!isSuper && recruiterEmail) {
-    list = list.filter(a => (a.recruiterEmail || '').toLowerCase().trim() === recruiterEmail);
-  }
-
-  res.json({
-    success: true,
-    agreements: list,
-    counts: {
-      total: list.length,
-      signed: list.filter(a => a.status === 'SIGNED').length,
-      pending: list.filter(a => a.status === 'PENDING').length
-    }
   });
 });
 
