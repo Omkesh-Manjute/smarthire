@@ -130,6 +130,7 @@ SmartHire Recruitment Team`
   const [reviewStatus, setReviewStatus] = useState('submitted')
   const [isSavingReview, setIsSavingReview] = useState(false)
   const [playbackSpeed, setPlaybackSpeed] = useState(1)
+  const [isReEvaluating, setIsReEvaluating] = useState(false)
 
   // Auto-fill campaign title & questions when job is selected
   useEffect(() => {
@@ -285,6 +286,34 @@ SmartHire Recruitment Team`
       alert('Error saving review: ' + err.message)
     } finally {
       setIsSavingReview(false)
+    }
+  }
+
+  // Handle On-Demand Audio Transcription & AI Evaluation
+  const handleReEvaluateSession = async (sessionId) => {
+    if (!sessionId) return
+    setIsReEvaluating(true)
+    try {
+      const res = await fetch(`${API}/${sessionId}/re-evaluate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+        }
+      })
+      const data = await res.json()
+      if (data.success && data.session) {
+        setReviewSession(data.session)
+        setSessions(prev => prev.map(s => (s.id === sessionId || s._id === sessionId || s.sessionId === sessionId) ? data.session : s))
+        alert('AI Speech-to-Text audio transcription and fit evaluation completed successfully!')
+      } else {
+        alert(data.message || 'Failed to complete AI evaluation')
+      }
+    } catch (err) {
+      console.error(err)
+      alert('Error during AI transcription: ' + err.message)
+    } finally {
+      setIsReEvaluating(false)
     }
   }
 
@@ -991,7 +1020,37 @@ SmartHire Recruitment Team`
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                {/* Download Full Video */}
+                {(reviewSession.masterMediaUrl || (reviewSession.responses && reviewSession.responses[0]?.mediaUrl)) && (
+                  <a
+                    href={reviewSession.masterMediaUrl || reviewSession.responses[0]?.mediaUrl}
+                    download={`Interview_${(reviewSession.candidateName || 'Candidate').replace(/\s+/g, '_')}_Full.webm`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={styles.downloadTopBtn}
+                    title="Download candidate full interview recording"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="7 10 12 15 17 10"></polyline>
+                      <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Download Video
+                  </a>
+                )}
+
+                {/* AI Re-evaluation & Transcription Button */}
+                <button
+                  type="button"
+                  onClick={() => handleReEvaluateSession(reviewSession.id || reviewSession._id || reviewSession.sessionId)}
+                  disabled={isReEvaluating}
+                  style={styles.reEvaluateTopBtn}
+                  title="Extract audio speech from candidate video, transcribe with Whisper AI, and re-evaluate technical fit"
+                >
+                  {isReEvaluating ? 'Transcribing & Evaluating...' : '⚡ AI Transcribe & Evaluate'}
+                </button>
+
                 <button
                   type="button"
                   onClick={() => handleSaveReview('shortlisted')}
@@ -1083,16 +1142,50 @@ SmartHire Recruitment Team`
 
                 {/* AI Screening Assessment Card */}
                 <div style={styles.reviewSideCard}>
-                  <div style={styles.sideCardHeading}>AI Match & Insights</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={styles.sideCardHeading}>AI Match & Insights</div>
+                    <button
+                      type="button"
+                      onClick={() => handleReEvaluateSession(reviewSession.id || reviewSession._id || reviewSession.sessionId)}
+                      disabled={isReEvaluating}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#2563eb',
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        padding: '2px 4px'
+                      }}
+                      title="Re-run AI evaluation on candidate speech"
+                    >
+                      {isReEvaluating ? 'Evaluating...' : '↻ Re-evaluate'}
+                    </button>
+                  </div>
+
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '8px 0 12px' }}>
-                    <div style={styles.aiMatchScoreCircle}>
+                    <div style={{
+                      ...styles.aiMatchScoreCircle,
+                      ...(reviewSession.aiScore >= 85 ? { background: '#ecfdf5', color: '#047857', borderColor: '#a7f3d0' } :
+                          reviewSession.aiScore >= 70 ? { background: '#eff6ff', color: '#1d4ed8', borderColor: '#bfdbfe' } :
+                          reviewSession.aiScore >= 50 ? { background: '#fffbeb', color: '#b45309', borderColor: '#fde68a' } :
+                          { background: '#fff1f2', color: '#be123c', borderColor: '#fecdd3' })
+                    }}>
                       {reviewSession.aiScore || 85}%
                     </div>
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a' }}>
+                      <div style={{
+                        display: 'inline-block',
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: '800',
+                        background: reviewSession.aiScore >= 85 ? '#ecfdf5' : reviewSession.aiScore >= 70 ? '#eff6ff' : '#fffbeb',
+                        color: reviewSession.aiScore >= 85 ? '#047857' : reviewSession.aiScore >= 70 ? '#1d4ed8' : '#b45309'
+                      }}>
                         {reviewSession.recommendation || 'Strong Match'}
                       </div>
-                      <div style={{ fontSize: '11px', color: '#64748b' }}>
+                      <div style={{ fontSize: '11px', color: '#64748b', marginTop: '3px' }}>
                         Evaluated against Requisition
                       </div>
                     </div>
@@ -1194,10 +1287,18 @@ SmartHire Recruitment Team`
                         ...(activeQuestionTab === idx ? styles.qTabBtnActive : {})
                       }}
                     >
-                      <span>Q{idx + 1}: {resp.format === 'video' ? 'Video' : resp.format === 'audio' ? 'Audio' : 'Text'}</span>
+                      <span style={{ fontWeight: '700' }}>Q{idx + 1}: {resp.format === 'video' ? 'Video' : resp.format === 'audio' ? 'Audio' : 'Text'}</span>
                       {typeof resp.startTime === 'number' && (
-                        <span style={{ fontSize: '11px', color: activeQuestionTab === idx ? '#1d4ed8' : '#64748b', marginLeft: '6px' }}>
-                          ({Math.floor(resp.startTime / 60)}:{String(Math.floor(resp.startTime % 60)).padStart(2, '0')})
+                        <span style={{
+                          fontSize: '11px',
+                          fontWeight: '700',
+                          padding: '2px 7px',
+                          borderRadius: '4px',
+                          background: activeQuestionTab === idx ? 'rgba(255, 255, 255, 0.25)' : '#e2e8f0',
+                          color: activeQuestionTab === idx ? '#ffffff' : '#475569',
+                          marginLeft: '6px'
+                        }}>
+                          {Math.floor(resp.startTime / 60)}:{String(Math.floor(resp.startTime % 60)).padStart(2, '0')}
                         </span>
                       )}
                     </button>
@@ -1212,10 +1313,10 @@ SmartHire Recruitment Team`
                       <div style={styles.playerWrapper}>
                         {/* Question Banner */}
                         <div style={styles.playerQuestionBanner}>
-                          <div style={{ fontSize: '11px', fontWeight: '800', color: '#2563eb', textTransform: 'uppercase' }}>
+                          <div style={{ fontSize: '11px', fontWeight: '800', color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                             Question {activeQuestionTab + 1}
                           </div>
-                          <h4 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', margin: '4px 0 0' }}>
+                          <h4 style={{ fontSize: '15.5px', fontWeight: '800', color: '#0f172a', margin: '4px 0 0', lineHeight: 1.4 }}>
                             {currentAns.questionText || `Question ${activeQuestionTab + 1}`}
                           </h4>
                         </div>
@@ -1230,26 +1331,46 @@ SmartHire Recruitment Team`
                               playbackRate={playbackSpeed}
                               style={styles.fullVideoElement}
                             />
-                            {/* Playback speed controls */}
+                            {/* Playback speed controls & video download */}
                             <div style={styles.speedControlsRow}>
-                              <span style={{ fontSize: '11.5px', color: '#64748b', fontWeight: '700' }}>Speed:</span>
-                              {[1, 1.25, 1.5, 2].map(speed => (
-                                <button
-                                  key={speed}
-                                  type="button"
-                                  onClick={() => {
-                                    setPlaybackSpeed(speed)
-                                    const vid = document.getElementById('screening-review-video')
-                                    if (vid) vid.playbackRate = speed
-                                  }}
-                                  style={{
-                                    ...styles.speedBtn,
-                                    ...(playbackSpeed === speed ? styles.speedBtnActive : {})
-                                  }}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontSize: '11.5px', color: '#94a3b8', fontWeight: '700' }}>Speed:</span>
+                                {[1, 1.25, 1.5, 2].map(speed => (
+                                  <button
+                                    key={speed}
+                                    type="button"
+                                    onClick={() => {
+                                      setPlaybackSpeed(speed)
+                                      const vid = document.getElementById('screening-review-video')
+                                      if (vid) vid.playbackRate = speed
+                                    }}
+                                    style={{
+                                      ...styles.speedBtn,
+                                      ...(playbackSpeed === speed ? styles.speedBtnActive : {})
+                                    }}
+                                  >
+                                    {speed}x
+                                  </button>
+                                ))}
+                              </div>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <a
+                                  href={currentAns.mediaUrl || reviewSession.masterMediaUrl}
+                                  download={`Interview_${(reviewSession.candidateName || 'Candidate').replace(/\s+/g, '_')}_Q${activeQuestionTab + 1}.webm`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={styles.downloadVideoBtn}
+                                  title="Download video for this question"
                                 >
-                                  {speed}x
-                                </button>
-                              ))}
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                  </svg>
+                                  Download Video
+                                </a>
+                              </div>
                             </div>
                           </div>
                         )}
@@ -1284,26 +1405,60 @@ SmartHire Recruitment Team`
                         )}
 
                         {/* AI Transcript Box */}
-                        {currentAns.transcript && currentAns.format !== 'text' && (
+                        {currentAns.format !== 'text' && (
                           <div style={styles.transcriptBox}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontSize: '12px', fontWeight: '800', color: '#4338ca', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                AI Speech-to-Text Transcript
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                              <span style={{ fontSize: '12px', fontWeight: '800', color: '#312e81', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                </svg>
+                                AI Speech-to-Text Transcript (Whisper AI)
                               </span>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(currentAns.transcript)
-                                  alert('Transcript copied to clipboard!')
-                                }}
-                                style={styles.copyTranscriptBtn}
-                              >
-                                Copy Text
-                              </button>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                {currentAns.transcript && !currentAns.transcript.includes('Spoken answer captured during continuous interview') && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(currentAns.transcript)
+                                      alert('Transcript copied to clipboard!')
+                                    }}
+                                    style={styles.copyTranscriptBtn}
+                                  >
+                                    Copy Text
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                            <p style={styles.transcriptParagraph}>
-                              "{currentAns.transcript}"
-                            </p>
+
+                            {currentAns.transcript && !currentAns.transcript.includes('Spoken answer captured during continuous interview') ? (
+                              <p style={styles.transcriptParagraph}>
+                                "{currentAns.transcript}"
+                              </p>
+                            ) : (
+                              <div style={{ padding: '14px', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1', textAlign: 'center' }}>
+                                <p style={{ fontSize: '12.5px', color: '#64748b', margin: '0 0 10px' }}>
+                                  Candidate speech audio has not been transcribed yet, or placeholder text was detected.
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() => handleReEvaluateSession(reviewSession.id || reviewSession._id || reviewSession.sessionId)}
+                                  disabled={isReEvaluating}
+                                  style={{
+                                    padding: '6px 14px',
+                                    borderRadius: '6px',
+                                    background: '#4f46e5',
+                                    color: '#ffffff',
+                                    border: 'none',
+                                    fontSize: '12px',
+                                    fontWeight: '700',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  {isReEvaluating ? 'Transcribing with AI...' : '⚡ Transcribe Spoken Audio with AI'}
+                                </button>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1912,26 +2067,37 @@ const styles = {
   qTabRow: {
     display: 'flex',
     gap: '8px',
-    borderBottom: '1px solid #e2e8f0',
-    paddingBottom: '12px',
-    marginBottom: '18px',
-    overflowX: 'auto'
+    alignItems: 'center',
+    background: '#f1f5f9',
+    padding: '6px',
+    borderRadius: '10px',
+    border: '1px solid #e2e8f0',
+    marginBottom: '16px',
+    overflowX: 'auto',
+    flexWrap: 'wrap',
+    boxSizing: 'border-box'
   },
   qTabBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
     padding: '7px 14px',
-    borderRadius: '8px',
-    border: '1px solid #cbd5e1',
-    background: '#ffffff',
+    borderRadius: '7px',
+    border: '1px solid transparent',
+    background: 'transparent',
     color: '#475569',
     fontSize: '12.5px',
-    fontWeight: '700',
+    fontWeight: '600',
     cursor: 'pointer',
-    whiteSpace: 'nowrap'
+    whiteSpace: 'nowrap',
+    transition: 'all 0.15s ease'
   },
   qTabBtnActive: {
     background: '#2563eb',
     color: '#ffffff',
-    borderColor: '#2563eb'
+    borderColor: '#1d4ed8',
+    boxShadow: '0 1px 3px rgba(37, 99, 235, 0.25)',
+    fontWeight: '700'
   },
   playerWrapper: {
     display: 'flex',
@@ -1941,8 +2107,10 @@ const styles = {
   playerQuestionBanner: {
     background: '#f8fafc',
     border: '1px solid #e2e8f0',
-    borderRadius: '12px',
-    padding: '14px 18px'
+    borderLeft: '4px solid #2563eb',
+    borderRadius: '10px',
+    padding: '14px 18px',
+    boxSizing: 'border-box'
   },
   videoPlayerBox: {
     position: 'relative',
@@ -1957,12 +2125,54 @@ const styles = {
     display: 'block'
   },
   speedControlsRow: {
-    background: '#1e293b',
+    background: '#0f172a',
     padding: '8px 14px',
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
-    borderTop: '1px solid #334155'
+    justifyContent: 'space-between',
+    borderTop: '1px solid #1e293b'
+  },
+  downloadVideoBtn: {
+    padding: '4px 10px',
+    borderRadius: '6px',
+    background: '#334155',
+    color: '#ffffff',
+    border: 'none',
+    fontSize: '11.5px',
+    fontWeight: '700',
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '5px',
+    textDecoration: 'none'
+  },
+  reEvaluateTopBtn: {
+    padding: '7px 14px',
+    borderRadius: '8px',
+    background: '#4f46e5',
+    color: '#ffffff',
+    border: 'none',
+    fontSize: '12px',
+    fontWeight: '700',
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    transition: 'background 0.15s ease'
+  },
+  downloadTopBtn: {
+    padding: '7px 14px',
+    borderRadius: '8px',
+    background: '#ffffff',
+    color: '#0f172a',
+    border: '1px solid #cbd5e1',
+    fontSize: '12px',
+    fontWeight: '700',
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    textDecoration: 'none'
   },
   speedBtn: {
     padding: '3px 8px',

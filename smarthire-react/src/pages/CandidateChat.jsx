@@ -688,6 +688,14 @@ export default function CandidateChat() {
             }
             setLiveTranscript((accumulated + interim).trim())
           }
+          rec.onend = () => {
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+              try { rec.start() } catch (e) {}
+            }
+          }
+          rec.onerror = (e) => {
+            console.warn('SpeechRecognition error:', e.error)
+          }
           rec.start()
           speechRecognitionRef.current = rec
         }
@@ -718,7 +726,7 @@ export default function CandidateChat() {
       startTime: currentQStartTimeRef.current,
       endTime: nowSeconds,
       duration: Math.max(1, nowSeconds - currentQStartTimeRef.current),
-      transcript: liveTranscript.trim() || 'Spoken answer captured during continuous interview.'
+      transcript: liveTranscript.trim()
     }
 
     markersRef.current.push(marker)
@@ -794,6 +802,21 @@ export default function CandidateChat() {
         const upData = await upRes.json()
         if (upData.success) {
           uploadedMediaUrl = upData.mediaUrl
+          // Distribute server Whisper transcription segments to markers
+          if (upData.segments && upData.segments.length > 0) {
+            markersRef.current.forEach(m => {
+              if (!m.transcript || m.transcript.trim() === '') {
+                const qSegs = upData.segments.filter(s => {
+                  const mid = (s.start + s.end) / 2
+                  return (mid >= m.startTime && mid <= (m.endTime || 99999)) ||
+                         (s.start >= m.startTime && s.start < (m.endTime || 99999))
+                })
+                if (qSegs.length > 0) {
+                  m.transcript = qSegs.map(s => s.text.trim()).join(' ').trim()
+                }
+              }
+            })
+          }
         } else {
           throw new Error(upData.message || 'Media upload rejected by server')
         }

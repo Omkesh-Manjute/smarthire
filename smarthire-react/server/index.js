@@ -9,6 +9,10 @@ import pdfParse from 'pdf-parse'
 import mammoth from 'mammoth'
 import dotenv from 'dotenv'
 import https from 'https'
+import { exec } from 'child_process'
+import { promisify } from 'util'
+import os from 'os'
+const execAsync = promisify(exec)
 import { pdfConverter } from 'pdf-image-converter'
 import jwt from 'jsonwebtoken'
 import {
@@ -1332,24 +1336,44 @@ const uploadScreeningMedia = multer({
   limits: { fileSize: 500 * 1024 * 1024 }, // 500MB max
 })
 
-// Transcribe audio/video using Groq Whisper API
-async function transcribeScreeningAudio(filePath) {
+// Transcribe audio/video using ffmpeg extraction + Groq Whisper API (verbose_json with timestamps)
+async function transcribeScreeningMediaFile(filePath) {
   const groqApiKey = process.env.GROQ_API_KEY
   if (!groqApiKey || !fs.existsSync(filePath)) {
-    return null
+    return { text: null, segments: [] }
   }
+
+  let audioPathToClean = null
+  let audioToTranscribe = filePath
 
   try {
     const fileStats = fs.statSync(filePath)
-    if (fileStats.size === 0) return null
+    if (fileStats.size === 0) return { text: null, segments: [] }
 
-    const fileBuffer = fs.readFileSync(filePath)
-    const fileName = path.basename(filePath)
-    const blob = new Blob([fileBuffer], { type: 'audio/webm' })
+    // If file is video (.webm, .mp4, etc.) or larger than 15MB, extract audio track via ffmpeg
+    const isVideo = filePath.endsWith('.webm') || filePath.endsWith('.mp4') || filePath.endsWith('.mov') || filePath.endsWith('.mkv') || fileStats.size > 15 * 1024 * 1024
+    if (isVideo) {
+      const tmpAudioPath = path.resolve(os.tmpdir(), `audio_extract_${Date.now()}_${path.basename(filePath, path.extname(filePath))}.mp3`)
+      try {
+        await execAsync(`ffmpeg -y -i "${filePath}" -vn -ar 16000 -ac 1 -b:a 64k "${tmpAudioPath}"`)
+        if (fs.existsSync(tmpAudioPath) && fs.statSync(tmpAudioPath).size > 0) {
+          audioToTranscribe = tmpAudioPath
+          audioPathToClean = tmpAudioPath
+        }
+      } catch (ffErr) {
+        console.warn('⚠️ ffmpeg audio extraction notice (will try direct file):', ffErr.message)
+      }
+    }
+
+    const fileBuffer = fs.readFileSync(audioToTranscribe)
+    const baseName = path.basename(audioToTranscribe)
+    const isMp3 = baseName.endsWith('.mp3')
+    const mime = isMp3 ? 'audio/mp3' : 'audio/webm'
+    const blob = new Blob([fileBuffer], { type: mime })
     const formData = new FormData()
-    formData.append('file', blob, fileName)
+    formData.append('file', blob, baseName)
     formData.append('model', 'whisper-large-v3-turbo')
-    formData.append('response_format', 'json')
+    formData.append('response_format', 'verbose_json')
 
     const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
       method: 'POST',
@@ -1362,15 +1386,96 @@ async function transcribeScreeningAudio(filePath) {
     if (!res.ok) {
       const errText = await res.text()
       console.warn('⚠️ Groq Whisper transcription notice:', res.status, errText)
-      return null
+      return { text: null, segments: [] }
     }
 
     const data = await res.json()
-    return data.text ? data.text.trim() : null
+    const fullText = (data.text || '').trim()
+    const segments = Array.isArray(data.segments) ? data.segments : []
+
+    return {
+      text: fullText || null,
+      segments
+    }
   } catch (err) {
     console.warn('⚠️ Groq Whisper transcription error:', err.message)
-    return null
+    return { text: null, segments: [] }
+  } finally {
+    if (audioPathToClean && fs.existsSync(audioPathToClean)) {
+      try { fs.unlinkSync(audioPathToClean) } catch (e) {}
+    }
   }
+}
+
+// Backward compatible helper returning single string
+async function transcribeScreeningAudio(filePath) {
+  const result = await transcribeScreeningMediaFile(filePath)
+  return result.text
+}
+
+// Distribute timestamped transcription segments to individual question responses
+function distributeTranscriptionToQuestions(responses, segments = [], fullText = '') {
+  if (!Array.isArray(responses) || responses.length === 0) return responses
+
+  if (!segments || segments.length === 0) {
+    if (fullText && responses.length === 1) {
+      responses[0].transcript = fullText
+    }
+    return responses
+  }
+
+  responses.forEach((resp, idx) => {
+    const qStart = typeof resp.startTime === 'number' ? resp.startTime : null
+    let qEnd = typeof resp.endTime === 'number' ? resp.endTime : null
+
+    if (qStart !== null) {
+      if (qEnd === null || qEnd <= qStart) {
+        const nextQ = responses[idx + 1]
+        if (nextQ && typeof nextQ.startTime === 'number') {
+          qEnd = nextQ.startTime
+        } else {
+          qEnd = qStart + 180
+        }
+      }
+
+      // Collect segments overlapping with [qStart, qEnd]
+      const matchingSegments = segments.filter(seg => {
+        const segMid = (seg.start + seg.end) / 2
+        return (segMid >= qStart && segMid <= qEnd) ||
+               (seg.start >= qStart && seg.start < qEnd) ||
+               (seg.start <= qStart && seg.end > qStart + 2)
+      })
+
+      if (matchingSegments.length > 0) {
+        resp.transcript = matchingSegments.map(s => s.text.trim()).join(' ').trim()
+      }
+    }
+
+    // Replace old placeholder string if present
+    if (resp.transcript && resp.transcript.includes('Spoken answer captured during continuous interview')) {
+      resp.transcript = ''
+    }
+  })
+
+  // If some responses still have no transcript, assign fallback from fullText if available
+  const hasAnyTranscript = responses.some(r => r.transcript && r.transcript.trim().length > 0)
+  if (!hasAnyTranscript && fullText) {
+    if (responses.length === 1) {
+      responses[0].transcript = fullText
+    } else {
+      // Split fullText roughly across questions
+      const words = fullText.split(/\s+/)
+      const chunkSize = Math.max(1, Math.floor(words.length / responses.length))
+      responses.forEach((r, i) => {
+        if (!r.transcript || r.transcript.trim().length === 0) {
+          const slice = words.slice(i * chunkSize, (i + 1) * chunkSize)
+          if (slice.length > 0) r.transcript = slice.join(' ')
+        }
+      })
+    }
+  }
+
+  return responses
 }
 
 // Evaluate candidate screening responses against Job Requisition
@@ -1404,9 +1509,14 @@ Candidate Answer/Transcript: ${r.transcript || r.textAnswer || '(No answer recor
 Job Skills: ${(job?.skills || []).join(', ')}.
 Job Location: ${job?.location || 'Remote/US'}.
 
-Analyze the candidate's answers below and output a clean JSON object with:
+Analyze the candidate's actual answers below carefully:
+1. Technical Relevance & Accuracy: Did the candidate mention real production architectures, tools, libraries, or frameworks matching the target role?
+2. Communication & Articulation: Fluency, structure, and professional tone.
+3. Candidate Fit: Practical experience and background depth.
+
+Output a clean JSON object with:
 {
-  "aiScore": <integer between 55 and 98 based on relevance, technical accuracy, and presentation>,
+  "aiScore": <integer between 55 and 98 based on technical depth, presentation, and relevance>,
   "recommendation": "Strong Match" | "Recommended" | "Follow-up Needed",
   "aiSummary": [
     "bullet point 1 on technical relevance and skill alignment",
@@ -6658,10 +6768,10 @@ app.post('/api/screening/:sessionId/upload-media', uploadScreeningMedia.single('
     const mediaUrl = `/uploads/screening/${req.file.filename}`;
     const filePath = req.file.path;
 
-    // Transcribe with Groq Whisper if available
-    let transcript = null;
+    // Transcribe with ffmpeg extraction + Groq Whisper if available
+    let transcription = { text: null, segments: [] };
     try {
-      transcript = await transcribeScreeningAudio(filePath);
+      transcription = await transcribeScreeningMediaFile(filePath);
     } catch (tErr) {
       console.warn('Whisper transcription notice:', tErr.message);
     }
@@ -6672,7 +6782,8 @@ app.post('/api/screening/:sessionId/upload-media', uploadScreeningMedia.single('
       filename: req.file.filename,
       mimetype: req.file.mimetype,
       size: req.file.size,
-      transcript: transcript || (req.body.transcript || null)
+      transcript: transcription.text || (req.body.transcript || null),
+      segments: transcription.segments || []
     });
   } catch (err) {
     console.error('Error uploading screening media:', err);
@@ -6693,6 +6804,28 @@ app.post('/api/screening/:sessionId/submit-response', async (req, res) => {
       client: session.jobClient || 'Enterprise Client',
       location: session.jobLocation || 'Remote/US'
     };
+
+    // If responses are missing transcripts or contain placeholder, check if master media can be transcribed
+    const masterMedia = req.body.masterMediaUrl || session.masterMediaUrl || (responses[0]?.mediaUrl);
+    const needsTranscription = responses.some(r => !r.transcript || r.transcript.includes('Spoken answer captured during continuous interview'));
+    if (needsTranscription && masterMedia) {
+      const baseFilename = path.basename(masterMedia);
+      const possiblePaths = [
+        path.resolve(__dirname, 'uploads/screening', baseFilename),
+        path.resolve('/home/ubuntu/smarthire/smarthire-react/server/uploads/screening', baseFilename),
+        path.resolve('/home/ubuntu/smarthire/server/uploads/screening', baseFilename),
+        path.resolve(__dirname, '../uploads/screening', baseFilename)
+      ];
+      let foundPath = possiblePaths.find(p => fs.existsSync(p));
+      if (foundPath) {
+        try {
+          const trans = await transcribeScreeningMediaFile(foundPath);
+          distributeTranscriptionToQuestions(responses, trans.segments, trans.text);
+        } catch (e) {
+          console.warn('Backend auto-transcription on submit notice:', e.message);
+        }
+      }
+    }
 
     // Run AI evaluation on candidate's answers
     const evaluation = await evaluateScreeningResponses(job, candidateInfo, responses);
@@ -6810,6 +6943,98 @@ app.post('/api/screening/:sessionId/submit-response', async (req, res) => {
     });
   } catch (err) {
     console.error('Error submitting screening response:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Re-transcribe screening audio from saved video/audio and run dynamic Groq AI evaluation
+app.post('/api/screening/:sessionId/re-evaluate', async (req, res) => {
+  const sessionId = req.params.sessionId;
+  const session = screeningStore.find(s => s.id === sessionId || s._id === sessionId || s.sessionId === sessionId);
+  if (!session) {
+    return res.status(404).json({ success: false, message: 'Screening session not found.' });
+  }
+
+  try {
+    // 1. Locate media file
+    const mediaUrl = session.masterMediaUrl || (session.responses && session.responses[0]?.mediaUrl);
+    let resolvedFilePath = null;
+
+    if (mediaUrl) {
+      const baseFilename = path.basename(mediaUrl);
+      const possiblePaths = [
+        path.resolve(__dirname, 'uploads/screening', baseFilename),
+        path.resolve('/home/ubuntu/smarthire/smarthire-react/server/uploads/screening', baseFilename),
+        path.resolve('/home/ubuntu/smarthire/server/uploads/screening', baseFilename),
+        path.resolve(__dirname, '../uploads/screening', baseFilename),
+        path.resolve(__dirname, '../../uploads/screening', baseFilename)
+      ];
+
+      for (const p of possiblePaths) {
+        if (fs.existsSync(p)) {
+          resolvedFilePath = p;
+          break;
+        }
+      }
+    }
+
+    let transcription = { text: null, segments: [] };
+    if (resolvedFilePath) {
+      console.log(`🎙️ Re-transcribing screening audio from file: ${resolvedFilePath}`);
+      transcription = await transcribeScreeningMediaFile(resolvedFilePath);
+      console.log(`✅ Transcribed ${transcription.segments?.length || 0} segments, ${(transcription.text || '').length} characters.`);
+    }
+
+    // 2. Distribute segments across question responses
+    if (Array.isArray(session.responses) && session.responses.length > 0) {
+      distributeTranscriptionToQuestions(session.responses, transcription.segments, transcription.text);
+    }
+
+    // 3. Find matching job requisition
+    const job = jobsStore.find(j => j.id === session.jobId) || {
+      id: session.jobId || 'J-102',
+      title: session.jobTitle || 'Open Position',
+      skills: session.jobSkills || [],
+      client: session.jobClient || 'Enterprise Client',
+      location: session.jobLocation || 'Remote/US'
+    };
+
+    // 4. Run dynamic Groq AI evaluation on genuine spoken transcripts
+    const candidateInfo = {
+      name: session.candidateName,
+      email: session.candidateEmail,
+      phone: session.candidatePhone,
+      location: session.candidateLocation,
+      visaStatus: session.visaStatus
+    };
+
+    const evaluation = await evaluateScreeningResponses(job, candidateInfo, session.responses || []);
+
+    session.aiScore = evaluation.aiScore;
+    session.aiSummary = evaluation.aiSummary;
+    session.recommendation = evaluation.recommendation;
+    session.keyTakeaways = evaluation.keyTakeaways;
+    session.lastEvaluatedAt = new Date().toISOString();
+
+    // 5. Update candidatesStore
+    if (session.candidateEmail || session.candidateName) {
+      const cand = candidatesStore.find(c =>
+        (c.email && session.candidateEmail && c.email.toLowerCase().trim() === session.candidateEmail) ||
+        (c.name && session.candidateName && c.name.toLowerCase().trim() === session.candidateName.toLowerCase().trim())
+      );
+      if (cand) {
+        cand.screeningScore = session.aiScore;
+        cand.screeningRecommendation = session.recommendation;
+        cand.screeningSummary = session.keyTakeaways;
+        cand.screeningResponses = session.responses;
+      }
+      saveCandidatesToDisk();
+    }
+
+    saveScreeningToDisk();
+    res.json({ success: true, session });
+  } catch (err) {
+    console.error('Error re-evaluating screening session:', err);
     res.status(500).json({ success: false, message: err.message });
   }
 });
