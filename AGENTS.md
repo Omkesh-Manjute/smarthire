@@ -67,6 +67,44 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
 
+## Product Roadmap & Architecture Plan (Queued Features)
+
+The following high-impact features and optimizations have been agreed upon and prioritized for upcoming execution sessions (No direct action taken yet; planned & architected):
+
+### 1. Speed & Payload Optimization (Sub-Second Load Time)
+- **Problem**: `/api/recruiter/email-streams` downloads ~8.9 MB JSON per call with uncompressed full resume texts and executes up to 50,000 synchronous matching iterations on mount, creating UI lag.
+- **Architected Fix**:
+  - Add Express `compression()` middleware to reduce payload size by ~93% (8.9MB $\rightarrow$ ~450KB).
+  - Precompute and cache match scores upon candidate ingestion/update instead of looping across all active jobs on every request.
+  - Separate candidate list summary (`name`, `role`, `skills`, `exp`, `location`, `matchScore`) from full `resumeText` (lazy-loaded on candidate select).
+
+### 2. Unified Semantic Matching Engine (Vendor Hotlists & Candidate Inbox)
+- **Problem**: Candidate inbox uses 5-tier scoring with 60% threshold, while vendor hotlists use 45% threshold with client-side token fallback calculation.
+- **Architected Fix**:
+  - Consolidate both Candidate Inbox and Vendor Hotlists into a single, standardized 100-point matching function (`evaluateUnifiedMatch`).
+  - Introduce semantic ontology clusters (e.g. AWS $\leftrightarrow$ EC2/S3; React $\leftrightarrow$ Next.js; Java $\leftrightarrow$ Spring Boot) so candidate skills aren't missed by strict keyword string matching.
+  - Add transparent match breakdown UI: Hover/modal showing exact points for Must-Have Skills, Preferred Skills, Location Fit, Experience Fit, and Title Alignment.
+
+### 3. In-House "SmartSign RTR" Digital Signature (HelloSign / DocuSign Alternative)
+- **Goal**: Enable recruiters to request Right to Represent (RTR) signatures with zero third-party subscription costs.
+- **Architected Flow**:
+  - Recruiter clicks "Request RTR Signature ✍️" on candidate row $\rightarrow$ generates secure token link `https://smarthireus.com/sign-rtr/:token`.
+  - Candidate opens responsive mobile/desktop signing screen without creating an account.
+  - Agreement is pre-filled with candidate name, requisition title, client name, agreed rate, and exclusivity duration.
+  - Interactive HTML5 signature pad supports Draw (touch/mouse), Type (cursive fonts), and Upload.
+  - Audit trail captures IP address, user agent, UTC timestamp, and SHA-256 hash (ESIGN & UETA compliant).
+  - Instantly compiles signed PDF to candidate profile documents and sends copy to recruiter & candidate.
+
+### 4. Instant Submittal Pack Generator (Client Coversheet + Branded Resume Engine)
+- **Goal**: Eliminate manual copy-pasting into Word/Excel when submitting candidates to direct clients, prime vendors, and VMS portals.
+- **Architected Flow**:
+  - **Template Selection**: Standard US Enterprise Client, State Government (e.g. Texas DIR), MSP/VMS Matrix (Fieldglass/Beeline), Prime Vendor C2C, and Custom Recruiter Template.
+  - **Auto-Populated Coversheet**: Instantly extracts Candidate Legal Name, Current Location & Relocation, Visa Status & Expiry, Total/Relevant Exp, Highest Education & Year, Rate ($/hr), Notice Period, Interview Availability, and Key Skills Matrix.
+  - **Branded & Blind Resume Wrapper**: Formats candidate resume with agency letterhead/header, core competencies table, clean bullet points, and optional contact masking (hiding direct phone/email to prevent poaching).
+  - **1-Click Actions**: 📋 Copy formatted text to clipboard (for portal/email paste), 📥 Download PDF/DOCX submittal package, and ✉️ Direct email dispatch to Account Manager / Client.
+
+---
+
 ## Recent Changes
 
 ### 2026-10-02 — Sticky Non-Hiding Question Tabs, Initials Removal, Top Download Cleanup, Widescreen Modal (1360px), PDF Dossier Export & AI Question Auto-Generation
