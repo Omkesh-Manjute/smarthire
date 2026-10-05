@@ -1831,33 +1831,35 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const isLight = themeMode === 'light'
 
   const C = {
-    bg: isLight ? '#F9FAFB' : '#141A21',
-    surface: isLight ? '#FFFFFF' : '#1C252E',
-    surface2: isLight ? '#F4F6F8' : '#28323D',
-    sidebar: isLight ? '#FFFFFF' : '#1C252E',
-    border: isLight ? 'rgba(145, 158, 171, 0.16)' : 'rgba(255, 255, 255, 0.08)',
-    textPrimary: isLight ? '#1C252E' : '#F9FAFB',
-    textSecondary: isLight ? '#637381' : '#919EAB',
-    activeConv: isLight ? '#EBF3FE' : 'rgba(32, 101, 209, 0.16)',
-    inputBg: isLight ? '#FFFFFF' : '#212B36',
-    inputBorder: isLight ? 'rgba(145, 158, 171, 0.24)' : 'rgba(255, 255, 255, 0.12)',
-    msgOther: isLight ? '#F4F6F8' : '#28323D',
-    msgOtherText: isLight ? '#1C252E' : '#F9FAFB',
-    shadow: isLight ? 'rgba(145, 158, 171, 0.16) 0px 4px 20px 0px, rgba(145, 158, 171, 0.08) 0px 0px 2px 0px' : '0 4px 24px rgba(0,0,0,0.4)',
-    headerBg: isLight ? 'rgba(255, 255, 255, 0.94)' : 'rgba(28, 37, 46, 0.94)',
-    brand: '#2065D1',
-    brandHover: '#115293',
-    brandLight: isLight ? '#EBF3FE' : 'rgba(32, 101, 209, 0.16)',
-    brandBorder: isLight ? '#BAE6FD' : 'rgba(32, 101, 209, 0.3)',
-    teal: '#00A76F',
-    tealLight: isLight ? '#C8FACD' : 'rgba(0, 167, 111, 0.16)',
-    amber: '#FFAB00',
-    amberLight: isLight ? '#FFF7CD' : 'rgba(255, 171, 0, 0.16)',
-    coral: '#FF5630',
-    coralLight: isLight ? '#FFE7D9' : 'rgba(255, 86, 48, 0.16)',
-    purple: '#7928CA',
-    purpleLight: isLight ? '#EFD8F9' : 'rgba(121, 40, 202, 0.16)',
-    cardRadius: 16
+    bg: isLight ? '#F8FAFC' : '#0B0F17',
+    surface: isLight ? '#FFFFFF' : '#111827',
+    surface2: isLight ? '#F1F5F9' : '#1E293B',
+    sidebar: isLight ? '#FFFFFF' : '#0F172A',
+    border: isLight ? '#E2E8F0' : '#1E293B',
+    borderSubtle: isLight ? '#EDF2F7' : 'rgba(255, 255, 255, 0.05)',
+    textPrimary: isLight ? '#0F172A' : '#F8FAFC',
+    textSecondary: isLight ? '#64748B' : '#94A3B8',
+    activeConv: isLight ? '#F0F9FF' : 'rgba(14, 165, 233, 0.12)',
+    inputBg: isLight ? '#FFFFFF' : '#182234',
+    inputBorder: isLight ? '#E2E8F0' : '#334155',
+    msgOther: isLight ? '#F1F5F9' : '#1E293B',
+    msgOtherText: isLight ? '#0F172A' : '#F8FAFC',
+    shadow: isLight ? '0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02)' : '0 4px 20px rgba(0, 0, 0, 0.4)',
+    headerBg: isLight ? 'rgba(255, 255, 255, 0.92)' : 'rgba(17, 24, 39, 0.92)',
+    brand: '#4A154B', // Slack Signature Deep Aubergine
+    brandBlue: '#0284C7', // Crisp Modern Accent Blue
+    brandHover: '#611f69',
+    brandLight: isLight ? '#FDF4FF' : 'rgba(74, 21, 75, 0.25)',
+    brandBorder: isLight ? '#F5D0FE' : 'rgba(74, 21, 75, 0.4)',
+    teal: '#0D9488',
+    tealLight: isLight ? '#F0FDFA' : 'rgba(13, 148, 136, 0.16)',
+    amber: '#D97706',
+    amberLight: isLight ? '#FFFBEB' : 'rgba(217, 119, 6, 0.16)',
+    coral: '#E11D48',
+    coralLight: isLight ? '#FFF1F2' : 'rgba(225, 29, 72, 0.16)',
+    purple: '#4A154B',
+    purpleLight: isLight ? '#FAF5FF' : 'rgba(74, 21, 75, 0.16)',
+    cardRadius: 10
   }
 
   const DEFAULT_MESSAGES_THREADS = []
@@ -11099,399 +11101,280 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   </div>
                 </div>
 
-                {/* 5 Metric KPI Cards matching screenshot */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                {/* 5 Metric KPI Cards — Linear & Slack Segmented Tab Feel */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', backgroundColor: isLight ? '#F1F5F9' : '#1E293B', padding: 4, borderRadius: 10 }}>
                   {[
-                    { color: '#2563EB', count: roleScopedCandidates.length, label: 'Total Candidates', filter: 'all' },
-                    { color: '#16A34A', count: roleScopedCandidates.filter(c => c.status !== 'Archived' && c.status !== 'Rejected' && c.status !== 'Closed').length, label: 'Active', filter: 'active' },
-                    { color: '#D97706', count: roleScopedCandidates.filter(c => c.sourceCategory === 'email_inbox').length, label: 'Resume Emails', filter: 'inbox' },
+                    { color: '#4A154B', count: roleScopedCandidates.length, label: 'Total', filter: 'all' },
+                    { color: '#0D9488', count: roleScopedCandidates.filter(c => c.status !== 'Archived' && c.status !== 'Rejected' && c.status !== 'Closed').length, label: 'Active', filter: 'active' },
+                    { color: '#D97706', count: roleScopedCandidates.filter(c => c.sourceCategory === 'email_inbox').length, label: 'Inbox', filter: 'inbox' },
                     { color: '#0284C7', count: roleScopedCandidates.filter(c => c.status === 'In Review' || c.status === 'Review').length, label: 'In Review', filter: 'review' },
-                    { color: '#DC2626', count: roleScopedCandidates.filter(c => c.sourceCategory === 'email_spam' || c.isSpamRecovery).length, label: 'Spam / Recovered', filter: 'spam' }
+                    { color: '#E11D48', count: roleScopedCandidates.filter(c => c.sourceCategory === 'email_spam' || c.isSpamRecovery).length, label: 'Spam', filter: 'spam' }
                   ].map((card, cIdx) => {
                     const isSelected = tableCategory === card.filter
                     return (
-                      <div
+                      <button
                         key={cIdx}
+                        type="button"
                         onClick={() => {
                           setTableCategory(card.filter)
                           setTablePage(1)
                         }}
                         style={{
-                          backgroundColor: isSelected ? (isLight ? '#EFF6FF' : 'rgba(37,99,235,0.18)') : (isLight ? '#FFFFFF' : C.surface),
-                          border: `1px solid ${isSelected ? '#2563EB' : C.border}`,
-                          borderRadius: 10,
-                          padding: '8px 14px',
-                          minWidth: 100,
+                          backgroundColor: isSelected ? (isLight ? '#FFFFFF' : '#0F172A') : 'transparent',
+                          border: isSelected ? `1px solid ${isLight ? '#CBD5E1' : '#334155'}` : '1px solid transparent',
+                          borderRadius: 8,
+                          padding: '6px 12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
                           cursor: 'pointer',
-                          boxShadow: isSelected ? '0 2px 8px rgba(37,99,235,0.15)' : '0 1px 2px rgba(0,0,0,0.03)',
+                          boxShadow: isSelected ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
                           transition: 'all 0.15s ease'
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                          <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: card.color, flexShrink: 0 }} />
-                          <span style={{ fontSize: 17, fontWeight: 800, color: C.textPrimary }}>
-                            {card.count}
-                          </span>
-                        </div>
-                        <div style={{ fontSize: 11, fontWeight: 600, color: isSelected ? '#2563EB' : C.textSecondary, whiteSpace: 'nowrap' }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: card.color, flexShrink: 0 }} />
+                        <span style={{ fontSize: 13, fontWeight: 700, color: isSelected ? (isLight ? '#0F172A' : '#F8FAFC') : C.textSecondary }}>
+                          {card.count}
+                        </span>
+                        <span style={{ fontSize: 11.5, fontWeight: isSelected ? 600 : 500, color: isSelected ? (isLight ? '#0F172A' : '#F8FAFC') : C.textSecondary, whiteSpace: 'nowrap' }}>
                           {card.label}
-                        </div>
-                      </div>
+                        </span>
+                      </button>
                     )
                   })}
                 </div>
               </div>
 
-              {/* 2. Filter Bar Card matching screenshot */}
+              {/* 2. Minimalist Fast Filter Bar (Slack & Linear Inspired) */}
               <div style={{
                 backgroundColor: isLight ? '#FFFFFF' : C.surface,
                 border: `1px solid ${C.border}`,
                 borderRadius: 10,
-                padding: '12px 18px',
+                padding: '10px 16px',
                 marginBottom: 16,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 flexWrap: 'wrap',
-                gap: 12,
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                gap: 10,
+                boxShadow: isLight ? '0 1px 2px rgba(0,0,0,0.03)' : 'none',
                 flexShrink: 0
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', flex: 1 }}>
-                  {/* Requisition dropdown */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1 }}>
+                  {/* Search Input — Sleek Linear-style */}
+                  <div style={{ position: 'relative', minWidth: 260, flex: '1 1 260px', maxWidth: 360 }}>
+                    <span style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8', display: 'flex', pointerEvents: 'none' }}>
+                      <IconSearch />
+                    </span>
+                    <input
+                      value={streamSearch}
+                      onChange={e => { setStreamSearch(e.target.value); setTablePage(1); }}
+                      placeholder="Search candidates, skills, role (e.g. Java, AWS)..."
+                      style={{
+                        width: '100%',
+                        backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
+                        border: `1px solid ${C.border}`,
+                        borderRadius: 8,
+                        padding: '7px 12px 7px 34px',
+                        fontSize: 12.5,
+                        fontWeight: 500,
+                        color: C.textPrimary,
+                        outline: 'none',
+                        transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+                        boxSizing: 'border-box'
+                      }}
+                      onFocus={e => { e.target.style.borderColor = '#4A154B'; e.target.style.boxShadow = '0 0 0 2px rgba(74, 21, 75, 0.1)' }}
+                      onBlur={e => { e.target.style.borderColor = C.border; e.target.style.boxShadow = 'none' }}
+                    />
+                  </div>
+
+                  {/* Requisition Dropdown */}
                   <div style={{ position: 'relative' }}>
                     <select
                       value={streamReqFilter}
                       onChange={e => { setStreamReqFilter(e.target.value); setTablePage(1); }}
                       style={{
                         backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
-                        border: `1px solid ${C.border}`,
+                        border: `1px solid ${streamReqFilter !== 'all' ? '#4A154B' : C.border}`,
                         borderRadius: 8,
-                        padding: '8px 28px 8px 32px',
-                        fontSize: 12.5,
-                        fontWeight: 700,
-                        color: C.textPrimary,
+                        padding: '7px 26px 7px 11px',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: streamReqFilter !== 'all' ? '#4A154B' : C.textPrimary,
                         outline: 'none',
                         cursor: 'pointer',
                         appearance: 'none',
                         WebkitAppearance: 'none'
                       }}
                     >
-                      <option value="all">All Open Requisitions</option>
+                      <option value="all">All Requisitions</option>
                       {openJobsList.map(j => (
                         <option key={j.id} value={j.id}>
-                          Req #{j.id} · {j.title.slice(0, 24)}...
+                          Req #{j.id} · {j.title.slice(0, 26)}
                         </option>
                       ))}
                     </select>
-                    
-                    <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', fontSize: 11, color: C.textSecondary }}>
+                    <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', fontSize: 10, color: C.textSecondary }}>
                       ⌵
                     </span>
                   </div>
 
-                  {/* Search Input */}
-                  <div style={{ position: 'relative', width: 220 }}>
-                    <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8', display: 'flex', pointerEvents: 'none' }}>
-                      <IconSearch />
-                    </span>
-                    <input
-                      value={streamSearch}
-                      onChange={e => { setStreamSearch(e.target.value); setTablePage(1); }}
-                      placeholder="Search or Boolean (Java AND Spring)..."
+                  {/* Skills Filter Dropdown */}
+                  <div style={{ position: 'relative' }}>
+                    <select
+                      value={filterSkill}
+                      onChange={e => { setFilterSkill(e.target.value); setTablePage(1); }}
                       style={{
-                        width: '100%',
                         backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
-                        border: `1px solid ${C.border}`,
+                        border: `1px solid ${filterSkill !== 'all' ? '#4A154B' : C.border}`,
                         borderRadius: 8,
-                        padding: '8px 12px 8px 32px',
-                        fontSize: 12.5,
-                        color: C.textPrimary,
+                        padding: '7px 24px 7px 11px',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: filterSkill !== 'all' ? '#4A154B' : C.textPrimary,
                         outline: 'none',
-                        boxSizing: 'border-box'
+                        cursor: 'pointer',
+                        appearance: 'none',
+                        WebkitAppearance: 'none'
                       }}
-                    />
+                    >
+                      <option value="all">All Skills</option>
+                      <option value=".net">.NET / C#</option>
+                      <option value="java">Java / Spring</option>
+                      <option value="python">Python / AI</option>
+                      <option value="react">React / Node</option>
+                      <option value="aws">AWS / Cloud</option>
+                      <option value="sql">SQL / Data</option>
+                      <option value="selenium">QA / Test</option>
+                    </select>
+                    <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', fontSize: 10, color: C.textSecondary }}>
+                      ⌵
+                    </span>
                   </div>
 
-                  {/* Location dropdown */}
-                  <select
-                    value={filterLocation}
-                    onChange={e => { setFilterLocation(e.target.value); setTablePage(1); }}
-                    style={{
-                      backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
-                      border: `1px solid ${C.border}`,
-                      borderRadius: 8,
-                      padding: '8px 12px',
-                      fontSize: 12.5,
-                      fontWeight: 600,
-                      color: C.textPrimary,
-                      outline: 'none',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <option value="all">Location ⌵</option>
-                    <option value="remote">Remote</option>
-                    <option value="wisconsin">Wisconsin</option>
-                    <option value="north carolina">North Carolina</option>
-                    <option value="tennessee">Tennessee</option>
-                    <option value="iowa">Iowa</option>
-                    <option value="texas">Texas</option>
-                  </select>
-
-                  {/* Skills dropdown */}
-                  <select
-                    value={filterSkill}
-                    onChange={e => { setFilterSkill(e.target.value); setTablePage(1); }}
-                    style={{
-                      backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
-                      border: `1px solid ${C.border}`,
-                      borderRadius: 8,
-                      padding: '8px 12px',
-                      fontSize: 12.5,
-                      fontWeight: 600,
-                      color: C.textPrimary,
-                      outline: 'none',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <option value="all">Skills ⌵</option>
-                    <option value=".net">.NET / C#</option>
-                    <option value="java">Java / Spring Boot</option>
-                    <option value="python">Python</option>
-                    <option value="react">React / Frontend</option>
-                    <option value="angular">Angular</option>
-                    <option value="vue">Vue</option>
-                    <option value="aws">AWS / Cloud</option>
-                    <option value="sql">SQL / Database</option>
-                    <option value="selenium">QA / Selenium</option>
-                  </select>
-
-                  {/* Match % dropdown */}
-                  <select
-                    value={filterMatch}
-                    onChange={e => { setFilterMatch(e.target.value); setTablePage(1); }}
-                    style={{
-                      backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
-                      border: `1px solid ${C.border}`,
-                      borderRadius: 8,
-                      padding: '8px 12px',
-                      fontSize: 12.5,
-                      fontWeight: 600,
-                      color: C.textPrimary,
-                      outline: 'none',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <option value="all">Match % ⌵</option>
-                    <option value="90">90%+ Excellent</option>
-                    <option value="70">70%+ Good</option>
-                    <option value="50">50%+ Average</option>
-                    <option value="under_50">Under 50% Low</option>
-                  </select>
-
-                  {/* Recruiter dropdown (Always Accessible) */}
-                  <select
-                    value={filterRecruiter}
-                    onChange={e => { setFilterRecruiter(e.target.value); setTablePage(1); }}
-                    style={{
-                      backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
-                      border: filterRecruiter !== 'all' ? '1px solid #2563EB' : `1px solid ${C.border}`,
-                      borderRadius: 8,
-                      padding: '8px 12px',
-                      fontSize: 12.5,
-                      fontWeight: 600,
-                      color: filterRecruiter !== 'all' ? '#2563EB' : C.textPrimary,
-                      outline: 'none',
-                      cursor: 'pointer'
-                    }}
-                    title="Filter candidates by assigned recruiter"
-                  >
-                    <option value="all">Recruiter: All (All Recruiters) ⌵</option>
-                      {availableRecruiters.map(r => (
-                        <option key={r.id || r._id || r.email} value={r.name || r.email}>
-                          {r.name} ({r.role || 'Recruiter'})
-                        </option>
-                      ))}
+                  {/* Match % Filter Dropdown */}
+                  <div style={{ position: 'relative' }}>
+                    <select
+                      value={filterMatch}
+                      onChange={e => { setFilterMatch(e.target.value); setTablePage(1); }}
+                      style={{
+                        backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
+                        border: `1px solid ${filterMatch !== 'all' ? '#0D9488' : C.border}`,
+                        borderRadius: 8,
+                        padding: '7px 24px 7px 11px',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: filterMatch !== 'all' ? '#0D9488' : C.textPrimary,
+                        outline: 'none',
+                        cursor: 'pointer',
+                        appearance: 'none',
+                        WebkitAppearance: 'none'
+                      }}
+                    >
+                      <option value="all">Any Match %</option>
+                      <option value="90">90%+ Excellent</option>
+                      <option value="70">70%+ Good</option>
+                      <option value="50">50%+ Average</option>
                     </select>
+                    <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', fontSize: 10, color: C.textSecondary }}>
+                      ⌵
+                    </span>
+                  </div>
 
-                  {/* Source Channel dropdown */}
-                  <select
-                    value={filterSource}
-                    onChange={e => { setFilterSource(e.target.value); setTablePage(1); }}
-                    style={{
-                      backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
-                      border: filterSource !== 'all' ? '1px solid #2563EB' : `1px solid ${C.border}`,
-                      borderRadius: 8,
-                      padding: '8px 12px',
-                      fontSize: 12.5,
-                      fontWeight: 600,
-                      color: filterSource !== 'all' ? '#2563EB' : C.textPrimary,
-                      outline: 'none',
-                      cursor: 'pointer'
-                    }}
-                    title="Filter candidates by acquisition channel"
-                  >
-                    <option value="all">Source: All ⌵</option>
-                    <option value="mobile">Applied via Mobile App</option>
-                    <option value="careers">Job Sites / Careers Portal</option>
-                    <option value="email">Email Ingest</option>
-                    <option value="spam">Spam Recovered</option>
-                    <option value="manual">Manual Entry</option>
-                    <option value="vendor">Vendor Bench</option>
-                  </select>
+                  {/* Location Filter Dropdown */}
+                  <div style={{ position: 'relative' }}>
+                    <select
+                      value={filterLocation}
+                      onChange={e => { setFilterLocation(e.target.value); setTablePage(1); }}
+                      style={{
+                        backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
+                        border: `1px solid ${filterLocation !== 'all' ? '#4A154B' : C.border}`,
+                        borderRadius: 8,
+                        padding: '7px 24px 7px 11px',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: filterLocation !== 'all' ? '#4A154B' : C.textPrimary,
+                        outline: 'none',
+                        cursor: 'pointer',
+                        appearance: 'none',
+                        WebkitAppearance: 'none'
+                      }}
+                    >
+                      <option value="all">All Locations</option>
+                      <option value="remote">Remote, US</option>
+                      <option value="texas">Texas</option>
+                      <option value="wisconsin">Wisconsin</option>
+                      <option value="north carolina">North Carolina</option>
+                      <option value="iowa">Iowa</option>
+                    </select>
+                    <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', fontSize: 10, color: C.textSecondary }}>
+                      ⌵
+                    </span>
+                  </div>
 
-                  {/* State / Public Sector Department Experience dropdown */}
-                  <select
-                    value={filterGovDept}
-                    onChange={e => { setFilterGovDept(e.target.value); setTablePage(1); }}
-                    style={{
-                      backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
-                      border: filterGovDept !== 'all' ? '1px solid #059669' : `1px solid ${C.border}`,
-                      borderRadius: 8,
-                      padding: '8px 12px',
-                      fontSize: 12.5,
-                      fontWeight: 600,
-                      color: filterGovDept !== 'all' ? '#059669' : C.textPrimary,
-                      outline: 'none',
-                      cursor: 'pointer'
-                    }}
-                    title="Filter candidates by State & Public Sector Department Experience"
-                  >
-                    <option value="all">Gov / Dept: All</option>
-                    <option value="any_gov">Any Public Sector / State Agency</option>
-                    <option value="health">Dept of Health / DSHS / HHSC</option>
-                    <option value="transportation">TxDOT / Transportation</option>
-                    <option value="behavioral">DBHDS / Behavioral Health</option>
-                    <option value="state_tx">State of Texas Agencies</option>
-                  </select>
-
-                  {/* Local Candidate Fit filter dropdown */}
-                  <select
-                    value={filterLocalFit}
-                    onChange={e => { setFilterLocalFit(e.target.value); setTablePage(1); }}
-                    style={{
-                      backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
-                      border: filterLocalFit !== 'all' ? '1px solid #059669' : `1px solid ${C.border}`,
-                      borderRadius: 8,
-                      padding: '8px 12px',
-                      fontSize: 12.5,
-                      fontWeight: 600,
-                      color: filterLocalFit !== 'all' ? '#059669' : C.textPrimary,
-                      outline: 'none',
-                      cursor: 'pointer'
-                    }}
-                    title="Filter candidates by location proximity to requisition (Local vs Non-Local)"
-                  >
-                    <option value="all">Local Fit: All</option>
-                    <option value="confirmed_local">Confirmed Local (Exact Match)</option>
-                    <option value="remote_ok">Remote / Nationwide Eligible</option>
-                    <option value="relocation_needed">Non-Local / Relocation Needed</option>
-                  </select>
-
-                  {/* Matched Requisition Source dropdown (InfoOrigin vs Direct Client / COOLSOFT) */}
-                  <select
-                    value={filterMatchedClient}
-                    onChange={e => { setFilterMatchedClient(e.target.value); setTablePage(1); }}
-                    style={{
-                      backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
-                      border: filterMatchedClient !== 'all' ? '1px solid #7C3AED' : `1px solid ${C.border}`,
-                      borderRadius: 8,
-                      padding: '8px 12px',
-                      fontSize: 12.5,
-                      fontWeight: 600,
-                      color: filterMatchedClient !== 'all' ? '#7C3AED' : C.textPrimary,
-                      outline: 'none',
-                      cursor: 'pointer'
-                    }}
-                    title="Filter candidates by Matched Client (Direct Client vs InfoOrigin)"
-                  >
-                    <option value="all">Matched Client: All Sources ⌵</option>
-                    <option value="direct_coolsoft">Direct Client / COOLSOFT Only</option>
-                    <option value="infoorigin">InfoOrigin Requisitions Only</option>
-                    <option value="talent_pool">General Talent Pool (No Match)</option>
-                  </select>
-
-                  {/* Toggle InfoOrigin Match Display */}
-                  <button
-                    type="button"
-                    onClick={() => setHideInfoOriginMatches(!hideInfoOriginMatches)}
-                    title={hideInfoOriginMatches ? 'Click to show InfoOrigin matches' : 'Click to hide InfoOrigin matches and display as Direct / Talent Pool'}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      backgroundColor: hideInfoOriginMatches ? '#FEF3C7' : (isLight ? '#F8FAFC' : C.inputBg),
-                      border: hideInfoOriginMatches ? '1px solid #F59E0B' : `1px solid ${C.border}`,
-                      borderRadius: 8,
-                      padding: '8px 12px',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: hideInfoOriginMatches ? '#B45309' : C.textSecondary,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    <span>{hideInfoOriginMatches ? 'InfoOrigin Match: Hidden' : 'InfoOrigin Match: Visible'}</span>
-                  </button>
-
-                  {/* Clear text button */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStreamReqFilter('all')
-                      setStreamSearch('')
-                      setFilterLocation('all')
-                      setFilterSkill('all')
-                      setFilterMatch('all')
-                      setFilterRecruiter('all')
-                      setFilterSource('all')
-                      setFilterGovDept('all')
-                      setFilterLocalFit('all')
-                      setFilterMatchedClient('all')
-                      setHideInfoOriginMatches(false)
-                      setTableCategory('all')
-                      setTablePage(1)
-                    }}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: C.textSecondary,
-                      fontSize: 12.5,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      padding: '6px 10px',
-                      borderRadius: 6
-                    }}
-                  >
-                    Clear
-                  </button>
+                  {/* Reset Filters Link */}
+                  {(streamReqFilter !== 'all' || streamSearch || filterLocation !== 'all' || filterSkill !== 'all' || filterMatch !== 'all' || filterRecruiter !== 'all' || filterSource !== 'all' || filterGovDept !== 'all' || filterLocalFit !== 'all') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStreamReqFilter('all')
+                        setStreamSearch('')
+                        setFilterLocation('all')
+                        setFilterSkill('all')
+                        setFilterMatch('all')
+                        setFilterRecruiter('all')
+                        setFilterSource('all')
+                        setFilterGovDept('all')
+                        setFilterLocalFit('all')
+                        setFilterMatchedClient('all')
+                        setHideInfoOriginMatches(false)
+                        setTableCategory('all')
+                        setTablePage(1)
+                      }}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#64748B',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        padding: '4px 8px',
+                        borderRadius: 6,
+                        textDecoration: 'underline'
+                      }}
+                    >
+                      Reset
+                    </button>
+                  )}
                 </div>
 
+                {/* Right side: Quick Refresh */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {/* Dedicated Fast Refresh Button */}
                   <button
                     type="button"
                     onClick={handleQuickRefresh}
                     disabled={isTableRefreshing}
                     style={{
-                      backgroundColor: isLight ? '#FFFFFF' : C.cardBg,
-                      color: '#2563EB',
-                      border: '1px solid #93C5FD',
+                      backgroundColor: isLight ? '#FFFFFF' : C.inputBg,
+                      color: isTableRefreshing ? '#94A3B8' : '#0F172A',
+                      border: `1px solid ${C.border}`,
                       borderRadius: 8,
-                      padding: '8px 14px',
-                      fontSize: 12.5,
-                      fontWeight: 700,
+                      padding: '7px 12px',
+                      fontSize: 12,
+                      fontWeight: 600,
                       cursor: isTableRefreshing ? 'wait' : 'pointer',
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: 6,
-                      boxShadow: '0 1px 3px rgba(37,99,235,0.1)'
+                      transition: 'all 0.15s ease'
                     }}
-                    title="Refresh candidate stream and sync latest resumes"
+                    title="Sync candidate stream"
+                    onMouseEnter={e => { if (!isTableRefreshing) e.currentTarget.style.backgroundColor = isLight ? '#F1F5F9' : '#1E293B' }}
+                    onMouseLeave={e => { if (!isTableRefreshing) e.currentTarget.style.backgroundColor = isLight ? '#FFFFFF' : C.inputBg }}
                   >
                     <svg
-                      width="14"
-                      height="14"
+                      width="13"
+                      height="13"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -11507,29 +11390,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       <polyline points="1 20 1 14 7 14"></polyline>
                       <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
                     </svg>
-                    <span>{isTableRefreshing ? 'Refreshing...' : 'Refresh'}</span>
-                  </button>
-
-                  {/* Search Button */}
-                  <button
-                    type="button"
-                    onClick={() => setTablePage(1)}
-                    style={{
-                      backgroundColor: '#2563EB',
-                      color: '#FFFFFF',
-                      border: 'none',
-                      borderRadius: 8,
-                      padding: '8px 18px',
-                      fontSize: 12.5,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      boxShadow: '0 2px 6px rgba(37,99,235,0.25)'
-                    }}
-                  >
-                    <IconSearch /> <span>Search</span>
+                    <span>{isTableRefreshing ? 'Syncing...' : 'Sync'}</span>
                   </button>
                 </div>
               </div>
@@ -11668,23 +11529,24 @@ export default function RecruiterInbox({ defaultViewMode }) {
                       background: ${isLight ? '#64748B' : '#64748B'};
                     }
                   `}</style>
-                  <table style={{ width: '100%', minWidth: 1080, borderCollapse: 'collapse', textAlign: 'left', fontSize: 12.5 }}>
+                  <table style={{ width: '100%', minWidth: 1040, borderCollapse: 'collapse', textAlign: 'left', fontSize: 12.5 }}>
                     <thead>
                       <tr style={{
-                        backgroundColor: isLight ? '#F8FAFC' : '#1E293B',
+                        backgroundColor: isLight ? '#F8FAFC' : '#111827',
                         borderBottom: `1px solid ${C.border}`,
-                        color: '#64748B',
-                        fontSize: 11.5,
+                        color: isLight ? '#475569' : '#94A3B8',
+                        fontSize: 11,
                         fontWeight: 700,
                         textTransform: 'uppercase',
-                        letterSpacing: '0.4px',
+                        letterSpacing: '0.5px',
                         position: 'sticky',
                         top: 0,
                         zIndex: 10
                       }}>
-                        <th style={{ padding: '8px 8px', width: 36, minWidth: 36, maxWidth: 36, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>
+                        <th style={{ padding: '9px 10px', width: 36, minWidth: 36, maxWidth: 36, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#111827', borderBottom: `1px solid ${C.border}` }}>
                           <input
                             type="checkbox"
+                            style={{ cursor: 'pointer', accentColor: '#4A154B' }}
                             checked={selectedCardIds.size === filteredCandidates.length && filteredCandidates.length > 0}
                             onChange={(e) => {
                               if (e.target.checked) {
@@ -11695,16 +11557,15 @@ export default function RecruiterInbox({ defaultViewMode }) {
                             }}
                           />
                         </th>
-                        <th style={{ padding: '8px 10px', width: 200, minWidth: 180, maxWidth: 220, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Candidate</th>
-                        <th style={{ padding: '8px 10px', width: 180, minWidth: 160, maxWidth: 200, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Current Role & Experience</th>
-                        <th style={{ padding: '8px 10px', width: 210, minWidth: 190, maxWidth: 240, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>AI Matched Requirement</th>
-                        <th style={{ padding: '8px 8px', width: 85, minWidth: 80, maxWidth: 95, textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Match %</th>
-                        <th style={{ padding: '8px 10px', width: 140, minWidth: 120, maxWidth: 160, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Key Skills</th>
-                        <th style={{ padding: '8px 10px', width: 120, minWidth: 105, maxWidth: 140, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Location</th>
-                        <th style={{ padding: '8px 10px', width: 95, minWidth: 85, maxWidth: 110, textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Relocation</th>
-                        <th style={{ padding: '8px 8px', width: 85, minWidth: 75, maxWidth: 95, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Received</th>
-                        <th style={{ padding: '8px 8px', width: 90, minWidth: 80, maxWidth: 100, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Source</th>
-                        <th style={{ padding: '8px 10px', width: 220, minWidth: 200, textAlign: 'right', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderBottom: `1px solid ${C.border}`, boxShadow: `0 1px 0 ${C.border}` }}>Actions</th>
+                        <th style={{ padding: '9px 12px', width: 210, minWidth: 190, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#111827', borderBottom: `1px solid ${C.border}` }}>Candidate</th>
+                        <th style={{ padding: '9px 12px', width: 180, minWidth: 160, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#111827', borderBottom: `1px solid ${C.border}` }}>Current Role & Exp</th>
+                        <th style={{ padding: '9px 12px', width: 220, minWidth: 200, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#111827', borderBottom: `1px solid ${C.border}` }}>AI Requirement Match</th>
+                        <th style={{ padding: '9px 8px', width: 90, minWidth: 80, textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#111827', borderBottom: `1px solid ${C.border}` }}>Match %</th>
+                        <th style={{ padding: '9px 12px', width: 140, minWidth: 120, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#111827', borderBottom: `1px solid ${C.border}` }}>Key Skills</th>
+                        <th style={{ padding: '9px 12px', width: 120, minWidth: 100, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#111827', borderBottom: `1px solid ${C.border}` }}>Location</th>
+                        <th style={{ padding: '9px 10px', width: 85, minWidth: 75, textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#111827', borderBottom: `1px solid ${C.border}` }}>Relocate</th>
+                        <th style={{ padding: '9px 8px', width: 80, minWidth: 70, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#111827', borderBottom: `1px solid ${C.border}` }}>Received</th>
+                        <th style={{ padding: '9px 12px', width: 190, minWidth: 170, textAlign: 'right', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#111827', borderBottom: `1px solid ${C.border}` }}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -11738,18 +11599,19 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   setActiveTobuTab('resume')
                                 }}
                                 style={{
-                                  borderBottom: `1px solid ${C.border}`,
+                                  borderBottom: `1px solid ${isLight ? '#F1F5F9' : '#1E293B'}`,
                                   backgroundColor: isSelected
-                                    ? (isLight ? '#EFF6FF' : 'rgba(37,99,235,0.12)')
-                                    : (isHovered ? (isLight ? '#F1F5F9' : '#1E293B') : 'transparent'),
+                                    ? (isLight ? '#FDF4FF' : 'rgba(74, 21, 75, 0.16)')
+                                    : (isHovered ? (isLight ? '#F8FAFC' : '#1E293B') : 'transparent'),
                                   cursor: 'pointer',
-                                  transition: 'background-color 0.15s ease'
+                                  transition: 'background-color 0.12s ease'
                                 }}
                               >
                                 {/* 1. Checkbox — stopPropagation so row click doesn't trigger */}
-                                <td style={{ padding: '8px 8px' }} onClick={e => e.stopPropagation()}>
+                                <td style={{ padding: '8px 10px' }} onClick={e => e.stopPropagation()}>
                                   <input
                                     type="checkbox"
+                                    style={{ cursor: 'pointer', accentColor: '#4A154B' }}
                                     checked={isSelected}
                                     onChange={(e) => toggleSelectCard(candId, e)}
                                   />
@@ -11987,7 +11849,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   {c.location || 'Remote / US'}
                                 </td>
 
-                                {/* 8. Relocation (NEW Column) */}
+                                {/* 8. Relocation */}
                                 <td style={{ padding: '8px 10px', textAlign: 'center' }}>
                                   {(() => {
                                     const rel = String(c.relocation || 'Open').trim();
@@ -11995,12 +11857,12 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                     return (
                                       <span style={{
                                         fontSize: 10.5,
-                                        fontWeight: 700,
-                                        backgroundColor: isOpen ? '#ECFDF5' : '#F1F5F9',
-                                        color: isOpen ? '#047857' : '#475569',
-                                        border: `1px solid ${isOpen ? '#A7F3D0' : '#E2E8F0'}`,
-                                        padding: '2px 7px',
-                                        borderRadius: 9999
+                                        fontWeight: 600,
+                                        backgroundColor: isOpen ? '#F0FDF4' : '#F1F5F9',
+                                        color: isOpen ? '#15803D' : '#64748B',
+                                        border: `1px solid ${isOpen ? '#BBF7D0' : '#E2E8F0'}`,
+                                        padding: '2px 8px',
+                                        borderRadius: 6
                                       }}>
                                         {isOpen ? 'Open' : 'No'}
                                       </span>
@@ -12009,7 +11871,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                 </td>
 
                                 {/* 9. Received Date */}
-                                <td style={{ padding: '8px 8px', fontSize: 11.5, color: '#475569', whiteSpace: 'nowrap' }}>
+                                <td style={{ padding: '8px 8px', fontSize: 11, color: '#64748B', whiteSpace: 'nowrap' }}>
                                   {(() => {
                                     const raw = c.createdAt || c.resumeUploadDate || c.timestamp
                                     if (raw) {
@@ -12022,37 +11884,35 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   })()}
                                 </td>
 
-                                {/* 10. Source Badge */}
-                                <td style={{ padding: '8px 8px' }}>
-                                  {renderSourceBadge(c)}
-                                </td>
-
-                                {/* 11. Actions: Message + Resume + ⋮ */}
-                                <td style={{ padding: '8px 10px', textAlign: 'right', position: 'relative' }} onClick={e => e.stopPropagation()}>
-                                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                {/* 10. Actions: Clean Slack-style minimal action buttons */}
+                                <td style={{ padding: '8px 12px', textAlign: 'right', position: 'relative' }} onClick={e => e.stopPropagation()}>
+                                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                                     <button
                                       type="button"
                                       onClick={() => handleOpenCandidateChat(c)}
                                       style={{
-                                        backgroundColor: '#F0FDF4',
-                                        color: '#166534',
-                                        border: '1px solid #BBF7D0',
+                                        backgroundColor: 'transparent',
+                                        color: '#0F172A',
+                                        border: '1px solid #E2E8F0',
                                         borderRadius: 6,
                                         padding: '4px 8px',
                                         fontSize: 11,
-                                        fontWeight: 700,
+                                        fontWeight: 600,
                                         cursor: 'pointer',
                                         display: 'inline-flex',
                                         alignItems: 'center',
                                         gap: 4,
-                                        whiteSpace: 'nowrap'
+                                        whiteSpace: 'nowrap',
+                                        transition: 'all 0.15s ease'
                                       }}
+                                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#F8FAFC'; e.currentTarget.style.borderColor = '#CBD5E1' }}
+                                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.borderColor = '#E2E8F0' }}
                                       title="Message Candidate"
                                     >
                                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                                       </svg>
-                                      <span>Message</span>
+                                      <span>Chat</span>
                                     </button>
 
                                     <button
@@ -12063,19 +11923,23 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                         setActiveTobuTab('resume')
                                       }}
                                       style={{
-                                        backgroundColor: '#EFF6FF',
-                                        color: '#1D4ED8',
-                                        border: '1px solid #BFDBFE',
+                                        backgroundColor: '#4A154B',
+                                        color: '#FFFFFF',
+                                        border: 'none',
                                         borderRadius: 6,
-                                        padding: '4px 8px',
+                                        padding: '4px 9px',
                                         fontSize: 11,
-                                        fontWeight: 700,
+                                        fontWeight: 600,
                                         cursor: 'pointer',
                                         display: 'inline-flex',
                                         alignItems: 'center',
                                         gap: 4,
-                                        whiteSpace: 'nowrap'
+                                        whiteSpace: 'nowrap',
+                                        boxShadow: '0 1px 2px rgba(74, 21, 75, 0.2)',
+                                        transition: 'all 0.15s ease'
                                       }}
+                                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#611f69' }}
+                                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#4A154B' }}
                                       title="View Candidate Resume"
                                     >
                                       <IconFileText />
