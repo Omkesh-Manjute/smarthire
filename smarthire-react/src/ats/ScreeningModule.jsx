@@ -2,7 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react'
 
 const API = '/api/screening'
 
-export default function ScreeningModule({ jobsList = [], allCandidates = [] }) {
+export default function ScreeningModule({ jobsList = [], allCandidates = [], currentUser = null, isSuperAdmin = false }) {
+  // Derive current user identity for role-based session filtering
+  const currentUserEmail = (currentUser?.email || '').toLowerCase().trim()
+  const currentUserRef = (currentUser?.refCode || '').toLowerCase().trim()
+  const currentUserName = (currentUser?.name || '').toLowerCase().trim()
   const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState('all') // 'all', 'submitted', 'shortlisted', 'reviewed', 'rejected'
@@ -191,6 +195,57 @@ SmartHire Recruitment Team`
     return () => clearInterval(interval)
   }, [fetchSessions])
 
+  // ─── Admin-only: Delete single session ────────────────────────────────────
+  const [deletingId, setDeletingId] = useState(null)
+  const handleDeleteSession = async (session, e) => {
+    if (e) e.stopPropagation()
+    const name = session.candidateName || session.sessionId
+    if (!window.confirm(`Delete screening session for "${name}"?\n\nThis will permanently remove the session, all responses, and AI transcripts. This action cannot be undone.`)) return
+    setDeletingId(session.sessionId)
+    try {
+      const res = await fetch(`${API}/${session.sessionId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}` }
+      })
+      const data = await res.json()
+      if (data.success) {
+        setSessions(prev => prev.filter(s => s.sessionId !== session.sessionId))
+      } else {
+        alert(data.message || 'Failed to delete session.')
+      }
+    } catch (err) {
+      alert('Network error while deleting session: ' + err.message)
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  // ─── Admin-only: Clear all visible sessions ────────────────────────────────
+  const [isClearingAll, setIsClearingAll] = useState(false)
+  const handleClearAllSessions = async () => {
+    if (filteredSessions.length === 0) return
+    if (!window.confirm(`Clear ALL ${filteredSessions.length} screening sessions currently visible?\n\nThis will permanently delete all sessions, responses, and AI transcripts. This action CANNOT be undone.`)) return
+    if (!window.confirm(`FINAL CONFIRMATION: You are about to permanently delete ${filteredSessions.length} screening sessions. Are you absolutely sure?`)) return
+    setIsClearingAll(true)
+    let deletedCount = 0
+    for (const session of filteredSessions) {
+      try {
+        const res = await fetch(`${API}/${session.sessionId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}` }
+        })
+        const data = await res.json()
+        if (data.success) {
+          deletedCount++
+          setSessions(prev => prev.filter(s => s.sessionId !== session.sessionId))
+        }
+      } catch (_) {}
+    }
+    setIsClearingAll(false)
+    alert(`Successfully cleared ${deletedCount} screening session${deletedCount !== 1 ? 's' : ''}.`)
+  }
+
+
   // Handle Create Campaign
   const handleCreateCampaign = async () => {
     if (!selectedJobId) {
@@ -212,7 +267,10 @@ SmartHire Recruitment Team`
           campaignTitle,
           questions,
           allowedFormats,
-          maxDuration
+          maxDuration,
+          createdByEmail: currentUserEmail || '',
+          createdByRef: currentUserRef || '',
+          createdByName: currentUserName || ''
         })
       })
 
@@ -672,8 +730,27 @@ SmartHire Recruitment Team`
     }
   }
 
-  // Filtered Sessions
-  const filteredSessions = sessions.filter(s => {
+
+  // ─── Role-based session visibility ────────────────────────────────────────
+  // superadmin / admin → sees ALL sessions
+  // manager / recruiter → sees only sessions they created (by email or refCode)
+  const visibleSessions = isSuperAdmin
+    ? sessions
+    : sessions.filter(s => {
+        if (!s) return false
+        const sessionCreatorEmail = (s.createdByEmail || '').toLowerCase().trim()
+        const sessionCreatorRef = (s.createdByRef || '').toLowerCase().trim()
+        const sessionCreatorName = (s.createdByName || '').toLowerCase().trim()
+        if (currentUserEmail && sessionCreatorEmail && sessionCreatorEmail === currentUserEmail) return true
+        if (currentUserRef && sessionCreatorRef && sessionCreatorRef === currentUserRef) return true
+        if (currentUserName && sessionCreatorName && sessionCreatorName === currentUserName) return true
+        // Fallback: if session has no creator metadata at all, show to everyone (legacy data)
+        if (!sessionCreatorEmail && !sessionCreatorRef && !sessionCreatorName) return true
+        return false
+      })
+
+  // Filtered Sessions (from visible set, after search/status/format filters)
+  const filteredSessions = visibleSessions.filter(s => {
     if (!s) return false
 
     // Search query
@@ -704,11 +781,11 @@ SmartHire Recruitment Team`
     return true
   })
 
-  // KPI Metrics
-  const totalSubmissions = sessions.filter(s => s.status === 'submitted' || s.status === 'shortlisted' || s.screeningComplete).length
-  const videoSubmissions = sessions.filter(s => (s.responses || []).some(r => r.format === 'video')).length
-  const shortlistedCount = sessions.filter(s => s.status === 'shortlisted' || (s.recruiterRating && s.recruiterRating >= 4)).length
-  const totalCampaigns = sessions.length
+  // KPI Metrics (scoped to visibleSessions so each recruiter sees their own stats)
+  const totalSubmissions = visibleSessions.filter(s => s.status === 'submitted' || s.status === 'shortlisted' || s.screeningComplete).length
+  const videoSubmissions = visibleSessions.filter(s => (s.responses || []).some(r => r.format === 'video')).length
+  const shortlistedCount = visibleSessions.filter(s => s.status === 'shortlisted' || (s.recruiterRating && s.recruiterRating >= 4)).length
+  const totalCampaigns = visibleSessions.length
 
   return (
     <div style={styles.container}>
@@ -724,16 +801,47 @@ SmartHire Recruitment Team`
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            setShowCreateModal(true)
-            setCreatedLinkResult(null)
-          }}
-          style={styles.createCampaignBtn}
-        >
-          + Create Screening Link
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {isSuperAdmin && visibleSessions.length > 0 && (
+            <button
+              type="button"
+              onClick={handleClearAllSessions}
+              disabled={isClearingAll}
+              title="Admin only: Permanently delete all visible screening sessions"
+              style={{
+                padding: '9px 16px',
+                background: isClearingAll ? '#f1f5f9' : 'transparent',
+                color: '#ef4444',
+                border: '1px solid #fecaca',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: '600',
+                cursor: isClearingAll ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={e => { if (!isClearingAll) { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.borderColor = '#ef4444' } }}
+              onMouseLeave={e => { if (!isClearingAll) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#fecaca' } }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4h6v2" />
+              </svg>
+              {isClearingAll ? 'Clearing...' : `Clear All (${filteredSessions.length})`}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              setShowCreateModal(true)
+              setCreatedLinkResult(null)
+            }}
+            style={styles.createCampaignBtn}
+          >
+            + Create Screening Link
+          </button>
+        </div>
       </div>
 
       {/* ─── 4 STATS KPI CARDS ────────────────────────────────────────────── */}
@@ -1031,6 +1139,49 @@ SmartHire Recruitment Team`
                           >
                             Review
                           </button>
+                          {isSuperAdmin && (
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteSession(session, e)}
+                              disabled={deletingId === session.sessionId}
+                              title="Admin only: Permanently delete this screening session"
+                              style={{
+                                padding: '5px 8px',
+                                background: 'transparent',
+                                color: deletingId === session.sessionId ? '#94a3b8' : '#ef4444',
+                                border: '1px solid',
+                                borderColor: deletingId === session.sessionId ? '#e2e8f0' : '#fecaca',
+                                borderRadius: '6px',
+                                fontSize: '12px',
+                                cursor: deletingId === session.sessionId ? 'not-allowed' : 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                transition: 'all 0.15s ease'
+                              }}
+                              onMouseEnter={e => {
+                                if (deletingId !== session.sessionId) {
+                                  e.currentTarget.style.background = '#fef2f2'
+                                  e.currentTarget.style.borderColor = '#ef4444'
+                                }
+                              }}
+                              onMouseLeave={e => {
+                                if (deletingId !== session.sessionId) {
+                                  e.currentTarget.style.background = 'transparent'
+                                  e.currentTarget.style.borderColor = '#fecaca'
+                                }
+                              }}
+                            >
+                              {deletingId === session.sessionId ? (
+                                <span style={{ fontSize: '10px', padding: '0 2px' }}>...</span>
+                              ) : (
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <polyline points="3 6 5 6 21 6" />
+                                  <path d="M19 6l-1 14H6L5 6" />
+                                  <path d="M9 6V4h6v2" />
+                                </svg>
+                              )}
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -1447,6 +1598,36 @@ SmartHire Recruitment Team`
                 >
                   Shortlist Candidate
                 </button>
+                {isSuperAdmin && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      handleDeleteSession(reviewSession, e)
+                      setReviewSession(null)
+                    }}
+                    style={{
+                      padding: '8px 14px',
+                      background: '#fef2f2',
+                      color: '#ef4444',
+                      border: '1px solid #fecaca',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px'
+                    }}
+                    title="Permanently delete this screening session (Admin only)"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6l-1 14H6L5 6" />
+                      <path d="M9 6V4h6v2" />
+                    </svg>
+                    Delete Session
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setReviewSession(null)}

@@ -472,29 +472,34 @@ export default function AtsPlatform() {
         const data = apiRes.value
         const apiList = Array.isArray(data) ? data : Array.isArray(data.candidates) ? data.candidates : Array.isArray(data.data?.candidates) ? data.data.candidates : []
         const map = new Map()
-        combined.forEach(c => { if (c && (c.id || c.name)) map.set(String(c.id || c.name), c) })
+        // Only use a stable unique ID as merge key — never use name alone (two candidates can share the same name)
+        combined.forEach(c => { if (c && c.id) map.set(String(c.id), c) })
         apiList.forEach(c => {
-          if (c && (c.id || c.name)) {
-            const existing = map.get(String(c.id || c.name)) || {}
-            map.set(String(c.id || c.name), { ...existing, ...c })
+          if (c && c.id) {
+            const existing = map.get(String(c.id)) || {}
+            map.set(String(c.id), { ...existing, ...c })
+          } else if (c && !c.id) {
+            // Candidate without id: add directly, don't try to merge by name
+            combined.push(c)
           }
         })
         combined = Array.from(map.values())
       }
 
-      // Merge cached local candidates
+      // Merge cached local candidates — only merge by real unique ID
       try {
         const localRaw = localStorage.getItem('smarthire_all_candidates')
         if (localRaw) {
           const localList = JSON.parse(localRaw)
           if (Array.isArray(localList)) {
             const map = new Map()
-            combined.forEach(c => { if (c && (c.id || c.name)) map.set(String(c.id || c.name), c) })
+            combined.forEach(c => { if (c && c.id) map.set(String(c.id), c) })
             localList.forEach(c => {
-              if (c && (c.id || c.name)) {
-                const existing = map.get(String(c.id || c.name)) || {}
-                map.set(String(c.id || c.name), { ...existing, ...c })
+              if (c && c.id) {
+                const existing = map.get(String(c.id)) || {}
+                map.set(String(c.id), { ...existing, ...c })
               }
+              // Skip name-only candidates from local cache to avoid phantom duplication
             })
             combined = Array.from(map.values())
           }
@@ -937,12 +942,13 @@ export default function AtsPlatform() {
           )}
 
           {[
-            { id: 'inquiries', label: 'Client Inquiries', count: inquiriesCount || undefined },
-            { id: 'audit', label: 'Audit Logs' },
-            { id: 'automation', label: 'Automation' },
-            { id: 'settings', label: 'Settings' },
-            { id: 'users', label: 'Manage Users' },
+            { id: 'inquiries', label: 'Client Inquiries', count: inquiriesCount || undefined, adminOnly: true },
+            { id: 'audit', label: 'Audit Logs', adminOnly: false },
+            { id: 'automation', label: 'Automation', adminOnly: true },
+            { id: 'settings', label: 'Settings', adminOnly: true },
+            { id: 'users', label: 'Manage Users', adminOnly: true },
           ]
+            .filter(m => !m.adminOnly || isSuperAdmin)
             .map(m => {
               const isActive = activeTab === m.id
               return (
@@ -1672,6 +1678,8 @@ export default function AtsPlatform() {
               <ScreeningModule
                 jobsList={safeJobs}
                 allCandidates={safeCandidates}
+                currentUser={currentUser}
+                isSuperAdmin={isSuperAdmin}
               />
             </div>
           )}
@@ -1731,13 +1739,23 @@ export default function AtsPlatform() {
             </div>
           )}
 
-          {activeTab === 'users' && (
+          {activeTab === 'users' && isSuperAdmin && (
             <div style={{ padding: '20px' }}>
               <UsersModule
                 allCandidates={rawCandidates}
                 permissions={permissions}
                 setPermissions={setPermissions}
               />
+            </div>
+          )}
+
+          {activeTab === 'users' && !isSuperAdmin && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: '12px', color: '#64748b' }}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <div style={{ fontSize: '16px', fontWeight: '700', color: '#334155' }}>Access Restricted</div>
+              <div style={{ fontSize: '13px', textAlign: 'center', maxWidth: '300px', lineHeight: 1.5 }}>
+                The User Management console is restricted to Super Admin accounts only. Contact your admin for access.
+              </div>
             </div>
           )}
 

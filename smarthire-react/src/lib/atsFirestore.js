@@ -553,10 +553,9 @@ export function deduplicateCandidates(list) {
   const seenIds = new Set()
   const seenEmails = new Set()
   const seenPhones = new Set()
-  const seenNames = new Set()
+  // NOTE: Name alone is NOT a reliable dedup key — multiple real candidates can share the same name.
+  // We only use name+email or name+phone combos, never name alone.
   const result = []
-
-  const GENERIC_NAMES = new Set(['candidate', 'applicant', 'consultant', 'general applicant', 'test', 'unknown', 'new candidate'])
 
   for (const c of list) {
     if (!c || typeof c !== 'object') continue
@@ -567,21 +566,15 @@ export function deduplicateCandidates(list) {
       .map(val => String(val).trim())
       .filter(val => val.length > 0)
 
-    // 2. Email
+    // 2. Email (normalize)
     const emailVal = typeof c.email === 'string' ? c.email : (typeof c.candidateEmail === 'string' ? c.candidateEmail : (c.extracted_profile?.email || ''))
     const email = String(emailVal || '').toLowerCase().trim()
 
-    // 3. Phone (last 10 digits)
+    // 3. Phone (last 10 digits only — avoid country code mismatches)
     const rawPhone = String(c.phone || c.phoneCell || c.extracted_profile?.phone || c.candidatePhone || '').replace(/\D/g, '')
     const phone = rawPhone.length >= 7 ? rawPhone.slice(-10) : ''
 
-    // 4. Name
-    const nameVal = typeof c.name === 'string' ? c.name : (typeof c.candidateName === 'string' ? c.candidateName : (c.extracted_profile?.name || (c.firstName || c.lastName ? `${c.firstName || ''} ${c.lastName || ''}` : '')))
-    const rawName = String(nameVal || '').trim()
-    const cleanName = rawName.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim()
-    const isValidName = cleanName.length >= 3 && !GENERIC_NAMES.has(cleanName)
-
-    // Check if candidate already exists by ANY primary identifier
+    // Check for duplicates by ID or email only (safe unique identifiers)
     let isDuplicate = false
 
     // Check IDs
@@ -592,28 +585,26 @@ export function deduplicateCandidates(list) {
       }
     }
 
-    // Check Email
-    if (!isDuplicate && email && seenEmails.has(email)) {
+    // Check Email — only deduplicate if email is a real non-generic address
+    const GENERIC_EMAILS = new Set(['noemail@example.com', 'no-email@test.com', 'test@test.com', 'candidate@test.com'])
+    if (!isDuplicate && email && email.length > 4 && email.includes('@') && !GENERIC_EMAILS.has(email) && seenEmails.has(email)) {
       isDuplicate = true
     }
 
-    // Check Phone
-    if (!isDuplicate && phone && seenPhones.has(phone)) {
+    // Check Phone — only deduplicate if phone is a real 10-digit number
+    if (!isDuplicate && phone && phone.length === 10 && seenPhones.has(phone)) {
       isDuplicate = true
     }
 
-    // Check Name
-    if (!isDuplicate && isValidName && seenNames.has(cleanName)) {
-      isDuplicate = true
-    }
+    // NOTE: Name-only dedup removed — too many false positives with common Indian names
+    // (Rahul Sharma, Priya Patel, etc.) causing real candidates to be hidden
 
     if (isDuplicate) continue
 
     // Register all identifiers for this candidate
     for (const id of ids) seenIds.add(id)
-    if (email) seenEmails.add(email)
-    if (phone) seenPhones.add(phone)
-    if (isValidName) seenNames.add(cleanName)
+    if (email && email.includes('@') && !['noemail@example.com', 'test@test.com'].includes(email)) seenEmails.add(email)
+    if (phone && phone.length === 10) seenPhones.add(phone)
 
     result.push(c)
   }
