@@ -9159,6 +9159,31 @@ app.post('/api/messages/mark-all-read', authenticateToken, (req, res) => {
   res.json({ success: true });
 });
 
+// Delete a conversation thread and its associated inquiry if any
+app.delete('/api/messages/:candidateId', authenticateToken, (req, res) => {
+  const { candidateId } = req.params;
+  const targetId = String(candidateId || '').trim().toLowerCase();
+  
+  messagesStore = messagesStore.filter(m => {
+    if (!m) return false;
+    const mCandId = String(m.candidateId || '').trim().toLowerCase();
+    const mId = String(m.id || '').trim().toLowerCase();
+    return mCandId !== targetId && mId !== targetId;
+  });
+  try { fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messagesStore, null, 2)); } catch(e) {}
+
+  if (Array.isArray(inquiriesStore)) {
+    inquiriesStore = inquiriesStore.filter(inq => {
+      if (!inq) return false;
+      const inqId = String(inq.id || '').trim().toLowerCase();
+      return inqId !== targetId;
+    });
+    try { fs.writeFileSync(INQUIRIES_FILE, JSON.stringify(inquiriesStore, null, 2)); } catch(e) {}
+  }
+
+  res.json({ success: true, message: 'Conversation deleted successfully' });
+});
+
 app.post('/api/messages/:candidateId', authenticateToken, (req, res) => {
   const { candidateId } = req.params;
   const { sender = 'recruiter', text = '', candidateName = '', jobTitle = '', senderName = '' } = req.body;

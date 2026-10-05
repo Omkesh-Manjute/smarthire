@@ -2438,6 +2438,10 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const [activeActionMenuId, setActiveActionMenuId] = useState(null)
   const [hoveredNav, setHoveredNav] = useState(null)
   const [hoveredTableCardId, setHoveredTableCardId] = useState(null)
+  const [hoveredKpiCard, setHoveredKpiCard] = useState(null)
+  const [hoveredSkill, setHoveredSkill] = useState(null)
+  const [hoveredSource, setHoveredSource] = useState(null)
+  const [hoveredThreadId, setHoveredThreadId] = useState(null)
 
   // Push to Requisition Modal State
   const [pushToReqModalOpen, setPushToReqModalOpen] = useState(false)
@@ -2919,6 +2923,28 @@ export default function RecruiterInbox({ defaultViewMode }) {
       })
     } catch (e) {}
   }, [fetchMessages, fetchCandidateDetails])
+
+  const handleDeleteThread = useCallback(async (e, threadId) => {
+    if (e && e.stopPropagation) e.stopPropagation()
+    if (!window.confirm('Delete this conversation thread?')) return
+    try {
+      await fetch(`/api/messages/${encodeURIComponent(threadId)}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+        }
+      })
+      setThreads(prev => prev.filter(t => t.candidateId !== threadId))
+      if (activeThread?.candidateId === threadId) {
+        setActiveThread(null)
+        setMessages([])
+      }
+      setMessageToast('Conversation thread deleted')
+      setTimeout(() => setMessageToast(''), 3000)
+    } catch(err) {
+      console.error('Failed to delete thread:', err)
+    }
+  }, [activeThread?.candidateId])
 
   const handleSend = async (textOverride) => {
     const text = (textOverride || inputText).trim()
@@ -7955,48 +7981,73 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   {/* Card 1: Total Candidates */}
                   <div
                     onClick={() => { setInboxViewMode('stream'); setInboxSubMode('table'); }}
+                    onMouseEnter={() => setHoveredKpiCard('total')}
+                    onMouseLeave={() => setHoveredKpiCard(null)}
                     style={{
-                      background: 'linear-gradient(135deg, rgba(208, 242, 254, 0.85) 0%, rgba(186, 230, 253, 0.5) 100%)',
+                      background: 'linear-gradient(135deg, rgba(208, 242, 254, 0.9) 0%, rgba(186, 230, 253, 0.55) 100%)',
                       borderRadius: 16,
                       padding: '22px 24px',
                       cursor: 'pointer',
                       position: 'relative',
                       overflow: 'hidden',
-                      boxShadow: '0 4px 16px rgba(0, 108, 156, 0.08)',
-                      transition: 'transform 0.2s, box-shadow 0.2s',
+                      boxShadow: hoveredKpiCard === 'total' ? '0 16px 36px rgba(0, 108, 156, 0.22)' : '0 4px 16px rgba(0, 108, 156, 0.08)',
+                      transform: hoveredKpiCard === 'total' ? 'translateY(-6px) scale(1.018)' : 'translateY(0) scale(1)',
+                      transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'space-between',
                       minHeight: 155
                     }}
                   >
+                    {hoveredKpiCard === 'total' && (
+                      <div style={{
+                        position: 'absolute',
+                        top: 10,
+                        right: 12,
+                        background: '#04297A',
+                        color: '#FFFFFF',
+                        padding: '4px 10px',
+                        borderRadius: 8,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        boxShadow: '0 4px 12px rgba(4,41,122,0.3)',
+                        pointerEvents: 'none',
+                        zIndex: 10
+                      }}>
+                        Active: {dashboardMetrics.total} candidates
+                      </div>
+                    )}
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                       <div style={{
                         width: 44,
                         height: 44,
                         borderRadius: '50%',
-                        backgroundColor: 'rgba(0, 108, 156, 0.12)',
+                        backgroundColor: 'rgba(0, 108, 156, 0.14)',
                         color: '#006C9C',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        transition: 'transform 0.2s',
+                        transform: hoveredKpiCard === 'total' ? 'scale(1.08)' : 'scale(1)'
                       }}>
                         <IconUser />
                       </div>
 
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 3,
-                        background: '#C8FACD',
-                        color: '#007B55',
-                        fontSize: 11.5,
-                        fontWeight: 700,
-                        padding: '3px 8px',
-                        borderRadius: 20
-                      }}>
-                        <IconTrendingUp /> 100% Active
-                      </span>
+                      {hoveredKpiCard !== 'total' && (
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 3,
+                          background: '#C8FACD',
+                          color: '#007B55',
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          padding: '3px 8px',
+                          borderRadius: 20
+                        }}>
+                          <IconTrendingUp /> 100% Active
+                        </span>
+                      )}
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 16 }}>
@@ -8015,48 +8066,73 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   {/* Card 2: Active Requisitions */}
                   <div
                     onClick={() => navigate('/ats?tab=jobs')}
+                    onMouseEnter={() => setHoveredKpiCard('jobs')}
+                    onMouseLeave={() => setHoveredKpiCard(null)}
                     style={{
-                      background: 'linear-gradient(135deg, rgba(239, 216, 249, 0.85) 0%, rgba(227, 210, 254, 0.5) 100%)',
+                      background: 'linear-gradient(135deg, rgba(239, 216, 249, 0.9) 0%, rgba(227, 210, 254, 0.55) 100%)',
                       borderRadius: 16,
                       padding: '22px 24px',
                       cursor: 'pointer',
                       position: 'relative',
                       overflow: 'hidden',
-                      boxShadow: '0 4px 16px rgba(81, 25, 183, 0.08)',
-                      transition: 'transform 0.2s, box-shadow 0.2s',
+                      boxShadow: hoveredKpiCard === 'jobs' ? '0 16px 36px rgba(81, 25, 183, 0.22)' : '0 4px 16px rgba(81, 25, 183, 0.08)',
+                      transform: hoveredKpiCard === 'jobs' ? 'translateY(-6px) scale(1.018)' : 'translateY(0) scale(1)',
+                      transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'space-between',
                       minHeight: 155
                     }}
                   >
+                    {hoveredKpiCard === 'jobs' && (
+                      <div style={{
+                        position: 'absolute',
+                        top: 10,
+                        right: 12,
+                        background: '#27097A',
+                        color: '#FFFFFF',
+                        padding: '4px 10px',
+                        borderRadius: 8,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        boxShadow: '0 4px 12px rgba(39,9,122,0.3)',
+                        pointerEvents: 'none',
+                        zIndex: 10
+                      }}>
+                        {dashboardMetrics.activeJobsCount} Open Requisitions
+                      </div>
+                    )}
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                       <div style={{
                         width: 44,
                         height: 44,
                         borderRadius: '50%',
-                        backgroundColor: 'rgba(81, 25, 183, 0.12)',
+                        backgroundColor: 'rgba(81, 25, 183, 0.14)',
                         color: '#5119B7',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        transition: 'transform 0.2s',
+                        transform: hoveredKpiCard === 'jobs' ? 'scale(1.08)' : 'scale(1)'
                       }}>
                         <IconBriefcase />
                       </div>
 
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 3,
-                        background: '#E0F2FE',
-                        color: '#0284C7',
-                        fontSize: 11.5,
-                        fontWeight: 700,
-                        padding: '3px 8px',
-                        borderRadius: 20
-                      }}>
-                        Open Positions
-                      </span>
+                      {hoveredKpiCard !== 'jobs' && (
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 3,
+                          background: '#E0F2FE',
+                          color: '#0284C7',
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          padding: '3px 8px',
+                          borderRadius: 20
+                        }}>
+                          Open Positions
+                        </span>
+                      )}
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 16 }}>
@@ -8075,48 +8151,73 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   {/* Card 3: Strong Matches (80%+) */}
                   <div
                     onClick={() => { setFilterMatch('80'); setInboxViewMode('stream'); setInboxSubMode('table'); }}
+                    onMouseEnter={() => setHoveredKpiCard('strong')}
+                    onMouseLeave={() => setHoveredKpiCard(null)}
                     style={{
-                      background: 'linear-gradient(135deg, rgba(255, 247, 205, 0.85) 0%, rgba(255, 234, 167, 0.5) 100%)',
+                      background: 'linear-gradient(135deg, rgba(255, 247, 205, 0.9) 0%, rgba(255, 234, 167, 0.55) 100%)',
                       borderRadius: 16,
                       padding: '22px 24px',
                       cursor: 'pointer',
                       position: 'relative',
                       overflow: 'hidden',
-                      boxShadow: '0 4px 16px rgba(183, 129, 3, 0.08)',
-                      transition: 'transform 0.2s, box-shadow 0.2s',
+                      boxShadow: hoveredKpiCard === 'strong' ? '0 16px 36px rgba(183, 129, 3, 0.22)' : '0 4px 16px rgba(183, 129, 3, 0.08)',
+                      transform: hoveredKpiCard === 'strong' ? 'translateY(-6px) scale(1.018)' : 'translateY(0) scale(1)',
+                      transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'space-between',
                       minHeight: 155
                     }}
                   >
+                    {hoveredKpiCard === 'strong' && (
+                      <div style={{
+                        position: 'absolute',
+                        top: 10,
+                        right: 12,
+                        background: '#7A4F01',
+                        color: '#FFFFFF',
+                        padding: '4px 10px',
+                        borderRadius: 8,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        boxShadow: '0 4px 12px rgba(122,79,1,0.3)',
+                        pointerEvents: 'none',
+                        zIndex: 10
+                      }}>
+                        {dashboardMetrics.strongFits} Qualified Candidates
+                      </div>
+                    )}
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                       <div style={{
                         width: 44,
                         height: 44,
                         borderRadius: '50%',
-                        backgroundColor: 'rgba(183, 129, 3, 0.12)',
+                        backgroundColor: 'rgba(183, 129, 3, 0.14)',
                         color: '#B78103',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        transition: 'transform 0.2s',
+                        transform: hoveredKpiCard === 'strong' ? 'scale(1.08)' : 'scale(1)'
                       }}>
                         <IconSparkles />
                       </div>
 
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 3,
-                        background: '#C8FACD',
-                        color: '#007B55',
-                        fontSize: 11.5,
-                        fontWeight: 700,
-                        padding: '3px 8px',
-                        borderRadius: 20
-                      }}>
-                        <IconTrendingUp /> {Math.round((dashboardMetrics.strongFits / Math.max(1, dashboardMetrics.total)) * 100)}% Match
-                      </span>
+                      {hoveredKpiCard !== 'strong' && (
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 3,
+                          background: '#C8FACD',
+                          color: '#007B55',
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          padding: '3px 8px',
+                          borderRadius: 20
+                        }}>
+                          <IconTrendingUp /> {Math.round((dashboardMetrics.strongFits / Math.max(1, dashboardMetrics.total)) * 100)}% Match
+                        </span>
+                      )}
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 16 }}>
@@ -8135,48 +8236,73 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   {/* Card 4: Resume Ingestion & Spam Recovery */}
                   <div
                     onClick={() => { setFilterMatch('all'); setResumeKeywordSearch(''); setInboxViewMode('stream'); setInboxSubMode('table'); }}
+                    onMouseEnter={() => setHoveredKpiCard('ingested')}
+                    onMouseLeave={() => setHoveredKpiCard(null)}
                     style={{
-                      background: 'linear-gradient(135deg, rgba(255, 231, 217, 0.85) 0%, rgba(255, 208, 189, 0.5) 100%)',
+                      background: 'linear-gradient(135deg, rgba(255, 231, 217, 0.9) 0%, rgba(255, 208, 189, 0.55) 100%)',
                       borderRadius: 16,
                       padding: '22px 24px',
                       cursor: 'pointer',
                       position: 'relative',
                       overflow: 'hidden',
-                      boxShadow: '0 4px 16px rgba(183, 33, 54, 0.08)',
-                      transition: 'transform 0.2s, box-shadow 0.2s',
+                      boxShadow: hoveredKpiCard === 'ingested' ? '0 16px 36px rgba(183, 33, 54, 0.22)' : '0 4px 16px rgba(183, 33, 54, 0.08)',
+                      transform: hoveredKpiCard === 'ingested' ? 'translateY(-6px) scale(1.018)' : 'translateY(0) scale(1)',
+                      transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'space-between',
                       minHeight: 155
                     }}
                   >
+                    {hoveredKpiCard === 'ingested' && (
+                      <div style={{
+                        position: 'absolute',
+                        top: 10,
+                        right: 12,
+                        background: '#7A0C2E',
+                        color: '#FFFFFF',
+                        padding: '4px 10px',
+                        borderRadius: 8,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        boxShadow: '0 4px 12px rgba(122,12,46,0.3)',
+                        pointerEvents: 'none',
+                        zIndex: 10
+                      }}>
+                        Email: {dashboardMetrics.sources.email.count} | Spam: {dashboardMetrics.sources.spam.count}
+                      </div>
+                    )}
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                       <div style={{
                         width: 44,
                         height: 44,
                         borderRadius: '50%',
-                        backgroundColor: 'rgba(183, 33, 54, 0.12)',
+                        backgroundColor: 'rgba(183, 33, 54, 0.14)',
                         color: '#B72136',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        transition: 'transform 0.2s',
+                        transform: hoveredKpiCard === 'ingested' ? 'scale(1.08)' : 'scale(1)'
                       }}>
                         <IconMail />
                       </div>
 
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 3,
-                        background: '#FFE7D9',
-                        color: '#B72136',
-                        fontSize: 11.5,
-                        fontWeight: 700,
-                        padding: '3px 8px',
-                        borderRadius: 20
-                      }}>
-                        {dashboardMetrics.sources.spam.count} Spam Recovered
-                      </span>
+                      {hoveredKpiCard !== 'ingested' && (
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 3,
+                          background: '#FFE7D9',
+                          color: '#B72136',
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          padding: '3px 8px',
+                          borderRadius: 20
+                        }}>
+                          {dashboardMetrics.sources.spam.count} Spam Recovered
+                        </span>
+                      )}
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 16 }}>
@@ -8206,7 +8332,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     border: `1px solid ${C.border}`,
                     display: 'flex',
                     flexDirection: 'column',
-                    justifyContent: 'space-between'
+                    justifyContent: 'space-between',
+                    transition: 'all 0.2s ease'
                   }}>
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -8227,53 +8354,77 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
                         return (
                           <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0' }}>
-                            <svg width="220" height="220" viewBox="0 0 220 220">
+                            <svg width="220" height="220" viewBox="0 0 220 220" style={{ cursor: 'pointer' }}>
                               {/* Segment 1: Email Inbox (#0284C7) */}
                               <circle
                                 cx="110" cy="110" r="70"
                                 fill="transparent"
                                 stroke="#0284C7"
-                                strokeWidth="24"
+                                strokeWidth={hoveredSource === 'email' ? '28' : '24'}
                                 strokeDasharray={`${segEmail} ${circ - segEmail}`}
                                 strokeDashoffset="0"
                                 transform="rotate(-90 110 110)"
+                                style={{ transition: 'stroke-width 0.2s ease, opacity 0.2s ease', opacity: !hoveredSource || hoveredSource === 'email' ? 1 : 0.4 }}
+                                onMouseEnter={() => setHoveredSource('email')}
+                                onMouseLeave={() => setHoveredSource(null)}
+                                onClick={() => { setFilterSource('email'); setInboxViewMode('stream'); setInboxSubMode('table'); }}
                               />
                               {/* Segment 2: Spam Harvester (#F59E0B) */}
                               <circle
                                 cx="110" cy="110" r="70"
                                 fill="transparent"
                                 stroke="#F59E0B"
-                                strokeWidth="24"
+                                strokeWidth={hoveredSource === 'spam' ? '28' : '24'}
                                 strokeDasharray={`${segSpam} ${circ - segSpam}`}
                                 strokeDashoffset={-segEmail}
                                 transform="rotate(-90 110 110)"
+                                style={{ transition: 'stroke-width 0.2s ease, opacity 0.2s ease', opacity: !hoveredSource || hoveredSource === 'spam' ? 1 : 0.4 }}
+                                onMouseEnter={() => setHoveredSource('spam')}
+                                onMouseLeave={() => setHoveredSource(null)}
+                                onClick={() => { setFilterSource('spam'); setInboxViewMode('stream'); setInboxSubMode('table'); }}
                               />
                               {/* Segment 3: Careers Portal (#10B981) */}
                               <circle
                                 cx="110" cy="110" r="70"
                                 fill="transparent"
                                 stroke="#10B981"
-                                strokeWidth="24"
+                                strokeWidth={hoveredSource === 'portal' ? '28' : '24'}
                                 strokeDasharray={`${segPortal} ${circ - segPortal}`}
                                 strokeDashoffset={-(segEmail + segSpam)}
                                 transform="rotate(-90 110 110)"
+                                style={{ transition: 'stroke-width 0.2s ease, opacity 0.2s ease', opacity: !hoveredSource || hoveredSource === 'portal' ? 1 : 0.4 }}
+                                onMouseEnter={() => setHoveredSource('portal')}
+                                onMouseLeave={() => setHoveredSource(null)}
+                                onClick={() => { setFilterSource('portal'); setInboxViewMode('stream'); setInboxSubMode('table'); }}
                               />
                               {/* Segment 4: Vendor / Bench (#8B5CF6) */}
                               <circle
                                 cx="110" cy="110" r="70"
                                 fill="transparent"
                                 stroke="#8B5CF6"
-                                strokeWidth="24"
+                                strokeWidth={hoveredSource === 'bench' ? '28' : '24'}
                                 strokeDasharray={`${segBench} ${circ - segBench}`}
                                 strokeDashoffset={-(segEmail + segSpam + segPortal)}
                                 transform="rotate(-90 110 110)"
+                                style={{ transition: 'stroke-width 0.2s ease, opacity 0.2s ease', opacity: !hoveredSource || hoveredSource === 'bench' ? 1 : 0.4 }}
+                                onMouseEnter={() => setHoveredSource('bench')}
+                                onMouseLeave={() => setHoveredSource(null)}
+                                onClick={() => { setFilterSource('bench'); setInboxViewMode('stream'); setInboxSubMode('table'); }}
                               />
                               
-                              <text x="110" y="105" textAnchor="middle" fontSize="24" fontWeight="800" fill={C.textPrimary}>
-                                {dashboardMetrics.total}
+                              <text x="110" y="103" textAnchor="middle" fontSize="24" fontWeight="800" fill={C.textPrimary}>
+                                {hoveredSource === 'email' ? dashboardMetrics.sources.email.count :
+                                 hoveredSource === 'spam' ? dashboardMetrics.sources.spam.count :
+                                 hoveredSource === 'portal' ? dashboardMetrics.sources.portal.count :
+                                 hoveredSource === 'bench' ? dashboardMetrics.sources.bench.count :
+                                 dashboardMetrics.total}
                               </text>
-                              <text x="110" y="124" textAnchor="middle" fontSize="10.5" fontWeight="700" fill={C.textSecondary} letterSpacing="0.5px">
-                                TOTAL SOURCED
+                              <text x="110" y="123" textAnchor="middle" fontSize="10.5" fontWeight="700" fill={hoveredSource ? '#2563EB' : C.textSecondary} letterSpacing="0.5px">
+                                {hoveredSource === 'email' ? `EMAIL (${dashboardMetrics.sources.email.pct}%)` :
+                                 hoveredSource === 'spam' ? `SPAM (${dashboardMetrics.sources.spam.pct}%)` :
+                                 hoveredSource === 'portal' ? `PORTAL (${dashboardMetrics.sources.portal.pct}%)` :
+                                 hoveredSource === 'bench' ? `BENCH (${dashboardMetrics.sources.bench.pct}%)` :
+                                 'TOTAL SOURCED'}
                               </text>
                             </svg>
                           </div>
@@ -8282,25 +8433,45 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 14px', fontSize: 12, fontWeight: 700, marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C.border}` }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: C.textPrimary }}>
+                      <div
+                        onMouseEnter={() => setHoveredSource('email')}
+                        onMouseLeave={() => setHoveredSource(null)}
+                        onClick={() => { setFilterSource('email'); setInboxViewMode('stream'); setInboxSubMode('table'); }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, color: C.textPrimary, cursor: 'pointer', padding: '4px 6px', borderRadius: 6, background: hoveredSource === 'email' ? (isLight ? '#EFF6FF' : 'rgba(2,132,199,0.15)') : 'transparent', transition: 'background 0.15s ease' }}
+                      >
                         <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#0284C7', flexShrink: 0 }} />
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           Email Inbox: <strong>{dashboardMetrics.sources.email.count}</strong> ({dashboardMetrics.sources.email.pct}%)
                         </span>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: C.textPrimary }}>
+                      <div
+                        onMouseEnter={() => setHoveredSource('spam')}
+                        onMouseLeave={() => setHoveredSource(null)}
+                        onClick={() => { setFilterSource('spam'); setInboxViewMode('stream'); setInboxSubMode('table'); }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, color: C.textPrimary, cursor: 'pointer', padding: '4px 6px', borderRadius: 6, background: hoveredSource === 'spam' ? (isLight ? '#FFFBEB' : 'rgba(245,158,11,0.15)') : 'transparent', transition: 'background 0.15s ease' }}
+                      >
                         <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#F59E0B', flexShrink: 0 }} />
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           Spam Harvester: <strong>{dashboardMetrics.sources.spam.count}</strong> ({dashboardMetrics.sources.spam.pct}%)
                         </span>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: C.textPrimary }}>
+                      <div
+                        onMouseEnter={() => setHoveredSource('portal')}
+                        onMouseLeave={() => setHoveredSource(null)}
+                        onClick={() => { setFilterSource('portal'); setInboxViewMode('stream'); setInboxSubMode('table'); }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, color: C.textPrimary, cursor: 'pointer', padding: '4px 6px', borderRadius: 6, background: hoveredSource === 'portal' ? (isLight ? '#ECFDF5' : 'rgba(16,185,129,0.15)') : 'transparent', transition: 'background 0.15s ease' }}
+                      >
                         <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#10B981', flexShrink: 0 }} />
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           Careers Portal: <strong>{dashboardMetrics.sources.portal.count}</strong> ({dashboardMetrics.sources.portal.pct}%)
                         </span>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: C.textPrimary }}>
+                      <div
+                        onMouseEnter={() => setHoveredSource('bench')}
+                        onMouseLeave={() => setHoveredSource(null)}
+                        onClick={() => { setFilterSource('bench'); setInboxViewMode('stream'); setInboxSubMode('table'); }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, color: C.textPrimary, cursor: 'pointer', padding: '4px 6px', borderRadius: 6, background: hoveredSource === 'bench' ? (isLight ? '#F5F3FF' : 'rgba(139,92,246,0.15)') : 'transparent', transition: 'background 0.15s ease' }}
+                      >
                         <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#8B5CF6', flexShrink: 0 }} />
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           Vendor / Bench: <strong>{dashboardMetrics.sources.bench.count}</strong> ({dashboardMetrics.sources.bench.pct}%)
@@ -8318,7 +8489,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     border: `1px solid ${C.border}`,
                     display: 'flex',
                     flexDirection: 'column',
-                    justifyContent: 'space-between'
+                    justifyContent: 'space-between',
+                    transition: 'all 0.2s ease'
                   }}>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -8337,29 +8509,50 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
                       {/* Skills Progress List */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '4px 0 10px' }}>
-                        {dashboardMetrics.topSkills.map((sk, idx) => (
-                          <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12.5 }}>
-                              <span style={{ fontWeight: 700, color: C.textPrimary }}>{sk.name}</span>
-                              <span style={{ color: C.textSecondary, fontWeight: 600, fontSize: 11.5 }}>
-                                <strong style={{ color: '#2563EB', fontWeight: 800 }}>{sk.count}</strong> candidates ({sk.pct}%)
-                              </span>
+                        {dashboardMetrics.topSkills.map((sk, idx) => {
+                          const isHovered = hoveredSkill === sk.name
+                          return (
+                            <div
+                              key={idx}
+                              onMouseEnter={() => setHoveredSkill(sk.name)}
+                              onMouseLeave={() => setHoveredSkill(null)}
+                              onClick={() => { setResumeKeywordSearch(sk.name); setInboxViewMode('stream'); setInboxSubMode('table'); }}
+                              style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 4,
+                                cursor: 'pointer',
+                                padding: '6px 8px',
+                                borderRadius: 8,
+                                background: isHovered ? (isLight ? '#F8FAFC' : 'rgba(255,255,255,0.04)') : 'transparent',
+                                transition: 'all 0.2s ease'
+                              }}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12.5 }}>
+                                <span style={{ fontWeight: 700, color: isHovered ? '#2563EB' : C.textPrimary, transition: 'color 0.15s ease' }}>
+                                  {sk.name}
+                                  {isHovered && <span style={{ fontSize: 10.5, fontWeight: 600, color: '#2563EB', marginLeft: 6 }}>• Click to filter</span>}
+                                </span>
+                                <span style={{ color: C.textSecondary, fontWeight: 600, fontSize: 11.5 }}>
+                                  <strong style={{ color: '#2563EB', fontWeight: 800 }}>{sk.count}</strong> candidates ({sk.pct}%)
+                                </span>
+                              </div>
+                              <div style={{ width: '100%', height: isHovered ? 9 : 7, backgroundColor: isLight ? '#F1F5F9' : '#334155', borderRadius: 4, overflow: 'hidden', transition: 'height 0.2s ease' }}>
+                                <div style={{
+                                  height: '100%',
+                                  width: `${Math.max(6, sk.pct)}%`,
+                                  background: idx === 0 ? 'linear-gradient(90deg, #2563EB 0%, #38BDF8 100%)' :
+                                              idx === 1 ? 'linear-gradient(90deg, #0284C7 0%, #67E8F9 100%)' :
+                                              idx === 2 ? 'linear-gradient(90deg, #059669 0%, #34D399 100%)' :
+                                              idx === 3 ? 'linear-gradient(90deg, #D97706 0%, #FBBF24 100%)' :
+                                              'linear-gradient(90deg, #7C3AED 0%, #A78BFA 100%)',
+                                  borderRadius: 4,
+                                  transition: 'width 0.4s ease'
+                                }} />
+                              </div>
                             </div>
-                            <div style={{ width: '100%', height: 7, backgroundColor: isLight ? '#F1F5F9' : '#334155', borderRadius: 4, overflow: 'hidden' }}>
-                              <div style={{
-                                height: '100%',
-                                width: `${Math.max(6, sk.pct)}%`,
-                                background: idx === 0 ? 'linear-gradient(90deg, #2563EB 0%, #38BDF8 100%)' :
-                                            idx === 1 ? 'linear-gradient(90deg, #0284C7 0%, #67E8F9 100%)' :
-                                            idx === 2 ? 'linear-gradient(90deg, #059669 0%, #34D399 100%)' :
-                                            idx === 3 ? 'linear-gradient(90deg, #D97706 0%, #FBBF24 100%)' :
-                                            'linear-gradient(90deg, #7C3AED 0%, #A78BFA 100%)',
-                                borderRadius: 4,
-                                transition: 'width 0.4s ease'
-                              }} />
-                            </div>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     </div>
 
@@ -12533,67 +12726,40 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 ) : (
                   filteredThreads.map(thread => {
                     const isSelected = activeThread?.candidateId === thread.candidateId
-                    const initials = thread.initials || getInitials(thread.candidateName)
                     const isActiveNow = thread.status === 'active' || thread.candidateId === 'team-gourav' || thread.candidateId === 'client-shweta-patel' || thread.candidateId === 'cand-rahul-kumar'
+                    const isHovered = hoveredThreadId === thread.candidateId
                     return (
                       <div
                         key={thread.candidateId}
                         onClick={() => selectThread(thread)}
+                        onMouseEnter={() => setHoveredThreadId(thread.candidateId)}
+                        onMouseLeave={() => setHoveredThreadId(null)}
                         style={{
                           display: 'flex',
                           alignItems: 'flex-start',
-                          gap: 12,
+                          gap: 10,
                           padding: '10px 14px',
                           cursor: 'pointer',
-                          backgroundColor: isSelected ? '#1164A3' : 'transparent',
-                          borderRadius: isSelected ? 8 : 0,
-                          margin: isSelected ? '2px 8px' : '0',
+                          backgroundColor: isSelected ? '#1164A3' : (isHovered ? 'rgba(255, 255, 255, 0.08)' : 'transparent'),
+                          borderRadius: isSelected ? 8 : 6,
+                          margin: '2px 8px',
                           transition: 'background 0.12s ease'
                         }}
-                        onMouseEnter={e => { if (!isSelected) e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)' }}
-                        onMouseLeave={e => { if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent' }}
                       >
-                        {/* Circular Avatar */}
-                        <div style={{ position: 'relative', flexShrink: 0 }}>
-                          {thread.avatarImg ? (
-                            <img
-                              src={thread.avatarImg}
-                              alt={thread.candidateName}
-                              style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }}
-                            />
-                          ) : (
-                            <div style={{
-                              width: 36,
-                              height: 36,
-                              borderRadius: '50%',
-                              backgroundColor: thread.avatarColor || '#E8912D',
-                              color: '#FFFFFF',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontWeight: 700,
-                              fontSize: 12.5
-                            }}>
-                              {initials}
-                            </div>
-                          )}
-                          {isActiveNow && (
-                            <span style={{
-                              position: 'absolute',
-                              bottom: 0,
-                              right: 0,
-                              width: 9,
-                              height: 9,
-                              borderRadius: '50%',
-                              backgroundColor: '#2BAC76',
-                              border: '2px solid #3F0E40'
-                            }} />
-                          )}
+                        {/* Slack Presence Dot */}
+                        <div style={{ paddingTop: 4, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            backgroundColor: isActiveNow ? '#2BAC76' : 'rgba(255, 255, 255, 0.35)',
+                            boxShadow: isActiveNow ? '0 0 6px #2BAC76' : 'none'
+                          }} />
                         </div>
 
                         {/* Content */}
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          {/* Row 1: Name + Time */}
+                          {/* Row 1: Name + Time + Delete Action */}
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
                             <span style={{
                               fontSize: 13,
@@ -12602,13 +12768,36 @@ export default function RecruiterInbox({ defaultViewMode }) {
                               whiteSpace: 'nowrap',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
-                              maxWidth: 150
+                              maxWidth: isHovered || isSelected ? 120 : 155
                             }}>
                               {thread.candidateName}
                             </span>
-                            <span style={{ fontSize: 10.5, color: isSelected ? 'rgba(255, 255, 255, 0.85)' : 'rgba(255, 255, 255, 0.55)', flexShrink: 0, marginLeft: 6, fontWeight: 500 }}>
-                              {formatTime(thread.lastMessageTime || thread.timestamp)}
-                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <span style={{ fontSize: 10.5, color: isSelected ? 'rgba(255, 255, 255, 0.85)' : 'rgba(255, 255, 255, 0.55)', flexShrink: 0, fontWeight: 500 }}>
+                                {formatTime(thread.lastMessageTime || thread.timestamp)}
+                              </span>
+                              {(isHovered || isSelected) && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleDeleteThread(e, thread.candidateId)}
+                                  title="Delete conversation"
+                                  style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'rgba(255, 255, 255, 0.75)',
+                                    cursor: 'pointer',
+                                    padding: '0 2px',
+                                    borderRadius: 4,
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                  }}
+                                  onMouseEnter={e => e.currentTarget.style.color = '#F87171'}
+                                  onMouseLeave={e => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.75)'}
+                                >
+                                  <IconTrash />
+                                </button>
+                              )}
+                            </div>
                           </div>
 
                           {/* Row 2: Subtitle / Role / Company */}
@@ -12683,51 +12872,24 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     flexShrink: 0,
                     backgroundColor: C.surface
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      {/* Avatar */}
-                      <div style={{ position: 'relative', flexShrink: 0 }}>
-                        {activeThread.avatarImg ? (
-                          <img
-                            src={activeThread.avatarImg}
-                            alt={activeThread.candidateName}
-                            style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }}
-                          />
-                        ) : (
-                          <div style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: '50%',
-                            backgroundColor: activeThread.avatarColor || '#2065D1',
-                            color: '#FFFFFF',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontWeight: 700,
-                            fontSize: 14
-                          }}>
-                            {activeThread.initials || getInitials(activeThread.candidateName)}
-                          </div>
-                        )}
-                        <span style={{
-                          position: 'absolute',
-                          bottom: 0,
-                          right: 0,
-                          width: 10,
-                          height: 10,
-                          borderRadius: '50%',
-                          backgroundColor: '#10B981',
-                          border: `2px solid ${C.surface}`
-                        }} />
-                      </div>
-
-                      {/* Header Info */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      {/* Slack Presence Indicator */}
+                      <span style={{
+                        width: 9,
+                        height: 9,
+                        borderRadius: '50%',
+                        backgroundColor: '#10B981',
+                        boxShadow: '0 0 8px rgba(16,185,129,0.5)',
+                        flexShrink: 0
+                      }} />
                       <div>
-                        <div style={{ fontSize: 15, fontWeight: 800, color: C.textPrimary, lineHeight: 1.2 }}>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: C.textPrimary, lineHeight: 1.2, display: 'flex', alignItems: 'center', gap: 6 }}>
                           {activeThread.candidateName}
+                          <span style={{ fontSize: 13, color: '#F59E0B', cursor: 'pointer' }} title="Starred">☆</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
                           <span style={{ fontSize: 12, color: C.textSecondary }}>
-                            {activeThread.subtitle || activeThread.jobTitle || 'Direct Reportee • SmartHire LLC'}
+                            {activeThread.subtitle || activeThread.jobTitle || 'Team Member • SmartHire ATS'}
                           </span>
                           <span style={{
                             fontSize: 11,
@@ -12741,14 +12903,13 @@ export default function RecruiterInbox({ defaultViewMode }) {
                             alignItems: 'center',
                             gap: 4
                           }}>
-                            <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#10B981' }} />
                             Active now
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    {/* Header Actions: Call, Video, More */}
+                    {/* Header Actions: Call, Video, Delete, More */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <button
                         type="button"
@@ -12796,6 +12957,24 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
                       <button
                         type="button"
+                        onClick={(e) => handleDeleteThread(e, activeThread.candidateId)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          padding: 8,
+                          borderRadius: 8,
+                          color: '#EF4444',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center'
+                        }}
+                        title="Delete Conversation Thread"
+                      >
+                        <IconTrash />
+                      </button>
+
+                      <button
+                        type="button"
                         onClick={() => setRightPanelCollapsed(c => !c)}
                         style={{
                           background: 'transparent',
@@ -12822,7 +13001,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     backgroundColor: isLight ? '#FAFBFC' : '#161D26',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 12
+                    gap: 10
                   }}>
                     {/* Centered Date Divider */}
                     {messages.length > 0 && (
@@ -12858,46 +13037,101 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                      (!isReportee && msg.sender !== 'other' && msg.sender !== 'candidate')
 
                         const timeDisplay = msg.timeStr || (msg.timestamp ? formatTime(msg.timestamp) : '')
+                        const isInquiry = (msg.text || '').includes('New Client Demo') || (msg.text || '').includes('Contact Inquiry') || (msg.text || '').includes('Demo Request')
+
+                        if (isInquiry) {
+                          return (
+                            <div
+                              key={msg.id || idx}
+                              style={{
+                                width: '100%',
+                                padding: '12px 16px',
+                                borderRadius: 8,
+                                backgroundColor: isLight ? '#F8FAFC' : '#1E293B',
+                                border: `1px solid ${C.border}`,
+                                borderLeft: '4px solid #1164A3',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                                margin: '4px 0'
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <span style={{ fontSize: 11, fontWeight: 800, color: '#1164A3', background: '#EFF6FF', padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase' }}>
+                                    SmartHire Inbound Inquiry
+                                  </span>
+                                  <span style={{ fontSize: 12, color: C.textSecondary }}>{timeDisplay}</span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleDeleteThread(e, activeThread.candidateId)}
+                                  style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: '#EF4444',
+                                    fontSize: 11.5,
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 4
+                                  }}
+                                >
+                                  <IconTrash /> <span>Delete Inquiry</span>
+                                </button>
+                              </div>
+                              <div style={{ fontSize: 13.5, color: C.textPrimary, lineHeight: 1.55, whiteSpace: 'pre-line' }}>
+                                {String(msg.text || '').replace(/â€¦/g, '...').replace(/&hellip;/g, '...')}
+                              </div>
+                            </div>
+                          )
+                        }
 
                         return (
                           <div
                             key={msg.id || idx}
                             style={{
                               display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: isMe ? 'flex-end' : 'flex-start',
-                              alignSelf: isMe ? 'flex-end' : 'flex-start',
-                              maxWidth: '68%'
+                              alignItems: 'flex-start',
+                              gap: 12,
+                              padding: '8px 12px',
+                              borderRadius: 8,
+                              backgroundColor: 'transparent',
+                              transition: 'background 0.15s ease'
                             }}
+                            onMouseEnter={e => e.currentTarget.style.backgroundColor = isLight ? 'rgba(0,0,0,0.025)' : 'rgba(255,255,255,0.03)'}
+                            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                           >
-                            {/* Message Bubble */}
-                            <div style={{
-                              backgroundColor: isMe ? '#2065D1' : (isLight ? '#F3F4F6' : '#28323D'),
-                              color: isMe ? '#FFFFFF' : C.textPrimary,
-                              borderRadius: isMe ? '14px 14px 3px 14px' : '14px 14px 14px 3px',
-                              padding: '10px 15px',
-                              fontSize: 13.5,
-                              lineHeight: 1.55,
-                              whiteSpace: 'pre-line',
-                              wordBreak: 'break-word',
-                              boxShadow: isMe ? '0 2px 8px rgba(32,101,209,0.22)' : '0 1px 2px rgba(0,0,0,0.04)'
-                            }}>
-                              {String(msg.text || '').replace(/â€¦/g, '...').replace(/&hellip;/g, '...')}
+                            {/* Presence dot */}
+                            <div style={{ paddingTop: 6, flexShrink: 0 }}>
+                              <span style={{
+                                display: 'block',
+                                width: 8,
+                                height: 8,
+                                borderRadius: '50%',
+                                backgroundColor: isMe ? '#2563EB' : '#10B981'
+                              }} />
                             </div>
 
-                            {/* Timestamp & Delivery Indicators */}
-                            <div style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 4,
-                              fontSize: 11,
-                              color: '#9CA3AF',
-                              marginTop: 4,
-                              marginRight: isMe ? 2 : 0,
-                              marginLeft: isMe ? 0 : 2
-                            }}>
-                              <span>{timeDisplay}</span>
-                              {isMe && <IconCheckCheck color="#2065D1" />}
+                            {/* Message Content */}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 2 }}>
+                                <span style={{ fontSize: 13.5, fontWeight: 800, color: isMe ? '#2563EB' : C.textPrimary }}>
+                                  {isMe ? 'You' : (msg.senderName || activeThread.candidateName)}
+                                </span>
+                                <span style={{ fontSize: 11.5, color: C.textSecondary, fontWeight: 500 }}>
+                                  {timeDisplay}
+                                </span>
+                                {isMe && <IconCheckCheck color="#2563EB" />}
+                              </div>
+                              <div style={{
+                                fontSize: 14,
+                                color: C.textPrimary,
+                                lineHeight: 1.5,
+                                whiteSpace: 'pre-line',
+                                wordBreak: 'break-word'
+                              }}>
+                                {String(msg.text || '').replace(/â€¦/g, '...').replace(/&hellip;/g, '...')}
+                              </div>
                             </div>
                           </div>
                         )
@@ -13241,30 +13475,21 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     <IconExpand />
                   </button>
 
-                  {/* Avatar (64px) */}
-                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
-                    {activeThread.avatarImg ? (
-                      <img
-                        src={activeThread.avatarImg}
-                        alt={activeThread.candidateName}
-                        style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover' }}
-                      />
-                    ) : (
-                      <div style={{
-                        width: 64,
-                        height: 64,
-                        borderRadius: '50%',
-                        backgroundColor: activeThread.avatarColor || '#2065D1',
-                        color: '#FFFFFF',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 800,
-                        fontSize: 22
-                      }}>
-                        {activeThread.initials || getInitials(activeThread.candidateName)}
-                      </div>
-                    )}
+                  {/* Slack Contact Icon */}
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
+                    <div style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 12,
+                      backgroundColor: '#1164A3',
+                      color: '#FFFFFF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 4px 12px rgba(17,100,163,0.2)'
+                    }}>
+                      <IconChat />
+                    </div>
                   </div>
 
                   <div style={{ fontSize: 16, fontWeight: 800, color: C.textPrimary, lineHeight: 1.25 }}>
@@ -13395,25 +13620,26 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
                   <button
                     type="button"
-                    onClick={() => setShowFullProfileModal(true)}
+                    onClick={(e) => handleDeleteThread(e, activeThread.candidateId)}
                     style={{
-                      background: isLight ? '#F9FAFB' : '#1C252E',
-                      border: `1px solid ${C.border}`,
+                      background: isLight ? '#FEF2F2' : 'rgba(239, 68, 68, 0.1)',
+                      border: `1px solid ${isLight ? '#FCA5A5' : 'rgba(239, 68, 68, 0.25)'}`,
                       borderRadius: 8,
                       padding: '8px 4px',
                       textAlign: 'center',
                       fontSize: 11.5,
                       fontWeight: 600,
-                      color: C.textPrimary,
+                      color: '#EF4444',
                       cursor: 'pointer',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
                       gap: 4
                     }}
+                    title="Delete Conversation Thread"
                   >
-                    <IconDots />
-                    <span>More</span>
+                    <IconTrash />
+                    <span>Delete</span>
                   </button>
                 </div>
 
