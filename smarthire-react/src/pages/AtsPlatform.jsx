@@ -751,18 +751,19 @@ export default function AtsPlatform() {
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
     }}>
 
-      {/* ─── 1. ZOHO CRM DEEP-SLATE NAVY SIDEBAR (#161e31) ───────────────── */}
+      {/* ─── 1. SLACK SIGNATURE AUBERGINE SIDEBAR (#3F0E40) ───────────────── */}
       <div style={{
         width: sidebarCollapsed ? '64px' : '240px',
         minWidth: sidebarCollapsed ? '64px' : '240px',
-        background: '#161e31',
+        background: '#3F0E40',
         display: 'flex',
         flexDirection: 'column',
         height: '100vh',
-        transition: 'width 0.2s ease',
+        transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
         zIndex: 100,
         userSelect: 'none',
-        flexShrink: 0
+        flexShrink: 0,
+        borderRight: '1px solid rgba(255,255,255,0.08)'
       }}>
 
         {/* Top Brand & Collapse Icon */}
@@ -772,18 +773,20 @@ export default function AtsPlatform() {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: sidebarCollapsed ? '0 16px' : '0 18px',
-          borderBottom: '1px solid rgba(255,255,255,0.06)'
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          background: '#350d36'
         }}>
           {!sidebarCollapsed && (
             <div
               onClick={() => setActiveTab('home')}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '9px', cursor: 'pointer' }}
             >
               <div style={{
-                width: '28px', height: '28px', borderRadius: '7px',
-                background: 'linear-gradient(135deg, #3b82f6, #6366f1)',
+                width: '28px', height: '28px', borderRadius: '6px',
+                background: '#4A154B',
+                border: '1px solid rgba(255,255,255,0.2)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#ffffff', fontWeight: '900', fontSize: '15px'
+                color: '#ffffff', fontWeight: '900', fontSize: '13px'
               }}>
                 SH
               </div>
@@ -791,7 +794,7 @@ export default function AtsPlatform() {
                 <span style={{ fontSize: '14.5px', fontWeight: '800', color: '#ffffff', letterSpacing: '-0.01em' }}>
                   SmartHire ATS
                 </span>
-                <span style={{ fontSize: '10px', color: '#94a3b8' }}>▼</span>
+                <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.5)' }}>▼</span>
               </div>
             </div>
           )}
@@ -800,8 +803,9 @@ export default function AtsPlatform() {
             <div
               onClick={() => setActiveTab('home')}
               style={{
-                width: '32px', height: '32px', borderRadius: '7px',
-                background: 'linear-gradient(135deg, #3b82f6, #6366f1)',
+                width: '32px', height: '32px', borderRadius: '6px',
+                background: '#4A154B',
+                border: '1px solid rgba(255,255,255,0.2)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 color: '#ffffff', fontWeight: '900', cursor: 'pointer'
               }}
@@ -816,14 +820,17 @@ export default function AtsPlatform() {
             style={{
               background: 'transparent',
               border: 'none',
-              color: '#94a3b8',
+              color: 'rgba(255,255,255,0.65)',
               cursor: 'pointer',
               padding: '4px',
-              borderRadius: '4px',
+              borderRadius: '5px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              transition: 'background 0.15s, color 0.15s'
             }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#ffffff' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.65)' }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -848,20 +855,20 @@ export default function AtsPlatform() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '12px',
-                  padding: sidebarCollapsed ? '10px 0' : '9px 12px',
+                  padding: sidebarCollapsed ? '10px 0' : '8px 12px',
                   justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
                   borderRadius: '6px',
-                  background: isActive ? '#24324f' : 'transparent',
-                  color: isActive ? '#ffffff' : '#94a3b8',
+                  background: isActive ? '#1164A3' : 'transparent',
+                  color: isActive ? '#ffffff' : 'rgba(255,255,255,0.72)',
                   fontWeight: isActive ? '700' : '500',
                   fontSize: '13px',
                   cursor: 'pointer',
-                  transition: 'all 0.12s'
+                  transition: 'all 0.15s ease'
                 }}
-                onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#ffffff' } }}
-                onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94a3b8' } }}
+                onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#ffffff' } }}
+                onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.72)' } }}
               >
-                <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon(item.id, 15, isActive ? '#ffffff' : '#94a3b8')}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon(item.id, 15, isActive ? '#ffffff' : 'rgba(255,255,255,0.72)')}</span>
                 {!sidebarCollapsed && <span>{item.label}</span>}
               </div>
             )
@@ -877,7 +884,7 @@ export default function AtsPlatform() {
         <div style={{ flex: 1, overflowY: 'auto', padding: '4px 8px' }}>
           {/* Section: Talent Acquisition */}
           {!sidebarCollapsed && (
-            <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', padding: '8px 10px 4px' }}>
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em', padding: '8px 10px 4px' }}>
               Talent Acquisition
             </div>
           )}
@@ -904,26 +911,27 @@ export default function AtsPlatform() {
                     justifyContent: 'space-between',
                     padding: sidebarCollapsed ? '10px 0' : '7px 12px',
                     borderRadius: '6px',
-                    background: isActive ? '#24324f' : 'transparent',
-                    color: isActive ? '#ffffff' : '#94a3b8',
+                    background: isActive ? '#1164A3' : 'transparent',
+                    color: isActive ? '#ffffff' : 'rgba(255,255,255,0.72)',
                     fontSize: '12.5px',
                     fontWeight: isActive ? '700' : '500',
                     cursor: 'pointer',
-                    marginBottom: '2px'
+                    marginBottom: '2px',
+                    transition: 'all 0.15s ease'
                   }}
-                  onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#ffffff' } }}
-                  onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94a3b8' } }}
+                  onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#ffffff' } }}
+                  onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.72)' } }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', width: sidebarCollapsed ? '100%' : 'auto' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon(m.id, 14, isActive ? '#ffffff' : '#94a3b8')}</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon(m.id, 14, isActive ? '#ffffff' : 'rgba(255,255,255,0.72)')}</span>
                     {!sidebarCollapsed && <span>{m.label}</span>}
                   </div>
                   {!sidebarCollapsed && m.count != null && (
                     <span style={{
                       fontSize: '10.5px',
-                      background: isActive ? '#3b82f6' : 'rgba(255,255,255,0.1)',
+                      background: isActive ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.16)',
                       color: '#ffffff',
-                      padding: '1px 6px',
+                      padding: '1px 7px',
                       borderRadius: '10px',
                       fontWeight: '700'
                     }}>
@@ -936,7 +944,7 @@ export default function AtsPlatform() {
 
           {/* Section: Operations & Admin */}
           {!sidebarCollapsed && (
-            <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', padding: '12px 10px 4px' }}>
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em', padding: '12px 10px 4px' }}>
               Operations & Admin
             </div>
           )}
@@ -962,26 +970,27 @@ export default function AtsPlatform() {
                     justifyContent: 'space-between',
                     padding: sidebarCollapsed ? '10px 0' : '7px 12px',
                     borderRadius: '6px',
-                    background: isActive ? '#24324f' : 'transparent',
-                    color: isActive ? '#ffffff' : '#94a3b8',
+                    background: isActive ? '#1164A3' : 'transparent',
+                    color: isActive ? '#ffffff' : 'rgba(255,255,255,0.72)',
                     fontSize: '12.5px',
                     fontWeight: isActive ? '700' : '500',
                     cursor: 'pointer',
                     marginBottom: '2px',
+                    transition: 'all 0.15s ease'
                   }}
-                  onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#ffffff' } }}
-                  onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94a3b8' } }}
+                  onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#ffffff' } }}
+                  onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.72)' } }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon(m.id, 14, isActive ? '#ffffff' : '#94a3b8')}</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon(m.id, 14, isActive ? '#ffffff' : 'rgba(255,255,255,0.72)')}</span>
                     {!sidebarCollapsed && <span>{m.label}</span>}
                   </div>
                   {!sidebarCollapsed && m.count != null && m.count > 0 && (
                     <span style={{
                       fontSize: '10px',
-                      background: '#2563eb',
+                      background: isActive ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.16)',
                       color: '#ffffff',
-                      padding: '1px 6px',
+                      padding: '1px 7px',
                       borderRadius: '10px',
                       fontWeight: '800'
                     }}>
@@ -994,7 +1003,7 @@ export default function AtsPlatform() {
 
           {/* Quick Portals */}
           {!sidebarCollapsed && (
-            <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', padding: '12px 10px 4px' }}>
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em', padding: '12px 10px 4px' }}>
               Quick Portals
             </div>
           )}
@@ -1008,16 +1017,17 @@ export default function AtsPlatform() {
               gap: '10px',
               padding: sidebarCollapsed ? '10px 0' : '7px 12px',
               borderRadius: '6px',
-              color: '#38bdf8',
+              color: 'rgba(255,255,255,0.85)',
               fontSize: '12.5px',
-              fontWeight: '600',
+              fontWeight: '500',
               cursor: 'pointer',
-              justifyContent: sidebarCollapsed ? 'center' : 'flex-start'
+              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+              transition: 'all 0.15s ease'
             }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(56,189,248,0.1)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#ffffff' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.85)' }}
           >
-            <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('building', 14, '#38bdf8')}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('building', 14, 'rgba(255,255,255,0.8)')}</span>
             {!sidebarCollapsed && <span>Requisitions Portal ↗</span>}
           </div>
 
@@ -1030,63 +1040,68 @@ export default function AtsPlatform() {
               gap: '10px',
               padding: sidebarCollapsed ? '10px 0' : '7px 12px',
               borderRadius: '6px',
-              color: '#34d399',
+              color: 'rgba(255,255,255,0.85)',
               fontSize: '12.5px',
-              fontWeight: '600',
+              fontWeight: '500',
               cursor: 'pointer',
-              justifyContent: sidebarCollapsed ? 'center' : 'flex-start'
+              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+              transition: 'all 0.15s ease'
             }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(52,211,153,0.1)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#ffffff' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.85)' }}
           >
-            <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('globe', 14, '#34d399')}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('globe', 14, 'rgba(255,255,255,0.8)')}</span>
             {!sidebarCollapsed && <span>Public Careers (/jobs) ↗</span>}
           </div>
         </div>
 
-        {/* Sidebar Bottom Pinned Tools (Zoho CRM Style) */}
+        {/* Sidebar Bottom Pinned Tools */}
         <div style={{
-          padding: '8px',
-          borderTop: '1px solid rgba(255,255,255,0.06)',
+          padding: '8px 12px',
+          borderTop: '1px solid rgba(255,255,255,0.08)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: sidebarCollapsed ? 'center' : 'space-around',
-          color: '#94a3b8',
-          fontSize: '12px'
+          color: 'rgba(255,255,255,0.7)',
+          fontSize: '12px',
+          background: '#350d36'
         }}>
           {!sidebarCollapsed ? (
             <>
-              <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }} title="Pinned Records">
-                <span style={{ fontSize: '11px' }}>Pins</span>
-              </div>
               <div
                 onClick={() => setShowCandidatePicker(true)}
-                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 6px', borderRadius: '4px', transition: 'all 0.15s' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#ffffff' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.7)' }}
                 title="Open Candidate Chat"
               >
-                <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('chat', 13, '#94a3b8')}</span>
-                <span style={{ fontSize: '11px' }}>Chats</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('chat', 13, 'currentColor')}</span>
+                <span style={{ fontSize: '11px', fontWeight: '600' }}>Chats</span>
               </div>
               <div
                 onClick={() => setActiveTab('users')}
-                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 6px', borderRadius: '4px', transition: 'all 0.15s' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#ffffff' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.7)' }}
                 title="Team Members"
               >
-                <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('users', 13, '#94a3b8')}</span>
-                <span style={{ fontSize: '11px' }}>Team</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('users', 13, 'currentColor')}</span>
+                <span style={{ fontSize: '11px', fontWeight: '600' }}>Team</span>
               </div>
               <div
-                onClick={() => window.open('https://help.zoho.com', '_blank')}
-                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
-                title="Help & Documentation"
+                onClick={() => setActiveTab('settings')}
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 6px', borderRadius: '4px', transition: 'all 0.15s' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#ffffff' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.7)' }}
+                title="ATS Settings"
               >
-                <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('help', 13, '#94a3b8')}</span>
-                <span style={{ fontSize: '11px' }}>Help</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('settings', 13, 'currentColor')}</span>
+                <span style={{ fontSize: '11px', fontWeight: '600' }}>Settings</span>
               </div>
             </>
           ) : (
-            <div onClick={() => setShowCandidatePicker(true)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }} title="Chat">
-              {renderAtsIcon('chat', 15, '#94a3b8')}
+            <div onClick={() => setShowCandidatePicker(true)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'rgba(255,255,255,0.7)' }} title="Chat">
+              {renderAtsIcon('chat', 15, 'currentColor')}
             </div>
           )}
         </div>

@@ -6929,15 +6929,15 @@ export default function RecruiterInbox({ defaultViewMode }) {
     <div style={{ display: 'flex', height: '100vh', width: '100vw', backgroundColor: C.bg, fontFamily: "'Plus Jakarta Sans','Inter',sans-serif", color: C.textPrimary, overflow: 'hidden' }}>
       
       {/* 1. Left Navigation Sidebar (Full Height, Matching media_1789073118530.png) */}
-      {/* 1. Left Navigation Sidebar (1-Click Collapsible) */}
+      {/* 1. Left Navigation Sidebar (Slack Signature Aubergine #3F0E40) */}
       <aside style={{
         width: sidebarCollapsed ? 68 : 240,
         minWidth: sidebarCollapsed ? 68 : 240,
-        backgroundColor: C.sidebar,
-        borderRight: `1px solid ${C.border}`,
+        backgroundColor: '#3F0E40',
+        borderRight: '1px solid rgba(255, 255, 255, 0.08)',
         display: 'flex',
         flexDirection: 'column',
-        padding: sidebarCollapsed ? '16px 8px' : '20px 16px',
+        padding: sidebarCollapsed ? '16px 8px' : '16px 12px',
         overflowY: 'auto',
         overflowX: 'hidden',
         flexShrink: 0,
@@ -6949,7 +6949,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: sidebarCollapsed ? 'center' : 'space-between',
-          marginBottom: 24,
+          marginBottom: 20,
           padding: sidebarCollapsed ? '0' : '0 4px',
           borderRadius: 8
         }}>
@@ -6965,16 +6965,48 @@ export default function RecruiterInbox({ defaultViewMode }) {
             }}
           >
             {!sidebarCollapsed ? (
-              <div style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                <div style={{ fontWeight: 900, fontSize: 17, color: C.textPrimary, letterSpacing: '-0.3px', lineHeight: 1.2 }}>
-                  SmartHire ATS
+              <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                <div style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: 6,
+                  background: '#4A154B',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#ffffff',
+                  fontWeight: 900,
+                  fontSize: 13,
+                  flexShrink: 0
+                }}>
+                  SH
                 </div>
-                <div style={{ fontSize: 11, color: C.textSecondary, fontWeight: 600 }}>
-                  Find · Evaluate · Hire
+                <div style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontWeight: 800, fontSize: 15, color: '#FFFFFF', letterSpacing: '-0.2px', lineHeight: 1.2 }}>
+                    SmartHire ATS
+                  </div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}>
+                    Find · Evaluate · Hire
+                  </div>
                 </div>
               </div>
             ) : (
-              <div style={{ fontWeight: 900, fontSize: 16, color: '#2563EB' }}>SH</div>
+              <div style={{
+                width: 32,
+                height: 32,
+                borderRadius: 6,
+                background: '#4A154B',
+                border: '1px solid rgba(255,255,255,0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#ffffff',
+                fontWeight: 900,
+                fontSize: 14
+              }}>
+                SH
+              </div>
             )}
           </div>
 
@@ -6988,7 +7020,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 background: 'transparent',
                 border: 'none',
                 cursor: 'pointer',
-                color: C.textSecondary,
+                color: 'rgba(255,255,255,0.65)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -6996,12 +7028,12 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 height: 28,
                 borderRadius: 6,
                 padding: 0,
-                transition: 'background 0.15s'
+                transition: 'background 0.15s, color 0.15s'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isLight ? '#F1F5F9' : 'rgba(255,255,255,0.08)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#ffffff'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.65)'; }}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="11 17 6 12 11 7"></polyline>
                 <polyline points="18 17 13 12 18 7"></polyline>
               </svg>
@@ -7010,7 +7042,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
         </div>
 
         {/* Navigation Links with Icon-Only Mode for Collapsed State */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {/* 1. Dashboard */}
           <button
             type="button"
@@ -7023,22 +7055,21 @@ export default function RecruiterInbox({ defaultViewMode }) {
               alignItems: 'center',
               justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
               gap: 12,
-              padding: sidebarCollapsed ? '10px 0' : '10px 14px',
-              borderRadius: 8,
+              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
+              borderRadius: 6,
               border: 'none',
               background: inboxViewMode === 'dashboard'
-                ? (isLight ? '#E0F2FE' : 'rgba(14,165,233,0.18)')
-                : (hoveredNav === 'dashboard' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent'),
+                ? '#1164A3'
+                : (hoveredNav === 'dashboard' ? 'rgba(255,255,255,0.08)' : 'transparent'),
               color: inboxViewMode === 'dashboard'
-                ? (isLight ? '#0284C7' : '#38BDF8')
-                : (hoveredNav === 'dashboard' ? C.textPrimary : C.textSecondary),
+                ? '#FFFFFF'
+                : (hoveredNav === 'dashboard' ? '#FFFFFF' : 'rgba(255,255,255,0.72)'),
               fontWeight: inboxViewMode === 'dashboard' ? 700 : (hoveredNav === 'dashboard' ? 600 : 500),
-              fontSize: 13.5,
+              fontSize: 13,
               cursor: 'pointer',
               textAlign: 'left',
               width: '100%',
-              boxShadow: inboxViewMode === 'dashboard' ? '0 1px 3px rgba(2,132,199,0.12)' : 'none',
-              transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
+              transition: 'all 0.15s ease'
             }}
           >
             <IconHome /> {!sidebarCollapsed && <span>Dashboard</span>}
@@ -7055,30 +7086,36 @@ export default function RecruiterInbox({ defaultViewMode }) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: sidebarCollapsed ? 'center' : 'space-between',
-              padding: sidebarCollapsed ? '10px 0' : '10px 14px',
-              borderRadius: 8,
+              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
+              borderRadius: 6,
               border: 'none',
               position: 'relative',
               background: (inboxViewMode === 'stream')
-                ? (isLight ? '#E0F2FE' : 'rgba(14,165,233,0.18)')
-                : (hoveredNav === 'candidates' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent'),
+                ? '#1164A3'
+                : (hoveredNav === 'candidates' ? 'rgba(255,255,255,0.08)' : 'transparent'),
               color: (inboxViewMode === 'stream')
-                ? (isLight ? '#0284C7' : '#38BDF8')
-                : (hoveredNav === 'candidates' ? C.textPrimary : C.textSecondary),
+                ? '#FFFFFF'
+                : (hoveredNav === 'candidates' ? '#FFFFFF' : 'rgba(255,255,255,0.72)'),
               fontWeight: (inboxViewMode === 'stream') ? 700 : (hoveredNav === 'candidates' ? 600 : 500),
-              fontSize: 13.5,
+              fontSize: 13,
               cursor: 'pointer',
               textAlign: 'left',
               width: '100%',
-              boxShadow: (inboxViewMode === 'stream') ? '0 1px 3px rgba(2,132,199,0.12)' : 'none',
-              transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
+              transition: 'all 0.15s ease'
             }}
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <IconUsers /> {!sidebarCollapsed && <span>Candidates</span>}
             </span>
             {!sidebarCollapsed ? (
-              <span style={{ fontSize: 10.5, background: '#2563EB', color: '#FFFFFF', padding: '1px 7px', borderRadius: 10, fontWeight: 800 }}>
+              <span style={{
+                fontSize: 10.5,
+                background: (inboxViewMode === 'stream') ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.16)',
+                color: '#FFFFFF',
+                padding: '1px 7px',
+                borderRadius: 10,
+                fontWeight: 700
+              }}>
                 {roleScopedCandidates.length || 0}
               </span>
             ) : (
@@ -7089,7 +7126,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 width: 7,
                 height: 7,
                 borderRadius: '50%',
-                backgroundColor: '#2563EB'
+                backgroundColor: '#38BDF8'
               }} />
             )}
           </button>
@@ -7106,15 +7143,15 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '6px 12px 6px 36px',
+                padding: '6px 12px 6px 34px',
                 borderRadius: 6,
                 border: 'none',
                 background: (inboxViewMode === 'stream' && filterSource === 'mobile')
-                  ? (isLight ? '#EFF6FF' : 'rgba(37,99,235,0.18)')
-                  : (hoveredNav === 'mobile_app' ? (isLight ? '#F8FAFC' : 'rgba(255,255,255,0.04)') : 'transparent'),
+                  ? 'rgba(17,100,163,0.35)'
+                  : (hoveredNav === 'mobile_app' ? 'rgba(255,255,255,0.06)' : 'transparent'),
                 color: (inboxViewMode === 'stream' && filterSource === 'mobile')
-                  ? '#2563EB'
-                  : (hoveredNav === 'mobile_app' ? C.textPrimary : C.textSecondary),
+                  ? '#FFFFFF'
+                  : (hoveredNav === 'mobile_app' ? '#FFFFFF' : 'rgba(255,255,255,0.65)'),
                 fontWeight: (inboxViewMode === 'stream' && filterSource === 'mobile') ? 700 : 500,
                 fontSize: 12,
                 cursor: 'pointer',
@@ -7130,7 +7167,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 </svg>
                 <span>Mobile App</span>
               </span>
-              <span style={{ fontSize: 10, background: '#EFF6FF', color: '#2563EB', padding: '1px 6px', borderRadius: 8, fontWeight: 700, border: '1px solid #BFDBFE' }}>
+              <span style={{ fontSize: 10, background: 'rgba(255,255,255,0.16)', color: '#FFFFFF', padding: '1px 6px', borderRadius: 8, fontWeight: 700 }}>
                 {mobileAppCount}
               </span>
             </button>
@@ -7148,15 +7185,15 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '6px 12px 6px 36px',
+                padding: '6px 12px 6px 34px',
                 borderRadius: 6,
                 border: 'none',
                 background: (inboxViewMode === 'stream' && filterSource === 'careers')
-                  ? (isLight ? '#ECFDF5' : 'rgba(5,150,105,0.18)')
-                  : (hoveredNav === 'job_sites' ? (isLight ? '#F8FAFC' : 'rgba(255,255,255,0.04)') : 'transparent'),
+                  ? 'rgba(17,100,163,0.35)'
+                  : (hoveredNav === 'job_sites' ? 'rgba(255,255,255,0.06)' : 'transparent'),
                 color: (inboxViewMode === 'stream' && filterSource === 'careers')
-                  ? '#059669'
-                  : (hoveredNav === 'job_sites' ? C.textPrimary : C.textSecondary),
+                  ? '#FFFFFF'
+                  : (hoveredNav === 'job_sites' ? '#FFFFFF' : 'rgba(255,255,255,0.65)'),
                 fontWeight: (inboxViewMode === 'stream' && filterSource === 'careers') ? 700 : 500,
                 fontSize: 12,
                 cursor: 'pointer',
@@ -7173,7 +7210,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 </svg>
                 <span>Job Sites</span>
               </span>
-              <span style={{ fontSize: 10, background: '#ECFDF5', color: '#059669', padding: '1px 6px', borderRadius: 8, fontWeight: 700, border: '1px solid #A7F3D0' }}>
+              <span style={{ fontSize: 10, background: 'rgba(255,255,255,0.16)', color: '#FFFFFF', padding: '1px 6px', borderRadius: 8, fontWeight: 700 }}>
                 {jobSitesCount}
               </span>
             </button>
@@ -7190,30 +7227,29 @@ export default function RecruiterInbox({ defaultViewMode }) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: sidebarCollapsed ? 'center' : 'space-between',
-              padding: sidebarCollapsed ? '10px 0' : '10px 14px',
-              borderRadius: 8,
+              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
+              borderRadius: 6,
               border: 'none',
               position: 'relative',
               background: inboxViewMode === 'chat'
-                ? (isLight ? '#E0F2FE' : 'rgba(14,165,233,0.18)')
-                : (hoveredNav === 'chat' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent'),
+                ? '#1164A3'
+                : (hoveredNav === 'chat' ? 'rgba(255,255,255,0.08)' : 'transparent'),
               color: inboxViewMode === 'chat'
-                ? (isLight ? '#0284C7' : '#38BDF8')
-                : (hoveredNav === 'chat' ? C.textPrimary : C.textSecondary),
+                ? '#FFFFFF'
+                : (hoveredNav === 'chat' ? '#FFFFFF' : 'rgba(255,255,255,0.72)'),
               fontWeight: inboxViewMode === 'chat' ? 700 : (hoveredNav === 'chat' ? 600 : 500),
-              fontSize: 13.5,
+              fontSize: 13,
               cursor: 'pointer',
               textAlign: 'left',
               width: '100%',
-              boxShadow: inboxViewMode === 'chat' ? '0 1px 3px rgba(2,132,199,0.12)' : 'none',
-              transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
+              transition: 'all 0.15s ease'
             }}
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <IconChat /> {!sidebarCollapsed && <span>Messages</span>}
             </span>
             {totalUnread > 0 && (!sidebarCollapsed ? (
-              <span style={{ fontSize: 10.5, background: '#FF5630', color: '#FFF', padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>
+              <span style={{ fontSize: 10.5, background: '#E01E5A', color: '#FFF', padding: '1px 7px', borderRadius: 10, fontWeight: 700 }}>
                 {totalUnread}
               </span>
             ) : (
@@ -7224,7 +7260,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 width: 7,
                 height: 7,
                 borderRadius: '50%',
-                backgroundColor: '#FF5630'
+                backgroundColor: '#E01E5A'
               }} />
             ))}
           </button>
@@ -7243,30 +7279,36 @@ export default function RecruiterInbox({ defaultViewMode }) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: sidebarCollapsed ? 'center' : 'space-between',
-              padding: sidebarCollapsed ? '10px 0' : '10px 14px',
-              borderRadius: 8,
+              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
+              borderRadius: 6,
               border: 'none',
               position: 'relative',
               background: inboxViewMode === 'hotlists'
-                ? (isLight ? '#CCFBF1' : 'rgba(13,148,136,0.18)')
-                : (hoveredNav === 'hotlists' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent'),
+                ? '#1164A3'
+                : (hoveredNav === 'hotlists' ? 'rgba(255,255,255,0.08)' : 'transparent'),
               color: inboxViewMode === 'hotlists'
-                ? '#0D9488'
-                : (hoveredNav === 'hotlists' ? C.textPrimary : C.textSecondary),
+                ? '#FFFFFF'
+                : (hoveredNav === 'hotlists' ? '#FFFFFF' : 'rgba(255,255,255,0.72)'),
               fontWeight: inboxViewMode === 'hotlists' ? 700 : (hoveredNav === 'hotlists' ? 600 : 500),
-              fontSize: 13.5,
+              fontSize: 13,
               cursor: 'pointer',
               textAlign: 'left',
               width: '100%',
-              boxShadow: inboxViewMode === 'hotlists' ? '0 1px 3px rgba(13,148,136,0.15)' : 'none',
-              transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
+              transition: 'all 0.15s ease'
             }}
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <IconBriefcase /> {!sidebarCollapsed && <span>Vendor Hotlists</span>}
             </span>
             {!sidebarCollapsed ? (
-              <span style={{ fontSize: 10.5, background: '#0D9488', color: '#FFFFFF', padding: '1px 7px', borderRadius: 10, fontWeight: 800 }}>
+              <span style={{
+                fontSize: 10.5,
+                background: (inboxViewMode === 'hotlists') ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.16)',
+                color: '#FFFFFF',
+                padding: '1px 7px',
+                borderRadius: 10,
+                fontWeight: 700
+              }}>
                 {scopedVendorHotlists.length || 0}
               </span>
             ) : (
@@ -7277,7 +7319,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 width: 7,
                 height: 7,
                 borderRadius: '50%',
-                backgroundColor: '#0D9488'
+                backgroundColor: '#10B981'
               }} />
             )}
           </button>
@@ -7298,19 +7340,19 @@ export default function RecruiterInbox({ defaultViewMode }) {
               alignItems: 'center',
               justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
               gap: 12,
-              padding: sidebarCollapsed ? '10px 0' : '10px 14px',
-              borderRadius: 8,
+              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
+              borderRadius: 6,
               border: 'none',
               background: syncingEmailResumes
-                ? 'rgba(37,99,235,0.12)'
-                : (hoveredNav === 'scaningest' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent'),
-              color: syncingEmailResumes ? '#2563EB' : (hoveredNav === 'scaningest' ? C.textPrimary : C.textSecondary),
+                ? 'rgba(255,255,255,0.12)'
+                : (hoveredNav === 'scaningest' ? 'rgba(255,255,255,0.08)' : 'transparent'),
+              color: syncingEmailResumes ? '#FFFFFF' : (hoveredNav === 'scaningest' ? '#FFFFFF' : 'rgba(255,255,255,0.72)'),
               fontWeight: syncingEmailResumes ? 700 : (hoveredNav === 'scaningest' ? 600 : 500),
-              fontSize: 13.5,
+              fontSize: 13,
               cursor: syncingEmailResumes ? 'wait' : 'pointer',
               textAlign: 'left',
               width: '100%',
-              transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
+              transition: 'all 0.15s ease'
             }}
           >
             <IconZap /> {!sidebarCollapsed && <span>{syncingEmailResumes ? 'Scanning...' : 'Scan Ingest'}</span>}
@@ -7328,17 +7370,17 @@ export default function RecruiterInbox({ defaultViewMode }) {
               alignItems: 'center',
               justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
               gap: 12,
-              padding: sidebarCollapsed ? '10px 0' : '10px 14px',
-              borderRadius: 8,
+              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
+              borderRadius: 6,
               border: 'none',
-              background: hoveredNav === 'submittal_pack' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent',
-              color: hoveredNav === 'submittal_pack' ? '#0F766E' : C.textSecondary,
+              background: hoveredNav === 'submittal_pack' ? 'rgba(255,255,255,0.08)' : 'transparent',
+              color: hoveredNav === 'submittal_pack' ? '#FFFFFF' : 'rgba(255,255,255,0.72)',
               fontWeight: hoveredNav === 'submittal_pack' ? 600 : 500,
-              fontSize: 13.5,
+              fontSize: 13,
               cursor: 'pointer',
               textAlign: 'left',
               width: '100%',
-              transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
+              transition: 'all 0.15s ease'
             }}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -7362,17 +7404,17 @@ export default function RecruiterInbox({ defaultViewMode }) {
               alignItems: 'center',
               justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
               gap: 12,
-              padding: sidebarCollapsed ? '10px 0' : '10px 14px',
-              borderRadius: 8,
+              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
+              borderRadius: 6,
               border: 'none',
-              background: hoveredNav === 'smartsign_rtr' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent',
-              color: hoveredNav === 'smartsign_rtr' ? '#4338CA' : C.textSecondary,
+              background: hoveredNav === 'smartsign_rtr' ? 'rgba(255,255,255,0.08)' : 'transparent',
+              color: hoveredNav === 'smartsign_rtr' ? '#FFFFFF' : 'rgba(255,255,255,0.72)',
               fontWeight: hoveredNav === 'smartsign_rtr' ? 600 : 500,
-              fontSize: 13.5,
+              fontSize: 13,
               cursor: 'pointer',
               textAlign: 'left',
               width: '100%',
-              transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
+              transition: 'all 0.15s ease'
             }}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -7394,17 +7436,17 @@ export default function RecruiterInbox({ defaultViewMode }) {
               alignItems: 'center',
               justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
               gap: 12,
-              padding: sidebarCollapsed ? '10px 0' : '10px 14px',
-              borderRadius: 8,
+              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
+              borderRadius: 6,
               border: 'none',
-              background: hoveredNav === 'settings' ? (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)') : 'transparent',
-              color: hoveredNav === 'settings' ? C.textPrimary : C.textSecondary,
+              background: hoveredNav === 'settings' ? 'rgba(255,255,255,0.08)' : 'transparent',
+              color: hoveredNav === 'settings' ? '#FFFFFF' : 'rgba(255,255,255,0.72)',
               fontWeight: hoveredNav === 'settings' ? 600 : 500,
-              fontSize: 13.5,
+              fontSize: 13,
               cursor: 'pointer',
               textAlign: 'left',
               width: '100%',
-              transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
+              transition: 'all 0.15s ease'
             }}
           >
             <IconSettings /> {!sidebarCollapsed && <span>Settings</span>}
@@ -7423,20 +7465,20 @@ export default function RecruiterInbox({ defaultViewMode }) {
               alignItems: 'center',
               justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
               gap: 10,
-              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
-              borderRadius: 8,
-              border: `1px solid ${C.border}`,
-              backgroundColor: isLight ? '#F8FAFC' : 'rgba(255,255,255,0.04)',
-              color: C.textSecondary,
+              padding: sidebarCollapsed ? '10px 0' : '8px 12px',
+              borderRadius: 6,
+              border: '1px solid rgba(255,255,255,0.1)',
+              backgroundColor: 'rgba(255,255,255,0.06)',
+              color: 'rgba(255,255,255,0.75)',
               fontSize: 12,
               fontWeight: 600,
               cursor: 'pointer',
               transition: 'all 0.15s ease'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isLight ? '#F1F5F9' : 'rgba(255,255,255,0.08)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isLight ? '#F8FAFC' : 'rgba(255,255,255,0.04)'}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = '#ffffff'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.75)'; }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               {sidebarCollapsed ? (
                 <>
                   <polyline points="13 17 18 12 13 7"></polyline>
@@ -14125,7 +14167,6 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 gap: 16
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <Avatar name={candidateName} size={46} />
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: C.textPrimary }}>{candidateName}</h3>

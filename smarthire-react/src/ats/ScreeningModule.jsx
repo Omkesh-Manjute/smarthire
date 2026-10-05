@@ -1011,14 +1011,10 @@ SmartHire Recruitment Team`
                     >
                       {/* Candidate Column */}
                       <td style={styles.td}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <div style={styles.avatarCircle}>
-                            {initials}
+                        <div>
+                          <div style={{ fontSize: '13.5px', fontWeight: '800', color: '#0f172a' }}>
+                            {candName}
                           </div>
-                          <div>
-                            <div style={{ fontSize: '13.5px', fontWeight: '800', color: '#0f172a' }}>
-                              {candName}
-                            </div>
                             <div style={{ fontSize: '11.5px', color: '#64748b', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                               <span>{candEmail}</span>
                               {(session.candidateLocation || session.candidateGeo?.cityState) && (
@@ -1036,8 +1032,7 @@ SmartHire Recruitment Team`
                               )}
                             </div>
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
                       {/* Requisition */}
                       <td style={styles.td}>
