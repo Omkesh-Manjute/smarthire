@@ -11617,50 +11617,32 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   />
                                 </td>
 
-                                {/* 2. Candidate: SINGLE Status Dot + Name + Email (No initials box) */}
-                                <td style={{ padding: '8px 10px' }}>
-                                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                                    {(() => {
-                                      const rawTime = c.createdAt || c.timestamp;
-                                      const isFresh = !rawTime || (Date.now() - new Date(rawTime).getTime() < 7 * 86400000);
-                                      return (
-                                        <span style={{
-                                          width: 8,
-                                          height: 8,
-                                          borderRadius: '50%',
-                                          backgroundColor: isFresh ? '#10B981' : '#F59E0B',
-                                          marginTop: 5,
-                                          flexShrink: 0
-                                        }} title={isFresh ? 'Fresh Candidate (< 7 days)' : 'Candidate (~1 month old)'} />
-                                      );
-                                    })()}
-                                    <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                                        <span
-                                          onClick={() => {
-                                            setSelectedCandidate(c)
-                                            setInboxSubMode('card')
-                                          }}
-                                          style={{
-                                            fontSize: 13,
-                                            fontWeight: 800,
-                                            color: '#0F172A',
-                                            cursor: 'pointer',
-                                            whiteSpace: 'nowrap',
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis'
-                                          }}
-                                          title={candName}
-                                        >
-                                          {candName}
-                                        </span>
+                                {/* 2. Candidate: Clean Name + Email (No initials or dots) */}
+                                <td style={{ padding: '8px 12px' }}>
+                                  <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+                                    <span
+                                      onClick={() => {
+                                        setSelectedCandidate(c)
+                                        setInboxSubMode('card')
+                                      }}
+                                      style={{
+                                        fontSize: 13,
+                                        fontWeight: 700,
+                                        color: isLight ? '#0F172A' : '#F8FAFC',
+                                        cursor: 'pointer',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis'
+                                      }}
+                                      title={candName}
+                                    >
+                                      {candName}
+                                    </span>
+                                    {c.email && (
+                                      <div style={{ fontSize: 11, color: '#64748B', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={c.email}>
+                                        {c.email}
                                       </div>
-                                      {c.email && (
-                                        <div style={{ fontSize: 11, color: '#64748B', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={c.email}>
-                                          {c.email}
-                                        </div>
-                                      )}
-                                    </div>
+                                    )}
                                   </div>
                                 </td>
 
@@ -12416,11 +12398,11 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     style={{
                       background: 'transparent',
                       border: 'none',
-                      borderBottom: isActive ? `2px solid #2065D1` : '2px solid transparent',
+                      borderBottom: isActive ? `2px solid #4A154B` : '2px solid transparent',
                       padding: '10px 4px 12px 4px',
                       fontSize: 13.5,
                       fontWeight: isActive ? 700 : 500,
-                      color: isActive ? '#2065D1' : C.textSecondary,
+                      color: isActive ? '#4A154B' : C.textSecondary,
                       cursor: 'pointer',
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -12432,7 +12414,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     <span>{tab.label}</span>
                     {tab.badge && (
                       <span style={{
-                        background: isActive ? '#2065D1' : (isLight ? '#E5E7EB' : '#374151'),
+                        background: isActive ? '#4A154B' : (isLight ? '#E5E7EB' : '#374151'),
                         color: isActive ? '#FFFFFF' : C.textSecondary,
                         borderRadius: 10,
                         padding: '1px 6px',
@@ -12457,51 +12439,51 @@ export default function RecruiterInbox({ defaultViewMode }) {
             overflow: 'hidden'
           }}>
             
-            {/* COLUMN 1: Conversation List (~25% width, minWidth 310px, maxWidth 340px) */}
+            {/* COLUMN 1: Conversation List (~25% width, Slack Aubergine Style #3F0E40) */}
             <div style={{
               width: 320,
               minWidth: 290,
               maxWidth: 340,
-              backgroundColor: C.surface,
+              backgroundColor: '#3F0E40',
               borderRadius: 14,
-              border: `1px solid ${C.border}`,
+              border: '1px solid #350d36',
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden',
               flexShrink: 0,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+              boxShadow: '0 4px 16px rgba(63, 14, 64, 0.15)'
             }}>
               {/* Recruiter Filter Dropdown for Admins / Leads */}
               {!isReportee && (
-                <div style={{ padding: '10px 12px', borderBottom: `1px solid ${C.border}`, backgroundColor: isLight ? '#FAFBFC' : '#1A222C' }}>
+                <div style={{ padding: '10px 12px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', backgroundColor: '#350d36' }}>
                   <select
                     value={recruiterFilter}
                     onChange={e => setRecruiterFilter(e.target.value)}
                     style={{
                       width: '100%',
-                      background: C.surface,
-                      border: `1px solid ${C.border}`,
+                      background: 'rgba(255, 255, 255, 0.12)',
+                      border: '1px solid rgba(255, 255, 255, 0.18)',
                       borderRadius: 6,
-                      padding: '5px 8px',
+                      padding: '6px 8px',
                       fontSize: 11.5,
                       fontWeight: 700,
-                      color: C.textPrimary,
+                      color: '#FFFFFF',
                       outline: 'none',
                       cursor: 'pointer'
                     }}
                   >
-                    <option value="all">All Recruiters & Channels ({threads.length})</option>
+                    <option value="all" style={{ background: '#3F0E40', color: '#FFF' }}>All Recruiters & Channels ({threads.length})</option>
                     {ALL_SMARTHIRE_RECRUITERS.map(r => (
-                      <option key={r.refCode} value={r.refCode}>{r.name}</option>
+                      <option key={r.refCode} value={r.refCode} style={{ background: '#3F0E40', color: '#FFF' }}>{r.name}</option>
                     ))}
                   </select>
                 </div>
               )}
 
-              {/* Conversations Rows (Subtle Dividers, No Boxed Cards) */}
+              {/* Conversations Rows (Slack Dark Channel Item Style) */}
               <div style={{ flex: 1, overflowY: 'auto' }}>
                 {filteredThreads.length === 0 ? (
-                  <div style={{ padding: '60px 20px', textAlign: 'center', color: C.textSecondary }}>
+                  <div style={{ padding: '60px 20px', textAlign: 'center', color: 'rgba(255, 255, 255, 0.6)' }}>
                     <div style={{ marginBottom: 10, display: 'flex', justifyContent: 'center' }}><IconChat /></div>
                     <p style={{ fontSize: 13, margin: 0, fontWeight: 600 }}>No conversations found</p>
                     <p style={{ fontSize: 11.5, margin: '4px 0 0' }}>Try switching tabs or adjusting search query.</p>
@@ -12519,13 +12501,15 @@ export default function RecruiterInbox({ defaultViewMode }) {
                           display: 'flex',
                           alignItems: 'flex-start',
                           gap: 12,
-                          padding: '12px 14px',
+                          padding: '10px 14px',
                           cursor: 'pointer',
-                          backgroundColor: isSelected ? (isLight ? '#EBF3FE' : 'rgba(32,101,209,0.16)') : 'transparent',
-                          borderLeft: isSelected ? '3px solid #2065D1' : '3px solid transparent',
-                          borderBottom: `1px solid ${isLight ? '#F3F4F6' : 'rgba(255,255,255,0.05)'}`,
-                          transition: 'background 0.15s'
+                          backgroundColor: isSelected ? '#1164A3' : 'transparent',
+                          borderRadius: isSelected ? 8 : 0,
+                          margin: isSelected ? '2px 8px' : '0',
+                          transition: 'background 0.12s ease'
                         }}
+                        onMouseEnter={e => { if (!isSelected) e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)' }}
+                        onMouseLeave={e => { if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent' }}
                       >
                         {/* Circular Avatar */}
                         <div style={{ position: 'relative', flexShrink: 0 }}>
@@ -12533,20 +12517,20 @@ export default function RecruiterInbox({ defaultViewMode }) {
                             <img
                               src={thread.avatarImg}
                               alt={thread.candidateName}
-                              style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }}
+                              style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }}
                             />
                           ) : (
                             <div style={{
-                              width: 40,
-                              height: 40,
+                              width: 36,
+                              height: 36,
                               borderRadius: '50%',
-                              backgroundColor: thread.avatarColor || '#2065D1',
+                              backgroundColor: thread.avatarColor || '#E8912D',
                               color: '#FFFFFF',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
                               fontWeight: 700,
-                              fontSize: 13
+                              fontSize: 12.5
                             }}>
                               {initials}
                             </div>
@@ -12556,11 +12540,11 @@ export default function RecruiterInbox({ defaultViewMode }) {
                               position: 'absolute',
                               bottom: 0,
                               right: 0,
-                              width: 10,
-                              height: 10,
+                              width: 9,
+                              height: 9,
                               borderRadius: '50%',
-                              backgroundColor: '#10B981',
-                              border: `2px solid ${C.surface}`
+                              backgroundColor: '#2BAC76',
+                              border: '2px solid #3F0E40'
                             }} />
                           )}
                         </div>
@@ -12570,29 +12554,29 @@ export default function RecruiterInbox({ defaultViewMode }) {
                           {/* Row 1: Name + Time */}
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
                             <span style={{
-                              fontSize: 13.5,
-                              fontWeight: (thread.unreadCount > 0 || isSelected) ? 700 : 600,
-                              color: C.textPrimary,
+                              fontSize: 13,
+                              fontWeight: isSelected ? 800 : 700,
+                              color: '#FFFFFF',
                               whiteSpace: 'nowrap',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
-                              maxWidth: 160
+                              maxWidth: 150
                             }}>
                               {thread.candidateName}
                             </span>
-                            <span style={{ fontSize: 11, color: C.textSecondary, flexShrink: 0, marginLeft: 6, fontWeight: 500 }}>
+                            <span style={{ fontSize: 10.5, color: isSelected ? 'rgba(255, 255, 255, 0.85)' : 'rgba(255, 255, 255, 0.55)', flexShrink: 0, marginLeft: 6, fontWeight: 500 }}>
                               {formatTime(thread.lastMessageTime || thread.timestamp)}
                             </span>
                           </div>
 
                           {/* Row 2: Subtitle / Role / Company */}
                           <div style={{
-                            fontSize: 11.5,
-                            color: isLight ? '#4B5563' : '#9CA3AF',
+                            fontSize: 11,
+                            color: isSelected ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.65)',
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
-                            marginBottom: 3
+                            marginBottom: 2
                           }}>
                             {String(thread.subtitle || thread.jobTitle || 'Team Member • SmartHire ATS').replace(/â€¦/g, '...')}
                           </div>
@@ -12600,23 +12584,23 @@ export default function RecruiterInbox({ defaultViewMode }) {
                           {/* Row 3: Last message preview + Unread badge */}
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <span style={{
-                              fontSize: 12,
-                              color: thread.unreadCount > 0 ? C.textPrimary : C.textSecondary,
-                              fontWeight: thread.unreadCount > 0 ? 600 : 400,
+                              fontSize: 11.5,
+                              color: isSelected ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.5)',
+                              fontWeight: thread.unreadCount > 0 ? 700 : 400,
                               whiteSpace: 'nowrap',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
-                              maxWidth: 180
+                              maxWidth: 170
                             }}>
                               {String(thread.lastMessage || '').replace(/â€¦/g, '...')}
                             </span>
                             {thread.unreadCount > 0 && (
                               <span style={{
-                                backgroundColor: '#2065D1',
+                                backgroundColor: '#E01E5A',
                                 color: '#FFFFFF',
                                 borderRadius: 10,
                                 padding: '1px 6px',
-                                fontSize: 10.5,
+                                fontSize: 10,
                                 fontWeight: 800,
                                 flexShrink: 0
                               }}>
