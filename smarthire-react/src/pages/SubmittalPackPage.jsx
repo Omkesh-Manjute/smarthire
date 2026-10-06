@@ -51,6 +51,287 @@ const IconReset = () => (
     <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
   </svg>
 )
+const IconUpload = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+    <polyline points="17 8 12 3 7 8"/>
+    <line x1="12" y1="3" x2="12" y2="15"/>
+  </svg>
+)
+const IconFileText = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+    <polyline points="14 2 14 8 20 8"/>
+    <line x1="16" y1="13" x2="8" y2="13"/>
+    <line x1="16" y1="17" x2="8" y2="17"/>
+    <polyline points="10 9 9 9 8 9"/>
+  </svg>
+)
+const IconPlus = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19"/>
+    <line x1="5" y1="12" x2="19" y2="12"/>
+  </svg>
+)
+
+// ─── Extract Actual Candidate Legal Name from Raw Text ──────────────────────
+export function extractCandidateRealName(rawName, resumeText) {
+  const isGeneric = !rawName || 
+    rawName.trim().startsWith('.') || 
+    /^(net|\.net|java|\.java|developer|engineer|consultant|hotlist|c2c|resume|specialist|lead)$/i.test(rawName.trim());
+  
+  if (!isGeneric && rawName.trim().length > 2) {
+    return rawName.trim();
+  }
+
+  if (!resumeText) return rawName || 'Candidate Full Legal Name';
+
+  const lines = resumeText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  for (let i = 0; i < Math.min(lines.length, 8); i++) {
+    const l = lines[i];
+    if (
+      l.length >= 2 && 
+      l.length <= 35 && 
+      !l.includes(':') && 
+      !l.includes('@') && 
+      !/\d/.test(l) &&
+      !/(developer|engineer|analyst|architect|consultant|summary|skills|experience|phone|email|authorization|visa)/i.test(l)
+    ) {
+      return l;
+    }
+  }
+  return rawName || 'Candidate Full Legal Name';
+}
+
+// ─── Extract Rich Candidate Metadata from Raw Resume Text ───────────────────
+export function extractResumeMetadata(rawText) {
+  if (!rawText) return { name: '', role: '', phone: '', email: '', visa: '', location: '', experience: '', education: '', skills: [] };
+
+  const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  let name = '';
+  let phone = '';
+  let email = '';
+  let visa = '';
+  let role = '';
+  let location = '';
+  let experience = '';
+  let education = '';
+
+  for (let i = 0; i < Math.min(lines.length, 12); i++) {
+    const l = lines[i];
+    if (!name && l.length >= 2 && l.length <= 35 && !l.includes(':') && !l.includes('@') && !/\d/.test(l) && !/(developer|engineer|consultant|summary|skills|phone|email)/i.test(l)) {
+      name = l;
+    }
+    const phoneMatch = l.match(/(?:\+?\d{1,3}[\s-]?)?\(?\d{3}\)?[\s-]?\d{3}[\s-]?\d{4}/);
+    if (phoneMatch && !phone) phone = phoneMatch[0];
+
+    const emailMatch = l.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+    if (emailMatch && !email) email = emailMatch[0];
+
+    const visaMatch = l.match(/(H-1B|H1B|US Citizen|Green Card|GC|Permanent Resident|OPT|CPT|TN Visa|EAD)/i);
+    if (visaMatch && !visa) {
+      visa = visaMatch[0].toUpperCase().includes('H') ? 'H-1B' : visaMatch[0].toUpperCase().includes('CITIZEN') ? 'US Citizen' : visaMatch[0];
+    }
+
+    const roleMatch = l.match(/^(Sr\.?|Lead|Principal|Junior)?\s*([A-Za-z0-9.#+/\s]+(Developer|Engineer|Architect|Analyst|Consultant|Manager))/i);
+    if (roleMatch && !role) role = roleMatch[0].trim();
+  }
+
+  const expMatch = rawText.match(/(?:Over|Around|More than|\+)?\s*(\d{1,2})\+?\s*(?:years|yrs)\s+(?:of\s+)?(?:experience|IT\s+experience)/i);
+  if (expMatch) {
+    experience = `${expMatch[1]}+ Years`;
+  }
+
+  const locMatch = rawText.match(/([A-Z][a-zA-Z\s]{2,15},\s*[A-Z]{2})/);
+  if (locMatch) {
+    location = locMatch[1].trim();
+  }
+
+  const eduMatch = rawText.match(/(Bachelor[^\n\r]+|Master[^\n\r]+|B\.Tech[^\n\r]+|B\.S\.[^\n\r]+|Degree[^\n\r]+)/i);
+  if (eduMatch) {
+    education = eduMatch[0].trim().replace(/\.$/, '');
+  }
+
+  const skills = [];
+  const commonTech = ['C#', 'ASP.NET', '.NET Core', 'Java', 'Python', 'React', 'Angular', 'TypeScript', 'JavaScript', 'SQL Server', 'Oracle', 'Azure', 'AWS', 'Docker', 'Kubernetes', 'Microservices', 'REST APIs', 'Git', 'CI/CD'];
+  commonTech.forEach(tech => {
+    const escaped = tech.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const regex = new RegExp(`\\b${escaped}\\b`, 'i');
+    if (regex.test(rawText)) {
+      skills.push(tech);
+    }
+  });
+
+  return { name, role, phone, email, visa, location, experience, education, skills };
+}
+
+// ─── Format Candidate Resume Text with Authentic Word Styling & Bullets ────
+export function formatStructuredWordResume(resumeText, blindResume = false) {
+  if (!resumeText) return '<p><i>No resume experience provided.</i></p>';
+
+  let raw = resumeText;
+
+  // Mask sensitive direct contact info if blind resume is active
+  if (blindResume) {
+    raw = raw
+      .replace(/[\w.-]+@[\w.-]+\.\w+/g, '[Contact details available via CoolSoft LLC]')
+      .replace(/\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g, '[Contact details available via CoolSoft LLC]')
+      .replace(/linkedin\.com\/in\/[\w.-]+/gi, 'linkedin.com/in/[Agency-Verified-Profile]');
+  }
+
+  // Normalize sticky section headers
+  raw = raw
+    .replace(/([^\n])\s*(Professional Summary|Summary of Qualifications|Summary):/gi, '$1\n$2:')
+    .replace(/([^\n])\s*(Technical Skills|Skills & Abilities|Core Competencies):/gi, '$1\n$2:')
+    .replace(/([^\n])\s*(Professional Experience|Employment History|Work Experience|Work History):/gi, '$1\n$2:')
+    .replace(/([^\n])\s*(Education|Education & Certifications):/gi, '$1\n$2:')
+    .replace(/([^\n])\s*(Client:|Project\s*#?\d*:|Role:|Responsibilities:|Environment:)/gi, '$1\n$2:');
+
+  const rawLines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+  // Merge wrapped broken lines
+  const mergedLines = [];
+  for (let i = 0; i < rawLines.length; i++) {
+    const line = rawLines[i];
+    const isHeader = /^(PROFESSIONAL SUMMARY|TECHNICAL SKILLS|EMPLOYMENT HISTORY|PROFESSIONAL EXPERIENCE|WORK EXPERIENCE|WORK HISTORY|EDUCATION|CLIENT:|PROJECT|ROLE:|RESPONSIBILITIES:|ENVIRONMENT:)/i.test(line);
+    const startsWithBullet = line.startsWith('•') || line.startsWith('-') || line.startsWith('*');
+    const prevLine = mergedLines[mergedLines.length - 1];
+
+    if (prevLine && !isHeader && !startsWithBullet && (!prevLine.endsWith('.') && !prevLine.endsWith(':') && !prevLine.endsWith(';')) && !line.includes(':') && line.length < 90) {
+      mergedLines[mergedLines.length - 1] = prevLine + ' ' + line;
+    } else {
+      mergedLines.push(line);
+    }
+  }
+
+  let html = '';
+  let currentSection = ''; // 'summary', 'skills', 'experience', 'education'
+  let inList = false;
+  let inResp = false;
+
+  for (let i = 0; i < mergedLines.length; i++) {
+    const l = mergedLines[i];
+
+    // Check main section headers
+    if (/^(PROFESSIONAL SUMMARY|SUMMARY OF QUALIFICATIONS|SUMMARY):?/i.test(l)) {
+      if (inList) { html += '</ul>'; inList = false; }
+      currentSection = 'summary';
+      inResp = false;
+      html += '<p style="margin: 18px 0 6px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; font-weight: bold; text-decoration: underline; color: #000000; text-transform: uppercase;">PROFESSIONAL SUMMARY</p>';
+      continue;
+    }
+    if (/^(TECHNICAL SKILLS|SKILLS & ABILITIES|CORE COMPETENCIES|AREAS OF EXPERTISE):?/i.test(l)) {
+      if (inList) { html += '</ul>'; inList = false; }
+      currentSection = 'skills';
+      inResp = false;
+      html += '<p style="margin: 18px 0 6px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; font-weight: bold; text-decoration: underline; color: #000000; text-transform: uppercase;">TECHNICAL SKILLS</p>';
+      continue;
+    }
+    if (/^(PROFESSIONAL EXPERIENCE|EMPLOYMENT HISTORY|WORK EXPERIENCE|WORK HISTORY):?/i.test(l)) {
+      if (inList) { html += '</ul>'; inList = false; }
+      currentSection = 'experience';
+      inResp = false;
+      html += '<p style="margin: 20px 0 8px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; font-weight: bold; text-decoration: underline; color: #000000; text-transform: uppercase;">EMPLOYMENT HISTORY</p>';
+      continue;
+    }
+    if (/^(EDUCATION|EDUCATION & CERTIFICATIONS|ACADEMIC BACKGROUND):?/i.test(l)) {
+      if (inList) { html += '</ul>'; inList = false; }
+      currentSection = 'education';
+      inResp = false;
+      html += '<p style="margin: 20px 0 6px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; font-weight: bold; text-decoration: underline; color: #000000; text-transform: uppercase;">EDUCATION</p>';
+      continue;
+    }
+
+    // Skip redundant top lines (e.g. name or phone if before summary)
+    if (!currentSection && i < 4 && (/phone|email|authorization|contact/i.test(l) || l.length < 35)) {
+      continue;
+    }
+
+    // Detect Project Title / Client / Company / Dates
+    const isClientLine = /^(Client|Company|Employer):/i.test(l) || 
+      /((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}|\d{4})\s*[-–—to]+\s*(Present|Current|Till Date|\d{4}|(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4})/i.test(l);
+
+    const isProjectNameLine = /^(Project\s*#?\d*):/i.test(l);
+    const isRoleLine = /^(Role|Title|Designation|Position):/i.test(l) || (/^(Senior|Sr\.?|Lead|Principal|Junior|Staff)?\s*(Developer|Engineer|Architect|Consultant|Analyst|Programmer)/i.test(l) && l.length < 50);
+    const isDescriptionLine = /^(Description|Project Description):/i.test(l);
+    const isRespHeader = /^(Responsibilities|Key Responsibilities|Duties|Accomplishments):/i.test(l);
+    const isEnvLine = /^(Environment|Technologies|Tools|Tech Stack):/i.test(l);
+
+    if (isClientLine) {
+      if (inList) { html += '</ul>'; inList = false; }
+      inResp = false;
+      html += '<div style="margin-top: 16px; margin-bottom: 6px; padding-top: 8px; border-top: 1px dashed #CBD5E1;">';
+      html += '<p style="margin: 0 0 3px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; font-weight: bold; color: #0F172A;">' + l + '</p></div>';
+      continue;
+    }
+
+    if (isRoleLine) {
+      if (inList) { html += '</ul>'; inList = false; }
+      html += '<p style="margin: 2px 0 4px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; font-weight: bold; color: #1E293B;">' + (l.startsWith('Role:') ? l : '<b>Role:</b> ' + l) + '</p>';
+      continue;
+    }
+
+    if (isProjectNameLine) {
+      if (inList) { html += '</ul>'; inList = false; }
+      html += '<p style="margin: 2px 0 3px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; font-weight: bold; color: #334155;">' + l + '</p>';
+      continue;
+    }
+
+    if (isDescriptionLine) {
+      if (inList) { html += '</ul>'; inList = false; }
+      html += '<p style="margin: 2px 0 4px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; color: #334155; line-height: 1.5;">' + l + '</p>';
+      continue;
+    }
+
+    if (isEnvLine) {
+      if (inList) { html += '</ul>'; inList = false; }
+      inResp = false;
+      html += '<p style="margin: 4px 0 8px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; font-style: italic; color: #334155;"><b>' + l + '</b></p>';
+      continue;
+    }
+
+    if (isRespHeader) {
+      if (inList) { html += '</ul>'; inList = false; }
+      inResp = true;
+      html += '<p style="margin: 6px 0 4px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; font-weight: bold; color: #000000;">Responsibilities:</p>';
+      continue;
+    }
+
+    // Format skills categories with bold label
+    if (currentSection === 'skills') {
+      if (inList) { html += '</ul>'; inList = false; }
+      const colonIdx = l.indexOf(':');
+      if (colonIdx > 0 && colonIdx < 35) {
+        const cat = l.substring(0, colonIdx);
+        const vals = l.substring(colonIdx + 1);
+        html += '<p style="margin: 3px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; line-height: 1.5; color: #000000;"><b>' + cat + ':</b>' + vals + '</p>';
+      } else {
+        html += '<p style="margin: 3px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; line-height: 1.5; color: #000000;">' + l + '</p>';
+      }
+      continue;
+    }
+
+    // Detect bullet points for summary, responsibilities, or lines with bullet symbols/verbs
+    const hasBulletSymbol = l.startsWith('•') || l.startsWith('-') || l.startsWith('*');
+    const isBulletItem = currentSection === 'summary' || inResp || hasBulletSymbol || currentSection === 'education';
+
+    if (isBulletItem) {
+      if (!inList) {
+        html += '<ul style="margin: 3px 0 10px 20px; padding: 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; line-height: 1.6; color: #000000; list-style-type: disc;">';
+        inList = true;
+      }
+      const cleanText = l.replace(/^[•\-*]\s*/, '');
+      html += '<li style="margin-bottom: 5px;">' + cleanText + '</li>';
+      continue;
+    }
+
+    if (inList) { html += '</ul>'; inList = false; }
+    html += '<p style="margin: 3px 0 5px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; line-height: 1.5; color: #000000;">' + l + '</p>';
+  }
+
+  if (inList) html += '</ul>';
+  return html;
+}
 
 // ─── Supported Presentation & E-RTR Templates ──────────────────────────────
 export const SUBMITTAL_TEMPLATES = [
@@ -183,6 +464,13 @@ export default function SubmittalPackPage() {
   // Resume Content State
   const [resumeText, setResumeText] = useState('')
 
+  // Resume File Upload & Live Parsing State
+  const resumeFileInputRef = useRef(null)
+  const [isParsingResume, setIsParsingResume] = useState(false)
+  const [uploadedFileName, setUploadedFileName] = useState('')
+  const [showPasteModal, setShowPasteModal] = useState(false)
+  const [pastedResumeText, setPastedResumeText] = useState('')
+
   // Editable Document Refs & Version Tracker
   const resumeEditorRef = useRef(null)
   const rtrEditorRef = useRef(null)
@@ -313,6 +601,87 @@ export default function SubmittalPackPage() {
     setIsLiveEditDirty(false)
   }
 
+  // ─── Direct Candidate Resume Upload & Parsing Handlers ───────────────────
+  const handleResumeFileUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setIsParsingResume(true)
+    setUploadedFileName(file.name)
+    try {
+      let extractedText = ''
+      const ext = file.name.split('.').pop()?.toLowerCase()
+      if (ext === 'txt' || ext === 'rtf') {
+        extractedText = await file.text()
+      } else {
+        const formData = new FormData()
+        formData.append('resume', file)
+        const res = await fetch('/api/parse-resume', {
+          method: 'POST',
+          body: formData
+        })
+        const data = await res.json()
+        if (data.success && data.text) {
+          extractedText = data.text
+        } else {
+          throw new Error(data.message || 'Failed to extract resume text')
+        }
+      }
+      processUploadedResumeText(extractedText, file.name)
+    } catch (err) {
+      console.error('Resume upload error:', err)
+      alert('Error uploading or parsing resume: ' + err.message)
+    } finally {
+      setIsParsingResume(false)
+      if (e.target) e.target.value = ''
+    }
+  }
+
+  const processUploadedResumeText = (rawText, sourceFileName = '') => {
+    if (!rawText || !rawText.trim()) return
+    const detected = extractResumeMetadata(rawText)
+    const candName = detected.name || sourceFileName.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ') || 'Candidate Full Legal Name'
+    const candRole = detected.role || positionTitle || 'Senior Specialist'
+    const candVisa = detected.visa || 'H-1B'
+    const candExp = detected.experience || '7+ Years'
+    const candEdu = detected.education || 'Bachelor of Science in Computer Science'
+    const candLoc = detected.location || 'Remote / US'
+    const candPhone = detected.phone || ''
+    const candEmail = detected.email || ''
+
+    const newCand = {
+      id: `cand-upload-${Date.now()}`,
+      name: candName,
+      role: candRole,
+      phone: candPhone,
+      email: candEmail,
+      location: candLoc,
+      visaStatus: candVisa,
+      experience: candExp,
+      education: candEdu,
+      skills: detected.skills.length > 0 ? detected.skills : ['Java', 'SQL', 'Cloud', 'Microservices'],
+      resumeText: rawText,
+      isUploaded: true
+    }
+
+    setCandidates(prev => [newCand, ...prev.filter(c => c.id !== newCand.id)])
+    setSelectedCandidateId(newCand.id)
+    setResumeText(rawText)
+    setCoversheet(prev => ({
+      ...prev,
+      candidateLegalName: candName,
+      targetRole: positionTitle || candRole,
+      currentLocation: candLoc,
+      visaStatus: candVisa,
+      totalExperience: candExp,
+      highestEducation: candEdu,
+      relevantExperience: `${parseInt(candExp) > 2 ? parseInt(candExp) - 1 : candExp}+ Years`
+    }))
+    setIsLiveEditDirty(false)
+    showToast(`Resume for ${candName} parsed & loaded!`)
+    setShowPasteModal(false)
+    setPastedResumeText('')
+  }
+
   // 4. Auto-populate Candidate Data into Coversheet and Resume
   useEffect(() => {
     if (!selectedCandidateId) return
@@ -320,10 +689,14 @@ export default function SubmittalPackPage() {
     const job = jobs.find(j => String(j.id) === String(selectedJobId) || String(j.id).replace(/^J-/, '') === String(selectedJobId))
 
     if (cand) {
-      const exp = cand.experience || '7+ Years'
+      const rawRes = cand.resumeText || cand.summary || ''
+      const realLegalName = extractCandidateRealName(cand.name, rawRes)
+      const detected = extractResumeMetadata(rawRes)
+
+      const exp = cand.experience || detected.experience || '7+ Years'
       const candSkills = Array.isArray(cand.skills)
         ? cand.skills
-        : String(cand.skills || '').split(/[,|•]+/).map(s => s.trim()).filter(Boolean)
+        : (detected.skills.length > 0 ? detected.skills : String(cand.skills || '').split(/[,|•]+/).map(s => s.trim()).filter(Boolean))
       const jobSkills = job
         ? (Array.isArray(job.skills) ? job.skills : String(job.skills || '').split(',').map(s => s.trim()))
         : (candSkills.slice(0, 5).length > 0 ? candSkills.slice(0, 5) : ['Java', 'SQL', 'Cloud', 'Microservices', 'REST APIs'])
@@ -346,20 +719,24 @@ export default function SubmittalPackPage() {
           : 'C2C'
       setEmploymentType(matchedEmp)
 
+      const finalVisa = cand.visaStatus || cand.visa || detected.visa || 'H-1B'
+      const finalEdu = cand.education || detected.education || 'Bachelor of Science in Computer Science'
+      const finalLoc = cand.location || detected.location || 'Remote / US'
+
       setCoversheet(prev => ({
         ...prev,
-        candidateLegalName: cand.name || cand.extracted_profile?.name || 'Candidate Full Legal Name',
-        targetRole: positionTitle || cand.role || 'Senior Specialist',
+        candidateLegalName: realLegalName,
+        targetRole: positionTitle || cand.role || detected.role || 'Senior Specialist',
         clientName: clientAgency || job?.client || 'Enterprise Client',
         jobId: vmsNumber || String(job?.id || '').replace(/^J-/, '') || '159256',
-        currentLocation: cand.location || 'Remote / US',
+        currentLocation: finalLoc,
         willingToRelocate: 'Yes (Open to Relocation)',
-        visaStatus: cand.visaStatus || cand.visa || 'H-1B',
-        visaExpiry: (cand.visaStatus === 'US Citizen' || cand.visaStatus === 'Green Card') ? 'Permanent' : 'Valid & Active',
+        visaStatus: finalVisa,
+        visaExpiry: (finalVisa === 'US Citizen' || finalVisa === 'Green Card') ? 'Permanent' : 'Valid & Active',
         totalExperience: exp,
         relevantExperience: `${parseInt(exp) > 2 ? parseInt(exp) - 1 : exp}+ Years`,
         proposedRate: rawRate,
-        highestEducation: cand.education || 'Bachelor of Science in Computer Science',
+        highestEducation: finalEdu,
         noticePeriod: 'Immediate / 2 Weeks',
         interviewAvailability: 'Flexible with 24 Hours Notice (Video)',
         linkedinUrl: cand.linkedinUrl || 'Represented Exclusively via CoolSoft LLC',
@@ -367,8 +744,6 @@ export default function SubmittalPackPage() {
         skillsMatrix: matrix
       }))
 
-      // Populate formatted Submittal Resume text
-      const rawRes = cand.resumeText || cand.summary || ''
       if (rawRes) {
         setResumeText(rawRes)
       } else {
@@ -384,7 +759,7 @@ PROFESSIONAL WORK HISTORY
 • Collaborated closely with cross-functional product, cloud, and QA squads
 
 EDUCATION & CERTIFICATIONS
-• ${cand.education || 'Bachelor of Science in Computer Science'}`)
+• ${finalEdu}`)
       }
       setIsLiveEditDirty(false)
     }
@@ -400,54 +775,9 @@ EDUCATION & CERTIFICATIONS
     }))
   }, [positionTitle, vmsNumber, clientAgency])
 
-  // ─── Format Candidate Resume Text with Authentic Bullet Points ────────────
+  // ─── Format Candidate Resume Text with Structured Headers & Authentic Bullets ────
   const formattedResumeBodyHtml = useMemo(() => {
-    if (!resumeText) return '<p><i>No resume experience provided.</i></p>'
-
-    // Clean up direct email/phone if blind resume is active
-    let sanitized = resumeText
-    if (blindResume) {
-      sanitized = sanitized
-        .replace(/[\w.-]+@[\w.-]+\.\w+/g, '[Contact details available via CoolSoft LLC]')
-        .replace(/\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g, '[Contact details available via CoolSoft LLC]')
-        .replace(/linkedin\.com\/in\/[\w.-]+/gi, 'linkedin.com/in/[Agency-Verified-Profile]')
-    }
-
-    const lines = sanitized.split('\n')
-    let html = ''
-    let inList = false
-
-    lines.forEach((line) => {
-      const trimmed = line.trim()
-      if (!trimmed) {
-        if (inList) { html += '</ul>'; inList = false }
-        return
-      }
-
-      // Check for section headers (e.g. PROFESSIONAL SUMMARY, WORK HISTORY, TECHNICAL SKILLS, EDUCATION)
-      const isHeader = /^(PROFESSIONAL SUMMARY|SUMMARY|EMPLOYMENT HISTORY|WORK HISTORY|PROFESSIONAL EXPERIENCE|TECHNICAL SKILLS|CORE COMPETENCIES|EDUCATION|CERTIFICATIONS|PROJECTS)/i.test(trimmed) && trimmed.length < 50
-
-      if (isHeader) {
-        if (inList) { html += '</ul>'; inList = false }
-        html += `<p style="margin: 18px 0 6px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; font-weight: bold; text-decoration: underline; color: #000000; text-transform: uppercase;">${trimmed}</p>`
-        return
-      }
-
-      // Check if line is bullet item
-      const isBullet = trimmed.startsWith('•') || trimmed.startsWith('- ') || trimmed.startsWith('* ')
-      if (isBullet) {
-        if (!inList) { html += '<ul style="margin: 4px 0 10px 24px; padding: 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; line-height: 1.6; color: #000000;">'; inList = true }
-        const cleanBulletText = trimmed.replace(/^[•\-*]\s*/, '')
-        html += `<li style="margin-bottom: 5px;">${cleanBulletText}</li>`
-        return
-      }
-
-      if (inList) { html += '</ul>'; inList = false }
-      html += `<p style="margin: 4px 0 6px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; line-height: 1.6; color: #000000;">${trimmed}</p>`
-    })
-
-    if (inList) html += '</ul>'
-    return html
+    return formatStructuredWordResume(resumeText, blindResume)
   }, [resumeText, blindResume])
 
   // ─── Generate Authentic Word-Formatted Resume HTML ────────────────────────
@@ -474,31 +804,18 @@ EDUCATION & CERTIFICATIONS
           Email: <a href="mailto:${caiManagerEmail}" style="color: #0000EE; text-decoration: underline;">${caiManagerEmail}</a>
         </p>
 
-        <!-- Candidate Name (Bold, Underline, 12px Verdana) -->
-        <p style="margin: 18px 0 4px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12.5px; font-weight: bold; text-decoration: underline; color: #000000; text-transform: uppercase;">
+        <!-- Candidate Name (Bold, Underline, 13px Verdana) -->
+        <p style="margin: 18px 0 4px 0; font-family: Verdana, Geneva, sans-serif; font-size: 13px; font-weight: bold; text-decoration: underline; color: #000000; text-transform: uppercase;">
           ${candidateName}
         </p>
-        <p style="margin: 2px 0 16px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; color: #334155;">
+        <p style="margin: 2px 0 18px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; color: #334155;">
           ${positionTitle} • Req #${vmsNumber} (${clientAgency}) • Represented via COOLSOFT LLC
         </p>
 
-        <!-- Employment History (Bold, Underline, 12px Verdana) -->
-        <p style="margin: 16px 0 6px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; font-weight: bold; text-decoration: underline; color: #000000;">
-          EMPLOYMENT HISTORY
-        </p>
-
-        <!-- Resume Body Experience -->
+        <!-- Structured Resume Body (Summary, Skills, Experience with Project Titles & Bullets, Education) -->
         <div style="font-family: Verdana, Geneva, sans-serif; font-size: 12px; line-height: 1.6; color: #000000;">
           ${formattedResumeBodyHtml}
         </div>
-
-        <!-- Education (Bold, Underline, 12px Verdana) -->
-        <p style="margin: 20px 0 6px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; font-weight: bold; text-decoration: underline; color: #000000;">
-          EDUCATION
-        </p>
-        <p style="margin: 2px 0 10px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; color: #000000;">
-          • ${coversheet.highestEducation}
-        </p>
       `
     }
 
@@ -508,7 +825,7 @@ EDUCATION & CERTIFICATIONS
       <div style="border-bottom: 2px solid #0F172A; padding-bottom: 12px; margin-bottom: 16px;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
           <div>
-            <h1 style="font-family: Verdana, Geneva, sans-serif; font-size: 22px; font-weight: bold; color: #0F172A; margin: 0 0 4px;">
+            <h1 style="font-family: Verdana, Geneva, sans-serif; font-size: 20px; font-weight: bold; color: #0F172A; margin: 0 0 4px;">
               ${candidateName}
             </h1>
             <div style="font-family: Verdana, Geneva, sans-serif; font-size: 13.5px; font-weight: bold; color: #2563EB;">
@@ -758,6 +1075,30 @@ EDUCATION & CERTIFICATIONS
     setIsLiveEditDirty(true)
   }
 
+  const handleInsertProjectHeader = () => {
+    const snippet = `
+      <div style="margin-top: 16px; margin-bottom: 6px; padding-top: 8px; border-top: 1px dashed #CBD5E1;">
+        <p style="margin: 0 0 3px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; font-weight: bold; color: #0F172A;">
+          Client: [Company / Client Name] — [City, State] <span style="float: right; font-weight: bold;">[Jan 2022 – Present]</span>
+        </p>
+        <p style="margin: 2px 0 4px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; font-weight: bold; color: #1E293B;">
+          Role: [Job Title]
+        </p>
+        <p style="margin: 6px 0 4px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; font-weight: bold; color: #000000;">
+          Responsibilities:
+        </p>
+        <ul style="margin: 3px 0 10px 20px; padding: 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; line-height: 1.6; color: #000000; list-style-type: disc;">
+          <li style="margin-bottom: 5px;">• [Key accomplishment or responsibility]</li>
+        </ul>
+        <p style="margin: 4px 0 8px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; font-style: italic; color: #334155;">
+          <b>Environment:</b> [Technologies and tools used]
+        </p>
+      </div>
+    `
+    document.execCommand('insertHTML', false, snippet)
+    setIsLiveEditDirty(true)
+  }
+
   // ─── Coversheet Text Generator (Plain-text for ATS / Portals) ──────────────
   const formattedCoversheetText = useMemo(() => {
     return `=====================================================
@@ -960,11 +1301,14 @@ ${coversheet.references}
               onChange={e => setSelectedCandidateId(e.target.value)}
               style={styles.selectInput}
             >
-              {candidates.map(c => (
-                <option key={c.id || c.candidate_id} value={c.id || c.candidate_id}>
-                  {c.name || 'Candidate'} — {c.role || 'Specialist'} {c.isVendorHotlist ? `(Bench: ${c.vendorCompany})` : ''}
-                </option>
-              ))}
+              {candidates.map(c => {
+                const displayName = extractCandidateRealName(c.name, c.resumeText)
+                return (
+                  <option key={c.id || c.candidate_id} value={c.id || c.candidate_id}>
+                    {c.isUploaded ? '📁 [Uploaded] ' : ''}{displayName} — {c.role || 'Specialist'} {c.phone ? `Phone: ${c.phone}` : ''} {c.isVendorHotlist ? `(Bench: ${c.vendorCompany})` : ''}
+                  </option>
+                )
+              })}
             </select>
           </div>
 
@@ -1036,6 +1380,62 @@ ${coversheet.references}
             <span style={{ fontSize: '11px', fontWeight: '700', color: '#2563EB', background: '#EFF6FF', padding: '3px 8px', borderRadius: 6, border: '1px solid #BFDBFE' }}>
               Editable Live
             </span>
+          </div>
+
+          {/* 0. Upload Candidate Resume Card */}
+          <div style={styles.uploadCard}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span>Upload Candidate Resume</span>
+              </div>
+              <span style={{ fontSize: '10px', fontWeight: '700', color: '#047857', background: '#ECFDF5', padding: '2px 6px', borderRadius: 4, border: '1px solid #A7F3D0' }}>
+                DOCX • PDF • TXT
+              </span>
+            </div>
+            <p style={{ fontSize: '11px', color: '#64748B', margin: '0 0 10px 0', lineHeight: 1.4 }}>
+              Upload candidate resume to auto-extract details, format projects & bullets, and prepare submittal pack.
+            </p>
+            
+            <input
+              type="file"
+              ref={resumeFileInputRef}
+              style={{ display: 'none' }}
+              accept=".docx,.doc,.pdf,.txt,.rtf"
+              onChange={handleResumeFileUpload}
+            />
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => resumeFileInputRef.current?.click()}
+                disabled={isParsingResume}
+                style={styles.uploadBtnPrimary}
+              >
+                <IconUpload /> <span>{isParsingResume ? 'Parsing...' : 'Upload File'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowPasteModal(true)}
+                style={styles.uploadBtnSecondary}
+              >
+                <IconFileText /> <span>Paste Resume</span>
+              </button>
+            </div>
+
+            {uploadedFileName && (
+              <div style={{ marginTop: 8, padding: '5px 8px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 6, fontSize: '11px', color: '#15803D', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '85%' }}>
+                  ✓ <b>{uploadedFileName}</b>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setUploadedFileName('')}
+                  style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#94A3B8', fontSize: '12px' }}
+                >
+                  ✕
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Dynamic Position Binding Section */}
@@ -1467,6 +1867,14 @@ ${coversheet.references}
               >
                 • Bullet
               </button>
+              <button
+                type="button"
+                onClick={handleInsertProjectHeader}
+                style={{ ...styles.toolbarBtn, color: '#1D4ED8', fontWeight: '700' }}
+                title="Insert New Project / Client Experience Block"
+              >
+                + Project
+              </button>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1593,6 +2001,60 @@ ${coversheet.references}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Paste Candidate Resume Text Modal ────────────────────────────── */}
+      {showPasteModal && (
+        <div style={styles.modalOverlay} onClick={() => setShowPasteModal(false)}>
+          <div style={styles.modalCard} onClick={e => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0F172A', margin: 0 }}>
+                Paste Candidate Resume Text
+              </h3>
+              <button onClick={() => setShowPasteModal(false)} style={styles.closeBtn}>✕</button>
+            </div>
+            <div style={{ padding: '16px' }}>
+              <p style={{ fontSize: '11.5px', color: '#64748B', margin: '0 0 10px 0', lineHeight: 1.5 }}>
+                Paste the candidate's resume from Word, PDF, or email. SmartHire will automatically extract their legal name, target role, contact, visa, experience, bulleted responsibilities, and format everything in authentic Word styling.
+              </p>
+              <textarea
+                rows={12}
+                value={pastedResumeText}
+                onChange={e => setPastedResumeText(e.target.value)}
+                placeholder="Paste full resume text here (Ctrl+V)..."
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  borderRadius: 8,
+                  border: '1px solid #CBD5E1',
+                  fontFamily: 'monospace',
+                  fontSize: '11.5px',
+                  boxSizing: 'border-box',
+                  outline: 'none',
+                  resize: 'vertical',
+                  lineHeight: '1.5'
+                }}
+              />
+              <div style={{ marginTop: 14, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setShowPasteModal(false)}
+                  style={styles.actionBtnSecondary}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={!pastedResumeText.trim()}
+                  onClick={() => processUploadedResumeText(pastedResumeText, 'Pasted Resume')}
+                  style={styles.actionBtnPrimary}
+                >
+                  Parse & Load Resume
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -1981,5 +2443,42 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: 4
+  },
+  uploadCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: '10px',
+    border: '1px solid #E2E8F0',
+    padding: '14px 16px',
+    boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+  },
+  uploadBtnPrimary: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px',
+    padding: '8px 12px',
+    borderRadius: '6px',
+    backgroundColor: '#0F172A',
+    color: '#FFFFFF',
+    border: 'none',
+    fontSize: '11.5px',
+    fontWeight: '700',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease'
+  },
+  uploadBtnSecondary: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px',
+    padding: '8px 12px',
+    borderRadius: '6px',
+    backgroundColor: '#F8FAFC',
+    color: '#1E293B',
+    border: '1px solid #CBD5E1',
+    fontSize: '11.5px',
+    fontWeight: '700',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease'
   }
 }
