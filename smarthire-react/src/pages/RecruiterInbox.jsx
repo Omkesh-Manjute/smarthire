@@ -2697,13 +2697,19 @@ export default function RecruiterInbox({ defaultViewMode }) {
     if (userStr) currentUser = JSON.parse(userStr)
   } catch (e) {}
 
-  const teamUsersList = (() => {
+  const teamUsersList = useMemo(() => {
+    if (Array.isArray(availableRecruiters) && availableRecruiters.length > 0) {
+      return availableRecruiters
+    }
     try {
       const raw = localStorage.getItem('smarthire_recruiters')
-      if (raw) return JSON.parse(raw) || []
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
     } catch(e) {}
-    return []
-  })()
+    return ALL_SMARTHIRE_RECRUITERS
+  }, [availableRecruiters])
 
   const matchedUserInTeam = teamUsersList.find(u =>
     (u.email && currentUser?.email && u.email.toLowerCase() === currentUser.email.toLowerCase()) ||
@@ -2756,20 +2762,23 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
   const fetchCandidateDetails = useCallback(async (candidateId, threadObj = null) => {
     const thread = threadObj || threads.find(t => t.candidateId === candidateId)
-    if (thread?.isTeamMember || thread?.isLeadChannel || candidateId.startsWith('team-') || candidateId.startsWith('lead-')) {
+    if (thread?.isTeamMember || thread?.isLeadChannel || thread?.category === 'team' || candidateId.startsWith('team-') || candidateId.startsWith('lead-')) {
       const isLead = thread?.isLeadChannel || isReportee
       setCandidateDetails({
-        name: thread?.candidateName || (isLead ? parentRecruiterName : 'Team Member'),
+        isTeamMember: true,
+        candidateName: thread?.candidateName || thread?.name || (isLead ? parentRecruiterName : 'Team Member'),
+        name: thread?.candidateName || thread?.name || (isLead ? parentRecruiterName : 'Team Member'),
         email: thread?.email || (isLead ? parentRecruiterEmail : 'team@coolsofttech.com'),
-        role: thread?.role || (isLead ? 'Lead Recruiter & Reporting Supervisor' : 'Sourcing Specialist / Team Member'),
-        phone: thread?.phone || '571-660-5778',
-        location: 'Richmond, VA / Remote',
+        role: thread?.role || (isLead ? 'Lead Recruiter & Reporting Supervisor' : 'Recruiter / Sourcing Specialist'),
+        phone: thread?.phone || '+1 (555) 019-2834',
+        location: thread?.location || 'United States / Remote',
+        company: thread?.company || 'COOLSOFT LLC / SmartHire',
         skills: isLead 
           ? ['Team Supervision', 'Requisition Approvals', 'Client Delivery', 'Rate Clearances', 'Candidate Intake']
-          : ['Active Sourcing', 'Resume Verification', 'RTR Screening', 'Boolean Search', 'Candidate Engagement'],
+          : ['Candidate Sourcing', 'Resume Verification', 'RTR Screening', 'Boolean Search', 'Candidate Engagement'],
         summary: isLead
           ? `Lead Recruiter supervisor for ${currentUser?.name || 'Recruiter'}. Reviews candidates, requisition queries, and approves client submissions.`
-          : `Team member reporting to ${currentUser?.name || 'Lead Recruiter'}. Sources candidates, collects RTR documents, and submits profiles for requisition matching.`
+          : `Team colleague at SmartHire. Collaborates on candidate sourcing, requisition matching, and client submittals.`
       })
       return
     }
@@ -2908,70 +2917,124 @@ export default function RecruiterInbox({ defaultViewMode }) {
       }
     } catch (e) { console.warn('Candidate thread fetch error:', e) }
 
-    // ─── DYNAMIC TEAM REPORTING CHANNELS ───
+    // ─── DYNAMIC TEAM COLLABORATION CHANNELS ───
     const teamChannels = []
+    const myName = (currentUser?.name || '').toLowerCase().trim()
+    const myEmail = (currentUser?.email || '').toLowerCase().trim()
+    const myRef = (currentUser?.refCode || '').toLowerCase().trim()
 
-    if (isReportee) {
-      // Employee / Sourcing Specialist channel with their direct supervisor (e.g. Naveen -> Sukamal)
-      const threadId = `team-reportee-${(currentUser?.email || 'emp').toLowerCase().trim()}`
-      let fsMsgs = []
-      try { fsMsgs = await getMessagesFirestore(threadId) } catch(e) {}
-      const lastMsgText = (fsMsgs && fsMsgs.length > 0) ? fsMsgs[fsMsgs.length - 1].text : ''
-      const lastMsgTime = (fsMsgs && fsMsgs.length > 0) ? fsMsgs[fsMsgs.length - 1].timestamp : ''
+    // 1. If user has a designated reporting lead / supervisor, place them first
+    if (isReportee && parentRecruiterName) {
+      const supRef = (parentRecruiterEmail || parentRecruiterName).toLowerCase().replace(/[^a-z0-9_-]/g, '-')
+      const supThreadId = `team-${supRef}`
+      const existingThread = candidateThreads.find(t => t.candidateId === supThreadId || t.candidateId === `team-reportee-${myEmail}`)
+      let lastMsgText = existingThread?.lastMessage || ''
+      let lastMsgTime = existingThread?.lastMessageTime || ''
+      if (!lastMsgText) {
+        try {
+          const fsMsgs = await getMessagesFirestore(supThreadId)
+          if (fsMsgs && fsMsgs.length > 0) {
+            lastMsgText = fsMsgs[fsMsgs.length - 1].text
+            lastMsgTime = fsMsgs[fsMsgs.length - 1].timestamp
+          }
+        } catch(e) {}
+      }
 
-      const supervisorThread = {
-        candidateId: threadId,
+      teamChannels.push({
+        candidateId: supThreadId,
         candidateName: `${parentRecruiterName} (Reporting Supervisor / Lead)`,
+        name: parentRecruiterName,
         jobTitle: 'Reporting Supervisor & Sourcing Approvals',
-        lastMessage: lastMsgText,
-        lastMessageTime: lastMsgTime,
-        unreadCount: 0,
+        subtitle: `Lead Recruiter • ${parentRecruiterEmail}`,
+        lastMessage: lastMsgText || `Direct messaging with ${parentRecruiterName.split(' ')[0]}`,
+        lastMessageTime: lastMsgTime || new Date().toISOString(),
+        unreadCount: existingThread?.unreadCount || 0,
         isLeadChannel: true,
         isTeamMember: true,
+        category: 'team',
         email: parentRecruiterEmail,
-        role: 'Lead Recruiter'
-      }
-      teamChannels.push(supervisorThread)
-    } else {
-      // Supervisor / Lead Recruiter / Admin (e.g. Sukamal Chatterjee, Omkesh, Vaibhav)
-      // Find all reportees assigned to this supervisor
-      const myName = (currentUser?.name || '').toLowerCase().trim()
-      const myEmail = (currentUser?.email || '').toLowerCase().trim()
-
-      const myReportees = teamUsersList.filter(u => {
-        if (!u || !u.name) return false
-        const pName = (u.parentRecruiterName || '').toLowerCase().trim()
-        const pEmail = (u.parentRecruiterEmail || '').toLowerCase().trim()
-        const uEmail = (u.email || '').toLowerCase().trim()
-        if (uEmail === myEmail) return false
-        if (isAdmin || isSuperAdmin) {
-          return u.role === 'employee' || u.role === 'recruiter'
-        }
-        return pName === myName || (myEmail && pEmail === myEmail) || (myName && pName.includes(myName))
+        phone: '+1 (571) 660-5778',
+        role: 'Lead Recruiter & Reporting Supervisor',
+        company: 'COOLSOFT LLC / SmartHire',
+        location: 'Richmond, VA / Remote',
+        status: 'online',
+        isOnline: true,
+        recentFiles: []
       })
+    }
 
-      for (const rep of myReportees) {
-        const threadId = `team-reportee-${(rep.email || '').toLowerCase().trim()}`
-        let fsMsgs = []
-        try { fsMsgs = await getMessagesFirestore(threadId) } catch(e) {}
-        const lastMsgText = (fsMsgs && fsMsgs.length > 0) ? fsMsgs[fsMsgs.length - 1].text : ''
-        const lastMsgTime = (fsMsgs && fsMsgs.length > 0) ? fsMsgs[fsMsgs.length - 1].timestamp : ''
+    // 2. Add all team colleagues from teamUsersList (excluding self and already added supervisor)
+    const allMembers = Array.isArray(teamUsersList) && teamUsersList.length > 0 ? teamUsersList : ALL_SMARTHIRE_RECRUITERS
+    const addedEmails = new Set(teamChannels.map(c => (c.email || '').toLowerCase().trim()).filter(Boolean))
 
-        teamChannels.push({
-          candidateId: threadId,
-          candidateName: `${rep.name} (Sourcing Specialist)`,
-          jobTitle: `Direct Reportee • ${rep.company || 'SmartHire Team'}`,
-          lastMessage: lastMsgText,
-          lastMessageTime: lastMsgTime,
-          unreadCount: 0,
-          isLeadChannel: false,
-          isTeamMember: true,
-          email: rep.email,
-          phone: rep.phone || '',
-          role: rep.role || 'Employee / Sourcing Specialist',
-          recentFiles: []
-        })
+    for (const mem of allMembers) {
+      if (!mem || !mem.name) continue
+      const memEmail = (mem.email || '').toLowerCase().trim()
+      const memRef = (mem.refCode || '').toLowerCase().trim()
+      const memName = (mem.name || '').toLowerCase().trim()
+
+      // Skip current user (don't chat with self)
+      if ((myEmail && memEmail === myEmail) || (myRef && memRef === myRef) || (myName && memName === myName)) {
+        continue
       }
+      // Skip if already added
+      if (memEmail && addedEmails.has(memEmail)) {
+        continue
+      }
+
+      const safeCode = memRef || memEmail.split('@')[0] || mem.name.toLowerCase().replace(/[^a-z0-9_-]/g, '-')
+      const threadId = `team-${safeCode}`
+      addedEmails.add(memEmail)
+
+      // Look up existing messages from candidateThreads (from server) or Firestore
+      const existingThread = candidateThreads.find(t => t.candidateId === threadId || t.candidateId === `team-reportee-${memEmail}`)
+      let lastMsgText = existingThread?.lastMessage || ''
+      let lastMsgTime = existingThread?.lastMessageTime || ''
+      let unreadCount = existingThread?.unreadCount || 0
+
+      if (!lastMsgText) {
+        try {
+          const fsMsgs = await getMessagesFirestore(threadId)
+          if (fsMsgs && fsMsgs.length > 0) {
+            lastMsgText = fsMsgs[fsMsgs.length - 1].text
+            lastMsgTime = fsMsgs[fsMsgs.length - 1].timestamp
+          }
+        } catch(e) {}
+      }
+
+      const isSupervisor = (parentRecruiterEmail && memEmail === parentRecruiterEmail.toLowerCase()) || 
+                           (parentRecruiterName && memName.includes(parentRecruiterName.toLowerCase()))
+      const isMyReportee = (mem.parentRecruiterEmail && mem.parentRecruiterEmail.toLowerCase() === myEmail) ||
+                           (mem.parentRecruiterName && myName && mem.parentRecruiterName.toLowerCase().includes(myName))
+
+      const relationshipBadge = isSupervisor 
+        ? ' (Reporting Lead)' 
+        : isMyReportee 
+        ? ' (Direct Reportee)' 
+        : ` (${mem.role || 'Recruiter'})`
+
+      teamChannels.push({
+        candidateId: threadId,
+        candidateName: `${mem.name}${relationshipBadge}`,
+        name: mem.name,
+        jobTitle: `${mem.role || 'Recruiter'} • ${mem.company || 'SmartHire Team'}`,
+        subtitle: `${mem.role || 'Recruiter'} • ${mem.email || ''}`,
+        lastMessage: lastMsgText || `Click to start conversation with ${mem.name.split(' ')[0]}`,
+        lastMessageTime: lastMsgTime || new Date(Date.now() - 3600000).toISOString(),
+        unreadCount: unreadCount,
+        isLeadChannel: isSupervisor,
+        isTeamMember: true,
+        category: 'team',
+        email: mem.email,
+        phone: mem.phone || '+1 (555) 019-2834',
+        role: mem.role || 'Recruiter / Sourcing Specialist',
+        company: mem.company || 'COOLSOFT LLC / SmartHire',
+        location: mem.location || 'United States',
+        refCode: mem.refCode || safeCode,
+        status: 'online',
+        isOnline: true,
+        recentFiles: []
+      })
     }
 
     const threadMap = new Map()
@@ -2980,10 +3043,12 @@ export default function RecruiterInbox({ defaultViewMode }) {
     })
     candidateThreads.forEach(t => {
       const resolvedName = resolveCandidateDisplayName(t, streamCandidates)
+      const isTeam = t.isTeamMember || t.isLeadChannel || String(t.candidateId || '').startsWith('team-') || String(t.candidateId || '').startsWith('lead-')
       const threadObj = {
         ...t,
         candidateName: resolvedName,
-        category: t.category || 'candidates'
+        isTeamMember: t.isTeamMember || isTeam,
+        category: t.category || (isTeam ? 'team' : 'candidates')
       }
       if (threadMap.has(t.candidateId)) {
         threadMap.set(t.candidateId, { ...threadMap.get(t.candidateId), ...threadObj })
@@ -4579,6 +4644,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
   const visibleThreads = threads.filter(t => {
     if (!t) return false
+    // Team collaboration channels should NEVER be hidden by recruiterFilter
+    if (t.isTeamMember || t.isLeadChannel || t.category === 'team' || String(t.candidateId || '').startsWith('team-')) return true
     if (recruiterFilter === 'all') return true
     const tRef = (t.refCode || t.referredBy || '').toLowerCase()
     const tEmail = (t.recruiterEmail || t.createdBy || '').toLowerCase()
@@ -4594,11 +4661,11 @@ export default function RecruiterInbox({ defaultViewMode }) {
   }).filter(t => {
     // 1. Category Tab Filter ('all', 'candidates', 'clients', 'team')
     if (messageCategoryTab === 'candidates') {
-      if (t.category !== 'candidates' && (t.isTeamMember || t.isLeadChannel || t.category === 'clients')) return false
+      if (t.category !== 'candidates' && (t.isTeamMember || t.isLeadChannel || t.category === 'clients' || t.category === 'team')) return false
     } else if (messageCategoryTab === 'clients') {
       if (t.category !== 'clients') return false
     } else if (messageCategoryTab === 'team') {
-      if (t.category !== 'team' && !t.isTeamMember && !t.isLeadChannel) return false
+      if (t.category !== 'team' && !t.isTeamMember && !t.isLeadChannel && !String(t.candidateId || '').startsWith('team-')) return false
     }
 
     // 2. Search Filter
@@ -4609,7 +4676,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
       const roleMatch = (t.role || '').toLowerCase().includes(q)
       const compMatch = (t.company || '').toLowerCase().includes(q)
       const lastMatch = (t.lastMessage || '').toLowerCase().includes(q)
-      if (!nameMatch && !jobMatch && !roleMatch && !compMatch && !lastMatch) return false
+      const emailMatch = (t.email || '').toLowerCase().includes(q)
+      if (!nameMatch && !jobMatch && !roleMatch && !compMatch && !lastMatch && !emailMatch) return false
     }
     return true
   }).sort((a, b) => {
@@ -12770,7 +12838,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
               <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
                 {[
                   { id: 'all', label: 'All', count: threads.length },
-                  { id: 'candidates', label: 'Candidates', count: threads.filter(t => !t.isTeamMember && !t.isLeadChannel && t.category !== 'clients').length },
+                  { id: 'candidates', label: 'Candidates', count: threads.filter(t => !t.isTeamMember && !t.isLeadChannel && t.category !== 'clients' && t.category !== 'team').length },
                   { id: 'clients', label: 'Clients', count: threads.filter(t => t.category === 'clients').length },
                   { id: 'team', label: 'Team', count: threads.filter(t => t.isTeamMember || t.isLeadChannel || t.category === 'team').length }
                 ].map(tab => {
@@ -12918,6 +12986,44 @@ export default function RecruiterInbox({ defaultViewMode }) {
               flexShrink: 0,
               boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
             }}>
+              {/* Column 1 Title & Quick Action */}
+              <div style={{
+                padding: '10px 14px',
+                borderBottom: `1px solid ${C.border}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                backgroundColor: isLight ? '#F8FAFC' : '#1C252E'
+              }}>
+                <span style={{ fontSize: 13, fontWeight: 800, color: C.textPrimary }}>
+                  {messageCategoryTab === 'team' ? 'Team Collab' : 'Conversations'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMessageCategoryTab('team')
+                    const firstTeam = threads.find(t => t.isTeamMember || t.category === 'team')
+                    if (firstTeam) selectThread(firstTeam)
+                  }}
+                  style={{
+                    background: '#2563EB',
+                    color: '#FFF',
+                    border: 'none',
+                    borderRadius: 6,
+                    padding: '4px 10px',
+                    fontSize: 11.5,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}
+                  title="View and message team colleagues"
+                >
+                  <span>+ Team Chat</span>
+                </button>
+              </div>
+
               {/* Recruiter Filter Dropdown for Admins / Leads */}
               {!isReportee && (
                 <div style={{ padding: '10px 12px', borderBottom: `1px solid ${C.border}`, backgroundColor: isLight ? '#F8FAFC' : '#1C252E' }}>
@@ -14519,6 +14625,205 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
       {/* Candidate Full Profile Drawer (Recruiter Side - Monster Style & AI Matcher) */}
       {showFullProfileModal && candidateDetails && (() => {
+        if (candidateDetails.isTeamMember || activeThread?.isTeamMember || activeThread?.category === 'team' || String(activeThread?.candidateId || '').startsWith('team-')) {
+          const colleagueName = candidateDetails.name || candidateDetails.candidateName || activeThread?.candidateName || 'Team Member';
+          const colleagueRole = candidateDetails.role || activeThread?.role || 'Recruiter / Sourcing Specialist';
+          const colleagueEmail = candidateDetails.email || activeThread?.email || '';
+          const colleaguePhone = candidateDetails.phone || activeThread?.phone || '+1 (555) 019-2834';
+          const colleagueCompany = activeThread?.company || candidateDetails.company || 'COOLSOFT LLC / SmartHire';
+          const colleagueLocation = activeThread?.location || candidateDetails.location || 'United States / Remote';
+          const isOnline = Boolean(activeThread?.isOnline || activeThread?.status === 'online');
+
+          return (
+            <div style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(15, 23, 42, 0.65)',
+              backdropFilter: 'blur(6px)',
+              zIndex: 4000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 20,
+              animation: 'fadeIn 0.2s ease-out'
+            }} onClick={() => setShowFullProfileModal(false)}>
+              <div style={{
+                width: '100%',
+                maxWidth: 620,
+                backgroundColor: C.surface,
+                borderRadius: 16,
+                border: `1px solid ${C.border}`,
+                boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.3)',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                fontFamily: "'Plus Jakarta Sans', Inter, sans-serif"
+              }} onClick={e => e.stopPropagation()}>
+                {/* Header */}
+                <div style={{
+                  padding: '20px 24px',
+                  borderBottom: `1px solid ${C.border}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  background: isLight ? '#F8FAFC' : '#1E293B'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 12,
+                      background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
+                      color: '#FFF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 18,
+                      fontWeight: 800
+                    }}>
+                      {colleagueName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: C.textPrimary }}>{colleagueName}</h3>
+                        <span style={{
+                          background: isOnline ? '#ECFDF5' : (isLight ? '#F1F5F9' : '#334155'),
+                          color: isOnline ? '#059669' : C.textSecondary,
+                          border: `1px solid ${isOnline ? '#A7F3D0' : C.border}`,
+                          padding: '2px 8px',
+                          borderRadius: 12,
+                          fontSize: 11,
+                          fontWeight: 700
+                        }}>
+                          {isOnline ? 'Online' : 'Active'}
+                        </span>
+                      </div>
+                      <p style={{ margin: '3px 0 0', fontSize: 12.5, color: C.textSecondary, fontWeight: 600 }}>
+                        {colleagueRole} • {colleagueCompany}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowFullProfileModal(false)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      fontSize: 20,
+                      color: C.textSecondary,
+                      cursor: 'pointer',
+                      padding: 4
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Body Details */}
+                <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
+                    <div style={{ background: isLight ? '#F8FAFC' : '#1C252E', padding: '12px 16px', borderRadius: 10, border: `1px solid ${C.border}` }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: C.textSecondary, textTransform: 'uppercase' }}>Email Address</div>
+                      <div style={{ fontSize: 13.5, fontWeight: 600, color: '#2563EB', marginTop: 4, wordBreak: 'break-all' }}>{colleagueEmail}</div>
+                    </div>
+                    <div style={{ background: isLight ? '#F8FAFC' : '#1C252E', padding: '12px 16px', borderRadius: 10, border: `1px solid ${C.border}` }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: C.textSecondary, textTransform: 'uppercase' }}>Phone Number</div>
+                      <div style={{ fontSize: 13.5, fontWeight: 600, color: C.textPrimary, marginTop: 4 }}>{colleaguePhone}</div>
+                    </div>
+                    <div style={{ background: isLight ? '#F8FAFC' : '#1C252E', padding: '12px 16px', borderRadius: 10, border: `1px solid ${C.border}` }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: C.textSecondary, textTransform: 'uppercase' }}>Role / Designation</div>
+                      <div style={{ fontSize: 13.5, fontWeight: 600, color: C.textPrimary, marginTop: 4 }}>{colleagueRole}</div>
+                    </div>
+                    <div style={{ background: isLight ? '#F8FAFC' : '#1C252E', padding: '12px 16px', borderRadius: 10, border: `1px solid ${C.border}` }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: C.textSecondary, textTransform: 'uppercase' }}>Location</div>
+                      <div style={{ fontSize: 13.5, fontWeight: 600, color: C.textPrimary, marginTop: 4 }}>{colleagueLocation}</div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: 12.5, fontWeight: 800, color: C.textPrimary, marginBottom: 8 }}>
+                      Core Functional Responsibilities
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {(candidateDetails.skills || [
+                        'Candidate Sourcing', 'Requisition Matching', 'Right to Represent (RTR)', 'Vendor Management', 'Technical Screening', 'Portal Submissions'
+                      ]).map((s, idx) => (
+                        <span key={idx} style={{
+                          background: isLight ? '#EFF6FF' : 'rgba(37, 99, 235, 0.15)',
+                          color: '#2563EB',
+                          border: '1px solid #BFDBFE',
+                          padding: '4px 10px',
+                          borderRadius: 8,
+                          fontSize: 12,
+                          fontWeight: 600
+                        }}>
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {candidateDetails.summary && (
+                    <div style={{ background: isLight ? '#F8FAFC' : '#1C252E', padding: '14px 16px', borderRadius: 10, border: `1px solid ${C.border}` }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: C.textSecondary, textTransform: 'uppercase', marginBottom: 4 }}>About Colleague</div>
+                      <div style={{ fontSize: 13, color: C.textPrimary, lineHeight: 1.5 }}>
+                        {candidateDetails.summary}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer Actions */}
+                <div style={{
+                  padding: '16px 24px',
+                  borderTop: `1px solid ${C.border}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-end',
+                  gap: 12,
+                  background: isLight ? '#F8FAFC' : '#1E293B'
+                }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowFullProfileModal(false)}
+                    style={{
+                      background: C.surface,
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 8,
+                      padding: '8px 16px',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: C.textPrimary,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowFullProfileModal(false)
+                      inputRef.current?.focus()
+                    }}
+                    style={{
+                      background: '#2563EB',
+                      color: '#FFF',
+                      border: 'none',
+                      borderRadius: 8,
+                      padding: '8px 18px',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Send Direct Message
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
+        }
+
         const candidateName = candidateDetails.candidateName || candidateDetails.name || activeThread?.candidateName || 'Candidate'
         const email = candidateDetails.candidateEmail || candidateDetails.email || profile?.email || '—'
         const phone = candidateDetails.candidatePhone || candidateDetails.phone || profile?.phone || '—'

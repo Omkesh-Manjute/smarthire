@@ -25,21 +25,32 @@ import {
   extractProfileFromRawText
 } from './linkedin-verifier.js'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'smarthire_secure_jwt_secret_key_2026';
+const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' && !process.env.ALLOW_INSECURE_JWT
+  ? (() => {
+      console.warn('⚠️ WARNING: JWT_SECRET environment variable is not defined in production. Generating secure random key.');
+      return crypto.randomBytes(32).toString('hex');
+    })()
+  : 'smarthire_secure_jwt_secret_key_2026');
 
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
   
   if (!token) {
-    req.user = { id: 'admin-1', role: 'superadmin', name: 'Super Admin', email: 'omkesh@coolsofttech.com' };
+    return res.status(401).json({ success: false, message: 'Unauthorized: Access token is required' });
+  }
+
+  // Handle client-side session tokens (e.g. Firebase or mock session token from auth store)
+  if (token.startsWith('mock-token-') || token.startsWith('token-')) {
+    const userEmail = (req.headers['x-recruiter-email'] || 'recruiter@coolsofttech.com').toLowerCase().trim();
+    const userRole = (req.headers['x-recruiter-role'] || 'recruiter').toLowerCase().trim();
+    req.user = { id: token, email: userEmail, role: userRole };
     return next();
   }
 
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) {
-      req.user = { id: 'admin-1', role: 'superadmin', name: 'Super Admin', email: 'omkesh@coolsofttech.com' };
-      return next();
+      return res.status(401).json({ success: false, message: 'Unauthorized: Invalid or expired token' });
     }
     req.user = user;
     next();
@@ -1220,7 +1231,32 @@ const distPath = fs.existsSync(path.resolve(__dirname, '../../dist'))
   ? path.resolve(__dirname, '../../dist')
   : path.resolve(__dirname, '../dist');
 
-app.use(cors())
+const ALLOWED_ORIGINS = [
+  'https://smarthireus.com',
+  'https://www.smarthireus.com',
+  'https://smarthire-4zqf.onrender.com',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:3000'
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (
+      ALLOWED_ORIGINS.includes(origin) ||
+      origin.endsWith('.smarthireus.com') ||
+      origin.endsWith('.onrender.com')
+    ) {
+      return callback(null, true);
+    }
+    return callback(null, false);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-recruiter-email', 'x-recruiter-ref', 'x-recruiter-role', 'x-admin-key']
+}))
 app.use((req, res, next) => {
   const proto = req.headers['x-forwarded-proto'];
   if (proto && proto === 'http') {
@@ -2541,6 +2577,10 @@ app.get('/api/candidates/view-resume', async (req, res) => {
       bodyHtml = `<pre style="white-space: pre-wrap; font-family: monospace;">${rawText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`;
     }
 
+    const escapeHtml = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    const safeCandName = escapeHtml(candName);
+    const safeFileName = escapeHtml(cleanFn || path.basename(resolvedPath));
+
     const downloadViewerUrl = `/api/candidates/view-resume?download=true&file=${encodeURIComponent(cleanFn || path.basename(resolvedPath))}&name=${encodeURIComponent(candName)}`;
 
     const docViewerHtml = `<!DOCTYPE html>
@@ -2548,7 +2588,7 @@ app.get('/api/candidates/view-resume', async (req, res) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${candName} — Resume Preview | SmartHire ATS</title>
+  <title>${safeCandName} — Resume Preview | SmartHire ATS</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -2653,8 +2693,8 @@ app.get('/api/candidates/view-resume', async (req, res) => {
 <body>
   <div class="top-bar">
     <div class="cand-info">
-      <div class="cand-name">${candName}</div>
-      <div class="file-name">${cleanFn || path.basename(resolvedPath)}</div>
+      <div class="cand-name">${safeCandName}</div>
+      <div class="file-name">${safeFileName}</div>
     </div>
     <div class="actions">
       <button class="btn btn-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
@@ -9291,6 +9331,7 @@ app.get('/api/messages', authenticateToken, (req, res) => {
 
   if (queryRecruiter && queryRecruiter !== 'all') {
     filteredThreads = allThreads.filter(t => {
+      if (t.candidateId && (t.candidateId.startsWith('team-') || t.candidateId.startsWith('lead-'))) return true;
       const matchEmail = t.recruiterEmail && (t.recruiterEmail.toLowerCase() === queryRecruiter || t.recruiterEmail.toLowerCase().includes(queryRecruiter));
       const matchRef = t.refCode && (t.refCode.toLowerCase() === queryRecruiter || queryRecruiter.includes(t.refCode.toLowerCase()) || t.refCode.toLowerCase().includes(queryRecruiter));
       const matchName = t.recruiterName && t.recruiterName.toLowerCase().includes(queryRecruiter);
@@ -9298,6 +9339,7 @@ app.get('/api/messages', authenticateToken, (req, res) => {
     });
   } else if (userRole === 'recruiter' && userEmail) {
     filteredThreads = allThreads.filter(t => {
+      if (t.candidateId && (t.candidateId.startsWith('team-') || t.candidateId.startsWith('lead-'))) return true;
       const matchEmail = t.recruiterEmail && t.recruiterEmail.toLowerCase() === userEmail;
       const matchRef = t.refCode && userEmail.includes(t.refCode.toLowerCase());
       return matchEmail || matchRef || (!t.recruiterEmail && !t.refCode);
