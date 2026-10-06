@@ -107,6 +107,110 @@ The following high-impact features and optimizations have been agreed upon and p
 
 ## Recent Changes
 
+### 2026-10-07 — Submittal Pack: Profile Header Restoration, Direct RTR Candidate Email Dispatch, Formatted Word (.doc) Download & SmartSign RTR Fix
+- **Context & Objectives**:
+  - The user requested:
+    - *"bhai top mai mera profile hai usko q update kiya jo other ismai hai ustype se set karo right and RTR ko hum direct email se bhej sake yaha se bhi ye bhi set karo and resume formated wala downlaod bhi kar sakte ye bhi set karo bhai and sing RTR wala page kam nahi kar raha hai check karo and update karo"*
+    1. **Profile Header Restoration**: Restore the exact circular profile avatar (`OM` or photo uploaded from `localStorage.getItem('smarthire_user_avatar')`), first name + role layout, dropdown menu, bell icon, and dark/light theme toggle matching `RecruiterInbox.jsx`.
+    2. **Direct Candidate RTR Email Dispatch**: Enable recruiters to email the official Right to Represent (E-RTR) agreement directly to the candidate with 1 click from `/submittal-pack`.
+    3. **Formatted Word Resume (.doc) Download**: Provide 1-click download of the formatted candidate resume as a native Microsoft Word (`.doc`) file preserving all typography (`Verdana`), red underline headers, yellow highlights, and bullets.
+    4. **SmartSign RTR Handshake & Bug Fixes**: Fix the candidate digital signing workflow (`SmartSignRtrPage.jsx`) to resolve missing authentication headers, pass candidate and requisition metadata via query parameters, auto-initialize the signing wizard on mount, and provide instant signing link generation.
+- **Key Solutions & Deliverables**:
+  1. **Restored Profile Header (100% Match with RecruiterInbox.jsx)**:
+     - Replaced the temporary square badge with the circular 36px profile pill (`borderRadius: '50%'`, `border: userAvatar ? '1px solid #CBD5E1' : 'none'`).
+     - Reads `userAvatar` from `localStorage.getItem('smarthire_user_avatar')` with automatic fallback to user initials (`OM`).
+     - Restored notification bell button (`IconBell`), theme toggle (`IconMoon`), and profile dropdown with user email, profile link, and sign-out button.
+  2. **Direct RTR Email Dispatch to Candidate**:
+     - Added dual-mode email modal supporting both `'submittal'` (to client / account manager) and `'rtr'` (direct to candidate).
+     - Added `handleOpenRtrEmailModal`: automatically extracts candidate's email from the selected candidate profile, pre-fills subject `Right to Represent (RTR) Confirmation: Candidate Legal Name — Position Title (Req #159241)`, and sets up the full legal RTR acknowledgment text.
+     - Added dedicated `Email RTR to Candidate` action buttons in both the top navigation bar and the E-RTR banner toolbar.
+  3. **Formatted Microsoft Word Resume (.doc) Downloader**:
+     - Implemented `handleDownloadResumeWord`: compiles `resumeEditorRef.current.innerHTML` into standard Microsoft Word XML/HTML document headers (`urn:schemas-microsoft-com:office:word`, `@page Section1`, 0.75in margins, Verdana 11pt, clean bullets, and table styles).
+     - Downloads directly as `${cleanName}_Formatted_Resume_${vmsNumber}.doc`, opening natively in Microsoft Word, LibreOffice, and Google Docs.
+     - Added `📥 Download .doc` button to both the top action bar and the live Word canvas editing toolbar.
+  4. **SmartSign RTR Flow & Handshake Fixes**:
+     - Added `Authorization: Bearer <smarthire_token>` header to all RTR endpoints (`/api/rtr/list`, `/api/rtr/create`, `/api/rtr/upload-document`, `/api/rtr/remind`).
+     - Added URL search parameters listener in `SmartSignRtrPage.jsx` on mount: auto-selects corresponding template (`nc_cai`, `georgia_cai`, `texas_dir`, `standard_c2c`), binds candidate legal name, email, job title, req number, client name, and rate, and automatically launches the wizard at Step 3 (Fields) or Step 2 (Signers).
+     - Added 1-click **"⚡ Generate & Copy Sign Link"** button in `/submittal-pack` calling `POST /api/rtr/create` directly and copying the live signing link (`https://smarthireus.com/sign-rtr/:token`) to clipboard.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (active bundle `index-aJ8UJe2w.js`).
+  - Git committed (`955e389`) and pushed to GitHub `origin/main`.
+  - Deployed production bundle to AWS Lightsail server (`34.194.119.199`), extracted to webroot `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Pruned old asset bundles (kept 5 most recent), removed temporary `.tar.gz` archive immediately, and reloaded PM2 `smarthire-ats`.
+  - Verified disk hygiene: 7.5GB available (60% used).
+  - Verified live domain `https://smarthireus.com/submittal-pack` and `/sign-rtr` returning HTTP 200 with new active bundle `index-aJ8UJe2w.js`.
+
+### 2026-10-07 — Submittal Pack: Collapsible Aubergine Sidebar, Topbar Modernization, Dedicated RTR Header & Touchpad Wobble Containment
+- **Context & Objectives**:
+  - The user requested:
+    - *"bhai ispage mai vo pannel lauve ye side wala with color ke sath but default vo collapes hona cahiye and RTR ka formate and tamplete nahi dikhraha hai and ismai slect candidate ka cloumn hata do top se fillter se and top ka UI bhi better karo other ke saman"*
+    - *"and bhai candidate submitted cover sheet wala section hai vo ak dam round ghum raha hai mins mai mouse toch pad mai round ghuma raha hu to vo contaner ke under bhi page round ho raha hai jo sahi nahi hai so improve and fix karo isko and ye same candidate ke table mai bhi ho raha hai so fix this also"*
+- **Key Solutions & Deliverables**:
+  1. **Collapsible Slack-Aubergine Sidebar (`#3F0E40`)**:
+     - Added the full ATS navigation sidebar to `SubmittalPackPage.jsx` styled in authentic Slack Aubergine (`#3F0E40`), collapsed by default (`68px` icon dock) with smooth expansion (`220px`).
+     - Highlights `Submittal Pack` as the active item (`#1164A3`).
+     - Includes brand logo `SH`, 1-click collapse/expand toggles (`>>` / `<<`), and full navigation to Dashboard, Candidates, Messages, Vendor Hotlists, Scan Ingest, SmartSign RTR, and Settings.
+  2. **Top Bar Modernization (Matching Inbox & ATS Platform)**:
+     - Added hamburger toggle button `☰` for 1-click sidebar toggling.
+     - Breadcrumb navigation: `Client Submissions / Submittal Pack & Coversheet Generator` + enterprise badge.
+     - Clean modern action buttons: `Copy Coversheet`, `Copy RTR Email`, `Print / Save PDF`, and `Email Submittal Pack`.
+     - User profile badge: Avatar initials chip `Omkesh (Super Admin)`.
+  3. **Streamlined Selector Bar**:
+     - Completely removed the bulky `SELECT CANDIDATE` dropdown from the top filter bar per user request.
+     - Repositioned candidate selection directly inside the left panel's `Upload Candidate Resume` card (`Or Select Existing Candidate ({candidates.length}):`).
+     - Streamlined filter bar into a sleek strip with `TARGET JOB REQUISITION`, `PRESENTATION & RTR TEMPLATE`, and `Blind Resume` toggle.
+  4. **Fixed RTR Format & Template Display**:
+     - Fixed React DOM ref bug where conditionally unmounting the E-RTR container prevented `rtrEditorRef.current` from being populated. Both resume and RTR editors are now continuously mounted in the DOM with `display: block / none` toggles.
+     - Added dedicated E-RTR Header Banner with instant quick-switch buttons for all formats: `NC VectorVMS`, `Georgia GDOT`, `Texas DIR`, and `Standard US`.
+     - Included 1-click `Copy RTR Email Text`, `Reset RTR Template`, and direct link to `SmartSign RTR` candidate digital signatures.
+  5. **Touchpad Circular Wobble / Spinning Containment**:
+     - Fixed touchpad circular spinning ("round ghum raha hai"):
+       - Added `overflowX: 'hidden'`, `overscrollBehavior: 'contain'`, `overscrollBehaviorX: 'none'`, and `overscrollBehaviorY: 'contain'` to `coversheetCol` and `resumeCol`.
+       - Added `tableLayout: 'fixed'` to the skills matrix table to prevent horizontal width inflation.
+       - Added `overscrollBehavior: 'contain'` and `overscrollBehaviorX: 'contain'` to the main candidate table wrappers in `RecruiterInbox.jsx` and `ScreeningModule.jsx`.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (active bundle `index-BmbW_Hxe.js`).
+  - Git committed (`2b87a77`) and pushed to GitHub `origin/main`.
+  - Deployed production bundle to AWS Lightsail server (`34.194.119.199`), extracted to webroot `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Pruned old asset bundles (kept 5 most recent), removed `.tar.gz` archive immediately, and reloaded PM2 `smarthire-ats`.
+  - Verified disk hygiene: 7.5GB available (60% used).
+  - Verified live domain `https://smarthireus.com/submittal-pack` returning HTTP 200 with new active bundle `index-BmbW_Hxe.js`.
+
+### 2026-10-06 — Submittal Pack: Structured Resume Bullet Points, Distinct Project Headers, Real Legal Name Parser & Left-Column Resume Upload
+- **Context & Objectives**:
+  - The user requested:
+    - *"bhai ye formating sahi nahi ho raha hai and and na bollent point hai na project titile sahi karo isko and edit bhi kar sake hum and left side mai candidat ka resume bhi upload kar sakte jiska ready karna hai okay"*
+    - Fix formatting issues: Ensure bullet points (`•`) and bold project titles (`Client: ... | Dates | Role: ...`) are properly rendered rather than flat unformatted text.
+    - Resolve candidate real legal name (e.g. `Aparna` instead of `.net` or email subject snippets).
+    - Ensure live in-place editing on the Word canvas (`contentEditable`) remains smooth with a `+ Project` insertion tool.
+    - Add a candidate resume upload / parser to the left column (`.docx`, `.doc`, `.pdf`, `.txt`) and a "Paste Resume" option to extract metadata, pre-fill coversheet, and generate the submittal pack on the fly.
+- **Key Solutions & Deliverables**:
+  1. **Candidate Real Name & Metadata Extraction**:
+     - Added `extractCandidateRealName(rawName, resumeText)` to discard technical artifact names (`.net`, `java`, `developer`, `hotlist`) and reliably identify the genuine legal name.
+     - Added `extractResumeMetadata(rawText)` to automatically extract name, role, phone, email, visa status, location, total years of experience, highest education, and core skills.
+  2. **Structured Resume Bullet & Project Formatting**:
+     - Implemented `formatStructuredWordResume(resumeText, blindResume)`:
+       - Automatically normalizes major section headers (`PROFESSIONAL SUMMARY`, `TECHNICAL SKILLS`, `EMPLOYMENT HISTORY`, `EDUCATION`).
+       - Merges broken wrapped lines into complete sentences.
+       - Converts summary points and responsibility lines into authentic `•` bullet list items (`margin-bottom: 5px`).
+       - Formats bold project and client experience blocks (`Client / Company: ... | Location | Dates | Role`).
+       - Generates environment stacks (`Environment: C#, ASP.NET, SQL Server...`).
+  3. **Left-Column Candidate Resume Upload & Paste Engine**:
+     - Added dedicated upload card on the left panel with support for `.docx`, `.doc`, `.pdf`, `.txt`, `.rtf`.
+     - Direct API integration with `POST /api/parse-resume` (with `FileReader` fallback).
+     - Added "Paste Resume" modal with instant text parsing.
+     - Dynamically prepends newly parsed candidates to the dropdown list (`📁 [Uploaded] Name`) and instantly syncs coversheet and preview canvases.
+  4. **Canvas Live Editing & `+ Project` Toolbar**:
+     - Retained full `contentEditable` Word styling canvas (`Verdana`, 12px body, red underline headers, yellow highlight tags).
+     - Added `+ Project` button in the floating toolbar to insert a new client experience block with one click.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (active bundle `index-Cdz3ltKC.js`).
+  - Git committed (`d315f1a`) and pushed to GitHub `origin/main`.
+  - Deployed production bundle to AWS Lightsail server (`34.194.119.199`), extracted to webroot `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Pruned old asset bundles (kept 5 most recent), removed `.tar.gz` archive immediately, and reloaded PM2 `smarthire-ats`.
+  - Verified disk hygiene: 7.5GB available (60% used).
+  - Verified live domain `https://smarthireus.com/submittal-pack` returning HTTP 200 with new active bundle `index-Cdz3ltKC.js`.
+
 ### 2026-10-06 — Submittal Pack & E-RTR: Exact Word Formatting (Verdana, Red Headers, Yellow Highlights) & Live In-Place Editing Canvas
 - **Context & Objectives**:
   - The user requested:
