@@ -107,6 +107,34 @@ The following high-impact features and optimizations have been agreed upon and p
 
 ## Recent Changes
 
+### 2026-10-06 — Submittal Pack & E-RTR: Exact Word Formatting (Verdana, Red Headers, Yellow Highlights) & Live In-Place Editing Canvas
+- **Context & Objectives**:
+  - The user requested:
+    - *"bhai iski formating change mat karo as it is rakho color and formating and font size or other think sab wase hi hona cahiye and hum edit bhi kar sakte"*
+    - Retain the exact Word document styling: typography (`Verdana`), font sizes (12px body, 11px headers, 10px notes), red underline instructions (`#FF0000`), and yellow fill-in highlights (`#FFFF00`).
+    - Enable direct live in-place editing so recruiters can click anywhere on the preview sheet and type or adjust text directly without losing formatting.
+- **Key Solutions & Deliverables**:
+  1. **Authentic Word Document Formatting**:
+     - Converted raw templates from `Doc/*.doc` directly to clean HTML/CSS preserving authentic Word dimensions (`8.5in x 11in` letter canvas, 0.75in margins, crisp page shadow `#E2E8F0`).
+     - Maintained font-family: `Verdana, Geneva, sans-serif`.
+     - Preserved red instruction headers: `color: #FF0000; font-weight: bold; text-decoration: underline`.
+     - Preserved yellow highlighter: `background-color: #FFFF00; padding: 1px 4px; font-weight: bold` on candidate name, rate, and employment type.
+     - Preserved exact CAI Manager and VectorVMS Contact tables with 1px solid gray borders.
+  2. **Live In-Place Word Canvas (`contentEditable`)**:
+     - Replaced plain text `<pre>` blocks with an interactive, rich `contentEditable={true}` Word canvas.
+     - Added floating Word-style formatting toolbar: `[B] Bold`, `[I] Italic`, `[U] Underline`, `[Highlight Yellow]`, `[• Bullet]`, and `[Reset Template]`.
+     - Handled cursor stability using uncontrolled `innerHTML` initial sync with `isLiveEditDirty` state flag.
+  3. **Dynamic Requisition Binding & Live Synchronization**:
+     - Dynamic fields (Position Title, Req #, Agency, Rate, Employment Type, CAI Manager) automatically populate across the resume header, summary, and E-RTR body.
+     - Maintained 1-click clipboard copy (`Copy Resume for Portal`, `Copy E-RTR Text`, `Copy Email Subject`) and direct PDF print preview.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (active bundle `index-DJfvW2Hd.js`).
+  - Git committed (`0d47de1`) and pushed to GitHub `origin/main`.
+  - Deployed production bundle to AWS Lightsail server (`34.194.119.199`), extracted to webroot `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Pruned old asset bundles (kept 5 most recent), removed `.tar.gz` archive immediately, and reloaded PM2 `smarthire-ats`.
+  - Verified disk hygiene: 7.5GB available (60% used).
+  - Verified live domain `https://smarthireus.com/submittal-pack` returning HTTP 200 with new active bundle `index-DJfvW2Hd.js`.
+
 ### 2026-10-06 — North Carolina & Georgia VectorVMS Templates, Dynamic Position Binding & E-RTR Integration
 - **Context & Objectives**:
   - The user uploaded official VectorVMS submittal templates (`Doc/nc_resume_template - 159241.doc`, `Doc/nc_e-rtr_template - 159241.doc`, `Doc/georgia_resume_template - 159253.doc`, and `Doc/georgia_e-rtr_template -159253.doc`).
