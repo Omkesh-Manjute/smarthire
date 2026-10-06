@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
-// ─── SVG Icons (Strict Rule 8: Clean Enterprise Line Glyphs, Zero Unrequested Emojis) ───
+// ─── SVG Icons (Enterprise Line Icons, Rule 8 Compliant) ────────────────────
 const IconArrowLeft = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M19 12H5M12 19l-7-7 7-7"/>
@@ -43,6 +43,12 @@ const IconExternalLink = () => (
     <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
     <polyline points="15 3 21 3 21 9"/>
     <line x1="10" y1="14" x2="21" y2="3"/>
+  </svg>
+)
+const IconReset = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="1 4 1 10 7 10"/>
+    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
   </svg>
 )
 
@@ -177,10 +183,21 @@ export default function SubmittalPackPage() {
   // Resume Content State
   const [resumeText, setResumeText] = useState('')
 
-  // Find active template metadata
+  // Editable Document Refs & Version Tracker
+  const resumeEditorRef = useRef(null)
+  const rtrEditorRef = useRef(null)
+  const [isLiveEditDirty, setIsLiveEditDirty] = useState(false)
+
+  // Active Template Config
   const activeTemplateMeta = useMemo(() => {
     return SUBMITTAL_TEMPLATES.find(t => t.id === selectedTemplate) || SUBMITTAL_TEMPLATES[0]
   }, [selectedTemplate])
+
+  // Extract clean numerical rate (e.g. "$75.00 / hr C2C" -> "75.00")
+  const cleanRateNumber = useMemo(() => {
+    const m = String(coversheet.proposedRate || '').match(/[\d]+(?:\.[\d]+)?/)
+    return m ? m[0] : '75'
+  }, [coversheet.proposedRate])
 
   // 1. Initial Data Ingestion (Candidates, Jobs, Hotlists)
   useEffect(() => {
@@ -278,6 +295,7 @@ export default function SubmittalPackPage() {
     } else if (lowerCombined.includes('texas') || lowerCombined.includes('dir')) {
       setSelectedTemplate('texas_dir')
     }
+    setIsLiveEditDirty(false)
   }, [selectedJobId, jobs])
 
   // 3. Update CAI defaults when user manually switches template
@@ -292,6 +310,7 @@ export default function SubmittalPackPage() {
       setCaiManagerPhone('678-427-3660')
       setCaiManagerEmail('Timothy.Brodrick@cai.io')
     }
+    setIsLiveEditDirty(false)
   }
 
   // 4. Auto-populate Candidate Data into Coversheet and Resume
@@ -367,6 +386,7 @@ PROFESSIONAL WORK HISTORY
 EDUCATION & CERTIFICATIONS
 • ${cand.education || 'Bachelor of Science in Computer Science'}`)
       }
+      setIsLiveEditDirty(false)
     }
   }, [selectedCandidateId, selectedJobId, candidates, jobs, positionTitle, vmsNumber, clientAgency])
 
@@ -380,93 +400,363 @@ EDUCATION & CERTIFICATIONS
     }))
   }, [positionTitle, vmsNumber, clientAgency])
 
-  // ─── Dynamic E-RTR Text Builder (North Carolina, Georgia, Standard) ───────
-  const rtrSubject = useMemo(() => {
-    return `${positionTitle || 'Specialist'} (${vmsNumber || 'Requisition'})`
-  }, [positionTitle, vmsNumber])
+  // ─── Format Candidate Resume Text with Authentic Bullet Points ────────────
+  const formattedResumeBodyHtml = useMemo(() => {
+    if (!resumeText) return '<p><i>No resume experience provided.</i></p>'
 
-  const rtrBody = useMemo(() => {
+    // Clean up direct email/phone if blind resume is active
+    let sanitized = resumeText
+    if (blindResume) {
+      sanitized = sanitized
+        .replace(/[\w.-]+@[\w.-]+\.\w+/g, '[Contact details available via CoolSoft LLC]')
+        .replace(/\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g, '[Contact details available via CoolSoft LLC]')
+        .replace(/linkedin\.com\/in\/[\w.-]+/gi, 'linkedin.com/in/[Agency-Verified-Profile]')
+    }
+
+    const lines = sanitized.split('\n')
+    let html = ''
+    let inList = false
+
+    lines.forEach((line) => {
+      const trimmed = line.trim()
+      if (!trimmed) {
+        if (inList) { html += '</ul>'; inList = false }
+        return
+      }
+
+      // Check for section headers (e.g. PROFESSIONAL SUMMARY, WORK HISTORY, TECHNICAL SKILLS, EDUCATION)
+      const isHeader = /^(PROFESSIONAL SUMMARY|SUMMARY|EMPLOYMENT HISTORY|WORK HISTORY|PROFESSIONAL EXPERIENCE|TECHNICAL SKILLS|CORE COMPETENCIES|EDUCATION|CERTIFICATIONS|PROJECTS)/i.test(trimmed) && trimmed.length < 50
+
+      if (isHeader) {
+        if (inList) { html += '</ul>'; inList = false }
+        html += `<p style="margin: 18px 0 6px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; font-weight: bold; text-decoration: underline; color: #000000; text-transform: uppercase;">${trimmed}</p>`
+        return
+      }
+
+      // Check if line is bullet item
+      const isBullet = trimmed.startsWith('•') || trimmed.startsWith('- ') || trimmed.startsWith('* ')
+      if (isBullet) {
+        if (!inList) { html += '<ul style="margin: 4px 0 10px 24px; padding: 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; line-height: 1.6; color: #000000;">'; inList = true }
+        const cleanBulletText = trimmed.replace(/^[•\-*]\s*/, '')
+        html += `<li style="margin-bottom: 5px;">${cleanBulletText}</li>`
+        return
+      }
+
+      if (inList) { html += '</ul>'; inList = false }
+      html += `<p style="margin: 4px 0 6px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; line-height: 1.6; color: #000000;">${trimmed}</p>`
+    })
+
+    if (inList) html += '</ul>'
+    return html
+  }, [resumeText, blindResume])
+
+  // ─── Generate Authentic Word-Formatted Resume HTML ────────────────────────
+  const generatedResumeTemplateHtml = useMemo(() => {
+    const candidateName = coversheet.candidateLegalName || 'Candidate Full Legal Name'
+
+    if (activeTemplateMeta.hasCaiBox) {
+      const isNc = selectedTemplate === 'nc_cai'
+      return `
+        <!-- CAI Contact Box (Word 12px Verdana, exactly matching Doc template) -->
+        <p style="margin: 12px 0 3px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; font-weight: bold; ${isNc ? 'text-decoration: underline;' : ''} color: #000000;">
+          CAI CONTACT
+        </p>
+        <p style="margin: 2px 0 10px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; line-height: 1.5; color: #000000;">
+          &lt;Insert name and contact information for the CAI Contract Manager listed on the VectorVMS requirement. For ease of reference, the Contract Managers’ contact information appears below.&gt;
+        </p>
+        <p style="margin: 8px 0 2px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; font-weight: bold; color: #000000;">
+          ${caiManagerName}
+        </p>
+        <p style="margin: 2px 0 2px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; color: #000000;">
+          Phone: ${caiManagerPhone}
+        </p>
+        <p style="margin: 2px 0 14px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; color: #000000;">
+          Email: <a href="mailto:${caiManagerEmail}" style="color: #0000EE; text-decoration: underline;">${caiManagerEmail}</a>
+        </p>
+
+        <!-- Candidate Name (Bold, Underline, 12px Verdana) -->
+        <p style="margin: 18px 0 4px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12.5px; font-weight: bold; text-decoration: underline; color: #000000; text-transform: uppercase;">
+          ${candidateName}
+        </p>
+        <p style="margin: 2px 0 16px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; color: #334155;">
+          ${positionTitle} • Req #${vmsNumber} (${clientAgency}) • Represented via COOLSOFT LLC
+        </p>
+
+        <!-- Employment History (Bold, Underline, 12px Verdana) -->
+        <p style="margin: 16px 0 6px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; font-weight: bold; text-decoration: underline; color: #000000;">
+          EMPLOYMENT HISTORY
+        </p>
+
+        <!-- Resume Body Experience -->
+        <div style="font-family: Verdana, Geneva, sans-serif; font-size: 12px; line-height: 1.6; color: #000000;">
+          ${formattedResumeBodyHtml}
+        </div>
+
+        <!-- Education (Bold, Underline, 12px Verdana) -->
+        <p style="margin: 20px 0 6px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; font-weight: bold; text-decoration: underline; color: #000000;">
+          EDUCATION
+        </p>
+        <p style="margin: 2px 0 10px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; color: #000000;">
+          • ${coversheet.highestEducation}
+        </p>
+      `
+    }
+
+    // Default Standard Direct Client Presentation Format
+    return `
+      <!-- Standard Corporate Letterhead -->
+      <div style="border-bottom: 2px solid #0F172A; padding-bottom: 12px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <h1 style="font-family: Verdana, Geneva, sans-serif; font-size: 22px; font-weight: bold; color: #0F172A; margin: 0 0 4px;">
+              ${candidateName}
+            </h1>
+            <div style="font-family: Verdana, Geneva, sans-serif; font-size: 13.5px; font-weight: bold; color: #2563EB;">
+              ${positionTitle}
+            </div>
+          </div>
+          <div style="text-align: right; font-family: Verdana, Geneva, sans-serif;">
+            <div style="font-size: 13.5px; font-weight: bold; color: #0F172A;">${activeTemplateMeta.agencyName}</div>
+            <div style="font-size: 11px; color: #64748B;">SmartHire Authorized Presentation</div>
+            <div style="font-size: 11px; color: #64748B;">Req #${vmsNumber} • ${clientAgency}</div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; color: #475569; margin-top: 8px; flex-wrap: wrap;">
+          <span>Location: ${coversheet.currentLocation}</span>
+          <span>•</span>
+          <span>Visa: ${coversheet.visaStatus}</span>
+          <span>•</span>
+          <span>Experience: ${coversheet.totalExperience}</span>
+          <span>•</span>
+          <span style="color: #059669; font-weight: bold;">Represented exclusively via ${activeTemplateMeta.agencyName}</span>
+        </div>
+      </div>
+
+      <div style="font-family: Verdana, Geneva, sans-serif; font-size: 12px; line-height: 1.6; color: #000000;">
+        ${formattedResumeBodyHtml}
+      </div>
+    `
+  }, [activeTemplateMeta, selectedTemplate, caiManagerName, caiManagerPhone, caiManagerEmail, coversheet, positionTitle, vmsNumber, clientAgency, formattedResumeBodyHtml])
+
+  // ─── Generate Authentic Word-Formatted E-RTR HTML ─────────────────────────
+  const generatedRtrTemplateHtml = useMemo(() => {
     const candidateName = coversheet.candidateLegalName || 'Candidate Full Legal Name'
     const reqInfo = `${positionTitle || 'Specialist'} (${vmsNumber || 'Req'})`
     const client = clientAgency || 'Client Agency'
-    const rate = coversheet.proposedRate || '$75.00 / hr C2C'
 
     if (selectedTemplate === 'nc_cai') {
-      return `Right to Represent Acknowledgement
+      return `
+        <!-- RED HEADER 1: Subject instruction (Verdana 12px, bold, underline, #FF0000) -->
+        <p style="margin: 0 0 8px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; line-height: 17px; font-weight: bold; text-decoration: underline; color: #FF0000;">
+          INSERT THE FOLLOWING INTO EMAIL SUBJECT AND UPDATE
+        </p>
 
-By signing below, I acknowledge and agree that [COOLSOFT LLC] has the sole right to represent me in matters of work assignment relating the North Carolina IT Supplemental Services Contract by submitting my professional resume to the Contract's Managed Service Provider, Computer Aid, Inc. for the requirement identified below.
+        <!-- Subject Line -->
+        <p style="margin: 0 0 16px 0; font-family: Verdana, Geneva, sans-serif; font-size: 13.5px; font-weight: bold; color: #000000;">
+          ${reqInfo}
+        </p>
 
-I also acknowledge and verify that all the information contained in my resume related to my technical credentials is accurate and is based on educational training and professional experience obtained throughout my career.
+        <!-- RED HEADER 2: Body instruction (Verdana 12px, bold, underline, #FF0000) -->
+        <p style="margin: 0 0 10px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; line-height: 17px; font-weight: bold; text-decoration: underline; color: #FF0000;">
+          COPY, PASTE AND UPDATE THE FOLLOWING IN EMAIL BODY
+        </p>
 
-VectorVMS Requirement Number and Title (including Name of Agency):
-${reqInfo} - ${client}
+        <!-- Centered RTR Title (Verdana 10px/11px, bold, underline) -->
+        <p style="margin: 0 0 14px 0; text-align: center; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 17px; font-weight: bold; text-decoration: underline; color: #000000;">
+          Right to Represent Acknowledgement
+        </p>
 
-Candidate Full Legal Name:
-${candidateName}
+        <!-- Body Paragraph 1 (Verdana 10.5px/11px, justified) -->
+        <p style="margin: 0 0 12px 0; text-align: justify; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 1.6; color: #000000;">
+          By signing below, I acknowledge and agree that <b>[COOLSOFT LLC]</b> has the sole right to represent me in matters of work assignment relating the North Carolina IT Supplemental Services Contract by submitting my professional resume to the Contract’s Managed Service Provider, Computer Aid, Inc. for the requirement identified below.
+        </p>
 
-======================================================================
-EMAIL TEMPLATE TO CANDIDATE
-ONCE CANDIDATE RESPONDS VIA EMAIL AGREEING WITH YOUR REPRESENTATION, SAVE ENTIRE EMAIL THREAD AS A PDF DOC AND UPLOAD IN CANDIDATE'S VECTORVMS PROFILE`
+        <!-- Body Paragraph 2 (Verdana 10.5px/11px, justified) -->
+        <p style="margin: 0 0 14px 0; text-align: justify; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 1.6; color: #000000;">
+          I also acknowledge and verify that all the information contained in my resume related to my technical credentials is accurate and is based on educational training and professional experience obtained throughout my career.
+        </p>
+
+        <!-- Req number & Title label -->
+        <p style="margin: 0 0 2px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 14px; font-weight: bold; color: #000000;">
+          VectorVMS Requirement Number and Title (including Name of Agency):
+        </p>
+        <p style="margin: 0 0 14px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; font-weight: bold; color: #000000;">
+          ${reqInfo} - ${client}
+        </p>
+
+        <!-- Candidate Full Legal Name label & Yellow Highlight Field -->
+        <p style="margin: 0 0 2px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 14px; font-weight: bold; color: #000000;">
+          Candidate Full Legal Name:
+        </p>
+        <p style="margin: 0 0 18px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; line-height: 16px;">
+          <span style="background-color: #FFFF00; font-weight: bold; padding: 2px 8px; border-bottom: 1px solid #000000;">
+            ${candidateName}
+          </span>
+        </p>
+
+        <!-- Red Instructions 3: Email template to candidate -->
+        <p style="margin: 0 0 8px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; line-height: 17px; font-weight: bold; text-decoration: underline; color: #FF0000;">
+          EMAIL TEMPLATE TO CANDIDATE
+        </p>
+        <p style="margin: 0 0 10px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; line-height: 17px; font-weight: bold; text-decoration: underline; color: #FF0000;">
+          ONCE CANDIDATE RESPONDS VIA EMAIL AGREEING WITH YOUR REPRESENTATION, SAVE ENTIRE EMAIL THREAD AS A PDF DOC AND UPLOAD IN CANDIDATE’S VECTORVMS PROFILE
+        </p>
+      `
     }
 
     if (selectedTemplate === 'georgia_cai') {
-      return `Right to Represent Acknowledgement
+      return `
+        <!-- RED HEADER 1: Subject instruction (Verdana 12px, bold, underline, #FF0000) -->
+        <p style="margin: 0 0 8px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; line-height: 17px; font-weight: bold; text-decoration: underline; color: #FF0000;">
+          INSERT THE FOLLOWING INTO EMAIL SUBJECT AND UPDATE
+        </p>
 
-By inserting my full legal name below, I acknowledge and agree that [COOLSOFT LLC] has the sole right to represent me in matters of work assignment relating to the State of Georgia's IT Staffing Services Contract by submitting my professional resume to the Contract's Managed Service Provider, Computer Aid, Inc. for the requirement identified below.
+        <!-- Subject Line -->
+        <p style="margin: 0 0 16px 0; font-family: Verdana, Geneva, sans-serif; font-size: 13.5px; font-weight: bold; color: #000000;">
+          ${reqInfo}
+        </p>
 
-I also acknowledge and verify that all the information contained in my resume related to my technical credentials is accurate and is based on educational training and professional experience obtained throughout my career.
+        <!-- RED HEADER 2: Body instruction (Verdana 12px, bold, underline, #FF0000) -->
+        <p style="margin: 0 0 10px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; line-height: 17px; font-weight: bold; text-decoration: underline; color: #FF0000;">
+          COPY, PASTE AND UPDATE THE FOLLOWING IN EMAIL BODY
+        </p>
 
-VectorVMS Requirement Number and Title (including Name of Agency):
-${reqInfo} - ${client}
+        <!-- Centered RTR Title (Verdana 10px/11px, bold, underline) -->
+        <p style="margin: 0 0 14px 0; text-align: center; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 17px; font-weight: bold; text-decoration: underline; color: #000000;">
+          Right to Represent Acknowledgement
+        </p>
 
-Candidate Full Legal Name:
-${candidateName}
+        <!-- Body Paragraph 1 (Verdana 10.5px/11px, justified) -->
+        <p style="margin: 0 0 12px 0; text-align: justify; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 1.6; color: #000000;">
+          By inserting my full legal name below, I acknowledge and agree that <b>[COOLSOFT LLC]</b> has the sole right to represent me in matters of work assignment relating to the State of Georgia’s IT Staffing Services Contract by submitting my professional resume to the Contract’s Managed Service Provider, Computer Aid, Inc. for the requirement identified below.
+        </p>
 
-Candidate Pay Rate for this Position (as Referenced in VectorVMS Requirement): 
-${rate}
+        <!-- Body Paragraph 2 (Verdana 10.5px/11px, justified) -->
+        <p style="margin: 0 0 14px 0; text-align: justify; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 1.6; color: #000000;">
+          I also acknowledge and verify that all the information contained in my resume related to my technical credentials is accurate and is based on educational training and professional experience obtained throughout my career.
+        </p>
 
-Candidate Employment Type if Selected for Engagement (W2, 1099, C2C):
-(W2, 1099, C2C):  ${employmentType}
+        <!-- Req number & Title label -->
+        <p style="margin: 0 0 2px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 14px; font-weight: bold; color: #000000;">
+          VectorVMS Requirement Number and Title (including Name of Agency):
+        </p>
+        <p style="margin: 0 0 14px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; font-weight: bold; color: #000000;">
+          ${reqInfo} - ${client}
+        </p>
 
-======================================================================
-EMAIL TEMPLATE TO CANDIDATE
-ONCE CANDIDATE RESPONDS VIA EMAIL AGREEING WITH YOUR REPRESENTATION, SAVE ENTIRE EMAIL THREAD AS A PDF DOC AND UPLOAD IN CANDIDATE'S VECTORVMS PROFILE`
+        <!-- Candidate Full Legal Name label & Yellow Highlight Field -->
+        <p style="margin: 0 0 2px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 14px; font-weight: bold; color: #000000;">
+          Candidate Full Legal Name:
+        </p>
+        <p style="margin: 0 0 14px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; line-height: 16px;">
+          <span style="background-color: #FFFF00; font-weight: bold; padding: 2px 8px; border-bottom: 1px solid #000000;">
+            ${candidateName}
+          </span>
+        </p>
+
+        <!-- Candidate Pay Rate label & Yellow Highlight Field -->
+        <p style="margin: 0 0 2px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 14px; font-weight: bold; color: #000000;">
+          Candidate Pay Rate for this Position (as Referenced in VectorVMS Requirement):
+        </p>
+        <p style="margin: 0 0 14px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; font-weight: bold; color: #000000;">
+          $<span style="background-color: #FFFF00; font-weight: bold; padding: 2px 6px;">${cleanRateNumber}</span>/hour
+        </p>
+
+        <!-- Candidate Employment Type label & Yellow Highlight Field -->
+        <p style="margin: 0 0 2px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 14px; font-weight: bold; color: #000000;">
+          Candidate Employment Type if Selected for Engagement (W2, 1099, C2C):
+        </p>
+        <p style="margin: 0 0 18px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; font-weight: bold; color: #000000;">
+          (W2, 1099, C2C): <span style="background-color: #FFFF00; font-weight: bold; padding: 2px 8px;">${employmentType}</span>
+        </p>
+
+        <!-- Red Instructions 3: Email template to candidate -->
+        <p style="margin: 0 0 8px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; line-height: 17px; font-weight: bold; text-decoration: underline; color: #FF0000;">
+          EMAIL TEMPLATE TO CANDIDATE
+        </p>
+        <p style="margin: 0 0 10px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; line-height: 17px; font-weight: bold; text-decoration: underline; color: #FF0000;">
+          ONCE CANDIDATE RESPONDS VIA EMAIL AGREEING WITH YOUR REPRESENTATION, SAVE ENTIRE EMAIL THREAD AS A PDF DOC AND UPLOAD IN CANDIDATE’S VECTORVMS PROFILE
+        </p>
+      `
     }
 
     if (selectedTemplate === 'texas_dir') {
-      return `State of Texas Department of Information Resources (DIR)
-Contract Representation & Exclusivity Agreement
-
-1. Scope of Representation
-The undersigned candidate hereby grants COOLSOFT LLC the exclusive authorization to submit credentials, resume, and rate proposal for active requisition #${vmsNumber} (${positionTitle}) issued under the Texas DIR Cooperative Contracts Program (DIR-CPO-ITSA-0442).
-
-2. Candidate Acknowledgment
-Candidate acknowledges that only one submittal per candidate is permitted by the State of Texas for each Solicitation ID. Dual representation will lead to immediate disqualification.
-
-3. Agreed Rate & Term
-Agreed Hourly Submittal Rate: ${rate} (${employmentType})
-Exclusivity Window: 60 Days from signature date.
-
-Candidate Full Legal Name:
-${candidateName}`
+      return `
+        <p style="margin: 0 0 6px 0; font-family: Verdana, Geneva, sans-serif; font-size: 13px; font-weight: bold; color: #0F172A;">
+          State of Texas Department of Information Resources (DIR)
+        </p>
+        <p style="margin: 0 0 14px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; color: #475569;">
+          Contract Representation & Exclusivity Agreement • DIR-CPO-ITSA-0442
+        </p>
+        <p style="margin: 0 0 10px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 1.6; color: #000000;">
+          1. <b>Scope of Representation</b>: The undersigned candidate hereby grants COOLSOFT LLC the exclusive authorization to submit credentials, resume, and rate proposal for active requisition #${vmsNumber} (${positionTitle}) issued under the Texas DIR Cooperative Contracts Program.
+        </p>
+        <p style="margin: 0 0 10px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 1.6; color: #000000;">
+          2. <b>Candidate Acknowledgment</b>: Candidate acknowledges that only one submittal per candidate is permitted by the State of Texas for each Solicitation ID. Dual representation will lead to immediate disqualification.
+        </p>
+        <p style="margin: 0 0 14px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 1.6; color: #000000;">
+          3. <b>Agreed Rate & Term</b>: Agreed Hourly Submittal Rate: <span style="background-color: #FFFF00; font-weight: bold; padding: 2px 6px;">$${cleanRateNumber}/hr (${employmentType})</span>. Exclusivity Window: 60 Days from signature date.
+        </p>
+        <p style="margin: 0 0 4px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; font-weight: bold; color: #000000;">Candidate Full Legal Name:</p>
+        <p style="margin: 0 0 16px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px;"><span style="background-color: #FFFF00; font-weight: bold; padding: 2px 6px;">${candidateName}</span></p>
+      `
     }
 
-    // Default: Standard Direct Client RTR
-    return `EXCLUSIVE RIGHT TO REPRESENTATION (RTR)
+    // Default Standard Direct Client RTR
+    return `
+      <div style="border-bottom: 2px solid #0F172A; padding-bottom: 10px; margin-bottom: 14px;">
+        <h3 style="font-family: Verdana, Geneva, sans-serif; font-size: 15px; font-weight: bold; color: #0F172A; margin: 0 0 4px;">
+          Exclusive Right to Represent & Authorization Agreement (RTR)
+        </h3>
+        <div style="font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; color: #64748B;">
+          CoolSoft LLC Staff Augmentation Services • Requisition #${vmsNumber} (${clientAgency})
+        </div>
+      </div>
+      <p style="margin: 0 0 12px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; line-height: 1.6; color: #000000;">
+        I, <span style="background-color: #FFFF00; font-weight: bold; padding: 2px 6px;">${candidateName}</span>, hereby grant COOLSOFT LLC the exclusive authorization to represent and submit my candidate credentials for the <b>${positionTitle}</b> requirement (Req #${vmsNumber}) with <b>${clientAgency}</b>.
+      </p>
+      <p style="margin: 0 0 12px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; line-height: 1.6; color: #000000;">
+        I confirm that I am legally authorized to work in the United States (${coversheet.visaStatus}) and have not authorized any other staffing agency or vendor to submit my resume for this engagement.
+      </p>
+      <p style="margin: 0 0 14px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; line-height: 1.6; color: #000000;">
+        <b>Agreed Pay Rate:</b> <span style="background-color: #FFFF00; font-weight: bold; padding: 2px 6px;">$${cleanRateNumber}/hour (${employmentType})</span><br>
+        <b>Notice Period:</b> ${coversheet.noticePeriod}<br>
+        <b>Representation Term:</b> 60 Calendar Days
+      </p>
+      <p style="margin: 0 0 4px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; font-weight: bold; color: #000000;">Candidate Signature Verification:</p>
+      <p style="margin: 0 0 16px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px;"><span style="background-color: #FFFF00; font-weight: bold; padding: 2px 6px;">${candidateName}</span></p>
+    `
+  }, [selectedTemplate, positionTitle, vmsNumber, clientAgency, coversheet, cleanRateNumber, employmentType])
 
-To: Hiring Client & Account Management (${client})
-From: COOLSOFT LLC Staff Augmentation Team
-Requisition: #${vmsNumber} - ${positionTitle}
+  // Synchronize HTML into the live contentEditable DOM elements
+  useEffect(() => {
+    if (!isLiveEditDirty) {
+      if (resumeEditorRef.current) {
+        resumeEditorRef.current.innerHTML = generatedResumeTemplateHtml
+      }
+      if (rtrEditorRef.current) {
+        rtrEditorRef.current.innerHTML = generatedRtrTemplateHtml
+      }
+    }
+  }, [generatedResumeTemplateHtml, generatedRtrTemplateHtml, isLiveEditDirty])
 
-Candidate Declaration:
-I, ${candidateName}, grant COOLSOFT LLC the exclusive right to represent and submit my profile for the ${positionTitle} position (Req #${vmsNumber}) with ${client}. I confirm that I am legally authorized to work in the United States (${coversheet.visaStatus}) and have not authorized any other staffing agency or prime vendor to submit my credentials for this requirement.
+  // Reset edited document back to default generated template
+  const handleResetToTemplate = () => {
+    setIsLiveEditDirty(false)
+    if (resumeEditorRef.current) {
+      resumeEditorRef.current.innerHTML = generatedResumeTemplateHtml
+    }
+    if (rtrEditorRef.current) {
+      rtrEditorRef.current.innerHTML = generatedRtrTemplateHtml
+    }
+    showToast('Reset to original template!')
+  }
 
-Agreed Submittal Rate: ${rate} (${employmentType})
-Availability / Notice: ${coversheet.noticePeriod}
-
-Candidate Full Legal Name:
-${candidateName}`
-  }, [selectedTemplate, positionTitle, vmsNumber, clientAgency, coversheet, employmentType])
+  // Formatting actions for live editing
+  const execCmd = (cmd, val = null) => {
+    document.execCommand(cmd, false, val)
+    setIsLiveEditDirty(true)
+  }
 
   // ─── Coversheet Text Generator (Plain-text for ATS / Portals) ──────────────
   const formattedCoversheetText = useMemo(() => {
@@ -511,14 +801,20 @@ ${coversheet.references}
   }, [coversheet, employmentType, activeTemplateMeta, caiManagerName, caiManagerPhone, caiManagerEmail])
 
   // ─── 1-Click Clipboard Actions ───────────────────────────────────────────
+  const showToast = (msg) => {
+    setCopyToastText(msg)
+    setTimeout(() => setCopyToastText(''), 2600)
+  }
+
   const handleCopyCoversheet = () => {
     navigator.clipboard.writeText(formattedCoversheetText)
     showToast('Coversheet copied to clipboard!')
   }
 
   const handleCopyRtr = () => {
-    const fullRtrEmail = `SUBJECT: ${rtrSubject}\n\n${rtrBody}`
-    navigator.clipboard.writeText(fullRtrEmail)
+    const rawRtrText = rtrEditorRef.current ? rtrEditorRef.current.innerText : ''
+    const subjectLine = `${positionTitle} (${vmsNumber})`
+    navigator.clipboard.writeText(`SUBJECT: ${subjectLine}\n\n${rawRtrText}`)
     showToast('E-RTR Subject & Body copied!')
   }
 
@@ -526,17 +822,16 @@ ${coversheet.references}
     if (activePreviewTab === 'rtr') {
       handleCopyRtr()
     } else if (activePreviewTab === 'all') {
-      const combined = `${formattedCoversheetText}\n\n=====================================================\nSUBMITTAL RESUME\n=====================================================\n\n${resumeText}\n\n=====================================================\nRIGHT TO REPRESENT (E-RTR)\n=====================================================\n\n${rtrBody}`
+      const resumeHtml = resumeEditorRef.current ? resumeEditorRef.current.innerText : ''
+      const rtrText = rtrEditorRef.current ? rtrEditorRef.current.innerText : ''
+      const combined = `${formattedCoversheetText}\n\n=====================================================\nSUBMITTAL RESUME\n=====================================================\n\n${resumeHtml}\n\n=====================================================\nRIGHT TO REPRESENT (E-RTR)\n=====================================================\n\n${rtrText}`
       navigator.clipboard.writeText(combined)
       showToast('Complete Submittal Pack copied!')
     } else {
-      handleCopyCoversheet()
+      const resumeTextRaw = resumeEditorRef.current ? resumeEditorRef.current.innerText : ''
+      navigator.clipboard.writeText(`${formattedCoversheetText}\n\n${resumeTextRaw}`)
+      showToast('Resume & Coversheet copied!')
     }
-  }
-
-  const showToast = (msg) => {
-    setCopyToastText(msg)
-    setTimeout(() => setCopyToastText(''), 2600)
   }
 
   const handlePrint = () => {
@@ -556,7 +851,9 @@ ${coversheet.references}
     e.preventDefault()
     setIsSendingEmail(true)
     try {
-      const payloadMessage = `${emailBody}\n\n${formattedCoversheetText}\n\n=====================================================\nE-RTR ACKNOWLEDGEMENT\n=====================================================\n${rtrBody}`
+      const rtrText = rtrEditorRef.current ? rtrEditorRef.current.innerText : ''
+      const resumeTextCurrent = resumeEditorRef.current ? resumeEditorRef.current.innerText : ''
+      const payloadMessage = `${emailBody}\n\n${formattedCoversheetText}\n\n=====================================================\nSUBMITTAL RESUME\n=====================================================\n${resumeTextCurrent}\n\n=====================================================\nE-RTR ACKNOWLEDGEMENT\n=====================================================\n${rtrText}`
       const res = await fetch('/api/recruiter/send-direct-email', {
         method: 'POST',
         headers: {
@@ -752,7 +1049,10 @@ ${coversheet.references}
                 <input
                   type="text"
                   value={positionTitle}
-                  onChange={e => setPositionTitle(e.target.value)}
+                  onChange={e => {
+                    setPositionTitle(e.target.value)
+                    setIsLiveEditDirty(false)
+                  }}
                   style={{ ...styles.textInput, fontWeight: '700', color: '#1E293B' }}
                   placeholder="e.g. Epic Orders Analyst"
                 />
@@ -764,7 +1064,10 @@ ${coversheet.references}
                   <input
                     type="text"
                     value={vmsNumber}
-                    onChange={e => setVmsNumber(e.target.value)}
+                    onChange={e => {
+                      setVmsNumber(e.target.value)
+                      setIsLiveEditDirty(false)
+                    }}
                     style={{ ...styles.textInput, fontWeight: '800', color: '#2563EB' }}
                     placeholder="e.g. 812797"
                   />
@@ -775,7 +1078,10 @@ ${coversheet.references}
                   <input
                     type="text"
                     value={clientAgency}
-                    onChange={e => setClientAgency(e.target.value)}
+                    onChange={e => {
+                      setClientAgency(e.target.value)
+                      setIsLiveEditDirty(false)
+                    }}
                     style={styles.textInput}
                     placeholder="e.g. NCDHHS-AM or GDOT"
                   />
@@ -788,7 +1094,10 @@ ${coversheet.references}
                   <input
                     type="text"
                     value={coversheet.proposedRate}
-                    onChange={e => setCoversheet({ ...coversheet, proposedRate: e.target.value })}
+                    onChange={e => {
+                      setCoversheet({ ...coversheet, proposedRate: e.target.value })
+                      setIsLiveEditDirty(false)
+                    }}
                     style={{ ...styles.textInput, fontWeight: '700' }}
                     placeholder="e.g. $75.00 / hr"
                   />
@@ -798,7 +1107,10 @@ ${coversheet.references}
                   <label style={styles.inputLabel}>Employment Type (W2/1099/C2C)</label>
                   <select
                     value={employmentType}
-                    onChange={e => setEmploymentType(e.target.value)}
+                    onChange={e => {
+                      setEmploymentType(e.target.value)
+                      setIsLiveEditDirty(false)
+                    }}
                     style={styles.selectInput}
                   >
                     <option value="C2C">Corp-to-Corp (C2C)</option>
@@ -827,7 +1139,10 @@ ${coversheet.references}
                   <input
                     type="text"
                     value={caiManagerName}
-                    onChange={e => setCaiManagerName(e.target.value)}
+                    onChange={e => {
+                      setCaiManagerName(e.target.value)
+                      setIsLiveEditDirty(false)
+                    }}
                     style={styles.textInput}
                   />
                 </div>
@@ -837,7 +1152,10 @@ ${coversheet.references}
                     <input
                       type="text"
                       value={caiManagerPhone}
-                      onChange={e => setCaiManagerPhone(e.target.value)}
+                      onChange={e => {
+                        setCaiManagerPhone(e.target.value)
+                        setIsLiveEditDirty(false)
+                      }}
                       style={styles.textInput}
                     />
                   </div>
@@ -846,7 +1164,10 @@ ${coversheet.references}
                     <input
                       type="email"
                       value={caiManagerEmail}
-                      onChange={e => setCaiManagerEmail(e.target.value)}
+                      onChange={e => {
+                        setCaiManagerEmail(e.target.value)
+                        setIsLiveEditDirty(false)
+                      }}
                       style={styles.textInput}
                     />
                   </div>
@@ -862,7 +1183,10 @@ ${coversheet.references}
               <input
                 type="text"
                 value={coversheet.candidateLegalName}
-                onChange={e => setCoversheet({ ...coversheet, candidateLegalName: e.target.value })}
+                onChange={e => {
+                  setCoversheet({ ...coversheet, candidateLegalName: e.target.value })
+                  setIsLiveEditDirty(false)
+                }}
                 style={{ ...styles.textInput, fontWeight: '700' }}
               />
             </div>
@@ -1053,7 +1377,7 @@ ${coversheet.references}
           </div>
         </div>
 
-        {/* RIGHT COLUMN: PRESENTATION PREVIEW WITH TABS */}
+        {/* RIGHT COLUMN: PRESENTATION PREVIEW WITH AUTHENTIC WORD FORMATTING & LIVE EDITING */}
         <div style={styles.resumeCol}>
           {/* View Tab Switcher Header */}
           <div style={styles.previewTabHeader} className="no-print">
@@ -1092,175 +1416,100 @@ ${coversheet.references}
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: '11px', color: '#059669', fontWeight: '700', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <IconCheck /> Client Presentation Certified
+                <IconCheck /> Authentic Doc Format (Verdana)
               </span>
             </div>
           </div>
 
-          {/* ─── TAB 1: CLIENT-READY SUBMITTAL RESUME ─────────────────────── */}
+          {/* Quick Word-Style Formatting Toolbar (Bold, Italic, Underline, Yellow Highlight, Bullets, Reset) */}
+          <div style={styles.editorToolbar} className="no-print">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginRight: 4 }}>
+                Live Edit:
+              </span>
+              <button
+                type="button"
+                onClick={() => execCmd('bold')}
+                style={styles.toolbarBtn}
+                title="Bold (Ctrl+B)"
+              >
+                <b>B</b>
+              </button>
+              <button
+                type="button"
+                onClick={() => execCmd('italic')}
+                style={styles.toolbarBtn}
+                title="Italic (Ctrl+I)"
+              >
+                <i>I</i>
+              </button>
+              <button
+                type="button"
+                onClick={() => execCmd('underline')}
+                style={styles.toolbarBtn}
+                title="Underline (Ctrl+U)"
+              >
+                <u>U</u>
+              </button>
+              <button
+                type="button"
+                onClick={() => execCmd('hiliteColor', '#FFFF00')}
+                style={{ ...styles.toolbarBtn, backgroundColor: '#FEF08A', color: '#854D0E', fontWeight: '700' }}
+                title="Yellow Highlight"
+              >
+                Highlight
+              </button>
+              <button
+                type="button"
+                onClick={() => execCmd('insertUnorderedList')}
+                style={styles.toolbarBtn}
+                title="Insert Bullet List"
+              >
+                • Bullet
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button
+                type="button"
+                onClick={handleResetToTemplate}
+                style={styles.toolbarResetBtn}
+                title="Re-populate document from live candidate and requisition fields"
+              >
+                <IconReset /> <span>Reset Template</span>
+              </button>
+              <span style={{ fontSize: '11px', color: '#64748B' }}>
+                Click text on document to edit directly
+              </span>
+            </div>
+          </div>
+
+          {/* ─── TAB 1: CLIENT-READY SUBMITTAL RESUME (EXACT VERDANA WORD FORMAT) ─── */}
           {(activePreviewTab === 'resume' || activePreviewTab === 'all') && (
-            <div style={styles.resumePaper}>
-              {/* CAI Contact Box (VectorVMS NC & Georgia Formats) */}
-              {activeTemplateMeta.hasCaiBox && (
-                <div style={styles.caiBox}>
-                  <div style={{ fontSize: '13px', fontWeight: '800', color: '#0F172A', marginBottom: 2 }}>
-                    CAI Contact
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#64748B', marginBottom: 8, lineHeight: 1.4 }}>
-                    Insert name and contact information for the CAI Contract Manager listed on the VectorVMS requirement. For ease of reference, the Contract Manager's contact information appears below.
-                  </div>
-                  <div style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A' }}>
-                    {caiManagerName}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#334155', marginTop: 2 }}>
-                    Phone: <span style={{ fontWeight: '600' }}>{caiManagerPhone}</span>
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#2563EB', marginTop: 1 }}>
-                    Email: <span style={{ fontWeight: '600' }}>{caiManagerEmail}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Standard Corporate Letterhead (When NOT using CAI box) */}
-              {!activeTemplateMeta.hasCaiBox && (
-                <div style={styles.letterhead}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <h1 style={{ fontSize: '24px', fontWeight: '900', color: '#0F172A', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
-                        {coversheet.candidateLegalName}
-                      </h1>
-                      <div style={{ fontSize: '14px', fontWeight: '700', color: '#2563EB' }}>
-                        {positionTitle}
-                      </div>
-                    </div>
-
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: '14px', fontWeight: '800', color: '#0F172A' }}>{activeTemplateMeta.agencyName}</div>
-                      <div style={{ fontSize: '11px', color: '#64748B' }}>SmartHire Authorized Presentation</div>
-                      <div style={{ fontSize: '11px', color: '#64748B' }}>Req #{vmsNumber} • {clientAgency}</div>
-                    </div>
-                  </div>
-
-                  {/* Metadata Sub-bar */}
-                  <div style={styles.metaSubBar}>
-                    <span>Location: {coversheet.currentLocation}</span>
-                    <span>•</span>
-                    <span>Visa: {coversheet.visaStatus}</span>
-                    <span>•</span>
-                    <span>Experience: {coversheet.totalExperience}</span>
-                    <span>•</span>
-                    <span style={{ color: '#059669', fontWeight: '700' }}>
-                      Represented exclusively via {activeTemplateMeta.agencyName}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* NC & Georgia Candidate Header Title Bar */}
-              {activeTemplateMeta.hasCaiBox && (
-                <div style={{ marginBottom: 18, borderBottom: '2px solid #0F172A', paddingBottom: 10 }}>
-                  <h1 style={{ fontSize: '23px', fontWeight: '900', color: '#0F172A', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
-                    {coversheet.candidateLegalName}
-                  </h1>
-                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#2563EB' }}>
-                    {positionTitle}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '12px', color: '#64748B', marginTop: 6, flexWrap: 'wrap' }}>
-                    <span>Location: {coversheet.currentLocation}</span>
-                    <span>•</span>
-                    <span>Visa: {coversheet.visaStatus}</span>
-                    <span>•</span>
-                    <span>Total Exp: {coversheet.totalExperience}</span>
-                    <span>•</span>
-                    <span>Req #{vmsNumber} ({clientAgency})</span>
-                    <span>•</span>
-                    <span style={{ color: '#059669', fontWeight: '700' }}>Represented via CoolSoft LLC</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Editable Formatted Resume Body */}
-              <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                  <label style={{ fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase' }}>
-                    Resume Experience & Employment History
-                  </label>
-                  <span style={{ fontSize: '11px', color: '#64748B' }} className="no-print">
-                    Click text below to edit prior to submission
-                  </span>
-                </div>
-                <textarea
-                  value={resumeText}
-                  onChange={e => setResumeText(e.target.value)}
-                  style={styles.resumeTextarea}
-                  placeholder="Paste or format candidate employment history, skills, and education..."
-                />
-              </div>
+            <div style={styles.wordPaperWrapper}>
+              <div
+                ref={resumeEditorRef}
+                contentEditable={true}
+                suppressContentEditableWarning={true}
+                onInput={() => setIsLiveEditDirty(true)}
+                style={styles.wordPaper}
+              />
             </div>
           )}
 
-          {/* ─── TAB 2: ELECTRONIC RIGHT TO REPRESENT (E-RTR) ─────────────── */}
+          {/* ─── TAB 2: ELECTRONIC RIGHT TO REPRESENT (E-RTR) (EXACT DOC FORMAT) ─── */}
           {(activePreviewTab === 'rtr' || activePreviewTab === 'all') && (
-            <div style={{ ...styles.resumePaper, marginTop: activePreviewTab === 'all' ? 24 : 0 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #0F172A', paddingBottom: 10, marginBottom: 14 }}>
-                <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#0F172A', margin: 0 }}>
-                    Right to Represent (E-RTR) Template
-                  </h3>
-                  <div style={{ fontSize: '12px', color: '#64748B', marginTop: 2 }}>
-                    {activeTemplateMeta.contractName} • Official Representation Acknowledgement
-                  </div>
-                </div>
-                <span style={{ fontSize: '11px', fontWeight: '800', color: '#1D4ED8', background: '#EFF6FF', padding: '3px 9px', borderRadius: 6, border: '1px solid #BFDBFE' }}>
-                  {activeTemplateMeta.badge}
-                </span>
-              </div>
-
-              {/* Email Subject Card */}
-              <div style={styles.rtrSubjectCard}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase' }}>
-                    Candidate Email Subject Line:
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      navigator.clipboard.writeText(rtrSubject)
-                      showToast('Email Subject copied!')
-                    }}
-                    style={styles.rtrCopyPill}
-                    title="Copy subject line"
-                  >
-                    <IconCopy /> <span>Copy Subject</span>
-                  </button>
-                </div>
-                <div style={{ fontSize: '14px', fontWeight: '800', color: '#0F172A', marginTop: 4, fontFamily: 'monospace' }}>
-                  {rtrSubject}
-                </div>
-              </div>
-
-              {/* Email Body Card */}
-              <div style={{ marginTop: 14 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase' }}>
-                    Right to Represent Body Text (Copy & Paste to Candidate):
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleCopyRtr}
-                    style={styles.rtrCopyPill}
-                    title="Copy full RTR text"
-                  >
-                    <IconCopy /> <span>Copy Body Text</span>
-                  </button>
-                </div>
-                <pre style={styles.rtrPreBlock}>
-                  {rtrBody}
-                </pre>
-              </div>
+            <div style={{ ...styles.wordPaperWrapper, marginTop: activePreviewTab === 'all' ? 24 : 0 }}>
+              <div
+                ref={rtrEditorRef}
+                contentEditable={true}
+                suppressContentEditableWarning={true}
+                onInput={() => setIsLiveEditDirty(true)}
+                style={styles.wordPaper}
+              />
 
               {/* Action Toolbar for E-RTR */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 16 }} className="no-print">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14 }} className="no-print">
                 <button
                   type="button"
                   onClick={handleCopyRtr}
@@ -1354,7 +1603,7 @@ ${coversheet.references}
 const styles = {
   pageWrap: {
     minHeight: '100vh',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F1F5F9',
     display: 'flex',
     flexDirection: 'column',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
@@ -1503,7 +1752,7 @@ const styles = {
     flexShrink: 0,
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
-    border: '1px solid #E2E8F0',
+    border: '1px solid #CBD5E1',
     padding: 18,
     boxSizing: 'border-box',
     maxHeight: 'calc(100vh - 160px)',
@@ -1514,7 +1763,7 @@ const styles = {
     minWidth: 0,
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
-    border: '1px solid #E2E8F0',
+    border: '1px solid #CBD5E1',
     padding: 18,
     boxSizing: 'border-box',
     display: 'flex',
@@ -1534,7 +1783,7 @@ const styles = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 10,
     borderBottom: '1px solid #E2E8F0',
     paddingBottom: 8,
     flexWrap: 'wrap',
@@ -1556,6 +1805,64 @@ const styles = {
     color: '#1D4ED8',
     fontWeight: '800',
     boxShadow: '0 1px 2px rgba(37,99,235,0.1)'
+  },
+  editorToolbar: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F8FAFC',
+    border: '1px solid #E2E8F0',
+    borderRadius: 8,
+    padding: '6px 10px',
+    marginBottom: 12,
+    flexWrap: 'wrap',
+    gap: 6
+  },
+  toolbarBtn: {
+    padding: '4px 9px',
+    borderRadius: 4,
+    backgroundColor: '#FFFFFF',
+    border: '1px solid #CBD5E1',
+    fontSize: '11.5px',
+    fontWeight: '600',
+    color: '#0F172A',
+    cursor: 'pointer'
+  },
+  toolbarResetBtn: {
+    background: 'none',
+    border: '1px solid #CBD5E1',
+    borderRadius: 4,
+    padding: '3px 8px',
+    color: '#475569',
+    fontSize: '11px',
+    fontWeight: '700',
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFFFFF'
+  },
+  wordPaperWrapper: {
+    flex: 1,
+    backgroundColor: '#E2E8F0',
+    padding: '16px',
+    borderRadius: 10,
+    boxSizing: 'border-box'
+  },
+  wordPaper: {
+    backgroundColor: '#FFFFFF',
+    border: '1px solid #CBD5E1',
+    borderRadius: 2,
+    padding: '40px 48px',
+    boxSizing: 'border-box',
+    boxShadow: '0 4px 14px rgba(0,0,0,0.06)',
+    fontFamily: 'Verdana, Geneva, sans-serif',
+    fontSize: '12px',
+    lineHeight: '1.6',
+    color: '#000000',
+    outline: 'none',
+    minHeight: '680px',
+    cursor: 'text'
   },
   sectionCard: {
     backgroundColor: '#F8FAFC',
@@ -1631,83 +1938,6 @@ const styles = {
     fontSize: '11px',
     outline: 'none',
     color: '#0F172A'
-  },
-  resumePaper: {
-    backgroundColor: '#FFFFFF',
-    border: '1px solid #CBD5E1',
-    borderRadius: 8,
-    padding: 24,
-    boxSizing: 'border-box',
-    display: 'flex',
-    flexDirection: 'column',
-    minHeight: '500px'
-  },
-  caiBox: {
-    backgroundColor: '#F8FAFC',
-    border: '1px solid #CBD5E1',
-    borderRadius: 8,
-    padding: '12px 16px',
-    marginBottom: 16
-  },
-  letterhead: {
-    borderBottom: '2px solid #0F172A',
-    paddingBottom: 12,
-    marginBottom: 14
-  },
-  metaSubBar: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    fontSize: '11.5px',
-    color: '#475569',
-    marginTop: 8,
-    flexWrap: 'wrap'
-  },
-  resumeTextarea: {
-    flex: 1,
-    minHeight: '380px',
-    width: '100%',
-    backgroundColor: '#FAFAFA',
-    border: '1px solid #CBD5E1',
-    borderRadius: 8,
-    padding: 14,
-    fontSize: '12.5px',
-    lineHeight: 1.6,
-    color: '#0F172A',
-    fontFamily: 'inherit',
-    outline: 'none',
-    resize: 'vertical',
-    boxSizing: 'border-box'
-  },
-  rtrSubjectCard: {
-    backgroundColor: '#F8FAFC',
-    border: '1px solid #CBD5E1',
-    borderRadius: 8,
-    padding: '10px 14px'
-  },
-  rtrCopyPill: {
-    background: 'none',
-    border: 'none',
-    color: '#2563EB',
-    fontSize: '11px',
-    fontWeight: '700',
-    cursor: 'pointer',
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 4
-  },
-  rtrPreBlock: {
-    backgroundColor: '#FAFAFA',
-    border: '1px solid #CBD5E1',
-    borderRadius: 8,
-    padding: 14,
-    fontSize: '12px',
-    lineHeight: 1.55,
-    color: '#0F172A',
-    whiteSpace: 'pre-wrap',
-    wordBreak: 'break-word',
-    fontFamily: 'monospace',
-    margin: 0
   },
   modalOverlay: {
     position: 'fixed',
