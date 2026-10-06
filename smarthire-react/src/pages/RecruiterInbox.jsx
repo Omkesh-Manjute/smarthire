@@ -12674,51 +12674,51 @@ export default function RecruiterInbox({ defaultViewMode }) {
             overflow: 'hidden'
           }}>
             
-            {/* COLUMN 1: Conversation List (~25% width, Slack Aubergine Style #3F0E40) */}
+            {/* COLUMN 1: Conversation List (~25% width, Clean Modern Surface) */}
             <div style={{
               width: 320,
               minWidth: 290,
               maxWidth: 340,
-              backgroundColor: '#3F0E40',
+              backgroundColor: C.surface,
               borderRadius: 14,
-              border: '1px solid #350d36',
+              border: `1px solid ${C.border}`,
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden',
               flexShrink: 0,
-              boxShadow: '0 4px 16px rgba(63, 14, 64, 0.15)'
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
             }}>
               {/* Recruiter Filter Dropdown for Admins / Leads */}
               {!isReportee && (
-                <div style={{ padding: '10px 12px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', backgroundColor: '#350d36' }}>
+                <div style={{ padding: '10px 12px', borderBottom: `1px solid ${C.border}`, backgroundColor: isLight ? '#F8FAFC' : '#1C252E' }}>
                   <select
                     value={recruiterFilter}
                     onChange={e => setRecruiterFilter(e.target.value)}
                     style={{
                       width: '100%',
-                      background: 'rgba(255, 255, 255, 0.12)',
-                      border: '1px solid rgba(255, 255, 255, 0.18)',
-                      borderRadius: 6,
-                      padding: '6px 8px',
-                      fontSize: 11.5,
+                      background: C.surface,
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 8,
+                      padding: '7px 10px',
+                      fontSize: 12,
                       fontWeight: 700,
-                      color: '#FFFFFF',
+                      color: C.textPrimary,
                       outline: 'none',
                       cursor: 'pointer'
                     }}
                   >
-                    <option value="all" style={{ background: '#3F0E40', color: '#FFF' }}>All Recruiters & Channels ({threads.length})</option>
+                    <option value="all">All Recruiters & Channels ({threads.length})</option>
                     {ALL_SMARTHIRE_RECRUITERS.map(r => (
-                      <option key={r.refCode} value={r.refCode} style={{ background: '#3F0E40', color: '#FFF' }}>{r.name}</option>
+                      <option key={r.refCode} value={r.refCode}>{r.name}</option>
                     ))}
                   </select>
                 </div>
               )}
 
-              {/* Conversations Rows (Slack Dark Channel Item Style) */}
+              {/* Conversations Rows (Clean Modern Item Style) */}
               <div style={{ flex: 1, overflowY: 'auto' }}>
                 {filteredThreads.length === 0 ? (
-                  <div style={{ padding: '60px 20px', textAlign: 'center', color: 'rgba(255, 255, 255, 0.6)' }}>
+                  <div style={{ padding: '60px 20px', textAlign: 'center', color: C.textSecondary }}>
                     <div style={{ marginBottom: 10, display: 'flex', justifyContent: 'center' }}><IconChat /></div>
                     <p style={{ fontSize: 13, margin: 0, fontWeight: 600 }}>No conversations found</p>
                     <p style={{ fontSize: 11.5, margin: '4px 0 0' }}>Try switching tabs or adjusting search query.</p>
@@ -12738,22 +12738,22 @@ export default function RecruiterInbox({ defaultViewMode }) {
                           display: 'flex',
                           alignItems: 'flex-start',
                           gap: 10,
-                          padding: '10px 14px',
+                          padding: '11px 14px',
                           cursor: 'pointer',
-                          backgroundColor: isSelected ? '#1164A3' : (isHovered ? 'rgba(255, 255, 255, 0.08)' : 'transparent'),
-                          borderRadius: isSelected ? 8 : 6,
-                          margin: '2px 8px',
-                          transition: 'background 0.12s ease'
+                          backgroundColor: isSelected ? (isLight ? '#EFF6FF' : 'rgba(37, 99, 235, 0.15)') : (isHovered ? (isLight ? '#F8FAFC' : 'rgba(255, 255, 255, 0.04)') : 'transparent'),
+                          borderLeft: isSelected ? '3.5px solid #2563EB' : '3.5px solid transparent',
+                          borderBottom: `1px solid ${isLight ? '#F1F5F9' : 'rgba(255, 255, 255, 0.05)'}`,
+                          transition: 'all 0.12s ease'
                         }}
                       >
-                        {/* Slack Presence Dot */}
+                        {/* Presence Dot */}
                         <div style={{ paddingTop: 4, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <span style={{
                             width: 8,
                             height: 8,
                             borderRadius: '50%',
-                            backgroundColor: isActiveNow ? '#2BAC76' : 'rgba(255, 255, 255, 0.35)',
-                            boxShadow: isActiveNow ? '0 0 6px #2BAC76' : 'none'
+                            backgroundColor: isActiveNow ? '#10B981' : (isLight ? '#CBD5E1' : '#475569'),
+                            boxShadow: isActiveNow ? '0 0 6px #10B981' : 'none'
                           }} />
                         </div>
 
@@ -12764,7 +12764,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                             <span style={{
                               fontSize: 13,
                               fontWeight: isSelected ? 800 : 700,
-                              color: '#FFFFFF',
+                              color: isSelected ? '#1D4ED8' : C.textPrimary,
                               whiteSpace: 'nowrap',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
@@ -12773,7 +12773,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                               {thread.candidateName}
                             </span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                              <span style={{ fontSize: 10.5, color: isSelected ? 'rgba(255, 255, 255, 0.85)' : 'rgba(255, 255, 255, 0.55)', flexShrink: 0, fontWeight: 500 }}>
+                              <span style={{ fontSize: 10.5, color: isSelected ? '#2563EB' : C.textSecondary, flexShrink: 0, fontWeight: 500 }}>
                                 {formatTime(thread.lastMessageTime || thread.timestamp)}
                               </span>
                               {(isHovered || isSelected) && (
@@ -12784,15 +12784,15 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                   style={{
                                     background: 'transparent',
                                     border: 'none',
-                                    color: 'rgba(255, 255, 255, 0.75)',
+                                    color: C.textSecondary,
                                     cursor: 'pointer',
                                     padding: '0 2px',
                                     borderRadius: 4,
                                     display: 'flex',
                                     alignItems: 'center'
                                   }}
-                                  onMouseEnter={e => e.currentTarget.style.color = '#F87171'}
-                                  onMouseLeave={e => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.75)'}
+                                  onMouseEnter={e => e.currentTarget.style.color = '#EF4444'}
+                                  onMouseLeave={e => e.currentTarget.style.color = C.textSecondary}
                                 >
                                   <IconTrash />
                                 </button>
@@ -12803,7 +12803,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                           {/* Row 2: Subtitle / Role / Company */}
                           <div style={{
                             fontSize: 11,
-                            color: isSelected ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.65)',
+                            color: C.textSecondary,
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
@@ -12816,7 +12816,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <span style={{
                               fontSize: 11.5,
-                              color: isSelected ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.5)',
+                              color: isSelected ? '#2563EB' : (isLight ? '#475569' : '#94A3B8'),
                               fontWeight: thread.unreadCount > 0 ? 700 : 400,
                               whiteSpace: 'nowrap',
                               overflow: 'hidden',
@@ -13123,15 +13123,88 @@ export default function RecruiterInbox({ defaultViewMode }) {
                                 </span>
                                 {isMe && <IconCheckCheck color="#2563EB" />}
                               </div>
-                              <div style={{
-                                fontSize: 14,
-                                color: C.textPrimary,
-                                lineHeight: 1.5,
-                                whiteSpace: 'pre-line',
-                                wordBreak: 'break-word'
-                              }}>
-                                {String(msg.text || '').replace(/â€¦/g, '...').replace(/&hellip;/g, '...')}
-                              </div>
+                              {(() => {
+                                const textContent = String(msg.text || '').replace(/â€¦/g, '...').replace(/&hellip;/g, '...')
+                                const isCandShare = textContent.includes('Candidate Shared:')
+                                if (isCandShare) {
+                                  const match = textContent.match(/Candidate Shared:\s*([^—–-]+)[—–-]\s*([^(]+)\(([^)]+)\)/i)
+                                  if (match) {
+                                    const candName = match[1].trim()
+                                    const candRole = match[2].trim()
+                                    const candDetails = match[3].trim()
+                                    const matchScore = candDetails.includes('%') ? candDetails.split(',')[0].trim() : '90% Match'
+                                    const reqInfo = candDetails.includes('Req') ? candDetails.split(',')[1]?.trim() : 'Req #159078'
+                                    return (
+                                      <div style={{
+                                        background: isLight ? '#FFFFFF' : '#1E293B',
+                                        border: `1px solid ${C.border}`,
+                                        borderRadius: 12,
+                                        padding: '12px 16px',
+                                        marginTop: 6,
+                                        maxWidth: 440,
+                                        boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+                                      }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                                          <div style={{ fontSize: 14.5, fontWeight: 800, color: C.textPrimary }}>
+                                            {candName}
+                                          </div>
+                                          <span style={{
+                                            fontSize: 11,
+                                            fontWeight: 800,
+                                            background: '#ECFDF5',
+                                            color: '#059669',
+                                            border: '1px solid #A7F3D0',
+                                            padding: '2px 8px',
+                                            borderRadius: 10
+                                          }}>
+                                            {matchScore}
+                                          </span>
+                                        </div>
+                                        <div style={{ fontSize: 12, color: C.textSecondary, marginBottom: 10 }}>
+                                          {candRole} • {reqInfo}
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const found = (streamCandidates || []).find(c => (c.name || '').toLowerCase() === candName.toLowerCase()) || { name: candName, role: candRole }
+                                            setSelectedCandidate(found)
+                                          }}
+                                          style={{
+                                            width: '100%',
+                                            padding: '7px 12px',
+                                            background: isLight ? '#F8FAFC' : '#0F172A',
+                                            border: `1px solid ${C.border}`,
+                                            borderRadius: 8,
+                                            fontSize: 12,
+                                            fontWeight: 700,
+                                            color: C.textPrimary,
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: 6
+                                          }}
+                                          onMouseEnter={e => { e.currentTarget.style.background = '#EFF6FF'; e.currentTarget.style.borderColor = '#93C5FD'; e.currentTarget.style.color = '#1D4ED8' }}
+                                          onMouseLeave={e => { e.currentTarget.style.background = isLight ? '#F8FAFC' : '#0F172A'; e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textPrimary }}
+                                        >
+                                          Review Candidate ↗
+                                        </button>
+                                      </div>
+                                    )
+                                  }
+                                }
+                                return (
+                                  <div style={{
+                                    fontSize: 14,
+                                    color: C.textPrimary,
+                                    lineHeight: 1.5,
+                                    whiteSpace: 'pre-line',
+                                    wordBreak: 'break-word'
+                                  }}>
+                                    {textContent}
+                                  </div>
+                                )
+                              })()}
                             </div>
                           </div>
                         )
@@ -13352,27 +13425,6 @@ export default function RecruiterInbox({ defaultViewMode }) {
                         }}
                       >
                         <IconSparkles /> <span>Write with AI</span>
-                      </button>
-
-                      {/* Share Candidate */}
-                      <button
-                        type="button"
-                        onClick={() => setShowShareCandidateModal(true)}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          backgroundColor: C.surface,
-                          color: C.textPrimary,
-                          border: `1px solid ${C.border}`,
-                          borderRadius: 8,
-                          padding: '5px 11px',
-                          fontSize: 12,
-                          fontWeight: 600,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        <IconUsers /> <span>Share Candidate</span>
                       </button>
 
                       {/* Schedule Meeting */}
