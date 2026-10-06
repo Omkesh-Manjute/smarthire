@@ -107,6 +107,130 @@ The following high-impact features and optimizations have been agreed upon and p
 
 ## Recent Changes
 
+### 2026-10-06 — Slack Signature Aubergine Theme (#3F0E40) Across Candidates & ATS Sidebars & Initials Circle Avatar Removal
+- **Context & Objectives**:
+  - The user requested applying the authentic Slack-style left panel color scheme (`#3F0E40`) to the main Candidate sidebar (`RecruiterInbox.jsx`) and ATS sidebar (`AtsPlatform.jsx`) with smooth transitions.
+  - The user also requested removing candidate initials circle avatars (`MA`, `MR`, `NN`, `PA`) from the Candidate screening table and candidate detail view for a clean, minimal aesthetic.
+- **Key Solutions & Deliverables**:
+  1. **Slack Signature Aubergine Theme (#3F0E40) on Both Sidebars**:
+     - Updated both `RecruiterInbox.jsx` and `AtsPlatform.jsx` left sidebars to authentic Slack deep aubergine (`#3F0E40` base, `#350d36` top bar).
+     - Applied Slack active selection blue (`#1164A3`) with crisp white text and smooth 6px border radius.
+     - Applied subtle translucent hover states (`rgba(255, 255, 255, 0.08)`), refined inactive text (`rgba(255, 255, 255, 0.72)`), and high-contrast uppercase category headers (`rgba(255, 255, 255, 0.5)`).
+     - Styled unread notifications badge in Slack signature red/pink (`#E01E5A`) and count pills in semi-transparent white (`rgba(255, 255, 255, 0.16)`).
+  2. **Candidate Initials Circle Avatar Removal**:
+     - Removed circular avatar initials from the Candidate column in `ScreeningModule.jsx` so candidate name, email, and location badges render smoothly and cleanly.
+     - Cleaned up the candidate detail view modal header in `RecruiterInbox.jsx`.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (active bundle `index--R2xCfdW.js`).
+  - Git committed (`e5d33d4`) and pushed to GitHub `origin/main`.
+  - Deployed production bundle to AWS Lightsail server (`34.194.119.199`), extracted to webroot `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+### 2026-10-06 — Dynamic Dashboard Hover Effects & Tooltips, Slack Messages Screen Redesign & 1-Click Conversation Deletion
+- **Context & Objectives**:
+  - The user requested major UX & UI polish for the Recruiter Inbox dashboard and chat screens:
+    1. **Dashboard Dynamic KPI Cards & Smooth Hover Effects**: The 4 KPI cards (`Total Candidates`, `Active Requisitions`, `Strong Fits`, `Direct / Ingested Resumes`) must feature smooth elevated hover transforms, dynamic live number tooltips, and interactive breakdowns.
+    2. **Candidate Sourcing Donut & Skills Breakdown**: Added interactive segment hovering, dynamic center text updates, and 1-click filter navigation into candidate roster.
+    3. **Messages Page Slack Clean Redesign**:
+       - Removed circular initials avatars (`CA`, `TV`, etc.) from thread list, top chat header, and right context panel.
+       - Replaced with authentic Slack presence dots (`●` in green `#2BAC76` / active state).
+       - Restyled message stream to authentic Slack left-aligned stream with bold sender name, timestamp, and clean message body.
+       - Formatted inbound inquiries as Slack integration cards with left accent border (`#1164A3`).
+       - Added 1-click Delete Conversation Trash button on thread rows, chat header, and right context drawer calling `DELETE /api/messages/:candidateId`.
+    4. **"Test Visitor" Demo Entry Explanation**:
+       - Verified origin: Generated from public website "Book a Demo" / "Enterprise Contact" form (`POST /api/inquiries`) which automatically logs notifications to ATS messages. Provided 1-click delete to purge test inquiries.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (active bundle `index-DnpqHBjI.js`).
+  - Git committed (`6c964d9`) and pushed to GitHub `origin/main`.
+  - Deployed production bundle to AWS Lightsail server (`34.194.119.199`), extracted to webroot `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Updated `server/index.js` on Lightsail with `DELETE /api/messages/:candidateId` and reloaded PM2 `smarthire-ats`.
+  - Verified disk hygiene: 7.4GB available (60% used), temporary archives cleaned immediately.
+  - Verified live domain `https://smarthireus.com` returning HTTP 200 with new active bundle `index-DnpqHBjI.js`.
+
+### 2026-10-06 — Screening Overhaul: Recruiter Column, Location Discrepancy Mismatch Audit, Pinned Non-Hiding Question Tabs, Top Bar Decluttering & Accidental Skip Guards
+- **Context & Objectives**:
+  - The user requested several specific UI/UX fixes and features on the Candidate Screening module (`/ats?tab=screening`):
+    1. **Recruiter Column ("kisne genrate kiya vo bhi ana cahiye like recruiter ka name ak cloum mai")**: Added a dedicated `RECRUITER` column displaying who generated the screening campaign link (`getRecruiterName`), with backend metadata persistence and enrichment.
+    2. **Rating Removal ("ye reting ka hata do and data ko short mai likno")**: Removed the `RECRUITER RATING` star rating column from the table and simplified KPI card 4 to `AI Shortlisted / Qualified submissions`. Made candidate, requisition, and recruiter data compact with ellipsis and sleek typography.
+    3. **Location Mismatch Audit ("SmartHire ATS — Candidate Screening Dossier mai location miss match ka bhi ana cahiye like candidate entered this location but his actual gps location is this")**:
+       - Implemented `checkLocationMismatch(enteredLocation, gpsGeo)` cross-referencing candidate stated city/state against verified device GPS coordinates.
+       - High-visibility warning alert in PDF Candidate Screening Dossier: flags discrepancies (e.g. Stated: Madison, WI vs Actual GPS: Kansas City, MO) with an official integrity warning notice.
+       - Added Location Discrepancy alerts in the Review Drawer's Proctoring & Integrity Audit card and in the candidate table row (`⚠️ Mismatch: GPS in ...`).
+    4. **Top Bar Decluttering ("upper clear all 5 ye hata do yaha se right and ye page mai jo jarurat nahi ho vo batavo like top mai bhi candiate search vo kam ka nahi hai , chat, req, pluse icon ye sab hata do simple rakho")**:
+       - Removed the red `Clear All (5)` button from the screening page header.
+       - In `AtsPlatform.jsx`, removed redundant global candidate search input, `+` quick add button, `Chat` button, and `Requisitions` button from the top navigation bar, preserving only the Activity Notification Bell and User Avatar for a clean, minimal look.
+    5. **Pinned Non-Hiding Question Tabs in Review Modal ("top mai dekho questin ke button hai vo hide ho rahe hai usko bhi improve karna hai")**:
+       - Separated `qTabRowPinned` into a dedicated non-scrolling header with solid background and crisp borders.
+       - Placed video player and spoken transcripts inside `reviewScrollableBody`, guaranteeing question tabs (`Q1`, `Q2`, `Q3`, `Q4`) are always 100% visible and never clipped or scrolled away.
+    6. **Candidate Accidental Skip Protections ("While scrolling and recording my video, I accidentally skipped one question")**:
+       - In `CandidateChat.jsx`, added a fast-advance confirmation guard: if a candidate spends $< 6$ seconds on a question and clicks advance, a prompt checks if they are sure.
+       - Added a `← Back to Question X` button in continuous recording so candidates can immediately step back if they accidentally advanced.
+       - Added a `↺ Retake Assessment` option in Step 4 review so candidates can re-record cleanly if they missed a question before final submission.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (active bundle `index-DE8GODbb.js`).
+  - Git committed (`a90ec86`) and pushed to GitHub `origin/main`.
+  - Deployed bundle and updated `server/index.js` on AWS Lightsail (`34.194.119.199`), extracted to webroot `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Pruned old asset bundles, kept only 5 most recent, cleaned archives immediately. PM2 `smarthire-ats` reloaded.
+  - Verified disk hygiene: 7.4GB free space (60% used).
+  - Verified live domain `https://smarthireus.com` returning HTTP 200 with new active bundle `index-DE8GODbb.js`.
+
+### 2026-10-06 — Slack Signature Aubergine Theme (#3F0E40) Across Candidates & ATS Sidebars & Initials Circle Avatar Removal
+- **Context & Objectives**:
+  - The user reported three critical issues on `/sign-rtr`:
+    1. **Garbled Binary Text (`PK ! [Content_Types].xml`)**: Uploaded `.docx` was previously read with `FileReader.readAsText()`, showing raw binary zip internals instead of readable text. User requested all document formats to work seamlessly.
+    2. **Field Boxes Missing ("box nahi a rahe hai sign ke taxt ke")**: In Step 3 (Place Fields), field blocks were hidden at the bottom of the raw text instead of being prominent, interactive floating boxes overlaid on the document page.
+    3. **Dropbox Branding Removal**: The user explicitly requested removing the "Dropbox Sign" logo & name and replacing it with authentic "SmartHire Sign" branding.
+- **Key Solutions & Deliverables**:
+  1. **SmartHire Sign Enterprise Branding**:
+     - Removed all Dropbox logos, icons, and references.
+     - Added modern SmartHire Sign ATS badge with blue briefcase/contract glyph (`#2563EB`) and subtitle "Enterprise RTR Platform".
+  2. **All Document Formats Support (`POST /api/rtr/upload-document`)**:
+     - Added server-side extraction supporting Word (`.docx`, `.doc` via `mammoth`), PDF (`.pdf` via `pdf-parse`), Text (`.txt`, `.rtf`, `.md`), and Scanned Images (`.png`, `.jpg`, `.jpeg`, `.webp`).
+     - Added drag-and-drop file upload zones on both Home Dashboard and Wizard Step 1.
+     - Automatically cleans formatting and auto-places initial signature and date fields at the document bottom.
+  3. **Draggable & Floating Interactive Field Boxes on Document Canvas**:
+     - Rendered all fields (`Signature`, `Initials`, `Date signed`, `Full name`, `Email`, `Company`, `Title`, `Textbox`, `Tickbox`) directly overlaid on top of the document canvas sheet with `{ left: field.x, top: field.y, width, height }`.
+     - Added smooth mouse drag-and-drop repositioning with live coordinate feedback.
+     - Added distinctive, high-visibility styling per field (e.g. gold/blue for Signature, green for Date, blue for Name, slate for Textbox) with drag handle (`⠿`) and delete handle (`✕`).
+     - Added "✨ Auto-place fields" to detect document length and place signature, date, name, and title at the bottom execution area.
+     - Added interactive summary grid below document content with 1-click scroll-and-focus.
+     - Added quick alignment shortcuts (`Move to Signature Block`, `Align Left`, `Align Right`) in Right Inspector.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (active bundle `index-BJ2-U86o.js`).
+  - Git committed (`b7ad221`) and pushed to GitHub `origin/main`.
+  - Deployed production bundle to AWS Lightsail (`34.194.119.199`), extracted to webroot `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Updated `/home/ubuntu/smarthire/smarthire-react/server/index.js` on Lightsail and reloaded PM2 `smarthire-ats`.
+  - Verified disk hygiene: 7.6GB available (59% used), temporary archives deleted immediately.
+  - Verified live domain `https://smarthireus.com` returning HTTP 200 with new active bundle `index-BJ2-U86o.js`.
+
+### 2026-10-03 — SmartSign RTR (DocuSign/HelloSign Alternative), Submittal Pack Generator & Coversheet Tool, Gzip Speed Optimization & Table Layout Polish
+- **Context & Objectives**:
+  - The user requested major enterprise features and system improvements:
+    1. **In-House "SmartSign RTR" Digital Signature (HelloSign/DocuSign Alternative)**:
+       - Standalone dedicated signing screen (`/sign-rtr/:token`) for candidates to electronically sign Right to Represent agreements with zero account or login required.
+       - Interactive HTML5 canvas signature pad supporting Draw (touch/mouse), Type (cursive fonts), and Upload.
+       - ESIGN/UETA legal audit trail recording IP address, UTC timestamp, and SHA-256 certificate hash.
+       - Recruiter management dashboard to generate links, track pending/signed statuses, and view audit certificates.
+    2. **Submittal Pack Generator & Formatting Tool (`/submittal-pack`)**:
+       - Dedicated ATS tool allowing recruiters to select candidate + requisition + client template (Standard US, Texas DIR, MSP/VMS, Prime Vendor C2C, Custom).
+       - Auto-populated candidate Coversheet Matrix (Legal name, location, visa, experience, rate, education, notice period, interview availability, skills matrix).
+       - Client-ready formatted submittal resume preview with "Blind Resume" (contact info masking) toggle and clean `•` bullet point formatting.
+       - 1-Click Copy coversheet, Download/Print submittal pack PDF, and Direct Email Dispatch.
+    3. **Speed & Payload Optimization (Sub-Second Load Time)**:
+       - Added native `zlib` gzip compression middleware on Express backend, dropping large JSON payloads from 8.9MB to ~60-80KB (>90% reduction).
+       - Added in-memory match caching (`vendorMatchCache`) in vendor hotlists to eliminate 50,000 un-cached synchronous regex iterations per refresh.
+       - Lightweight candidate list summary with lazy-loaded full resume texts.
+    4. **Candidate Deduplication & Table Layout / Wording Polish**:
+       - Multi-identifier candidate deduplication across backend API and frontend views.
+       - Fixed job title text wrapping and overlay collisions by applying `minWidth: 0`, `overflow: hidden`, and `textOverflow: ellipsis` across table cells.
+       - Integrated Submittal Pack and SmartSign RTR actions directly into the candidate table row menu (`⋮`), Candidate Profile top action bar, candidate card quick-action chips, and sidebar navigation.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (active bundle `index-BnGASuZm.js`).
+  - Git committed and pushed to GitHub `origin/main` (`f09a623`, `54b2fcb`).
+  - Deployed production bundle to AWS Lightsail server (`34.194.119.199`), extracted to webroot `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Updated `server/index.js` on Lightsail and reloaded PM2 `smarthire-ats`.
+  - Verified disk hygiene: 7.6GB available (59% used), temporary archives cleaned up immediately, old bundles pruned.
+  - Verified live domain `https://smarthireus.com` returning HTTP 200 OK with active bundle `index-BnGASuZm.js`.
+  - Verified `/api/submittal-pack/templates`, `/api/rtr/list`, `/api/rtr/create`, `/api/rtr/:token`, and `/api/rtr/:token/sign` end-to-end on production.
+
 ### 2026-10-02 — Sticky Non-Hiding Question Tabs, Initials Removal, Top Download Cleanup, Widescreen Modal (1360px), PDF Dossier Export & AI Question Auto-Generation
 - **Context & Objectives**:
   - The user requested targeted UX fixes and two high-impact features in candidate screening:
