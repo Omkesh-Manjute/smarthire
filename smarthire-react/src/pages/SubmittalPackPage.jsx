@@ -363,6 +363,248 @@ export function formatStructuredWordResume(resumeText, blindResume = false) {
   return html;
 }
 
+// ─── Format Candidate Resume for State of Nebraska Official Tabular Layout ───
+export function formatStructuredNebraskaResume(resumeText, blindResume = false) {
+  if (!resumeText) return '<p><i>No resume experience provided.</i></p>';
+
+  const raw = blindResume
+    ? resumeText
+        .replace(/[\w.-]+@[\w.-]+\.\w+/g, '[Contact details available via CoolSoft LLC]')
+        .replace(/\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g, '[Contact details available via CoolSoft LLC]')
+    : resumeText;
+
+  const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+  let descLines = [];
+  let skillsLines = [];
+  let expLines = [];
+  let eduLines = [];
+  let currentSec = 'desc';
+
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
+    if (/^(PROFESSIONAL SUMMARY|SUMMARY OF QUALIFICATIONS|SUMMARY|CANDIDATE DESCRIPTION):?/i.test(l)) {
+      currentSec = 'desc';
+      continue;
+    }
+    if (/^(TECHNICAL SKILLS|SKILLS|CORE COMPETENCIES|TECHNICAL QUALIFICATIONS):?/i.test(l)) {
+      currentSec = 'skills';
+      continue;
+    }
+    if (/^(EMPLOYMENT HISTORY|PROFESSIONAL EXPERIENCE|WORK EXPERIENCE|WORK HISTORY):?/i.test(l)) {
+      currentSec = 'exp';
+      continue;
+    }
+    if (/^(EDUCATION|EDUCATION & CERTIFICATIONS|ACADEMIC BACKGROUND):?/i.test(l)) {
+      currentSec = 'edu';
+      continue;
+    }
+
+    if (currentSec === 'desc') descLines.push(l);
+    else if (currentSec === 'skills') skillsLines.push(l);
+    else if (currentSec === 'exp') expLines.push(l);
+    else if (currentSec === 'edu') eduLines.push(l);
+  }
+
+  if (descLines.length === 0 && skillsLines.length === 0 && expLines.length === 0) {
+    expLines = lines;
+  }
+
+  const renderSectionLines = (arr) => {
+    let out = '';
+    let inUl = false;
+    for (const line of arr) {
+      if (line.startsWith('•') || line.startsWith('-') || line.startsWith('*')) {
+        if (!inUl) { out += '<ul style="margin: 4px 0 8px 18px; padding: 0;">'; inUl = true; }
+        out += `<li style="margin-bottom: 4px; font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.4;">${line.replace(/^[•\-*]\s*/, '')}</li>`;
+      } else {
+        if (inUl) { out += '</ul>'; inUl = false; }
+        const isHeader = /^(Client|Company|Role|Project|Environment|Education|Degree):/i.test(line) || line.length < 50;
+        out += `<p style="margin: 0 0 5px 0; font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.4; ${isHeader ? 'font-weight: bold;' : ''}">${line}</p>`;
+      }
+    }
+    if (inUl) out += '</ul>';
+    return out || '<p style="margin: 0; font-family: Arial, sans-serif; font-size: 10pt; color: #64748B;"><i>Details available upon request</i></p>';
+  };
+
+  return `
+    <table cellspacing="0" cellpadding="0" style="border-collapse: collapse; width: 100%; border: 1px solid #bfbfbf; font-family: Arial, Helvetica, sans-serif;">
+      <tbody>
+        <tr>
+          <td style="border: 1px solid #bfbfbf; padding: 10px 14px; background-color: #FFFFFF;">
+            <p style="margin: 0 0 6px 0; font-family: Arial, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
+              Candidate Description
+            </p>
+            <div style="font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.4; color: #000000;">
+              ${renderSectionLines(descLines)}
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td style="border: 1px solid #bfbfbf; padding: 10px 14px; background-color: #FFFFFF;">
+            <p style="margin: 0 0 6px 0; font-family: Arial, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
+              Technical Qualifications/Skills List
+            </p>
+            <div style="font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.4; color: #000000;">
+              ${renderSectionLines(skillsLines)}
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td style="border: 1px solid #bfbfbf; padding: 10px 14px; background-color: #FFFFFF;">
+            <p style="margin: 0 0 6px 0; font-family: Arial, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
+              Employment History
+            </p>
+            <div style="font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.4; color: #000000;">
+              ${renderSectionLines(expLines)}
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td style="border: 1px solid #bfbfbf; padding: 10px 14px; background-color: #FFFFFF;">
+            <p style="margin: 0 0 6px 0; font-family: Arial, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
+              Education and Certifications
+            </p>
+            <div style="font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.4; color: #000000;">
+              ${renderSectionLines(eduLines)}
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  `;
+}
+
+// ─── Extract Clean RTR Subject, Body & Recruiter Signature ───────────────────
+export function getCleanRtrEmailDetails({
+  selectedTemplate,
+  candidateName,
+  candidateFirstName,
+  coversheet,
+  positionTitle,
+  vmsNumber,
+  clientAgency,
+  cleanRateNumber,
+  employmentType,
+  currentUser
+}) {
+  const reqNumber = vmsNumber || '159260';
+  const title = positionTitle || 'Candidate Position';
+  const client = clientAgency || 'Client Agency';
+  const rate = cleanRateNumber || '75';
+  const emp = employmentType || 'C2C';
+  const name = candidateName || 'Candidate Full Legal Name';
+  const fname = candidateFirstName || name.split(' ')[0] || 'Candidate';
+
+  // Recruiter professional signature
+  const recName = currentUser?.name || currentUser?.fullName || 'Omkesh Manjute';
+  const recEmail = currentUser?.email || 'omkesh@coolsofttech.com';
+  const recRole = currentUser?.role === 'superadmin' ? 'Lead Technical Recruiter / Talent Acquisition' : (currentUser?.title || 'Lead Technical Recruiter');
+  const recPhone = currentUser?.phone || '502-327-9805';
+  const recruiterSignature = `Thanks & Regards,\n\n${recName}\n${recRole}\nCOOLSOFT LLC\nEmail: ${recEmail}\nPhone: ${recPhone}\nWeb: https://www.coolsofttech.com`;
+
+  let subject = '';
+  let ackBody = '';
+
+  if (selectedTemplate === 'nc_cai' || selectedTemplate === 'georgia_cai') {
+    // VectorVMS NC & Georgia format specifies subject to be exactly: Position Title (Req #)
+    subject = `${title} (${reqNumber})`;
+    const stateName = selectedTemplate === 'nc_cai' ? 'North Carolina' : "State of Georgia's";
+    const contractTitle = selectedTemplate === 'nc_cai' ? 'North Carolina IT Supplemental Services Contract' : "State of Georgia's IT Staffing Services Contract";
+
+    ackBody = `Right to Represent Acknowledgement
+
+By inserting my full legal name below, I acknowledge and agree that [COOLSOFT LLC] has the sole right to represent me in matters of work assignment relating to the ${contractTitle} by submitting my professional resume to the Contract's Managed Service Provider, Computer Aid, Inc. for the requirement identified below.
+
+I also acknowledge and verify that all the information contained in my resume related to my technical credentials is accurate and is based on educational training and professional experience obtained throughout my career.
+
+VectorVMS Requirement Number and Title (including Name of Agency):
+${title} (${reqNumber}) - ${client}
+
+Candidate Full Legal Name:
+${name}
+
+Candidate Pay Rate for this Position (as Referenced in VectorVMS Requirement):
+$${rate} /hour
+
+Candidate Employment Type if Selected for Engagement (W2, 1099, C2C):
+(W2, 1099, C2C): ${emp}`;
+  } else if (selectedTemplate === 'nebraska_state') {
+    subject = `${title} (${reqNumber}) - State of Nebraska`;
+    ackBody = `Right to Represent Acknowledgement
+State of Nebraska Staff Augmentation Services
+
+By replying to this email with your confirmation, you acknowledge and agree that COOLSOFT LLC has the exclusive right to represent you for active requisition #${reqNumber} (${title}) with the State of Nebraska.
+
+I also acknowledge and verify that all the information contained in my resume related to my technical credentials is accurate and is based on educational training and professional experience obtained throughout my career.
+
+Requisition Number and Title:
+${title} (${reqNumber}) - State of Nebraska
+
+Candidate Full Legal Name:
+${name}
+
+Candidate Hourly Rate:
+$${rate} /hour (${emp})
+
+Candidate Employment Type:
+${emp}`;
+  } else if (selectedTemplate === 'texas_dir') {
+    subject = `DIR-CPO-ITSA: ${title} (Req #${reqNumber})`;
+    ackBody = `State of Texas Department of Information Resources (DIR)
+Contract Representation & Exclusivity Agreement • DIR-CPO-ITSA-0442
+
+1. Scope of Representation:
+The undersigned candidate hereby grants COOLSOFT LLC the exclusive authorization to submit credentials, resume, and rate proposal for active requisition #${reqNumber} (${title}) issued under the Texas DIR Cooperative Contracts Program.
+
+2. Candidate Acknowledgment:
+Candidate acknowledges that only one submittal per candidate is permitted by the State of Texas for each Solicitation ID. Dual representation will lead to immediate disqualification.
+
+3. Agreed Rate & Term:
+Agreed Hourly Submittal Rate: $${rate}/hour (${emp})
+Exclusivity Window: 60 Days from signature date.
+
+Candidate Full Legal Name:
+${name}`;
+  } else {
+    // Standard Direct Client RTR
+    subject = `Right to Represent (RTR): ${title} (Req #${reqNumber}) - ${client}`;
+    ackBody = `Exclusive Right to Represent & Authorization Agreement (RTR)
+COOLSOFT LLC Staff Augmentation Services • Requisition #${reqNumber} (${client})
+
+I, ${name}, hereby grant COOLSOFT LLC the exclusive authorization to represent and submit my candidate credentials for the ${title} requirement (Req #${reqNumber}) with ${client}.
+
+I confirm that I am legally authorized to work in the United States (${coversheet.visaStatus || 'Valid'}) and have not authorized any other staffing agency or vendor to submit my resume for this engagement.
+
+Agreed Pay Rate: $${rate}/hour (${emp})
+Notice Period: ${coversheet.noticePeriod || '2 Weeks'}
+Representation Term: 60 Calendar Days
+
+Candidate Legal Name:
+${name}`;
+  }
+
+  const fullEmailBody = `Hi ${fname},
+
+Please review the Right to Represent (RTR) details below for active requisition #${reqNumber} (${title}) with ${client}.
+
+--------------------------------------------------
+${ackBody}
+--------------------------------------------------
+
+Please reply directly to this email confirming your authorization:
+"I, ${name}, confirm and agree that COOLSOFT LLC has the exclusive right to represent me for ${title} (${reqNumber}) at $${rate}/hr (${emp})."
+
+${recruiterSignature}`;
+
+  return {
+    subject,
+    ackBody,
+    fullEmailBody,
+    recruiterSignature
+  };
+}
+
 // ─── Supported Presentation & E-RTR Templates ──────────────────────────────
 export const SUBMITTAL_TEMPLATES = [
   {
@@ -400,6 +642,16 @@ export const SUBMITTAL_TEMPLATES = [
     defaultCaiEmail: 'Timothy.Brodrick@cai.io',
     hasCaiBox: true,
     description: 'Official State of Georgia (GDOT) VectorVMS submittal layout with CAI Contact block, Pay Rate & Employment Type.'
+  },
+  {
+    id: 'nebraska_state',
+    name: 'State of Nebraska (Official State Template Format)',
+    badge: 'Nebraska State',
+    agencyName: 'CoolSoft LLC',
+    mspName: 'State of Nebraska IT Services',
+    contractName: 'State of Nebraska Staff Augmentation Services',
+    hasCaiBox: false,
+    description: 'Official State of Nebraska tabular resume presentation format with Candidate Description, Skills List, History, and Education sections.'
   },
   {
     id: 'texas_dir',
@@ -652,6 +904,8 @@ export default function SubmittalPackPage() {
       setCaiManagerEmail('Timothy.Brodrick@cai.io')
     } else if (lowerCombined.includes('texas') || lowerCombined.includes('dir')) {
       setSelectedTemplate('texas_dir')
+    } else if (lowerCombined.includes('nebraska') || lowerCombined.includes('nedoc') || lowerCombined.includes('state of nebraska')) {
+      setSelectedTemplate('nebraska_state')
     }
     setIsLiveEditDirty(false)
   }, [selectedJobId, jobs])
@@ -850,9 +1104,38 @@ EDUCATION & CERTIFICATIONS
     return formatStructuredWordResume(resumeText, blindResume)
   }, [resumeText, blindResume])
 
+  const formattedNebraskaResumeBodyHtml = useMemo(() => {
+    return formatStructuredNebraskaResume(resumeText, blindResume)
+  }, [resumeText, blindResume])
+
   // ─── Generate Authentic Word-Formatted Resume HTML ────────────────────────
   const generatedResumeTemplateHtml = useMemo(() => {
     const candidateName = coversheet.candidateLegalName || 'Candidate Full Legal Name'
+
+    if (selectedTemplate === 'nebraska_state') {
+      return `
+        <!-- State of Nebraska Header -->
+        <div style="border-bottom: 2px solid #000000; padding-bottom: 10px; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+              <h1 style="font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: bold; color: #000000; margin: 0 0 4px; text-transform: uppercase;">
+                ${candidateName}
+              </h1>
+              <div style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: bold; color: #1E293B;">
+                ${positionTitle} • Req #${vmsNumber}
+              </div>
+            </div>
+            <div style="text-align: right; font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #334155;">
+              <div style="font-weight: bold; color: #000000;">State of Nebraska IT Services</div>
+              <div>Submitted via COOLSOFT LLC</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Official Nebraska Tabular Layout (Candidate Description, Skills List, History, Education) -->
+        ${formattedNebraskaResumeBodyHtml}
+      `
+    }
 
     if (activeTemplateMeta.hasCaiBox) {
       const isNc = selectedTemplate === 'nc_cai'
@@ -923,7 +1206,7 @@ EDUCATION & CERTIFICATIONS
         ${formattedResumeBodyHtml}
       </div>
     `
-  }, [activeTemplateMeta, selectedTemplate, caiManagerName, caiManagerPhone, caiManagerEmail, coversheet, positionTitle, vmsNumber, clientAgency, formattedResumeBodyHtml])
+  }, [activeTemplateMeta, selectedTemplate, caiManagerName, caiManagerPhone, caiManagerEmail, coversheet, positionTitle, vmsNumber, clientAgency, formattedResumeBodyHtml, formattedNebraskaResumeBodyHtml])
 
   // ─── Generate Authentic Word-Formatted E-RTR HTML ─────────────────────────
   const generatedRtrTemplateHtml = useMemo(() => {
@@ -1089,6 +1372,85 @@ EDUCATION & CERTIFICATIONS
       `
     }
 
+    if (selectedTemplate === 'nebraska_state') {
+      return `
+        <!-- RED HEADER 1: Subject instruction (Verdana 12px, bold, underline, #FF0000) -->
+        <p style="margin: 0 0 8px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; line-height: 17px; font-weight: bold; text-decoration: underline; color: #FF0000;">
+          INSERT THE FOLLOWING INTO EMAIL SUBJECT AND UPDATE
+        </p>
+
+        <!-- Subject Line -->
+        <p style="margin: 0 0 16px 0; font-family: Verdana, Geneva, sans-serif; font-size: 13.5px; font-weight: bold; color: #000000;">
+          ${reqInfo} - State of Nebraska
+        </p>
+
+        <!-- RED HEADER 2: Body instruction (Verdana 12px, bold, underline, #FF0000) -->
+        <p style="margin: 0 0 10px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; line-height: 17px; font-weight: bold; text-decoration: underline; color: #FF0000;">
+          COPY, PASTE AND UPDATE THE FOLLOWING IN EMAIL BODY
+        </p>
+
+        <!-- Centered RTR Title (Verdana 10px/11px, bold, underline) -->
+        <p style="margin: 0 0 4px 0; text-align: center; font-family: Verdana, Geneva, sans-serif; font-size: 12px; line-height: 17px; font-weight: bold; text-decoration: underline; color: #000000;">
+          Right to Represent Acknowledgement
+        </p>
+        <p style="margin: 0 0 14px 0; text-align: center; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 15px; color: #475569;">
+          State of Nebraska Staff Augmentation Services
+        </p>
+
+        <!-- Body Paragraph 1 (Verdana 10.5px/11px, justified) -->
+        <p style="margin: 0 0 12px 0; text-align: justify; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 1.6; color: #000000;">
+          By replying to this email with your confirmation, you acknowledge and agree that <b>[COOLSOFT LLC]</b> has the exclusive right to represent you for active requisition #${vmsNumber} (<b>${positionTitle}</b>) with the <b>State of Nebraska</b>.
+        </p>
+
+        <!-- Body Paragraph 2 (Verdana 10.5px/11px, justified) -->
+        <p style="margin: 0 0 14px 0; text-align: justify; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 1.6; color: #000000;">
+          I also acknowledge and verify that all the information contained in my resume related to my technical credentials is accurate and is based on educational training and professional experience obtained throughout my career.
+        </p>
+
+        <!-- Req number & Title label -->
+        <p style="margin: 0 0 2px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 14px; font-weight: bold; color: #000000;">
+          Requisition Number and Title:
+        </p>
+        <p style="margin: 0 0 14px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; font-weight: bold; color: #000000;">
+          ${reqInfo} - State of Nebraska
+        </p>
+
+        <!-- Candidate Full Legal Name label & Yellow Highlight Field -->
+        <p style="margin: 0 0 2px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 14px; font-weight: bold; color: #000000;">
+          Candidate Full Legal Name:
+        </p>
+        <p style="margin: 0 0 14px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; line-height: 16px;">
+          <span style="background-color: #FFFF00; font-weight: bold; padding: 2px 8px; border-bottom: 1px solid #000000;">
+            ${candidateName}
+          </span>
+        </p>
+
+        <!-- Candidate Hourly Rate label & Yellow Highlight Field -->
+        <p style="margin: 0 0 2px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 14px; font-weight: bold; color: #000000;">
+          Candidate Hourly Rate:
+        </p>
+        <p style="margin: 0 0 14px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; font-weight: bold; color: #000000;">
+          $<span style="background-color: #FFFF00; font-weight: bold; padding: 2px 6px;">${cleanRateNumber}</span>/hour (${employmentType})
+        </p>
+
+        <!-- Candidate Employment Type label & Yellow Highlight Field -->
+        <p style="margin: 0 0 2px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 14px; font-weight: bold; color: #000000;">
+          Candidate Employment Type:
+        </p>
+        <p style="margin: 0 0 18px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; font-weight: bold; color: #000000;">
+          <span style="background-color: #FFFF00; font-weight: bold; padding: 2px 8px;">${employmentType}</span>
+        </p>
+
+        <!-- Red Instructions 3: Email template to candidate -->
+        <p style="margin: 0 0 8px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; line-height: 17px; font-weight: bold; text-decoration: underline; color: #FF0000;">
+          EMAIL TEMPLATE TO CANDIDATE
+        </p>
+        <p style="margin: 0 0 10px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; line-height: 17px; font-weight: bold; text-decoration: underline; color: #FF0000;">
+          ONCE CANDIDATE RESPONDS VIA EMAIL AGREEING WITH YOUR REPRESENTATION, SAVE ENTIRE EMAIL THREAD AS A PDF DOC AND UPLOAD IN CANDIDATE’S PROFILE
+        </p>
+      `
+    }
+
     // Default Standard Direct Client RTR
     return `
       <div style="border-bottom: 2px solid #0F172A; padding-bottom: 10px; margin-bottom: 14px;">
@@ -1223,10 +1585,20 @@ ${coversheet.references}
   }
 
   const handleCopyRtr = () => {
-    const rawRtrText = rtrEditorRef.current ? rtrEditorRef.current.innerText : ''
-    const subjectLine = `${positionTitle} (${vmsNumber})`
-    navigator.clipboard.writeText(`SUBJECT: ${subjectLine}\n\n${rawRtrText}`)
-    showToast('E-RTR Subject & Body copied!')
+    const details = getCleanRtrEmailDetails({
+      selectedTemplate,
+      candidateName: coversheet.candidateLegalName,
+      candidateFirstName: coversheet.candidateLegalName?.split(' ')[0],
+      coversheet,
+      positionTitle,
+      vmsNumber,
+      clientAgency,
+      cleanRateNumber,
+      employmentType,
+      currentUser
+    })
+    navigator.clipboard.writeText(`SUBJECT: ${details.subject}\n\n${details.fullEmailBody}`)
+    showToast('Clean RTR Subject, Body & Signature copied!')
   }
 
   const handleCopyCurrentView = () => {
@@ -1234,8 +1606,19 @@ ${coversheet.references}
       handleCopyRtr()
     } else if (activePreviewTab === 'all') {
       const resumeHtml = resumeEditorRef.current ? resumeEditorRef.current.innerText : ''
-      const rtrText = rtrEditorRef.current ? rtrEditorRef.current.innerText : ''
-      const combined = `${formattedCoversheetText}\n\n=====================================================\nSUBMITTAL RESUME\n=====================================================\n\n${resumeHtml}\n\n=====================================================\nRIGHT TO REPRESENT (E-RTR)\n=====================================================\n\n${rtrText}`
+      const details = getCleanRtrEmailDetails({
+        selectedTemplate,
+        candidateName: coversheet.candidateLegalName,
+        candidateFirstName: coversheet.candidateLegalName?.split(' ')[0],
+        coversheet,
+        positionTitle,
+        vmsNumber,
+        clientAgency,
+        cleanRateNumber,
+        employmentType,
+        currentUser
+      })
+      const combined = `${formattedCoversheetText}\n\n=====================================================\nSUBMITTAL RESUME\n=====================================================\n\n${resumeHtml}\n\n=====================================================\nRIGHT TO REPRESENT (E-RTR)\n=====================================================\n\nSUBJECT: ${details.subject}\n\n${details.fullEmailBody}`
       navigator.clipboard.writeText(combined)
       showToast('Complete Submittal Pack copied!')
     } else {
@@ -1263,11 +1646,22 @@ ${coversheet.references}
     setEmailModalMode('rtr')
     const cand = candidates.find(c => c.id === selectedCandidateId)
     const candEmail = cand?.email || ''
-    const rtrCleanText = rtrEditorRef.current ? rtrEditorRef.current.innerText : (generatedRtrTemplateHtml ? generatedRtrTemplateHtml.replace(/<[^>]+>/g, '\n').replace(/\n\s*\n/g, '\n') : '')
+    const details = getCleanRtrEmailDetails({
+      selectedTemplate,
+      candidateName: coversheet.candidateLegalName,
+      candidateFirstName: coversheet.candidateLegalName?.split(' ')[0],
+      coversheet,
+      positionTitle,
+      vmsNumber,
+      clientAgency,
+      cleanRateNumber,
+      employmentType,
+      currentUser
+    })
 
     setEmailTo(candEmail)
-    setEmailSubject(`Right to Represent (RTR) Confirmation: ${coversheet.candidateLegalName} — ${positionTitle} (Req #${vmsNumber})`)
-    setEmailBody(`Dear ${coversheet.candidateLegalName},\n\nPlease review the Right to Represent (RTR) authorization details below for active requisition #${vmsNumber} (${positionTitle}) with ${clientAgency}.\n\nAGREED POSITION TERMS:\n• Position Title: ${positionTitle}\n• Client / Agency: ${clientAgency}\n• Requisition / VMS #: ${vmsNumber}\n• Agreed Pay Rate: $${cleanRateNumber}/hour (${employmentType})\n• Work Authorization: ${coversheet.visaStatus}\n• Exclusivity Term: 60 Calendar Days\n\nLEGAL RTR AUTHORIZATION:\n${rtrCleanText}\n\nPlease reply directly to this email confirming:\n"I, ${coversheet.candidateLegalName}, confirm that CoolSoft LLC has the exclusive right to represent me for requisition #${vmsNumber} at $${cleanRateNumber}/hr."\n\nBest regards,\nCoolSoft LLC Staff Augmentation Team\nhttps://smarthireus.com`)
+    setEmailSubject(details.subject)
+    setEmailBody(details.fullEmailBody)
     setShowEmailModal(true)
   }
 
@@ -2705,6 +3099,16 @@ ${coversheet.references}
                     }}
                   >
                     Georgia GDOT
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleTemplateChange('nebraska_state')}
+                    style={{
+                      ...styles.rtrQuickBtn,
+                      ...(selectedTemplate === 'nebraska_state' ? styles.rtrQuickBtnActive : {})
+                    }}
+                  >
+                    Nebraska State
                   </button>
                   <button
                     type="button"

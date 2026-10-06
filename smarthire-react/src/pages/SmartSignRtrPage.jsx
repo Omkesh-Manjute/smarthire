@@ -168,6 +168,34 @@ Contract Manager: Tim Brodrick (Timothy.Brodrick@cai.io | 678-427-3660)`,
         { id: 'f3', type: 'name', label: 'Candidate Full Legal Name', required: true, x: 60, y: 460, signerIndex: 0 }
       ]
     }
+  },
+  {
+    id: 'nebraska_state',
+    name: 'State of Nebraska IT Services E-RTR',
+    description: 'State of Nebraska Staff Augmentation Services Right to Represent with Rate & Exclusivity.',
+    rate: '$85.00/hr',
+    client: 'State of Nebraska IT Services',
+    doc: {
+      id: 'nebraska-state-rtr-doc',
+      title: 'State of Nebraska IT Services Right to Represent Agreement',
+      contractNo: 'NE-ITSS-2026',
+      maxBillRate: '$95.00',
+      clientName: 'State of Nebraska',
+      content: `RIGHT TO REPRESENT ACKNOWLEDGEMENT
+State of Nebraska Staff Augmentation Services
+
+By replying to this email or digitally signing below with your confirmation, you acknowledge and agree that COOLSOFT LLC has the exclusive right to represent you for active requisitions with the State of Nebraska.
+
+I also acknowledge and verify that all the information contained in my resume related to my technical credentials is accurate and is based on educational training and professional experience obtained throughout my career.
+
+Client Agency: State of Nebraska IT Services
+Candidate Representation Term: 60 Days`,
+      defaultFields: [
+        { id: 'f1', type: 'signature', label: 'Candidate Signature', required: true, x: 60, y: 520, signerIndex: 0 },
+        { id: 'f2', type: 'date', label: 'Date signed', required: true, x: 420, y: 520, signerIndex: 0 },
+        { id: 'f3', type: 'name', label: 'Candidate Full Legal Name', required: true, x: 60, y: 460, signerIndex: 0 }
+      ]
+    }
   }
 ]
 
@@ -286,6 +314,8 @@ export default function SmartSignRtrPage() {
             matchedTpl = PREBUILT_TEMPLATES.find(t => t.id === 'georgia_cai')
           } else if (tplParam?.includes('texas')) {
             matchedTpl = PREBUILT_TEMPLATES.find(t => t.id === 'texas_dir')
+          } else if (tplParam?.includes('nebraska')) {
+            matchedTpl = PREBUILT_TEMPLATES.find(t => t.id === 'nebraska_state')
           } else if (tplParam?.includes('standard')) {
             matchedTpl = PREBUILT_TEMPLATES.find(t => t.id === 'standard_c2c')
           }
