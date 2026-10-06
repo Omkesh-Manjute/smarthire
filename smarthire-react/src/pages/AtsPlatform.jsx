@@ -1135,66 +1135,8 @@ export default function AtsPlatform() {
             )}
           </div>
 
-          {/* Center: Global Search (Pill shaped, subtle border) */}
-          <div style={{ flex: '0 1 420px', position: 'relative' }}>
-            <input
-              type="text"
-              placeholder="Search candidate records, skills, requisitions... (⌘K)"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter') {
-                  navigate(`/inbox?search=${encodeURIComponent(query)}`)
-                }
-              }}
-              style={{
-                width: '100%',
-                padding: '7px 12px 7px 32px',
-                fontSize: '12.5px',
-                borderRadius: '8px',
-                border: '1px solid #cbd5e1',
-                background: '#f8fafc',
-                outline: 'none',
-                boxSizing: 'border-box'
-              }}
-            />
-            <span style={{ position: 'absolute', left: '10px', top: '8px', color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
-              {renderAtsIcon('search', 13, '#94a3b8')}
-            </span>
-          </div>
-
-          {/* Right Utility Cluster: Create +, Chat, Notification, Settings, Avatar */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            {/* Quick Add Pill */}
-            <button
-              onClick={() => navigate('/inbox?action=add')}
-              title="Quick Add Candidate"
-              style={{
-                width: '30px', height: '30px', borderRadius: '50%',
-                background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '16px', fontWeight: 'bold', cursor: 'pointer'
-              }}
-            >
-              +
-            </button>
-
-            {/* Candidate Chat Trigger */}
-            <button
-              onClick={() => setShowCandidatePicker(true)}
-              title="Real-time Candidate Chat"
-              style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                padding: '5px 10px', borderRadius: '6px',
-                background: '#ffffff', border: '1px solid #e2e8f0',
-                fontSize: '12px', fontWeight: '600', color: '#334155',
-                cursor: 'pointer'
-              }}
-            >
-              <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('chat', 13, '#334155')}</span>
-              <span>Chat</span>
-            </button>
-
+          {/* Right Utility Cluster: Notifications & User Avatar */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             {/* Live Activity & Push Notification Bell with Sound */}
             <ActivityNotificationBell
               theme="default"
@@ -1203,22 +1145,6 @@ export default function AtsPlatform() {
                 else if (notif.reqId) navigate('/dashboard')
               }}
             />
-
-            {/* Requisitions Switcher Shortcut */}
-            <button
-              onClick={() => navigate('/dashboard')}
-              title="Switch to Requisitions Dashboard"
-              style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                padding: '5px 10px', borderRadius: '6px',
-                background: '#f0fdf4', border: '1px solid #bbf7d0',
-                fontSize: '12px', fontWeight: '700', color: '#15803d',
-                cursor: 'pointer'
-              }}
-            >
-              <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('building', 13, '#15803d')}</span>
-              <span>Requisitions</span>
-            </button>
 
             {/* User Profile Avatar with Online Indicator */}
             <div style={{ position: 'relative' }}>

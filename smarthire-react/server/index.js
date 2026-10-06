@@ -6248,8 +6248,12 @@ app.post('/api/screening/create', authenticateToken, (req, res) => {
     recruiterNotes: '',
     status: 'pending', // pending, active, submitted, shortlisted, reviewed, rejected
     createdAt: new Date().toISOString(),
-    createdBy: userEmail || userId,
-    recruiterEmail: userEmail,
+    createdBy: (req.body.createdByEmail || req.body.recruiterEmail || userEmail || userId),
+    createdByEmail: (req.body.createdByEmail || req.body.recruiterEmail || userEmail).toLowerCase().trim(),
+    createdByName: (req.body.createdByName || req.body.recruiterName || req.user?.name || (userEmail ? userEmail.split('@')[0] : 'Omkesh Manjute')).trim(),
+    createdByRef: (req.body.createdByRef || req.user?.refCode || '').trim(),
+    recruiterEmail: (req.body.createdByEmail || req.body.recruiterEmail || userEmail).toLowerCase().trim(),
+    recruiterName: (req.body.createdByName || req.body.recruiterName || req.user?.name || (userEmail ? userEmail.split('@')[0] : 'Omkesh Manjute')).trim(),
     submittedBy: userEmail || userId,
     recruiterId: userId,
     screeningComplete: false,
@@ -6802,7 +6806,27 @@ app.get('/api/screening/sessions', authenticateToken, (req, res) => {
       return sOwner === userEmail || s.isSample || s.jobId === 'J-102';
     });
   }
-  res.json({ success: true, sessions: filtered });
+  // Ensure recruiterName and createdByName are present on every session
+  const enriched = filtered.map(s => {
+    if (!s) return s;
+    let recName = s.recruiterName || s.createdByName;
+    if (!recName) {
+      const em = s.recruiterEmail || s.createdByEmail || (typeof s.createdBy === 'string' && s.createdBy.includes('@') ? s.createdBy : '');
+      if (em) {
+        const namePart = em.split('@')[0].replace(/[._-]/g, ' ');
+        recName = namePart.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      } else {
+        recName = 'Omkesh Manjute';
+      }
+    }
+    return {
+      ...s,
+      recruiterName: recName,
+      createdByName: recName
+    };
+  });
+
+  res.json({ success: true, sessions: enriched });
 });
 
 // Helper to get or auto-create a screening session on the fly

@@ -2,11 +2,88 @@ import React, { useState, useEffect, useCallback } from 'react'
 
 const API = '/api/screening'
 
+// Comprehensive check for mismatch between candidate-entered location and device GPS
+export const checkLocationMismatch = (enteredLoc, gpsGeo) => {
+  if (!enteredLoc && !gpsGeo) return { hasCheck: false, isMismatch: false }
+  const gpsStr = ((gpsGeo && (gpsGeo.cityState || gpsGeo.resolvedAddress)) || '').trim()
+  const entered = String(enteredLoc || '').trim()
+  if (!gpsStr || !entered) return { hasCheck: false, isMismatch: false }
+
+  const cleanTokens = (str) =>
+    str.toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .split(/\s+/)
+      .filter(t => t.length > 2 && !['city', 'the', 'and', 'state', 'usa', 'united', 'states', 'county', 'town', 'village', 'street', 'ave', 'road'].includes(t))
+
+  const enteredTokens = cleanTokens(entered)
+  const gpsTokens = cleanTokens(gpsStr)
+
+  const stateMap = {
+    wi: 'wisconsin', mo: 'missouri', ct: 'connecticut', tx: 'texas',
+    ca: 'california', ny: 'new york', nc: 'north carolina', il: 'illinois',
+    ga: 'georgia', fl: 'florida', va: 'virginia', oh: 'ohio', mi: 'michigan',
+    pa: 'pennsylvania', nj: 'new jersey', ma: 'massachusetts', co: 'colorado',
+    wa: 'washington', az: 'arizona', tn: 'tennessee', in: 'indiana', md: 'maryland',
+    mh: 'maharashtra', dl: 'delhi', ka: 'karnataka', up: 'uttar pradesh', ts: 'telangana'
+  }
+
+  const expandStates = (tokens) => {
+    const res = new Set(tokens)
+    tokens.forEach(t => {
+      if (stateMap[t]) res.add(stateMap[t])
+      Object.entries(stateMap).forEach(([k, v]) => {
+        if (v === t || v.includes(t)) res.add(k)
+      })
+    })
+    return Array.from(res)
+  }
+
+  const expEntered = expandStates(enteredTokens)
+  const expGps = expandStates(gpsTokens)
+
+  const overlap = expEntered.some(t => expGps.includes(t))
+  const isMismatch = !overlap
+
+  return {
+    hasCheck: true,
+    isMismatch,
+    enteredLocation: entered,
+    actualGpsLocation: gpsStr || `${gpsGeo?.latitude?.toFixed(2)}°, ${gpsGeo?.longitude?.toFixed(2)}°`,
+    statusText: isMismatch ? 'Location Discrepancy Flagged' : 'Location Verified'
+  }
+}
+
 export default function ScreeningModule({ jobsList = [], allCandidates = [], currentUser = null, isSuperAdmin = false }) {
   // Derive current user identity for role-based session filtering
   const currentUserEmail = (currentUser?.email || '').toLowerCase().trim()
   const currentUserRef = (currentUser?.refCode || '').toLowerCase().trim()
   const currentUserName = (currentUser?.name || '').toLowerCase().trim()
+
+  // Helper to dynamically resolve recruiter name who generated the screening link
+  const getRecruiterName = (session) => {
+    if (!session) return 'Omkesh Manjute'
+    if (session.recruiterName && session.recruiterName.trim()) return session.recruiterName.trim()
+    if (session.createdByName && session.createdByName.trim()) return session.createdByName.trim()
+
+    if (session.jobId && Array.isArray(jobsList)) {
+      const job = jobsList.find(j => j.id === session.jobId || j.jobId === session.jobId)
+      if (job?.recruiterName) return job.recruiterName
+      if (job?.assignedRecruiter) return job.assignedRecruiter
+    }
+
+    const email = session.recruiterEmail || session.createdByEmail || (typeof session.createdBy === 'string' && session.createdBy.includes('@') ? session.createdBy : '')
+    if (email) {
+      const prefix = email.split('@')[0].replace(/[._-]/g, ' ')
+      return prefix.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+    }
+
+    if (typeof session.createdBy === 'string' && session.createdBy.trim() && !session.createdBy.startsWith('U-')) {
+      return session.createdBy.trim()
+    }
+
+    return 'Omkesh Manjute'
+  }
+
   const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState('all') // 'all', 'submitted', 'shortlisted', 'reviewed', 'rejected'
@@ -435,6 +512,9 @@ SmartHire Recruitment Team`
     const scoreColor = score >= 85 ? '#059669' : score >= 70 ? '#2563eb' : score >= 50 ? '#d97706' : '#dc2626'
     const scoreBg = score >= 85 ? '#ecfdf5' : score >= 70 ? '#eff6ff' : score >= 50 ? '#fffbeb' : '#fef2f2'
 
+    const recruiterName = getRecruiterName(session)
+    const audit = checkLocationMismatch(location, geo)
+
     const htmlContent = `
 <!DOCTYPE html>
 <html>
@@ -483,6 +563,7 @@ SmartHire Recruitment Team`
       text-align: right;
       font-size: 12px;
       color: #64748b;
+      line-height: 1.6;
     }
     .section-title {
       font-size: 13px;
@@ -652,9 +733,52 @@ SmartHire Recruitment Team`
     <div class="report-meta">
       <div>Report ID: <strong>${session.sessionId || session.id || 'SCR-2026'}</strong></div>
       <div>Date: <strong>${dateStr}</strong></div>
+      <div>Recruiter: <strong>${recruiterName}</strong></div>
       <div>Status: <strong>${session.status ? session.status.toUpperCase() : 'SUBMITTED'}</strong></div>
     </div>
   </div>
+
+  ${audit.hasCheck ? (audit.isMismatch ? `
+  <div style="background: #fff1f2; border: 1.5px solid #f43f5e; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px;">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13.5px; color: #be123c;">
+        <span style="font-size: 16px;">⚠️</span> LOCATION MISMATCH DETECTED (PROXIED / REMOTE DISCREPANCY)
+      </div>
+      <span style="font-size: 11px; font-weight: 800; background: #be123c; color: #ffffff; padding: 2px 8px; border-radius: 12px; text-transform: uppercase;">
+        Integrity Alert
+      </span>
+    </div>
+    <div style="margin-top: 10px; font-size: 13px; color: #334155; line-height: 1.6;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px;">
+        <div style="background: #ffffff; padding: 8px 12px; border-radius: 6px; border: 1px solid #fecdd3;">
+          <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Candidate Stated Location</div>
+          <div style="font-weight: 800; color: #0f172a; margin-top: 2px;">${audit.enteredLocation}</div>
+        </div>
+        <div style="background: #ffffff; padding: 8px 12px; border-radius: 6px; border: 1px solid #fecdd3;">
+          <div style="font-size: 11px; font-weight: 700; color: #be123c; text-transform: uppercase;">Actual Verified Device GPS</div>
+          <div style="font-weight: 800; color: #be123c; margin-top: 2px;">${audit.actualGpsLocation}</div>
+        </div>
+      </div>
+      <div style="font-size: 11.5px; color: #9f1239; font-weight: 600;">
+        ⚠️ Verification Audit Notice: Candidate entered "${audit.enteredLocation}" as their physical location, but device GPS coordinates captured during the live screening session resolve to "${audit.actualGpsLocation}".
+      </div>
+    </div>
+  </div>
+  ` : `
+  <div style="background: #ecfdf5; border: 1.5px solid #10b981; border-radius: 8px; padding: 12px 18px; margin-bottom: 20px;">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13.5px; color: #047857;">
+        <span style="font-size: 16px;">✓</span> LOCATION AUTHENTICATED & VERIFIED
+      </div>
+      <span style="font-size: 11px; font-weight: 800; background: #047857; color: #ffffff; padding: 2px 8px; border-radius: 12px; text-transform: uppercase;">
+        Passed
+      </span>
+    </div>
+    <div style="margin-top: 6px; font-size: 12.5px; color: #065f46;">
+      Candidate reported location (<strong>${audit.enteredLocation}</strong>) matches physical GPS device coordinates (<strong>${audit.actualGpsLocation}</strong>).
+    </div>
+  </div>
+  `) : ''}
 
   <div class="grid-2">
     <div class="info-card">
@@ -670,7 +794,7 @@ SmartHire Recruitment Team`
       <div class="info-row"><span class="info-label">Desktop Screen Share:</span><span class="info-value" style="color: ${proctoring.screenShared ? '#16a34a' : '#64748b'}">${proctoring.screenShared ? 'Verified Monitor' : 'Standard'}</span></div>
       <div class="info-row"><span class="info-label">Fullscreen Enforced:</span><span class="info-value" style="color: ${proctoring.fullscreenEnforced ? '#16a34a' : '#64748b'}">${proctoring.fullscreenEnforced ? 'Yes (Enforced)' : 'No'}</span></div>
       <div class="info-row"><span class="info-label">Tab Violations:</span><span class="info-value" style="color: ${(proctoring.tabViolationsCount || 0) > 0 ? '#dc2626' : '#16a34a'}">${(proctoring.tabViolationsCount || 0) === 0 ? '0 (Clean)' : proctoring.tabViolationsCount}</span></div>
-      ${geo ? `<div class="info-row"><span class="info-label">GPS Geolocation:</span><span class="info-value" style="color: #16a34a;">${geo.cityState || geo.resolvedAddress || `${geo.latitude?.toFixed(3)}°, ${geo.longitude?.toFixed(3)}°`}</span></div>` : ''}
+      ${geo ? `<div class="info-row"><span class="info-label">GPS Geolocation:</span><span class="info-value" style="color: ${audit.isMismatch ? '#be123c' : '#16a34a'};">${geo.cityState || geo.resolvedAddress || `${geo.latitude?.toFixed(3)}°, ${geo.longitude?.toFixed(3)}°`}</span></div>` : ''}
     </div>
   </div>
 
@@ -784,7 +908,7 @@ SmartHire Recruitment Team`
   // KPI Metrics (scoped to visibleSessions so each recruiter sees their own stats)
   const totalSubmissions = visibleSessions.filter(s => s.status === 'submitted' || s.status === 'shortlisted' || s.screeningComplete).length
   const videoSubmissions = visibleSessions.filter(s => (s.responses || []).some(r => r.format === 'video')).length
-  const shortlistedCount = visibleSessions.filter(s => s.status === 'shortlisted' || (s.recruiterRating && s.recruiterRating >= 4)).length
+  const shortlistedCount = visibleSessions.filter(s => s.status === 'shortlisted' || (s.aiScore && s.aiScore >= 75) || s.status === 'reviewed').length
   const totalCampaigns = visibleSessions.length
 
   return (
@@ -802,35 +926,6 @@ SmartHire Recruitment Team`
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          {isSuperAdmin && visibleSessions.length > 0 && (
-            <button
-              type="button"
-              onClick={handleClearAllSessions}
-              disabled={isClearingAll}
-              title="Admin only: Permanently delete all visible screening sessions"
-              style={{
-                padding: '9px 16px',
-                background: isClearingAll ? '#f1f5f9' : 'transparent',
-                color: '#ef4444',
-                border: '1px solid #fecaca',
-                borderRadius: '8px',
-                fontSize: '13px',
-                fontWeight: '600',
-                cursor: isClearingAll ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                transition: 'all 0.15s ease'
-              }}
-              onMouseEnter={e => { if (!isClearingAll) { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.borderColor = '#ef4444' } }}
-              onMouseLeave={e => { if (!isClearingAll) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#fecaca' } }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4h6v2" />
-              </svg>
-              {isClearingAll ? 'Clearing...' : `Clear All (${filteredSessions.length})`}
-            </button>
-          )}
           <button
             type="button"
             onClick={() => {
@@ -846,7 +941,11 @@ SmartHire Recruitment Team`
 
       {/* ─── 4 STATS KPI CARDS ────────────────────────────────────────────── */}
       <div style={styles.kpiGrid}>
-        <div style={styles.kpiCard}>
+        <div
+          style={styles.kpiCard}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(15, 23, 42, 0.08)' }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.04)' }}
+        >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <span style={styles.kpiLabel}>Total Campaigns</span>
           </div>
@@ -854,7 +953,11 @@ SmartHire Recruitment Team`
           <div style={styles.kpiSub}>Active screening links</div>
         </div>
 
-        <div style={styles.kpiCard}>
+        <div
+          style={styles.kpiCard}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(15, 23, 42, 0.08)' }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.04)' }}
+        >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <span style={styles.kpiLabel}>Submissions Received</span>
           </div>
@@ -862,7 +965,11 @@ SmartHire Recruitment Team`
           <div style={styles.kpiSub}>Completed candidate screens</div>
         </div>
 
-        <div style={styles.kpiCard}>
+        <div
+          style={styles.kpiCard}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(15, 23, 42, 0.08)' }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.04)' }}
+        >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <span style={styles.kpiLabel}>Video Submissions</span>
           </div>
@@ -870,13 +977,17 @@ SmartHire Recruitment Team`
           <div style={styles.kpiSub}>Camera responses recorded</div>
         </div>
 
-        <div style={styles.kpiCard}>
+        <div
+          style={styles.kpiCard}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(15, 23, 42, 0.08)' }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.04)' }}
+        >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <span style={styles.kpiLabel}>AI Shortlisted</span>
             <span style={styles.kpiIconAmber}>✓</span>
           </div>
           <div style={styles.kpiValue}>{shortlistedCount}</div>
-          <div style={styles.kpiSub}>Rating 4+ or shortlisted</div>
+          <div style={styles.kpiSub}>Qualified submissions</div>
         </div>
       </div>
 
@@ -984,9 +1095,9 @@ SmartHire Recruitment Team`
                 <tr style={styles.tableHeadRow}>
                   <th style={styles.th}>Candidate</th>
                   <th style={styles.th}>Target Requisition</th>
+                  <th style={styles.th}>Recruiter</th>
                   <th style={styles.th}>Formats</th>
                   <th style={styles.th}>AI Fit Score</th>
-                  <th style={styles.th}>Recruiter Rating</th>
                   <th style={styles.th}>Status</th>
                   <th style={styles.th}>Submitted</th>
                   <th style={{ ...styles.th, textAlign: 'right' }}>Actions</th>
@@ -1001,46 +1112,132 @@ SmartHire Recruitment Team`
                   const aiScore = session.aiScore || (session.jdMatch?.match_score) || 78
                   const candName = session.candidateName || 'Pending Applicant'
                   const candEmail = session.candidateEmail || 'No email yet'
-                  const initials = candName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+                  const recName = getRecruiterName(session)
+                  const enteredLoc = session.candidateLocation || session.candidateInfo?.location || ''
+                  const geo = session.candidateGeo || session.gpsLocation || null
+                  const locationAudit = checkLocationMismatch(enteredLoc, geo)
 
                   return (
                     <tr
                       key={session.sessionId}
                       onClick={() => handleOpenReview(session)}
                       style={styles.tableRow}
+                      onMouseEnter={e => { e.currentTarget.style.background = '#f8fafc' }}
+                      onMouseLeave={e => { e.currentTarget.style.background = '#ffffff' }}
                     >
                       {/* Candidate Column */}
                       <td style={styles.td}>
-                        <div>
-                          <div style={{ fontSize: '13.5px', fontWeight: '800', color: '#0f172a' }}>
+                        <div style={{ maxWidth: '230px' }}>
+                          <div
+                            title={candName}
+                            style={{
+                              fontSize: '13.5px',
+                              fontWeight: '800',
+                              color: '#0f172a',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }}
+                          >
                             {candName}
                           </div>
-                            <div style={{ fontSize: '11.5px', color: '#64748b', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                              <span>{candEmail}</span>
-                              {(session.candidateLocation || session.candidateGeo?.cityState) && (
-                                <>
-                                  <span style={{ color: '#cbd5e1' }}>•</span>
-                                  <span style={{ color: '#334155', fontWeight: 600 }}>
-                                    {session.candidateLocation || session.candidateGeo?.cityState}
-                                  </span>
-                                </>
-                              )}
-                              {session.candidateGeo && (
-                                <span style={{ fontSize: '10.5px', color: '#16a34a', fontWeight: 700, background: '#ecfdf5', padding: '1px 5px', borderRadius: 4 }}>
-                                  GPS: {session.candidateGeo.cityState || `${session.candidateGeo.latitude?.toFixed(2)}°, ${session.candidateGeo.longitude?.toFixed(2)}°`}
+                          <div style={{ fontSize: '11.5px', color: '#64748b', display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap', marginTop: '2px' }}>
+                            <span style={{ maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={candEmail}>{candEmail}</span>
+                            {enteredLoc && (
+                              <>
+                                <span style={{ color: '#cbd5e1' }}>•</span>
+                                <span style={{ color: '#334155', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                  {enteredLoc}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                          {/* Location Audit Badge */}
+                          {locationAudit.hasCheck && (
+                            <div style={{ marginTop: '3px' }}>
+                              {locationAudit.isMismatch ? (
+                                <span
+                                  title={`Discrepancy: Candidate reported "${locationAudit.enteredLocation}" but device GPS captured "${locationAudit.actualGpsLocation}"`}
+                                  style={{
+                                    fontSize: '10px',
+                                    color: '#be123c',
+                                    fontWeight: 800,
+                                    background: '#fff1f2',
+                                    border: '1px solid #fecdd3',
+                                    padding: '1px 6px',
+                                    borderRadius: '4px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '3px'
+                                  }}
+                                >
+                                  <span>⚠️ Mismatch: GPS in {locationAudit.actualGpsLocation}</span>
+                                </span>
+                              ) : (
+                                <span
+                                  title="Candidate reported location matches verified device GPS"
+                                  style={{
+                                    fontSize: '10px',
+                                    color: '#15803d',
+                                    fontWeight: 700,
+                                    background: '#f0fdf4',
+                                    border: '1px solid #bbf7d0',
+                                    padding: '1px 6px',
+                                    borderRadius: '4px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '3px'
+                                  }}
+                                >
+                                  <span>✓ GPS: {locationAudit.actualGpsLocation}</span>
                                 </span>
                               )}
                             </div>
-                          </div>
-                        </td>
+                          )}
+                        </div>
+                      </td>
 
                       {/* Requisition */}
                       <td style={styles.td}>
-                        <div style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b' }}>
-                          {session.jobTitle || 'General Position'}
+                        <div style={{ maxWidth: '210px' }}>
+                          <div
+                            title={session.jobTitle || 'General Position'}
+                            style={{
+                              fontSize: '13px',
+                              fontWeight: '700',
+                              color: '#1e293b',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }}
+                          >
+                            {session.jobTitle || 'General Position'}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '1px' }}>
+                            Req #{String(session.jobId || '102').replace(/^J-/, '')} • {session.jobClient || 'Enterprise Client'}
+                          </div>
                         </div>
-                        <div style={{ fontSize: '11px', color: '#64748b' }}>
-                          Req #{String(session.jobId || '102').replace(/^J-/, '')} • {session.jobClient || 'Enterprise Client'}
+                      </td>
+
+                      {/* Recruiter / Generated By */}
+                      <td style={styles.td}>
+                        <div style={{ maxWidth: '160px' }}>
+                          <div
+                            title={recName}
+                            style={{
+                              fontSize: '12.5px',
+                              fontWeight: '700',
+                              color: '#334155',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }}
+                          >
+                            {recName}
+                          </div>
+                          <div style={{ fontSize: '10.5px', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {session.createdByEmail || session.recruiterEmail || 'Screening Specialist'}
+                          </div>
                         </div>
                       </td>
 
@@ -1073,17 +1270,6 @@ SmartHire Recruitment Team`
                         )}
                       </td>
 
-                      {/* Recruiter Rating */}
-                      <td style={styles.td}>
-                        <div style={{ display: 'flex', gap: '2px', color: '#f59e0b', fontSize: '14px' }}>
-                          {[1, 2, 3, 4, 5].map(star => (
-                            <span key={star}>
-                              {star <= (session.recruiterRating || 0) ? '★' : '☆'}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-
                       {/* Status */}
                       <td style={styles.td}>
                         <span style={{
@@ -1103,8 +1289,8 @@ SmartHire Recruitment Team`
 
                       {/* Submitted Date */}
                       <td style={styles.td}>
-                        <div style={{ fontSize: '12px', color: '#475569' }}>
-                          {session.submittedAt ? new Date(session.submittedAt).toLocaleDateString() : 'Active Link'}
+                        <div style={{ fontSize: '12px', color: '#475569', whiteSpace: 'nowrap' }}>
+                          {session.submittedAt ? new Date(session.submittedAt).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : 'Active Link'}
                         </div>
                       </td>
 
@@ -1701,6 +1887,51 @@ SmartHire Recruitment Team`
                         </div>
                       </div>
                     )}
+
+                    {reviewSession.candidateGeo && (() => {
+                      const enteredLoc = reviewSession.candidateLocation || reviewSession.candidateInfo?.location || ''
+                      const audit = checkLocationMismatch(enteredLoc, reviewSession.candidateGeo)
+                      if (!audit.hasCheck) return null
+                      if (audit.isMismatch) {
+                        return (
+                          <div style={{
+                            marginTop: '10px',
+                            padding: '10px 12px',
+                            borderRadius: '8px',
+                            background: '#fff1f2',
+                            border: '1.5px solid #fecdd3'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#be123c', fontWeight: 800, fontSize: '11.5px' }}>
+                              <span>⚠️</span> LOCATION DISCREPANCY DETECTED
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#475569', marginTop: '5px', lineHeight: 1.5 }}>
+                              <div>• Stated Location: <strong style={{ color: '#0f172a' }}>{audit.enteredLocation}</strong></div>
+                              <div>• Verified Device GPS: <strong style={{ color: '#be123c' }}>{audit.actualGpsLocation}</strong></div>
+                              <div style={{ color: '#e11d48', marginTop: '3px', fontSize: '10.5px', fontWeight: 600 }}>
+                                Candidate reported location does not match physical GPS device coordinates.
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      }
+                      return (
+                        <div style={{
+                          marginTop: '8px',
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          background: '#ecfdf5',
+                          border: '1px solid #bbf7d0',
+                          color: '#15803d',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}>
+                          <span>✓</span> Verified: GPS matches stated location ({audit.enteredLocation})
+                        </div>
+                      )
+                    })()}
                   </div>
                 )}
 
@@ -1830,8 +2061,8 @@ SmartHire Recruitment Team`
 
               {/* RIGHT COLUMN: QUESTION TABS & VIDEO/AUDIO PLAYER */}
               <div style={styles.reviewRightCol}>
-                {/* Question Tabs */}
-                <div style={styles.qTabRow}>
+                {/* Pinned Question Tabs Header (Never scrolls, never cuts off) */}
+                <div style={styles.qTabRowPinned}>
                   {(reviewSession.responses || []).map((resp, idx) => (
                     <button
                       key={resp.questionId || idx}
@@ -1869,8 +2100,9 @@ SmartHire Recruitment Team`
                   ))}
                 </div>
 
-                {/* Active Response Content */}
-                {reviewSession.responses && reviewSession.responses[activeQuestionTab] ? (
+                {/* Scrollable Response Content Body */}
+                <div style={styles.reviewScrollableBody}>
+                  {reviewSession.responses && reviewSession.responses[activeQuestionTab] ? (
                   (() => {
                     const currentAns = reviewSession.responses[activeQuestionTab]
                     return (
@@ -2033,6 +2265,7 @@ SmartHire Recruitment Team`
                     No responses recorded for this session.
                   </div>
                 )}
+                </div>
               </div>
             </div>
           </div>
@@ -2549,10 +2782,30 @@ const styles = {
   },
   reviewRightCol: {
     flex: 1,
-    padding: '0 28px 28px 28px',
     display: 'flex',
     flexDirection: 'column',
-    overflowY: 'auto'
+    overflow: 'hidden',
+    background: '#ffffff'
+  },
+  qTabRowPinned: {
+    display: 'flex',
+    gap: '10px',
+    alignItems: 'center',
+    background: '#ffffff',
+    padding: '16px 28px 14px 28px',
+    borderBottom: '1.5px solid #e2e8f0',
+    flexShrink: 0,
+    boxSizing: 'border-box',
+    overflowX: 'auto',
+    zIndex: 10
+  },
+  reviewScrollableBody: {
+    flex: 1,
+    overflowY: 'auto',
+    padding: '18px 28px 28px 28px',
+    display: 'flex',
+    flexDirection: 'column',
+    boxSizing: 'border-box'
   },
   reviewSideCard: {
     background: '#ffffff',
@@ -2649,24 +2902,25 @@ const styles = {
   qTabBtn: {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: '6px',
-    padding: '8px 16px',
-    borderRadius: '8px',
-    border: '1px solid #cbd5e1',
+    gap: '8px',
+    padding: '9px 18px',
+    borderRadius: '10px',
+    border: '1.5px solid #cbd5e1',
     background: '#f8fafc',
-    color: '#475569',
-    fontSize: '12.5px',
-    fontWeight: '600',
+    color: '#334155',
+    fontSize: '13px',
+    fontWeight: '700',
     cursor: 'pointer',
     whiteSpace: 'nowrap',
-    transition: 'all 0.15s ease'
+    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)'
   },
   qTabBtnActive: {
     background: '#2563eb',
     color: '#ffffff',
     borderColor: '#1d4ed8',
-    boxShadow: '0 2px 4px rgba(37, 99, 235, 0.25)',
-    fontWeight: '700'
+    boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
+    fontWeight: '800'
   },
   playerWrapper: {
     display: 'flex',

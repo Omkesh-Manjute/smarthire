@@ -719,13 +719,24 @@ export default function CandidateChat() {
     if (!currentQ) return
 
     const nowSeconds = sessionSeconds
+    const duration = Math.max(1, nowSeconds - currentQStartTimeRef.current)
+
+    // Protection against accidental skip while scrolling / moving mouse:
+    // If less than 6 seconds spent on the question, ask for confirmation
+    if (duration < 6) {
+      const confirmAdvance = window.confirm(
+        `⚠️ Quick Advance Notice:\nYou have only spent ${duration} second${duration === 1 ? '' : 's'} on Question ${currentQuestionIndex + 1}.\n\nAre you sure you finished answering this question and want to proceed to Question ${currentQuestionIndex + 2}? Click Cancel to continue your answer.`
+      )
+      if (!confirmAdvance) return
+    }
+
     const marker = {
       questionId: currentQ.id,
       questionIndex: currentQuestionIndex,
       questionText: currentQ.text,
       startTime: currentQStartTimeRef.current,
       endTime: nowSeconds,
-      duration: Math.max(1, nowSeconds - currentQStartTimeRef.current),
+      duration: duration,
       transcript: liveTranscript.trim()
     }
 
@@ -740,6 +751,47 @@ export default function CandidateChat() {
       // Finished all questions -> Stop continuous recording and proceed to review
       finishContinuousInterview(marker)
     }
+  }
+
+  // Go back to previous question if candidate accidentally skipped or advanced too early
+  const handlePreviousQuestionContinuous = () => {
+    if (currentQuestionIndex <= 0) return
+    const popped = markersRef.current.pop()
+    setQuestionMarkers(prev => prev.slice(0, -1))
+    const prevIndex = currentQuestionIndex - 1
+    setCurrentQuestionIndex(prevIndex)
+    if (popped && typeof popped.startTime === 'number') {
+      currentQStartTimeRef.current = popped.startTime
+    }
+  }
+
+  // Allow candidate to retake entire assessment from Step 4 if they missed a question
+  const handleRetakeAssessment = async () => {
+    if (!window.confirm('Retake Assessment?\n\nThis will reset your current recording and start a fresh continuous session so you can answer all questions completely. Are you sure?')) return
+
+    setMasterVideoBlob(null)
+    setMasterVideoUrl(null)
+    setRecordedChunks([])
+    recordedChunksRef.current = []
+    setQuestionMarkers([])
+    markersRef.current = []
+    setCurrentQuestionIndex(0)
+    currentQStartTimeRef.current = 0
+    setSessionSeconds(0)
+    setStep(3)
+
+    setCountdown(3)
+    let c = 3
+    const countInterval = setInterval(() => {
+      c -= 1
+      if (c <= 0) {
+        clearInterval(countInterval)
+        setCountdown(null)
+        startContinuousRecording()
+      } else {
+        setCountdown(c)
+      }
+    }, 1000)
   }
 
   // Complete continuous interview session
@@ -1441,21 +1493,43 @@ export default function CandidateChat() {
               </div>
             </div>
 
-            {/* Studio Navigation: Continuous Next Button */}
+            {/* Studio Navigation: Continuous Next & Previous Buttons */}
             <div style={styles.studioNavFooter}>
               <div style={{ fontSize: '12px', color: '#64748b' }}>
-                Note: Recording will continue seamlessly without stopping as you advance through all questions.
+                Note: Recording continues seamlessly across all questions. Use buttons below when ready.
               </div>
 
-              <button
-                type="button"
-                onClick={handleNextQuestionContinuous}
-                style={styles.primaryButtonLarge}
-              >
-                {currentQuestionIndex < questions.length - 1
-                  ? `Save & Go to Question ${currentQuestionIndex + 2} ➔`
-                  : 'Finish & Review Entire Interview ➔'}
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                {currentQuestionIndex > 0 && (
+                  <button
+                    type="button"
+                    onClick={handlePreviousQuestionContinuous}
+                    style={{
+                      padding: '12px 18px',
+                      borderRadius: '10px',
+                      background: '#ffffff',
+                      color: '#475569',
+                      border: '1.5px solid #cbd5e1',
+                      fontSize: '13.5px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    ← Back to Question {currentQuestionIndex}
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleNextQuestionContinuous}
+                  style={styles.primaryButtonLarge}
+                >
+                  {currentQuestionIndex < questions.length - 1
+                    ? `Save & Go to Question ${currentQuestionIndex + 2} ➔`
+                    : 'Finish & Review Entire Interview ➔'}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1577,7 +1651,29 @@ export default function CandidateChat() {
               </div>
             )}
 
-            <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+            <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+              <button
+                type="button"
+                onClick={handleRetakeAssessment}
+                disabled={isSubmitting}
+                style={{
+                  padding: '12px 20px',
+                  borderRadius: '10px',
+                  background: '#ffffff',
+                  color: '#64748b',
+                  border: '1.5px solid #cbd5e1',
+                  fontSize: '13.5px',
+                  fontWeight: '700',
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <span>↺ Retake Assessment</span>
+              </button>
+
               <button
                 type="button"
                 onClick={handleSubmitFinalApplication}
