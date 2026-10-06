@@ -107,6 +107,37 @@ The following high-impact features and optimizations have been agreed upon and p
 
 ## Recent Changes
 
+### 2026-10-06 — North Carolina & Georgia VectorVMS Templates, Dynamic Position Binding & E-RTR Integration
+- **Context & Objectives**:
+  - The user uploaded official VectorVMS submittal templates (`Doc/nc_resume_template - 159241.doc`, `Doc/nc_e-rtr_template - 159241.doc`, `Doc/georgia_resume_template - 159253.doc`, and `Doc/georgia_e-rtr_template -159253.doc`).
+  - The user requested:
+    1. Integrate the new North Carolina and State of Georgia presentation templates into the Submittal Pack generator (`/submittal-pack`).
+    2. Dynamic Requisition Binding: For every position, dynamically change the job title, requisition number, and client/agency name across coversheets, headers, and RTR agreements.
+    3. Include both the submittal resume template and the electronic Right to Represent (E-RTR) agreement with 1-click clipboard copy, email dispatch, and digital signature integration.
+- **Key Solutions & Deliverables**:
+  1. **Integrated VectorVMS NC & Georgia Templates**:
+     - Added `State of North Carolina (NC VectorVMS / CAI Format)` with CAI Contact manager header (Nicole Walker, `910-520-1506`, `nicole.walker@cai.io`).
+     - Added `State of Georgia (GDOT / VectorVMS / CAI Format)` with CAI Contact manager header (Tim Brodrick, `678-427-3660`, `Timothy.Brodrick@cai.io`).
+     - Included full editable controls for CAI Manager Name, Phone, and Email.
+  2. **Dynamic Position & Number Binding**:
+     - Automatically parses VMS numbers (e.g. `812797`, `812760`, `66393`) and clean job titles from requisition strings upon selection.
+     - Added dedicated input fields for Target Position Title, Requisition / VMS #, Client Agency, Rate, and Employment Type (`C2C`, `W2`, `1099`).
+     - Any edit instantly propagates across Coversheet, Resume Letterhead/Header, and E-RTR Agreement in real time.
+  3. **Multi-Tab Preview Engine (Resume, E-RTR, Full Pack)**:
+     - **Tab 1 (Resume Preview)**: Formats candidate profile with CAI Contact box (for NC & GA) or CoolSoft LLC letterhead (Standard), metadata bar, and live editable text.
+     - **Tab 2 (Electronic E-RTR)**: Generates exact state contract legal wording with dynamic Candidate Name, Title, Req #, Agency, Rate, and Employment Type. Includes 1-click copy of email subject & body.
+     - **Tab 3 (Complete Submittal Pack)**: Stacks Coversheet, Submittal Resume, and E-RTR for complete client PDF printing or copying.
+  4. **SmartSign RTR Digital Signature Integration**:
+     - Added NC and Georgia templates to `SmartSignRtrPage.jsx` (`/sign-rtr`).
+     - Added 1-click "Request Candidate Digital Signature" button linking directly to the digital signing workflow.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (active bundle `index-B87-iu2P.js`).
+  - Git committed (`80ebb02`) and pushed to GitHub `origin/main`.
+  - Deployed production bundle to AWS Lightsail (`34.194.119.199`), extracted to webroot `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Pruned old asset bundles (kept 5 most recent), reloaded PM2 `smarthire-ats`.
+  - Verified disk hygiene: 7.5GB available (60% used).
+  - Verified live domain `https://smarthireus.com/submittal-pack` returning HTTP 200 with new active bundle `index-B87-iu2P.js`.
+
 ### 2026-10-06 — Chat Match Box Removal, Real OS File Attachment Picker, Clean Online Presence & Permanent Conversation Deletion
 - **Context & Objectives**:
   - The user requested:
