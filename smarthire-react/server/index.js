@@ -6271,6 +6271,33 @@ app.post('/api/screening/create', authenticateToken, (req, res) => {
   });
 });
 
+// Update assigned recruiter for a screening session
+const handleUpdateScreeningRecruiter = (req, res) => {
+  const { sessionId } = req.params;
+  const { recruiterName, recruiterEmail } = req.body;
+  if (!recruiterName) {
+    return res.status(400).json({ success: false, message: 'recruiterName is required' });
+  }
+
+  const session = screeningStore.find(s => s.sessionId === sessionId || s.id === sessionId || s._id === sessionId);
+  if (!session) {
+    return res.status(404).json({ success: false, message: 'Screening session not found' });
+  }
+
+  session.recruiterName = recruiterName.trim();
+  session.createdByName = recruiterName.trim();
+  if (recruiterEmail) {
+    session.recruiterEmail = recruiterEmail.trim().toLowerCase();
+    session.createdByEmail = recruiterEmail.trim().toLowerCase();
+  }
+  saveScreeningToDisk();
+  res.json({ success: true, session });
+};
+
+app.post('/api/screening/:sessionId/recruiter', authenticateToken, handleUpdateScreeningRecruiter);
+app.patch('/api/screening/:sessionId/recruiter', authenticateToken, handleUpdateScreeningRecruiter);
+
+
 // Direct candidate submission endpoint (public careers portal - NO redirection)
 app.post('/api/screening/public-submit', async (req, res) => {
   const {
@@ -6811,12 +6838,19 @@ app.get('/api/screening/sessions', authenticateToken, (req, res) => {
     if (!s) return s;
     let recName = s.recruiterName || s.createdByName;
     if (!recName) {
-      const em = s.recruiterEmail || s.createdByEmail || (typeof s.createdBy === 'string' && s.createdBy.includes('@') ? s.createdBy : '');
-      if (em) {
-        const namePart = em.split('@')[0].replace(/[._-]/g, ' ');
-        recName = namePart.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      const targetJob = jobsStore.find(j => j.id === s.jobId || j.jobId === s.jobId);
+      if (targetJob?.recruiterName) {
+        recName = targetJob.recruiterName;
+      } else if (Array.isArray(targetJob?.assignedRecruiters) && targetJob.assignedRecruiters.length > 0) {
+        recName = targetJob.assignedRecruiters[0];
       } else {
-        recName = 'Omkesh Manjute';
+        const em = s.recruiterEmail || s.createdByEmail || (typeof s.createdBy === 'string' && s.createdBy.includes('@') ? s.createdBy : '');
+        if (em) {
+          const namePart = em.split('@')[0].replace(/[._-]/g, ' ');
+          recName = namePart.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        } else {
+          recName = 'Omkesh';
+        }
       }
     }
     return {
@@ -6825,6 +6859,7 @@ app.get('/api/screening/sessions', authenticateToken, (req, res) => {
       createdByName: recName
     };
   });
+
 
   res.json({ success: true, sessions: enriched });
 });

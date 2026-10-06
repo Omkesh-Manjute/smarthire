@@ -59,15 +59,63 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [], cur
   const currentUserRef = (currentUser?.refCode || '').toLowerCase().trim()
   const currentUserName = (currentUser?.name || '').toLowerCase().trim()
 
+  // Derive list of all available recruiters across the organization
+  const allAvailableRecruiters = useMemo(() => {
+    const list = [
+      { name: 'Omkesh', email: 'omkesh@coolsofttech.com' },
+      { name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com' },
+      { name: 'Gourav', email: 'gourav@coolsofttech.com' },
+      { name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com' },
+      { name: 'Naveen Bhardwaj', email: 'naveen@coolsofttech.com' },
+      { name: 'Rahul Sharma', email: 'rahul@coolsofttech.com' },
+      { name: 'Priya Verma', email: 'priya@coolsofttech.com' },
+      { name: 'Alok Manager', email: 'manager@coolsofttech.com' }
+    ]
+    try {
+      const stored = localStorage.getItem('smarthire_recruiters')
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed)) {
+          parsed.forEach(u => {
+            if (u && u.name && !list.some(r => r.name.toLowerCase() === u.name.toLowerCase())) {
+              list.push({ name: u.name, email: u.email || '' })
+            }
+          })
+        }
+      }
+    } catch(e) {}
+    // If jobs have recruiters
+    if (Array.isArray(jobsList)) {
+      jobsList.forEach(j => {
+        if (j.recruiterName && !list.some(r => r.name.toLowerCase() === j.recruiterName.toLowerCase())) {
+          list.push({ name: j.recruiterName, email: '' })
+        }
+        if (Array.isArray(j.assignedRecruiters)) {
+          j.assignedRecruiters.forEach(ar => {
+            if (ar && typeof ar === 'string' && !list.some(r => r.name.toLowerCase() === ar.toLowerCase())) {
+              list.push({ name: ar, email: '' })
+            }
+          })
+        }
+      })
+    }
+    // Also include currentUser if not already present
+    if (currentUser?.name && !list.some(r => r.name.toLowerCase() === currentUser.name.toLowerCase())) {
+      list.push({ name: currentUser.name, email: currentUser.email || '' })
+    }
+    return list
+  }, [jobsList, currentUser])
+
   // Helper to dynamically resolve recruiter name who generated the screening link
   const getRecruiterName = (session) => {
-    if (!session) return 'Omkesh Manjute'
+    if (!session) return 'Omkesh'
     if (session.recruiterName && session.recruiterName.trim()) return session.recruiterName.trim()
     if (session.createdByName && session.createdByName.trim()) return session.createdByName.trim()
 
     if (session.jobId && Array.isArray(jobsList)) {
       const job = jobsList.find(j => j.id === session.jobId || j.jobId === session.jobId)
       if (job?.recruiterName) return job.recruiterName
+      if (Array.isArray(job?.assignedRecruiters) && job.assignedRecruiters.length > 0) return job.assignedRecruiters[0]
       if (job?.assignedRecruiter) return job.assignedRecruiter
     }
 
@@ -81,21 +129,71 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [], cur
       return session.createdBy.trim()
     }
 
-    return 'Omkesh Manjute'
+    return 'Omkesh'
   }
 
   const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState('all') // 'all', 'submitted', 'shortlisted', 'reviewed', 'rejected'
   const [filterFormat, setFilterFormat] = useState('all') // 'all', 'video', 'audio', 'text'
+  const [filterRecruiter, setFilterRecruiter] = useState('all') // 'all' or specific recruiter
   const [searchQuery, setSearchQuery] = useState('')
 
   // Campaign Builder Modal States
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedJobId, setSelectedJobId] = useState('')
+  const [selectedRecruiter, setSelectedRecruiter] = useState(currentUser?.name || 'Omkesh')
   const [campaignTitle, setCampaignTitle] = useState('')
   const [allowedFormats, setAllowedFormats] = useState(['video', 'audio', 'text'])
   const [maxDuration, setMaxDuration] = useState(120)
+
+  // 1-Click Reassign Recruiter on Screening Session
+  const handleUpdateSessionRecruiter = async (sessionId, newRecruiterName) => {
+    if (!sessionId || !newRecruiterName) return
+    const recObj = allAvailableRecruiters.find(r => r.name.toLowerCase() === newRecruiterName.toLowerCase())
+    const recEmail = recObj?.email || ''
+
+    // Optimistic UI update
+    setSessions(prev => prev.map(s => {
+      if (s.sessionId === sessionId || s.id === sessionId || s._id === sessionId) {
+        return {
+          ...s,
+          recruiterName: newRecruiterName,
+          createdByName: newRecruiterName,
+          recruiterEmail: recEmail || s.recruiterEmail,
+          createdByEmail: recEmail || s.createdByEmail
+        }
+      }
+      return s
+    }))
+
+    if (reviewSession && (reviewSession.sessionId === sessionId || reviewSession.id === sessionId)) {
+      setReviewSession(prev => ({
+        ...prev,
+        recruiterName: newRecruiterName,
+        createdByName: newRecruiterName,
+        recruiterEmail: recEmail || prev.recruiterEmail,
+        createdByEmail: recEmail || prev.createdByEmail
+      }))
+    }
+
+    try {
+      await fetch(`${API}/${sessionId}/recruiter`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
+        },
+        body: JSON.stringify({
+          recruiterName: newRecruiterName,
+          recruiterEmail: recEmail
+        })
+      })
+    } catch (err) {
+      console.error('Failed to update recruiter on server:', err)
+    }
+  }
+
   const [questions, setQuestions] = useState([
     {
       id: 'q1',
@@ -219,7 +317,13 @@ SmartHire Recruitment Team`
     if (selectedJobId) {
       const job = jobsList.find(j => j.id === selectedJobId)
       if (job) {
+        if (job.recruiterName) {
+          setSelectedRecruiter(job.recruiterName)
+        } else if (Array.isArray(job.assignedRecruiters) && job.assignedRecruiters.length > 0) {
+          setSelectedRecruiter(job.assignedRecruiters[0])
+        }
         setCampaignTitle(`${job.title} Screening Campaign`)
+
         setQuestions([
           {
             id: 'q1',
@@ -345,9 +449,11 @@ SmartHire Recruitment Team`
           questions,
           allowedFormats,
           maxDuration,
-          createdByEmail: currentUserEmail || '',
+          createdByEmail: (allAvailableRecruiters.find(r => r.name.toLowerCase() === selectedRecruiter.toLowerCase())?.email) || currentUserEmail || '',
           createdByRef: currentUserRef || '',
-          createdByName: currentUserName || ''
+          createdByName: selectedRecruiter || currentUserName || 'Omkesh',
+          recruiterName: selectedRecruiter || currentUserName || 'Omkesh',
+          recruiterEmail: (allAvailableRecruiters.find(r => r.name.toLowerCase() === selectedRecruiter.toLowerCase())?.email) || currentUserEmail || ''
         })
       })
 
@@ -865,15 +971,17 @@ SmartHire Recruitment Team`
         const sessionCreatorEmail = (s.createdByEmail || '').toLowerCase().trim()
         const sessionCreatorRef = (s.createdByRef || '').toLowerCase().trim()
         const sessionCreatorName = (s.createdByName || '').toLowerCase().trim()
+        const sessionRecruiterName = (s.recruiterName || '').toLowerCase().trim()
         if (currentUserEmail && sessionCreatorEmail && sessionCreatorEmail === currentUserEmail) return true
         if (currentUserRef && sessionCreatorRef && sessionCreatorRef === currentUserRef) return true
-        if (currentUserName && sessionCreatorName && sessionCreatorName === currentUserName) return true
+        if (currentUserName && sessionCreatorName && (sessionCreatorName === currentUserName || sessionCreatorName.includes(currentUserName))) return true
+        if (currentUserName && sessionRecruiterName && (sessionRecruiterName === currentUserName || sessionRecruiterName.includes(currentUserName))) return true
         // Fallback: if session has no creator metadata at all, show to everyone (legacy data)
         if (!sessionCreatorEmail && !sessionCreatorRef && !sessionCreatorName) return true
         return false
       })
 
-  // Filtered Sessions (from visible set, after search/status/format filters)
+  // Filtered Sessions (from visible set, after search/status/format/recruiter filters)
   const filteredSessions = visibleSessions.filter(s => {
     if (!s) return false
 
@@ -884,7 +992,14 @@ SmartHire Recruitment Team`
       const matchEmail = (s.candidateEmail || '').toLowerCase().includes(q)
       const matchJob = (s.jobTitle || '').toLowerCase().includes(q)
       const matchId = (s.sessionId || '').toLowerCase().includes(q)
-      if (!matchName && !matchEmail && !matchJob && !matchId) return false
+      const matchRec = (getRecruiterName(s) || '').toLowerCase().includes(q)
+      if (!matchName && !matchEmail && !matchJob && !matchId && !matchRec) return false
+    }
+
+    // Recruiter filter
+    if (filterRecruiter !== 'all') {
+      const rec = (getRecruiterName(s) || '').toLowerCase()
+      if (rec !== filterRecruiter.toLowerCase()) return false
     }
 
     // Status filter
@@ -1059,7 +1174,32 @@ SmartHire Recruitment Team`
             </button>
           ))}
         </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '700' }}>Recruiter:</span>
+          <select
+            value={filterRecruiter}
+            onChange={e => setFilterRecruiter(e.target.value)}
+            style={{
+              padding: '5px 10px',
+              borderRadius: '6px',
+              border: '1px solid #cbd5e1',
+              background: '#ffffff',
+              fontSize: '12px',
+              fontWeight: '600',
+              color: '#334155',
+              cursor: 'pointer',
+              outline: 'none'
+            }}
+          >
+            <option value="all">All Recruiters</option>
+            {allAvailableRecruiters.map(r => (
+              <option key={r.name} value={r.name}>{r.name}</option>
+            ))}
+          </select>
+        </div>
       </div>
+
 
       {/* ─── CANDIDATE SUBMISSIONS TABLE ──────────────────────────────────── */}
       <div style={styles.tableCard}>
@@ -1220,24 +1360,36 @@ SmartHire Recruitment Team`
                       </td>
 
                       {/* Recruiter / Generated By */}
-                      <td style={styles.td}>
-                        <div style={{ maxWidth: '160px' }}>
-                          <div
-                            title={recName}
+                      <td style={styles.td} onClick={e => e.stopPropagation()}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center' }}>
+                          <select
+                            value={recName}
+                            onChange={e => handleUpdateSessionRecruiter(session.sessionId, e.target.value)}
+                            title="Click to change or reassign recruiter"
                             style={{
+                              background: '#f8fafc',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '6px',
+                              padding: '3px 8px',
                               fontSize: '12.5px',
                               fontWeight: '700',
                               color: '#334155',
+                              cursor: 'pointer',
+                              outline: 'none',
+                              maxWidth: '155px',
+                              textOverflow: 'ellipsis',
                               whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis'
+                              transition: 'all 0.15s ease'
                             }}
+                            onMouseEnter={e => { e.currentTarget.style.borderColor = '#94a3b8'; e.currentTarget.style.background = '#ffffff' }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = '#f8fafc' }}
                           >
-                            {recName}
-                          </div>
-                          <div style={{ fontSize: '10.5px', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {session.createdByEmail || session.recruiterEmail || 'Screening Specialist'}
-                          </div>
+                            {allAvailableRecruiters.map(r => (
+                              <option key={r.name} value={r.name}>
+                                {r.name}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                       </td>
 
@@ -1289,14 +1441,62 @@ SmartHire Recruitment Team`
 
                       {/* Submitted Date */}
                       <td style={styles.td}>
-                        <div style={{ fontSize: '12px', color: '#475569', whiteSpace: 'nowrap' }}>
-                          {session.submittedAt ? new Date(session.submittedAt).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : 'Active Link'}
-                        </div>
+                        {session.submittedAt ? (
+                          <div
+                            title={new Date(session.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            style={{
+                              fontSize: '12px',
+                              fontWeight: 700,
+                              color: '#475569',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            {new Date(session.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </div>
+                        ) : (
+                          <span style={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            color: '#059669',
+                            background: '#ecfdf5',
+                            border: '1px solid #a7f3d0',
+                            padding: '2px 7px',
+                            borderRadius: '4px',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            Active
+                          </span>
+                        )}
                       </td>
 
                       {/* Actions */}
                       <td style={{ ...styles.td, textAlign: 'right' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              const url = `${window.location.origin}/screening/${session.sessionId}`
+                              navigator.clipboard.writeText(url)
+                              alert(`✓ Copied screening link to clipboard:\n${url}`)
+                            }}
+                            style={{
+                              padding: '5px 9px',
+                              background: '#f8fafc',
+                              color: '#475569',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '6px',
+                              fontSize: '11.5px',
+                              fontWeight: '700',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                            title="Copy candidate screening link to clipboard"
+                          >
+                            Copy Link
+                          </button>
                           {(session.status === 'submitted' || session.status === 'shortlisted' || session.status === 'reviewed' || (session.responses && session.responses.length > 0)) && (
                             <button
                               type="button"
@@ -1310,16 +1510,6 @@ SmartHire Recruitment Team`
                               PDF
                             </button>
                           )}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleOpenReview(session)
-                            }}
-                            style={styles.reviewButton}
-                          >
-                            Review
-                          </button>
                           {isSuperAdmin && (
                             <button
                               type="button"
@@ -1427,6 +1617,23 @@ SmartHire Recruitment Team`
                       placeholder="e.g. Lead GenAI Engineer Asynchronous Screen"
                     />
                   </div>
+
+                  {/* Recruiter / Owner */}
+                  <div style={styles.modalFormGroup}>
+                    <label style={styles.modalLabel}>Assign Recruiter / Screening Owner *</label>
+                    <select
+                      value={selectedRecruiter}
+                      onChange={e => setSelectedRecruiter(e.target.value)}
+                      style={styles.modalSelect}
+                    >
+                      {allAvailableRecruiters.map(r => (
+                        <option key={r.name} value={r.name}>
+                          {r.name} {r.name.toLowerCase() === (currentUser?.name || '').toLowerCase() ? '(You)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
 
                   {/* Allowed Formats */}
                   <div style={styles.modalFormGroup}>
@@ -1850,7 +2057,29 @@ SmartHire Recruitment Team`
                       </a>
                     </div>
                   )}
+                  <div style={styles.sideInfoRow}>
+                    <span style={{ color: '#64748b' }}>Assigned Recruiter:</span>
+                    <select
+                      value={getRecruiterName(reviewSession)}
+                      onChange={e => handleUpdateSessionRecruiter(reviewSession.sessionId, e.target.value)}
+                      style={{
+                        background: '#ffffff',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '4px',
+                        padding: '2px 6px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        color: '#0f172a',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {allAvailableRecruiters.map(r => (
+                        <option key={r.name} value={r.name}>{r.name}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
+
 
                 {/* Proctoring & Integrity Audit Card */}
                 {(reviewSession.proctoring || reviewSession.candidateGeo) && (
