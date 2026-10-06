@@ -2,6 +2,27 @@ import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 // ─── SVG Icons (Enterprise Line Icons, Rule 8 Compliant) ────────────────────
+const IconHome = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+)
+const IconUsers = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+)
+const IconChat = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+)
+const IconBriefcase = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+)
+const IconZap = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+)
+const IconSettings = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+)
+const IconMenu = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+)
 const IconArrowLeft = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M19 12H5M12 19l-7-7 7-7"/>
@@ -475,6 +496,21 @@ export default function SubmittalPackPage() {
   const resumeEditorRef = useRef(null)
   const rtrEditorRef = useRef(null)
   const [isLiveEditDirty, setIsLiveEditDirty] = useState(false)
+
+  // Left Sidebar State (Aubergine Slack theme, default collapsed per user request)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true)
+  const [hoveredNav, setHoveredNav] = useState(null)
+
+  // Current logged in user info for top bar
+  const currentUser = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem('smarthire_user') || '{}')
+    } catch (_) {
+      return {}
+    }
+  }, [])
+  const userDisplayName = currentUser?.name || currentUser?.fullName || 'Omkesh'
+  const userRole = currentUser?.role ? (currentUser.role === 'superadmin' ? 'Super Admin' : currentUser.role.toUpperCase()) : 'Super Admin'
 
   // Active Template Config
   const activeTemplateMeta = useMemo(() => {
@@ -1222,221 +1258,624 @@ ${coversheet.references}
   }
 
   return (
-    <div style={styles.pageWrap}>
-      {/* ─── Top Navbar ──────────────────────────────────────────────────── */}
-      <header style={styles.topNav} className="no-print">
-        <div style={styles.navLeft}>
-          <button onClick={() => navigate('/inbox')} style={styles.backBtn} title="Back to Recruiter Inbox">
-            <IconArrowLeft /> <span>Back to Inbox</span>
+    <div style={{ display: 'flex', width: '100%', minHeight: '100vh', backgroundColor: '#F1F5F9', overflow: 'hidden' }}>
+      {/* ─── Left Slack-Aubergine ATS Sidebar (Collapsible, default collapsed per user request) ─── */}
+      <aside style={{
+        width: sidebarCollapsed ? '68px' : '220px',
+        backgroundColor: '#3F0E40',
+        color: '#FFFFFF',
+        display: 'flex',
+        flexDirection: 'column',
+        flexShrink: 0,
+        transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+        position: 'sticky',
+        top: 0,
+        height: '100vh',
+        overflowX: 'hidden',
+        overflowY: 'auto',
+        zIndex: 40,
+        boxShadow: '1px 0 3px rgba(0,0,0,0.1)'
+      }} className="no-print">
+        {/* Top Brand Logo & 1-Click Collapse Toggle */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: sidebarCollapsed ? 'center' : 'space-between',
+          padding: sidebarCollapsed ? '16px 0 12px 0' : '16px 14px 12px 14px',
+          borderBottom: '1px solid rgba(255,255,255,0.08)'
+        }}>
+          <div
+            onClick={() => navigate('/inbox?tab=dashboard')}
+            title="SmartHire ATS — Dashboard"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              cursor: 'pointer',
+              minWidth: 0
+            }}
+          >
+            {!sidebarCollapsed ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                <div style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: 6,
+                  background: '#4A154B',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#ffffff',
+                  fontWeight: 900,
+                  fontSize: 13,
+                  flexShrink: 0
+                }}>
+                  SH
+                </div>
+                <div style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontWeight: 800, fontSize: 14.5, color: '#FFFFFF', letterSpacing: '-0.2px', lineHeight: 1.2 }}>
+                    SmartHire ATS
+                  </div>
+                  <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}>
+                    Find · Evaluate · Hire
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div style={{
+                width: 32,
+                height: 32,
+                borderRadius: 6,
+                background: '#4A154B',
+                border: '1px solid rgba(255,255,255,0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#ffffff',
+                fontWeight: 900,
+                fontSize: 14
+              }}>
+                SH
+              </div>
+            )}
+          </div>
+
+          {!sidebarCollapsed && (
+            <button
+              type="button"
+              onClick={() => setSidebarCollapsed(true)}
+              title="Collapse Sidebar (1-Click)"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'rgba(255,255,255,0.65)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 26,
+                height: 26,
+                borderRadius: 6,
+                padding: 0
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="11 17 6 12 11 7"></polyline>
+                <polyline points="18 17 13 12 18 7"></polyline>
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {/* Navigation Items */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: '12px 8px' }}>
+          {/* 1. Dashboard */}
+          <button
+            type="button"
+            title="Dashboard"
+            onMouseEnter={() => setHoveredNav('dashboard')}
+            onMouseLeave={() => setHoveredNav(null)}
+            onClick={() => navigate('/inbox?tab=dashboard')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+              gap: 12,
+              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
+              borderRadius: 6,
+              border: 'none',
+              background: hoveredNav === 'dashboard' ? 'rgba(255,255,255,0.08)' : 'transparent',
+              color: hoveredNav === 'dashboard' ? '#FFFFFF' : 'rgba(255,255,255,0.72)',
+              fontWeight: 500,
+              fontSize: 13,
+              cursor: 'pointer',
+              width: '100%',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <IconHome /> {!sidebarCollapsed && <span>Dashboard</span>}
           </button>
-          <div style={{ height: 18, width: 1, backgroundColor: '#CBD5E1' }} />
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <h2 style={{ fontSize: '15px', fontWeight: '800', color: '#0F172A', margin: 0, letterSpacing: '-0.01em' }}>
+
+          {/* 2. Candidates */}
+          <button
+            type="button"
+            title="Candidates"
+            onMouseEnter={() => setHoveredNav('candidates')}
+            onMouseLeave={() => setHoveredNav(null)}
+            onClick={() => navigate('/inbox')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+              gap: 12,
+              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
+              borderRadius: 6,
+              border: 'none',
+              background: hoveredNav === 'candidates' ? 'rgba(255,255,255,0.08)' : 'transparent',
+              color: hoveredNav === 'candidates' ? '#FFFFFF' : 'rgba(255,255,255,0.72)',
+              fontWeight: 500,
+              fontSize: 13,
+              cursor: 'pointer',
+              width: '100%',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <IconUsers /> {!sidebarCollapsed && <span>Candidates</span>}
+          </button>
+
+          {/* 3. Messages */}
+          <button
+            type="button"
+            title="Messages"
+            onMouseEnter={() => setHoveredNav('chat')}
+            onMouseLeave={() => setHoveredNav(null)}
+            onClick={() => navigate('/inbox?tab=chat')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+              gap: 12,
+              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
+              borderRadius: 6,
+              border: 'none',
+              background: hoveredNav === 'chat' ? 'rgba(255,255,255,0.08)' : 'transparent',
+              color: hoveredNav === 'chat' ? '#FFFFFF' : 'rgba(255,255,255,0.72)',
+              fontWeight: 500,
+              fontSize: 13,
+              cursor: 'pointer',
+              width: '100%',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <IconChat /> {!sidebarCollapsed && <span>Messages</span>}
+          </button>
+
+          {/* 4. Vendor Hotlists */}
+          <button
+            type="button"
+            title="Vendor Hotlists"
+            onMouseEnter={() => setHoveredNav('hotlists')}
+            onMouseLeave={() => setHoveredNav(null)}
+            onClick={() => navigate('/inbox?tab=hotlists')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+              gap: 12,
+              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
+              borderRadius: 6,
+              border: 'none',
+              background: hoveredNav === 'hotlists' ? 'rgba(255,255,255,0.08)' : 'transparent',
+              color: hoveredNav === 'hotlists' ? '#FFFFFF' : 'rgba(255,255,255,0.72)',
+              fontWeight: 500,
+              fontSize: 13,
+              cursor: 'pointer',
+              width: '100%',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <IconBriefcase /> {!sidebarCollapsed && <span>Vendor Hotlists</span>}
+          </button>
+
+          {/* 5. Scan Ingest */}
+          <button
+            type="button"
+            title="Scan Ingest"
+            onMouseEnter={() => setHoveredNav('scaningest')}
+            onMouseLeave={() => setHoveredNav(null)}
+            onClick={() => navigate('/inbox')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+              gap: 12,
+              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
+              borderRadius: 6,
+              border: 'none',
+              background: hoveredNav === 'scaningest' ? 'rgba(255,255,255,0.08)' : 'transparent',
+              color: hoveredNav === 'scaningest' ? '#FFFFFF' : 'rgba(255,255,255,0.72)',
+              fontWeight: 500,
+              fontSize: 13,
+              cursor: 'pointer',
+              width: '100%',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <IconZap /> {!sidebarCollapsed && <span>Scan Ingest</span>}
+          </button>
+
+          {/* 6. Submittal Pack (Active Tab) */}
+          <button
+            type="button"
+            title="Submittal Pack & Coversheet Generator"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+              gap: 12,
+              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
+              borderRadius: 6,
+              border: 'none',
+              background: '#1164A3',
+              color: '#FFFFFF',
+              fontWeight: 700,
+              fontSize: 13,
+              cursor: 'pointer',
+              width: '100%',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
+            }}
+          >
+            <IconFileText /> {!sidebarCollapsed && <span>Submittal Pack</span>}
+          </button>
+
+          {/* 7. SmartSign RTR */}
+          <button
+            type="button"
+            title="SmartSign RTR Digital Signatures"
+            onMouseEnter={() => setHoveredNav('smartsign_rtr')}
+            onMouseLeave={() => setHoveredNav(null)}
+            onClick={() => navigate('/sign-rtr')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+              gap: 12,
+              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
+              borderRadius: 6,
+              border: 'none',
+              background: hoveredNav === 'smartsign_rtr' ? 'rgba(255,255,255,0.08)' : 'transparent',
+              color: hoveredNav === 'smartsign_rtr' ? '#FFFFFF' : 'rgba(255,255,255,0.72)',
+              fontWeight: 500,
+              fontSize: 13,
+              cursor: 'pointer',
+              width: '100%',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <IconSignature /> {!sidebarCollapsed && <span>SmartSign RTR</span>}
+          </button>
+
+          {/* 8. Settings */}
+          <button
+            type="button"
+            title="Settings"
+            onMouseEnter={() => setHoveredNav('settings')}
+            onMouseLeave={() => setHoveredNav(null)}
+            onClick={() => navigate('/ats')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+              gap: 12,
+              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
+              borderRadius: 6,
+              border: 'none',
+              background: hoveredNav === 'settings' ? 'rgba(255,255,255,0.08)' : 'transparent',
+              color: hoveredNav === 'settings' ? '#FFFFFF' : 'rgba(255,255,255,0.72)',
+              fontWeight: 500,
+              fontSize: 13,
+              cursor: 'pointer',
+              width: '100%',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <IconSettings /> {!sidebarCollapsed && <span>Settings</span>}
+          </button>
+        </div>
+
+        {/* Bottom Expand / Collapse Toggle Button */}
+        <div style={{ marginTop: 'auto', padding: '12px 8px' }}>
+          <button
+            type="button"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            title={sidebarCollapsed ? "Expand Sidebar (1-Click)" : "Collapse Sidebar (1-Click)"}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+              gap: 10,
+              padding: sidebarCollapsed ? '10px 0' : '8px 12px',
+              borderRadius: 6,
+              border: '1px solid rgba(255,255,255,0.1)',
+              backgroundColor: 'rgba(255,255,255,0.06)',
+              color: 'rgba(255,255,255,0.75)',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            {sidebarCollapsed ? (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="13 17 18 12 13 7"></polyline>
+                <polyline points="6 17 11 12 6 7"></polyline>
+              </svg>
+            ) : (
+              <>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="11 17 6 12 11 7"></polyline>
+                  <polyline points="18 17 13 12 18 7"></polyline>
+                </svg>
+                <span>Collapse Sidebar</span>
+              </>
+            )}
+          </button>
+        </div>
+      </aside>
+
+      {/* ─── Main Content Container (Top Nav + Workspace) ────────────────── */}
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', height: '100vh', overflowY: 'auto', overflowX: 'hidden' }}>
+        {/* ─── Top Navbar (Modern ATS UI matching Screenshot 2) ──────────── */}
+        <header style={styles.topNav} className="no-print">
+          <div style={styles.navLeft}>
+            {/* Hamburger Sidebar Toggle Button */}
+            <button
+              type="button"
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              style={styles.hamburgerBtn}
+              title={sidebarCollapsed ? "Expand Sidebar (☰)" : "Collapse Sidebar"}
+            >
+              <IconMenu />
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '13px', color: '#64748B', fontWeight: '500' }}>
+                Client Submissions
+              </span>
+              <span style={{ fontSize: '12px', color: '#CBD5E1' }}>/</span>
+              <h2 style={{ fontSize: '14.5px', fontWeight: '800', color: '#0F172A', margin: 0, letterSpacing: '-0.01em' }}>
                 Submittal Pack & Coversheet Generator
               </h2>
               <span style={styles.badgeEnterprise}>
                 {activeTemplateMeta.badge}
               </span>
             </div>
-            <div style={{ fontSize: '11px', color: '#64748B', marginTop: 1 }}>
-              Official Client Presentation Engine • VectorVMS & Direct Client Certified
-            </div>
-          </div>
-        </div>
-
-        <div style={styles.navRight}>
-          {copyToastText && (
-            <div style={styles.toastChip}>
-              <IconCheck /> <span>{copyToastText}</span>
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={handleCopyCurrentView}
-            style={styles.actionBtnSecondary}
-            title="Copy current active view to clipboard"
-          >
-            <IconCopy /> <span>Copy {activePreviewTab === 'rtr' ? 'E-RTR' : activePreviewTab === 'all' ? 'Pack' : 'Coversheet'}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleCopyRtr}
-            style={styles.actionBtnSecondary}
-            title="Copy Right to Represent email subject and body for candidate"
-          >
-            <IconSignature /> <span>Copy RTR Email</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handlePrint}
-            style={styles.actionBtnSecondary}
-            title="Export clean PDF submittal package"
-          >
-            <IconPrint /> <span>Print / Save PDF</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleOpenEmailModal}
-            style={styles.actionBtnPrimary}
-            title="Send submittal directly to client or account manager"
-          >
-            <IconMail /> <span>Email Submittal Pack</span>
-          </button>
-        </div>
-      </header>
-
-      {/* ─── Control Selector Bar ────────────────────────────────────────── */}
-      <div style={styles.selectorBar} className="no-print">
-        <div style={styles.selectorInner}>
-          {/* 1. Candidate Selector */}
-          <div style={styles.filterGroup}>
-            <label style={styles.filterLabel}>SELECT CANDIDATE:</label>
-            <select
-              value={selectedCandidateId}
-              onChange={e => setSelectedCandidateId(e.target.value)}
-              style={styles.selectInput}
-            >
-              {candidates.map(c => {
-                const displayName = extractCandidateRealName(c.name, c.resumeText)
-                return (
-                  <option key={c.id || c.candidate_id} value={c.id || c.candidate_id}>
-                    {c.isUploaded ? '📁 [Uploaded] ' : ''}{displayName} — {c.role || 'Specialist'} {c.phone ? `Phone: ${c.phone}` : ''} {c.isVendorHotlist ? `(Bench: ${c.vendorCompany})` : ''}
-                  </option>
-                )
-              })}
-            </select>
           </div>
 
-          {/* 2. Target Job Selector */}
-          <div style={styles.filterGroup}>
-            <label style={styles.filterLabel}>TARGET JOB REQUISITION:</label>
-            <select
-              value={selectedJobId}
-              onChange={e => setSelectedJobId(e.target.value)}
-              style={styles.selectInput}
-            >
-              {jobs.map(j => {
-                const titleStr = j.title || 'Requisition'
-                const vmsMatch = titleStr.match(/\(([\d]{4,7})\)/)
-                const num = vmsMatch ? vmsMatch[1] : String(j.id).replace(/^J-/, '')
-                return (
-                  <option key={j.id} value={j.id}>
-                    #{num}: {titleStr} ({j.client || 'Client'})
-                  </option>
-                )
-              })}
-            </select>
-          </div>
-
-          {/* 3. Submittal Presentation Template Selector */}
-          <div style={styles.filterGroup}>
-            <label style={styles.filterLabel}>PRESENTATION TEMPLATE:</label>
-            <select
-              value={selectedTemplate}
-              onChange={e => handleTemplateChange(e.target.value)}
-              style={{ ...styles.selectInput, fontWeight: '700', color: '#1D4ED8' }}
-            >
-              {SUBMITTAL_TEMPLATES.map(tpl => (
-                <option key={tpl.id} value={tpl.id}>
-                  {tpl.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* 4. Blind Resume Toggle */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 18 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: '12.5px', fontWeight: '700', color: '#334155' }}>
-              <input
-                type="checkbox"
-                checked={blindResume}
-                onChange={e => setBlindResume(e.target.checked)}
-                style={{ cursor: 'pointer', width: 15, height: 15, accentColor: '#2563EB' }}
-              />
-              Blind Resume (Mask Direct Phone/Email)
-            </label>
-          </div>
-        </div>
-      </div>
-
-      {/* ─── Main Workspace: Left Column Coversheet Form, Right Column Presentation ─── */}
-      <div style={styles.workspace}>
-        {/* LEFT COLUMN: EDITABLE POSITION & COVERSHEET FORM */}
-        <div style={styles.coversheetCol} className="no-print">
-          <div style={styles.colHeader}>
-            <div>
-              <h3 style={{ fontSize: '14px', fontWeight: '800', color: '#0F172A', margin: 0 }}>
-                Client Submission Coversheet
-              </h3>
-              <div style={{ fontSize: '11px', color: '#64748B', marginTop: 2 }}>
-                Dynamic Position Parameters & Live Form
-              </div>
-            </div>
-            <span style={{ fontSize: '11px', fontWeight: '700', color: '#2563EB', background: '#EFF6FF', padding: '3px 8px', borderRadius: 6, border: '1px solid #BFDBFE' }}>
-              Editable Live
-            </span>
-          </div>
-
-          {/* 0. Upload Candidate Resume Card */}
-          <div style={styles.uploadCard}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-              <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span>Upload Candidate Resume</span>
-              </div>
-              <span style={{ fontSize: '10px', fontWeight: '700', color: '#047857', background: '#ECFDF5', padding: '2px 6px', borderRadius: 4, border: '1px solid #A7F3D0' }}>
-                DOCX • PDF • TXT
-              </span>
-            </div>
-            <p style={{ fontSize: '11px', color: '#64748B', margin: '0 0 10px 0', lineHeight: 1.4 }}>
-              Upload candidate resume to auto-extract details, format projects & bullets, and prepare submittal pack.
-            </p>
-            
-            <input
-              type="file"
-              ref={resumeFileInputRef}
-              style={{ display: 'none' }}
-              accept=".docx,.doc,.pdf,.txt,.rtf"
-              onChange={handleResumeFileUpload}
-            />
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <button
-                type="button"
-                onClick={() => resumeFileInputRef.current?.click()}
-                disabled={isParsingResume}
-                style={styles.uploadBtnPrimary}
-              >
-                <IconUpload /> <span>{isParsingResume ? 'Parsing...' : 'Upload File'}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowPasteModal(true)}
-                style={styles.uploadBtnSecondary}
-              >
-                <IconFileText /> <span>Paste Resume</span>
-              </button>
-            </div>
-
-            {uploadedFileName && (
-              <div style={{ marginTop: 8, padding: '5px 8px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 6, fontSize: '11px', color: '#15803D', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '85%' }}>
-                  ✓ <b>{uploadedFileName}</b>
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setUploadedFileName('')}
-                  style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#94A3B8', fontSize: '12px' }}
-                >
-                  ✕
-                </button>
+          <div style={styles.navRight}>
+            {copyToastText && (
+              <div style={styles.toastChip}>
+                <IconCheck /> <span>{copyToastText}</span>
               </div>
             )}
+
+            <button
+              type="button"
+              onClick={handleCopyCurrentView}
+              style={styles.actionBtnSecondary}
+              title="Copy current active view to clipboard"
+            >
+              <IconCopy /> <span>Copy {activePreviewTab === 'rtr' ? 'E-RTR' : activePreviewTab === 'all' ? 'Pack' : 'Coversheet'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleCopyRtr}
+              style={styles.actionBtnSecondary}
+              title="Copy Right to Represent email subject and body for candidate"
+            >
+              <IconSignature /> <span>Copy RTR Email</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handlePrint}
+              style={styles.actionBtnSecondary}
+              title="Export clean PDF submittal package"
+            >
+              <IconPrint /> <span>Print / Save PDF</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleOpenEmailModal}
+              style={styles.actionBtnPrimary}
+              title="Send submittal directly to client or account manager"
+            >
+              <IconMail /> <span>Email Submittal Pack</span>
+            </button>
+
+            {/* User Profile Avatar Pill */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 8, borderLeft: '1px solid #E2E8F0' }}>
+              <div style={{
+                width: 32,
+                height: 32,
+                borderRadius: 8,
+                backgroundColor: '#0F172A',
+                color: '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '12px',
+                fontWeight: '800'
+              }}>
+                {userDisplayName.slice(0, 2).toUpperCase()}
+              </div>
+              <div style={{ lineHeight: 1.2, display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '12px', fontWeight: '700', color: '#0F172A' }}>{userDisplayName}</span>
+                <span style={{ fontSize: '10px', color: '#64748B', fontWeight: '500' }}>{userRole}</span>
+              </div>
+            </div>
           </div>
+        </header>
+
+        {/* ─── Streamlined Selector Bar (SELECT CANDIDATE REMOVED per user request) ─ */}
+        <div style={styles.selectorBar} className="no-print">
+          <div style={styles.selectorInner}>
+            {/* 1. Target Job Selector */}
+            <div style={{ ...styles.filterGroup, flex: '1.2' }}>
+              <label style={styles.filterLabel}>TARGET JOB REQUISITION:</label>
+              <select
+                value={selectedJobId}
+                onChange={e => setSelectedJobId(e.target.value)}
+                style={styles.selectInput}
+              >
+                {jobs.map(j => {
+                  const titleStr = j.title || 'Requisition'
+                  const vmsMatch = titleStr.match(/\(([\d]{4,7})\)/)
+                  const num = vmsMatch ? vmsMatch[1] : String(j.id).replace(/^J-/, '')
+                  return (
+                    <option key={j.id} value={j.id}>
+                      #{num}: {titleStr} ({j.client || 'Client'})
+                    </option>
+                  )
+                })}
+              </select>
+            </div>
+
+            {/* 2. Submittal Presentation & RTR Template Selector */}
+            <div style={{ ...styles.filterGroup, flex: '1.5' }}>
+              <label style={styles.filterLabel}>PRESENTATION & RTR TEMPLATE:</label>
+              <select
+                value={selectedTemplate}
+                onChange={e => handleTemplateChange(e.target.value)}
+                style={{ ...styles.selectInput, fontWeight: '700', color: '#1D4ED8' }}
+              >
+                {SUBMITTAL_TEMPLATES.map(tpl => (
+                  <option key={tpl.id} value={tpl.id}>
+                    {tpl.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* 3. Blind Resume Toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 18, flexShrink: 0 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: '12px', fontWeight: '700', color: '#334155' }}>
+                <input
+                  type="checkbox"
+                  checked={blindResume}
+                  onChange={e => setBlindResume(e.target.checked)}
+                  style={{ cursor: 'pointer', width: 15, height: 15, accentColor: '#2563EB' }}
+                />
+                Blind Resume (Mask Contact)
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {/* ─── Main Workspace: Left Column Coversheet Form, Right Column Presentation ─── */}
+        <div style={styles.workspace}>
+          {/* LEFT COLUMN: EDITABLE POSITION & COVERSHEET FORM */}
+          <div style={styles.coversheetCol} className="no-print">
+            <div style={styles.colHeader}>
+              <div>
+                <h3 style={{ fontSize: '14px', fontWeight: '800', color: '#0F172A', margin: 0 }}>
+                  Client Submission Coversheet
+                </h3>
+                <div style={{ fontSize: '11px', color: '#64748B', marginTop: 2 }}>
+                  Dynamic Position Parameters & Live Form
+                </div>
+              </div>
+              <span style={{ fontSize: '11px', fontWeight: '700', color: '#2563EB', background: '#EFF6FF', padding: '3px 8px', borderRadius: 6, border: '1px solid #BFDBFE' }}>
+                Editable Live
+              </span>
+            </div>
+
+            {/* 0. Upload Candidate Resume Card */}
+            <div style={styles.uploadCard}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>Upload Candidate Resume</span>
+                </div>
+                <span style={{ fontSize: '10px', fontWeight: '700', color: '#047857', background: '#ECFDF5', padding: '2px 6px', borderRadius: 4, border: '1px solid #A7F3D0' }}>
+                  DOCX • PDF • TXT
+                </span>
+              </div>
+              <p style={{ fontSize: '11px', color: '#64748B', margin: '0 0 10px 0', lineHeight: 1.4 }}>
+                Upload candidate resume to auto-extract details, format projects & bullets, and prepare submittal pack.
+              </p>
+              
+              <input
+                type="file"
+                ref={resumeFileInputRef}
+                style={{ display: 'none' }}
+                accept=".docx,.doc,.pdf,.txt,.rtf"
+                onChange={handleResumeFileUpload}
+              />
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => resumeFileInputRef.current?.click()}
+                  disabled={isParsingResume}
+                  style={styles.uploadBtnPrimary}
+                >
+                  <IconUpload /> <span>{isParsingResume ? 'Parsing...' : 'Upload File'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPasteModal(true)}
+                  style={styles.uploadBtnSecondary}
+                >
+                  <IconFileText /> <span>Paste Resume</span>
+                </button>
+              </div>
+
+              {uploadedFileName && (
+                <div style={{ marginTop: 8, padding: '5px 8px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 6, fontSize: '11px', color: '#15803D', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '85%' }}>
+                    ✓ <b>{uploadedFileName}</b>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setUploadedFileName('')}
+                    style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#94A3B8', fontSize: '12px' }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+
+              {/* Or Select Existing Candidate from Pool */}
+              <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid #E2E8F0' }}>
+                <label style={{ fontSize: '11px', fontWeight: '700', color: '#475569', display: 'block', marginBottom: 4 }}>
+                  Or Select Existing Candidate ({candidates.length}):
+                </label>
+                <select
+                  value={selectedCandidateId}
+                  onChange={e => setSelectedCandidateId(e.target.value)}
+                  style={{
+                    ...styles.selectInput,
+                    width: '100%',
+                    fontSize: '11.5px',
+                    padding: '6px 10px',
+                    backgroundColor: '#F8FAFC'
+                  }}
+                >
+                  {candidates.map(c => {
+                    const displayName = extractCandidateRealName(c.name, c.resumeText)
+                    return (
+                      <option key={c.id || c.candidate_id} value={c.id || c.candidate_id}>
+                        {c.isUploaded ? '📁 [Uploaded] ' : ''}{displayName} — {c.role || 'Specialist'} {c.isVendorHotlist ? `(Bench: ${c.vendorCompany})` : ''}
+                      </option>
+                    )
+                  })}
+                </select>
+              </div>
+            </div>
 
           {/* Dynamic Position Binding Section */}
           <div style={styles.sectionCard}>
@@ -1893,31 +2332,101 @@ ${coversheet.references}
           </div>
 
           {/* ─── TAB 1: CLIENT-READY SUBMITTAL RESUME (EXACT VERDANA WORD FORMAT) ─── */}
-          {(activePreviewTab === 'resume' || activePreviewTab === 'all') && (
-            <div style={styles.wordPaperWrapper}>
-              <div
-                ref={resumeEditorRef}
-                contentEditable={true}
-                suppressContentEditableWarning={true}
-                onInput={() => setIsLiveEditDirty(true)}
-                style={styles.wordPaper}
-              />
-            </div>
-          )}
+          <div style={{
+            ...styles.wordPaperWrapper,
+            display: (activePreviewTab === 'resume' || activePreviewTab === 'all') ? 'block' : 'none'
+          }}>
+            <div
+              ref={resumeEditorRef}
+              contentEditable={true}
+              suppressContentEditableWarning={true}
+              onInput={() => setIsLiveEditDirty(true)}
+              style={styles.wordPaper}
+            />
+          </div>
 
           {/* ─── TAB 2: ELECTRONIC RIGHT TO REPRESENT (E-RTR) (EXACT DOC FORMAT) ─── */}
-          {(activePreviewTab === 'rtr' || activePreviewTab === 'all') && (
-            <div style={{ ...styles.wordPaperWrapper, marginTop: activePreviewTab === 'all' ? 24 : 0 }}>
-              <div
-                ref={rtrEditorRef}
-                contentEditable={true}
-                suppressContentEditableWarning={true}
-                onInput={() => setIsLiveEditDirty(true)}
-                style={styles.wordPaper}
-              />
+          <div style={{
+            ...styles.wordPaperWrapper,
+            marginTop: activePreviewTab === 'all' ? 24 : 0,
+            display: (activePreviewTab === 'rtr' || activePreviewTab === 'all') ? 'block' : 'none'
+          }}>
+            {/* Dedicated RTR Format Banner & Quick Switcher */}
+            <div style={styles.rtrBanner} className="no-print">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={styles.rtrBadge}>
+                      {activeTemplateMeta.badge} E-RTR
+                    </span>
+                    <h4 style={{ margin: 0, fontSize: '13px', fontWeight: '800', color: '#0F172A' }}>
+                      {activeTemplateMeta.name} — Right to Represent Agreement
+                    </h4>
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#64748B', marginTop: 2 }}>
+                    Requisition #{vmsNumber} • {positionTitle} • Rate: ${cleanRateNumber}/hr ({employmentType})
+                  </div>
+                </div>
 
-              {/* Action Toolbar for E-RTR */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14 }} className="no-print">
+                {/* Quick Switch RTR Template Direct Buttons */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '700', color: '#475569' }}>RTR Formats:</span>
+                  <button
+                    type="button"
+                    onClick={() => handleTemplateChange('nc_cai')}
+                    style={{
+                      ...styles.rtrQuickBtn,
+                      ...(selectedTemplate === 'nc_cai' ? styles.rtrQuickBtnActive : {})
+                    }}
+                  >
+                    NC VectorVMS
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleTemplateChange('georgia_cai')}
+                    style={{
+                      ...styles.rtrQuickBtn,
+                      ...(selectedTemplate === 'georgia_cai' ? styles.rtrQuickBtnActive : {})
+                    }}
+                  >
+                    Georgia GDOT
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleTemplateChange('texas_dir')}
+                    style={{
+                      ...styles.rtrQuickBtn,
+                      ...(selectedTemplate === 'texas_dir' ? styles.rtrQuickBtnActive : {})
+                    }}
+                  >
+                    Texas DIR
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleTemplateChange('standard')}
+                    style={{
+                      ...styles.rtrQuickBtn,
+                      ...(selectedTemplate === 'standard' ? styles.rtrQuickBtnActive : {})
+                    }}
+                  >
+                    Standard US
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* The Authentic Word Canvas for RTR */}
+            <div
+              ref={rtrEditorRef}
+              contentEditable={true}
+              suppressContentEditableWarning={true}
+              onInput={() => setIsLiveEditDirty(true)}
+              style={styles.wordPaper}
+            />
+
+            {/* Action Toolbar for E-RTR */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 14, flexWrap: 'wrap' }} className="no-print">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <button
                   type="button"
                   onClick={handleCopyRtr}
@@ -1925,17 +2434,24 @@ ${coversheet.references}
                 >
                   <IconCopy /> <span>Copy RTR Email Text</span>
                 </button>
-
-                <Link
-                  to={`/sign-rtr?template=${selectedTemplate}&candidateId=${encodeURIComponent(selectedCandidateId)}`}
-                  style={styles.actionBtnSecondaryLink}
-                  title="Open candidate digital signature interface"
+                <button
+                  type="button"
+                  onClick={handleResetToTemplate}
+                  style={styles.toolbarResetBtn}
                 >
-                  <IconSignature /> <span>Request Candidate Digital Signature (SmartSign RTR)</span> <IconExternalLink />
-                </Link>
+                  <IconReset /> <span>Reset RTR Template</span>
+                </button>
               </div>
+
+              <Link
+                to={`/sign-rtr?template=${selectedTemplate}&candidateId=${encodeURIComponent(selectedCandidateId)}`}
+                style={styles.actionBtnSecondaryLink}
+                title="Open candidate digital signature interface"
+              >
+                <IconSignature /> <span>Request Candidate Digital Signature (SmartSign RTR)</span> <IconExternalLink />
+              </Link>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
@@ -2058,6 +2574,7 @@ ${coversheet.references}
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }
@@ -2079,6 +2596,20 @@ const styles = {
     alignItems: 'center',
     boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
     flexShrink: 0
+  },
+  hamburgerBtn: {
+    background: '#F8FAFC',
+    border: '1px solid #E2E8F0',
+    color: '#334155',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    padding: 0,
+    transition: 'all 0.15s ease'
   },
   navLeft: {
     display: 'flex',
@@ -2207,7 +2738,8 @@ const styles = {
     padding: '18px 24px',
     gap: 20,
     boxSizing: 'border-box',
-    alignItems: 'flex-start'
+    alignItems: 'flex-start',
+    overflowX: 'hidden'
   },
   coversheetCol: {
     width: '450px',
@@ -2217,8 +2749,12 @@ const styles = {
     border: '1px solid #CBD5E1',
     padding: 18,
     boxSizing: 'border-box',
-    maxHeight: 'calc(100vh - 160px)',
-    overflowY: 'auto'
+    maxHeight: 'calc(100vh - 150px)',
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    overscrollBehavior: 'contain',
+    overscrollBehaviorX: 'none',
+    overscrollBehaviorY: 'contain'
   },
   resumeCol: {
     flex: 1,
@@ -2230,8 +2766,45 @@ const styles = {
     boxSizing: 'border-box',
     display: 'flex',
     flexDirection: 'column',
-    maxHeight: 'calc(100vh - 160px)',
-    overflowY: 'auto'
+    maxHeight: 'calc(100vh - 150px)',
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    overscrollBehavior: 'contain',
+    overscrollBehaviorX: 'none',
+    overscrollBehaviorY: 'contain'
+  },
+  rtrBanner: {
+    backgroundColor: '#F8FAFC',
+    border: '1px solid #E2E8F0',
+    borderRadius: '8px',
+    padding: '12px 14px',
+    marginBottom: '14px'
+  },
+  rtrBadge: {
+    fontSize: '10.5px',
+    fontWeight: '800',
+    padding: '2px 8px',
+    borderRadius: '4px',
+    backgroundColor: '#EFF6FF',
+    color: '#1D4ED8',
+    border: '1px solid #BFDBFE'
+  },
+  rtrQuickBtn: {
+    fontSize: '11px',
+    fontWeight: '600',
+    padding: '4px 8px',
+    borderRadius: '4px',
+    border: '1px solid #CBD5E1',
+    backgroundColor: '#FFFFFF',
+    color: '#475569',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease'
+  },
+  rtrQuickBtnActive: {
+    backgroundColor: '#1D4ED8',
+    borderColor: '#1D4ED8',
+    color: '#FFFFFF',
+    fontWeight: '700'
   },
   colHeader: {
     display: 'flex',
@@ -2377,6 +2950,7 @@ const styles = {
   },
   matrixTable: {
     width: '100%',
+    tableLayout: 'fixed',
     borderCollapse: 'collapse',
     fontSize: '11.5px',
     border: '1px solid #E2E8F0'

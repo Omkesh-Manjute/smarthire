@@ -1256,7 +1256,7 @@ SmartHire Recruitment Team`
             </button>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <div style={{ overflowX: 'auto', overscrollBehavior: 'contain', overscrollBehaviorX: 'contain' }}>
             <table style={{ ...styles.table, tableLayout: 'fixed', width: '100%' }}>
               <colgroup>
                 <col style={{ width: '25%' }} />

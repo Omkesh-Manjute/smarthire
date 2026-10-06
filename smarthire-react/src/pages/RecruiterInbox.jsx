@@ -6228,7 +6228,14 @@ export default function RecruiterInbox({ defaultViewMode }) {
             overflow: 'hidden',
             boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
           }}>
-            <div style={{ overflowX: 'auto', maxHeight: 'calc(100vh - 340px)', minHeight: 420 }}>
+            <div style={{
+              overflowX: 'auto',
+              overflowY: 'auto',
+              maxHeight: 'calc(100vh - 340px)',
+              minHeight: 420,
+              overscrollBehavior: 'contain',
+              overscrollBehaviorX: 'contain'
+            }}>
               <table style={{
                 width: '100%',
                 minWidth: 1250,
@@ -11914,6 +11921,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
                     maxHeight: 'calc(100vh - 340px)',
                     minHeight: 400,
                     width: '100%',
+                    overscrollBehavior: 'contain',
+                    overscrollBehaviorX: 'contain',
                     WebkitOverflowScrolling: 'touch',
                     scrollbarWidth: 'thin',
                     scrollbarColor: isLight ? '#94A3B8 #F1F5F9' : '#475569 #1E293B'
