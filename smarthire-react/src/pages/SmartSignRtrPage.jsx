@@ -112,6 +112,62 @@ Terms:
         { id: 'f3', type: 'name', label: 'Full name', required: true, x: 60, y: 460, signerIndex: 0 }
       ]
     }
+  },
+  {
+    id: 'nc_cai',
+    name: 'State of North Carolina (VectorVMS / CAI) E-RTR',
+    description: 'North Carolina IT Supplemental Services Contract Right to Represent acknowledgement.',
+    rate: '$85.00/hr',
+    client: 'State of North Carolina (CAI / VectorVMS)',
+    doc: {
+      id: 'nc-cai-rtr-doc',
+      title: 'North Carolina IT Supplemental Services Contract Right to Represent',
+      contractNo: 'NC-ITSS-CAI-2026',
+      maxBillRate: '$95.00',
+      clientName: 'State of North Carolina / Computer Aid, Inc.',
+      content: `RIGHT TO REPRESENT ACKNOWLEDGEMENT
+State of North Carolina IT Supplemental Services Contract
+
+By signing below, I acknowledge and agree that COOLSOFT LLC has the sole right to represent me in matters of work assignment relating the North Carolina IT Supplemental Services Contract by submitting my professional resume to the Contract's Managed Service Provider, Computer Aid, Inc. for the requirement identified below.
+
+I also acknowledge and verify that all the information contained in my resume related to my technical credentials is accurate and is based on educational training and professional experience obtained throughout my career.
+
+Managed Service Provider: Computer Aid, Inc. (CAI)
+Contract Manager: Nicole Walker (nicole.walker@cai.io | 910-520-1506)`,
+      defaultFields: [
+        { id: 'f1', type: 'signature', label: 'Candidate Signature', required: true, x: 60, y: 520, signerIndex: 0 },
+        { id: 'f2', type: 'date', label: 'Date signed', required: true, x: 420, y: 520, signerIndex: 0 },
+        { id: 'f3', type: 'name', label: 'Candidate Full Legal Name', required: true, x: 60, y: 460, signerIndex: 0 }
+      ]
+    }
+  },
+  {
+    id: 'georgia_cai',
+    name: 'State of Georgia (GDOT / VectorVMS / CAI) E-RTR',
+    description: 'State of Georgia IT Staffing Services Contract Right to Represent with Rate & Employment Type.',
+    rate: '$90.00/hr',
+    client: 'State of Georgia (GDOT / CAI / VectorVMS)',
+    doc: {
+      id: 'georgia-cai-rtr-doc',
+      title: 'State of Georgia IT Staffing Services Contract Right to Represent',
+      contractNo: 'GA-ITSS-CAI-2026',
+      maxBillRate: '$105.00',
+      clientName: 'State of Georgia / Computer Aid, Inc.',
+      content: `RIGHT TO REPRESENT ACKNOWLEDGEMENT
+State of Georgia's IT Staffing Services Contract
+
+By inserting my full legal name below, I acknowledge and agree that COOLSOFT LLC has the sole right to represent me in matters of work assignment relating to the State of Georgia's IT Staffing Services Contract by submitting my professional resume to the Contract's Managed Service Provider, Computer Aid, Inc. for the requirement identified below.
+
+I also acknowledge and verify that all the information contained in my resume related to my technical credentials is accurate and is based on educational training and professional experience obtained throughout my career.
+
+Managed Service Provider: Computer Aid, Inc. (CAI)
+Contract Manager: Tim Brodrick (Timothy.Brodrick@cai.io | 678-427-3660)`,
+      defaultFields: [
+        { id: 'f1', type: 'signature', label: 'Candidate Signature', required: true, x: 60, y: 520, signerIndex: 0 },
+        { id: 'f2', type: 'date', label: 'Date signed', required: true, x: 420, y: 520, signerIndex: 0 },
+        { id: 'f3', type: 'name', label: 'Candidate Full Legal Name', required: true, x: 60, y: 460, signerIndex: 0 }
+      ]
+    }
   }
 ]
 
