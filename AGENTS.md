@@ -107,6 +107,37 @@ The following high-impact features and optimizations have been agreed upon and p
 
 ## Recent Changes
 
+### 2026-10-07 — Performance & Packaging: Candidate Search Bar, 99% Payload Optimization, and Route Code-Splitting
+- **Context & Objectives**:
+  - The user requested:
+    - *"sire bahut load le rahi hai so kay karna cahiye batavo imporve karne ke liye kay loaded hai jo hatana padega bhai ismai se"*
+    - *"mai cha raha tha ki pure candidate mat bhejo only mai boollen dal ke sarch karu ya titile se search karu vo hi bhejo right ye sahi rahega na defalt mai koi active nahi rahna cahiye and pars jo ho raha hai email se uska kay karna hai batavo kay uska only list banvo resume pars na karo name , email , number , tititle only rakho q ki databse bahut bada ban jayega to matanse ka prob a sakta hai right and other platform kay karte hai batavo"*
+    - *"do it bro for all and better karo isko without any error and ye submittal pack mai email se search ya name se search ka banna if find ho to add karo ya manualy uplod karo"*
+  - **Implementations**:
+    1. **Candidate Search Bar & Interactive Suggestions in Submittal Pack (`SubmittalPackPage.jsx`)**:
+       - Replaced the clunky 400+ option `<select>` dropdown with an interactive Candidate Finder (`Search by Candidate Name, Email, or Skill`).
+       - Implemented live debounced search querying `/api/candidates?search=...` alongside local memory cache.
+       - Matching results display clean suggestion cards with Name, Email, Role, Experience, Bench/Database badge, and 1-click **"Select"** action.
+       - If candidate is not found, displays an informative prompt with instant 1-click buttons: **"Upload Resume File (DOCX / PDF)"** and **"Paste Resume"**.
+       - Active candidate card shows selected details (Legal Name, Email, Role, Exp, Source) with a sleek **"Change"** button.
+       - Always-available direct **"Upload File"** and **"Paste Resume"** buttons preserved right below the search card.
+    2. **99% Payload Optimization & Boolean Search (`server/index.js`)**:
+       - Updated `GET /api/candidates` to support Boolean expressions (`AND`, `OR`), tokenized terms, and exact substring matching across name, email, phone, role, and skills.
+       - Omitted heavy uncompressed `resumeText` and document byte blobs in list responses by default (`summary=true` / `includeResume=false`), reducing response payload from ~10 MB to < 100 KB.
+       - Enhanced `GET /api/candidates/:id` to support lookup by `id`, `candidate_id`, `canId`, or `email`, returning the full candidate object with complete `resumeText` on demand when selected.
+       - Removed shadowed/duplicate candidate route on line 4784.
+    3. **Route-Level Code-Splitting (`App.jsx`)**:
+       - Code-split all heavy page routes using `React.lazy()` and `<Suspense fallback={<PageFallback />}>`.
+       - Initial entry bundle slashed from 2,376 KB to **312 KB** (62 KB gzipped) — an **87% reduction in initial bundle size** for sub-second page loads.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (active bundle `index-BBOLlKDq.js`).
+  - Git committed (`fe3de6d`) and pushed to GitHub `origin/main`.
+  - Deployed production bundle to AWS Lightsail server (`34.194.119.199`), extracted to webroot `/var/www/html/` and `/home/ubuntu/smarthire/smarthire-react/dist/`.
+  - Server `server/index.js` updated and reloaded with PM2 `smarthire-ats`.
+  - Verified disk hygiene: 7.5GB available (60% used), temporary archives deleted immediately, assets pruned (5 most recent).
+  - Verified live domain `https://smarthireus.com` returning HTTP 200 with new active bundle `index-BBOLlKDq.js`.
+  - Verified live API `GET /api/candidates?search=Azure&limit=3` and `GET /api/candidates/srush9420@gmail.com` returning instant responses.
+
 ### 2026-10-07 — Submittal Pack: Reverted Dark Hero Banner, Restored Clean Compact Original Layout
 - **Context & Objectives**:
   - The user requested:
