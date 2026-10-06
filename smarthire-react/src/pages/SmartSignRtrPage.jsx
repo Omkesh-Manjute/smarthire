@@ -249,7 +249,10 @@ export default function SmartSignRtrPage() {
   const fetchAgreements = async () => {
     try {
       setAgreementsLoading(true)
-      const res = await fetch('/api/rtr/list')
+      const authToken = localStorage.getItem('smarthire_token') || localStorage.getItem('token') || ''
+      const res = await fetch('/api/rtr/list', {
+        headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
+      })
       const data = await res.json()
       if (data.success && Array.isArray(data.agreements)) {
         setAgreementsList(data.agreements)
@@ -260,6 +263,82 @@ export default function SmartSignRtrPage() {
       setAgreementsLoading(false)
     }
   }
+
+  // 1b. Parse URL query parameters to auto-load candidate & template
+  useEffect(() => {
+    if (!isCandidateSigningView) {
+      const tplParam = searchParams.get('template')
+      const nameParam = searchParams.get('candidateName')
+      const emailParam = searchParams.get('candidateEmail')
+      const jobParam = searchParams.get('jobTitle')
+      const reqParam = searchParams.get('reqNumber')
+      const clientParam = searchParams.get('clientName')
+      const rateParam = searchParams.get('rate')
+      const empParam = searchParams.get('employmentType')
+
+      if (tplParam || nameParam) {
+        // Map template key to prebuilt templates
+        let matchedTpl = PREBUILT_TEMPLATES.find(t => t.id === tplParam)
+        if (!matchedTpl) {
+          if (tplParam?.includes('nc')) {
+            matchedTpl = PREBUILT_TEMPLATES.find(t => t.id === 'nc_cai')
+          } else if (tplParam?.includes('georgia')) {
+            matchedTpl = PREBUILT_TEMPLATES.find(t => t.id === 'georgia_cai')
+          } else if (tplParam?.includes('texas')) {
+            matchedTpl = PREBUILT_TEMPLATES.find(t => t.id === 'texas_dir')
+          } else if (tplParam?.includes('standard')) {
+            matchedTpl = PREBUILT_TEMPLATES.find(t => t.id === 'standard_c2c')
+          }
+        }
+        if (!matchedTpl) matchedTpl = PREBUILT_TEMPLATES[0]
+
+        setSelectedTemplate(matchedTpl)
+
+        // Build customized title
+        let title = matchedTpl.doc.title
+        if (nameParam && jobParam) {
+          title = `RTR - ${nameParam} (${jobParam}${reqParam ? ` - Req #${reqParam}` : ''})`
+        } else if (nameParam) {
+          title = `RTR - ${nameParam}`
+        }
+        setDocumentTitle(title)
+
+        // Customize document content with dynamic fields
+        let content = matchedTpl.doc.content
+        if (nameParam) {
+          content = content.replace(/\$\{candidateName\}|\[Candidate Full Legal Name\]/g, nameParam)
+        }
+        if (jobParam) {
+          content = content.replace(/\$\{positionTitle\}|\[Position Title\]/g, jobParam)
+        }
+        if (reqParam) {
+          content = content.replace(/\$\{vmsNumber\}|\[Req #\]/g, reqParam)
+        }
+        if (clientParam) {
+          content = content.replace(/\$\{clientAgency\}|\[Client Name\]/g, clientParam)
+        }
+        setDocumentContent(content)
+
+        if (nameParam || emailParam) {
+          setSigners([
+            {
+              id: 's-1',
+              name: nameParam || 'Candidate Signer',
+              email: emailParam || '',
+              color: '#0284C7'
+            }
+          ])
+        }
+
+        setPlacedFields(matchedTpl.doc.defaultFields || [])
+        setSelectedFieldId(matchedTpl.doc.defaultFields?.[0]?.id || null)
+
+        // Automatically open wizard at step 2 or 3
+        setWizardOpen(true)
+        setWizardStep(nameParam && emailParam ? 3 : 2)
+      }
+    }
+  }, [searchParams, isCandidateSigningView])
 
   useEffect(() => {
     if (!isCandidateSigningView) {
@@ -328,7 +407,7 @@ export default function SmartSignRtrPage() {
       const formData = new FormData()
       formData.append('file', file)
 
-      const authToken = localStorage.getItem('token') || ''
+      const authToken = localStorage.getItem('smarthire_token') || localStorage.getItem('token') || ''
       const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
 
       const res = await fetch('/api/rtr/upload-document', {
@@ -532,9 +611,13 @@ export default function SmartSignRtrPage() {
         customNotes: emailMessage
       }
 
+      const authToken = localStorage.getItem('smarthire_token') || localStorage.getItem('token') || ''
       const res = await fetch('/api/rtr/create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+        },
         body: JSON.stringify(payload)
       })
 
@@ -547,15 +630,22 @@ export default function SmartSignRtrPage() {
         alert(data.message || 'Failed to generate signing link.')
       }
     } catch (e) {
-      alert('Network error creating agreement.')
+      alert('Network error creating agreement: ' + e.message)
+    } finally {
+      setIsSending(false)
+    }
   }
 
   // Send Email Reminder
   const handleSendReminder = async (agreement) => {
     try {
+      const authToken = localStorage.getItem('smarthire_token') || localStorage.getItem('token') || ''
       const res = await fetch('/api/rtr/remind', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+        },
         body: JSON.stringify({ agreementId: agreement.id, signerEmail: agreement.candidateEmail })
       })
       const data = await res.json()
@@ -2556,6 +2646,5 @@ export default function SmartSignRtrPage() {
       )}
     </div>
   )
-}
 }
 

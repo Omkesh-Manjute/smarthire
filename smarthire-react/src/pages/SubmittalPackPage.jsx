@@ -94,6 +94,15 @@ const IconPlus = () => (
     <line x1="5" y1="12" x2="19" y2="12"/>
   </svg>
 )
+const IconBell = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+)
+const IconMoon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+)
+const IconDownload = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+)
 
 // ─── Extract Actual Candidate Legal Name from Raw Text ──────────────────────
 export function extractCandidateRealName(rawName, resumeText) {
@@ -454,12 +463,15 @@ export default function SubmittalPackPage() {
   // Notification Toast State
   const [copyToastText, setCopyToastText] = useState('')
 
-  // Email Submittal Pack Modal
+  // Email Dispatch Modal (Submittal Pack or RTR)
   const [showEmailModal, setShowEmailModal] = useState(false)
+  const [emailModalMode, setEmailModalMode] = useState('submittal') // 'submittal' | 'rtr'
   const [emailTo, setEmailTo] = useState('')
   const [emailSubject, setEmailSubject] = useState('')
   const [emailBody, setEmailBody] = useState('')
   const [isSendingEmail, setIsSendingEmail] = useState(false)
+  const [isGeneratingSignLink, setIsGeneratingSignLink] = useState(false)
+  const [candidateSignUrl, setCandidateSignUrl] = useState('')
 
   // Coversheet Form State
   const [coversheet, setCoversheet] = useState({
@@ -501,6 +513,24 @@ export default function SubmittalPackPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true)
   const [hoveredNav, setHoveredNav] = useState(null)
 
+  // User Profile & Avatar State (Matches RecruiterInbox.jsx)
+  const [userAvatar, setUserAvatar] = useState(() => {
+    return localStorage.getItem('smarthire_user_avatar') || ''
+  })
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false)
+  const profileDropdownRef = useRef(null)
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(e.target)) {
+        setShowProfileDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
   // Current logged in user info for top bar
   const currentUser = useMemo(() => {
     try {
@@ -509,8 +539,12 @@ export default function SubmittalPackPage() {
       return {}
     }
   }, [])
-  const userDisplayName = currentUser?.name || currentUser?.fullName || 'Omkesh'
-  const userRole = currentUser?.role ? (currentUser.role === 'superadmin' ? 'Super Admin' : currentUser.role.toUpperCase()) : 'Super Admin'
+  const userDisplayName = currentUser?.name ? currentUser.name.split(' ')[0] : (currentUser?.fullName?.split(' ')[0] || 'Omkesh')
+  const userInitials = currentUser?.name
+    ? currentUser.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+    : 'OM'
+  const isSuperAdmin = currentUser?.role === 'superadmin' || !currentUser?.role
+  const userRole = isSuperAdmin ? 'Super Admin' : (currentUser?.role === 'manager' ? 'Manager' : currentUser?.role === 'employee' ? 'Sourcing Specialist' : 'Recruiter')
 
   // Active Template Config
   const activeTemplateMeta = useMemo(() => {
@@ -1215,8 +1249,9 @@ ${coversheet.references}
     window.print()
   }
 
-  // ─── Email Modal Handler ──────────────────────────────────────────────────
+  // ─── Email Modal Handlers (Submittal & RTR) ───────────────────────────────
   const handleOpenEmailModal = () => {
+    setEmailModalMode('submittal')
     const cand = candidates.find(c => c.id === selectedCandidateId)
     setEmailTo(cand?.recruiterEmail || 'account-manager@coolsofttech.com')
     setEmailSubject(`Candidate Submittal: ${coversheet.candidateLegalName} — ${positionTitle} (Req #${vmsNumber} - ${clientAgency})`)
@@ -1224,13 +1259,140 @@ ${coversheet.references}
     setShowEmailModal(true)
   }
 
+  const handleOpenRtrEmailModal = () => {
+    setEmailModalMode('rtr')
+    const cand = candidates.find(c => c.id === selectedCandidateId)
+    const candEmail = cand?.email || ''
+    const rtrCleanText = rtrEditorRef.current ? rtrEditorRef.current.innerText : (generatedRtrTemplateHtml ? generatedRtrTemplateHtml.replace(/<[^>]+>/g, '\n').replace(/\n\s*\n/g, '\n') : '')
+
+    setEmailTo(candEmail)
+    setEmailSubject(`Right to Represent (RTR) Confirmation: ${coversheet.candidateLegalName} — ${positionTitle} (Req #${vmsNumber})`)
+    setEmailBody(`Dear ${coversheet.candidateLegalName},\n\nPlease review the Right to Represent (RTR) authorization details below for active requisition #${vmsNumber} (${positionTitle}) with ${clientAgency}.\n\nAGREED POSITION TERMS:\n• Position Title: ${positionTitle}\n• Client / Agency: ${clientAgency}\n• Requisition / VMS #: ${vmsNumber}\n• Agreed Pay Rate: $${cleanRateNumber}/hour (${employmentType})\n• Work Authorization: ${coversheet.visaStatus}\n• Exclusivity Term: 60 Calendar Days\n\nLEGAL RTR AUTHORIZATION:\n${rtrCleanText}\n\nPlease reply directly to this email confirming:\n"I, ${coversheet.candidateLegalName}, confirm that CoolSoft LLC has the exclusive right to represent me for requisition #${vmsNumber} at $${cleanRateNumber}/hr."\n\nBest regards,\nCoolSoft LLC Staff Augmentation Team\nhttps://smarthireus.com`)
+    setShowEmailModal(true)
+  }
+
+  // ─── Download Formatted Word Resume (.doc) ────────────────────────────────
+  const handleDownloadResumeWord = () => {
+    const content = resumeEditorRef.current ? resumeEditorRef.current.innerHTML : generatedResumeTemplateHtml
+    const docHtml = `<!DOCTYPE html>
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+  <meta charset="utf-8">
+  <title>${coversheet.candidateLegalName || 'Candidate'} - Resume</title>
+  <!--[if gte mso 9]>
+  <xml>
+    <w:WordDocument>
+      <w:View>Print</w:View>
+      <w:Zoom>100</w:Zoom>
+      <w:DoNotOptimizeForBrowser/>
+    </w:WordDocument>
+  </xml>
+  <![endif]-->
+  <style>
+    @page Section1 {
+      size: 8.5in 11.0in;
+      margin: 0.75in 0.75in 0.75in 0.75in;
+      mso-header-margin: 0.5in;
+      mso-footer-margin: 0.5in;
+      mso-paper-source: 0;
+    }
+    div.Section1 { page: Section1; }
+    body {
+      font-family: Verdana, Geneva, sans-serif;
+      font-size: 11pt;
+      line-height: 1.4;
+      color: #000000;
+    }
+    table { border-collapse: collapse; width: 100%; }
+    td, th { padding: 4px; }
+    p { margin: 0 0 6pt 0; }
+    ul { margin: 0 0 8pt 18pt; padding: 0; }
+    li { margin-bottom: 4pt; }
+  </style>
+</head>
+<body>
+  <div class="Section1">
+    ${content}
+  </div>
+</body>
+</html>`
+
+    const blob = new Blob(['\ufeff', docHtml], { type: 'application/msword;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    const cleanName = (coversheet.candidateLegalName || 'Candidate').replace(/[^a-zA-Z0-9_-]/g, '_')
+    link.href = url
+    link.download = `${cleanName}_Formatted_Resume_${vmsNumber || 'Submittal'}.doc`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    showToast('Formatted Word resume (.doc) downloaded!')
+  }
+
+  // ─── Instant Digital Signature Link Generation ────────────────────────────
+  const handleGenerateSignLink = async () => {
+    try {
+      setIsGeneratingSignLink(true)
+      const cand = candidates.find(c => c.id === selectedCandidateId)
+      const payload = {
+        documentTitle: `RTR - ${coversheet.candidateLegalName} (${positionTitle} - Req #${vmsNumber})`,
+        documentContent: rtrEditorRef.current ? rtrEditorRef.current.innerText : (generatedRtrTemplateHtml ? generatedRtrTemplateHtml.replace(/<[^>]+>/g, '\n') : ''),
+        signers: [
+          {
+            id: 's-1',
+            name: coversheet.candidateLegalName || 'Candidate',
+            email: cand?.email || '',
+            color: '#0284C7'
+          }
+        ],
+        candidateName: coversheet.candidateLegalName || 'Candidate',
+        candidateEmail: cand?.email || '',
+        candidateId: selectedCandidateId,
+        jobTitle: positionTitle,
+        clientName: clientAgency,
+        payRate: `$${cleanRateNumber}/hr ${employmentType}`,
+        allowReassignment: false,
+        customNotes: `Right to Represent authorization for ${clientAgency} req #${vmsNumber}`
+      }
+
+      const authToken = localStorage.getItem('smarthire_token') || localStorage.getItem('token') || ''
+      const res = await fetch('/api/rtr/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+        },
+        body: JSON.stringify(payload)
+      })
+      const data = await res.json()
+      if (data.success && data.fullSigningUrl) {
+        await navigator.clipboard.writeText(data.fullSigningUrl)
+        setCandidateSignUrl(data.fullSigningUrl)
+        showToast('Candidate Sign Link generated & copied to clipboard!')
+      } else {
+        alert(data.message || 'Failed to generate sign link.')
+      }
+    } catch (e) {
+      alert('Error generating sign link: ' + e.message)
+    } finally {
+      setIsGeneratingSignLink(false)
+    }
+  }
+
   const handleSendEmail = async (e) => {
     e.preventDefault()
     setIsSendingEmail(true)
     try {
-      const rtrText = rtrEditorRef.current ? rtrEditorRef.current.innerText : ''
-      const resumeTextCurrent = resumeEditorRef.current ? resumeEditorRef.current.innerText : ''
-      const payloadMessage = `${emailBody}\n\n${formattedCoversheetText}\n\n=====================================================\nSUBMITTAL RESUME\n=====================================================\n${resumeTextCurrent}\n\n=====================================================\nE-RTR ACKNOWLEDGEMENT\n=====================================================\n${rtrText}`
+      let payloadMessage = ''
+      if (emailModalMode === 'rtr') {
+        payloadMessage = emailBody
+      } else {
+        const rtrText = rtrEditorRef.current ? rtrEditorRef.current.innerText : ''
+        const resumeTextCurrent = resumeEditorRef.current ? resumeEditorRef.current.innerText : ''
+        payloadMessage = `${emailBody}\n\n${formattedCoversheetText}\n\n=====================================================\nSUBMITTAL RESUME\n=====================================================\n${resumeTextCurrent}\n\n=====================================================\nE-RTR ACKNOWLEDGEMENT\n=====================================================\n${rtrText}`
+      }
+
       const res = await fetch('/api/recruiter/send-direct-email', {
         method: 'POST',
         headers: {
@@ -1245,13 +1407,13 @@ ${coversheet.references}
       })
       const data = await res.json()
       if (data.success) {
-        showToast('Submittal pack successfully emailed!')
+        showToast(emailModalMode === 'rtr' ? `RTR Agreement successfully emailed to ${emailTo}!` : 'Submittal pack successfully emailed!')
         setShowEmailModal(false)
       } else {
         alert(data.message || 'Failed to dispatch email')
       }
     } catch (err) {
-      alert('Error sending submittal email: ' + err.message)
+      alert('Error sending email: ' + err.message)
     } finally {
       setIsSendingEmail(false)
     }
@@ -1681,6 +1843,24 @@ ${coversheet.references}
 
             <button
               type="button"
+              onClick={handleOpenRtrEmailModal}
+              style={{ ...styles.actionBtnSecondary, color: '#1D4ED8', borderColor: '#BFDBFE', backgroundColor: '#EFF6FF' }}
+              title="Email Right to Represent (RTR) directly to candidate"
+            >
+              <IconMail /> <span>Email RTR to Candidate</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDownloadResumeWord}
+              style={styles.actionBtnSecondary}
+              title="Download client-ready formatted resume in Microsoft Word (.doc) format"
+            >
+              <IconDownload /> <span>Download .doc</span>
+            </button>
+
+            <button
+              type="button"
               onClick={handlePrint}
               style={styles.actionBtnSecondary}
               title="Export clean PDF submittal package"
@@ -1697,26 +1877,153 @@ ${coversheet.references}
               <IconMail /> <span>Email Submittal Pack</span>
             </button>
 
-            {/* User Profile Avatar Pill */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 8, borderLeft: '1px solid #E2E8F0' }}>
-              <div style={{
-                width: 32,
-                height: 32,
-                borderRadius: 8,
-                backgroundColor: '#0F172A',
-                color: '#FFFFFF',
+            {/* Notification Bell */}
+            <button
+              type="button"
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: '6px',
+                cursor: 'pointer',
+                color: '#64748B',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '12px',
-                fontWeight: '800'
-              }}>
-                {userDisplayName.slice(0, 2).toUpperCase()}
+                borderRadius: '6px'
+              }}
+              title="Notifications"
+              onClick={() => showToast('No new notifications')}
+            >
+              <IconBell />
+            </button>
+
+            {/* Theme Moon Toggle */}
+            <button
+              type="button"
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: '6px',
+                cursor: 'pointer',
+                color: '#64748B',
+                display: 'flex',
+                alignItems: 'center',
+                borderRadius: '6px'
+              }}
+              title="Toggle dark/light theme"
+              onClick={() => showToast('Theme synchronized with system preferences')}
+            >
+              <IconMoon />
+            </button>
+
+            {/* User Profile Pill & Dropdown (Matches RecruiterInbox.jsx) */}
+            <div ref={profileDropdownRef} style={{ position: 'relative' }}>
+              <div
+                onClick={() => setShowProfileDropdown(prev => !prev)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 9,
+                  padding: '4px 8px 4px 4px',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  backgroundColor: showProfileDropdown ? '#F1F5F9' : 'transparent',
+                  transition: 'background-color 0.15s'
+                }}
+              >
+                <div style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: '50%',
+                  background: userAvatar ? 'transparent' : '#0284C7',
+                  color: '#FFFFFF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 800,
+                  fontSize: 13,
+                  overflow: 'hidden',
+                  border: userAvatar ? '1px solid #CBD5E1' : 'none'
+                }}>
+                  {userAvatar ? (
+                    <img src={userAvatar} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    userInitials
+                  )}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', lineHeight: 1.2 }}>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>{userDisplayName}</span>
+                  <span style={{ fontSize: 11, color: '#64748B' }}>{userRole}</span>
+                </div>
+                <span style={{ fontSize: 11, color: '#64748B', marginLeft: 2 }}>⌵</span>
               </div>
-              <div style={{ lineHeight: 1.2, display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '12px', fontWeight: '700', color: '#0F172A' }}>{userDisplayName}</span>
-                <span style={{ fontSize: '10px', color: '#64748B', fontWeight: '500' }}>{userRole}</span>
-              </div>
+
+              {showProfileDropdown && (
+                <div style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 8px)',
+                  right: 0,
+                  width: 240,
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid #CBD5E1',
+                  borderRadius: 10,
+                  boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
+                  zIndex: 1000,
+                  padding: '12px 14px',
+                  boxSizing: 'border-box'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                    <div style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: '50%',
+                      background: userAvatar ? 'transparent' : '#0284C7',
+                      color: '#FFFFFF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 800,
+                      fontSize: 14,
+                      overflow: 'hidden',
+                      border: userAvatar ? '1px solid #CBD5E1' : 'none'
+                    }}>
+                      {userAvatar ? (
+                        <img src={userAvatar} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        userInitials
+                      )}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>{currentUser?.name || userDisplayName}</div>
+                      <div style={{ fontSize: 11, color: '#64748B' }}>{currentUser?.email || 'omkesh@coolsofttech.com'}</div>
+                    </div>
+                  </div>
+                  <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <Link to="/settings" style={{ fontSize: 12, color: '#334155', textDecoration: 'none', padding: '6px 8px', borderRadius: 6, display: 'block' }}>
+                      Profile & Preferences
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        localStorage.removeItem('smarthire_token')
+                        localStorage.removeItem('smarthire_user')
+                        window.location.href = '/'
+                      }}
+                      style={{
+                        fontSize: 12,
+                        color: '#DC2626',
+                        background: 'none',
+                        border: 'none',
+                        textAlign: 'left',
+                        padding: '6px 8px',
+                        borderRadius: 6,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -2314,6 +2621,14 @@ ${coversheet.references}
               >
                 + Project
               </button>
+              <button
+                type="button"
+                onClick={handleDownloadResumeWord}
+                style={{ ...styles.toolbarBtn, color: '#059669', fontWeight: '700', gap: 4 }}
+                title="Download Formatted Resume as Microsoft Word .doc"
+              >
+                <IconDownload /> .doc
+              </button>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -2426,13 +2741,30 @@ ${coversheet.references}
 
             {/* Action Toolbar for E-RTR */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 14, flexWrap: 'wrap' }} className="no-print">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <button
                   type="button"
                   onClick={handleCopyRtr}
                   style={styles.actionBtnPrimary}
                 >
                   <IconCopy /> <span>Copy RTR Email Text</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOpenRtrEmailModal}
+                  style={{ ...styles.actionBtnSecondary, color: '#1D4ED8', borderColor: '#BFDBFE', backgroundColor: '#EFF6FF' }}
+                  title="Email Right to Represent (RTR) directly to candidate"
+                >
+                  <IconMail /> <span>Email RTR to Candidate</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleGenerateSignLink}
+                  disabled={isGeneratingSignLink}
+                  style={{ ...styles.actionBtnSecondary, color: '#059669', borderColor: '#A7F3D0', backgroundColor: '#ECFDF5' }}
+                  title="Generate instant candidate digital signature link and copy to clipboard"
+                >
+                  <IconSignature /> <span>{isGeneratingSignLink ? 'Generating...' : '⚡ Generate & Copy Sign Link'}</span>
                 </button>
                 <button
                   type="button"
@@ -2444,7 +2776,7 @@ ${coversheet.references}
               </div>
 
               <Link
-                to={`/sign-rtr?template=${selectedTemplate}&candidateId=${encodeURIComponent(selectedCandidateId)}`}
+                to={`/sign-rtr?template=${selectedTemplate}&candidateId=${encodeURIComponent(selectedCandidateId || '')}&candidateName=${encodeURIComponent(coversheet.candidateLegalName || '')}&candidateEmail=${encodeURIComponent(candidates.find(c => c.id === selectedCandidateId)?.email || '')}&jobTitle=${encodeURIComponent(positionTitle || '')}&reqNumber=${encodeURIComponent(vmsNumber || '')}&clientName=${encodeURIComponent(clientAgency || '')}&rate=${encodeURIComponent(cleanRateNumber || '')}&employmentType=${encodeURIComponent(employmentType || '')}`}
                 style={styles.actionBtnSecondaryLink}
                 title="Open candidate digital signature interface"
               >
@@ -2455,20 +2787,22 @@ ${coversheet.references}
         </div>
       </div>
 
-      {/* ─── Email Submittal Dispatch Modal ───────────────────────────────── */}
+      {/* ─── Email Submittal / RTR Dispatch Modal ─────────────────────────── */}
       {showEmailModal && (
         <div style={styles.modalOverlay} onClick={() => setShowEmailModal(false)}>
           <div style={styles.modalCard} onClick={e => e.stopPropagation()}>
             <div style={styles.modalHeader}>
               <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0F172A', margin: 0 }}>
-                Email Submittal Package to Client / Account Manager
+                {emailModalMode === 'rtr' ? 'Email Right to Represent (RTR) to Candidate' : 'Email Submittal Package to Client / Account Manager'}
               </h3>
               <button onClick={() => setShowEmailModal(false)} style={styles.closeBtn}>✕</button>
             </div>
 
             <form onSubmit={handleSendEmail} style={{ padding: '20px' }}>
               <div style={styles.modalField}>
-                <label style={styles.inputLabel}>Recipient Email *</label>
+                <label style={styles.inputLabel}>
+                  {emailModalMode === 'rtr' ? 'Candidate Email *' : 'Recipient Email *'}
+                </label>
                 <input
                   type="email"
                   value={emailTo}
@@ -2490,9 +2824,11 @@ ${coversheet.references}
               </div>
 
               <div style={styles.modalField}>
-                <label style={styles.inputLabel}>Cover Message *</label>
+                <label style={styles.inputLabel}>
+                  {emailModalMode === 'rtr' ? 'RTR Email Body & Legal Acknowledgment *' : 'Cover Message *'}
+                </label>
                 <textarea
-                  rows={4}
+                  rows={emailModalMode === 'rtr' ? 8 : 4}
                   value={emailBody}
                   onChange={e => setEmailBody(e.target.value)}
                   style={{ ...styles.textInput, resize: 'vertical' }}
@@ -2513,7 +2849,7 @@ ${coversheet.references}
                   disabled={isSendingEmail}
                   style={styles.actionBtnPrimary}
                 >
-                  {isSendingEmail ? 'Dispatching...' : 'Send Submittal Email ➔'}
+                  {isSendingEmail ? 'Dispatching...' : (emailModalMode === 'rtr' ? 'Send RTR Email ➔' : 'Send Submittal Email ➔')}
                 </button>
               </div>
             </form>
