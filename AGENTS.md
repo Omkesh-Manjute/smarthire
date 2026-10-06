@@ -107,6 +107,40 @@ The following high-impact features and optimizations have been agreed upon and p
 
 ## Recent Changes
 
+### 2026-10-07 — Submittal Pack: Nebraska State Template & Clean RTR Email Formatting with Recruiter Signature
+- **Context & Objectives**:
+  - The user requested:
+    - *"bhai ye formate sahi nahi a raha hai email mai bhejne pe ye dekho ak emaple diya hu this type se ana cahiye properly formated okay ismai alag alag details a raha hi so fix and update karo subject ki jagha subject mai and body ka body mai and meri signature jo hai vo below mai samjhe"*
+    - *"and ak aur templte add kiya hu file mai folder mai dekho nebraska templete so usko bhi add karo"*
+    1. **Clean RTR Email Formatting & Separation**: Prevent red instructional text ("INSERT THE FOLLOWING INTO EMAIL SUBJECT", "COPY, PASTE AND UPDATE THE FOLLOWING IN EMAIL BODY", etc.) and duplicate headers from leaking into candidate email body. Put the exact subject line in the Subject field, pure legal RTR acknowledgment text in the body, and append the recruiter's signature at the bottom.
+    2. **State of Nebraska Resume & E-RTR Template**: Integrate the official Nebraska state presentation format from `Doc/Nebraska Resume_Template.doc` (tabular 4-section format: Candidate Description, Technical Qualifications/Skills List, Employment History, Education and Certifications) into `/submittal-pack` and `/sign-rtr`.
+- **Key Solutions & Deliverables**:
+  1. **Clean RTR Email Details Engine (`getCleanRtrEmailDetails`)**:
+     - Formats strict, state-compliant email metadata for each template (`nc_cai`, `georgia_cai`, `nebraska_state`, `texas_dir`, `standard`).
+     - Extracts clean Subject line (e.g. `${title} (${reqNumber})` or `${title} (${reqNumber}) - State of Nebraska`).
+     - Extracts clean acknowledgment body without any red instructional banners or confusing prompts.
+     - Automatically appends personalized recruiter signature (`currentUser` with full COOLSOFT LLC contact card, phone, email, and website).
+     - Applied to both `handleOpenRtrEmailModal` and `handleCopyRtr`.
+  2. **Official State of Nebraska Tabular Resume Formatter (`formatStructuredNebraskaResume`)**:
+     - Parses uploaded or existing candidate resume into an authentic 4-row tabular structure with 1px solid `#bfbfbf` borders matching `Doc/Nebraska Resume_Template.doc`:
+       1. `Candidate Description` (Executive summary, qualifications overview, total experience).
+       2. `Technical Qualifications/Skills List` (Bulleted skills categorization table).
+       3. `Employment History` (Chronological client engagements with structured bullets and environment lines).
+       4. `Education and Certifications` (Degrees, institutions, certifications).
+     - Added `nebraska_state` template definition to `SUBMITTAL_TEMPLATES`.
+     - Added auto-detection for State of Nebraska requisitions (`nebraska`, `nedoc`, `state of nebraska`).
+     - Added quick format switch button `Nebraska State` to the E-RTR banner toolbar.
+  3. **SmartSign RTR Nebraska Integration**:
+     - Added `nebraska_state` template to `PREBUILT_TEMPLATES` in `SmartSignRtrPage.jsx` with pre-placed candidate signature, date, and full name fields.
+     - Added URL parameter detection for `?template=nebraska_state`.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (active bundle `index-HJ2eKjVR.js`).
+  - Git committed (`75d299f`) and pushed to GitHub `origin/main`.
+  - Deployed production bundle to AWS Lightsail server (`34.194.119.199`), extracted to webroot `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Pruned old asset bundles (kept 5 most recent), removed temporary `.tar.gz` archive immediately, and reloaded PM2 `smarthire-ats`.
+  - Verified disk hygiene: 7.5GB available (60% used).
+  - Verified live domain `https://smarthireus.com/submittal-pack` and `/sign-rtr` returning HTTP 200 with new active bundle `index-HJ2eKjVR.js`.
+
 ### 2026-10-07 — Submittal Pack: Profile Header Restoration, Direct RTR Candidate Email Dispatch, Formatted Word (.doc) Download & SmartSign RTR Fix
 - **Context & Objectives**:
   - The user requested:
