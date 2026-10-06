@@ -173,12 +173,13 @@ The following high-impact features and optimizations have been agreed upon and p
      - Added `Recruiter: [All Recruiters ▾]` filter dropdown next to Status and Format.
      - Added recruiter name matching in the global screening search bar.
 - **Verification & Deployment**:
-  - Production build in `smarthire-react`: 0 errors, 0 warnings (active bundle `index-qSSDmfjr.js`).
-  - Git committed (`12a5b70`) and pushed to GitHub `origin/main`.
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (active bundle `index-CEikCx83.js`).
+  - Git committed (`12a5b70`, `2610696`) and pushed to GitHub `origin/main`.
   - Deployed production bundle to AWS Lightsail server (`34.194.119.199`), extracted to webroot `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
   - Updated `server/index.js` on Lightsail with recruiter assignment endpoints and reloaded PM2 `smarthire-ats`.
   - Verified disk hygiene: 7.4GB available (60% used), temporary archives cleaned immediately.
-  - Verified live domain `https://smarthireus.com` returning HTTP 200 with new active bundle `index-qSSDmfjr.js`.
+  - Verified live domain `https://smarthireus.com` returning HTTP 200 with new active bundle `index-CEikCx83.js`.
+
 
 ### 2026-10-06 — Screening Overhaul: Recruiter Column, Location Discrepancy Mismatch Audit, Pinned Non-Hiding Question Tabs, Top Bar Decluttering & Accidental Skip Guards
 
