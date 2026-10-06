@@ -2145,12 +2145,71 @@ app.get('/api/candidates', authenticateToken, async (req, res) => {
     });
   }
 
+  // Filter out any deleted candidate IDs
+  filtered = filtered.filter(c => {
+    if (!c) return false;
+    const cid = String(c.id || '').toLowerCase().trim();
+    const c_id = String(c.candidate_id || '').toLowerCase().trim();
+    const can_id = String(c.canId || '').toLowerCase().trim();
+    const cem = String(c.email || '').toLowerCase().trim();
+    return !deletedCandidateIds.has(cid) && !deletedCandidateIds.has(c_id) && !deletedCandidateIds.has(can_id) && (!cem || !deletedCandidateIds.has(cem));
+  });
+
+  // Server-side search filter (supports Boolean AND, OR, name, email, phone, role, skills)
+  const searchQuery = String(req.query.search || req.query.q || '').trim();
+  if (searchQuery) {
+    const qLower = searchQuery.toLowerCase();
+    const isOrSearch = qLower.includes(' or ');
+    const isAndSearch = qLower.includes(' and ');
+    if (isOrSearch) {
+      const tokens = qLower.split(/\sor\s+/i).map(t => t.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
+      filtered = filtered.filter(c => {
+        const text = `${c.name || ''} ${c.email || ''} ${c.phone || ''} ${c.role || ''} ${Array.isArray(c.skills) ? c.skills.join(' ') : (c.skills || '')} ${c.location || ''}`.toLowerCase();
+        return tokens.some(tok => text.includes(tok));
+      });
+    } else if (isAndSearch) {
+      const tokens = qLower.split(/\sand\s+/i).map(t => t.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
+      filtered = filtered.filter(c => {
+        const text = `${c.name || ''} ${c.email || ''} ${c.phone || ''} ${c.role || ''} ${Array.isArray(c.skills) ? c.skills.join(' ') : (c.skills || '')} ${c.location || ''}`.toLowerCase();
+        return tokens.every(tok => text.includes(tok));
+      });
+    } else {
+      const tokens = qLower.split(/\s+/).filter(Boolean);
+      filtered = filtered.filter(c => {
+        const text = `${c.name || ''} ${c.email || ''} ${c.phone || ''} ${c.role || ''} ${Array.isArray(c.skills) ? c.skills.join(' ') : (c.skills || '')} ${c.location || ''}`.toLowerCase();
+        return text.includes(qLower) || tokens.every(tok => text.includes(tok));
+      });
+    }
+  }
+
   const deduped = deduplicateCandidatesArray(filtered);
+
+  // Payload optimization: Strip heavy full resumeText unless explicitly requested (includeResume=true or full=true)
+  const includeResume = req.query.includeResume === 'true' || req.query.full === 'true';
+  const isSummary = req.query.summary === 'true' || !includeResume;
+  const limitParam = req.query.limit ? parseInt(req.query.limit, 10) : (searchQuery ? 50 : (req.query.all === 'true' ? undefined : 150));
+
+  let finalCandidates = deduped;
+  if (limitParam && Number.isFinite(limitParam) && limitParam > 0) {
+    finalCandidates = finalCandidates.slice(0, limitParam);
+  }
+
+  if (isSummary) {
+    finalCandidates = finalCandidates.map(c => {
+      const { resumeText, resumeData, ...rest } = c;
+      return {
+        ...rest,
+        hasFullResume: Boolean(resumeText && resumeText.length > 0),
+        resumeSnippet: (resumeText || '').slice(0, 300)
+      };
+    });
+  }
 
   res.json({
     success: true,
-    count: deduped.length,
-    candidates: deduped,
+    total: deduped.length,
+    count: finalCandidates.length,
+    candidates: finalCandidates,
   });
 });
 
@@ -2617,13 +2676,20 @@ app.get('/api/candidates/view-resume', async (req, res) => {
 
 // ─── GET /api/candidates/:id — Returns a single candidate ────────────────────
 app.get('/api/candidates/:id', authenticateToken, (req, res) => {
-  const candidate = candidatesStore.find(c => c.candidate_id === req.params.id)
+  const targetId = String(req.params.id || '').toLowerCase().trim();
+  const candidate = (candidatesStore || []).find(c => {
+    if (!c) return false;
+    const cid = String(c.id || '').toLowerCase().trim();
+    const canId = String(c.candidate_id || c.canId || c._id || '').toLowerCase().trim();
+    const cem = String(c.email || c.candidateEmail || '').toLowerCase().trim();
+    return cid === targetId || canId === targetId || (cem && cem === targetId);
+  });
   if (!candidate) {
-    res.status(404).json({ success: false, message: 'Candidate not found' })
-    return
+    res.status(404).json({ success: false, message: 'Candidate not found' });
+    return;
   }
-  res.json({ success: true, candidate })
-})
+  res.json({ success: true, candidate });
+});
 
 // ─── DELETE /api/candidates/:id — Remove a candidate ─────────────────────────
 app.delete('/api/candidates/:id', authenticateToken, (req, res) => {
@@ -4713,34 +4779,6 @@ app.post('/api/jobs', (req, res) => {
 });
 
 // ─── Candidates Routes & Auto-Apply ──────────────────────────────────────────
-
-// GET all candidates
-app.get('/api/candidates', authenticateToken, (req, res) => {
-  const userRole = req.user?.role || 'superadmin';
-  const userEmail = (req.user?.email || '').toLowerCase().trim();
-
-  let filtered = (candidatesStore || []).filter(c => {
-    if (!c) return false;
-    const cid = String(c.id || '').toLowerCase().trim();
-    const c_id = String(c.candidate_id || '').toLowerCase().trim();
-    const can_id = String(c.canId || '').toLowerCase().trim();
-    const cem = String(c.email || '').toLowerCase().trim();
-    return !deletedCandidateIds.has(cid) && !deletedCandidateIds.has(c_id) && !deletedCandidateIds.has(can_id) && (!cem || !deletedCandidateIds.has(cem));
-  });
-
-  if (userRole === 'recruiter') {
-    filtered = filtered.filter(c => {
-      if (!c) return false;
-      const cOwner = (c.createdBy || c.recruiterEmail || c.submittedBy || c.recruiterId || '').toLowerCase().trim();
-      return cOwner === userEmail || c.isSample || c.job_id === 'J-102';
-    });
-  }
-
-  res.json({
-    success: true,
-    candidates: filtered
-  });
-});
 
 // POST Finalize candidate rate & approve
 app.post('/api/candidates/:id/finalize-rate', async (req, res) => {

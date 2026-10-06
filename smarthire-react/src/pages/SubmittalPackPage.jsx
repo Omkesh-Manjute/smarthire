@@ -104,6 +104,12 @@ const IconMoon = () => (
 const IconDownload = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
 )
+const IconSearch = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8"></circle>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+  </svg>
+)
 
 // ─── Extract Actual Candidate Legal Name from Raw Text ──────────────────────
 export function extractCandidateRealName(rawName, resumeText) {
@@ -901,6 +907,10 @@ export default function SubmittalPackPage() {
   const [candidates, setCandidates] = useState([])
   const [jobs, setJobs] = useState([])
   const [selectedCandidateId, setSelectedCandidateId] = useState('')
+  const [candidateSearchQuery, setCandidateSearchQuery] = useState('')
+  const [isSearchingCandidates, setIsSearchingCandidates] = useState(false)
+  const [remoteSearchResults, setRemoteSearchResults] = useState([])
+  const [isCandidateSearchOpen, setIsCandidateSearchOpen] = useState(false)
   const [selectedJobId, setSelectedJobId] = useState('')
   const [selectedTemplate, setSelectedTemplate] = useState('standard')
   const [activePreviewTab, setActivePreviewTab] = useState('resume') // 'resume', 'rtr', 'all'
@@ -1040,7 +1050,7 @@ export default function SubmittalPackPage() {
     async function loadInitialData() {
       try {
         const [candsRes, jobsRes, hotlistsRes] = await Promise.all([
-          fetch('/api/candidates', {
+          fetch('/api/candidates?summary=true&limit=150', {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}` }
           }).then(r => r.json()).catch(() => ({ candidates: [] })),
           fetch('/api/jobs').then(r => r.json()).catch(() => ({ jobs: [] })),
@@ -1098,6 +1108,96 @@ export default function SubmittalPackPage() {
     }
     loadInitialData()
   }, [urlCandidateId, urlReqId])
+
+  // Current Selected Candidate Object
+  const currentSelectedCandidate = useMemo(() => {
+    return candidates.find(c => c.id === selectedCandidateId || c.candidate_id === selectedCandidateId)
+  }, [candidates, selectedCandidateId])
+
+  // Matched candidate list for Candidate Search Bar
+  const matchedCandidatesList = useMemo(() => {
+    const q = candidateSearchQuery.trim().toLowerCase()
+    if (!q) {
+      return candidates.slice(0, 8)
+    }
+    const local = candidates.filter(c => {
+      const name = (c.name || '').toLowerCase()
+      const email = (c.email || '').toLowerCase()
+      const role = (c.role || '').toLowerCase()
+      const skills = (Array.isArray(c.skills) ? c.skills.join(' ') : String(c.skills || '')).toLowerCase()
+      return name.includes(q) || email.includes(q) || role.includes(q) || skills.includes(q)
+    })
+    const seen = new Set(local.map(c => String(c.id || c.candidate_id)))
+    const remote = remoteSearchResults.filter(r => !seen.has(String(r.id || r.candidate_id)))
+    return [...local, ...remote]
+  }, [candidateSearchQuery, candidates, remoteSearchResults])
+
+  // Debounced Remote Candidate Search on Backend
+  useEffect(() => {
+    const q = candidateSearchQuery.trim()
+    if (!q || q.length < 2) {
+      setRemoteSearchResults([])
+      setIsSearchingCandidates(false)
+      return
+    }
+    const timer = setTimeout(async () => {
+      setIsSearchingCandidates(true)
+      try {
+        const res = await fetch(`/api/candidates?search=${encodeURIComponent(q)}&summary=true&limit=25`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}` }
+        })
+        const data = await res.json()
+        if (data.success && Array.isArray(data.candidates)) {
+          setRemoteSearchResults(data.candidates)
+        }
+      } catch (err) {
+        console.warn('Error searching candidates remotely:', err)
+      } finally {
+        setIsSearchingCandidates(false)
+      }
+    }, 280)
+    return () => clearTimeout(timer)
+  }, [candidateSearchQuery])
+
+  // Lazy-load full candidate resume if missing in summary
+  const loadedCandidateResumesRef = useRef(new Set())
+  useEffect(() => {
+    if (!selectedCandidateId) return
+    const cand = candidates.find(c => c.id === selectedCandidateId || c.candidate_id === selectedCandidateId)
+    const candId = cand?.id || cand?.candidate_id
+    if (cand && candId && !cand.resumeText && !cand.isVendorHotlist && !cand.isUploaded && !loadedCandidateResumesRef.current.has(candId)) {
+      loadedCandidateResumesRef.current.add(candId)
+      fetch(`/api/candidates/${candId}`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}` }
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success && data.candidate && data.candidate.resumeText) {
+            const full = data.candidate
+            setCandidates(prev => prev.map(c => ((c.id || c.candidate_id) === candId ? { ...c, ...full } : c)))
+          }
+        })
+        .catch(err => console.warn('Could not fetch full candidate details:', err))
+    }
+  }, [selectedCandidateId, candidates])
+
+  // Select candidate handler
+  const handleSelectCandidate = async (cand) => {
+    if (!cand) return
+    const candId = cand.id || cand.candidate_id
+    setCandidates(prev => {
+      const exists = prev.some(c => (c.id || c.candidate_id) === candId)
+      return exists ? prev : [cand, ...prev]
+    })
+    setSelectedCandidateId(candId)
+    setIsCandidateSearchOpen(false)
+    setCandidateSearchQuery('')
+    if (cand.isUploaded) {
+      setUploadedFileName(cand.fileName || cand.name || '')
+    } else {
+      setUploadedFileName('')
+    }
+  }
 
   // 2. Dynamic Position & Requisition Binding when Target Job Changes
   useEffect(() => {
@@ -2811,86 +2911,298 @@ ${coversheet.references}
               </span>
             </div>
 
-            {/* 0. Upload Candidate Resume Card */}
+            {/* 0. Candidate Selection & Packaging Card */}
             <div style={styles.uploadCard}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                 <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span>Upload Candidate Resume</span>
+                  <span>Candidate Profile & Submittal Packaging</span>
                 </div>
-                <span style={{ fontSize: '10px', fontWeight: '700', color: '#047857', background: '#ECFDF5', padding: '2px 6px', borderRadius: 4, border: '1px solid #A7F3D0' }}>
-                  DOCX • PDF • TXT
+                <span style={{ fontSize: '10px', fontWeight: '700', color: '#0369A1', background: '#F0F9FF', padding: '2px 8px', borderRadius: 4, border: '1px solid #BAE6FD' }}>
+                  Search • Upload
                 </span>
               </div>
-              <p style={{ fontSize: '11px', color: '#64748B', margin: '0 0 10px 0', lineHeight: 1.4 }}>
-                Upload candidate resume to auto-extract details, format projects & bullets, and prepare submittal pack.
-              </p>
-              
-              <input
-                type="file"
-                ref={resumeFileInputRef}
-                style={{ display: 'none' }}
-                accept=".docx,.doc,.pdf,.txt,.rtf"
-                onChange={handleResumeFileUpload}
-              />
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                <button
-                  type="button"
-                  onClick={() => resumeFileInputRef.current?.click()}
-                  disabled={isParsingResume}
-                  style={styles.uploadBtnPrimary}
-                >
-                  <IconUpload /> <span>{isParsingResume ? 'Parsing...' : 'Upload File'}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowPasteModal(true)}
-                  style={styles.uploadBtnSecondary}
-                >
-                  <IconFileText /> <span>Paste Resume</span>
-                </button>
-              </div>
-
-              {uploadedFileName && (
-                <div style={{ marginTop: 8, padding: '5px 8px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 6, fontSize: '11px', color: '#15803D', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '85%' }}>
-                    ✓ <b>{uploadedFileName}</b>
-                  </span>
+              {/* A. If Candidate is Selected, display active candidate card */}
+              {currentSelectedCandidate && !isCandidateSearchOpen && (
+                <div style={{
+                  padding: '10px 12px',
+                  background: '#F8FAFC',
+                  border: '1px solid #CBD5E1',
+                  borderRadius: 8,
+                  marginBottom: 10,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 10
+                }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '800', color: '#0F172A' }}>
+                        {extractCandidateRealName(currentSelectedCandidate.name, currentSelectedCandidate.resumeText)}
+                      </span>
+                      <span style={{
+                        fontSize: '9.5px',
+                        fontWeight: '700',
+                        padding: '1px 6px',
+                        borderRadius: 4,
+                        textTransform: 'uppercase',
+                        background: currentSelectedCandidate.isVendorHotlist ? '#FEF3C7' : (currentSelectedCandidate.isUploaded ? '#ECFDF5' : '#EFF6FF'),
+                        color: currentSelectedCandidate.isVendorHotlist ? '#92400E' : (currentSelectedCandidate.isUploaded ? '#065F46' : '#1D4ED8'),
+                        border: `1px solid ${currentSelectedCandidate.isVendorHotlist ? '#FDE68A' : (currentSelectedCandidate.isUploaded ? '#A7F3D0' : '#BFDBFE')}`
+                      }}>
+                        {currentSelectedCandidate.isVendorHotlist ? `Bench: ${currentSelectedCandidate.vendorCompany || 'Vendor'}` : (currentSelectedCandidate.isUploaded ? 'Uploaded Resume' : 'ATS Pool')}
+                      </span>
+                      {currentSelectedCandidate.visaStatus && (
+                        <span style={{ fontSize: '9.5px', fontWeight: '600', color: '#475569', background: '#F1F5F9', padding: '1px 5px', borderRadius: 3, border: '1px solid #E2E8F0' }}>
+                          {currentSelectedCandidate.visaStatus}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#64748B', marginTop: 3, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                      <span><b>Email:</b> {currentSelectedCandidate.email || 'N/A'}</span>
+                      <span><b>Role:</b> {currentSelectedCandidate.role || 'Consultant'}</span>
+                      <span><b>Exp:</b> {currentSelectedCandidate.experience || 'Experienced'}</span>
+                    </div>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => setUploadedFileName('')}
-                    style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#94A3B8', fontSize: '12px' }}
+                    onClick={() => {
+                      setIsCandidateSearchOpen(true)
+                      setCandidateSearchQuery('')
+                    }}
+                    style={{
+                      padding: '5px 10px',
+                      fontSize: '11px',
+                      fontWeight: '700',
+                      color: '#2563EB',
+                      backgroundColor: '#FFFFFF',
+                      border: '1px solid #93C5FD',
+                      borderRadius: 6,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4
+                    }}
                   >
-                    ✕
+                    <IconSearch />
+                    <span>Change</span>
                   </button>
                 </div>
               )}
 
-              {/* Or Select Existing Candidate from Pool */}
-              <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid #E2E8F0' }}>
-                <label style={{ fontSize: '11px', fontWeight: '700', color: '#475569', display: 'block', marginBottom: 4 }}>
-                  Or Select Existing Candidate ({candidates.length}):
-                </label>
-                <select
-                  value={selectedCandidateId}
-                  onChange={e => setSelectedCandidateId(e.target.value)}
-                  style={{
-                    ...styles.selectInput,
-                    width: '100%',
-                    fontSize: '11.5px',
-                    padding: '6px 10px',
-                    backgroundColor: '#F8FAFC'
-                  }}
-                >
-                  {candidates.map(c => {
-                    const displayName = extractCandidateRealName(c.name, c.resumeText)
-                    return (
-                      <option key={c.id || c.candidate_id} value={c.id || c.candidate_id}>
-                        {c.isUploaded ? '📁 [Uploaded] ' : ''}{displayName} — {c.role || 'Specialist'} {c.isVendorHotlist ? `(Bench: ${c.vendorCompany})` : ''}
-                      </option>
-                    )
-                  })}
-                </select>
+              {/* B. Search Candidate by Name or Email */}
+              {(isCandidateSearchOpen || !currentSelectedCandidate) && (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <label style={{ fontSize: '11px', fontWeight: '700', color: '#334155' }}>
+                      Search Candidate (Name, Email, or Skill):
+                    </label>
+                    {currentSelectedCandidate && (
+                      <button
+                        type="button"
+                        onClick={() => setIsCandidateSearchOpen(false)}
+                        style={{ background: 'none', border: 'none', color: '#64748B', fontSize: '11px', cursor: 'pointer', padding: 0 }}
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="text"
+                      value={candidateSearchQuery}
+                      onChange={e => setCandidateSearchQuery(e.target.value)}
+                      placeholder="Type candidate name or email (e.g. Rahul, rohit@...)..."
+                      style={{
+                        ...styles.input,
+                        width: '100%',
+                        fontSize: '12px',
+                        padding: '8px 30px 8px 30px',
+                        backgroundColor: '#FFFFFF',
+                        border: '1px solid #94A3B8',
+                        borderRadius: 6,
+                        boxSizing: 'border-box'
+                      }}
+                      autoFocus={isCandidateSearchOpen}
+                    />
+                    <span style={{ position: 'absolute', left: 9, top: 9, color: '#64748B', pointerEvents: 'none' }}>
+                      <IconSearch />
+                    </span>
+                    {candidateSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setCandidateSearchQuery('')}
+                        style={{ position: 'absolute', right: 8, top: 7, border: 'none', background: 'none', color: '#94A3B8', cursor: 'pointer', fontSize: '14px' }}
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Matching Candidate Results List */}
+                  <div style={{
+                    marginTop: 6,
+                    maxHeight: 220,
+                    overflowY: 'auto',
+                    border: '1px solid #E2E8F0',
+                    borderRadius: 6,
+                    backgroundColor: '#FFFFFF'
+                  }}>
+                    {isSearchingCandidates && (
+                      <div style={{ padding: '8px 12px', fontSize: '11.5px', color: '#64748B', textAlign: 'center' }}>
+                        Searching database...
+                      </div>
+                    )}
+
+                    {!isSearchingCandidates && matchedCandidatesList.length > 0 && (
+                      <div>
+                        <div style={{ padding: '4px 10px', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', fontSize: '10px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>
+                          Matching Candidates ({matchedCandidatesList.length}):
+                        </div>
+                        {matchedCandidatesList.map(c => {
+                          const displayName = extractCandidateRealName(c.name, c.resumeText)
+                          const isSelected = selectedCandidateId && (c.id === selectedCandidateId || c.candidate_id === selectedCandidateId)
+                          return (
+                            <div
+                              key={c.id || c.candidate_id}
+                              onClick={() => handleSelectCandidate(c)}
+                              style={{
+                                padding: '8px 10px',
+                                borderBottom: '1px solid #F1F5F9',
+                                cursor: 'pointer',
+                                backgroundColor: isSelected ? '#EFF6FF' : '#FFFFFF',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: 8,
+                                transition: 'background-color 0.15s ease'
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.backgroundColor = isSelected ? '#DBEAFE' : '#F8FAFC'}
+                              onMouseLeave={e => e.currentTarget.style.backgroundColor = isSelected ? '#EFF6FF' : '#FFFFFF'}
+                            >
+                              <div style={{ minWidth: 0, flex: 1 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  <span style={{ fontSize: '12px', fontWeight: '700', color: '#0F172A' }}>
+                                    {displayName}
+                                  </span>
+                                  {c.isVendorHotlist && (
+                                    <span style={{ fontSize: '9px', fontWeight: '600', color: '#B45309', background: '#FEF3C7', padding: '1px 5px', borderRadius: 3 }}>
+                                      Bench
+                                    </span>
+                                  )}
+                                  {c.isUploaded && (
+                                    <span style={{ fontSize: '9px', fontWeight: '600', color: '#065F46', background: '#ECFDF5', padding: '1px 5px', borderRadius: 3 }}>
+                                      Uploaded
+                                    </span>
+                                  )}
+                                </div>
+                                <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {c.email ? `${c.email} • ` : ''}{c.role || 'Specialist'} {c.experience ? `• ${c.experience}` : ''}
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleSelectCandidate(c)
+                                }}
+                                style={{
+                                  padding: '4px 8px',
+                                  fontSize: '10.5px',
+                                  fontWeight: '700',
+                                  backgroundColor: isSelected ? '#2563EB' : '#F1F5F9',
+                                  color: isSelected ? '#FFFFFF' : '#334155',
+                                  border: `1px solid ${isSelected ? '#2563EB' : '#CBD5E1'}`,
+                                  borderRadius: 4,
+                                  cursor: 'pointer',
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                {isSelected ? 'Selected' : 'Select'}
+                              </button>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    {!isSearchingCandidates && matchedCandidatesList.length === 0 && candidateSearchQuery.trim().length > 0 && (
+                      <div style={{ padding: '12px', textAlign: 'center', background: '#FFFBEB', border: '1px dashed #FCD34D' }}>
+                        <div style={{ fontSize: '11.5px', fontWeight: '700', color: '#92400E', marginBottom: 4 }}>
+                          No candidate found for "{candidateSearchQuery}"
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#78350F', marginBottom: 8 }}>
+                          Upload their resume file or paste resume text below:
+                        </div>
+                        <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+                          <button
+                            type="button"
+                            onClick={() => resumeFileInputRef.current?.click()}
+                            style={{ padding: '5px 10px', fontSize: '11px', fontWeight: '700', color: '#FFFFFF', backgroundColor: '#0F172A', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+                          >
+                            Upload Resume File
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowPasteModal(true)}
+                            style={{ padding: '5px 10px', fontSize: '11px', fontWeight: '700', color: '#1E293B', backgroundColor: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: 4, cursor: 'pointer' }}
+                          >
+                            Paste Resume
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* C. Direct Resume Upload & Paste Actions (Always Accessible) */}
+              <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #F1F5F9' }}>
+                <div style={{ fontSize: '10.5px', fontWeight: '700', color: '#64748B', marginBottom: 6, textTransform: 'uppercase' }}>
+                  Or Upload / Paste Candidate Resume:
+                </div>
+                
+                <input
+                  type="file"
+                  ref={resumeFileInputRef}
+                  style={{ display: 'none' }}
+                  accept=".docx,.doc,.pdf,.txt,.rtf"
+                  onChange={handleResumeFileUpload}
+                />
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => resumeFileInputRef.current?.click()}
+                    disabled={isParsingResume}
+                    style={styles.uploadBtnPrimary}
+                  >
+                    <IconUpload /> <span>{isParsingResume ? 'Parsing...' : 'Upload File'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowPasteModal(true)}
+                    style={styles.uploadBtnSecondary}
+                  >
+                    <IconFileText /> <span>Paste Resume</span>
+                  </button>
+                </div>
+
+                {uploadedFileName && (
+                  <div style={{ marginTop: 8, padding: '5px 8px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 6, fontSize: '11px', color: '#15803D', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '85%' }}>
+                      ✓ <b>{uploadedFileName}</b>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setUploadedFileName('')}
+                      style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#94A3B8', fontSize: '12px' }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
