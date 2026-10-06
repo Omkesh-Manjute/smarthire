@@ -75,6 +75,21 @@ try {
   inquiriesStore = [];
 }
 
+// ─── Deleted Threads Store (Permanent Deletion) ──────────────────────────────
+const DELETED_THREADS_FILE = path.join(__dirname, 'deleted_threads.json');
+let deletedThreadsStore = new Set();
+try {
+  if (fs.existsSync(DELETED_THREADS_FILE)) {
+    const raw = fs.readFileSync(DELETED_THREADS_FILE, 'utf8');
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      deletedThreadsStore = new Set(parsed.map(x => String(x).toLowerCase().trim()));
+    }
+  }
+} catch (e) {
+  deletedThreadsStore = new Set();
+}
+
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
@@ -9081,20 +9096,40 @@ app.get('/api/messages', authenticateToken, (req, res) => {
   }
 
   const candMap = new Map();
+  const emailMap = new Map();
   if (Array.isArray(candidatesStore)) {
     for (const c of candidatesStore) {
       if (!c) continue;
       if (c.id) candMap.set(c.id, c);
       if (c.candidate_id) candMap.set(c.candidate_id, c);
       if (c.sessionId) candMap.set(c.sessionId, c);
+      if (c.email) emailMap.set(c.email.toLowerCase().trim(), c);
+    }
+  }
+  if (Array.isArray(screeningStore)) {
+    for (const s of screeningStore) {
+      if (!s) continue;
+      const em = (s.email || s.candidateEmail || '').toLowerCase().trim();
+      if (em && !emailMap.has(em)) emailMap.set(em, s);
     }
   }
 
   // Fast O(1) Helper to find candidate or session metadata
-  const getCandidateMeta = (candidateId) => {
-    const session = sessionMap.get(candidateId) || null;
-    const cand = candMap.get(candidateId) || null;
+  const getCandidateMeta = (candidateId, m = null) => {
+    let session = sessionMap.get(candidateId) || null;
+    let cand = candMap.get(candidateId) || null;
     
+    if (!cand && !session) {
+      const emailMatch = (m && m.to) || (typeof candidateId === 'string' && candidateId.includes('@') ? candidateId : null);
+      if (emailMatch) {
+        const found = emailMap.get(emailMatch.toLowerCase().trim());
+        if (found) {
+          if (found.sessionId) session = found;
+          else cand = found;
+        }
+      }
+    }
+
     const recEmail = (
       (session && (session.recruiterEmail || session.referredByEmail || session.createdBy)) ||
       (cand && (cand.recruiterEmail || cand.submittedBy || cand.createdBy)) ||
@@ -9118,16 +9153,39 @@ app.get('/api/messages', authenticateToken, (req, res) => {
     return { session, cand, recEmail, refCode, recName, jobId };
   };
 
+  const resolveServerCandidateName = (m, meta) => {
+    if (m.candidateName && m.candidateName !== 'Candidate' && !m.candidateName.includes('@')) {
+      return m.candidateName;
+    }
+    const candName = meta.cand?.name || meta.cand?.candidateName || meta.session?.candidateName || meta.session?.name;
+    if (candName && candName !== 'Candidate') return candName;
+
+    // Check email
+    const emailStr = m.to || (typeof m.candidateId === 'string' && m.candidateId.includes('@') ? m.candidateId : null) || (m.text && m.text.match(/\[EMAIL SENT to ([^ \],]+)/i)?.[1]);
+    if (emailStr) {
+      const cleanEm = emailStr.toLowerCase().trim();
+      const byEm = emailMap.get(cleanEm);
+      if (byEm && (byEm.name || byEm.candidateName)) return byEm.name || byEm.candidateName;
+      const prefix = cleanEm.split('@')[0].replace(/[._-]/g, ' ');
+      const words = prefix.split(' ').filter(Boolean);
+      if (words.length > 0) {
+        return words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+      }
+    }
+    return m.candidateName || 'Candidate';
+  };
+
   // Group messages by candidateId and get the latest message per thread
   const threadsMap = {};
   messagesStore.forEach(m => {
     if (!m || !m.candidateId) return;
     if (!threadsMap[m.candidateId]) {
-      const meta = getCandidateMeta(m.candidateId);
+      const meta = getCandidateMeta(m.candidateId, m);
+      const resolvedName = resolveServerCandidateName(m, meta);
       threadsMap[m.candidateId] = {
         candidateId: m.candidateId,
-        candidateName: m.candidateName || 'Candidate',
-        jobTitle: m.jobTitle || '',
+        candidateName: resolvedName,
+        jobTitle: m.jobTitle || (meta.cand && (meta.cand.role || meta.cand.matchedJobTitle)) || (meta.session && meta.session.jobTitle) || '',
         lastMessage: m.text,
         lastMessageTime: m.timestamp,
         unreadCount: 0,
@@ -9143,7 +9201,9 @@ app.get('/api/messages', authenticateToken, (req, res) => {
     if (new Date(m.timestamp) >= new Date(threadsMap[m.candidateId].lastMessageTime)) {
       threadsMap[m.candidateId].lastMessage = m.text;
       threadsMap[m.candidateId].lastMessageTime = m.timestamp;
-      if (m.candidateName) threadsMap[m.candidateId].candidateName = m.candidateName;
+      const meta = getCandidateMeta(m.candidateId, m);
+      const resolvedName = resolveServerCandidateName(m, meta);
+      if (resolvedName && resolvedName !== 'Candidate') threadsMap[m.candidateId].candidateName = resolvedName;
       if (m.jobTitle) threadsMap[m.candidateId].jobTitle = m.jobTitle;
     }
     // Count unread incoming messages
@@ -9157,6 +9217,9 @@ app.get('/api/messages', authenticateToken, (req, res) => {
   if (Array.isArray(screeningStore)) {
     screeningStore.forEach(s => {
       if (!s || !s.sessionId) return;
+      const sId = String(s.sessionId).toLowerCase().trim();
+      const sEm = String(s.candidateEmail || s.email || '').toLowerCase().trim();
+      if (deletedThreadsStore.has(sId) || (sEm && deletedThreadsStore.has(sEm))) return;
       if (!threadsMap[s.sessionId]) {
         const meta = getCandidateMeta(s.sessionId);
         threadsMap[s.sessionId] = {
@@ -9180,7 +9243,11 @@ app.get('/api/messages', authenticateToken, (req, res) => {
   const userRole = req.user?.role || 'superadmin';
   const userEmail = (req.user?.email || '').toLowerCase().trim();
 
-  let allThreads = Object.values(threadsMap);
+  let allThreads = Object.values(threadsMap).filter(t => {
+    const cId = String(t.candidateId || '').trim().toLowerCase();
+    const cEm = String(t.email || t.recruiterEmail || '').trim().toLowerCase();
+    return !deletedThreadsStore.has(cId) && (!cEm || !deletedThreadsStore.has(cEm));
+  });
 
   let filteredThreads = allThreads;
 
@@ -9231,16 +9298,55 @@ app.post('/api/messages/mark-all-read', authenticateToken, (req, res) => {
   res.json({ success: true });
 });
 
-// Delete a conversation thread and its associated inquiry if any
 app.delete('/api/messages/:candidateId', authenticateToken, (req, res) => {
   const { candidateId } = req.params;
   const targetId = String(candidateId || '').trim().toLowerCase();
+  if (!targetId) return res.status(400).json({ success: false, message: 'Invalid ID' });
   
+  deletedThreadsStore.add(targetId);
+
+  // Cross-reference any candidate / session matching targetId and add all their identifiers
+  if (Array.isArray(candidatesStore)) {
+    const matched = candidatesStore.find(c =>
+      c && (
+        String(c.id || '').toLowerCase() === targetId ||
+        String(c.candidate_id || '').toLowerCase() === targetId ||
+        String(c.sessionId || '').toLowerCase() === targetId ||
+        String(c.email || '').toLowerCase() === targetId
+      )
+    );
+    if (matched) {
+      if (matched.id) deletedThreadsStore.add(String(matched.id).toLowerCase());
+      if (matched.candidate_id) deletedThreadsStore.add(String(matched.candidate_id).toLowerCase());
+      if (matched.sessionId) deletedThreadsStore.add(String(matched.sessionId).toLowerCase());
+      if (matched.email) deletedThreadsStore.add(String(matched.email).toLowerCase());
+    }
+  }
+
+  if (Array.isArray(screeningStore)) {
+    const matchedSess = screeningStore.find(s =>
+      s && (
+        String(s.sessionId || '').toLowerCase() === targetId ||
+        String(s.candidateEmail || s.email || '').toLowerCase() === targetId
+      )
+    );
+    if (matchedSess) {
+      if (matchedSess.sessionId) deletedThreadsStore.add(String(matchedSess.sessionId).toLowerCase());
+      const sem = matchedSess.candidateEmail || matchedSess.email;
+      if (sem) deletedThreadsStore.add(String(sem).toLowerCase());
+    }
+  }
+
+  try {
+    fs.writeFileSync(DELETED_THREADS_FILE, JSON.stringify(Array.from(deletedThreadsStore), null, 2));
+  } catch(e) {}
+
   messagesStore = messagesStore.filter(m => {
     if (!m) return false;
     const mCandId = String(m.candidateId || '').trim().toLowerCase();
     const mId = String(m.id || '').trim().toLowerCase();
-    return mCandId !== targetId && mId !== targetId;
+    const mTo = String(m.to || '').trim().toLowerCase();
+    return !deletedThreadsStore.has(mCandId) && !deletedThreadsStore.has(mId) && (!mTo || !deletedThreadsStore.has(mTo));
   });
   try { fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messagesStore, null, 2)); } catch(e) {}
 
@@ -9248,7 +9354,8 @@ app.delete('/api/messages/:candidateId', authenticateToken, (req, res) => {
     inquiriesStore = inquiriesStore.filter(inq => {
       if (!inq) return false;
       const inqId = String(inq.id || '').trim().toLowerCase();
-      return inqId !== targetId;
+      const inqEm = String(inq.email || '').trim().toLowerCase();
+      return !deletedThreadsStore.has(inqId) && (!inqEm || !deletedThreadsStore.has(inqEm));
     });
     try { fs.writeFileSync(INQUIRIES_FILE, JSON.stringify(inquiriesStore, null, 2)); } catch(e) {}
   }
@@ -11268,10 +11375,11 @@ app.post('/api/recruiter/send-direct-email', express.json(), async (req, res) =>
   }
 
   // Record outgoing message into thread store
-  if (candidateId) {
+  if (candidateId || to) {
     const threadMsg = {
       id: `msg-${Date.now()}`,
-      candidateId: String(candidateId),
+      candidateId: String(candidateId || to),
+      candidateName: candidateName || '',
       sender: 'recruiter',
       senderName: senderName,
       senderEmail: senderEmail,
