@@ -145,7 +145,43 @@ The following high-impact features and optimizations have been agreed upon and p
   - Verified disk hygiene: 7.4GB available (60% used), temporary archives cleaned immediately.
   - Verified live domain `https://smarthireus.com` returning HTTP 200 with new active bundle `index-DnpqHBjI.js`.
 
+### 2026-10-06 — Screening Polish: 1-Click Recruiter Assignment, Email Subtext Removal, Short Date Format & Review Button Removal
+- **Context & Objectives**:
+  - The user reported that all candidates currently display "Omkesh" with his email underneath, even when generated/sent by other recruiters.
+  - The user requested:
+    1. Clarification and fix for how recruiter ownership is checked and assigned going forward.
+    2. Ability to update/reassign recruiter directly on existing candidates.
+    3. Remove email subtext underneath the recruiter's name in the table cell.
+    4. Remove redundant "Review" button from Actions (since clicking candidate name/row already opens the review drawer).
+    5. Shorten "Submitted" data column (e.g. `Oct 5` or `Active` badge instead of long dates).
+    6. Provide recommendations for further screening enhancements.
+- **Key Solutions & Deliverables**:
+  1. **1-Click Recruiter Assignment & Organization-Wide Selector**:
+     - Dynamically derived `allAvailableRecruiters` across all team members (`Omkesh`, `Sukamal Chatterjee`, `Gourav`, `Vaibhav Bisen`, `Naveen Bhardwaj`, `Rahul Sharma`, `Priya Verma`, `Alok Manager`).
+     - Added an interactive inline `<select>` directly inside each candidate row's `RECRUITER` cell: recruiters can change or reassign ownership with 1 click!
+     - Added `POST` & `PATCH /api/screening/:sessionId/recruiter` on Express backend to persist recruiter reassignments directly to disk and MongoDB Atlas.
+     - Added "Assign Recruiter / Screening Owner" dropdown in the **Create Screening Campaign Modal** so creators can select who owns the screening link upon generation.
+     - Added "Assigned Recruiter" dropdown inside the **Candidate Review Drawer** metadata card for easy drawer reassignment.
+  2. **Removed Email Subtext Under Recruiter Name**:
+     - Completely removed `session.createdByEmail` / `session.recruiterEmail` from the table cell, leaving a clean, compact recruiter badge/dropdown.
+  3. **Shortened Submitted Data**:
+     - Formatted completed submission dates to crisp `Oct 5` format (with full timestamp on hover tooltip) and pending sessions to a clean green `Active` badge.
+  4. **Removed Redundant Review Button & Added Quick Copy Link**:
+     - Removed the `Review` button from the Actions column. Clicking candidate name or row opens the review modal.
+     - Added a handy 1-click `Copy Link` button in the Actions column for active/pending candidate invites.
+  5. **Recruiter Filter Dropdown & Search**:
+     - Added `Recruiter: [All Recruiters ▾]` filter dropdown next to Status and Format.
+     - Added recruiter name matching in the global screening search bar.
+- **Verification & Deployment**:
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (active bundle `index-qSSDmfjr.js`).
+  - Git committed (`12a5b70`) and pushed to GitHub `origin/main`.
+  - Deployed production bundle to AWS Lightsail server (`34.194.119.199`), extracted to webroot `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Updated `server/index.js` on Lightsail with recruiter assignment endpoints and reloaded PM2 `smarthire-ats`.
+  - Verified disk hygiene: 7.4GB available (60% used), temporary archives cleaned immediately.
+  - Verified live domain `https://smarthireus.com` returning HTTP 200 with new active bundle `index-qSSDmfjr.js`.
+
 ### 2026-10-06 — Screening Overhaul: Recruiter Column, Location Discrepancy Mismatch Audit, Pinned Non-Hiding Question Tabs, Top Bar Decluttering & Accidental Skip Guards
+
 - **Context & Objectives**:
   - The user requested several specific UI/UX fixes and features on the Candidate Screening module (`/ats?tab=screening`):
     1. **Recruiter Column ("kisne genrate kiya vo bhi ana cahiye like recruiter ka name ak cloum mai")**: Added a dedicated `RECRUITER` column displaying who generated the screening campaign link (`getRecruiterName`), with backend metadata persistence and enrichment.
