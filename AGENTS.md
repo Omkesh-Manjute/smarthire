@@ -107,6 +107,29 @@ The following high-impact features and optimizations have been agreed upon and p
 
 ## Recent Changes
 
+### 2026-10-07 — Submittal Pack: Executive Hero Banner with Visual Image, Live Requisition Badges & Smooth SaaS Styling
+- **Context & Objectives**:
+  - The user requested:
+    - *"bhai ye koi chnages nahi dikh raha hai abhi dekho"*
+    - Confirmed that the user was specifically looking for the **visible Hero Banner card** on the page with the visual illustration, dynamic requisition badges, and smooth gradient styling rather than just subtle backend/top button updates.
+  - **Implementations**:
+    1. **Executive Hero Banner Card**:
+       - Added high-end dark slate/indigo gradient card (`background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 45%, #0F172A 100%)`) with soft glow (`box-shadow: 0 12px 30px -8px rgba(15, 23, 42, 0.35)`).
+       - Features badge: `⚡ SmartHire Packaging Studio • Multi-State ATS`.
+       - Title & Subtitle: `Client Submittal & Right to Represent (RTR) Hub`.
+       - Dynamic Live Parameter Chips: `#${vmsNumber} • ${positionTitle}`, `Candidate: ${name}`, `Rate: $${rate}/hr (${emp})`, `Client: ${client}`.
+       - Quick format switcher pills for instant 1-click template switching directly from the banner.
+       - Embedded visual banner image (`/images/submittal-banner.jpg`) in a glass-framed card with glowing border and `Verified Legal RTR • E-Sign Ready` pill.
+    2. **Refined Smooth Color Effects**:
+       - Smooth floating `selectorBar` card with soft shadow (`0 2px 6px rgba(0,0,0,0.03)`).
+       - Soft rounded-xl card borders and subtle transitions across all buttons.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (active bundle `index-Dml1Gji1.js`).
+  - Git committed (`07bbd64`) and pushed to GitHub `origin/main`.
+  - Deployed production bundle to AWS Lightsail server (`34.194.119.199`), extracted to `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Verified banner image reachable at `https://smarthireus.com/images/submittal-banner.jpg` (HTTP 200 OK, 585KB).
+  - Verified live domain `https://smarthireus.com/submittal-pack` returning HTTP 200 with new active bundle `index-Dml1Gji1.js`.
+
 ### 2026-10-07 — Submittal Pack: UI Decluttering, Streamlined Action Buttons, Stale Data Sync Fix & Smooth Design
 - **Context & Objectives**:
   - The user requested:
