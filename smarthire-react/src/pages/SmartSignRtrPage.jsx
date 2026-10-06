@@ -196,6 +196,35 @@ Candidate Representation Term: 60 Days`,
         { id: 'f3', type: 'name', label: 'Candidate Full Legal Name', required: true, x: 60, y: 460, signerIndex: 0 }
       ]
     }
+  },
+  {
+    id: 'south_carolina_sosc',
+    name: 'State of South Carolina (SOSC) E-RTR',
+    description: 'Official State of South Carolina (SOSC) Right to Represent with Posting ID and Position Title.',
+    rate: '$85.00/hr',
+    client: 'State of South Carolina (SOSC)',
+    doc: {
+      id: 'sosc-rtr-doc',
+      title: 'State of South Carolina (SOSC) Right to Represent Agreement',
+      contractNo: 'SC-SOSC-2026',
+      maxBillRate: '$95.00',
+      clientName: 'State of South Carolina (SOSC)',
+      content: `SOSC RIGHT TO REPRESENT - POSTING ID -[Req #]
+
+Please confirm that COOLSOFT LLC has the right to submit you for consideration to the [Position Title] - position at "SOSC" under posting [Req #].
+
+Candidate Declaration:
+I, [Candidate Full Legal Name], confirm that COOLSOFT LLC has the exclusive right to submit me for consideration to the [Position Title] position at "SOSC" under posting [Req #].
+
+Agreed Hourly Rate: As designated in submittal packaging.
+Client Agency: State of South Carolina (SOSC)
+Representation Term: 60 Days`,
+      defaultFields: [
+        { id: 'f1', type: 'signature', label: 'Candidate Signature', required: true, x: 60, y: 520, signerIndex: 0 },
+        { id: 'f2', type: 'date', label: 'Date signed', required: true, x: 420, y: 520, signerIndex: 0 },
+        { id: 'f3', type: 'name', label: 'Candidate Full Legal Name', required: true, x: 60, y: 460, signerIndex: 0 }
+      ]
+    }
   }
 ]
 
@@ -316,6 +345,8 @@ export default function SmartSignRtrPage() {
             matchedTpl = PREBUILT_TEMPLATES.find(t => t.id === 'texas_dir')
           } else if (tplParam?.includes('nebraska')) {
             matchedTpl = PREBUILT_TEMPLATES.find(t => t.id === 'nebraska_state')
+          } else if (tplParam?.includes('south_carolina') || tplParam?.includes('sosc')) {
+            matchedTpl = PREBUILT_TEMPLATES.find(t => t.id === 'south_carolina_sosc')
           } else if (tplParam?.includes('standard')) {
             matchedTpl = PREBUILT_TEMPLATES.find(t => t.id === 'standard_c2c')
           }

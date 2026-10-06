@@ -107,19 +107,20 @@ const IconDownload = () => (
 
 // ─── Extract Actual Candidate Legal Name from Raw Text ──────────────────────
 export function extractCandidateRealName(rawName, resumeText) {
-  const isGeneric = !rawName || 
-    rawName.trim().startsWith('.') || 
-    /^(net|\.net|java|\.java|developer|engineer|consultant|hotlist|c2c|resume|specialist|lead)$/i.test(rawName.trim());
+  let cleaned = (rawName || '').replace(/^(Resume\s+of|Profile\s+of|CV\s+of|Bio\s+of|Of\s+)/i, '').trim();
+  const isGeneric = !cleaned || 
+    cleaned.startsWith('.') || 
+    /^(net|\.net|java|\.java|developer|engineer|consultant|hotlist|c2c|resume|specialist|lead)$/i.test(cleaned);
   
-  if (!isGeneric && rawName.trim().length > 2) {
-    return rawName.trim();
+  if (!isGeneric && cleaned.length > 2) {
+    return cleaned;
   }
 
-  if (!resumeText) return rawName || 'Candidate Full Legal Name';
+  if (!resumeText) return cleaned || 'Candidate Full Legal Name';
 
   const lines = resumeText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   for (let i = 0; i < Math.min(lines.length, 8); i++) {
-    const l = lines[i];
+    let l = lines[i].replace(/^(Resume\s+of|Profile\s+of|CV\s+of|Bio\s+of|Of\s+)/i, '').trim();
     if (
       l.length >= 2 && 
       l.length <= 35 && 
@@ -131,7 +132,7 @@ export function extractCandidateRealName(rawName, resumeText) {
       return l;
     }
   }
-  return rawName || 'Candidate Full Legal Name';
+  return cleaned || 'Candidate Full Legal Name';
 }
 
 // ─── Extract Rich Candidate Metadata from Raw Resume Text ───────────────────
@@ -725,6 +726,24 @@ $${rate} /hour (${emp})
 
 Candidate Employment Type:
 ${emp}`;
+  } else if (selectedTemplate === 'south_carolina_sosc') {
+    subject = `SOSC Right to Represent-Posting ID -${reqNumber}`;
+    ackBody = `Please confirm that COOLSOFT LLC has the right to submit you for consideration to the ${title} - position at "SOSC" under posting ${reqNumber}.`;
+    const fullEmailBody = `Hi ${fname},
+
+${ackBody}
+
+Please reply directly to this email confirming your authorization:
+"I, ${name}, confirm that COOLSOFT LLC has the right to submit me for consideration to the ${title} position at SOSC under posting ${reqNumber}."
+
+${recruiterSignature}`;
+
+    return {
+      subject,
+      ackBody,
+      fullEmailBody,
+      recruiterSignature
+    };
   } else if (selectedTemplate === 'texas_dir') {
     subject = `DIR-CPO-ITSA: ${title} (Req #${reqNumber})`;
     ackBody = `State of Texas Department of Information Resources (DIR)
@@ -792,6 +811,16 @@ export const SUBMITTAL_TEMPLATES = [
     contractName: 'Master Professional Services Agreement',
     hasCaiBox: false,
     description: 'Corporate client coversheet with agency letterhead, competencies matrix, and standard RTR.'
+  },
+  {
+    id: 'south_carolina_sosc',
+    name: 'State of South Carolina (SOSC Format)',
+    badge: 'South Carolina SOSC',
+    agencyName: 'COOLSOFT LLC',
+    mspName: 'State of South Carolina (SOSC)',
+    contractName: 'State of South Carolina IT Staff Augmentation Services',
+    hasCaiBox: false,
+    description: 'Official State of South Carolina (SOSC) Right to Represent with Posting ID and Position Title binding.'
   },
   {
     id: 'nc_cai',
@@ -1103,6 +1132,8 @@ export default function SubmittalPackPage() {
       setSelectedTemplate('texas_dir')
     } else if (lowerCombined.includes('nebraska') || lowerCombined.includes('nedoc') || lowerCombined.includes('state of nebraska')) {
       setSelectedTemplate('nebraska_state')
+    } else if (lowerCombined.includes('sosc') || lowerCombined.includes('south carolina') || lowerCombined.includes('sc.gov')) {
+      setSelectedTemplate('south_carolina_sosc')
     }
     setIsLiveEditDirty(false)
   }, [selectedJobId, jobs])
@@ -1544,6 +1575,49 @@ EDUCATION & CERTIFICATIONS
         <p style="margin: 0 0 10px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; line-height: 17px; font-weight: bold; text-decoration: underline; color: #FF0000;">
           ONCE CANDIDATE RESPONDS VIA EMAIL AGREEING WITH YOUR REPRESENTATION, SAVE ENTIRE EMAIL THREAD AS A PDF DOC AND UPLOAD IN CANDIDATE’S VECTORVMS PROFILE
         </p>
+      `
+    }
+
+    if (selectedTemplate === 'south_carolina_sosc') {
+      const candidateFirst = candidateName ? candidateName.split(' ')[0] : 'Candidate'
+      return `
+        <div style="border-bottom: 2px solid #0F172A; padding-bottom: 10px; margin-bottom: 14px;">
+          <p style="margin: 0 0 6px 0; font-family: Verdana, Geneva, sans-serif; font-size: 13.5px; font-weight: bold; color: #0F172A;">
+            State of South Carolina (SOSC) Right to Represent
+          </p>
+          <p style="margin: 0 0 4px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; color: #475569;">
+            <b>Posting ID:</b> <span style="background-color: #FFFF00; font-weight: bold; padding: 1px 6px;">${vmsNumber}</span> &nbsp;|&nbsp; <b>Client Agency:</b> State of South Carolina (SOSC)
+          </p>
+        </div>
+
+        <!-- Subject Line Preview -->
+        <p style="margin: 0 0 14px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; font-weight: bold; color: #1E293B;">
+          Subject: <span style="background-color: #FFFF00; padding: 2px 6px;">SOSC Right to Represent-Posting ID -${vmsNumber}</span>
+        </p>
+
+        <!-- Body Paragraph -->
+        <p style="margin: 0 0 12px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; line-height: 1.6; color: #000000;">
+          Hi <span style="background-color: #FFFF00; font-weight: bold; padding: 1px 6px;">${candidateFirst}</span>,
+        </p>
+        <p style="margin: 0 0 16px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; line-height: 1.6; color: #000000;">
+          Please confirm that COOLSOFT LLC has the right to submit you for consideration to the <span style="background-color: #FFFF00; font-weight: bold; padding: 1px 6px;">${positionTitle}</span> - position at "SOSC" under posting <span style="background-color: #FFFF00; font-weight: bold; padding: 1px 6px;">${vmsNumber}</span>.
+        </p>
+
+        <!-- Candidate Confirmation Reply Section -->
+        <div style="background-color: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 4px; padding: 12px; margin: 16px 0;">
+          <p style="margin: 0 0 6px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; font-weight: bold; color: #334155;">
+            Candidate Reply Confirmation:
+          </p>
+          <p style="margin: 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; line-height: 1.5; color: #0F172A; font-style: italic;">
+            "I, <span style="background-color: #FFFF00; font-weight: bold; padding: 1px 6px;">${candidateName}</span>, confirm that COOLSOFT LLC has the right to submit me for consideration to the ${positionTitle} position at SOSC under posting ${vmsNumber}."
+          </p>
+        </div>
+
+        <p style="margin: 0 0 4px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; font-weight: bold; color: #000000;">Candidate Full Legal Name:</p>
+        <p style="margin: 0 0 14px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px;"><span style="background-color: #FFFF00; font-weight: bold; padding: 2px 8px;">${candidateName}</span></p>
+
+        <p style="margin: 0 0 4px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; font-weight: bold; color: #000000;">Agreed Hourly Rate & Employment Type:</p>
+        <p style="margin: 0 0 16px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px;"><span style="background-color: #FFFF00; font-weight: bold; padding: 2px 8px;">$${cleanRateNumber}/hour (${employmentType})</span></p>
       `
     }
 
@@ -3342,6 +3416,16 @@ ${coversheet.references}
                     }}
                   >
                     Nebraska State
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleTemplateChange('south_carolina_sosc')}
+                    style={{
+                      ...styles.rtrQuickBtn,
+                      ...(selectedTemplate === 'south_carolina_sosc' ? styles.rtrQuickBtnActive : {})
+                    }}
+                  >
+                    South Carolina SOSC
                   </button>
                   <button
                     type="button"
