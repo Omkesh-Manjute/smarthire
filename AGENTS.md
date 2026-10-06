@@ -107,6 +107,36 @@ The following high-impact features and optimizations have been agreed upon and p
 
 ## Recent Changes
 
+### 2026-10-06 — Chat Match Box Removal, Real OS File Attachment Picker, Clean Online Presence & Permanent Conversation Deletion
+- **Context & Objectives**:
+  - The user requested:
+    1. Remove the match box / candidate preview card from chat messages to keep the chat feed simple, clean, and fast with minimal app load.
+    2. Remove fake "Active now" badges and fake EST timestamps across the chat interface.
+    3. Remove star symbols (`★`, `☆`) from candidate profiles and skills per Rule 8 (0 unrequested emojis/symbols).
+    4. Fix conversation deletion so deleting a thread permanently purges it without re-synthesizing or blocking on browser confirm.
+    5. Replace mock demo file attachments with a real, working device file picker.
+- **Key Solutions & Deliverables**:
+  1. **Match Box Removal & Lightweight Message Stream**:
+     - Removed candidate share card block (`Stamens Software`, `Review Candidate ↗`) from message feed in `RecruiterInbox.jsx`. Messages now render crisp, distraction-free Slack-style text.
+     - Added clean attachment download chips for any sent/received attachments.
+  2. **100% Real OS File Picker**:
+     - Replaced hardcoded demo file attachments with hidden `<input type="file" ref={chatFileInputRef} multiple onChange={handleChatFileUpload} />`.
+     - Wired both the composer paperclip button and bottom toolbar "Attach File" button to trigger real device file selection with size calculation and download links.
+  3. **Genuine Online Presence & Star Removal**:
+     - Removed hardcoded "Active now" and "Local 02:25 PM (EST)" badges from right context panel. Status is only displayed when genuinely online (`activeThread.isOnline`).
+     - Removed star buttons and `<span>★</span>` symbols from candidate dossiers and preferred skills headers.
+  4. **Instant Permanent Thread Deletion**:
+     - Removed blocking `window.confirm` to allow instant deletion.
+     - Persists deleted thread IDs, candidate IDs, session IDs, and emails to `deletedThreadsStore` on server (`deleted_threads.json`) and client `localStorage` (`smarthire_deleted_threads`).
+     - Excluded deleted threads and screening candidates from both initial load and real-time synchronization.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (active bundle `index-H8z6oQnH.js`).
+  - Git committed (`eea99ec`) and pushed to GitHub `origin/main`.
+  - Deployed production bundle to AWS Lightsail server (`34.194.119.199`), extracted to webroot `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Updated `server/index.js` on Lightsail and reloaded PM2 `smarthire-ats`.
+  - Verified disk hygiene: 7.5GB available (60% used), temporary archives cleaned immediately.
+  - Verified live domain `https://smarthireus.com` returning HTTP 200 with new active bundle `index-H8z6oQnH.js`.
+
 ### 2026-10-06 — Slack Signature Aubergine Theme (#3F0E40) Across Candidates & ATS Sidebars & Initials Circle Avatar Removal
 - **Context & Objectives**:
   - The user requested applying the authentic Slack-style left panel color scheme (`#3F0E40`) to the main Candidate sidebar (`RecruiterInbox.jsx`) and ATS sidebar (`AtsPlatform.jsx`) with smooth transitions.
@@ -144,6 +174,32 @@ The following high-impact features and optimizations have been agreed upon and p
   - Updated `server/index.js` on Lightsail with `DELETE /api/messages/:candidateId` and reloaded PM2 `smarthire-ats`.
   - Verified disk hygiene: 7.4GB available (60% used), temporary archives cleaned immediately.
   - Verified live domain `https://smarthireus.com` returning HTTP 200 with new active bundle `index-DnpqHBjI.js`.
+### 2026-10-06 — Messages UI Redesign: Clean White Card Layout, Interactive Candidate Card, Share Candidate Button Removal & Screening Overhaul
+- **Context & Objectives**:
+  - The user requested applying the first UI redesign mockup to the Messages / Recruiter Inbox screen (`/inbox`), removing the "Share Candidate" button, and making all workspace elements clean, modern, and cohesive.
+  - Earlier in the session, the user also requested removing recruiter dropdowns, setting exact recruiter names, removing Copy Link, fixing table vertical alignment, polishing top KPI boxes, and resolving WebM video buffering with automatic container remuxing.
+- **Key Solutions & Deliverables**:
+  1. **Clean White Surface for Inbox Column (Left Column)**:
+     - Converted left conversation thread column from the dark aubergine box (`#3F0E40`) to a clean white card (`#FFFFFF`) with subtle 1px border (`#E2E8F0`), matching the center and right panels.
+     - Styled recruiter filter selector with light background (`#F8FAFC`), crisp border, and clean typography.
+     - Redesigned thread items with active blue accent strip (`3.5px solid #2563EB`), soft `#EFF6FF` background when selected, bold `#1D4ED8` contact name, green presence dot (`#10B981`), and unread pill badge (`#E01E5A`).
+  2. **Interactive Candidate Card in Chat Feed**:
+     - Parsed shared candidate snippets (`Candidate Shared: GERALD JOSE — Information Systems Analyst II (90% Match, Req #159078)`) into an interactive candidate card.
+     - Displays candidate name, role, emerald match badge (`90% Match`), target requisition, and a 1-click **"Review Candidate ↗"** button that directly opens the candidate dossier modal.
+  3. **Removed "Share Candidate" Button**:
+     - Removed the "Share Candidate" button from the composer bottom toolbar as requested, preserving only `Write with AI`, `Schedule Meeting`, and `Attach File`.
+  4. **Screening Table Alignment & Exact Recruiters**:
+     - Enforced `tableLayout: 'fixed'` and `<colgroup>` column widths so candidate rows never drift or misalign.
+     - Removed the recruiter dropdown from the table and review drawer; set clean bold text with exact assignments: Rohit Nagwani for the first 5 sessions, Omkesh for the remaining 2.
+     - Removed `Copy Link` button from the table actions column, leaving only centered `PDF` and superAdmin delete actions.
+     - Remuxed all existing WebM videos with ffmpeg seek cues and duration headers on Lightsail; added automatic remux pipeline to `POST /api/screening/:sessionId/upload-media` so all future video answers play instantly without buffering.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (active bundle `index-CpvPXsPQ.js`).
+  - Git committed (`8963ccf`) and pushed to GitHub `origin/main`.
+  - Production bundle deployed to AWS Lightsail (`34.194.119.199`), extracted to webroot `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Pruned old assets (kept 5 most recent), removed `.tar.gz` immediately, and reloaded PM2 `smarthire-ats`.
+  - Verified disk hygiene: 7.5GB available (60% used).
+  - Verified live domain `https://smarthireus.com` returning HTTP 200 with new active bundle `index-CpvPXsPQ.js`.
 
 ### 2026-10-06 — Screening Polish: 1-Click Recruiter Assignment, Email Subtext Removal, Short Date Format & Review Button Removal
 - **Context & Objectives**:
@@ -173,13 +229,12 @@ The following high-impact features and optimizations have been agreed upon and p
      - Added `Recruiter: [All Recruiters ▾]` filter dropdown next to Status and Format.
      - Added recruiter name matching in the global screening search bar.
 - **Verification & Deployment**:
-  - Production build in `smarthire-react`: 0 errors, 0 warnings (active bundle `index-CEikCx83.js`).
-  - Git committed (`12a5b70`, `2610696`) and pushed to GitHub `origin/main`.
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (active bundle `index-qSSDmfjr.js`).
+  - Git committed (`12a5b70`) and pushed to GitHub `origin/main`.
   - Deployed production bundle to AWS Lightsail server (`34.194.119.199`), extracted to webroot `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
   - Updated `server/index.js` on Lightsail with recruiter assignment endpoints and reloaded PM2 `smarthire-ats`.
   - Verified disk hygiene: 7.4GB available (60% used), temporary archives cleaned immediately.
-  - Verified live domain `https://smarthireus.com` returning HTTP 200 with new active bundle `index-CEikCx83.js`.
-
+  - Verified live domain `https://smarthireus.com` returning HTTP 200 with new active bundle `index-qSSDmfjr.js`.
 
 ### 2026-10-06 — Screening Overhaul: Recruiter Column, Location Discrepancy Mismatch Audit, Pinned Non-Hiding Question Tabs, Top Bar Decluttering & Accidental Skip Guards
 
