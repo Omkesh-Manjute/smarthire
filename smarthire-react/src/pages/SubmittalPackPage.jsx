@@ -1760,6 +1760,17 @@ EDUCATION & CERTIFICATIONS
     }
   }, [generatedResumeTemplateHtml, generatedRtrTemplateHtml, isLiveEditDirty])
 
+  // When candidate, job requisition, or template changes, force-reset dirty flag and update editor innerHTML
+  useEffect(() => {
+    setIsLiveEditDirty(false)
+    if (resumeEditorRef.current) {
+      resumeEditorRef.current.innerHTML = generatedResumeTemplateHtml
+    }
+    if (rtrEditorRef.current) {
+      rtrEditorRef.current.innerHTML = generatedRtrTemplateHtml
+    }
+  }, [selectedCandidateId, selectedJobId, selectedTemplate])
+
   // Reset edited document back to default generated template
   const handleResetToTemplate = () => {
     setIsLiveEditDirty(false)
@@ -2524,33 +2535,17 @@ ${coversheet.references}
               </div>
             )}
 
+            {/* 1. Smart Copy Action */}
             <button
               type="button"
-              onClick={handleCopyCurrentView}
+              onClick={activePreviewTab === 'rtr' ? handleCopyRtr : handleCopyCurrentView}
               style={styles.actionBtnSecondary}
-              title="Copy current active view to clipboard"
+              title={activePreviewTab === 'rtr' ? "Copy Right to Represent email subject and body" : "Copy current active view to clipboard"}
             >
-              <IconCopy /> <span>Copy {activePreviewTab === 'rtr' ? 'E-RTR' : activePreviewTab === 'all' ? 'Pack' : 'Coversheet'}</span>
+              <IconCopy /> <span>{activePreviewTab === 'rtr' ? 'Copy RTR Email' : 'Copy Coversheet'}</span>
             </button>
 
-            <button
-              type="button"
-              onClick={handleCopyRtr}
-              style={styles.actionBtnSecondary}
-              title="Copy Right to Represent email subject and body for candidate"
-            >
-              <IconSignature /> <span>Copy RTR Email</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleOpenRtrEmailModal}
-              style={{ ...styles.actionBtnSecondary, color: '#1D4ED8', borderColor: '#BFDBFE', backgroundColor: '#EFF6FF' }}
-              title="Email Right to Represent (RTR) directly to candidate"
-            >
-              <IconMail /> <span>Email RTR to Candidate</span>
-            </button>
-
+            {/* 2. Formatted Word (.doc) Download */}
             <button
               type="button"
               onClick={handleDownloadResumeWord}
@@ -2560,15 +2555,29 @@ ${coversheet.references}
               <IconDownload /> <span>Download .doc</span>
             </button>
 
+            {/* 3. SmartSign RTR Digital Signature Workflow */}
             <button
               type="button"
-              onClick={handlePrint}
-              style={styles.actionBtnSecondary}
-              title="Export clean PDF submittal package"
+              onClick={() => {
+                navigate(`/sign-rtr?template=${selectedTemplate}&name=${encodeURIComponent(coversheet.candidateLegalName || '')}&job=${encodeURIComponent(positionTitle || '')}&req=${encodeURIComponent(vmsNumber || '')}&rate=${encodeURIComponent(cleanRateNumber || '')}`)
+              }}
+              style={{ ...styles.actionBtnSecondary, color: '#4F46E5', borderColor: '#C7D2FE', backgroundColor: '#EEF2FF' }}
+              title="Open Digital Signature Portal (SmartSign RTR)"
             >
-              <IconPrint /> <span>Print / Save PDF</span>
+              <IconSignature /> <span>SmartSign RTR</span>
             </button>
 
+            {/* 4. Direct RTR Email to Candidate */}
+            <button
+              type="button"
+              onClick={handleOpenRtrEmailModal}
+              style={{ ...styles.actionBtnSecondary, color: '#1D4ED8', borderColor: '#BFDBFE', backgroundColor: '#EFF6FF' }}
+              title="Email Right to Represent (RTR) directly to candidate"
+            >
+              <IconMail /> <span>Email Candidate (RTR)</span>
+            </button>
+
+            {/* 5. Client Submittal Pack Dispatch (Primary Dark CTA) */}
             <button
               type="button"
               onClick={handleOpenEmailModal}
@@ -3367,87 +3376,36 @@ ${coversheet.references}
             marginTop: activePreviewTab === 'all' ? 24 : 0,
             display: (activePreviewTab === 'rtr' || activePreviewTab === 'all') ? 'block' : 'none'
           }}>
-            {/* Dedicated RTR Format Banner & Quick Switcher */}
-            <div style={styles.rtrBanner} className="no-print">
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={styles.rtrBadge}>
-                      {activeTemplateMeta.badge} E-RTR
-                    </span>
-                    <h4 style={{ margin: 0, fontSize: '13px', fontWeight: '800', color: '#0F172A' }}>
-                      {activeTemplateMeta.name} — Right to Represent Agreement
-                    </h4>
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#64748B', marginTop: 2 }}>
-                    Requisition #{vmsNumber} • {positionTitle} • Rate: ${cleanRateNumber}/hr ({employmentType})
-                  </div>
-                </div>
-
-                {/* Quick Switch RTR Template Direct Buttons */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '11px', fontWeight: '700', color: '#475569' }}>RTR Formats:</span>
-                  <button
-                    type="button"
-                    onClick={() => handleTemplateChange('nc_cai')}
-                    style={{
-                      ...styles.rtrQuickBtn,
-                      ...(selectedTemplate === 'nc_cai' ? styles.rtrQuickBtnActive : {})
-                    }}
-                  >
-                    NC VectorVMS
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleTemplateChange('georgia_cai')}
-                    style={{
-                      ...styles.rtrQuickBtn,
-                      ...(selectedTemplate === 'georgia_cai' ? styles.rtrQuickBtnActive : {})
-                    }}
-                  >
-                    Georgia GDOT
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleTemplateChange('nebraska_state')}
-                    style={{
-                      ...styles.rtrQuickBtn,
-                      ...(selectedTemplate === 'nebraska_state' ? styles.rtrQuickBtnActive : {})
-                    }}
-                  >
-                    Nebraska State
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleTemplateChange('south_carolina_sosc')}
-                    style={{
-                      ...styles.rtrQuickBtn,
-                      ...(selectedTemplate === 'south_carolina_sosc' ? styles.rtrQuickBtnActive : {})
-                    }}
-                  >
-                    South Carolina SOSC
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleTemplateChange('texas_dir')}
-                    style={{
-                      ...styles.rtrQuickBtn,
-                      ...(selectedTemplate === 'texas_dir' ? styles.rtrQuickBtnActive : {})
-                    }}
-                  >
-                    Texas DIR
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleTemplateChange('standard')}
-                    style={{
-                      ...styles.rtrQuickBtn,
-                      ...(selectedTemplate === 'standard' ? styles.rtrQuickBtnActive : {})
-                    }}
-                  >
-                    Standard US
-                  </button>
-                </div>
+            {/* Minimalist RTR Document Header */}
+            <div style={styles.rtrMinimalBar} className="no-print">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={styles.rtrBadgeActive}>
+                  {activeTemplateMeta.badge}
+                </span>
+                <span style={{ fontSize: '12.5px', fontWeight: '800', color: '#0F172A' }}>
+                  {activeTemplateMeta.name}
+                </span>
+                <span style={{ fontSize: '11.5px', color: '#64748B' }}>
+                  • Req #{vmsNumber} • Rate: ${cleanRateNumber}/hr ({employmentType})
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <button
+                  type="button"
+                  onClick={handleCopyRtr}
+                  style={styles.rtrActionSmallBtn}
+                  title="Copy RTR Email Subject & Body"
+                >
+                  <IconCopy /> <span>Copy RTR Email</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOpenRtrEmailModal}
+                  style={{ ...styles.rtrActionSmallBtn, color: '#1D4ED8', borderColor: '#BFDBFE', backgroundColor: '#EFF6FF' }}
+                  title="Email RTR to Candidate"
+                >
+                  <IconMail /> <span>Email Candidate</span>
+                </button>
               </div>
             </div>
 
@@ -3728,31 +3686,34 @@ const styles = {
     fontWeight: '700'
   },
   actionBtnPrimary: {
-    padding: '8px 16px',
+    padding: '7px 15px',
     borderRadius: 8,
-    backgroundColor: '#0F172A',
+    background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
     color: '#FFFFFF',
     border: 'none',
-    fontSize: '12.5px',
+    fontSize: '12px',
     fontWeight: '700',
     cursor: 'pointer',
     display: 'inline-flex',
     alignItems: 'center',
     gap: 6,
-    boxShadow: '0 1px 3px rgba(15,23,42,0.15)'
+    boxShadow: '0 2px 4px rgba(15,23,42,0.12)',
+    transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
   },
   actionBtnSecondary: {
-    padding: '8px 13px',
+    padding: '7px 12px',
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
-    color: '#0F172A',
+    color: '#1E293B',
     border: '1px solid #CBD5E1',
-    fontSize: '12.5px',
+    fontSize: '12px',
     fontWeight: '700',
     cursor: 'pointer',
     display: 'inline-flex',
     alignItems: 'center',
-    gap: 6
+    gap: 6,
+    boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+    transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
   },
   actionBtnSecondaryLink: {
     padding: '8px 14px',
@@ -3845,38 +3806,40 @@ const styles = {
     overscrollBehaviorX: 'none',
     overscrollBehaviorY: 'contain'
   },
-  rtrBanner: {
+  rtrMinimalBar: {
     backgroundColor: '#F8FAFC',
     border: '1px solid #E2E8F0',
-    borderRadius: '8px',
-    padding: '12px 14px',
-    marginBottom: '14px'
+    borderRadius: '10px',
+    padding: '8px 14px',
+    marginBottom: '14px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: '10px'
   },
-  rtrBadge: {
-    fontSize: '10.5px',
+  rtrBadgeActive: {
+    fontSize: '11px',
     fontWeight: '800',
-    padding: '2px 8px',
-    borderRadius: '4px',
+    padding: '3px 8px',
+    borderRadius: '6px',
     backgroundColor: '#EFF6FF',
     color: '#1D4ED8',
     border: '1px solid #BFDBFE'
   },
-  rtrQuickBtn: {
-    fontSize: '11px',
-    fontWeight: '600',
-    padding: '4px 8px',
-    borderRadius: '4px',
+  rtrActionSmallBtn: {
+    fontSize: '11.5px',
+    fontWeight: '700',
+    padding: '5px 12px',
+    borderRadius: '6px',
     border: '1px solid #CBD5E1',
     backgroundColor: '#FFFFFF',
-    color: '#475569',
+    color: '#334155',
     cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
     transition: 'all 0.15s ease'
-  },
-  rtrQuickBtnActive: {
-    backgroundColor: '#1D4ED8',
-    borderColor: '#1D4ED8',
-    color: '#FFFFFF',
-    fontWeight: '700'
   },
   colHeader: {
     display: 'flex',
