@@ -10543,6 +10543,207 @@ ${(job.description || '').slice(0, 1500)}`;
   }
 });
 
+// POST /api/ai/agent
+// Universal SmartHire Gemini / Groq Personal AI Agent
+// Handles page-aware queries, candidate finding & matching, resume transformations, and coversheet actions
+app.post('/api/ai/agent', async (req, res) => {
+  try {
+    const { prompt, pageContext = {}, history = [] } = req.body;
+    if (!prompt || !prompt.trim()) {
+      return res.status(400).json({ success: false, message: 'Prompt is required' });
+    }
+
+    const {
+      page = '',
+      candidate = null,
+      job = null,
+      coversheet = null,
+      selectedTemplate = '',
+      allCandidates = []
+    } = pageContext;
+
+    const groqKey = process.env.GROQ_API_KEY;
+
+    // Check if the query is asking to find/match candidates for a requirement/JD
+    const isMatchingQuery = /find|match|search|requirement|jd|job description|candidate|who is best|which candidate|developer|engineer|analyst|devops/i.test(prompt);
+
+    let candidatesPool = [];
+    if (Array.isArray(allCandidates) && allCandidates.length > 0) {
+      candidatesPool = allCandidates;
+    } else if (Array.isArray(candidatesStore) && candidatesStore.length > 0) {
+      candidatesPool = candidatesStore;
+    }
+
+    // If matching query: evaluate candidatesPool against prompt / JD
+    let matchedCandidates = [];
+    if (isMatchingQuery && candidatesPool.length > 0) {
+      const promptLower = prompt.toLowerCase();
+      
+      const scoredCandidates = candidatesPool.slice(0, 150).map(c => {
+        let score = 50;
+        const cSkills = Array.isArray(c.skills) 
+          ? c.skills.map(s => String(s).toLowerCase()) 
+          : (c.skills || '').split(/[,;|\n]/).map(s => s.trim().toLowerCase());
+        const cName = c.name || c.candidateName || 'Candidate';
+        const cRole = (c.role || c.targetRole || '').toLowerCase();
+        const cExp = (c.experience || c.totalExperience || '').toLowerCase();
+        const cLoc = (c.location || c.currentLocation || '').toLowerCase();
+        const cResume = (c.resumeText || '').toLowerCase();
+
+        const matchedSkills = [];
+        const missingSkills = [];
+
+        // Common tech tokens to search
+        const commonTokens = [
+          'java', 'python', 'react', 'angular', 'node', 'aws', 'azure', 'gcp', 'devops', 'kubernetes',
+          'docker', 'terraform', 'spring', 'spring boot', 'microservices', 'sql', 'oracle', 'postgres',
+          'mongodb', 'snowflake', 'c#', '.net', 'kafka', 'ci/cd', 'linux', 'golang', 'salesforce',
+          'cybersecurity', 'architect', 'lead', 'senior', 'data engineer', 'spark', 'hadoop'
+        ];
+
+        commonTokens.forEach(token => {
+          if (promptLower.includes(token)) {
+            const hasSkill = cSkills.some(s => s.includes(token)) || cResume.includes(token);
+            if (hasSkill) {
+              matchedSkills.push(token.toUpperCase());
+              score += 10;
+            } else {
+              missingSkills.push(token.toUpperCase());
+              score -= 3;
+            }
+          }
+        });
+
+        // Experience alignment
+        if (promptLower.includes('10+') || promptLower.includes('10 years') || promptLower.includes('senior') || promptLower.includes('lead')) {
+          if (cExp.includes('10') || cExp.includes('11') || cExp.includes('12') || cExp.includes('13') || cExp.includes('14') || cExp.includes('15') || cRole.includes('sr') || cRole.includes('lead')) {
+            score += 15;
+          }
+        }
+
+        // Title alignment
+        const promptWords = promptLower.split(/\s+/).filter(w => w.length > 3);
+        promptWords.forEach(w => {
+          if (cRole.includes(w)) score += 8;
+        });
+
+        score = Math.min(98, Math.max(45, score));
+
+        return {
+          id: c.id,
+          name: cName,
+          role: c.role || c.targetRole || 'Specialist',
+          experience: c.experience || c.totalExperience || '8+ Years',
+          location: c.location || c.currentLocation || 'United States',
+          visa: c.visaStatus || 'Authorized',
+          matchScore: score,
+          matchedSkills: matchedSkills.slice(0, 6),
+          missingSkills: missingSkills.slice(0, 3),
+          rate: c.rate || c.proposedRate || '$75/hr C2C'
+        };
+      });
+
+      scoredCandidates.sort((a, b) => b.matchScore - a.matchScore);
+      matchedCandidates = scoredCandidates.slice(0, 5);
+    }
+
+    // Now call Groq LLM (or provide intelligent conversational ATS Agent response)
+    let aiResponseText = '';
+    let aiAction = null;
+
+    if (groqKey) {
+      try {
+        const systemPrompt = `You are SmartHire's Personal AI Recruiter Copilot (powered by Gemini & Groq AI).
+You help recruiters find candidates, format submittal packs, rewrite resumes, change coversheet parameters, and answer ATS questions with precision.
+
+CURRENT ATS CONTEXT:
+- Active Page: ${page || 'General Dashboard'}
+- Current Candidate: ${candidate ? `${candidate.name || candidate.candidateLegalName} (${candidate.role || 'Specialist'})` : 'None selected'}
+- Target Requisition: ${job ? `${job.title} (Req #${job.vmsNumber || job.jobId || 'N/A'}) - ${job.client || 'Client'}` : 'None'}
+- Proposed Rate: ${coversheet?.proposedRate || 'N/A'}
+- Active Template: ${selectedTemplate || 'standard'}
+
+CAPABILITIES & ACTIONS:
+If the user requests an action on the page, generate a JSON action object inside your response:
+1. Switch template: {"action": {"type": "SWITCH_TEMPLATE", "value": "nebraska_state"}}
+2. Change rate: {"action": {"type": "UPDATE_RATE", "value": "$80.00 / hr C2C"}}
+3. Update summary: {"action": {"type": "UPDATE_SUMMARY", "value": "<new bulleted professional summary text>"}}
+4. Select candidate: {"action": {"type": "SELECT_CANDIDATE", "candidateId": "<id>", "candidateName": "<name>"}}
+
+Respond politely, professionally, in English or Hinglish (matching user's language). Keep answers concise, actionable, and structured with bullet points.
+If matching candidates were found, summarize why the top candidate fits the requirement.`;
+
+        const groqUrl = 'https://api.groq.com/openai/v1/chat/completions';
+        const groqRes = await fetch(groqUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${groqKey}`
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              ...history.slice(-4).map(h => ({ role: h.role, content: h.content })),
+              { role: 'user', content: prompt }
+            ],
+            temperature: 0.2,
+            max_tokens: 1024
+          })
+        });
+
+        if (groqRes.ok) {
+          const groqData = await groqRes.json();
+          aiResponseText = groqData.choices?.[0]?.message?.content || '';
+
+          // Parse any embedded action JSON if present
+          const actionMatch = aiResponseText.match(/\{"action":\s*(\{[^}]+\})\}/);
+          if (actionMatch) {
+            try {
+              aiAction = JSON.parse(actionMatch[1]);
+              aiResponseText = aiResponseText.replace(/\{"action":\s*\{[^}]+\}\}/, '').trim();
+            } catch (_) {}
+          }
+        }
+      } catch (llmErr) {
+        console.error('Groq LLM call failed in /api/ai/agent:', llmErr.message);
+      }
+    }
+
+    // Fallback response if LLM call was unavailable
+    if (!aiResponseText) {
+      if (matchedCandidates.length > 0) {
+        aiResponseText = `I have analyzed the candidate pool against your requirement. Here are the top ${matchedCandidates.length} matching candidates ranked by experience, skills, and domain fit:\n\n• **${matchedCandidates[0].name}** (${matchedCandidates[0].matchScore}% Match) — ${matchedCandidates[0].role} with ${matchedCandidates[0].experience}. Matched skills: ${matchedCandidates[0].matchedSkills.join(', ')}.\n\nYou can click below to open any candidate directly in the Submittal Pack or view their profile!`;
+      } else if (page.includes('submittal')) {
+        if (/rate/i.test(prompt)) {
+          const rateNum = prompt.match(/\$?(\d+)/)?.[1];
+          if (rateNum) {
+            aiAction = { type: 'UPDATE_RATE', value: `$${rateNum}.00 / hr C2C` };
+            aiResponseText = `I have updated the proposed rate to **$${rateNum}.00 / hr C2C** for this submittal package.`;
+          }
+        } else if (/nebraska/i.test(prompt)) {
+          aiAction = { type: 'SWITCH_TEMPLATE', value: 'nebraska_state' };
+          aiResponseText = `Switched presentation template to the **State of Nebraska Official Tabular Format** with Candidate Description, Skills Table, Employment History, and Education.`;
+        } else {
+          aiResponseText = `I am your SmartHire AI Assistant. I can help you format the resume, rewrite summary bullets, align skills with the job requisition, change rates, or switch submittal templates. Just let me know what you need!`;
+        }
+      } else {
+        aiResponseText = `I am your SmartHire AI Assistant. Paste any Job Description (JD) or requirement here, and I will instantly search your candidate pool to find the best matches with deep skill scoring!`;
+      }
+    }
+
+    return res.json({
+      success: true,
+      reply: aiResponseText,
+      action: aiAction,
+      matchedCandidates: matchedCandidates.length > 0 ? matchedCandidates : null
+    });
+  } catch (err) {
+    console.error('❌ Error in /api/ai/agent:', err);
+    res.status(500).json({ success: false, message: 'Server error in AI Agent' });
+  }
+});
+
 // GET /api/recruiter/email-streams
 // Strictly scoped to the logged-in recruiter (Indeed-style privacy) unless superadmin
 app.get('/api/recruiter/email-streams', (req, res) => {

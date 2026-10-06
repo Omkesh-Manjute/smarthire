@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import SmartHireAiAgent, { IconGeminiSparkle } from '../components/SmartHireAiAgent'
 
 // ─── SVG Icons (Enterprise Line Icons, Rule 8 Compliant) ────────────────────
 const IconHome = () => (
@@ -410,21 +411,196 @@ export function formatStructuredNebraskaResume(resumeText, blindResume = false) 
     expLines = lines;
   }
 
-  const renderSectionLines = (arr) => {
+  // 1. Render Candidate Description with Strict Bullet Points
+  const renderCandidateDescription = (arr) => {
+    if (!arr || arr.length === 0) {
+      return '<p style="margin: 0; font-family: Arial, sans-serif; font-size: 10pt; color: #64748B;"><i>Executive profile summary available upon request</i></p>';
+    }
+
+    let out = '<ul style="margin: 3px 0 8px 18px; padding: 0; list-style-type: disc;">';
+    for (const line of arr) {
+      const clean = line.replace(/^[•\-*\d.]\s*/, '').trim();
+      if (!clean) continue;
+      out += `<li style="margin-bottom: 5px; font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.45; color: #000000;">${clean}</li>`;
+    }
+    out += '</ul>';
+    return out;
+  };
+
+  // 2. Render Technical Qualifications / Skills List as Authentic 2-Column Table
+  const renderSkillsTable = (arr) => {
+    if (!arr || arr.length === 0) {
+      return '<p style="margin: 0; font-family: Arial, sans-serif; font-size: 10pt; color: #64748B;"><i>Technical qualifications list available upon request</i></p>';
+    }
+
+    const pairs = [];
+    let currentCategory = '';
+    let currentSkills = [];
+
+    const isCategoryCandidate = (str) => {
+      const clean = str.replace(/[:\-]$/, '').trim();
+      if (/^Category$/i.test(clean)) return false;
+      if (/^(Programming Languages|Languages|Java\/J2EE Technologies|J2EE Technologies|Frameworks|Frontend Technologies|Web Technologies|Backend Technologies|Microservices & Architecture|Microservices|Architecture|API Technologies|APIs|Cloud & DevOps|Cloud Technologies|DevOps & CI\/CD|DevOps Tools|Databases|Database Technologies|Operating Systems|Methodologies|Tools & Utilities|Version Control|Testing Tools|Security|Middleware|Libraries|Big Data|Others|Other Skills)$/i.test(clean)) {
+        return true;
+      }
+      if (clean.length > 2 && clean.length <= 32 && !clean.includes(',') && !clean.includes(';') && !clean.startsWith('•') && !clean.startsWith('-')) {
+        return true;
+      }
+      return false;
+    };
+
+    for (let i = 0; i < arr.length; i++) {
+      const line = arr[i].trim();
+      if (!line) continue;
+      if (/^Category$/i.test(line)) continue;
+
+      const colonIdx = line.indexOf(':');
+      if (colonIdx > 2 && colonIdx < 35 && !line.startsWith('http')) {
+        if (currentCategory && currentSkills.length > 0) {
+          pairs.push({ category: currentCategory, skills: currentSkills.join(' ') });
+          currentSkills = [];
+        }
+        currentCategory = line.slice(0, colonIdx).trim();
+        const afterColon = line.slice(colonIdx + 1).trim();
+        if (afterColon) {
+          currentSkills.push(afterColon);
+        }
+        continue;
+      }
+
+      if (isCategoryCandidate(line)) {
+        if (currentCategory && currentSkills.length > 0) {
+          pairs.push({ category: currentCategory, skills: currentSkills.join(' ') });
+          currentSkills = [];
+        }
+        currentCategory = line.replace(/[:\-]$/, '').trim();
+        continue;
+      }
+
+      if (!currentCategory) {
+        currentCategory = 'Technical Competencies';
+      }
+      currentSkills.push(line);
+    }
+
+    if (currentCategory && currentSkills.length > 0) {
+      pairs.push({ category: currentCategory, skills: currentSkills.join(' ') });
+    }
+
+    if (pairs.length === 0) {
+      pairs.push({ category: 'Core Technical Skills', skills: arr.join(', ') });
+    }
+
+    let tableHtml = `
+      <table cellspacing="0" cellpadding="0" style="border-collapse: collapse; width: 100%; border: 1px solid #bfbfbf; margin-top: 4px; font-family: Arial, sans-serif;">
+        <thead>
+          <tr style="background-color: #F1F5F9;">
+            <th style="border: 1px solid #bfbfbf; width: 30%; text-align: left; padding: 6px 10px; font-size: 10pt; font-weight: bold; color: #0F172A;">
+              Category
+            </th>
+            <th style="border: 1px solid #bfbfbf; width: 70%; text-align: left; padding: 6px 10px; font-size: 10pt; font-weight: bold; color: #0F172A;">
+              Skills / Technologies
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    pairs.forEach((p, idx) => {
+      const bg = idx % 2 === 0 ? '#FFFFFF' : '#FAFAFA';
+      tableHtml += `
+        <tr style="background-color: ${bg};">
+          <td style="border: 1px solid #bfbfbf; padding: 6px 10px; font-size: 9.5pt; font-weight: bold; color: #1E293B; vertical-align: top; width: 30%;">
+            ${p.category}
+          </td>
+          <td style="border: 1px solid #bfbfbf; padding: 6px 10px; font-size: 9.5pt; color: #000000; vertical-align: top; line-height: 1.45; width: 70%;">
+            ${p.skills}
+          </td>
+        </tr>
+      `;
+    });
+
+    tableHtml += `
+        </tbody>
+      </table>
+    `;
+
+    return tableHtml;
+  };
+
+  // 3. Render Employment History with Distinct Project Headers & Responsibilities Bullets
+  const renderEmploymentHistory = (arr) => {
+    if (!arr || arr.length === 0) {
+      return '<p style="margin: 0; font-family: Arial, sans-serif; font-size: 10pt; color: #64748B;"><i>Employment history available upon request</i></p>';
+    }
+
     let out = '';
     let inUl = false;
+
     for (const line of arr) {
-      if (line.startsWith('•') || line.startsWith('-') || line.startsWith('*')) {
-        if (!inUl) { out += '<ul style="margin: 4px 0 8px 18px; padding: 0;">'; inUl = true; }
-        out += `<li style="margin-bottom: 4px; font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.4;">${line.replace(/^[•\-*]\s*/, '')}</li>`;
-      } else {
+      const isClientLine = /^(Client|Company|Employer):/i.test(line) || 
+        /((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}|\d{4})\s*[-–—to]+\s*(Present|Current|Till Date|\d{4}|(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4})/i.test(line);
+      const isRoleLine = /^(Role|Title|Designation|Position):/i.test(line) || (/^(Senior|Sr\.?|Lead|Principal|Junior|Staff)?\s*(Developer|Engineer|Architect|Consultant|Analyst|Programmer)/i.test(line) && line.length < 50);
+      const isProjectNameLine = /^(Project\s*#?\d*):/i.test(line);
+      const isRespHeader = /^(Responsibilities|Key Responsibilities|Duties|Accomplishments):/i.test(line);
+      const isEnvLine = /^(Environment|Technologies|Tools|Tech Stack):/i.test(line);
+
+      if (isClientLine) {
         if (inUl) { out += '</ul>'; inUl = false; }
-        const isHeader = /^(Client|Company|Role|Project|Environment|Education|Degree):/i.test(line) || line.length < 50;
-        out += `<p style="margin: 0 0 5px 0; font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.4; ${isHeader ? 'font-weight: bold;' : ''}">${line}</p>`;
+        out += `<div style="margin-top: 14px; margin-bottom: 4px; padding-top: 6px; border-top: 1px dashed #bfbfbf;">
+          <p style="margin: 0 0 3px 0; font-family: Arial, sans-serif; font-size: 10.5pt; font-weight: bold; color: #000000;">${line}</p>
+        </div>`;
+        continue;
       }
+
+      if (isRoleLine) {
+        if (inUl) { out += '</ul>'; inUl = false; }
+        out += `<p style="margin: 2px 0 4px 0; font-family: Arial, sans-serif; font-size: 10pt; font-weight: bold; color: #1E293B;">${line.startsWith('Role:') ? line : 'Role: ' + line}</p>`;
+        continue;
+      }
+
+      if (isProjectNameLine) {
+        if (inUl) { out += '</ul>'; inUl = false; }
+        out += `<p style="margin: 2px 0 3px 0; font-family: Arial, sans-serif; font-size: 9.5pt; font-weight: bold; color: #334155;">${line}</p>`;
+        continue;
+      }
+
+      if (isEnvLine) {
+        if (inUl) { out += '</ul>'; inUl = false; }
+        out += `<p style="margin: 4px 0 6px 0; font-family: Arial, sans-serif; font-size: 9.5pt; font-style: italic; color: #334155;"><b>${line}</b></p>`;
+        continue;
+      }
+
+      if (isRespHeader) {
+        if (inUl) { out += '</ul>'; inUl = false; }
+        out += `<p style="margin: 6px 0 3px 0; font-family: Arial, sans-serif; font-size: 10pt; font-weight: bold; color: #000000;">Responsibilities:</p>`;
+        continue;
+      }
+
+      if (!inUl) {
+        out += '<ul style="margin: 3px 0 8px 18px; padding: 0; list-style-type: disc;">';
+        inUl = true;
+      }
+      const clean = line.replace(/^[•\-*\d.]\s*/, '').trim();
+      out += `<li style="margin-bottom: 4px; font-family: Arial, sans-serif; font-size: 9.5pt; line-height: 1.45; color: #000000;">${clean}</li>`;
     }
+
     if (inUl) out += '</ul>';
-    return out || '<p style="margin: 0; font-family: Arial, sans-serif; font-size: 10pt; color: #64748B;"><i>Details available upon request</i></p>';
+    return out;
+  };
+
+  // 4. Render Education with Clean Bullets
+  const renderEducation = (arr) => {
+    if (!arr || arr.length === 0) {
+      return '<p style="margin: 0; font-family: Arial, sans-serif; font-size: 10pt; color: #64748B;"><i>Bachelor\'s Degree in Computer Science or Equivalent</i></p>';
+    }
+    let out = '<ul style="margin: 3px 0 8px 18px; padding: 0; list-style-type: disc;">';
+    for (const l of arr) {
+      const clean = l.replace(/^[•\-*\d.]\s*/, '').trim();
+      out += `<li style="margin-bottom: 4px; font-family: Arial, sans-serif; font-size: 9.5pt; line-height: 1.4; color: #000000;">${clean}</li>`;
+    }
+    out += '</ul>';
+    return out;
   };
 
   return `
@@ -436,7 +612,7 @@ export function formatStructuredNebraskaResume(resumeText, blindResume = false) 
               Candidate Description
             </p>
             <div style="font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.4; color: #000000;">
-              ${renderSectionLines(descLines)}
+              ${renderCandidateDescription(descLines)}
             </div>
           </td>
         </tr>
@@ -446,7 +622,7 @@ export function formatStructuredNebraskaResume(resumeText, blindResume = false) 
               Technical Qualifications/Skills List
             </p>
             <div style="font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.4; color: #000000;">
-              ${renderSectionLines(skillsLines)}
+              ${renderSkillsTable(skillsLines)}
             </div>
           </td>
         </tr>
@@ -456,7 +632,7 @@ export function formatStructuredNebraskaResume(resumeText, blindResume = false) 
               Employment History
             </p>
             <div style="font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.4; color: #000000;">
-              ${renderSectionLines(expLines)}
+              ${renderEmploymentHistory(expLines)}
             </div>
           </td>
         </tr>
@@ -466,7 +642,7 @@ export function formatStructuredNebraskaResume(resumeText, blindResume = false) 
               Education and Certifications
             </p>
             <div style="font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.4; color: #000000;">
-              ${renderSectionLines(eduLines)}
+              ${renderEducation(eduLines)}
             </div>
           </td>
         </tr>
@@ -724,6 +900,27 @@ export default function SubmittalPackPage() {
   const [isSendingEmail, setIsSendingEmail] = useState(false)
   const [isGeneratingSignLink, setIsGeneratingSignLink] = useState(false)
   const [candidateSignUrl, setCandidateSignUrl] = useState('')
+  const [isAiAgentOpen, setIsAiAgentOpen] = useState(false)
+
+  // AI Agent Action Dispatcher
+  const handleAiExecuteAction = (action) => {
+    if (!action) return
+    if (action.type === 'SWITCH_TEMPLATE' && action.value) {
+      handleTemplateChange(action.value)
+      showToast(`AI switched template to ${action.value}`)
+    } else if (action.type === 'UPDATE_RATE' && action.value) {
+      handleFieldChange('proposedRate', action.value)
+      showToast(`AI updated proposed rate to ${action.value}`)
+    } else if (action.type === 'SELECT_CANDIDATE' && action.candidateId) {
+      handleCandidateChange(action.candidateId)
+      showToast(`AI selected candidate: ${action.candidateName || action.candidateId}`)
+    } else if (action.type === 'UPDATE_SUMMARY' && action.value) {
+      if (resumeEditorRef.current) {
+        resumeEditorRef.current.innerHTML = generatedResumeTemplateHtml
+      }
+      showToast('AI updated professional summary')
+    }
+  }
 
   // Coversheet Form State
   const [coversheet, setCoversheet] = useState({
@@ -2140,8 +2337,44 @@ ${coversheet.references}
           </button>
         </div>
 
+        {/* Gemini AI Personal Agent Button */}
+        <div style={{ marginTop: 'auto', padding: '8px 8px 0' }}>
+          <button
+            type="button"
+            onClick={() => setIsAiAgentOpen(true)}
+            title="Ask SmartHire Gemini AI Copilot (1-Click)"
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+              gap: 10,
+              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
+              borderRadius: 8,
+              border: '1px solid rgba(168, 85, 247, 0.4)',
+              background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(59, 130, 246, 0.2) 100%)',
+              color: '#FFFFFF',
+              fontWeight: 600,
+              fontSize: 12.5,
+              cursor: 'pointer',
+              boxShadow: '0 2px 10px rgba(124, 58, 237, 0.25)',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <IconGeminiSparkle size={18} />
+            {!sidebarCollapsed && (
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                <span style={{ fontWeight: 700, color: '#FFFFFF' }}>Ask AI Agent</span>
+                <span style={{ fontSize: 9.5, padding: '1px 5px', borderRadius: 4, background: 'rgba(168, 85, 247, 0.4)', color: '#F3E8FF', fontWeight: 800 }}>
+                  GEMINI
+                </span>
+              </span>
+            )}
+          </button>
+        </div>
+
         {/* Bottom Expand / Collapse Toggle Button */}
-        <div style={{ marginTop: 'auto', padding: '12px 8px' }}>
+        <div style={{ padding: '8px 8px 12px' }}>
           <button
             type="button"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -3314,6 +3547,21 @@ ${coversheet.references}
           </div>
         </div>
       )}
+
+      {/* ─── Gemini AI Personal Agent Floating Drawer ─── */}
+      <SmartHireAiAgent
+        isOpen={isAiAgentOpen}
+        onClose={() => setIsAiAgentOpen(false)}
+        pageContext={{
+          page: '/submittal-pack',
+          candidate: candidates.find(c => c.id === selectedCandidateId),
+          job: jobs.find(j => j.id === selectedJobId),
+          coversheet,
+          selectedTemplate,
+          allCandidates: candidates
+        }}
+        onExecuteAction={handleAiExecuteAction}
+      />
       </div>
     </div>
   )

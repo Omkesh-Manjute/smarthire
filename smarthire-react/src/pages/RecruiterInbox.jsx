@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { saveMessageFirestore, getMessagesFirestore, saveRequisitionCandidates, saveCandidate, getAllCandidates, deduplicateCandidates, deleteCandidateFirestore } from '../lib/atsFirestore'
 import { autoSendJobDescriptionToCandidate } from '../utils/autoSendJdHelper'
 import LinkedInVerificationModal from '../components/LinkedInVerificationModal'
+import SmartHireAiAgent, { IconGeminiSparkle } from '../components/SmartHireAiAgent'
 
 const IconLinkedIn = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -2334,6 +2335,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
       return next
     })
   }
+  const [isAiAgentOpen, setIsAiAgentOpen] = useState(false)
   const [streamFilter, setStreamFilter] = useState('all') // 'all', 'email_inbox', 'email_spam', 'careers_portal', 'vendor_bench'
   const [streamCandidates, setStreamCandidates] = useState(() => {
     try {
@@ -7681,8 +7683,44 @@ export default function RecruiterInbox({ defaultViewMode }) {
           </button>
         </div>
 
+        {/* Gemini AI Personal Agent Button */}
+        <div style={{ marginTop: 'auto', paddingTop: 12 }}>
+          <button
+            type="button"
+            onClick={() => setIsAiAgentOpen(true)}
+            title="Ask SmartHire Gemini AI Copilot (1-Click)"
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+              gap: 10,
+              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
+              borderRadius: 8,
+              border: '1px solid rgba(168, 85, 247, 0.4)',
+              background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(59, 130, 246, 0.2) 100%)',
+              color: '#FFFFFF',
+              fontWeight: 600,
+              fontSize: 12.5,
+              cursor: 'pointer',
+              boxShadow: '0 2px 10px rgba(124, 58, 237, 0.25)',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <IconGeminiSparkle size={18} />
+            {!sidebarCollapsed && (
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                <span style={{ fontWeight: 700, color: '#FFFFFF' }}>Ask AI Agent</span>
+                <span style={{ fontSize: 9.5, padding: '1px 5px', borderRadius: 4, background: 'rgba(168, 85, 247, 0.4)', color: '#F3E8FF', fontWeight: 800 }}>
+                  GEMINI
+                </span>
+              </span>
+            )}
+          </button>
+        </div>
+
         {/* Bottom 1-Click Sidebar Collapse / Expand Toggle */}
-        <div style={{ marginTop: 'auto', paddingTop: 16 }}>
+        <div style={{ paddingTop: 8 }}>
           <button
             type="button"
             onClick={handleToggleSidebar}
@@ -16287,6 +16325,16 @@ export default function RecruiterInbox({ defaultViewMode }) {
         candidate={linkedInCandidate || activeCandidate}
         onVerificationComplete={handleLinkedInVerificationComplete}
         currentUser={currentUser}
+      />
+
+      {/* ─── Gemini AI Personal Agent Floating Drawer ─── */}
+      <SmartHireAiAgent
+        isOpen={isAiAgentOpen}
+        onClose={() => setIsAiAgentOpen(false)}
+        pageContext={{
+          page: '/candidates',
+          allCandidates: roleScopedCandidates
+        }}
       />
     </div>
   )
