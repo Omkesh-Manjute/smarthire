@@ -107,6 +107,28 @@ The following high-impact features and optimizations have been agreed upon and p
 
 ## Recent Changes
 
+### 2026-10-07 — Submittal Pack: Reverted Dark Hero Banner, Restored Clean Compact Original Layout
+- **Context & Objectives**:
+  - The user requested:
+    - *"bhai ye kay kiya tumne hatavo isko kaisa dikh raha hai pura kharab remove karo pahle jaysa tha vahsa karo"*
+    - User found the large dark Hero Banner card heavy, cluttering vertical workspace, and requested its immediate removal and restoring the clean original layout.
+  - **Implementations**:
+    1. **Complete Removal of Hero Banner**:
+       - Removed the `heroBanner` card, visual image block, and duplicate format pills from `SubmittalPackPage.jsx`.
+       - Reconnected the top header bar directly to the compact `selectorBar`.
+    2. **Restored Original Compact Selector Bar**:
+       - Restored `selectorBar` styling to flat, clean white bar (`borderBottom: 1px solid #E2E8F0`, padding `12px 24px`) with no extra margins.
+       - Removed all unused `heroBanner*` CSS rules from `styles`.
+    3. **Preserved Core Functional Fixes**:
+       - Retained the cleaned 5-button top bar (`Copy RTR Email / Coversheet`, `Download .doc`, `SmartSign RTR`, `Email Candidate`, `Email Submittal Pack`).
+       - Retained candidate/requisition live-sync effect on `[selectedCandidateId, selectedJobId, selectedTemplate]` to prevent stale Word canvas preview.
+       - Retained South Carolina (SOSC) template with dynamic posting ID & title.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (active bundle `index-Cm8Oxt1M.js`).
+  - Git committed (`c119814`) and pushed to GitHub `origin/main`.
+  - Deployed production bundle to AWS Lightsail server (`34.194.119.199`), extracted to `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Verified live domain `https://smarthireus.com/submittal-pack` returning HTTP 200 with clean bundle `index-Cm8Oxt1M.js`.
+
 ### 2026-10-07 — Submittal Pack: Executive Hero Banner with Visual Image, Live Requisition Badges & Smooth SaaS Styling
 - **Context & Objectives**:
   - The user requested:
