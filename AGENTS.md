@@ -107,6 +107,44 @@ The following high-impact features and optimizations have been agreed upon and p
 
 ## Recent Changes
 
+### 2026-10-07 — Submittal Pack & SmartSign RTR: State of South Carolina (SOSC) Template with Dynamic Title & Posting ID
+- **Context & Objectives**:
+  - The user requested:
+    - *"bhai ye bhi add karo RTR mai south carolina ka hai ye RTR okay ismai tiitle and postioan number change hoga tiitle mai and boday mai so addkaro*
+      *SOSC Right to Represent-Posting ID -13028*
+      *Hi ,*
+      *Please confirm that COOLSOFT LLC has the right to submit you for consideration to the Business Analyst - Consultant - position at "SOSC" under posting 13028."*
+    1. **South Carolina (SOSC) RTR Template Integration**:
+       - Create dynamic RTR email subject: `SOSC Right to Represent-Posting ID -${reqNumber}`.
+       - Create dynamic RTR body: `Please confirm that COOLSOFT LLC has the right to submit you for consideration to the ${title} - position at "SOSC" under posting ${reqNumber}.`
+       - Append candidate confirmation reply statement and recruiter signature.
+    2. **Candidate Name Cleaning**:
+       - Fix artifact where candidate names derived from files or resume lines started with `"Of "`, `"Resume of "`, `"Profile of "`, or `"CV of "`.
+    3. **Submittal Pack & SmartSign RTR Integration**:
+       - Add `south_carolina_sosc` to `SUBMITTAL_TEMPLATES`, `getCleanRtrEmailDetails`, `generatedRtrTemplateHtml`, and auto-detection when job contains `sosc`, `south carolina`, or `sc.gov`.
+       - Add `South Carolina SOSC` quick switch button in the RTR toolbar.
+       - Add `south_carolina_sosc` to `PREBUILT_TEMPLATES` in `SmartSignRtrPage.jsx` and handle URL query parameters.
+- **Key Solutions & Deliverables**:
+  1. **Candidate Name Sanitizer**:
+     - Updated `extractCandidateRealName` in `SubmittalPackPage.jsx` to strip `^(Resume\s+of|Profile\s+of|CV\s+of|Bio\s+of|Of\s+)` case-insensitively across both raw filename names and extracted resume lines.
+  2. **SOSC Email Formatter (`getCleanRtrEmailDetails`)**:
+     - Added dedicated branch for `selectedTemplate === 'south_carolina_sosc'`:
+       - Subject: `SOSC Right to Represent-Posting ID -${reqNumber}`
+       - Ack Body: `Please confirm that COOLSOFT LLC has the right to submit you for consideration to the ${title} - position at "SOSC" under posting ${reqNumber}.`
+       - Full Email Body: Combines greeting (`Hi ${fname}`), acknowledgment, confirmation sentence for the candidate, and recruiter signature.
+  3. **Canvas Word Preview (`generatedRtrTemplateHtml`)**:
+     - Added official SOSC layout with yellow dynamic highlight spans for candidate name, posting ID, and position title.
+  4. **SmartSign RTR Flow**:
+     - Added `south_carolina_sosc` definition to `PREBUILT_TEMPLATES` with pre-placed candidate signature, date, and name fields.
+     - Added `south_carolina` and `sosc` keyword detection in `searchParams`.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (active bundle `index-BB24ovrg.js`).
+  - Git committed (`5d7ded7`) and pushed to GitHub `origin/main`.
+  - Deployed production bundle to AWS Lightsail server (`34.194.119.199`), extracted to webroot `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Pruned old asset bundles (kept 5 most recent), removed temporary `.tar.gz` archive immediately, and reloaded PM2 `smarthire-ats`.
+  - Verified disk hygiene: 7.5GB available (60% used).
+  - Verified live domain `https://smarthireus.com/submittal-pack` and `/sign-rtr` returning HTTP 200 with new active bundle `index-BB24ovrg.js`.
+
 ### 2026-10-07 — Submittal Pack & Inbox: Gemini AI Personal Agent Copilot & Nebraska 2-Column Skills Table with Bullets
 - **Context & Objectives**:
   - The user requested:
