@@ -6975,6 +6975,19 @@ app.post('/api/screening/:sessionId/upload-media', uploadScreeningMedia.single('
     const mediaUrl = `/uploads/screening/${req.file.filename}`;
     const filePath = req.file.path;
 
+    // Ensure WebM container has valid seek cues and duration headers for instant browser streaming
+    if (req.file.filename.endsWith('.webm')) {
+      try {
+        const remuxPath = filePath + '.remux.webm';
+        await execAsync(`ffmpeg -y -i "${filePath}" -c copy "${remuxPath}"`);
+        if (fs.existsSync(remuxPath) && fs.statSync(remuxPath).size > 1000) {
+          fs.renameSync(remuxPath, filePath);
+        }
+      } catch (rmxErr) {
+        console.warn('Screening WebM remux warning:', rmxErr.message);
+      }
+    }
+
     // Transcribe with ffmpeg extraction + Groq Whisper if available
     let transcription = { text: null, segments: [] };
     try {

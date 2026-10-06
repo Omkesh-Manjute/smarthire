@@ -1057,49 +1057,70 @@ SmartHire Recruitment Team`
       {/* ─── 4 STATS KPI CARDS ────────────────────────────────────────────── */}
       <div style={styles.kpiGrid}>
         <div
-          style={styles.kpiCard}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(15, 23, 42, 0.08)' }}
+          style={{ ...styles.kpiCard, borderTop: '3px solid #2563eb' }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(37, 99, 235, 0.08)' }}
           onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.04)' }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={styles.kpiLabel}>Total Campaigns</span>
+            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              </svg>
+            </div>
           </div>
           <div style={styles.kpiValue}>{totalCampaigns}</div>
           <div style={styles.kpiSub}>Active screening links</div>
         </div>
 
         <div
-          style={styles.kpiCard}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(15, 23, 42, 0.08)' }}
+          style={{ ...styles.kpiCard, borderTop: '3px solid #059669' }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(5, 150, 105, 0.08)' }}
           onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.04)' }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={styles.kpiLabel}>Submissions Received</span>
+            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
           </div>
           <div style={styles.kpiValue}>{totalSubmissions}</div>
           <div style={styles.kpiSub}>Completed candidate screens</div>
         </div>
 
         <div
-          style={styles.kpiCard}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(15, 23, 42, 0.08)' }}
+          style={{ ...styles.kpiCard, borderTop: '3px solid #7c3aed' }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(124, 58, 237, 0.08)' }}
           onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.04)' }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={styles.kpiLabel}>Video Submissions</span>
+            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#f5f3ff', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+              </svg>
+            </div>
           </div>
           <div style={styles.kpiValue}>{videoSubmissions}</div>
-          <div style={styles.kpiSub}>Camera responses recorded</div>
+          <div style={styles.kpiSub}>Recorded video answers</div>
         </div>
 
         <div
-          style={styles.kpiCard}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(15, 23, 42, 0.08)' }}
+          style={{ ...styles.kpiCard, borderTop: '3px solid #d97706' }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(217, 119, 6, 0.08)' }}
           onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.04)' }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={styles.kpiLabel}>AI Shortlisted</span>
-            <span style={styles.kpiIconAmber}>✓</span>
+            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#fffbeb', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="8" r="7"></circle>
+                <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+              </svg>
+            </div>
           </div>
           <div style={styles.kpiValue}>{shortlistedCount}</div>
           <div style={styles.kpiSub}>Qualified submissions</div>
@@ -1130,73 +1151,79 @@ SmartHire Recruitment Team`
           )}
         </div>
 
-        <div style={styles.filterButtonGroup}>
-          <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '700', marginRight: '4px' }}>Status:</span>
-          {[
-            { id: 'all', label: 'All' },
-            { id: 'submitted', label: 'New / Submitted' },
-            { id: 'shortlisted', label: 'Shortlisted' },
-            { id: 'reviewed', label: 'Reviewed' },
-            { id: 'rejected', label: 'Rejected' }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setFilterStatus(tab.id)}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '700' }}>Status:</span>
+            <select
+              value={filterStatus}
+              onChange={e => setFilterStatus(e.target.value)}
               style={{
-                ...styles.filterTab,
-                ...(filterStatus === tab.id ? styles.filterTabActive : {})
+                padding: '6px 10px',
+                borderRadius: '6px',
+                border: '1px solid #cbd5e1',
+                background: '#ffffff',
+                fontSize: '12.5px',
+                fontWeight: '600',
+                color: '#334155',
+                cursor: 'pointer',
+                outline: 'none'
               }}
             >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+              <option value="all">All Statuses</option>
+              <option value="submitted">New / Submitted</option>
+              <option value="shortlisted">Shortlisted</option>
+              <option value="reviewed">Reviewed</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
 
-        <div style={styles.filterButtonGroup}>
-          <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '700', marginRight: '4px' }}>Format:</span>
-          {[
-            { id: 'all', label: 'All' },
-            { id: 'video', label: 'Video' },
-            { id: 'audio', label: 'Audio' },
-            { id: 'text', label: 'Text' }
-          ].map(fmt => (
-            <button
-              key={fmt.id}
-              type="button"
-              onClick={() => setFilterFormat(fmt.id)}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '700' }}>Format:</span>
+            <select
+              value={filterFormat}
+              onChange={e => setFilterFormat(e.target.value)}
               style={{
-                ...styles.filterTab,
-                ...(filterFormat === fmt.id ? styles.filterTabActive : {})
+                padding: '6px 10px',
+                borderRadius: '6px',
+                border: '1px solid #cbd5e1',
+                background: '#ffffff',
+                fontSize: '12.5px',
+                fontWeight: '600',
+                color: '#334155',
+                cursor: 'pointer',
+                outline: 'none'
               }}
             >
-              {fmt.label}
-            </button>
-          ))}
-        </div>
+              <option value="all">All Formats</option>
+              <option value="video">Video</option>
+              <option value="audio">Audio</option>
+              <option value="text">Text</option>
+            </select>
+          </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '700' }}>Recruiter:</span>
-          <select
-            value={filterRecruiter}
-            onChange={e => setFilterRecruiter(e.target.value)}
-            style={{
-              padding: '5px 10px',
-              borderRadius: '6px',
-              border: '1px solid #cbd5e1',
-              background: '#ffffff',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#334155',
-              cursor: 'pointer',
-              outline: 'none'
-            }}
-          >
-            <option value="all">All Recruiters</option>
-            {allAvailableRecruiters.map(r => (
-              <option key={r.name} value={r.name}>{r.name}</option>
-            ))}
-          </select>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '700' }}>Recruiter:</span>
+            <select
+              value={filterRecruiter}
+              onChange={e => setFilterRecruiter(e.target.value)}
+              style={{
+                padding: '6px 10px',
+                borderRadius: '6px',
+                border: '1px solid #cbd5e1',
+                background: '#ffffff',
+                fontSize: '12.5px',
+                fontWeight: '600',
+                color: '#334155',
+                cursor: 'pointer',
+                outline: 'none'
+              }}
+            >
+              <option value="all">All Recruiters</option>
+              {allAvailableRecruiters.map(r => (
+                <option key={r.name} value={r.name}>{r.name}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -1230,7 +1257,17 @@ SmartHire Recruitment Team`
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table style={styles.table}>
+            <table style={{ ...styles.table, tableLayout: 'fixed', width: '100%' }}>
+              <colgroup>
+                <col style={{ width: '25%' }} />
+                <col style={{ width: '23%' }} />
+                <col style={{ width: '13%' }} />
+                <col style={{ width: '10%' }} />
+                <col style={{ width: '9%' }} />
+                <col style={{ width: '10%' }} />
+                <col style={{ width: '10%' }} />
+                <col style={{ width: '60px' }} />
+              </colgroup>
               <thead>
                 <tr style={styles.tableHeadRow}>
                   <th style={styles.th}>Candidate</th>
@@ -1240,7 +1277,7 @@ SmartHire Recruitment Team`
                   <th style={styles.th}>AI Fit Score</th>
                   <th style={styles.th}>Status</th>
                   <th style={styles.th}>Submitted</th>
-                  <th style={{ ...styles.th, textAlign: 'right' }}>Actions</th>
+                  <th style={{ ...styles.th, textAlign: 'center' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -1360,36 +1397,19 @@ SmartHire Recruitment Team`
                       </td>
 
                       {/* Recruiter / Generated By */}
-                      <td style={styles.td} onClick={e => e.stopPropagation()}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center' }}>
-                          <select
-                            value={recName}
-                            onChange={e => handleUpdateSessionRecruiter(session.sessionId, e.target.value)}
-                            title="Click to change or reassign recruiter"
-                            style={{
-                              background: '#f8fafc',
-                              border: '1px solid #e2e8f0',
-                              borderRadius: '6px',
-                              padding: '3px 8px',
-                              fontSize: '12.5px',
-                              fontWeight: '700',
-                              color: '#334155',
-                              cursor: 'pointer',
-                              outline: 'none',
-                              maxWidth: '155px',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              transition: 'all 0.15s ease'
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.borderColor = '#94a3b8'; e.currentTarget.style.background = '#ffffff' }}
-                            onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = '#f8fafc' }}
-                          >
-                            {allAvailableRecruiters.map(r => (
-                              <option key={r.name} value={r.name}>
-                                {r.name}
-                              </option>
-                            ))}
-                          </select>
+                      <td style={styles.td}>
+                        <div
+                          title={recName}
+                          style={{
+                            fontSize: '12.5px',
+                            fontWeight: '700',
+                            color: '#334155',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}
+                        >
+                          {recName}
                         </div>
                       </td>
 
@@ -1470,34 +1490,9 @@ SmartHire Recruitment Team`
                       </td>
 
                       {/* Actions */}
-                      <td style={{ ...styles.td, textAlign: 'right' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              const url = `${window.location.origin}/screening/${session.sessionId}`
-                              navigator.clipboard.writeText(url)
-                              alert(`✓ Copied screening link to clipboard:\n${url}`)
-                            }}
-                            style={{
-                              padding: '5px 9px',
-                              background: '#f8fafc',
-                              color: '#475569',
-                              border: '1px solid #e2e8f0',
-                              borderRadius: '6px',
-                              fontSize: '11.5px',
-                              fontWeight: '700',
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px'
-                            }}
-                            title="Copy candidate screening link to clipboard"
-                          >
-                            Copy Link
-                          </button>
-                          {(session.status === 'submitted' || session.status === 'shortlisted' || session.status === 'reviewed' || (session.responses && session.responses.length > 0)) && (
+                      <td style={{ ...styles.td, textAlign: 'center' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                          {(session.status === 'submitted' || session.status === 'shortlisted' || session.status === 'reviewed' || (session.responses && session.responses.length > 0)) ? (
                             <button
                               type="button"
                               onClick={(e) => {
@@ -1509,6 +1504,8 @@ SmartHire Recruitment Team`
                             >
                               PDF
                             </button>
+                          ) : (
+                            <span style={{ color: '#cbd5e1', fontSize: '13px' }}>—</span>
                           )}
                           {isSuperAdmin && (
                             <button
@@ -2059,24 +2056,9 @@ SmartHire Recruitment Team`
                   )}
                   <div style={styles.sideInfoRow}>
                     <span style={{ color: '#64748b' }}>Assigned Recruiter:</span>
-                    <select
-                      value={getRecruiterName(reviewSession)}
-                      onChange={e => handleUpdateSessionRecruiter(reviewSession.sessionId, e.target.value)}
-                      style={{
-                        background: '#ffffff',
-                        border: '1px solid #cbd5e1',
-                        borderRadius: '4px',
-                        padding: '2px 6px',
-                        fontSize: '12px',
-                        fontWeight: '700',
-                        color: '#0f172a',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {allAvailableRecruiters.map(r => (
-                        <option key={r.name} value={r.name}>{r.name}</option>
-                      ))}
-                    </select>
+                    <strong style={{ color: '#0f172a', fontWeight: '700', fontSize: '13px' }}>
+                      {getRecruiterName(reviewSession)}
+                    </strong>
                   </div>
                 </div>
 
@@ -2301,8 +2283,17 @@ SmartHire Recruitment Team`
                         if (typeof resp.startTime === 'number') {
                           const vid = document.getElementById('screening-review-video')
                           if (vid) {
-                            vid.currentTime = resp.startTime
-                            vid.play().catch(() => {})
+                            const applySeek = () => {
+                              try {
+                                vid.currentTime = resp.startTime
+                                vid.play().catch(() => {})
+                              } catch (e) {}
+                            }
+                            if (vid.readyState >= 1) {
+                              applySeek()
+                            } else {
+                              vid.addEventListener('loadedmetadata', applySeek, { once: true })
+                            }
                           }
                         }
                       }}
@@ -2351,10 +2342,20 @@ SmartHire Recruitment Team`
                           <div style={styles.videoPlayerBox}>
                             <video
                               id="screening-review-video"
+                              key={reviewSession?.sessionId}
                               src={currentAns.mediaUrl || reviewSession.masterMediaUrl}
                               controls
+                              preload="metadata"
+                              playsInline
                               playbackRate={playbackSpeed}
                               style={styles.fullVideoElement}
+                              onLoadedMetadata={e => {
+                                if (typeof currentAns.startTime === 'number' && currentAns.startTime > 0) {
+                                  try {
+                                    e.target.currentTime = currentAns.startTime
+                                  } catch (err) {}
+                                }
+                              }}
                             />
                             {/* Playback speed controls & video download */}
                             <div style={styles.speedControlsRow}>
