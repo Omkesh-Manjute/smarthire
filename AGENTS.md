@@ -107,6 +107,29 @@ The following high-impact features and optimizations have been agreed upon and p
 
 ## Recent Changes
 
+### 2026-10-07 — Submittal Pack: UI Decluttering, Streamlined Action Buttons, Stale Data Sync Fix & Smooth Design
+- **Context & Objectives**:
+  - The user requested:
+    - *"bhai ye bhi page sahi nahi dikh raha hai so updatekaro isko jo kam ka nahi hai hata ke an new banner image bana ke dikhao bhi kaysa lagta hai sab update karna button and other think also color somothe wala effact"*
+    - *"bhai kay kar rahe ho and kisa image banye ho samj nahi aya hai bhai"*
+    1. **Clarification & UI Focus**: Clarified that user requested modernizing the Submittal Pack UI layout, cleaning redundant buttons, and introducing smooth color effects rather than generating AI graphics.
+    2. **Declutter Top Navigation**: Streamline 6 scattered buttons down to a clean, well-spaced action group:
+       - `📋 Copy RTR Email / Coversheet`
+       - `📥 Download .doc` (instant Word file download)
+       - `✍️ SmartSign RTR` (direct digital signing)
+       - `✉️ Email Candidate (RTR)` (clean blue button)
+       - `✉️ Email Submittal Pack` (primary enterprise CTA)
+    3. **Remove Redundant In-Canvas Banner**: Removed the bulky blue format box inside the right preview column that duplicated the top template dropdown, freeing up 70px+ of vertical space for the Word Canvas.
+    4. **Fix Stale Data Sync Bug**: Fixed issue shown in user screenshot where left form was on `Azure Cloud Engineer 159260` while right Word preview remained stuck on `COBOL Developer 13915`. Added an explicit sync effect on `[selectedCandidateId, selectedJobId, selectedTemplate]` to force-update editor innerHTML and clear dirty flags.
+    5. **Smooth Color Effects**: Applied smooth cubic-bezier button transitions, soft box-shadows, subtle border highlights, and refined typography.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (active bundle `index-Cm8Oxt1M.js`).
+  - Git committed (`e2b3f8e`) and pushed to GitHub `origin/main`.
+  - Deployed production bundle to AWS Lightsail server (`34.194.119.199`), extracted to `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Pruned old asset bundles (kept 5 most recent), removed temporary `.tar.gz` archive immediately, and reloaded PM2 `smarthire-ats`.
+  - Verified disk hygiene: 7.5GB available (60% used).
+  - Verified live domain `https://smarthireus.com/submittal-pack` returning HTTP 200 with new active bundle `index-Cm8Oxt1M.js`.
+
 ### 2026-10-07 — Submittal Pack & SmartSign RTR: State of South Carolina (SOSC) Template with Dynamic Title & Posting ID
 - **Context & Objectives**:
   - The user requested:
