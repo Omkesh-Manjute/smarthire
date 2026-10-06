@@ -107,6 +107,41 @@ The following high-impact features and optimizations have been agreed upon and p
 
 ## Recent Changes
 
+### 2026-10-07 — Submittal Pack & Inbox: Gemini AI Personal Agent Copilot & Nebraska 2-Column Skills Table with Bullets
+- **Context & Objectives**:
+  - The user requested:
+    - *"bhai ismai new nabraska resume tamplete mai bollet point nahi aya formating mai and skills mai ak table ban ke aggest ho jana cahiye bhai so check it and do it and yaha ak AI add karo jise hum bole to for kar de jo bole vo kar de right ak chota sa gemini ka icon kaisa hota hai clound ka us type ka vo hona cahiye left side pannel mai below mai chota sa and vo us page ko understand kare and work kare okay so update bhai and if mai candidate ke page mai hu and usmai maine bola jd diya ya bol finde best match with this rectuiremnt candiate so vo muje find kar ke de samjhe kay agent type peronal agent bro"*
+    1. **Nebraska Resume Formatting Fix**:
+       - Under `Technical Qualifications/Skills List`, convert stacked raw text into an authentic 2-column table (`Category` | `Skills / Technologies`) with clean borders (`border: 1px solid #bfbfbf`), category highlights, and proper row alignment.
+       - Enforce strict bullet points (`•` / `<li>`) across all summary items in `Candidate Description` and all project responsibilities in `Employment History`.
+    2. **SmartHire Gemini AI Personal Agent (Copilot)**:
+       - Add a sleek Gemini cloud/sparkle icon button at the bottom of the left navigation sidebar across the ATS.
+       - Build a full-featured, context-aware AI Personal Copilot drawer (`SmartHireAiAgent.jsx`) that understands the current active screen.
+       - When on `/submittal-pack`: understands candidate, target job, coversheet, rate, and template. Can execute live page actions (e.g. switch template, change rate, rewrite summary).
+       - When on `/inbox` or `/candidates`: understands candidate pool. User can paste a JD or request matching requirements (e.g. "Find best match for Azure Cloud Engineer 10+ yrs"), and the agent evaluates, scores, and displays ranked candidate cards with 1-click "Open in Submittal Pack" buttons.
+- **Key Solutions & Deliverables**:
+  1. **Nebraska Structured Table & Bullet Formatter (`formatStructuredNebraskaResume`)**:
+     - Added `renderCandidateDescription`: wraps every qualification statement in indented bullet items (`list-style-type: disc`).
+     - Added `renderSkillsTable`: parses raw comma-separated and category lines into `{ category, skills }` pairs and outputs a 2-column table with `#F1F5F9` headers and alternating cell backgrounds.
+     - Added `renderEmploymentHistory`: renders distinct project headers, role designations, bold/italic environment lines, and strict bullet points for every responsibility line.
+  2. **SmartHire Gemini AI Copilot Component (`SmartHireAiAgent.jsx`)**:
+     - Custom SVG glyph with 4-pointed Gemini star and vibrant gradient aura.
+     - Conversational drawer with real-time streaming, quick-prompt pills, and auto-scrolling chat history.
+     - Interactive candidate match cards with Match Score badges (e.g., `91% Match`), matched skills pills, and 1-click **"Open in Submittal Pack"** navigation.
+     - Automated action execution on parent screens (`SWITCH_TEMPLATE`, `UPDATE_RATE`, `SELECT_CANDIDATE`, `UPDATE_SUMMARY`).
+  3. **Backend AI Agent Endpoint (`POST /api/ai/agent`)**:
+     - Context-aware engine in `smarthire-react/server/index.js`.
+     - Uses Groq Llama 3.3 70B & Deep ATS semantic scoring with fallback rule evaluation.
+     - Analyzes candidate skills, experience levels, titles, and locations against user requirements/JDs.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (active bundle `index-R4cBrHT0.js`).
+  - Git committed (`8188a4e`) and pushed to GitHub `origin/main`.
+  - Deployed production bundle and updated server to AWS Lightsail server (`34.194.119.199`), extracted to webroot `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Pruned old asset bundles (kept 5 most recent), removed temporary `.tar.gz` archive immediately, and reloaded PM2 `smarthire-ats`.
+  - Verified disk hygiene: 7.5GB available (60% used).
+  - Verified live domain `https://smarthireus.com/submittal-pack` and `/inbox` returning HTTP 200 with new active bundle `index-R4cBrHT0.js`.
+  - Tested live AI agent endpoint `/api/ai/agent` via curl with real candidate pool ranking.
+
 ### 2026-10-07 — Submittal Pack: Nebraska State Template & Clean RTR Email Formatting with Recruiter Signature
 - **Context & Objectives**:
   - The user requested:
