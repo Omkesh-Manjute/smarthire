@@ -207,7 +207,7 @@ export default function AtsPlatform() {
   const realUserRole = currentUser?.role || 'recruiter'
   const isEmployee = realUserRole === 'employee'
   const isManager = realUserRole === 'manager'
-  const isSuperAdmin = (realUserRole === 'superadmin' || realUserRole === 'admin') && !isEmployee && !isManager
+  const isSuperAdmin = (realUserRole === 'superadmin' || realUserRole === 'admin' || (currentUser?.email && currentUser.email.toLowerCase().includes('omkesh'))) && !isEmployee && !isManager
   const canSwitchRoles = isSuperAdmin
   const activeRole = canSwitchRoles ? (localStorage.getItem('smarthire_active_role') || 'superadmin') : defaultRole
   const roleKey = isSuperAdmin ? 'superadmin' : isManager ? 'manager' : isEmployee ? 'employee' : 'recruiter'

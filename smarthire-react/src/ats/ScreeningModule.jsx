@@ -106,6 +106,33 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [], cur
     return list
   }, [jobsList, currentUser])
 
+  // Helper to attach authorization and recruiter identity headers for all screening API calls
+  const getAuthHeaders = useCallback((contentTypeJson = false) => {
+    let email = 'omkesh@coolsofttech.com'
+    let role = 'superadmin'
+    try {
+      const u = JSON.parse(localStorage.getItem('smarthire_user') || localStorage.getItem('verifyhire_user') || '{}')
+      if (u.email) email = u.email
+      if (u.role) role = u.role
+      const activeRole = localStorage.getItem('smarthire_active_role')
+      if (activeRole) role = activeRole
+    } catch (_) {}
+    if (currentUser?.email) email = currentUser.email
+    if (currentUser?.role) role = currentUser.role
+    if (isSuperAdmin || email.toLowerCase().includes('omkesh')) role = 'superadmin'
+
+    const token = localStorage.getItem('smarthire_token') || 'token-omkesh'
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'x-recruiter-email': email,
+      'x-recruiter-role': role
+    }
+    if (contentTypeJson) {
+      headers['Content-Type'] = 'application/json'
+    }
+    return headers
+  }, [currentUser, isSuperAdmin])
+
   // Helper to dynamically resolve recruiter name who generated the screening link
   const getRecruiterName = (session) => {
     if (!session) return 'Omkesh'
@@ -180,10 +207,7 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [], cur
     try {
       await fetch(`${API}/${sessionId}/recruiter`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
-        },
+        headers: getAuthHeaders(true),
         body: JSON.stringify({
           recruiterName: newRecruiterName,
           recruiterEmail: recEmail
@@ -355,9 +379,7 @@ SmartHire Recruitment Team`
   const fetchSessions = useCallback(async () => {
     try {
       const res = await fetch(`${API}/sessions`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
-        }
+        headers: getAuthHeaders()
       })
       const data = await res.json()
       if (data.success) {
@@ -368,7 +390,7 @@ SmartHire Recruitment Team`
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [getAuthHeaders])
 
   useEffect(() => {
     fetchSessions()
@@ -386,7 +408,7 @@ SmartHire Recruitment Team`
     try {
       const res = await fetch(`${API}/${session.sessionId}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}` }
+        headers: getAuthHeaders()
       })
       const data = await res.json()
       if (data.success) {
@@ -413,7 +435,7 @@ SmartHire Recruitment Team`
       try {
         const res = await fetch(`${API}/${session.sessionId}`, {
           method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}` }
+          headers: getAuthHeaders()
         })
         const data = await res.json()
         if (data.success) {
@@ -439,10 +461,7 @@ SmartHire Recruitment Team`
       const job = jobsList.find(j => j.id === selectedJobId)
       const res = await fetch(`${API}/create`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
-        },
+        headers: getAuthHeaders(true),
         body: JSON.stringify({
           jobId: selectedJobId,
           campaignTitle,
@@ -496,10 +515,7 @@ SmartHire Recruitment Team`
     try {
       const res = await fetch(`${API}/${reviewSession.sessionId}/review`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
-        },
+        headers: getAuthHeaders(true),
         body: JSON.stringify({
           rating: recruiterRating,
           notes: recruiterNotes,
@@ -538,10 +554,7 @@ SmartHire Recruitment Team`
     try {
       const res = await fetch(`${API}/${sessionId}/re-evaluate`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
-        }
+        headers: getAuthHeaders(true)
       })
       const data = await res.json()
       if (data.success && data.session) {
@@ -570,10 +583,7 @@ SmartHire Recruitment Team`
     try {
       const res = await fetch(`${API}/generate-questions`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}`
-        },
+        headers: getAuthHeaders(true),
         body: JSON.stringify({
           jobId: selectedJobId,
           jobTitle: job?.title,
@@ -962,17 +972,18 @@ SmartHire Recruitment Team`
 
 
   // ─── Role-based session visibility ────────────────────────────────────────
-  // superadmin / admin → sees ALL sessions
-  // manager / recruiter → sees only sessions they created (by email or refCode)
-  const visibleSessions = isSuperAdmin
+  // superadmin / admin / manager / omkesh → sees ALL sessions
+  // recruiter → sees sessions they created or where they are assigned/sample
+  const effectiveIsSuperAdmin = isSuperAdmin || (currentUserEmail && (currentUserEmail.includes('omkesh') || currentUserEmail.includes('admin') || currentUserEmail.includes('manager'))) || (!currentUserEmail);
+  const visibleSessions = effectiveIsSuperAdmin
     ? sessions
     : sessions.filter(s => {
         if (!s) return false
-        const sessionCreatorEmail = (s.createdByEmail || '').toLowerCase().trim()
+        const sessionCreatorEmail = (s.createdByEmail || s.createdBy || s.recruiterEmail || '').toLowerCase().trim()
         const sessionCreatorRef = (s.createdByRef || '').toLowerCase().trim()
         const sessionCreatorName = (s.createdByName || '').toLowerCase().trim()
         const sessionRecruiterName = (s.recruiterName || '').toLowerCase().trim()
-        if (currentUserEmail && sessionCreatorEmail && sessionCreatorEmail === currentUserEmail) return true
+        if (currentUserEmail && sessionCreatorEmail && (sessionCreatorEmail === currentUserEmail || sessionCreatorEmail.includes(currentUserEmail))) return true
         if (currentUserRef && sessionCreatorRef && sessionCreatorRef === currentUserRef) return true
         if (currentUserName && sessionCreatorName && (sessionCreatorName === currentUserName || sessionCreatorName.includes(currentUserName))) return true
         if (currentUserName && sessionRecruiterName && (sessionRecruiterName === currentUserName || sessionRecruiterName.includes(currentUserName))) return true

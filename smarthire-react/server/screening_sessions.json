@@ -1,5 +1,465 @@
 [
   {
+    "sessionId": "SCR-1791326701821-558",
+    "campaignTitle": "Help Desk I Screening Campaign",
+    "jobId": "159259",
+    "jobTitle": "Help Desk I",
+    "jobSkills": [
+      "Customer Service",
+      "Basic IT Troubleshooting",
+      "Call Center Experience"
+    ],
+    "jobPreferredSkills": [
+      "Previous IT Call Center Experience"
+    ],
+    "jobExperience": "6 months",
+    "jobLocation": "Madison, WI",
+    "jobClient": "DOA",
+    "targetPayRate": null,
+    "maxPayRate": null,
+    "questions": [
+      {
+        "id": "q1",
+        "text": "Please tell your last 5 digit of SSN.",
+        "description": "Assess communication clarity, relevance of prior support roles, and alignment with Help Desk I responsibilities.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q2",
+        "text": "what is your current location and are you comfortable with in person interview for second round ?",
+        "description": "Provide brief context for candidate.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      }
+    ],
+    "allowedFormats": [
+      "video",
+      "audio",
+      "text"
+    ],
+    "maxDuration": 120,
+    "responses": [],
+    "candidateName": null,
+    "candidateEmail": null,
+    "candidatePhone": null,
+    "candidateLocation": null,
+    "candidateLinkedin": null,
+    "expectedRate": null,
+    "aiScore": null,
+    "aiSummary": null,
+    "recommendation": null,
+    "keyTakeaways": null,
+    "recruiterRating": null,
+    "recruiterNotes": "",
+    "status": "in_progress",
+    "createdAt": "2026-10-06T22:45:01.829Z",
+    "createdBy": "pankajm@coolsofttech.com",
+    "createdByEmail": "pankajm@coolsofttech.com",
+    "createdByName": "Pankaj",
+    "createdByRef": "pankaj",
+    "recruiterEmail": "pankajm@coolsofttech.com",
+    "recruiterName": "Pankaj",
+    "submittedBy": "omkesh@coolsofttech.com",
+    "recruiterId": "admin-1",
+    "screeningComplete": false,
+    "submittedAt": null,
+    "isStarted": true,
+    "startedAt": "2026-10-06T23:23:52.825Z"
+  },
+  {
+    "sessionId": "SCR-1791322905793-705",
+    "campaignTitle": " Senior COBOL Developer ",
+    "jobId": "159260",
+    "jobTitle": "Azure Cloud Engineer",
+    "jobSkills": [
+      "Azure",
+      "PowerShell",
+      "Python",
+      "Windows"
+    ],
+    "jobPreferredSkills": [
+      "Azure Certification",
+      "Rubrik",
+      "Secret Server"
+    ],
+    "jobExperience": "3+ years",
+    "jobLocation": "Mechanicsville, VA",
+    "jobClient": "VDOT",
+    "targetPayRate": null,
+    "maxPayRate": null,
+    "questions": [
+      {
+        "id": "q2",
+        "text": "What is your current work authorization, earliest availability or notice period, and  comfortable with onsite work?",
+        "description": "Explain the architecture, your specific contribution, and the final impact.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q3",
+        "text": "How many years of hands-on Visual COBOL/Micro Focus COBOL experience do you have, specifically Visual COBOL V9?",
+        "description": "Confirm your current location, remote/relocation flexibility, and visa authorization.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 90
+      },
+      {
+        "id": "q3",
+        "text": "How many years of COBOL development experience do you have in a Windows-based client-server environment?",
+        "description": "Provide brief context for candidate.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q4",
+        "text": "How many years of hands-on Oracle SQL experience do you have? Have you worked with Oracle 19c+?",
+        "description": "Provide brief context for candidate.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      }
+    ],
+    "allowedFormats": [
+      "video",
+      "audio",
+      "text"
+    ],
+    "maxDuration": 120,
+    "responses": [],
+    "candidateName": null,
+    "candidateEmail": null,
+    "candidatePhone": null,
+    "candidateLocation": null,
+    "candidateLinkedin": null,
+    "expectedRate": null,
+    "aiScore": null,
+    "aiSummary": null,
+    "recommendation": null,
+    "keyTakeaways": null,
+    "recruiterRating": null,
+    "recruiterNotes": "",
+    "status": "pending",
+    "createdAt": "2026-10-06T21:41:45.793Z",
+    "createdBy": "omkesh@coolsofttech.com",
+    "createdByEmail": "omkesh@coolsofttech.com",
+    "createdByName": "Omkesh",
+    "createdByRef": "omkesh",
+    "recruiterEmail": "omkesh@coolsofttech.com",
+    "recruiterName": "Omkesh",
+    "submittedBy": "omkesh@coolsofttech.com",
+    "recruiterId": "admin-1",
+    "screeningComplete": false,
+    "submittedAt": null
+  },
+  {
+    "sessionId": "SCR-1791315634246-868",
+    "campaignTitle": "Data Analyst 3 Screening Campaign",
+    "jobId": "159251",
+    "jobTitle": "Data Analyst 3",
+    "jobSkills": [
+      "Power BI",
+      "DAX",
+      "Excel",
+      "Azure"
+    ],
+    "jobPreferredSkills": [
+      "FinOps",
+      "Azure Reserved Instances",
+      "JIT capacity planning"
+    ],
+    "jobExperience": "Any",
+    "jobLocation": "Mechanicsville, VA",
+    "jobClient": "VDOT",
+    "targetPayRate": null,
+    "maxPayRate": null,
+    "questions": [
+      {
+        "id": "q1",
+        "text": "Give a 60-90 second introduction of your background, key technical skills, and recent projects relevant to Data Analyst 3.",
+        "description": "Summarize your core languages, frameworks, and client impact.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q2",
+        "text": "Describe a recent challenging project or technical problem you solved involving Power BI, DAX, Excel.",
+        "description": "Explain the architecture, your specific contribution, and the final impact.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q3",
+        "text": "What is your current work authorization, earliest availability or notice period, and desired hourly rate / compensation?",
+        "description": "Confirm your current location, remote/relocation flexibility, and visa authorization.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 90
+      },
+      {
+        "id": "q4",
+        "text": "hold your ID in your hand & show",
+        "description": "Provide brief context for candidate.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q5",
+        "text": "Explain why you are a good fit for this position.",
+        "description": "Provide brief context for candidate.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      }
+    ],
+    "allowedFormats": [
+      "video",
+      "audio",
+      "text"
+    ],
+    "maxDuration": 120,
+    "responses": [],
+    "candidateName": null,
+    "candidateEmail": null,
+    "candidatePhone": null,
+    "candidateLocation": null,
+    "candidateLinkedin": null,
+    "expectedRate": null,
+    "aiScore": null,
+    "aiSummary": null,
+    "recommendation": null,
+    "keyTakeaways": null,
+    "recruiterRating": null,
+    "recruiterNotes": "",
+    "status": "pending",
+    "createdAt": "2026-10-06T19:40:34.246Z",
+    "createdBy": "nishant@coolsofttech.com",
+    "createdByEmail": "nishant@coolsofttech.com",
+    "createdByName": "Nishant Kathane",
+    "createdByRef": "nishant-kathane",
+    "recruiterEmail": "nishant@coolsofttech.com",
+    "recruiterName": "Nishant Kathane",
+    "submittedBy": "omkesh@coolsofttech.com",
+    "recruiterId": "admin-1",
+    "screeningComplete": false,
+    "submittedAt": null
+  },
+  {
+    "sessionId": "SCR-1791300804988-543",
+    "campaignTitle": "Data Analyst 3 Screening Campaign",
+    "jobId": "159251",
+    "jobTitle": "Data Analyst 3",
+    "jobSkills": [
+      "Power BI",
+      "DAX",
+      "Excel",
+      "Azure"
+    ],
+    "jobPreferredSkills": [
+      "FinOps",
+      "Azure Reserved Instances",
+      "JIT capacity planning"
+    ],
+    "jobExperience": "Any",
+    "jobLocation": "Mechanicsville, VA",
+    "jobClient": "VDOT",
+    "targetPayRate": null,
+    "maxPayRate": null,
+    "questions": [
+      {
+        "id": "q1",
+        "text": " What is your current Location?  Are you available for F2F interview ?",
+        "description": "Summarize your core languages, frameworks, and client impact.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q2",
+        "text": "Describe a recent challenging project or technical problem you solved involving Power BI, DAX, Excel.",
+        "description": "Explain the architecture, your specific contribution, and the final impact.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q3",
+        "text": "What is your current work authorization, earliest availability or notice period, and desired hourly rate / compensation?",
+        "description": "Confirm your current location, remote/relocation flexibility, and visa authorization.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 90
+      },
+      {
+        "id": "q5",
+        "text": "Please describ your  experience in Cloud Financial Management & FinOps.",
+        "description": "Provide brief context for candidate.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      }
+    ],
+    "allowedFormats": [
+      "video",
+      "audio",
+      "text"
+    ],
+    "maxDuration": 120,
+    "responses": [],
+    "candidateName": null,
+    "candidateEmail": null,
+    "candidatePhone": null,
+    "candidateLocation": null,
+    "candidateLinkedin": null,
+    "expectedRate": null,
+    "aiScore": null,
+    "aiSummary": null,
+    "recommendation": null,
+    "keyTakeaways": null,
+    "recruiterRating": null,
+    "recruiterNotes": "",
+    "status": "pending",
+    "createdAt": "2026-10-06T15:33:24.988Z",
+    "createdBy": "kamal@coolsofttech.com",
+    "createdByEmail": "kamal@coolsofttech.com",
+    "createdByName": "Sukamal Chatterjee",
+    "createdByRef": "sukamal-chatterjee",
+    "recruiterEmail": "kamal@coolsofttech.com",
+    "recruiterName": "Sukamal Chatterjee",
+    "submittedBy": "omkesh@coolsofttech.com",
+    "recruiterId": "admin-1",
+    "screeningComplete": false,
+    "submittedAt": null
+  },
+  {
+    "sessionId": "SCR-1791298224853-562",
+    "campaignTitle": "Business Analyst 4 Screening Campaign",
+    "jobId": "159211",
+    "jobTitle": "Business Analyst 4",
+    "jobSkills": [
+      "API",
+      "Agile",
+      "Azure DevOps",
+      "SQL"
+    ],
+    "jobPreferredSkills": [
+      "Microservices",
+      "Tolling"
+    ],
+    "jobExperience": "7+ years",
+    "jobLocation": "Mechanicsville, VA",
+    "jobClient": "VDOT",
+    "targetPayRate": null,
+    "maxPayRate": null,
+    "questions": [
+      {
+        "id": "q1",
+        "text": "What is your current location",
+        "description": "Summarize your core languages, frameworks, and client impact.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q3",
+        "text": "What is your current work authorization, earliest availability or notice period, and desired hourly rate / compensation?",
+        "description": "Confirm your current location, remote/relocation flexibility, and visa authorization.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 90
+      }
+    ],
+    "allowedFormats": [
+      "video",
+      "audio",
+      "text"
+    ],
+    "maxDuration": 120,
+    "responses": [],
+    "candidateName": null,
+    "candidateEmail": null,
+    "candidatePhone": null,
+    "candidateLocation": null,
+    "candidateLinkedin": null,
+    "expectedRate": null,
+    "aiScore": null,
+    "aiSummary": null,
+    "recommendation": null,
+    "keyTakeaways": null,
+    "recruiterRating": null,
+    "recruiterNotes": "",
+    "status": "pending",
+    "createdAt": "2026-10-06T14:50:24.853Z",
+    "createdBy": "ajay@coolsofttech.com",
+    "createdByEmail": "ajay@coolsofttech.com",
+    "createdByName": "Ajay Arya",
+    "createdByRef": "ajay-arya",
+    "recruiterEmail": "ajay@coolsofttech.com",
+    "recruiterName": "Ajay Arya",
+    "submittedBy": "omkesh@coolsofttech.com",
+    "recruiterId": "admin-1",
+    "screeningComplete": false,
+    "submittedAt": null
+  },
+  {
     "sessionId": "SCR-1791222910662-896",
     "campaignTitle": "Certified Microsoft .NET Web Developer IV Screening Campaign",
     "jobId": "159245",
