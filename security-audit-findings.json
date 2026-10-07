@@ -1,0 +1,304 @@
+[
+  {
+    "verdict": "confirmed",
+    "fingerprint": "AUTH-BYPASS-001",
+    "title": "Unauthenticated Request Fallback Grants Superadmin Privilege",
+    "description": "The authenticateToken middleware in server/index.js defaults unauthenticated requests to the superadmin role when the Authorization token is missing or fails signature verification.",
+    "root_cause": "Fallback assignment of superadmin role in the authentication middleware error handling branch instead of returning HTTP 401 Unauthorized.",
+    "intended_behavior": "Requests without a valid signed JWT must be rejected with HTTP 401 Unauthorized and not assigned any principal credentials.",
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "smarthire-react/server/index.js",
+        "line": 30,
+        "scope": "authenticateToken",
+        "description": "Incoming HTTP request reaches authenticateToken middleware"
+      },
+      {
+        "kind": "propagation",
+        "file": "smarthire-react/server/index.js",
+        "line": 34,
+        "scope": "authenticateToken",
+        "description": "Absence of token evaluates true and assigns req.user with superadmin role"
+      },
+      {
+        "kind": "sink",
+        "file": "smarthire-react/server/index.js",
+        "line": 36,
+        "scope": "authenticateToken",
+        "description": "Calls next() with active superadmin credentials without authentication"
+      }
+    ],
+    "evidence": [
+      {
+        "file": "smarthire-react/server/index.js",
+        "line": 35,
+        "description": "Source code assigns req.user with superadmin role when token is falsy"
+      }
+    ],
+    "conditions": [
+      {
+        "kind": "authentication_level",
+        "description": "Unauthenticated client sending request without Authorization header"
+      }
+    ],
+    "execution": {
+      "attacker_perspective": "Unauthenticated remote network client",
+      "payloads": [
+        "curl -s https://smarthireus.com/api/candidates"
+      ],
+      "instructions": [
+        "Send GET request to protected endpoint /api/candidates without Authorization header",
+        "Observe the response payload and status code"
+      ],
+      "observed_result": "Server returns HTTP 200 with all candidate records as superadmin"
+    },
+    "remediation": {
+      "strategy": "Return res.status(401).json({ success: false, message: 'Unauthorized' }) when token is missing or invalid in authenticateToken middleware",
+      "code_changes": [
+        {
+          "file_name": "smarthire-react/server/index.js",
+          "fixed_code": "if (!token) { return res.status(401).json({ success: false, message: 'Unauthorized: Access token is required' }); }"
+        }
+      ]
+    },
+    "severity": {
+      "likelihood": {
+        "score": "critical",
+        "reason": "Trivial to trigger by sending any standard HTTP request without an Authorization header"
+      },
+      "impact": {
+        "score": "critical",
+        "reason": "Grants complete administrative control over all candidate profiles, notes, requisitions, and system data"
+      },
+      "overall_severity": "critical"
+    },
+    "confidence": {
+      "score": "high",
+      "reason": "Directly demonstrated in source code and observable in runtime execution"
+    }
+  },
+  {
+    "verdict": "confirmed",
+    "fingerprint": "CORS-WILDCARD-001",
+    "title": "Permissive Wildcard Cross-Origin Resource Sharing",
+    "description": "The Express application initializes CORS with wildcard defaults allowing any third-party web origin to perform cross-origin requests.",
+    "root_cause": "Calling app.use(cors()) without an origin allowlist configuration.",
+    "intended_behavior": "CORS should be configured with an explicit origin allowlist matching the production domains.",
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "smarthire-react/server/index.js",
+        "line": 22,
+        "scope": "top-level",
+        "description": "app.use(cors()) registers global wildcard CORS middleware"
+      },
+      {
+        "kind": "sink",
+        "file": "smarthire-react/server/index.js",
+        "line": 22,
+        "scope": "cors",
+        "description": "Reflects Access-Control-Allow-Origin: * to all origins"
+      }
+    ],
+    "evidence": [
+      {
+        "file": "smarthire-react/server/index.js",
+        "line": 22,
+        "description": "app.use(cors()) configured without options"
+      }
+    ],
+    "conditions": [
+      {
+        "kind": "system_configuration",
+        "description": "Express server configured with unconstrained cors() middleware"
+      }
+    ],
+    "execution": {
+      "attacker_perspective": "Malicious third-party website in user browser",
+      "payloads": [
+        "fetch('https://smarthireus.com/api/candidates', { mode: 'cors' })"
+      ],
+      "instructions": [
+        "Send an HTTP request with Origin header http://attacker.com",
+        "Check response headers for Access-Control-Allow-Origin"
+      ],
+      "observed_result": "Server responds with Access-Control-Allow-Origin: * enabling cross-origin reads"
+    },
+    "remediation": {
+      "strategy": "Specify origin allowlist in cors options including https://smarthireus.com and https://www.smarthireus.com",
+      "code_changes": [
+        {
+          "file_name": "smarthire-react/server/index.js",
+          "fixed_code": "app.use(cors({ origin: ['https://smarthireus.com', 'https://www.smarthireus.com'], credentials: true }))"
+        }
+      ]
+    },
+    "severity": {
+      "likelihood": {
+        "score": "medium",
+        "reason": "Requires inducing an authenticated recruiter to visit an attacker-controlled webpage"
+      },
+      "impact": {
+        "score": "medium",
+        "reason": "Allows unauthorized cross-origin reading of API responses"
+      },
+      "overall_severity": "medium"
+    },
+    "confidence": {
+      "score": "high",
+      "reason": "Directly visible in server middleware declaration and response headers"
+    }
+  },
+  {
+    "verdict": "confirmed",
+    "fingerprint": "JWT-HARDCODED-SECRET-001",
+    "title": "Fallback Hardcoded JWT Secret Key in Server Runtime",
+    "description": "JWT_SECRET constant falls back to a hardcoded predictable string if process.env.JWT_SECRET is unset in the environment.",
+    "root_cause": "Hardcoded default secret string smarthire_secure_jwt_secret_key_2026 committed directly in source code.",
+    "intended_behavior": "JWT secret must be injected solely via secure environment variables and must fail fast if undefined.",
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "smarthire-react/server/index.js",
+        "line": 28,
+        "scope": "top-level",
+        "description": "JWT_SECRET initialized with logical OR fallback to hardcoded string"
+      },
+      {
+        "kind": "sink",
+        "file": "smarthire-react/server/index.js",
+        "line": 39,
+        "scope": "authenticateToken",
+        "description": "jwt.verify verifies signature against the fallback secret key"
+      }
+    ],
+    "evidence": [
+      {
+        "file": "smarthire-react/server/index.js",
+        "line": 28,
+        "description": "const JWT_SECRET = process.env.JWT_SECRET || 'smarthire_secure_jwt_secret_key_2026'"
+      }
+    ],
+    "conditions": [
+      {
+        "kind": "system_configuration",
+        "description": "Server instance running without an explicitly configured JWT_SECRET environment variable"
+      }
+    ],
+    "execution": {
+      "attacker_perspective": "External adversary with read access to source repository",
+      "payloads": [
+        "jwt.sign({ id: 'attacker', role: 'superadmin' }, 'smarthire_secure_jwt_secret_key_2026')"
+      ],
+      "instructions": [
+        "Forge a JWT using the known secret key with role superadmin",
+        "Send forged token in Authorization header to /api/candidates"
+      ],
+      "observed_result": "jwt.verify succeeds and grants superadmin privileges to the forged token"
+    },
+    "remediation": {
+      "strategy": "Require JWT_SECRET from environment and throw fatal error if undefined",
+      "code_changes": [
+        {
+          "file_name": "smarthire-react/server/index.js",
+          "fixed_code": "if (!process.env.JWT_SECRET) { throw new Error('FATAL: JWT_SECRET environment variable must be defined'); }"
+        }
+      ]
+    },
+    "severity": {
+      "likelihood": {
+        "score": "high",
+        "reason": "The secret key is publicly visible in version control and easily extracted"
+      },
+      "impact": {
+        "score": "critical",
+        "reason": "Allows generating valid administrative credentials for any user account or role"
+      },
+      "overall_severity": "critical"
+    },
+    "confidence": {
+      "score": "high",
+      "reason": "Directly visible on line 28 of server/index.js"
+    }
+  },
+  {
+    "verdict": "confirmed",
+    "fingerprint": "XSS-REFLECTED-001",
+    "title": "Reflected Cross-Site Scripting in Resume Document Viewer",
+    "description": "The /api/candidates/view-resume route interpolates the untrusted query parameter name into the HTML document without HTML escaping.",
+    "root_cause": "Direct template literal interpolation of candName into raw HTML inside the inline doc viewer response.",
+    "intended_behavior": "All dynamic user or query parameters interpolated into HTML responses must be HTML entity encoded.",
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "smarthire-react/server/index.js",
+        "line": 2277,
+        "scope": "view-resume route",
+        "description": "candName extracted directly from req.query.name"
+      },
+      {
+        "kind": "propagation",
+        "file": "smarthire-react/server/index.js",
+        "line": 2546,
+        "scope": "view-resume route",
+        "description": "candName concatenated into docViewerHtml template literal"
+      },
+      {
+        "kind": "sink",
+        "file": "smarthire-react/server/index.js",
+        "line": 2670,
+        "scope": "view-resume route",
+        "description": "res.send(docViewerHtml) sends unescaped markup to browser"
+      }
+    ],
+    "evidence": [
+      {
+        "file": "smarthire-react/server/index.js",
+        "line": 2656,
+        "description": "<div class=\"cand-name\">${candName}</div> interpolates raw unescaped query parameter"
+      }
+    ],
+    "conditions": [
+      {
+        "kind": "user_interaction",
+        "description": "Recruiter clicks a crafted view-resume URL containing HTML/script tags in the name parameter"
+      }
+    ],
+    "execution": {
+      "attacker_perspective": "External attacker sending phishing link to recruiter",
+      "payloads": [
+        "https://smarthireus.com/api/candidates/view-resume?file=sample.pdf&name=%3Cscript%3Ealert(document.domain)%3C%2Fscript%3E"
+      ],
+      "instructions": [
+        "Load the craft URL with script tag in name parameter",
+        "Inspect rendered document in DOM"
+      ],
+      "observed_result": "Script tag is rendered directly into the DOM and executes within the smarthireus.com origin"
+    },
+    "remediation": {
+      "strategy": "Apply HTML escaping to candName before interpolating into HTML template",
+      "code_changes": [
+        {
+          "file_name": "smarthire-react/server/index.js",
+          "fixed_code": "const escapeHtml = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');\nconst safeCandName = escapeHtml(candName);"
+        }
+      ]
+    },
+    "severity": {
+      "likelihood": {
+        "score": "high",
+        "reason": "Easily triggered by clicking a link containing URL-encoded script payload"
+      },
+      "impact": {
+        "score": "high",
+        "reason": "Allows hijacking the recruiter session, stealing tokens from localStorage, or performing unauthorized actions"
+      },
+      "overall_severity": "high"
+    },
+    "confidence": {
+      "score": "high",
+      "reason": "Demonstrated through direct source inspection on lines 2277 and 2656"
+    }
+  }
+]

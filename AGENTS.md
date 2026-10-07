@@ -107,6 +107,29 @@ The following high-impact features and optimizations have been agreed upon and p
 
 ## Recent Changes
 
+### 2026-10-07 — Cloudflare Security Audit Remediation & Team Collaboration Messaging Restoration
+- **Context & Objectives**:
+  - The user requested:
+    - *"ha bhai kar do and ye massage wala kam nahi kar raha hai mins mujhe apne tema ko messae karna hai to nahi kar pa raha hu unka profile nahi a raha hai so check and update this also"*
+  - **Security Audit Remediations (`server/index.js`)**:
+    1. **`AUTH-BYPASS-001`**: Fixed `authenticateToken` middleware where unauthenticated requests defaulted to superadmin. Now returns HTTP 401 Unauthorized (`Access token is required`), while gracefully supporting existing frontend session tokens (`token-*` / `mock-token-*`) without superadmin privilege escalation.
+    2. **`JWT-HARDCODED-SECRET-001`**: Eliminated predictable fallback secret in production. In production environments without `JWT_SECRET`, the server generates a cryptographically secure ephemeral 256-bit random key.
+    3. **`CORS-WILDCARD-001`**: Restricted permissive `cors()` wildcard to explicit domain allowlist (`https://smarthireus.com`, `https://www.smarthireus.com`, `https://smarthire-4zqf.onrender.com`, `http://localhost:5173`, `http://localhost:3000`).
+    4. **`XSS-REFLECTED-001`**: Applied `escapeHtml` sanitization to `candName` and file names before interpolation in `/api/candidates/view-resume`.
+  - **Team Collaboration Messaging Restoration (`RecruiterInbox.jsx` & `server/index.js`)**:
+    1. **Team Channels Visibility**: Resolved bug where filtering by `recruiterFilter` (e.g. `'omkesh'`) concealed team colleagues. Exempted all `isTeamMember`, `isLeadChannel`, and `category: 'team'` channels from recruiter exclusion.
+    2. **Complete Colleague Directory**: Dynamically populates direct collaboration threads for all team members from `availableRecruiters` and `ALL_SMARTHIRE_RECRUITERS` (excluding self) with designations, direct email, phone, location, and online status.
+    3. **Colleague Profile Modal**: Replaced candidate ATS job-matching drawer with a dedicated, professional Team Colleague Profile modal displaying name, designation, company, direct contact info, core functional competencies, and 1-click messaging actions.
+    4. **Column 1 Header & Quick Action**: Added "+ Team Chat" 1-click button to immediately switch to team collaboration mode.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (active bundle `index-ldCVjMwP.js`).
+  - Git committed (`21cb176`) and pushed to GitHub `origin/main`.
+  - Deployed production bundle to AWS Lightsail server (`34.194.119.199`), extracted to webroot `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Server `server/index.js` updated and reloaded with PM2 `smarthire-ats`.
+  - Verified disk hygiene: 9.1GB available (51% used), temporary archives deleted immediately, asset bundles pruned (5 most recent).
+  - Verified live domain `https://smarthireus.com` returning HTTP 200 with new active bundle `index-ldCVjMwP.js`.
+  - Verified live API: unauthenticated request to `/api/candidates` returns HTTP 401; authenticated request passes; `/api/messages` returns HTTP 200 with team channels preserved.
+
 ### 2026-10-07 — Performance & Packaging: Candidate Search Bar, 99% Payload Optimization, and Route Code-Splitting
 - **Context & Objectives**:
   - The user requested:
