@@ -91,6 +91,22 @@ export default function CandidateChat() {
   const recordedChunksRef = useRef([])
   const masterVideoPlayerRef = useRef(null)
 
+  // Disallow indexing for private screening sessions
+  useEffect(() => {
+    document.title = 'AI Candidate Screening | SmartHire'
+    let meta = document.querySelector('meta[name="robots"]')
+    const prev = meta ? meta.getAttribute('content') : null
+    if (!meta) {
+      meta = document.createElement('meta')
+      meta.name = 'robots'
+      document.head.appendChild(meta)
+    }
+    meta.setAttribute('content', 'noindex, nofollow')
+    return () => {
+      if (meta) meta.setAttribute('content', prev || 'index, follow')
+    }
+  }, [])
+
   // ─── 1. MULTI-TAB DETECTION (SINGLE INSTANCE LOCK) ─────────────────────────
   useEffect(() => {
     if (!sessionId || typeof window === 'undefined') return

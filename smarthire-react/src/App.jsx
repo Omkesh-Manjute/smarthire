@@ -72,7 +72,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Homepage />} />
           <Route path="/jobs" element={<PublicCareers />} />
-          <Route path="/careers" element={<PublicCareers />} />
+          <Route path="/careers" element={<Navigate to="/jobs" replace />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<Blog />} />
           <Route path="/dashboard" element={<ProtectedRoute><RecruiterDashboard /></ProtectedRoute>} />

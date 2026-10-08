@@ -2,16 +2,14 @@
 User-agent: *
 Allow: /
 Allow: /jobs
-Allow: /careers
 Allow: /blog
+Allow: /blog/
 Allow: /about
 Allow: /contact
 Allow: /privacy
 Allow: /terms
-Allow: /login
-Allow: /screening
 
-# Disallow protected recruiter/admin and candidate chat routes
+# Disallow internal ATS, recruiter dashboard, private screening test rooms & candidate chats
 Disallow: /dashboard
 Disallow: /ats
 Disallow: /reports
@@ -20,6 +18,12 @@ Disallow: /branding
 Disallow: /inbox
 Disallow: /messages
 Disallow: /linkedin-posts
+Disallow: /submittal-pack
+Disallow: /sign-rtr/
 Disallow: /candidate-chat/
+Disallow: /screening
+Disallow: /screening/
+Disallow: /candidate/
 
+# Sitemap index
 Sitemap: https://smarthireus.com/sitemap.xml

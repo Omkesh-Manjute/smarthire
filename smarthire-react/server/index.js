@@ -13269,13 +13269,33 @@ const routeSeoMeta = {
     title: 'Browse Direct-Client IT Jobs & Contracts | SmartHire',
     desc: 'Explore 100+ high-paying direct-client IT positions across Cloud, Java, DevOps, Data & State Government projects.'
   },
-  '/careers': {
-    title: 'Explore Careers & Direct-Client Openings | SmartHire',
-    desc: 'Discover open IT roles and contract opportunities with SmartHire client network.'
-  },
   '/blog': {
     title: 'IT Recruitment Market Insights & Career Blog | SmartHire',
     desc: 'Expert hiring trends, compensation guides, C2C vs W2 comparisons, and IT work visa insights.'
+  },
+  '/blog/h1b-2026-update-it-work-visa-options': {
+    title: 'H-1B 2026 Update: Lottery, Fees & Best IT Visa Options | SmartHire',
+    desc: 'H-1B 2026 update for IT professionals: wage-weighted lottery, $100K fee ruling, new $103,265 proposal, and the best visa options (OPT, STEM OPT, EAD, TN, L-1) compared.'
+  },
+  '/blog/c2c-vs-w2-vs-1099-it-contracts-guide': {
+    title: 'C2C vs W2 vs 1099: Which IT Contract Type Is Best in 2026? | SmartHire',
+    desc: 'Confused about C2C, W2, and 1099 for IT contracts? This comprehensive 2026 guide breaks down tax implications, rate differences, S-Corp benefits, and take-home pay.'
+  },
+  '/blog/highest-paying-it-certifications-2026': {
+    title: '10 Highest-Paying IT Certifications in 2026 (Real Salary Data) | SmartHire',
+    desc: 'The 10 highest-paying IT certifications in 2026, ranked by real salary data: cloud architect, CISSP, AWS Security, AI security and more, with cost and ROI.'
+  },
+  '/blog/ai-entry-level-it-jobs-2026': {
+    title: 'Is AI Killing Entry-Level IT Jobs in 2026? The Real Data | SmartHire',
+    desc: 'Is AI really taking entry-level IT jobs in 2026? Stanford, BLS and Indeed data show what is actually happening to junior developers, and how freshers can still break in.'
+  },
+  '/blog/us-it-recruitment-market-2026': {
+    title: 'US IT Recruitment Market 2026: Trends, Skills & Salaries | SmartHire',
+    desc: 'US IT recruitment market 2026 explained: tech unemployment near 3%, AI and cybersecurity demand, salary trends, and how employers and candidates can win.'
+  },
+  '/blog/india-vs-usa-it-jobs-2026': {
+    title: 'India vs USA IT Jobs 2026: Salary, Taxes & Career Growth | SmartHire',
+    desc: 'India vs USA IT jobs in 2026 compared: real salary gap, taxes, cost of living, visas, job security and career growth. Find out where to build your tech career.'
   },
   '/about': {
     title: 'About SmartHire | Enterprise ATS & IT Staffing Solutions',
@@ -13292,22 +13312,91 @@ const routeSeoMeta = {
   '/terms': {
     title: 'Terms of Service | SmartHire ATS',
     desc: 'Review the terms and conditions for using SmartHire ATS platform and services.'
-  },
-  '/screening': {
-    title: 'AI Candidate Screening & Technical Evaluations | SmartHire',
-    desc: 'Automated skill verification, public sector compatibility checks, and compliance screening.'
   }
 };
+
+// ─── Dynamic Sitemap XML ──────────────────────────────────────────────────────
+app.get('/sitemap.xml', (_req, res) => {
+  res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+  let sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://smarthireus.com/</loc><lastmod>2026-10-08</lastmod><changefreq>daily</changefreq><priority>1.00</priority></url>
+  <url><loc>https://smarthireus.com/jobs</loc><lastmod>2026-10-08</lastmod><changefreq>daily</changefreq><priority>0.95</priority></url>
+  <url><loc>https://smarthireus.com/blog</loc><lastmod>2026-10-08</lastmod><changefreq>weekly</changefreq><priority>0.90</priority></url>
+  <url><loc>https://smarthireus.com/blog/h1b-2026-update-it-work-visa-options</loc><lastmod>2026-10-08</lastmod><changefreq>weekly</changefreq><priority>0.88</priority></url>
+  <url><loc>https://smarthireus.com/blog/c2c-vs-w2-vs-1099-it-contracts-guide</loc><lastmod>2026-10-08</lastmod><changefreq>weekly</changefreq><priority>0.88</priority></url>
+  <url><loc>https://smarthireus.com/blog/highest-paying-it-certifications-2026</loc><lastmod>2026-10-08</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://smarthireus.com/blog/ai-entry-level-it-jobs-2026</loc><lastmod>2026-10-08</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://smarthireus.com/blog/us-it-recruitment-market-2026</loc><lastmod>2026-10-08</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://smarthireus.com/blog/india-vs-usa-it-jobs-2026</loc><lastmod>2026-10-08</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://smarthireus.com/about</loc><lastmod>2026-10-08</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+  <url><loc>https://smarthireus.com/contact</loc><lastmod>2026-10-08</lastmod><changefreq>monthly</changefreq><priority>0.60</priority></url>
+  <url><loc>https://smarthireus.com/privacy</loc><lastmod>2026-10-08</lastmod><changefreq>yearly</changefreq><priority>0.40</priority></url>
+  <url><loc>https://smarthireus.com/terms</loc><lastmod>2026-10-08</lastmod><changefreq>yearly</changefreq><priority>0.40</priority></url>
+`;
+
+  // Dynamically append top active jobs so Google automatically indexes individual job requisitions
+  if (Array.isArray(jobsStore) && jobsStore.length > 0) {
+    const topJobs = jobsStore.slice(0, 50);
+    for (const j of topJobs) {
+      const jId = j.id || j.reqId;
+      if (jId) {
+        sitemapXml += `  <url><loc>https://smarthireus.com/jobs?jobId=${encodeURIComponent(jId)}</loc><changefreq>daily</changefreq><priority>0.80</priority></url>\n`;
+      }
+    }
+  }
+
+  sitemapXml += `</urlset>`;
+  res.send(sitemapXml);
+});
+
+// ─── Robots.txt Route ─────────────────────────────────────────────────────────
+app.get('/robots.txt', (_req, res) => {
+  const robotsPath = path.join(distPath, 'robots.txt');
+  if (fs.existsSync(robotsPath)) return res.sendFile(robotsPath);
+  const publicRobots = path.resolve(__dirname, '../public/robots.txt');
+  if (fs.existsSync(publicRobots)) return res.sendFile(publicRobots);
+  res.type('text/plain').send(`User-agent: *\nAllow: /\nAllow: /jobs\nAllow: /blog\nDisallow: /ats\nDisallow: /dashboard\nDisallow: /screening\nSitemap: https://smarthireus.com/sitemap.xml\n`);
+});
 
 app.use((req, res, next) => {
   if ((req.method !== 'GET' && req.method !== 'HEAD') || req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
     return next();
   }
+
+  const cleanPath = req.path.replace(/\/+$/, '') || '';
+
+  // 1. 301 Redirect duplicate /careers to canonical /jobs
+  if (cleanPath === '/careers') {
+    return res.redirect(301, '/jobs');
+  }
+
+  // 2. Prevent search engines from indexing private candidate screening & chat rooms
+  if (cleanPath.startsWith('/screening') || cleanPath.startsWith('/candidate-chat') || cleanPath.startsWith('/candidate/screen')) {
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+  }
+
+  // 3. Serve pre-rendered HTML file for static blog posts if available
+  if (cleanPath.startsWith('/blog/')) {
+    const slug = cleanPath.replace(/^\/blog\//, '').replace(/\/+$/, '');
+    const candidateFiles = [
+      path.join(distPath, 'blog', `${slug}.html`),
+      path.join(distPath, '..', 'public', 'blog', `${slug}.html`),
+      path.resolve(__dirname, '../public/blog', `${slug}.html`),
+      path.resolve(__dirname, '../../public/blog', `${slug}.html`)
+    ];
+    for (const f of candidateFiles) {
+      if (fs.existsSync(f)) {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        return res.sendFile(f);
+      }
+    }
+  }
+
   const indexPath = path.join(distPath, 'index.html');
   if (fs.existsSync(indexPath)) {
     try {
       let html = fs.readFileSync(indexPath, 'utf8');
-      const cleanPath = req.path.replace(/\/+$/, '') || '';
       const canonicalUrl = `https://smarthireus.com${cleanPath || ''}`;
 
       // Inject exact canonical link matching the current route for Googlebot and all crawlers
@@ -13321,13 +13410,53 @@ app.use((req, res, next) => {
         `<meta property="og:url" content="${canonicalUrl}" />`
       );
 
-      // Dynamic Title & Description for public indexed routes
-      const seo = routeSeoMeta[cleanPath];
-      if (seo) {
-        html = html.replace(/<title>.*?<\/title>/i, `<title>${seo.title}</title>`);
-        html = html.replace(/<meta name="description"[^>]*>/i, `<meta name="description" content="${seo.desc}" />`);
-        html = html.replace(/<meta property="og:title"[^>]*>/i, `<meta property="og:title" content="${seo.title}" />`);
-        html = html.replace(/<meta property="og:description"[^>]*>/i, `<meta property="og:description" content="${seo.desc}" />`);
+      // Handle specific job queries like /jobs?jobId=159188
+      if (cleanPath === '/jobs' && (req.query.jobId || req.query.job)) {
+        const jobId = String(req.query.jobId || req.query.job);
+        let job = null;
+        if (Array.isArray(jobsStore)) {
+          job = jobsStore.find(j => String(j.id) === jobId || String(j.reqId) === jobId || String(j.jobId) === jobId);
+        }
+        if (job) {
+          const jTitle = `${job.title} - ${job.location || 'Remote'} | SmartHire Jobs`;
+          const jDesc = `Apply for ${job.title} at ${job.client || 'Enterprise Client'}. Rate: ${job.rate || 'Competitive'}. ${job.skills ? 'Required Skills: ' + job.skills : ''} Quick 1-click apply on SmartHire.`;
+          html = html.replace(/<title>.*?<\/title>/i, `<title>${jTitle}</title>`);
+          html = html.replace(/<meta name="description"[^>]*>/i, `<meta name="description" content="${jDesc}" />`);
+          html = html.replace(/<meta property="og:title"[^>]*>/i, `<meta property="og:title" content="${jTitle}" />`);
+          html = html.replace(/<meta property="og:description"[^>]*>/i, `<meta property="og:description" content="${jDesc}" />`);
+
+          // Inject Google JobPosting JSON-LD Schema
+          const jobPostingSchema = {
+            '@context': 'https://schema.org/',
+            '@type': 'JobPosting',
+            'title': job.title,
+            'description': job.description || job.title,
+            'datePosted': job.datePosted || new Date().toISOString(),
+            'employmentType': job.employmentType || 'CONTRACTOR',
+            'hiringOrganization': {
+              '@type': 'Organization',
+              'name': job.client || 'SmartHire Client Network',
+              'sameAs': 'https://smarthireus.com'
+            },
+            'jobLocation': {
+              '@type': 'Place',
+              'address': {
+                '@type': 'PostalAddress',
+                'addressLocality': job.location || 'Remote'
+              }
+            }
+          };
+          html = html.replace('</head>', `<script type="application/ld+json">${JSON.stringify(jobPostingSchema)}</script></head>`);
+        }
+      } else {
+        // Dynamic Title & Description for public indexed routes
+        const seo = routeSeoMeta[cleanPath];
+        if (seo) {
+          html = html.replace(/<title>.*?<\/title>/i, `<title>${seo.title}</title>`);
+          html = html.replace(/<meta name="description"[^>]*>/i, `<meta name="description" content="${seo.desc}" />`);
+          html = html.replace(/<meta property="og:title"[^>]*>/i, `<meta property="og:title" content="${seo.title}" />`);
+          html = html.replace(/<meta property="og:description"[^>]*>/i, `<meta property="og:description" content="${seo.desc}" />`);
+        }
       }
 
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
