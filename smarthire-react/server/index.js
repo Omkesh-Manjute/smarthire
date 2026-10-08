@@ -28,6 +28,7 @@ import {
   parseJobDescription as monsterParseJobDescription,
   evaluateCandidateMatch as monsterEvaluateCandidateMatch,
   searchCandidatesPool as monsterSearchCandidatesPool,
+  autoSourceCandidates as monsterAutoSourceCandidates,
   liveMonsterSearch as monsterLiveMonsterSearch,
   REAL_MONSTER_CANDIDATE_POOL
 } from './monsterRecruiterEngine.js'
@@ -12088,12 +12089,13 @@ app.delete('/api/recruiter/vendor-hotlists/:id', (req, res) => {
 // 1. POST /api/recruiter/parse-jd
 app.post('/api/recruiter/parse-jd', express.json(), async (req, res) => {
   try {
-    const { jd_text, jdText } = req.body || {};
+    const { jd_text, jdText, job_title, jobTitle, title } = req.body || {};
     const text = jd_text || jdText || '';
+    const knownTitle = job_title || jobTitle || title || null;
     if (!text || text.trim().length < 5) {
       return res.status(400).json({ success: false, error: 'Job description text is required' });
     }
-    const result = await monsterParseJobDescription(text);
+    const result = await monsterParseJobDescription(text, knownTitle);
     return res.json(result);
   } catch (err) {
     console.error('[MonsterAPI] parse-jd error:', err);
@@ -12104,26 +12106,54 @@ app.post('/api/recruiter/parse-jd', express.json(), async (req, res) => {
 // 2. POST /api/recruiter/find-candidates
 app.post('/api/recruiter/find-candidates', express.json(), async (req, res) => {
   try {
-    const { jd_text, jdText, location, max_results, maxResults } = req.body || {};
+    const { jd_text, jdText, job_title, jobTitle, title, location, max_results, maxResults, interview_mode } = req.body || {};
     const text = jd_text || jdText || '';
+    const knownTitle = job_title || jobTitle || title || null;
     if (!text || text.trim().length < 5) {
       return res.status(400).json({ success: false, error: 'Job description text is required' });
     }
-    const jdParsed = await monsterParseJobDescription(text);
+    const jdParsed = await monsterParseJobDescription(text, knownTitle);
     if (!jdParsed || !jdParsed.success) {
       return res.status(400).json({ success: false, error: 'Failed to parse job description' });
     }
-    const loc = location || 'Richmond, VA';
-    const limit = Number(max_results || maxResults || 5);
+    if (interview_mode && jdParsed.interview_mode) {
+      jdParsed.interview_mode.mode = interview_mode;
+    }
+    const loc = location || jdParsed.primary_location || 'United States';
+    const limit = Number(max_results || maxResults || 10);
     const candidates = monsterSearchCandidatesPool(jdParsed, loc, limit, candidatesStore);
     return res.json({
       success: true,
       jd_parsed: jdParsed,
+      interview_mode: jdParsed.interview_mode,
       candidates,
-      count: candidates.length
+      count: candidates.length,
+      recency_filter: "Last 90 Days Active Only (Monster+ Verified)"
     });
   } catch (err) {
     console.error('[MonsterAPI] find-candidates error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 2.5. POST /api/recruiter/auto-source (1-Click Unified Auto-Sourcing)
+app.post('/api/recruiter/auto-source', express.json(), async (req, res) => {
+  try {
+    const { jd_text, jdText, job_title, jobTitle, title, location, max_results, maxResults } = req.body || {};
+    const text = jd_text || jdText || '';
+    const knownTitle = job_title || jobTitle || title || null;
+    if (!text || text.trim().length < 5) {
+      return res.status(400).json({ success: false, error: 'Job description text is required' });
+    }
+    const limit = Number(max_results || maxResults || 10);
+    const result = await monsterAutoSourceCandidates(text, {
+      knownTitle,
+      location,
+      maxResults: limit
+    });
+    return res.json(result);
+  } catch (err) {
+    console.error('[MonsterAPI] auto-source error:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });

@@ -27,6 +27,12 @@ const IconMail = () => (
   </svg>
 )
 
+const IconPhone = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+  </svg>
+)
+
 const IconBriefcase = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
@@ -39,6 +45,24 @@ const IconExternalLink = () => (
     <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
     <polyline points="15 3 21 3 21 9" />
     <line x1="10" y1="14" x2="21" y2="3" />
+  </svg>
+)
+
+const IconTable = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+    <line x1="3" y1="9" x2="21" y2="9" />
+    <line x1="3" y1="15" x2="21" y2="15" />
+    <line x1="12" y1="3" x2="12" y2="21" />
+  </svg>
+)
+
+const IconGrid = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="7" height="7" />
+    <rect x="14" y="3" width="7" height="7" />
+    <rect x="14" y="14" width="7" height="7" />
+    <rect x="3" y="14" width="7" height="7" />
   </svg>
 )
 
@@ -55,174 +79,108 @@ export default function MonsterSourcingModule({
 }) {
   const [selectedJobId, setSelectedJobId] = useState('')
   const [jdText, setJdText] = useState('')
-  const [location, setLocation] = useState('Richmond, VA')
-  const [maxResults, setMaxResults] = useState(5)
-  const [isParsing, setIsParsing] = useState(false)
-  const [isSearching, setIsSearching] = useState(false)
+  const [location, setLocation] = useState('Columbia, SC')
+  const [targetReqForImport, setTargetReqForImport] = useState('')
+  const [maxResults, setMaxResults] = useState(10)
+  const [interviewModeOverride, setInterviewModeOverride] = useState('auto') // 'auto', 'in_person', 'hybrid', 'remote'
+  const [last90DaysOnly, setLast90DaysOnly] = useState(true)
+
+  const [isAutoSourcing, setIsAutoSourcing] = useState(false)
   const [isLiveSearching, setIsLiveSearching] = useState(false)
   const [parsedData, setParsedData] = useState(null)
   const [candidates, setCandidates] = useState([])
+  const [viewMode, setViewMode] = useState('cards') // 'cards' or 'table'
+
   const [copiedQuery, setCopiedQuery] = useState(false)
   const [copiedEmailId, setCopiedEmailId] = useState(null)
+  const [copiedPhoneId, setCopiedPhoneId] = useState(null)
   const [sendingEmailId, setSendingEmailId] = useState(null)
+  const [sentEmailIds, setSentEmailIds] = useState(new Set())
   const [importedCandidateIds, setImportedCandidateIds] = useState(new Set())
   const [statusMessage, setStatusMessage] = useState(null)
-  const [expandedEmailId, setExpandedEmailId] = useState(null)
-  const [targetReqForImport, setTargetReqForImport] = useState('')
+  const [activeOutreachCandidate, setActiveOutreachCandidate] = useState(null)
 
-  // Pre-load default sample JD if empty
+  // Current selected job object
+  const currentJob = useMemo(() => {
+    if (!selectedJobId) return null
+    return activeJobs.find(j => String(j.id || j.jobId) === String(selectedJobId)) || null
+  }, [selectedJobId, activeJobs])
+
+  // Auto-fill default requisition on mount if available
   useEffect(() => {
-    if (!jdText && activeJobs.length > 0) {
-      const defaultJob = activeJobs.find(j => 
-        (j.title && /dynamics|power platform|developer/i.test(j.title))
+    if (!selectedJobId && activeJobs.length > 0) {
+      // Pick Systems Administrator or Dynamics job as preferred test requisition
+      const targetJob = activeJobs.find(j => 
+        String(j.id || j.jobId) === '159015' ||
+        (j.title && /systems administrator|dynamics|business analyst/i.test(j.title))
       ) || activeJobs[0]
 
-      if (defaultJob) {
-        setSelectedJobId(String(defaultJob.id || defaultJob.jobId))
-        const desc = defaultJob.description || defaultJob.desc || defaultJob.jobDescription || `${defaultJob.title}\nClient: ${defaultJob.client || 'Coolsoft Client'}\nLocation: ${defaultJob.location || 'Richmond, VA'}\n\nSeeking an experienced professional with deep technical expertise in Microsoft Dynamics 365, C#, .NET, Power Apps, and Azure cloud integration.`
-        setJdText(desc)
-        setLocation(defaultJob.location || 'Richmond, VA')
-        setTargetReqForImport(String(defaultJob.id || defaultJob.jobId))
+      if (targetJob) {
+        handleApplyJob(targetJob, true)
       }
-    } else if (!jdText) {
-      setJdText(`Senior Microsoft Dynamics 365 / Power Platform Developer
-Location: Richmond, Virginia (VDOT / State Government)
-Required Experience: 5+ Years
-Contract Rate: $75 - $85/hr C2C
-
-Requirements:
-- Strong hands-on experience with Microsoft Dynamics 365 Customer Engagement (CE)
-- Building custom Canvas Apps and Model-Driven Apps using Power Apps
-- Advanced automated business processes with Power Automate flows and Dataverse
-- Backend development in C#, .NET Framework, and REST API integration
-- Azure DevOps, ALM managed/unmanaged solutions, and CI/CD pipelines
-- SQL Server database queries and reporting`)
     }
   }, [activeJobs])
 
-  // Handle requisition selection from dropdown
-  const handleSelectJob = (e) => {
-    const val = e.target.value
-    setSelectedJobId(val)
-    setTargetReqForImport(val)
-    if (!val) return
+  // Applies a selected job and optionally triggers automated sourcing
+  const handleApplyJob = (job, autoTrigger = false) => {
+    const jobIdStr = String(job.id || job.jobId)
+    setSelectedJobId(jobIdStr)
+    setTargetReqForImport(jobIdStr)
 
-    const job = activeJobs.find(j => String(j.id || j.jobId) === String(val))
-    if (job) {
-      const desc = job.description || job.desc || job.jobDescription || `${job.title}\nClient: ${job.client || 'Enterprise Client'}\nLocation: ${job.location || 'Richmond, VA'}`
-      setJdText(desc)
-      if (job.location) setLocation(job.location)
+    const loc = job.location || (job.client && job.client.includes('Carolina') ? 'Columbia, SC' : 'Richmond, VA')
+    setLocation(loc)
+
+    const rawDesc = job.description || job.desc || job.jobDescription || `${job.title}\nClient: ${job.client || 'State Agency'}\nLocation: ${loc}`
+    setJdText(rawDesc)
+
+    if (autoTrigger) {
+      triggerAutoSource(rawDesc, job.title, loc, jobIdStr)
     }
   }
 
-  // Parse JD via API
-  const handleParseJd = async () => {
-    if (!jdText || jdText.trim().length < 10) {
-      setStatusMessage({ type: 'error', text: 'Please enter or select a valid Job Description first.' })
+  // Trigger 1-Click Unified Auto-Sourcing
+  const triggerAutoSource = async (customJd = null, customTitle = null, customLoc = null, customReq = null) => {
+    const textToUse = customJd || jdText
+    if (!textToUse || textToUse.trim().length < 5) {
+      setStatusMessage({ type: 'error', text: 'Please select a requisition or paste a Job Description first.' })
       return
     }
 
-    setIsParsing(true)
+    setIsAutoSourcing(true)
     setStatusMessage(null)
 
-    try {
-      const res = await fetch('/api/recruiter/parse-jd', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jd_text: jdText })
-      })
-
-      const data = await res.json()
-      if (data && data.success) {
-        setParsedData(data)
-        setStatusMessage({ type: 'success', text: `Requirements parsed successfully: ${data.job_title}` })
-      } else {
-        setStatusMessage({ type: 'error', text: data.error || 'Failed to parse Job Description.' })
-      }
-    } catch (err) {
-      console.error('Parse error:', err)
-      setStatusMessage({ type: 'error', text: 'Error connecting to parsing engine.' })
-    } finally {
-      setIsParsing(false)
-    }
-  }
-
-  // Find Monster Candidates via API
-  const handleFindCandidates = async () => {
-    if (!jdText || jdText.trim().length < 10) {
-      setStatusMessage({ type: 'error', text: 'Please enter or select a valid Job Description first.' })
-      return
-    }
-
-    setIsSearching(true)
-    setStatusMessage(null)
+    const titleToUse = customTitle || currentJob?.title || null
+    const locToUse = customLoc || location || 'United States'
 
     try {
-      const res = await fetch('/api/recruiter/find-candidates', {
+      const res = await fetch('/api/recruiter/auto-source', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          jd_text: jdText,
-          location,
-          max_results: maxResults
+          jd_text: textToUse,
+          job_title: titleToUse,
+          location: locToUse,
+          max_results: maxResults,
+          interview_mode: interviewModeOverride !== 'auto' ? interviewModeOverride : null
         })
       })
 
       const data = await res.json()
       if (data && data.success) {
-        if (data.jd_parsed) setParsedData(data.jd_parsed)
+        setParsedData(data.jd_parsed)
         setCandidates(data.candidates || [])
         setStatusMessage({
           type: 'success',
-          text: `Found ${data.count || data.candidates?.length || 0} matching candidates from Monster+ talent pool!`
+          text: `Auto-sourced ${data.candidates?.length || 0} top candidates active in last 90 days for "${data.jd_parsed?.job_title}".`
         })
       } else {
-        setStatusMessage({ type: 'error', text: data.error || 'Failed to extract Monster candidates.' })
+        setStatusMessage({ type: 'error', text: data.error || 'Auto-sourcing failed to complete.' })
       }
     } catch (err) {
-      console.error('Find candidates error:', err)
-      setStatusMessage({ type: 'error', text: 'Error executing candidate search.' })
+      console.error('[MonsterAutoSource] Error:', err)
+      setStatusMessage({ type: 'error', text: 'Failed to connect to auto-sourcing engine.' })
     } finally {
-      setIsSearching(false)
-    }
-  }
-
-  // Live Monster Automated Scraper
-  const handleLiveMonsterSearch = async () => {
-    const jobTitle = parsedData?.job_title || 'Dynamics 365 Developer'
-    const skills = parsedData?.must_have_skills || ['Dynamics 365', 'Power Apps', 'C#', '.NET']
-
-    setIsLiveSearching(true)
-    setStatusMessage({ type: 'info', text: 'Connecting to manage.monster.com with employer credentials...' })
-
-    try {
-      const res = await fetch('/api/recruiter/live-monster-search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          job_title: jobTitle,
-          skills,
-          location,
-          max_results: maxResults
-        })
-      })
-
-      const data = await res.json()
-      if (data && data.success && data.candidates?.length > 0) {
-        setCandidates(data.candidates)
-        setStatusMessage({
-          type: 'success',
-          text: `Live search complete: extracted ${data.candidates.length} profiles from manage.monster.com.`
-        })
-      } else {
-        // Fallback to talent pool search
-        handleFindCandidates()
-      }
-    } catch (err) {
-      console.error('Live search error:', err)
-      handleFindCandidates()
-    } finally {
-      setIsLiveSearching(false)
+      setIsAutoSourcing(false)
     }
   }
 
@@ -234,15 +192,21 @@ Requirements:
     setTimeout(() => setCopiedQuery(false), 2000)
   }
 
-  // Copy Personalized Outreach Email
-  const handleCopyEmail = (candId, emailText) => {
-    navigator.clipboard.writeText(emailText)
-    setCopiedEmailId(candId)
-    setTimeout(() => setCopiedEmailId(null), 2000)
+  // Copy Direct Contact Info
+  const handleCopyContact = (type, val, candId) => {
+    if (!val) return
+    navigator.clipboard.writeText(val)
+    if (type === 'phone') {
+      setCopiedPhoneId(candId)
+      setTimeout(() => setCopiedPhoneId(null), 2000)
+    } else {
+      setCopiedEmailId(candId)
+      setTimeout(() => setCopiedEmailId(null), 2000)
+    }
   }
 
-  // Send Direct Outreach Email
-  const handleSendEmail = async (cand) => {
+  // Send Direct Outreach Email via SMTP
+  const handleSendOutreachEmail = async (cand) => {
     setSendingEmailId(cand.id)
     try {
       const res = await fetch('/api/recruiter/monster/send-outreach', {
@@ -252,17 +216,24 @@ Requirements:
           toEmail: cand.email,
           candidateName: cand.name,
           subject: `Exciting ${parsedData?.job_title || 'Role'} Opportunity — Coolsoft LLC`,
-          emailBody: cand.outreach_email
+          emailBody: cand.outreach_email,
+          candidateId: cand.id
         })
       })
+
       const data = await res.json()
       if (data && data.success) {
-        setStatusMessage({ type: 'success', text: `Outreach email delivered to ${cand.name} (${cand.email}).` })
+        setSentEmailIds(prev => new Set([...prev, cand.id]))
+        setStatusMessage({
+          type: 'success',
+          text: `Outreach email successfully sent to ${cand.name} (${cand.email}).`
+        })
+        setActiveOutreachCandidate(null)
       } else {
-        setStatusMessage({ type: 'error', text: data.error || 'Failed to dispatch email.' })
+        setStatusMessage({ type: 'error', text: data.error || 'Failed to dispatch outreach email.' })
       }
     } catch (err) {
-      setStatusMessage({ type: 'error', text: 'Error sending outreach email.' })
+      setStatusMessage({ type: 'error', text: 'Error connecting to email dispatcher service.' })
     } finally {
       setSendingEmailId(null)
     }
@@ -284,16 +255,16 @@ Requirements:
         setImportedCandidateIds(prev => new Set([...prev, cand.id]))
         setStatusMessage({
           type: 'success',
-          text: `Transferred ${cand.name} directly into ATS Candidates pipeline!`
+          text: `Imported ${cand.name} into SmartHire ATS under Req #${targetReqForImport || 'Talent Pool'}.`
         })
         if (onCandidateImported && typeof onCandidateImported === 'function') {
           onCandidateImported(data.candidate)
         }
       } else {
-        setStatusMessage({ type: 'error', text: data.error || 'Failed to import candidate.' })
+        setStatusMessage({ type: 'error', text: data.error || 'Failed to import candidate into ATS.' })
       }
     } catch (err) {
-      setStatusMessage({ type: 'error', text: 'Error connecting to candidate import service.' })
+      setStatusMessage({ type: 'error', text: 'Error connecting to ATS import service.' })
     }
   }
 
@@ -310,7 +281,7 @@ Requirements:
     }}>
       {/* 1. Header Bar */}
       <div style={{
-        padding: '20px 28px',
+        padding: '16px 28px',
         backgroundColor: '#FFFFFF',
         borderBottom: '1px solid #E2E8F0',
         display: 'flex',
@@ -321,7 +292,7 @@ Requirements:
       }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}>
+            <h1 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}>
               Monster+ AI Candidate Sourcing & Good Match Engine
             </h1>
             <span style={{
@@ -339,18 +310,31 @@ Requirements:
               <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#10B981' }} />
               Monster+ Employer Session Active
             </span>
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '2px 8px',
+              backgroundColor: '#EFF6FF',
+              border: '1px solid #BFDBFE',
+              borderRadius: 6,
+              fontSize: 11,
+              fontWeight: 700,
+              color: '#1E40AF'
+            }}>
+              Active in Last 90 Days Only
+            </span>
           </div>
-          <p style={{ margin: '4px 0 0 0', fontSize: 13, color: '#64748B' }}>
-            Source real candidate profiles directly from employer account with AI requirement extraction, 0–100% fit scoring, and 1-click outreach.
+          <p style={{ margin: '3px 0 0 0', fontSize: 12.5, color: '#64748B' }}>
+            Automated JD parsing, Monster Boolean generation, In-Person / Hybrid location matching, and 1-click candidate outreach.
           </p>
         </div>
 
         {/* Global Feedback Status Banner */}
         {statusMessage && (
           <div style={{
-            padding: '8px 14px',
+            padding: '7px 14px',
             borderRadius: 6,
-            fontSize: 12.5,
+            fontSize: 12,
             fontWeight: 600,
             display: 'flex',
             alignItems: 'center',
@@ -370,375 +354,334 @@ Requirements:
         )}
       </div>
 
-      {/* 2. Main Content Grid */}
-      <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
-        
-        {/* Card A: Job Description & Sourcing Controls */}
+      {/* 2. Main Workspace Layout */}
+      <div style={{ padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 18, maxWidth: 1440, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+
+        {/* SECTION A: Sourcing Control Panel */}
         <div style={{
           backgroundColor: '#FFFFFF',
           borderRadius: 8,
           border: '1px solid #E2E8F0',
-          padding: '20px 24px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+          padding: '16px 20px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <IconBriefcase />
-              <span style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>Requisition & Job Requirements</span>
+          {/* Top Row: Requisition Selector & 1-Click Action */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', flex: 1 }}>
+              <span style={{ fontSize: 12.5, fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <IconBriefcase /> Select Requisition:
+              </span>
+              <select
+                value={selectedJobId}
+                onChange={(e) => {
+                  const job = activeJobs.find(j => String(j.id || j.jobId) === e.target.value)
+                  if (job) handleApplyJob(job, true)
+                  else setSelectedJobId(e.target.value)
+                }}
+                style={{
+                  padding: '7px 12px',
+                  fontSize: 13,
+                  borderRadius: 6,
+                  border: '1px solid #CBD5E1',
+                  backgroundColor: '#FFFFFF',
+                  color: '#0F172A',
+                  fontWeight: 700,
+                  outline: 'none',
+                  minWidth: 320,
+                  maxWidth: 480,
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="">-- Choose from 180 Active Requisitions --</option>
+                {activeJobs.map(j => (
+                  <option key={j.id || j.jobId} value={j.id || j.jobId}>
+                    #{j.id || j.jobId} — {j.title} ({j.client || 'Client'} · {j.location || 'Remote'})
+                  </option>
+                ))}
+              </select>
+
+              {/* Detected Job Details Badges */}
+              {currentJob && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ padding: '3px 8px', backgroundColor: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 4, fontSize: 11, fontWeight: 700, color: '#334155' }}>
+                    Client: {currentJob.client || 'State Agency'}
+                  </span>
+                  <span style={{ padding: '3px 8px', backgroundColor: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 4, fontSize: 11, fontWeight: 700, color: '#334155' }}>
+                    Location: {location}
+                  </span>
+                </div>
+              )}
             </div>
 
-            {/* Quick Requisition Selector */}
-            {activeJobs.length > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 12, color: '#64748B', fontWeight: 600 }}>Auto-fill from Requisition:</span>
+            {/* Primary 1-Click Action Button */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button
+                type="button"
+                onClick={() => triggerAutoSource()}
+                disabled={isAutoSourcing}
+                style={{
+                  padding: '9px 20px',
+                  backgroundColor: '#1E293B',
+                  border: 'none',
+                  borderRadius: 6,
+                  fontSize: 13,
+                  fontWeight: 800,
+                  color: '#FFFFFF',
+                  cursor: isAutoSourcing ? 'wait' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}
+              >
+                <IconSearch />
+                {isAutoSourcing ? 'Auto-Sourcing Monster+ Candidates...' : 'Auto-Source Candidates (1-Click)'}
+              </button>
+            </div>
+          </div>
+
+          {/* Sourcing Filters Bar */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 12,
+            paddingTop: 10,
+            borderTop: '1px solid #F1F5F9',
+            fontSize: 12
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+              {/* Interview Mode Detection & Selector */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ color: '#64748B', fontWeight: 600 }}>Interview Mode:</span>
                 <select
-                  value={selectedJobId}
-                  onChange={handleSelectJob}
+                  value={interviewModeOverride}
+                  onChange={(e) => {
+                    setInterviewModeOverride(e.target.value)
+                    if (parsedData) triggerAutoSource()
+                  }}
                   style={{
-                    padding: '6px 12px',
-                    fontSize: 12.5,
-                    borderRadius: 6,
+                    padding: '4px 8px',
+                    fontSize: 12,
+                    borderRadius: 5,
                     border: '1px solid #CBD5E1',
-                    backgroundColor: '#FFFFFF',
+                    fontWeight: 700,
                     color: '#0F172A',
-                    fontWeight: 600,
+                    backgroundColor: '#FFFFFF',
                     outline: 'none',
-                    maxWidth: 320,
                     cursor: 'pointer'
                   }}
                 >
-                  <option value="">-- Choose Requisition --</option>
-                  {activeJobs.map(job => (
-                    <option key={job.id || job.jobId} value={job.id || job.jobId}>
-                      #{job.id || job.jobId} — {job.title} ({job.client || 'Client'})
-                    </option>
-                  ))}
+                  <option value="auto">
+                    Auto-Detect {parsedData?.interview_mode?.badge ? `(${parsedData.interview_mode.badge})` : ''}
+                  </option>
+                  <option value="in_person">In-Person Onsite (Strict Local Candidates)</option>
+                  <option value="hybrid">Hybrid (Local / Relocatable)</option>
+                  <option value="remote">Remote / Video (Nationwide)</option>
                 </select>
               </div>
-            )}
-          </div>
 
-          {/* JD Input Area */}
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#475569', marginBottom: 6 }}>
-              Job Description (JD) Text
-            </label>
-            <textarea
-              rows={6}
-              value={jdText}
-              onChange={(e) => setJdText(e.target.value)}
-              placeholder="Paste Job Description here or select from active requisitions above..."
-              style={{
-                width: '100%',
-                padding: '10px 14px',
-                fontSize: 13,
-                fontFamily: 'inherit',
-                borderRadius: 6,
-                border: '1px solid #CBD5E1',
-                backgroundColor: '#F8FAFC',
-                color: '#0F172A',
-                lineHeight: 1.5,
-                outline: 'none',
-                resize: 'vertical',
-                boxSizing: 'border-box'
-              }}
-            />
-          </div>
-
-          {/* Search Controls Row */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748B', marginBottom: 4 }}>
-                  Target Location
-                </label>
+              {/* Target Location */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ color: '#64748B', fontWeight: 600 }}>Location:</span>
                 <input
                   type="text"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  placeholder="e.g. Richmond, VA or Remote"
+                  placeholder="e.g. Columbia, SC"
                   style={{
-                    padding: '7px 12px',
-                    fontSize: 12.5,
-                    borderRadius: 6,
+                    padding: '4px 8px',
+                    fontSize: 12,
+                    borderRadius: 5,
                     border: '1px solid #CBD5E1',
-                    backgroundColor: '#FFFFFF',
-                    color: '#0F172A',
                     fontWeight: 600,
-                    width: 200,
+                    width: 130,
                     outline: 'none'
                   }}
                 />
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748B', marginBottom: 4 }}>
-                  Max Candidates
-                </label>
-                <select
-                  value={maxResults}
-                  onChange={(e) => setMaxResults(Number(e.target.value))}
-                  style={{
-                    padding: '7px 12px',
-                    fontSize: 12.5,
-                    borderRadius: 6,
-                    border: '1px solid #CBD5E1',
-                    backgroundColor: '#FFFFFF',
-                    color: '#0F172A',
-                    fontWeight: 600,
-                    outline: 'none',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <option value={5}>Top 5 Candidates</option>
-                  <option value={10}>Top 10 Candidates</option>
-                  <option value={15}>Top 15 Candidates</option>
-                  <option value={20}>Top 20 Candidates</option>
-                </select>
+              {/* Recency Badge */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{
+                  padding: '3px 8px',
+                  backgroundColor: '#ECFDF5',
+                  border: '1px solid #A7F3D0',
+                  borderRadius: 4,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: '#065F46'
+                }}>
+                  Activity: Last 90 Days Only
+                </span>
               </div>
-
-              {/* Assign to Requisition for 1-click import */}
-              {activeJobs.length > 0 && (
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748B', marginBottom: 4 }}>
-                    Assign to ATS Req
-                  </label>
-                  <select
-                    value={targetReqForImport}
-                    onChange={(e) => setTargetReqForImport(e.target.value)}
-                    style={{
-                      padding: '7px 12px',
-                      fontSize: 12.5,
-                      borderRadius: 6,
-                      border: '1px solid #CBD5E1',
-                      backgroundColor: '#FFFFFF',
-                      color: '#0F172A',
-                      fontWeight: 600,
-                      outline: 'none',
-                      cursor: 'pointer',
-                      maxWidth: 240
-                    }}
-                  >
-                    <option value="">Talent Pool (General)</option>
-                    {activeJobs.map(job => (
-                      <option key={job.id || job.jobId} value={job.id || job.jobId}>
-                        Req #{job.id || job.jobId} - {job.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
             </div>
 
-            {/* Action Buttons */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            {/* View Mode Toggle: Cards vs Table */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, backgroundColor: '#F1F5F9', padding: '2px', borderRadius: 6 }}>
               <button
                 type="button"
-                onClick={handleParseJd}
-                disabled={isParsing}
+                onClick={() => setViewMode('cards')}
                 style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#FFFFFF',
-                  border: '1px solid #CBD5E1',
-                  borderRadius: 6,
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: '#334155',
-                  cursor: isParsing ? 'wait' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 6
-                }}
-              >
-                {isParsing ? 'Parsing Requirements...' : 'Parse Requirements & Boolean'}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleFindCandidates}
-                disabled={isSearching}
-                style={{
-                  padding: '8px 18px',
-                  backgroundColor: '#1E293B',
+                  gap: 5,
+                  padding: '4px 10px',
                   border: 'none',
-                  borderRadius: 6,
-                  fontSize: 13,
+                  borderRadius: 4,
+                  fontSize: 12,
                   fontWeight: 700,
-                  color: '#FFFFFF',
-                  cursor: isSearching ? 'wait' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                  cursor: 'pointer',
+                  backgroundColor: viewMode === 'cards' ? '#FFFFFF' : 'transparent',
+                  color: viewMode === 'cards' ? '#0F172A' : '#64748B',
+                  boxShadow: viewMode === 'cards' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'
                 }}
               >
-                <IconSearch />
-                {isSearching ? 'Evaluating Monster+ Candidates...' : 'Find Monster+ Candidates'}
+                <IconGrid /> Cards
               </button>
-
               <button
                 type="button"
-                onClick={handleLiveMonsterSearch}
-                disabled={isLiveSearching}
-                title="Automates search directly on manage.monster.com using saved session"
+                onClick={() => setViewMode('table')}
                 style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#0F766E',
-                  border: 'none',
-                  borderRadius: 6,
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: '#FFFFFF',
-                  cursor: isLiveSearching ? 'wait' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 6
+                  gap: 5,
+                  padding: '4px 10px',
+                  border: 'none',
+                  borderRadius: 4,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  backgroundColor: viewMode === 'table' ? '#FFFFFF' : 'transparent',
+                  color: viewMode === 'table' ? '#0F172A' : '#64748B',
+                  boxShadow: viewMode === 'table' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'
                 }}
               >
-                <IconMonster size={14} color="#FFF" />
-                {isLiveSearching ? 'Searching Portal...' : 'Live Monster Search'}
+                <IconTable /> Excel Grid
               </button>
             </div>
           </div>
         </div>
 
-        {/* Card B: Parsed Requirements & Boolean Search Query */}
+        {/* SECTION B: Parsed Requirements & Monster Boolean Query */}
         {parsedData && (
           <div style={{
             backgroundColor: '#FFFFFF',
             borderRadius: 8,
             border: '1px solid #E2E8F0',
-            padding: '20px 24px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+            padding: '14px 20px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <span style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>
-                Extracted Requirements & Monster Search Query
-              </span>
-              <span style={{ fontSize: 12, color: '#64748B', fontWeight: 600 }}>
-                Experience Target: {parsedData.experience_min_years || 4} - {parsedData.experience_max_years || 8} Years
-              </span>
-            </div>
-
-            {/* Criteria Badges */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
-              <span style={{ padding: '3px 10px', backgroundColor: '#F1F5F9', border: '1px solid #CBD5E1', borderRadius: 4, fontSize: 12, fontWeight: 700, color: '#1E293B' }}>
-                Role: {parsedData.job_title}
-              </span>
-              {parsedData.primary_location && (
-                <span style={{ padding: '3px 10px', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 4, fontSize: 12, fontWeight: 600, color: '#475569' }}>
-                  Location: {parsedData.primary_location}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 13.5, fontWeight: 800, color: '#0F172A' }}>
+                  Target Role: {parsedData.job_title}
                 </span>
-              )}
-              {parsedData.education && (
-                <span style={{ padding: '3px 10px', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 4, fontSize: 12, fontWeight: 600, color: '#475569' }}>
-                  Edu: {parsedData.education}
-                </span>
-              )}
-            </div>
 
-            {/* Must-Have Skills */}
-            <div style={{ marginBottom: 12 }}>
-              <span style={{ fontSize: 11.5, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Must-Have Technical Skills ({parsedData.must_have_skills?.length || 0}):
-              </span>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
-                {(parsedData.must_have_skills || []).map((sk, idx) => (
-                  <span key={idx} style={{
-                    padding: '3px 9px',
-                    backgroundColor: '#EFF6FF',
-                    border: '1px solid #BFDBFE',
+                {/* Interview Mode Badge */}
+                {parsedData.interview_mode && (
+                  <span style={{
+                    padding: '2px 8px',
                     borderRadius: 4,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: '#1E40AF'
+                    fontSize: 11,
+                    fontWeight: 700,
+                    backgroundColor: parsedData.interview_mode.badgeBg || '#EFF6FF',
+                    color: parsedData.interview_mode.badgeColor || '#1E40AF',
+                    border: `1px solid ${parsedData.interview_mode.badgeBorder || '#BFDBFE'}`
                   }}>
-                    {sk}
+                    {parsedData.interview_mode.label}
                   </span>
-                ))}
+                )}
+
+                <span style={{ fontSize: 11.5, color: '#64748B', fontWeight: 600 }}>
+                  Exp: {parsedData.experience_min_years || 4} - {parsedData.experience_max_years || 8} Yrs
+                </span>
               </div>
+
+              {/* 1-Click Copy Boolean Query Button */}
+              <button
+                type="button"
+                onClick={handleCopyQuery}
+                style={{
+                  padding: '5px 12px',
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid #CBD5E1',
+                  borderRadius: 5,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: '#334155',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6
+                }}
+              >
+                {copiedQuery ? <><IconCheck /> Copied Boolean</> : <><IconCopy /> Copy Monster Boolean</>}
+              </button>
             </div>
 
-            {/* Boolean Query Box */}
+            {/* Boolean Query Monospace Display */}
             {parsedData.monster_boolean_query && (
               <div style={{
-                marginTop: 14,
-                padding: '12px 16px',
+                padding: '8px 12px',
                 backgroundColor: '#F8FAFC',
                 border: '1px solid #E2E8F0',
-                borderRadius: 6,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 16
+                borderRadius: 5,
+                fontSize: 12,
+                fontFamily: 'SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                color: '#1E293B',
+                fontWeight: 600,
+                overflowX: 'auto',
+                whiteSpace: 'nowrap'
               }}>
-                <div style={{ overflow: 'hidden' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 4 }}>
-                    Monster Employer Boolean Query
-                  </div>
-                  <code style={{
-                    fontSize: 12.5,
-                    fontFamily: 'SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-                    color: '#0F172A',
-                    fontWeight: 600,
-                    display: 'block',
-                    overflowX: 'auto',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    {parsedData.monster_boolean_query}
-                  </code>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleCopyQuery}
-                  style={{
-                    padding: '6px 12px',
-                    backgroundColor: '#FFFFFF',
-                    border: '1px solid #CBD5E1',
-                    borderRadius: 5,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: '#334155',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    flexShrink: 0
-                  }}
-                >
-                  {copiedQuery ? <><IconCheck /> Copied</> : <><IconCopy /> Copy Query</>}
-                </button>
+                {parsedData.monster_boolean_query}
               </div>
             )}
+
+            {/* Must-Have Skills Row */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>
+                Required Skills:
+              </span>
+              {(parsedData.must_have_skills || []).map((sk, idx) => (
+                <span key={idx} style={{
+                  padding: '2px 8px',
+                  backgroundColor: '#EFF6FF',
+                  border: '1px solid #BFDBFE',
+                  borderRadius: 4,
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  color: '#1E40AF'
+                }}>
+                  {sk}
+                </span>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Card C: Candidates Match List */}
+        {/* SECTION C: Sourced Monster Candidates */}
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#0F172A' }}>
-                Evaluated Monster+ Candidates ({candidates.length})
+              <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#0F172A' }}>
+                Sourced Monster+ Candidates ({candidates.length})
               </h2>
-              {candidates.length > 0 && (
-                <span style={{ fontSize: 12, color: '#64748B', fontWeight: 600 }}>
-                  Ranked by Good Match Score (0–100%)
-                </span>
-              )}
+              <span style={{ fontSize: 11.5, color: '#059669', fontWeight: 700, backgroundColor: '#ECFDF5', padding: '1px 7px', borderRadius: 4, border: '1px solid #A7F3D0' }}>
+                Active in Last 90 Days
+              </span>
             </div>
 
-            {candidates.length === 0 && !isSearching && (
-              <span style={{ fontSize: 12.5, color: '#64748B' }}>
-                Click <strong>Find Monster+ Candidates</strong> to evaluate profiles against this requisition.
-              </span>
-            )}
+            <span style={{ fontSize: 12, color: '#64748B' }}>
+              Showing verified employer profiles with direct phone and email
+            </span>
           </div>
 
-          {/* Loading Indicator */}
-          {isSearching && (
+          {/* Loading Skeleton */}
+          {isAutoSourcing && (
             <div style={{
-              padding: '40px 20px',
+              padding: '36px 20px',
               backgroundColor: '#FFFFFF',
               borderRadius: 8,
               border: '1px solid #E2E8F0',
@@ -747,62 +690,68 @@ Requirements:
               fontSize: 13,
               fontWeight: 600
             }}>
-              Analyzing Monster+ talent pool and scoring candidates against requirements...
+              Extracting candidate profiles from Monster+ employer talent pool (Last 90 Days)...
             </div>
           )}
 
-          {/* Candidate Profile Cards */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {candidates.map((cand) => {
-              const isHighMatch = (cand.match_score || 0) >= 80
-              const isGoodMatch = (cand.match_score || 0) >= 65 && (cand.match_score || 0) < 80
-              const isImported = importedCandidateIds.has(cand.id)
-              const isExpanded = expandedEmailId === cand.id
+          {/* VIEW 1: Candidate Cards View */}
+          {viewMode === 'cards' && !isAutoSourcing && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {candidates.map((cand) => {
+                const isHighMatch = (cand.match_score || 0) >= 80
+                const isGoodMatch = (cand.match_score || 0) >= 65 && (cand.match_score || 0) < 80
+                const isImported = importedCandidateIds.has(cand.id)
+                const isEmailSent = sentEmailIds.has(cand.id)
+                const isOutreachOpen = activeOutreachCandidate?.id === cand.id
 
-              return (
-                <div
-                  key={cand.id}
-                  style={{
-                    backgroundColor: '#FFFFFF',
-                    borderRadius: 8,
-                    border: '1px solid #E2E8F0',
-                    padding: '20px 24px',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-                    transition: 'border-color 0.15s ease'
-                  }}
-                >
-                  {/* Row 1: Candidate Header & Match Score */}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 12 }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#0F172A' }}>
-                          {cand.name}
-                        </h3>
-                        <span style={{
-                          padding: '2px 8px',
-                          backgroundColor: '#F1F5F9',
-                          borderRadius: 4,
-                          fontSize: 11,
-                          fontWeight: 700,
-                          color: '#475569'
-                        }}>
-                          {cand.years_of_experience || 5} Yrs Exp
-                        </span>
-                        <span style={{ fontSize: 11, color: '#64748B' }}>
-                          {cand.last_active || 'Monster+ Active'}
-                        </span>
+                return (
+                  <div
+                    key={cand.id}
+                    style={{
+                      backgroundColor: '#FFFFFF',
+                      borderRadius: 8,
+                      border: '1px solid #E2E8F0',
+                      padding: '18px 22px',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+                    }}
+                  >
+                    {/* Header Row: Name, Match Score & Local Fit */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap', marginBottom: 10 }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#0F172A' }}>
+                            {cand.name}
+                          </h3>
+                          <span style={{ padding: '2px 7px', backgroundColor: '#F1F5F9', borderRadius: 4, fontSize: 11, fontWeight: 700, color: '#475569' }}>
+                            {cand.years_of_experience || 5} Yrs
+                          </span>
+                          <span style={{ fontSize: 11.5, color: '#059669', fontWeight: 700 }}>
+                            {cand.last_active || 'Monster+ Active'}
+                          </span>
+                          {cand.local_fit_badge && (
+                            <span style={{
+                              padding: '2px 8px',
+                              borderRadius: 4,
+                              fontSize: 11,
+                              fontWeight: 700,
+                              backgroundColor: cand.is_local_match ? '#ECFDF5' : '#FEF2F2',
+                              color: cand.is_local_match ? '#065F46' : '#991B1B',
+                              border: `1px solid ${cand.is_local_match ? '#A7F3D0' : '#FECACA'}`
+                            }}>
+                              {cand.local_fit_badge}
+                            </span>
+                          )}
+                        </div>
+
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#334155', marginTop: 3 }}>
+                          {cand.title}
+                        </div>
+                        <div style={{ fontSize: 12, color: '#64748B', marginTop: 1 }}>
+                          {cand.company} · {cand.location}
+                        </div>
                       </div>
 
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#334155', marginTop: 4 }}>
-                        {cand.title}
-                      </div>
-                      <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>
-                        {cand.company} · {cand.location}
-                      </div>
-                    </div>
-
-                    {/* Match Score Badge */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      {/* Match Score Badge */}
                       <div style={{
                         padding: '6px 14px',
                         borderRadius: 6,
@@ -824,300 +773,443 @@ Requirements:
                           fontSize: 10,
                           fontWeight: 700,
                           color: isHighMatch ? '#047857' : (isGoodMatch ? '#B45309' : '#64748B'),
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.4px'
+                          textTransform: 'uppercase'
                         }}>
-                          {cand.match_tier || (isHighMatch ? 'High Match' : 'Good Match')}
+                          {cand.match_tier || 'Good Match'}
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Row 2: Skills Match Breakdown */}
-                  <div style={{
-                    padding: '12px 16px',
-                    backgroundColor: '#F8FAFC',
-                    borderRadius: 6,
-                    border: '1px solid #F1F5F9',
-                    marginBottom: 14,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 8
-                  }}>
-                    {/* Matched Skills */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 11, fontWeight: 800, color: '#065F46', textTransform: 'uppercase', letterSpacing: '0.4px', minWidth: 90 }}>
-                        Matched Skills:
-                      </span>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                        {(cand.matched_skills || []).map((sk, idx) => (
-                          <span key={idx} style={{
-                            padding: '2px 8px',
-                            backgroundColor: '#ECFDF5',
-                            border: '1px solid #A7F3D0',
-                            borderRadius: 4,
-                            fontSize: 11.5,
+                    {/* Contact Info Bar (Direct Phone, Email, Work Auth) */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 16,
+                      flexWrap: 'wrap',
+                      padding: '8px 12px',
+                      backgroundColor: '#F8FAFC',
+                      borderRadius: 6,
+                      fontSize: 12,
+                      color: '#334155',
+                      marginBottom: 12
+                    }}>
+                      {/* Phone */}
+                      {cand.phone && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <IconPhone />
+                          <strong>{cand.phone}</strong>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyContact('phone', cand.phone, cand.id)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#2563EB', fontSize: 11, fontWeight: 700 }}
+                          >
+                            {copiedPhoneId === cand.id ? 'Copied' : 'Copy'}
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Email */}
+                      {cand.email && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <IconMail />
+                          <strong>{cand.email}</strong>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyContact('email', cand.email, cand.id)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#2563EB', fontSize: 11, fontWeight: 700 }}
+                          >
+                            {copiedEmailId === cand.id ? 'Copied' : 'Copy'}
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Work Auth */}
+                      {cand.work_auth && (
+                        <div>
+                          Auth: <strong>{cand.work_auth}</strong>
+                        </div>
+                      )}
+
+                      {/* Monster Profile Link */}
+                      {cand.profile_url && cand.profile_url !== '#' && (
+                        <a
+                          href={cand.profile_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            color: '#2563EB',
                             fontWeight: 700,
-                            color: '#065F46'
-                          }}>
-                            {sk}
-                          </span>
-                        ))}
-                        {(!cand.matched_skills || cand.matched_skills.length === 0) && (
-                          <span style={{ fontSize: 11.5, color: '#94A3B8' }}>None identified</span>
-                        )}
-                      </div>
+                            textDecoration: 'none',
+                            marginLeft: 'auto'
+                          }}
+                        >
+                          Monster Profile <IconExternalLink />
+                        </a>
+                      )}
                     </div>
 
-                    {/* Missing Skills */}
-                    {cand.missing_skills && cand.missing_skills.length > 0 && (
+                    {/* Matched Skills vs Missing Skills */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 11, fontWeight: 800, color: '#991B1B', textTransform: 'uppercase', letterSpacing: '0.4px', minWidth: 90 }}>
-                          Missing Skills:
+                        <span style={{ fontSize: 11, fontWeight: 800, color: '#065F46', textTransform: 'uppercase' }}>
+                          Matched Skills:
                         </span>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                          {cand.missing_skills.map((sk, idx) => (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                          {(cand.matched_skills || []).map((sk, idx) => (
                             <span key={idx} style={{
-                              padding: '2px 8px',
-                              backgroundColor: '#FEF2F2',
-                              border: '1px solid #FECACA',
+                              padding: '2px 7px',
+                              backgroundColor: '#ECFDF5',
+                              border: '1px solid #A7F3D0',
                               borderRadius: 4,
                               fontSize: 11.5,
-                              fontWeight: 600,
-                              color: '#991B1B'
+                              fontWeight: 700,
+                              color: '#065F46'
                             }}>
                               {sk}
                             </span>
                           ))}
                         </div>
                       </div>
-                    )}
-                  </div>
 
-                  {/* Row 3: Candidate Summary */}
-                  {cand.summary && (
-                    <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.5, marginBottom: 14 }}>
-                      {cand.summary}
-                    </div>
-                  )}
-
-                  {/* Row 4: Contact & Authorization Information */}
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 16,
-                    flexWrap: 'wrap',
-                    paddingBottom: 14,
-                    borderBottom: '1px solid #F1F5F9',
-                    fontSize: 12,
-                    color: '#64748B'
-                  }}>
-                    {cand.email && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <IconMail />
-                        <strong style={{ color: '#0F172A' }}>{cand.email}</strong>
-                      </span>
-                    )}
-
-                    {cand.phone && (
-                      <span>
-                        Phone: <strong style={{ color: '#0F172A' }}>{cand.phone}</strong>
-                      </span>
-                    )}
-
-                    {cand.work_auth && (
-                      <span>
-                        Work Auth: <strong style={{ color: '#0F172A' }}>{cand.work_auth}</strong>
-                      </span>
-                    )}
-
-                    {cand.profile_url && cand.profile_url !== '#' && (
-                      <a
-                        href={cand.profile_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 4,
-                          color: '#2563EB',
-                          fontWeight: 700,
-                          textDecoration: 'none'
-                        }}
-                      >
-                        Monster Profile <IconExternalLink />
-                      </a>
-                    )}
-                  </div>
-
-                  {/* Row 5: AI Recruiter Assessment Notes */}
-                  {cand.recruiter_notes && (
-                    <div style={{
-                      marginTop: 12,
-                      padding: '8px 12px',
-                      backgroundColor: '#F8FAFC',
-                      borderRadius: 6,
-                      fontSize: 12,
-                      color: '#475569',
-                      borderLeft: '3px solid #3B82F6'
-                    }}>
-                      <strong>AI Assessment:</strong> {cand.recruiter_notes}
-                    </div>
-                  )}
-
-                  {/* Row 6: Outreach Email Drawer */}
-                  {isExpanded && cand.outreach_email && (
-                    <div style={{
-                      marginTop: 14,
-                      padding: '14px 16px',
-                      backgroundColor: '#F8FAFC',
-                      border: '1px solid #E2E8F0',
-                      borderRadius: 6
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: '#334155' }}>
-                          Personalized Outreach Email Draft (Signed on behalf of Coolsoft LLC)
-                        </span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <button
-                            type="button"
-                            onClick={() => handleCopyEmail(cand.id, cand.outreach_email)}
-                            style={{
-                              padding: '4px 10px',
-                              backgroundColor: '#FFFFFF',
-                              border: '1px solid #CBD5E1',
-                              borderRadius: 4,
-                              fontSize: 11.5,
-                              fontWeight: 700,
-                              color: '#334155',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 5
-                            }}
-                          >
-                            {copiedEmailId === cand.id ? <><IconCheck /> Copied</> : <><IconCopy /> Copy Email</>}
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleSendEmail(cand)}
-                            disabled={sendingEmailId === cand.id}
-                            style={{
-                              padding: '4px 12px',
-                              backgroundColor: '#0F766E',
-                              border: 'none',
-                              borderRadius: 4,
-                              fontSize: 11.5,
-                              fontWeight: 700,
-                              color: '#FFFFFF',
-                              cursor: sendingEmailId === cand.id ? 'wait' : 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 5
-                            }}
-                          >
-                            <IconMail />
-                            {sendingEmailId === cand.id ? 'Sending...' : 'Send Email'}
-                          </button>
+                      {cand.missing_skills && cand.missing_skills.length > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: 11, fontWeight: 800, color: '#991B1B', textTransform: 'uppercase' }}>
+                            Missing:
+                          </span>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                            {cand.missing_skills.map((sk, idx) => (
+                              <span key={idx} style={{
+                                padding: '2px 7px',
+                                backgroundColor: '#FEF2F2',
+                                border: '1px solid #FECACA',
+                                borderRadius: 4,
+                                fontSize: 11.5,
+                                fontWeight: 600,
+                                color: '#991B1B'
+                              }}>
+                                {sk}
+                              </span>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-
-                      <pre style={{
-                        margin: 0,
-                        padding: '10px 12px',
-                        backgroundColor: '#FFFFFF',
-                        border: '1px solid #E2E8F0',
-                        borderRadius: 4,
-                        fontSize: 12,
-                        fontFamily: 'inherit',
-                        lineHeight: 1.5,
-                        color: '#1E293B',
-                        whiteSpace: 'pre-wrap'
-                      }}>
-                        {cand.outreach_email}
-                      </pre>
+                      )}
                     </div>
-                  )}
 
-                  {/* Row 7: Action Buttons Bar */}
-                  <div style={{
-                    marginTop: 14,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: 10
-                  }}>
-                    <button
-                      type="button"
-                      onClick={() => setExpandedEmailId(isExpanded ? null : cand.id)}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: isExpanded ? '#EFF6FF' : '#FFFFFF',
-                        border: '1px solid #CBD5E1',
+                    {/* Recruiter Assessment Note */}
+                    {cand.recruiter_notes && (
+                      <div style={{
+                        padding: '8px 12px',
+                        backgroundColor: '#F8FAFC',
                         borderRadius: 5,
                         fontSize: 12,
-                        fontWeight: 700,
-                        color: isExpanded ? '#1E40AF' : '#334155',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6
-                      }}
-                    >
-                      <IconMail />
-                      {isExpanded ? 'Hide Outreach Email' : 'View Outreach Email Draft'}
-                    </button>
+                        color: '#475569',
+                        borderLeft: '3px solid #3B82F6',
+                        marginBottom: 12
+                      }}>
+                        <strong>AI Assessment:</strong> {cand.recruiter_notes}
+                      </div>
+                    )}
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    {/* Email Outreach Box (Expandable) */}
+                    {isOutreachOpen && (
+                      <div style={{
+                        marginTop: 12,
+                        padding: '12px 14px',
+                        backgroundColor: '#F8FAFC',
+                        border: '1px solid #CBD5E1',
+                        borderRadius: 6,
+                        marginBottom: 12
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                          <span style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>
+                            Direct Email Outreach (Coolsoft LLC Pitch)
+                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(cand.outreach_email)
+                                setCopiedEmailId(cand.id)
+                                setTimeout(() => setCopiedEmailId(null), 2000)
+                              }}
+                              style={{
+                                padding: '4px 8px',
+                                backgroundColor: '#FFFFFF',
+                                border: '1px solid #CBD5E1',
+                                borderRadius: 4,
+                                fontSize: 11.5,
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                color: '#334155'
+                              }}
+                            >
+                              {copiedEmailId === cand.id ? 'Copied' : 'Copy Text'}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleSendOutreachEmail(cand)}
+                              disabled={sendingEmailId === cand.id}
+                              style={{
+                                padding: '4px 12px',
+                                backgroundColor: '#0F766E',
+                                border: 'none',
+                                borderRadius: 4,
+                                fontSize: 11.5,
+                                fontWeight: 800,
+                                color: '#FFFFFF',
+                                cursor: sendingEmailId === cand.id ? 'wait' : 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 5
+                              }}
+                            >
+                              <IconMail />
+                              {sendingEmailId === cand.id ? 'Sending...' : 'Send Email Now'}
+                            </button>
+                          </div>
+                        </div>
+
+                        <pre style={{
+                          margin: 0,
+                          padding: '10px',
+                          backgroundColor: '#FFFFFF',
+                          border: '1px solid #E2E8F0',
+                          borderRadius: 4,
+                          fontSize: 11.5,
+                          fontFamily: 'inherit',
+                          lineHeight: 1.5,
+                          color: '#1E293B',
+                          whiteSpace: 'pre-wrap'
+                        }}>
+                          {cand.outreach_email}
+                        </pre>
+                      </div>
+                    )}
+
+                    {/* Action Buttons Bar */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, paddingTop: 10, borderTop: '1px solid #F1F5F9' }}>
                       <button
                         type="button"
-                        onClick={() => handleCopyEmail(cand.id, cand.outreach_email)}
+                        onClick={() => setActiveOutreachCandidate(isOutreachOpen ? null : cand)}
                         style={{
                           padding: '6px 12px',
-                          backgroundColor: '#FFFFFF',
+                          backgroundColor: isOutreachOpen ? '#EFF6FF' : '#FFFFFF',
                           border: '1px solid #CBD5E1',
                           borderRadius: 5,
                           fontSize: 12,
                           fontWeight: 700,
-                          color: '#334155',
+                          color: isOutreachOpen ? '#1E40AF' : '#334155',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
                           gap: 6
                         }}
                       >
-                        {copiedEmailId === cand.id ? <><IconCheck /> Copied</> : <><IconCopy /> Copy Outreach</>}
+                        <IconMail />
+                        {isOutreachOpen ? 'Close Email Draft' : 'Email Outreach Draft'}
                       </button>
 
-                      <button
-                        type="button"
-                        onClick={() => handleImportToAts(cand)}
-                        disabled={isImported}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {isEmailSent && (
+                          <span style={{ fontSize: 11.5, color: '#059669', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <IconCheck /> Email Sent
+                          </span>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleSendOutreachEmail(cand)}
+                          disabled={sendingEmailId === cand.id}
+                          style={{
+                            padding: '6px 12px',
+                            backgroundColor: '#0F766E',
+                            border: 'none',
+                            borderRadius: 5,
+                            fontSize: 12,
+                            fontWeight: 700,
+                            color: '#FFFFFF',
+                            cursor: sendingEmailId === cand.id ? 'wait' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 5
+                          }}
+                        >
+                          <IconMail />
+                          {sendingEmailId === cand.id ? 'Sending...' : '1-Click Email'}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleImportToAts(cand)}
+                          disabled={isImported}
+                          style={{
+                            padding: '6px 14px',
+                            backgroundColor: isImported ? '#ECFDF5' : '#1E293B',
+                            border: isImported ? '1px solid #A7F3D0' : 'none',
+                            borderRadius: 5,
+                            fontSize: 12,
+                            fontWeight: 700,
+                            color: isImported ? '#065F46' : '#FFFFFF',
+                            cursor: isImported ? 'default' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6
+                          }}
+                        >
+                          {isImported ? <><IconCheck /> In ATS Pipeline</> : 'Import to SmartHire ATS'}
+                        </button>
+                      </div>
+                    </div>
+
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* VIEW 2: Excel-Style Spreadsheet Grid (Rule 9) */}
+          {viewMode === 'table' && !isAutoSourcing && (
+            <div style={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: 8,
+              border: '1px solid #CBD5E1',
+              overflowX: 'auto',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+            }}>
+              <table style={{
+                width: '100%',
+                borderCollapse: 'collapse',
+                textAlign: 'left',
+                fontSize: 12,
+                fontFamily: 'inherit'
+              }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#F1F5F9', borderBottom: '1px solid #CBD5E1' }}>
+                    <th style={{ padding: '8px 12px', fontWeight: 800, color: '#334155', borderRight: '1px solid #CBD5E1', width: 45 }}>#</th>
+                    <th style={{ padding: '8px 12px', fontWeight: 800, color: '#334155', borderRight: '1px solid #CBD5E1' }}>Candidate Name</th>
+                    <th style={{ padding: '8px 12px', fontWeight: 800, color: '#334155', borderRight: '1px solid #CBD5E1' }}>Role / Current Title</th>
+                    <th style={{ padding: '8px 12px', fontWeight: 800, color: '#334155', borderRight: '1px solid #CBD5E1' }}>Location & Local Fit</th>
+                    <th style={{ padding: '8px 12px', fontWeight: 800, color: '#334155', borderRight: '1px solid #CBD5E1' }}>Visa / Auth</th>
+                    <th style={{ padding: '8px 12px', fontWeight: 800, color: '#334155', borderRight: '1px solid #CBD5E1' }}>Direct Phone</th>
+                    <th style={{ padding: '8px 12px', fontWeight: 800, color: '#334155', borderRight: '1px solid #CBD5E1' }}>Monster Email</th>
+                    <th style={{ padding: '8px 12px', fontWeight: 800, color: '#334155', borderRight: '1px solid #CBD5E1', textAlign: 'center' }}>Match %</th>
+                    <th style={{ padding: '8px 12px', fontWeight: 800, color: '#334155', textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {candidates.map((cand, idx) => {
+                    const isImported = importedCandidateIds.has(cand.id)
+                    const isEmailSent = sentEmailIds.has(cand.id)
+                    const isHigh = (cand.match_score || 0) >= 80
+
+                    return (
+                      <tr
+                        key={cand.id}
                         style={{
-                          padding: '6px 14px',
-                          backgroundColor: isImported ? '#ECFDF5' : '#1E293B',
-                          border: isImported ? '1px solid #A7F3D0' : 'none',
-                          borderRadius: 5,
-                          fontSize: 12,
-                          fontWeight: 700,
-                          color: isImported ? '#065F46' : '#FFFFFF',
-                          cursor: isImported ? 'default' : 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6
+                          backgroundColor: idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC',
+                          borderBottom: '1px solid #E2E8F0',
+                          height: 42
                         }}
                       >
-                        {isImported ? <><IconCheck /> Imported to ATS</> : 'Import to SmartHire ATS'}
-                      </button>
-                    </div>
-                  </div>
+                        <td style={{ padding: '8px 12px', borderRight: '1px solid #E2E8F0', fontWeight: 700, color: '#64748B' }}>
+                          {idx + 1}
+                        </td>
+                        <td style={{ padding: '8px 12px', borderRight: '1px solid #E2E8F0', fontWeight: 700, color: '#0F172A' }}>
+                          {cand.name}
+                          <div style={{ fontSize: 10.5, color: '#059669', fontWeight: 700 }}>
+                            {cand.last_active}
+                          </div>
+                        </td>
+                        <td style={{ padding: '8px 12px', borderRight: '1px solid #E2E8F0', color: '#334155', fontWeight: 600 }}>
+                          {cand.title}
+                        </td>
+                        <td style={{ padding: '8px 12px', borderRight: '1px solid #E2E8F0' }}>
+                          <div style={{ color: '#0F172A', fontWeight: 600 }}>{cand.location}</div>
+                          <span style={{
+                            display: 'inline-block',
+                            marginTop: 2,
+                            padding: '1px 6px',
+                            borderRadius: 3,
+                            fontSize: 10,
+                            fontWeight: 700,
+                            backgroundColor: cand.is_local_match ? '#ECFDF5' : '#FEF2F2',
+                            color: cand.is_local_match ? '#065F46' : '#991B1B'
+                          }}>
+                            {cand.local_fit_badge || 'Regional'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '8px 12px', borderRight: '1px solid #E2E8F0', color: '#475569', fontWeight: 600 }}>
+                          {cand.work_auth}
+                        </td>
+                        <td style={{ padding: '8px 12px', borderRight: '1px solid #E2E8F0', fontWeight: 700, color: '#0F172A' }}>
+                          {cand.phone}
+                        </td>
+                        <td style={{ padding: '8px 12px', borderRight: '1px solid #E2E8F0', fontWeight: 600, color: '#2563EB' }}>
+                          {cand.email}
+                        </td>
+                        <td style={{ padding: '8px 12px', borderRight: '1px solid #E2E8F0', textAlign: 'center' }}>
+                          <span style={{
+                            padding: '3px 8px',
+                            borderRadius: 4,
+                            fontSize: 12,
+                            fontWeight: 800,
+                            backgroundColor: isHigh ? '#ECFDF5' : '#FFFBEB',
+                            color: isHigh ? '#065F46' : '#92400E',
+                            border: `1px solid ${isHigh ? '#A7F3D0' : '#FDE68A'}`
+                          }}>
+                            {cand.match_score}%
+                          </span>
+                        </td>
+                        <td style={{ padding: '8px 12px', textAlign: 'right' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
+                            <button
+                              type="button"
+                              onClick={() => handleSendOutreachEmail(cand)}
+                              disabled={sendingEmailId === cand.id}
+                              style={{
+                                padding: '4px 8px',
+                                backgroundColor: isEmailSent ? '#ECFDF5' : '#0F766E',
+                                color: isEmailSent ? '#065F46' : '#FFFFFF',
+                                border: isEmailSent ? '1px solid #A7F3D0' : 'none',
+                                borderRadius: 4,
+                                fontSize: 11,
+                                fontWeight: 700,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {isEmailSent ? 'Sent' : 'Email'}
+                            </button>
 
-                </div>
-              )
-            })}
-          </div>
+                            <button
+                              type="button"
+                              onClick={() => handleImportToAts(cand)}
+                              disabled={isImported}
+                              style={{
+                                padding: '4px 10px',
+                                backgroundColor: isImported ? '#ECFDF5' : '#1E293B',
+                                color: isImported ? '#065F46' : '#FFFFFF',
+                                border: isImported ? '1px solid #A7F3D0' : 'none',
+                                borderRadius: 4,
+                                fontSize: 11,
+                                fontWeight: 700,
+                                cursor: isImported ? 'default' : 'pointer'
+                              }}
+                            >
+                              {isImported ? 'In ATS' : 'Import'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
       </div>
