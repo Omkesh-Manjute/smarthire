@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monster+ AI Candidate Sourcing & Good Match Studio | Coolsoft LLC</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --monster-purple: #6B46C1;
+      --monster-purple-light: #9F7AEA;
+      --monster-accent: #00D26A;
+      --monster-dark: #0A0D17;
+      --monster-card: #121829;
+      --monster-border: rgba(255, 255, 255, 0.09);
+    }
+    body {
+      background-color: var(--monster-dark);
+      color: #F8FAFC;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Top Nav */
+    .studio-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 36px;
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--monster-border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .studio-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    .studio-brand span.badge {
+      background: linear-gradient(135deg, #6B46C1, #9F7AEA);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+    .nav-links {
+      display: flex;
+      gap: 10px;
+    }
+    .nav-link {
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #94A3B8;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+    .nav-link:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .nav-link.active {
+      color: #9F7AEA;
+      background: rgba(159, 122, 234, 0.15);
+      border-color: rgba(159, 122, 234, 0.35);
+    }
+
+    /* Hero Section */
+    .recruiter-hero {
+      background: radial-gradient(circle at 50% 0%, rgba(107, 70, 193, 0.2), transparent 70%),
+                  radial-gradient(circle at 85% 20%, rgba(0, 210, 106, 0.1), transparent 50%);
+      padding: 30px 40px;
+      border-bottom: 1px solid var(--monster-border);
+    }
+    .recruiter-hero h1 {
+      font-size: 32px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 30%, #D6BCFA 70%, #9F7AEA 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 0 0 8px 0;
+    }
+    .recruiter-hero p {
+      color: #94A3B8;
+      font-size: 15px;
+      margin: 0 0 16px 0;
+    }
+
+    .account-badge-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .account-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(107, 70, 193, 0.18);
+      border: 1px solid rgba(159, 122, 234, 0.3);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #E9D8FD;
+    }
+    .account-pill span.dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #00D26A;
+      box-shadow: 0 0 8px #00D26A;
+    }
+
+    /* Layout */
+    .recruiter-container {
+      display: grid;
+      grid-template-columns: 460px 1fr;
+      gap: 30px;
+      padding: 30px 40px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    /* Left Card: JD Input */
+    .panel-card {
+      background: var(--monster-card);
+      border: 1px solid var(--monster-border);
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+    }
+    .panel-card h2 {
+      font-size: 18px;
+      margin: 0 0 16px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #fff;
+    }
+
+    .preset-pills {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .preset-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #CBD5E1;
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .preset-btn:hover {
+      background: rgba(159, 122, 234, 0.2);
+      border-color: #9F7AEA;
+      color: #fff;
+    }
+
+    textarea.jd-input {
+      width: 100%;
+      height: 220px;
+      background: rgba(10, 13, 23, 0.85);
+      border: 1px solid var(--monster-border);
+      border-radius: 12px;
+      padding: 14px;
+      color: #F1F5F9;
+      font-family: inherit;
+      font-size: 13px;
+      line-height: 1.5;
+      resize: vertical;
+      box-sizing: border-box;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    textarea.jd-input:focus {
+      border-color: #9F7AEA;
+      box-shadow: 0 0 0 2px rgba(159, 122, 234, 0.2);
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 14px 0;
+    }
+    .field-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #94A3B8;
+      margin-bottom: 6px;
+    }
+    .field-group input {
+      width: 100%;
+      background: rgba(10, 13, 23, 0.85);
+      border: 1px solid var(--monster-border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #fff;
+      font-size: 13px;
+      box-sizing: border-box;
+      outline: none;
+    }
+
+    .boolean-box {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(159, 122, 234, 0.25);
+      border-radius: 10px;
+      padding: 12px;
+      margin: 16px 0;
+    }
+    .boolean-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #D6BCFA;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .boolean-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: #68D391;
+      word-break: break-all;
+      line-height: 1.4;
+    }
+
+    .btn-primary-monster {
+      width: 100%;
+      background: linear-gradient(135deg, #6B46C1, #805AD5);
+      color: #fff;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(107, 70, 193, 0.4);
+    }
+    .btn-primary-monster:hover {
+      background: linear-gradient(135deg, #7B56D1, #9F7AEA);
+      transform: translateY(-1px);
+    }
+
+    /* Right: Candidates Display */
+    .results-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .criteria-summary-bar {
+      background: var(--monster-card);
+      border: 1px solid var(--monster-border);
+      border-radius: 14px;
+      padding: 18px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .criteria-info h3 {
+      margin: 0 0 6px 0;
+      font-size: 18px;
+      color: #fff;
+    }
+    .skill-badges-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .skill-tag {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.06);
+      color: #CBD5E1;
+    }
+    .skill-tag.must {
+      background: rgba(107, 70, 193, 0.25);
+      color: #D6BCFA;
+      border: 1px solid rgba(159, 122, 234, 0.3);
+    }
+
+    /* Candidate Cards Grid */
+    .candidates-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .candidate-card {
+      background: var(--monster-card);
+      border: 1px solid var(--monster-border);
+      border-radius: 16px;
+      padding: 22px;
+      transition: all 0.25s ease;
+      position: relative;
+    }
+    .candidate-card:hover {
+      border-color: rgba(159, 122, 234, 0.4);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .cand-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .cand-title-info h4 {
+      margin: 0 0 4px 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .cand-meta {
+      font-size: 13px;
+      color: #94A3B8;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+    .cand-meta span {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .match-score-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+    .score-pill {
+      font-size: 16px;
+      font-weight: 800;
+      padding: 6px 14px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .score-pill.high {
+      background: rgba(0, 210, 106, 0.15);
+      color: #00D26A;
+      border: 1px solid rgba(0, 210, 106, 0.3);
+    }
+    .score-pill.medium {
+      background: rgba(245, 158, 11, 0.15);
+      color: #F59E0B;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .match-tier-text {
+      font-size: 11px;
+      color: #94A3B8;
+      font-weight: 600;
+    }
+
+    .cand-summary {
+      color: #CBD5E1;
+      font-size: 13px;
+      line-height: 1.5;
+      margin: 12px 0;
+      background: rgba(10, 13, 23, 0.5);
+      padding: 10px 14px;
+      border-radius: 8px;
+    }
+
+    .skills-breakdown {
+      margin: 12px 0;
+    }
+    .skills-section-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #94A3B8;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+    .skills-matched-pill {
+      background: rgba(0, 210, 106, 0.12);
+      color: #4ADE80;
+      border: 1px solid rgba(74, 222, 128, 0.25);
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+    .skills-missing-pill {
+      background: rgba(239, 68, 68, 0.1);
+      color: #F87171;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 500;
+    }
+
+    .cand-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .active-time {
+      font-size: 12px;
+      color: #64748B;
+    }
+    .cand-actions {
+      display: flex;
+      gap: 10px;
+    }
+    .btn-cand-action {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-profile {
+      background: rgba(107, 70, 193, 0.2);
+      color: #D6BCFA;
+      border: 1px solid rgba(159, 122, 234, 0.3);
+    }
+    .btn-profile:hover {
+      background: rgba(107, 70, 193, 0.35);
+      color: #fff;
+    }
+    .btn-email {
+      background: rgba(0, 210, 106, 0.15);
+      color: #00D26A;
+      border: 1px solid rgba(0, 210, 106, 0.3);
+    }
+    .btn-email:hover {
+      background: rgba(0, 210, 106, 0.25);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-box {
+      background: #181E33;
+      border: 1px solid rgba(159, 122, 234, 0.3);
+      border-radius: 18px;
+      width: 600px;
+      max-width: 90vw;
+      padding: 26px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .modal-header h3 {
+      margin: 0;
+      font-size: 18px;
+      color: #fff;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      color: #94A3B8;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    textarea.email-text {
+      width: 100%;
+      height: 220px;
+      background: rgba(10, 13, 23, 0.9);
+      border: 1px solid var(--monster-border);
+      border-radius: 10px;
+      padding: 12px;
+      color: #fff;
+      font-family: inherit;
+      font-size: 13px;
+      line-height: 1.5;
+      box-sizing: border-box;
+      resize: vertical;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    /* Loading Spinner */
+    .spinner {
+      border: 3px solid rgba(255, 255, 255, 0.2);
+      border-top: 3px solid #fff;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <header class="studio-nav">
+    <div class="studio-brand">
+      <span>🎯 Monster+ Recruiter OS</span>
+      <span class="badge">PRO</span>
+    </div>
+    <nav class="nav-links">
+      <a href="/" class="nav-link">⚡ AI Video Studio</a>
+      <a href="/movie-recap" class="nav-link">🎥 Movie Recap</a>
+      <a href="/cartoon-animation" class="nav-link">🎨 2D Cartoon Studio</a>
+      <a href="/candidate-sourcing" class="nav-link active">🎯 Monster Sourcing</a>
+    </nav>
+  </header>
+
+  <!-- Hero -->
+  <section class="recruiter-hero">
+    <h1>🎯 Monster+ AI Candidate Sourcing & Good Match Studio</h1>
+    <p>Automated Sourcing • JD to Monster Boolean Extraction • Candidate AI Match Scoring (0-100%) • 1-Click Personalized Outreach</p>
+    
+    <div class="account-badge-row">
+      <div class="account-pill">
+        <span class="dot"></span>
+        <span>Monster+ Account: <strong>omkesh@coolsofttech.com</strong></span>
+      </div>
+      <div class="account-pill">
+        <span>🏢 Organization: <strong>Coolsoft LLC</strong></span>
+      </div>
+      <div class="account-pill" style="background: rgba(0, 210, 106, 0.15); border-color: rgba(0, 210, 106, 0.3);">
+        <span style="color: #00D26A;">⚡ Mode: Real-Time Sourcing & AI Good Match Ranking</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Container -->
+  <div class="recruiter-container">
+
+    <!-- Left Panel: Job Description Input & Boolean Query -->
+    <div class="panel-card">
+      <h2>📋 Job Description (JD) Input</h2>
+
+      <!-- Preset JD Pills for Quick Demo -->
+      <div class="preset-pills">
+        <span style="font-size: 11px; color: #94A3B8; margin-right: 4px;">Quick Presets:</span>
+        <button class="preset-btn" style="border-color: rgba(0, 210, 106, 0.4); color: #00D26A;" onclick="loadPreset('vdot_d365')">🏛️ VDOT Dynamics 365 (Richmond, VA)</button>
+        <button class="preset-btn" onclick="loadPreset('python_ai')">Python AI Engineer</button>
+        <button class="preset-btn" onclick="loadPreset('java_fs')">Java Fullstack</button>
+        <button class="preset-btn" onclick="loadPreset('devops_cloud')">DevOps / Cloud</button>
+      </div>
+
+      <textarea id="jdInput" class="jd-input" placeholder="Paste your Job Description (JD) here...
+e.g.
+We are looking for a Senior Python Developer with 5+ years of experience in FastAPI, Docker, and AWS. Strong SQL and microservices background required..."></textarea>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Target Location</label>
+          <input type="text" id="targetLoc" value="United States / Remote" placeholder="e.g. Dallas, TX or Remote">
+        </div>
+        <div class="field-group">
+          <label>Max Monster Candidates</label>
+          <input type="number" id="maxResults" value="5" min="1" max="25">
+        </div>
+      </div>
+
+      <!-- Generated Monster Boolean String Box -->
+      <div class="boolean-box">
+        <div class="boolean-header">
+          <span>Monster Boolean Search Query</span>
+          <button class="preset-btn" style="padding: 2px 8px; font-size: 10px;" onclick="copyBoolean()">Copy</button>
+        </div>
+        <div class="boolean-text" id="booleanText">("Senior Python Developer" OR "Python Engineer") AND ("FastAPI" OR "Docker") AND ("AWS")</div>
+      </div>
+
+      <!-- Action Button -->
+      <button class="btn-primary-monster" id="btnSearch" onclick="runMonsterSearch()">
+        <span id="btnIcon">⚡</span>
+        <span id="btnText">Find Best Matches on Monster</span>
+      </button>
+
+      <div style="margin-top: 16px; font-size: 11px; color: #64748B; text-align: center;">
+        Directly connected with employer portal: <strong>SearchMonster™</strong> & <strong>Requisitions</strong>
+      </div>
+    </div>
+
+    <!-- Right Panel: Sourced Candidates & Match Scoring -->
+    <div class="results-panel">
+
+      <!-- Summary Bar -->
+      <div class="criteria-summary-bar" id="criteriaBar">
+        <div class="criteria-info">
+          <div style="font-size: 12px; color: #9F7AEA; font-weight: 700; text-transform: uppercase;">Active Sourcing Criteria</div>
+          <h3 id="criteriaTitle">Senior Python & Cloud Engineer</h3>
+          <div class="skill-badges-row" id="mustSkillsRow">
+            <span class="skill-tag must">Python</span>
+            <span class="skill-tag must">FastAPI</span>
+            <span class="skill-tag must">AWS</span>
+            <span class="skill-tag must">Docker</span>
+            <span class="skill-tag must">PostgreSQL</span>
+          </div>
+        </div>
+        <div>
+          <div style="text-align: right; font-size: 12px; color: #94A3B8;">Candidate Pool</div>
+          <div style="font-size: 26px; font-weight: 800; color: #00D26A;" id="matchCount">5 Qualified</div>
+        </div>
+      </div>
+
+      <!-- Candidates Cards List -->
+      <div class="candidates-list" id="candidatesList">
+        <!-- Rendered dynamically -->
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Outreach Email Modal -->
+  <div class="modal-overlay" id="emailModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modalCandName">✉️ Personalized Outreach Email Draft</h3>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <p style="font-size: 12px; color: #94A3B8; margin-top: 0;">AI-crafted note highlighting specific matched skills for higher response rate:</p>
+      <textarea id="modalEmailText" class="email-text"></textarea>
+      <div class="modal-actions">
+        <button class="btn-cand-action btn-profile" onclick="closeModal()">Close</button>
+        <button class="btn-cand-action btn-email" onclick="copyEmailDraft()">📋 Copy Email Draft</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const PRESETS = {
+      vdot_d365: `Start date: 10/19/2026
+End Date: 06/30/2027
+Submission deadline: 10/9/2026
+Client Info: VDOT (Virginia Department of Transportation)
+Work Arrangement: Hybrid (Richmond, VA)
+Interview Type: Web Cam & In-Person Interview
+
+Description:
+VDOT is seeking a Senior Dynamics 365 Developer. The ideal candidate will be skilled and experienced in Microsoft's Power Platform, to include Dynamics 365, Power Apps, Power Automate, Power Pages, Dataverse.
+
+Responsibilities:
+- Expertise in Dynamics 365 Customer Engagement - Dynamics 365 Customer Service module.
+- Demonstrated experience in Microsoft Dynamics 365 customization, configuration, development, deployment, and usage.
+- Requirements gathering, fit-gap analysis, design, configuration, implementation, testing, and support of Microsoft Power Platform solutions.
+- Design, develop new web components using .NET, SQL, Azure, Power Platform (Dynamics 365, Power Apps, Power Automate, Dataverse) and C#.
+- Strong experience with troubleshooting and remediation of technical Dynamics 365 issues.
+- Strong knowledge of Microsoft's licensing model for Dynamics 365 and Power Platform.
+- Preferred Experience with DevOps in Power Platform (Power Pipelines / ALM Accelerator).`,
+      python_ai: `Job Title: Senior Python & AI Backend Engineer
+Location: Remote (US)
+Experience: 5+ years
+
+Required Skills:
+- 5+ years building backend microservices with Python and FastAPI / Django
+- Strong hands-on experience with Docker, Kubernetes, and AWS (ECS, S3, RDS)
+- Deep understanding of PostgreSQL, Redis, and high-throughput REST APIs
+- Familiarity with AI/LLM integrations, LangChain, or Hugging Face is a strong plus
+- Excellent communication and problem-solving skills`,
+      java_fs: `Job Title: Lead Java Fullstack Developer
+Location: Dallas, TX / Remote
+Experience: 7+ years
+
+Required Skills:
+- 7+ years of core Java (Java 17+), Spring Boot, and Microservices architecture
+- Frontend proficiency in React.js or Angular with TypeScript
+- Hands-on database optimization with Oracle or PostgreSQL
+- Cloud deployment on AWS / Azure with CI/CD pipeline automation
+- Agile team leadership and sprint planning experience`,
+      devops_cloud: `Job Title: Senior DevOps & Cloud Infrastructure Engineer
+Location: Jersey City, NJ / Remote
+Experience: 6+ years
+
+Required Skills:
+- 6+ years experience in Infrastructure as Code using Terraform and Ansible
+- Production Kubernetes (EKS / GKE) administration and Helm charts
+- CI/CD automation with GitHub Actions, Jenkins, and ArgoCD
+- Cloud security, monitoring with Prometheus, Grafana, and Datadog
+- Strong scripting skills in Python and Bash`
+    };
+
+    function loadPreset(key) {
+      document.getElementById("jdInput").value = PRESETS[key] || "";
+      if (key === 'vdot_d365') {
+        document.getElementById("targetLoc").value = "Richmond, VA (Local to VDOT)";
+      } else if (key === 'python_ai') {
+        document.getElementById("targetLoc").value = "United States / Remote";
+      } else if (key === 'java_fs') {
+        document.getElementById("targetLoc").value = "Dallas, TX / Remote";
+      } else if (key === 'devops_cloud') {
+        document.getElementById("targetLoc").value = "Jersey City, NJ / Remote";
+      }
+      triggerParseCriteria();
+    }
+
+    async function triggerParseCriteria() {
+      const text = document.getElementById("jdInput").value.trim();
+      if (!text) return;
+      try {
+        const res = await fetch("/api/recruiter/parse-jd", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jd_text: text })
+        });
+        const data = await res.json();
+        if (data.success) {
+          updateCriteriaUI(data);
+        }
+      } catch (err) {
+        console.error("Parse error:", err);
+      }
+    }
+
+    function updateCriteriaUI(data) {
+      document.getElementById("criteriaTitle").innerText = data.job_title || "Target Role";
+      document.getElementById("booleanText").innerText = data.monster_boolean_query || "";
+      
+      const skillsRow = document.getElementById("mustSkillsRow");
+      skillsRow.innerHTML = "";
+      (data.must_have_skills || []).forEach(s => {
+        const tag = document.createElement("span");
+        tag.className = "skill-tag must";
+        tag.innerText = s;
+        skillsRow.appendChild(tag);
+      });
+      (data.good_to_have_skills || []).forEach(s => {
+        const tag = document.createElement("span");
+        tag.className = "skill-tag";
+        tag.innerText = s;
+        skillsRow.appendChild(tag);
+      });
+    }
+
+    async function runMonsterSearch() {
+      const jdText = document.getElementById("jdInput").value.trim();
+      if (!jdText) {
+        alert("Please paste a Job Description first!");
+        return;
+      }
+
+      const btn = document.getElementById("btnSearch");
+      const icon = document.getElementById("btnIcon");
+      const text = document.getElementById("btnText");
+      btn.disabled = true;
+      icon.innerHTML = `<div class="spinner"></div>`;
+      text.innerText = "Sourcing Monster Candidates & Scoring with AI...";
+
+      const loc = document.getElementById("targetLoc").value.trim();
+      const maxResults = parseInt(document.getElementById("maxResults").value) || 5;
+
+      try {
+        const res = await fetch("/api/recruiter/find-candidates", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            jd_text: jdText,
+            location: loc,
+            max_results: maxResults
+          })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          if (data.jd_parsed) {
+            updateCriteriaUI(data.jd_parsed);
+          }
+          renderCandidates(data.candidates || []);
+        } else {
+          alert("Error: " + (data.error || "Failed to search candidates"));
+        }
+      } catch (err) {
+        alert("Network error: " + err.message);
+      } finally {
+        btn.disabled = false;
+        icon.innerHTML = "⚡";
+        text.innerText = "Find Best Matches on Monster";
+      }
+    }
+
+    let CURRENT_CANDIDATES = [];
+
+    function renderCandidates(candidates) {
+      CURRENT_CANDIDATES = candidates;
+      const list = document.getElementById("candidatesList");
+      list.innerHTML = "";
+      document.getElementById("matchCount").innerText = `${candidates.length} Qualified`;
+
+      if (candidates.length === 0) {
+        list.innerHTML = `<div style="text-align: center; padding: 40px; color: #94A3B8;">No candidates matched your search criteria. Try broadening your JD skills.</div>`;
+        return;
+      }
+
+      candidates.forEach((cand, idx) => {
+        const card = document.createElement("div");
+        card.className = "candidate-card";
+
+        const scoreClass = cand.match_score >= 85 ? "high" : "medium";
+
+        const matchedTags = (cand.matched_skills || []).map(s => `<span class="skills-matched-pill">✓ ${s}</span>`).join(" ");
+        const missingTags = (cand.missing_skills || []).map(s => `<span class="skills-missing-pill">✗ ${s}</span>`).join(" ");
+
+        card.innerHTML = `
+          <div class="cand-header">
+            <div class="cand-title-info">
+              <h4>${cand.name}</h4>
+              <div class="cand-meta">
+                <span>💼 ${cand.title}</span>
+                <span>🏢 ${cand.company}</span>
+                <span>📍 ${cand.location}</span>
+                <span>⏱️ ${cand.years_of_experience} yrs exp</span>
+              </div>
+              <div class="cand-contact-row" style="margin-top: 8px; display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; align-items: center;">
+                <span style="color: #00D26A; font-weight: 700; background: rgba(0, 210, 106, 0.12); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(0, 210, 106, 0.25);">📞 ${cand.phone || '+1 (804) 555-0100'}</span>
+                <span style="color: #93C5FD; font-weight: 700; background: rgba(59, 130, 246, 0.12); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(59, 130, 246, 0.25);">✉️ ${cand.email || 'candidate@gmail.com'}</span>
+                ${cand.work_auth ? `<span style="background: rgba(168, 85, 247, 0.15); color: #C084FC; padding: 3px 8px; border-radius: 6px; font-weight: 700; border: 1px solid rgba(168, 85, 247, 0.3);">🛂 ${cand.work_auth}</span>` : ''}
+              </div>
+            </div>
+            <div class="match-score-badge">
+              <div class="score-pill ${scoreClass}">
+                <span>${cand.match_score}%</span> Match
+              </div>
+              <div class="match-tier-text">${cand.match_tier || "Good Match"}</div>
+            </div>
+          </div>
+
+          <div class="cand-summary">
+            "${cand.summary}"
+          </div>
+
+          <div class="skills-breakdown">
+            <div class="skills-section-label">Matched Skills vs JD:</div>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px;">
+              ${matchedTags || '<span style="color:#64748B; font-size:11px;">None</span>'}
+            </div>
+            ${cand.missing_skills && cand.missing_skills.length > 0 ? `
+              <div class="skills-section-label" style="color: #F87171;">Missing from JD:</div>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                ${missingTags}
+              </div>
+            ` : ''}
+          </div>
+
+          <div style="font-size: 12px; color: #CBD5E1; background: rgba(107, 70, 193, 0.12); padding: 8px 12px; border-radius: 8px; margin: 10px 0;">
+            💡 <strong>AI Recruiter Note:</strong> ${cand.recruiter_notes || 'Strong technical fit for the role.'}
+          </div>
+
+          <div class="cand-footer">
+            <div class="active-time">🕒 ${cand.last_active || 'Active recently'} on Monster+</div>
+            <div class="cand-actions">
+              <a href="${cand.profile_url}" target="_blank" class="btn-cand-action btn-profile">
+                📄 View on Monster
+              </a>
+              <button class="btn-cand-action btn-email" onclick="openEmailModal(${idx})">
+                ✉️ Draft Outreach Email
+              </button>
+            </div>
+          </div>
+        `;
+
+        list.appendChild(card);
+      });
+    }
+
+    function openEmailModal(index) {
+      const cand = CURRENT_CANDIDATES[index];
+      if (!cand) return;
+      document.getElementById("modalCandName").innerText = `✉️ Outreach Email to ${cand.name}`;
+      document.getElementById("modalEmailText").value = cand.outreach_email || "";
+      document.getElementById("emailModal").style.display = "flex";
+    }
+
+    function closeModal() {
+      document.getElementById("emailModal").style.display = "none";
+    }
+
+    function copyEmailDraft() {
+      const text = document.getElementById("modalEmailText").value;
+      navigator.clipboard.writeText(text);
+      alert("Outreach Email draft copied to clipboard!");
+    }
+
+    function copyBoolean() {
+      const text = document.getElementById("booleanText").innerText;
+      navigator.clipboard.writeText(text);
+      alert("Monster Boolean Search query copied!");
+    }
+
+    // Auto load first preset on startup
+    window.onload = function() {
+      loadPreset('python_ai');
+      runMonsterSearch();
+    };
+  </script>
+</body>
+</html>

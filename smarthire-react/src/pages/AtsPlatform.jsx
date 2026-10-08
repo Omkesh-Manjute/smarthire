@@ -105,6 +105,12 @@ const renderAtsIcon = (id, size = 16, color = 'currentColor') => {
           <circle cx="11" cy="11" r="2" />
         </svg>
       )
+    case 'monster':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+        </svg>
+      )
     case 'analytics':
       return (
         <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -183,6 +189,7 @@ const ALL_MODULES = [
   { id: 'candidates',  label: 'Candidates',      category: 'talent', countKey: 'candidates', isLink: '/inbox' },
   { id: 'pipeline',    label: 'Pipeline',        category: 'talent', adminOnly: true },
   { id: 'screening',   label: 'AI Screening',    category: 'talent' },
+  { id: 'monster',     label: 'Monster+ AI',     category: 'talent', isLink: '/inbox?tab=monster' },
   { id: 'submissions', label: 'Submissions',     category: 'talent', adminOnly: true },
   { id: 'submittal',   label: 'Submittal Pack',  category: 'talent', isLink: '/submittal-pack' },
   { id: 'rtr',         label: 'SmartSign RTR',   category: 'talent', isLink: '/sign-rtr' },
@@ -215,17 +222,17 @@ export default function AtsPlatform() {
 
   const DEFAULT_PERMISSIONS = {
     superadmin: {
-      ats: true, home: true, candidates: true, pipeline: true, screening: true,
+      ats: true, home: true, candidates: true, pipeline: true, screening: true, monster: true,
       submissions: true, submittal: true, rtr: true, reports: true, analytics: true, audit: true, automation: true,
       inbox: true, settings: true, users: true,
     },
     manager: {
-      ats: true, home: true, candidates: true, pipeline: true, screening: true,
+      ats: true, home: true, candidates: true, pipeline: true, screening: true, monster: true,
       submissions: true, submittal: true, rtr: true, reports: true, analytics: true, audit: true, automation: false,
       inbox: true, settings: false, users: false,
     },
     recruiter: {
-      ats: true, home: true, candidates: true, pipeline: false, screening: true,
+      ats: true, home: true, candidates: true, pipeline: false, screening: true, monster: true,
       submissions: false, submittal: true, rtr: true, reports: false, analytics: true, audit: true, automation: false,
       inbox: true, settings: false, users: false,
     }

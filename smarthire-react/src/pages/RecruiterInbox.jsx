@@ -4,6 +4,7 @@ import { saveMessageFirestore, getMessagesFirestore, saveRequisitionCandidates, 
 import { autoSendJobDescriptionToCandidate } from '../utils/autoSendJdHelper'
 import LinkedInVerificationModal from '../components/LinkedInVerificationModal'
 import SmartHireAiAgent, { IconGeminiSparkle } from '../components/SmartHireAiAgent'
+import MonsterSourcingModule, { IconMonster } from '../ats/MonsterSourcingModule'
 
 const IconLinkedIn = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -2303,15 +2304,17 @@ export default function RecruiterInbox({ defaultViewMode }) {
   const isChatRoute = window.location.pathname.includes('/messages') || tabParam === 'chat' || tabParam === 'messages' || viewParam === 'chat' || defaultViewMode === 'chat'
   const initialInboxMode = isChatRoute
     ? 'chat'
-    : (tabParam === 'leaderboard' || viewParam === 'leaderboard' || (!tabParam && !viewParam && storedInboxMode === 'leaderboard'))
-      ? 'leaderboard'
-      : (tabParam === 'dashboard' || viewParam === 'dashboard' || (!tabParam && !viewParam && storedInboxMode === 'dashboard'))
-        ? 'dashboard'
-        : (tabParam === 'hotlists' || viewParam === 'hotlists' || (!tabParam && !viewParam && storedInboxMode === 'hotlists'))
-          ? 'hotlists'
-          : (!tabParam && !viewParam && storedInboxMode === 'chat')
-            ? 'chat'
-            : (defaultViewMode || 'stream')
+    : (tabParam === 'monster' || viewParam === 'monster' || (!tabParam && !viewParam && storedInboxMode === 'monster'))
+      ? 'monster'
+      : (tabParam === 'leaderboard' || viewParam === 'leaderboard' || (!tabParam && !viewParam && storedInboxMode === 'leaderboard'))
+        ? 'leaderboard'
+        : (tabParam === 'dashboard' || viewParam === 'dashboard' || (!tabParam && !viewParam && storedInboxMode === 'dashboard'))
+          ? 'dashboard'
+          : (tabParam === 'hotlists' || viewParam === 'hotlists' || (!tabParam && !viewParam && storedInboxMode === 'hotlists'))
+            ? 'hotlists'
+            : (!tabParam && !viewParam && storedInboxMode === 'chat')
+              ? 'chat'
+              : (defaultViewMode || 'stream')
   const [inboxViewMode, setInboxViewMode] = useState(initialInboxMode)
 
   useEffect(() => {
@@ -7622,6 +7625,70 @@ export default function RecruiterInbox({ defaultViewMode }) {
             )}
           </button>
 
+          {/* 5. Monster+ AI Sourcing */}
+          <button
+            type="button"
+            title="Monster+ AI Candidate Sourcing & Good Match Engine"
+            onMouseEnter={() => setHoveredNav('monster')}
+            onMouseLeave={() => setHoveredNav(null)}
+            onClick={() => {
+              setInboxViewMode('monster')
+              try {
+                const url = new URL(window.location.href)
+                url.searchParams.set('tab', 'monster')
+                window.history.replaceState({}, '', url.toString())
+              } catch (_) {}
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarCollapsed ? 'center' : 'space-between',
+              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
+              borderRadius: 6,
+              border: 'none',
+              position: 'relative',
+              background: inboxViewMode === 'monster'
+                ? '#1164A3'
+                : (hoveredNav === 'monster' ? 'rgba(255,255,255,0.08)' : 'transparent'),
+              color: inboxViewMode === 'monster'
+                ? '#FFFFFF'
+                : (hoveredNav === 'monster' ? '#FFFFFF' : 'rgba(255,255,255,0.72)'),
+              fontWeight: inboxViewMode === 'monster' ? 700 : (hoveredNav === 'monster' ? 600 : 500),
+              fontSize: 13,
+              cursor: 'pointer',
+              textAlign: 'left',
+              width: '100%',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <IconMonster size={16} color="currentColor" /> {!sidebarCollapsed && <span>Monster+ Sourcing</span>}
+            </span>
+            {!sidebarCollapsed ? (
+              <span style={{
+                fontSize: 10,
+                background: inboxViewMode === 'monster' ? 'rgba(255,255,255,0.28)' : 'rgba(16,185,129,0.25)',
+                color: '#FFFFFF',
+                padding: '1px 6px',
+                borderRadius: 8,
+                fontWeight: 700,
+                letterSpacing: '0.3px'
+              }}>
+                AI MATCH
+              </span>
+            ) : (
+              <span style={{
+                position: 'absolute',
+                top: 7,
+                right: 14,
+                width: 7,
+                height: 7,
+                borderRadius: '50%',
+                backgroundColor: '#10B981'
+              }} />
+            )}
+          </button>
+
           {/* 5. Scan Ingest */}
           <button
             type="button"
@@ -7873,10 +7940,10 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
           {/* Breadcrumb Navigation (replacing duplicate top search bar) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: C.textSecondary }}>
-            <span>{inboxViewMode === 'chat' ? 'Workspace' : (inboxViewMode === 'hotlists' ? 'Vendor Hotlists' : 'Candidates')}</span>
+            <span>{inboxViewMode === 'chat' ? 'Workspace' : (inboxViewMode === 'hotlists' ? 'Vendor Hotlists' : (inboxViewMode === 'monster' ? 'Talent Sourcing' : 'Candidates'))}</span>
             <span style={{ color: '#CBD5E1' }}>/</span>
             <span style={{ color: C.textPrimary, fontWeight: 700 }}>
-              {inboxViewMode === 'chat' ? 'Messages & Team Collab' : (inboxViewMode === 'hotlists' ? 'Bench Ingestion Hub' : (filterSource === 'mobile' ? 'Mobile App Submissions' : filterSource === 'careers' ? 'Job Sites Portal' : 'Talent Cloud'))}
+              {inboxViewMode === 'chat' ? 'Messages & Team Collab' : (inboxViewMode === 'hotlists' ? 'Bench Ingestion Hub' : (inboxViewMode === 'monster' ? 'Monster+ AI Sourcing & Match Engine' : (filterSource === 'mobile' ? 'Mobile App Submissions' : filterSource === 'careers' ? 'Job Sites Portal' : 'Talent Cloud')))}
             </span>
           </div>
 
@@ -12799,6 +12866,19 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
       {/* VIEW 4: VENDOR HOTLISTS & BENCH CANDIDATES HUB */}
       {inboxViewMode === 'hotlists' && renderVendorHotlistsView()}
+
+      {/* VIEW 5: MONSTER+ AI CANDIDATE SOURCING & GOOD MATCH ENGINE */}
+      {inboxViewMode === 'monster' && (
+        <MonsterSourcingModule
+          currentUser={currentUser}
+          activeJobs={openJobsList}
+          onCandidateImported={(newCand) => {
+            if (newCand) {
+              setStreamCandidates(prev => deduplicateCandidates([newCand, ...prev]))
+            }
+          }}
+        />
+      )}
 
       {/* ========================================================================= */}
       {/* REDESIGNED MESSAGES PAGE (Linear / Slack / Notion Premium SaaS UX)        */}

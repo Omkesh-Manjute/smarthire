@@ -10,3 +10,5 @@ export { default as ScreeningModule } from './ScreeningModule'
 export { default as UsersModule } from './UsersModule'
 export { default as AuditActivityLogModule, logAuditEvent } from './AuditActivityLogModule'
 export { default as InquiriesModule } from './InquiriesModule'
+export { default as MonsterSourcingModule } from './MonsterSourcingModule'
+
