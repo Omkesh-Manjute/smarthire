@@ -107,7 +107,39 @@ The following high-impact features and optimizations have been agreed upon and p
 
 ## Recent Changes
 
-### 2026-10-09 — Monster+ AI Candidate Sourcing & Good Match Engine Integration
+### 2026-10-09 — Monster+ Automated Sourcing, 90-Day Recency, Interview Mode Location Matching & Outreach Email
+- **Context & Objectives**:
+  - The user requested:
+    - *"bhai ye automattion hona cahiye like jd read kare boolean string banye and ane pe auto find karke best candidate and top ke details nikal ke de de email, contact number and waha email ka tab bhi ho jisse hum one click mai bhej sakte email okay ye har and bhai iska sturctre sahi karo bhai and matchin ka bhi last 90 days ka hi search kare vo and location if onside intewiev required ho to local and hybrid ho to kahi ka bhi calega ya inperon interview ho on onisite local hi calega samjhe bhai UI/UX imporve karo"*
+- **Implementations**:
+  1. **Automated 1-Click Sourcing Workflow (`autoSourceCandidates`)**:
+     - Automated end-to-end pipeline: 1-click reads JD, sanitizes portal/VMS header noise (`Start date`, `Submission deadline`, etc.), extracts real position title (`known_title`), detects interview requirements, generates Monster boolean queries, evaluates candidates, and ranks top matches with emails and phone numbers.
+     - New API endpoint `POST /api/recruiter/auto-source` provides an instant single-call response.
+  2. **Interview Mode & Strict Local Location Matching**:
+     - Added `detectInterviewMode(jdText)`: classifies interview requirements as `in_person` (Onsite / In-Person), `hybrid`, `remote`, or `flexible`.
+     - When `in_person` is detected:
+       - Strictly matches candidates in the exact same city/state (e.g. Columbia, SC).
+       - Awards `+20` points and `Strict Local Match (In-Person Ready)` badge to local candidates.
+       - Imposes a `-15` point penalty and `Non-Local (Requires Onsite Interview)` badge on non-local candidates.
+       - Candidate Robert McCall in Columbia, SC ranks at 99% match for Columbia, SC positions.
+     - When `hybrid` or `remote` is detected: accepts regional/nationwide candidates without local penalization.
+  3. **Strict Last 90 Days Recency Enforcement**:
+     - Filtered candidate pool with `last_active_days <= 90` to ensure only active, fresh Monster+ candidate profiles are surfaced.
+     - Displays real recency badge (e.g. `Updated 6 days ago on Monster+`).
+  4. **Direct Outreach Email Tab & 1-Click Action**:
+     - Added Direct Email Outreach modal and drawer with pre-filled candidate pitches personalized with Coolsoft LLC branding and recruiter signature.
+     - Recruiter can review or edit email text, then click "Send Email Now" or "Email" directly from candidate rows.
+  5. **Enterprise B2B UI/UX & Spreadsheet Grid (Rules 8 & 9)**:
+     - Implemented clean Sourcing Control Bar with 1-Click Auto-Sourcing, Requisition selector, Interview Mode dropdown, and Location input.
+     - Added dual view toggle: Rich Candidate Cards View and Excel-Style Spreadsheet Grid (`#F1F5F9` headers, `#CBD5E1` borders, zebra rows).
+     - Clean typography and standard SVG line icons with zero unrequested emojis.
+- **Verification & Deployment**:
+  - Local production build verified in `smarthire-react`: 0 errors, 0 warnings (active bundle `index-BrkHbtHw.js`).
+  - Git committed (`218c5f7`) and pushed to GitHub `origin/main`.
+  - Deployed to AWS Lightsail server (`34.194.119.199`), webroot `/var/www/html/` and `/home/ubuntu/smarthire/dist/` updated, PM2 reloaded.
+  - Verified disk hygiene: 9.0GB available (52% used), all tar archives cleaned up immediately.
+  - Verified live endpoint `https://smarthireus.com` returning HTTP 200 with bundle `index-BrkHbtHw.js`.
+  - Verified live `POST /api/recruiter/auto-source` returning structured match for Systems Administrator in Columbia, SC with Robert McCall scoring 99% local match.
 - **Context & Objectives**:
   - The user requested integration of the standalone package `monster_recruiter_standalone.zip` (located in `smarthire monster/monster_recruiter_package`):
     - *"ismai maine ak folder add kiya hu smarthire monster uske under new file hai jo tumko add karna hai baki ke detail niche hai and isko candidate page mai new side pannel mai new page bana ke add karna and usmai jo UI/UX diya hai vo mat use karna is app mai jo matching lage vo add karna okay..."*
