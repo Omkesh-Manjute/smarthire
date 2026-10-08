@@ -12139,16 +12139,48 @@ app.post('/api/recruiter/find-candidates', express.json(), async (req, res) => {
 // 2.5. POST /api/recruiter/auto-source (1-Click Unified Auto-Sourcing)
 app.post('/api/recruiter/auto-source', express.json(), async (req, res) => {
   try {
-    const { jd_text, jdText, job_title, jobTitle, title, location, max_results, maxResults } = req.body || {};
-    const text = jd_text || jdText || '';
-    const knownTitle = job_title || jobTitle || title || null;
-    if (!text || text.trim().length < 5) {
-      return res.status(400).json({ success: false, error: 'Job description text is required' });
-    }
-    const limit = Number(max_results || maxResults || 10);
-    const result = await monsterAutoSourceCandidates(text, {
-      knownTitle,
+    const {
+      req_id, reqId, jobId, job_id,
+      jd_text, jdText,
+      job_title, jobTitle, title,
       location,
+      skills,
+      max_results, maxResults,
+      interview_mode, interviewMode
+    } = req.body || {};
+
+    const targetReqId = String(req_id || reqId || jobId || job_id || '').replace(/^J-/, '').trim();
+    let targetJob = null;
+    if (targetReqId && Array.isArray(jobsStore)) {
+      targetJob = jobsStore.find(j => 
+        String(j.id || j.reqId || '').replace(/^J-/, '').trim() === targetReqId
+      ) || null;
+    }
+
+    const inputDesc = jd_text || jdText || '';
+    const effectiveText = (inputDesc && inputDesc.trim().length > 60)
+      ? inputDesc
+      : (targetJob?.description || targetJob?.rawDescription || targetJob?.jobDescription || inputDesc || '');
+
+    const effectiveTitle = job_title || jobTitle || title || targetJob?.title || null;
+    const effectiveLocation = location || targetJob?.location || null;
+    const effectiveSkills = (Array.isArray(skills) && skills.length > 0)
+      ? skills
+      : (Array.isArray(targetJob?.skills) && targetJob.skills.length > 0 ? targetJob.skills : []);
+    const effectiveMode = interview_mode || interviewMode || (targetJob?.workMode === 'Onsite' || targetJob?.type === 'Onsite' ? 'in_person' : null);
+
+    if (!effectiveText || effectiveText.trim().length < 5) {
+      return res.status(400).json({ success: false, error: 'Job description text or valid Requisition ID is required' });
+    }
+
+    const limit = Number(max_results || maxResults || 10);
+    const result = await monsterAutoSourceCandidates(effectiveText, {
+      reqId: targetReqId,
+      knownTitle: effectiveTitle,
+      location: effectiveLocation,
+      knownSkills: effectiveSkills,
+      interviewMode: effectiveMode,
+      targetJob: targetJob || { title: effectiveTitle, location: effectiveLocation, skills: effectiveSkills },
       maxResults: limit
     });
     return res.json(result);

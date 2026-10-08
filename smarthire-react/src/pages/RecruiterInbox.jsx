@@ -2520,13 +2520,13 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
   // Open Requisitions for Multi-Position AI Matcher (Strictly Active & Unexpired)
   const DEFAULT_OPEN_JOBS = [
-    { id: '159023', title: 'Business Analyst - Advanced (13467)', client: 'Enterprise Client', rate: '$75/hr', location: 'Remote / US', skills: ['Business Analysis', 'Agile', 'User Stories', 'Requirements Gathering', 'JIRA'] },
-    { id: '159021', title: 'IT Deployment Team Member (66166)', client: 'Enterprise Client', rate: '$65/hr', location: 'Remote / US', skills: ['IT Deployment', 'System Support', 'Troubleshooting', 'Hardware/Software Rollouts'] },
-    { id: '159020', title: 'CBUS Program Manager 1 (809896)', client: 'State Agency', rate: '$85/hr', location: 'Remote / US', skills: ['Program Management', 'Agile', 'Stakeholder Management', 'Risk Analysis'] },
-    { id: '159016', title: 'Network Engineer II (165232)', client: 'State Agency', rate: '$75/hr', location: 'Remote / US', skills: ['Network Engineering', 'Cisco', 'Routing', 'Switching', 'Firewalls'] },
-    { id: '159015', title: 'Systems Administrator III (165231)', client: 'State Agency', rate: '$75/hr', location: 'Remote / US', skills: ['Systems Administration', 'Linux', 'Windows Server', 'Active Directory', 'Cloud'] },
-    { id: '159014', title: 'VDOT Program Manager - Data And GIS Governance (810103)', client: 'Virginia DOT (State Agency)', rate: '$90/hr', location: 'Richmond, VA (Hybrid)', skills: ['Data Governance', 'GIS', 'Program Management', 'SQL', 'Policy'] },
-    { id: '159010', title: 'Security Analyst II (165213)', client: 'State Agency', rate: '$75/hr', location: 'Remote / US', skills: ['Cybersecurity', 'SIEM', 'Threat Analysis', 'Compliance', 'Security Operations'] }
+    { id: '159023', title: 'Business Analyst - Advanced (13467)', client: 'State Client', rate: '$75/hr', location: 'Columbia, SC', workMode: 'Onsite', skills: ['Business Analyst', 'MS Excel', 'SHARE POINT', 'Performance Metrics'] },
+    { id: '159021', title: 'IT Deployment Team Member (66166)', client: 'Enterprise Client', rate: '$65/hr', location: 'Columbia, SC', workMode: 'Onsite', skills: ['IT Deployment', 'System Support', 'Troubleshooting', 'Hardware/Software Rollouts'] },
+    { id: '159020', title: 'CBUS Program Manager 1 (809896)', client: 'State Agency', rate: '$85/hr', location: 'Remote / US', workMode: 'Remote', skills: ['Program Management', 'Agile', 'Stakeholder Management', 'Risk Analysis'] },
+    { id: '159016', title: 'Network Engineer II (165232)', client: 'State Agency', rate: '$75/hr', location: 'Columbia, SC', workMode: 'Onsite', skills: ['Network Engineering', 'Cisco', 'Routing', 'Switching', 'Firewalls'] },
+    { id: '159015', title: 'Systems Administrator III (165231)', client: 'State Agency', rate: '$75/hr', location: 'Columbia, SC', workMode: 'Onsite', skills: ['Systems Administration', 'Linux', 'Windows Server', 'Active Directory', 'Cloud'] },
+    { id: '159014', title: 'VDOT Program Manager - Data And GIS Governance (810103)', client: 'Virginia DOT (State Agency)', rate: '$90/hr', location: 'Richmond, VA (Hybrid)', workMode: 'Hybrid', skills: ['Data Governance', 'GIS', 'Program Management', 'SQL', 'Policy'] },
+    { id: '159010', title: 'Security Analyst II (165213)', client: 'State Agency', rate: '$75/hr', location: 'Richmond, VA', workMode: 'Remote', skills: ['Cybersecurity', 'SIEM', 'Threat Analysis', 'Compliance', 'Security Operations'] }
   ]
   const [openJobsList, setOpenJobsList] = useState(DEFAULT_OPEN_JOBS)
   const [drawerReqId, setDrawerReqId] = useState('')
@@ -4362,6 +4362,10 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   source: j.source || (j.client === 'InfoOrigin' ? 'InfoOrigin' : 'COOLSOFT'),
                   rate: j.rate || j.payRate || j.budget || '$75/hr',
                   location: j.location || 'Remote',
+                  workMode: j.workMode || j.type || (j.location && j.location.toLowerCase().includes('remote') ? 'Remote' : 'Onsite'),
+                  description: j.description || j.rawDescription || j.jobDescription || '',
+                  rawDescription: j.rawDescription || j.description || '',
+                  positionNumber: j.positionNumber || '',
                   skills: safeSkillArray(j.skills).length > 0 ? safeSkillArray(j.skills) : ['Java', 'SQL']
                 })
               }

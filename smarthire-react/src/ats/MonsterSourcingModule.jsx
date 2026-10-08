@@ -99,47 +99,115 @@ export default function MonsterSourcingModule({
   const [importedCandidateIds, setImportedCandidateIds] = useState(new Set())
   const [statusMessage, setStatusMessage] = useState(null)
   const [activeOutreachCandidate, setActiveOutreachCandidate] = useState(null)
+  const [showJdEditor, setShowJdEditor] = useState(false)
+  const [internalJobs, setInternalJobs] = useState([])
+
+  // Dynamically load full active requisitions from ATS database on mount
+  useEffect(() => {
+    fetch('/api/jobs')
+      .then(res => res.json())
+      .then(data => {
+        const list = Array.isArray(data) ? data : (data.jobs || [])
+        if (list && list.length > 0) {
+          setInternalJobs(list)
+        }
+      })
+      .catch(err => console.warn('[MonsterModule] Jobs fetch error:', err))
+  }, [])
+
+  // Combined Requisitions: merges prop activeJobs with live ATS database
+  const allRequisitions = useMemo(() => {
+    const map = new Map()
+    ;(activeJobs || []).forEach(j => {
+      const id = String(j.id || j.jobId || j.reqId || '').replace(/^J-/, '').trim()
+      if (id) map.set(id, { ...j, id })
+    })
+
+    internalJobs.forEach(j => {
+      const id = String(j.id || j.jobId || j.reqId || '').replace(/^J-/, '').trim()
+      if (id) {
+        const existing = map.get(id) || {}
+        map.set(id, {
+          ...existing,
+          ...j,
+          id,
+          title: j.title || existing.title || `Requisition #${id}`,
+          client: j.client || existing.client || 'State Client',
+          location: j.location || existing.location || 'Columbia, SC',
+          workMode: j.workMode || j.type || existing.workMode || 'Onsite',
+          skills: (Array.isArray(j.skills) && j.skills.length > 0) ? j.skills : (existing.skills || []),
+          description: j.description || j.rawDescription || existing.description || ''
+        })
+      }
+    })
+
+    return Array.from(map.values())
+  }, [activeJobs, internalJobs])
 
   // Current selected job object
   const currentJob = useMemo(() => {
     if (!selectedJobId) return null
-    return activeJobs.find(j => String(j.id || j.jobId) === String(selectedJobId)) || null
-  }, [selectedJobId, activeJobs])
+    return allRequisitions.find(j => String(j.id) === String(selectedJobId)) || null
+  }, [selectedJobId, allRequisitions])
 
-  // Auto-fill default requisition on mount if available
+  // Auto-fill default requisition on mount once requisitions are loaded
   useEffect(() => {
-    if (!selectedJobId && activeJobs.length > 0) {
-      // Pick Systems Administrator or Dynamics job as preferred test requisition
-      const targetJob = activeJobs.find(j => 
-        String(j.id || j.jobId) === '159015' ||
-        (j.title && /systems administrator|dynamics|business analyst/i.test(j.title))
-      ) || activeJobs[0]
+    if (!selectedJobId && allRequisitions.length > 0) {
+      const targetJob = allRequisitions.find(j => 
+        String(j.id) === '159023' ||
+        String(j.id) === '159015' ||
+        (j.title && /business analyst|systems administrator|dynamics/i.test(j.title))
+      ) || allRequisitions[0]
 
       if (targetJob) {
         handleApplyJob(targetJob, true)
       }
     }
-  }, [activeJobs])
+  }, [allRequisitions])
 
-  // Applies a selected job and optionally triggers automated sourcing
-  const handleApplyJob = (job, autoTrigger = false) => {
-    const jobIdStr = String(job.id || job.jobId)
+  // Applies a selected job and triggers dynamic automated sourcing
+  const handleApplyJob = (job, autoTrigger = true) => {
+    const jobIdStr = String(job.id || job.jobId || job.reqId).replace(/^J-/, '').trim()
     setSelectedJobId(jobIdStr)
     setTargetReqForImport(jobIdStr)
 
     const loc = job.location || (job.client && job.client.includes('Carolina') ? 'Columbia, SC' : 'Richmond, VA')
     setLocation(loc)
 
-    const rawDesc = job.description || job.desc || job.jobDescription || `${job.title}\nClient: ${job.client || 'State Agency'}\nLocation: ${loc}`
+    // Detect work arrangement and interview mode
+    const wm = (job.workMode || job.type || '').toLowerCase()
+    let effectiveMode = 'auto'
+    if (wm.includes('onsite') || wm.includes('in-person')) {
+      effectiveMode = 'in_person'
+      setInterviewModeOverride('in_person')
+    } else if (wm.includes('hybrid')) {
+      effectiveMode = 'hybrid'
+      setInterviewModeOverride('hybrid')
+    } else if (wm.includes('remote')) {
+      effectiveMode = 'remote'
+      setInterviewModeOverride('remote')
+    } else {
+      setInterviewModeOverride('auto')
+    }
+
+    const rawDesc = job.description || job.rawDescription || job.jobDescription || `${job.title}\nClient: ${job.client || 'State Agency'}\nLocation: ${loc}\nRequired Skills: ${(job.skills || []).join(', ')}`
     setJdText(rawDesc)
 
     if (autoTrigger) {
-      triggerAutoSource(rawDesc, job.title, loc, jobIdStr)
+      triggerAutoSource(rawDesc, job.title, loc, jobIdStr, job.skills, job, effectiveMode)
     }
   }
 
   // Trigger 1-Click Unified Auto-Sourcing
-  const triggerAutoSource = async (customJd = null, customTitle = null, customLoc = null, customReq = null) => {
+  const triggerAutoSource = async (
+    customJd = null,
+    customTitle = null,
+    customLoc = null,
+    customReq = null,
+    customSkills = null,
+    jobObj = null,
+    overrideMode = null
+  ) => {
     const textToUse = customJd || jdText
     if (!textToUse || textToUse.trim().length < 5) {
       setStatusMessage({ type: 'error', text: 'Please select a requisition or paste a Job Description first.' })
@@ -149,19 +217,24 @@ export default function MonsterSourcingModule({
     setIsAutoSourcing(true)
     setStatusMessage(null)
 
-    const titleToUse = customTitle || currentJob?.title || null
-    const locToUse = customLoc || location || 'United States'
+    const reqToUse = customReq || selectedJobId
+    const titleToUse = customTitle || jobObj?.title || currentJob?.title || null
+    const locToUse = customLoc || location || jobObj?.location || 'United States'
+    const skillsToUse = customSkills || jobObj?.skills || currentJob?.skills || []
+    const modeToUse = overrideMode || (interviewModeOverride !== 'auto' ? interviewModeOverride : null)
 
     try {
       const res = await fetch('/api/recruiter/auto-source', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          req_id: reqToUse,
           jd_text: textToUse,
           job_title: titleToUse,
           location: locToUse,
+          skills: skillsToUse,
           max_results: maxResults,
-          interview_mode: interviewModeOverride !== 'auto' ? interviewModeOverride : null
+          interview_mode: modeToUse
         })
       })
 
@@ -374,9 +447,10 @@ export default function MonsterSourcingModule({
               <select
                 value={selectedJobId}
                 onChange={(e) => {
-                  const job = activeJobs.find(j => String(j.id || j.jobId) === e.target.value)
+                  const val = e.target.value
+                  setSelectedJobId(val)
+                  const job = allRequisitions.find(j => String(j.id) === String(val))
                   if (job) handleApplyJob(job, true)
-                  else setSelectedJobId(e.target.value)
                 }}
                 style={{
                   padding: '7px 12px',
@@ -392,23 +466,39 @@ export default function MonsterSourcingModule({
                   cursor: 'pointer'
                 }}
               >
-                <option value="">-- Choose from 180 Active Requisitions --</option>
-                {activeJobs.map(j => (
-                  <option key={j.id || j.jobId} value={j.id || j.jobId}>
-                    #{j.id || j.jobId} — {j.title} ({j.client || 'Client'} · {j.location || 'Remote'})
+                <option value="">-- Choose from {allRequisitions.length || 180} Active Requisitions --</option>
+                {allRequisitions.map(j => (
+                  <option key={j.id} value={j.id}>
+                    #{j.id} — {j.title} ({j.client || 'State Agency'} · {j.location || 'Remote'})
                   </option>
                 ))}
               </select>
 
               {/* Detected Job Details Badges */}
               {currentJob && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                   <span style={{ padding: '3px 8px', backgroundColor: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 4, fontSize: 11, fontWeight: 700, color: '#334155' }}>
-                    Client: {currentJob.client || 'State Agency'}
+                    Client: {currentJob.client || 'State Client'}
                   </span>
                   <span style={{ padding: '3px 8px', backgroundColor: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 4, fontSize: 11, fontWeight: 700, color: '#334155' }}>
                     Location: {location}
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowJdEditor(!showJdEditor)}
+                    style={{
+                      padding: '3px 8px',
+                      backgroundColor: showJdEditor ? '#EFF6FF' : '#FFFFFF',
+                      border: '1px solid #CBD5E1',
+                      borderRadius: 4,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: showJdEditor ? '#1E40AF' : '#475569',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {showJdEditor ? 'Hide Full JD' : `View / Edit JD (${jdText.length} chars)`}
+                  </button>
                 </div>
               )}
             </div>
@@ -417,7 +507,7 @@ export default function MonsterSourcingModule({
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <button
                 type="button"
-                onClick={() => triggerAutoSource()}
+                onClick={() => triggerAutoSource(jdText, currentJob?.title, location, selectedJobId, currentJob?.skills, currentJob)}
                 disabled={isAutoSourcing}
                 style={{
                   padding: '9px 20px',
@@ -439,6 +529,55 @@ export default function MonsterSourcingModule({
               </button>
             </div>
           </div>
+
+          {/* Collapsible Full JD Text Editor */}
+          {showJdEditor && (
+            <div style={{
+              marginTop: 10,
+              marginBottom: 14,
+              padding: 12,
+              backgroundColor: '#F8FAFC',
+              borderRadius: 6,
+              border: '1px solid #CBD5E1'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#1E293B' }}>
+                  Full Job Description Text (Loaded from Requisition #{selectedJobId}):
+                </span>
+                <button
+                  type="button"
+                  onClick={() => triggerAutoSource(jdText, currentJob?.title, location, selectedJobId, currentJob?.skills, currentJob)}
+                  disabled={isAutoSourcing}
+                  style={{
+                    padding: '4px 10px',
+                    backgroundColor: '#0F766E',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: 4,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Re-Source with Edited JD
+                </button>
+              </div>
+              <textarea
+                value={jdText}
+                onChange={(e) => setJdText(e.target.value)}
+                rows={7}
+                style={{
+                  width: '100%',
+                  padding: 10,
+                  fontSize: 11.5,
+                  fontFamily: 'monospace',
+                  borderRadius: 4,
+                  border: '1px solid #CBD5E1',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+          )}
 
           {/* Sourcing Filters Bar */}
           <div style={{
@@ -1168,8 +1307,7 @@ export default function MonsterSourcingModule({
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
                             <button
                               type="button"
-                              onClick={() => handleSendOutreachEmail(cand)}
-                              disabled={sendingEmailId === cand.id}
+                              onClick={() => setActiveOutreachCandidate(cand)}
                               style={{
                                 padding: '4px 8px',
                                 backgroundColor: isEmailSent ? '#ECFDF5' : '#0F766E',
@@ -1213,6 +1351,174 @@ export default function MonsterSourcingModule({
         </div>
 
       </div>
+
+      {/* 3. Dedicated Outreach Email Modal (Displays and dispatches Full Job Description) */}
+      {activeOutreachCandidate && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(3px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: 20
+        }}>
+          <div style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: 10,
+            border: '1px solid #CBD5E1',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.25)',
+            width: '100%',
+            maxWidth: 820,
+            maxHeight: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: '1px solid #E2E8F0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: '#F8FAFC'
+            }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#0F172A' }}>
+                  Direct Outreach Email — Full Job Description
+                </h3>
+                <div style={{ fontSize: 12, color: '#64748B', marginTop: 3 }}>
+                  Candidate: <strong>{activeOutreachCandidate.name}</strong> ({activeOutreachCandidate.email}) · Phone: <strong>{activeOutreachCandidate.phone || 'N/A'}</strong>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveOutreachCandidate(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: 18,
+                  fontWeight: 800,
+                  color: '#64748B',
+                  cursor: 'pointer',
+                  padding: 4
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body: Full JD Pitch */}
+            <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1 }}>
+              <div style={{ marginBottom: 12, padding: '8px 12px', backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 6, fontSize: 12, color: '#1E40AF' }}>
+                This outreach draft is personalized with Coolsoft LLC branding and includes the <strong>complete Job Description</strong>, client overview, and required skills. You may review and edit the text below before sending.
+              </div>
+
+              <textarea
+                value={activeOutreachCandidate.outreach_email}
+                onChange={(e) => {
+                  const val = e.target.value
+                  setActiveOutreachCandidate(prev => ({ ...prev, outreach_email: val }))
+                }}
+                rows={16}
+                style={{
+                  width: '100%',
+                  padding: 12,
+                  fontSize: 12,
+                  fontFamily: 'monospace',
+                  lineHeight: 1.5,
+                  borderRadius: 6,
+                  border: '1px solid #CBD5E1',
+                  color: '#1E293B',
+                  boxSizing: 'border-box',
+                  resize: 'vertical'
+                }}
+              />
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div style={{
+              padding: '14px 20px',
+              borderTop: '1px solid #E2E8F0',
+              backgroundColor: '#F8FAFC',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(activeOutreachCandidate.outreach_email)
+                  setCopiedEmailId(activeOutreachCandidate.id)
+                  setTimeout(() => setCopiedEmailId(null), 2000)
+                }}
+                style={{
+                  padding: '8px 14px',
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid #CBD5E1',
+                  borderRadius: 6,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: '#334155',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6
+                }}
+              >
+                <IconCopy /> {copiedEmailId === activeOutreachCandidate.id ? 'Copied Full Message' : 'Copy Full Message'}
+              </button>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setActiveOutreachCandidate(null)}
+                  style={{
+                    padding: '8px 14px',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #CBD5E1',
+                    borderRadius: 6,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: '#64748B',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSendOutreachEmail(activeOutreachCandidate)}
+                  disabled={sendingEmailId === activeOutreachCandidate.id}
+                  style={{
+                    padding: '8px 18px',
+                    backgroundColor: '#0F766E',
+                    border: 'none',
+                    borderRadius: 6,
+                    fontSize: 12,
+                    fontWeight: 800,
+                    color: '#FFFFFF',
+                    cursor: sendingEmailId === activeOutreachCandidate.id ? 'wait' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6
+                  }}
+                >
+                  <IconMail />
+                  {sendingEmailId === activeOutreachCandidate.id ? 'Sending...' : 'Send Email Now'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
