@@ -105,6 +105,40 @@ The following high-impact features and optimizations have been agreed upon and p
 
 ---
 
+### 2026-10-11 — SmartHire Talent Sourcing Copilot v3.6 Live (Browserflow Studio & Interactive Visual Picker)
+- **Context & Objectives**:
+  - The user requested:
+    - *"na req drowp down kam kar raha hai na candidate ke email and number nikal pa raha hai bhai browser flow ke jiase recrd kar ke flow banna padega so add karo recrd kar ta hu and slecter bhi table selctor and etc fir save karta hu run kar sakte okay fir hi kam karega ye bhai"*
+  - In user screenshot (`media_1791729764167.png`), candidate Siva N displayed `siva.n.c1ex1@contact.monster.com`. The previous regex was inadvertently discarding emails containing `monster.com`, falling back to `.talent` fake email. Also, the user requested an interactive visual recorder/picker to record and execute flows just like Browserflow.
+- **Implementations**:
+  1. **Browserflow Studio (Interactive Workflow Recorder & Runner)**:
+     - Added a dedicated `🛠 Browserflow Studio` tab directly in the Copilot drawer.
+     - Lets recruiters customize and record their loop:
+       - Card Container Selector (e.g. `smui-card`) with live match counter badge.
+       - Click Target Selector (e.g. `.smui-card-body`).
+       - Tab Switch Selector (e.g. `Profile` tab).
+       - Candidate Name Selector (e.g. `.candidate-name > div > span`).
+       - Contact Email Selector (e.g. `#contact-legend-detail`).
+       - Phone Selector (e.g. `#contact-legend-detail`).
+       - Step Delay (ms).
+     - **🎯 Point-and-Click Visual Element Picker**:
+       - Clicking `🎯 Pick` dims the drawer, turns the cursor into crosshairs, and highlights elements on the webpage in real time with an outline and tag badge.
+       - Clicking any element automatically computes the optimal CSS selector and fills the field!
+     - **Presets**: 1-click presets for `Monster+ Preset (Browserflow verified)`, `Dice Preset`, and `Custom Flow`.
+     - **▶ Run Workflow**: Loops through all cards, clicks `.smui-card-body`, extracts genuine details, and populates the spreadsheet view.
+  2. **Candidate Contact Relay Fix (`@contact.monster.com`)**:
+     - Fixed regex to retain Monster's legitimate candidate communication relay emails (`siva.n.c1ex1@contact.monster.com`) and direct emails, only discarding corporate support/sales addresses.
+  3. **Guaranteed Synchronous 180 ATS Requisitions**:
+     - Requisition `<select>` options now render immediately with all 180 jobs synchronously embedded in the initial HTML structure.
+- **Verification & Deployment**:
+  - Production build in `smarthire-react` verified: 0 errors, 0 warnings.
+  - Packaged `smarthire-extension.zip` (v3.6.0).
+  - Git committed (`5684412`) and pushed to `origin/main`.
+  - Deployed to AWS Lightsail server (`34.194.119.199`), PM2 `smarthire-ats` reloaded.
+  - Verified `https://smarthireus.com/smarthire-extension.zip` returning HTTP 200 with 55,489 bytes.
+
+---
+
 ### 2026-10-11 — SmartHire Talent Sourcing Copilot v3.5 Live (Browserflow Engine Integration & 180 Bundled Jobs)
 - **Context & Objectives**:
   - The user reported:
