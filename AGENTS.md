@@ -105,6 +105,31 @@ The following high-impact features and optimizations have been agreed upon and p
 
 ---
 
+### 2026-10-11 — SmartHire Talent Sourcing Copilot v3.6.1 (Multi-Event Click Simulation & Card-Scoped Name Fix)
+- **Context & Objectives**:
+  - The user reported: *"kam nahi kar raha hai bhai baraber se click ka add karo perperly check and updaet karo bhai"* and uploaded `media_1791730825097.png`.
+  - In screenshot, candidate extraction returned only 1 candidate: `1. Need Help?`.
+- **Root Cause & Fixes**:
+  1. **Global Selector Scope Bug (`document.querySelector('span')`)**:
+     - When user selected `span` for candidate name, `document.querySelector('span')` matched the top navbar button `? Need Help?`.
+     - Card 1 recorded name as "Need Help?". On card 2..20, `seenNames.has('need help?')` was true, skipping all 19 other candidates!
+     - **Fix**: Candidate name extraction is now strictly scoped inside the candidate card (`container.querySelector`), prioritizing name links/headings and falling back to clean text. Global tags like `span` will never grab navbar elements.
+  2. **Multi-Event Pointer Simulation for Angular `<smui-card>`**:
+     - Modern Angular custom elements often ignore simple synthetic `.click()` calls.
+     - **Fix**: Dispatching full event sequence with real viewport coordinates: `pointerdown`, `mousedown`, `pointerup`, `mouseup`, `click` on `.smui-card-body`, candidate link, and the container element.
+  3. **Visual Live Card Highlighting**:
+     - During workflow execution, the active card lights up with a green border (`3px solid #10B981`), visually tracking progress across the list.
+  4. **Smart Selector Generator**:
+     - Upgraded `computeOptimalSelector` so clicking inside nested elements walks up to meaningful parents (e.g. `.candidate-name span`, `#contact-legend-detail span`) rather than returning bare `span` or `div`.
+- **Deployment**:
+  - Production build in `smarthire-react` verified: 0 errors, 0 warnings.
+  - Packaged `smarthire-extension.zip` (v3.6.1).
+  - Git committed (`d8a94d3`) and pushed to `origin/main`.
+  - Deployed to AWS Lightsail (`34.194.119.199`), PM2 `smarthire-ats` reloaded.
+  - Verified `https://smarthireus.com/smarthire-extension.zip` returning HTTP 200 with 56,462 bytes.
+
+---
+
 ### 2026-10-11 — SmartHire Talent Sourcing Copilot v3.6 Live (Browserflow Studio & Interactive Visual Picker)
 - **Context & Objectives**:
   - The user requested:
