@@ -1,12 +1,12 @@
-/* SmartHire Sourcing Copilot - Injected Dock Styles */
+/* SmartHire Sourcing Copilot v3.6 - Injected Dock & Flow Studio Styles */
 #smarthire-copilot-trigger {
   position: fixed;
   right: 0;
-  top: 50%;
+  top: 45%;
   transform: translateY(-50%);
   background: #0F172A;
   color: #FFFFFF;
-  border: 1px solid #334155;
+  border: 1px solid #3B82F6;
   border-right: none;
   border-radius: 8px 0 0 8px;
   width: 38px;
@@ -14,7 +14,7 @@
   padding: 0;
   cursor: pointer;
   z-index: 2147483640;
-  box-shadow: -3px 0 12px rgba(0, 0, 0, 0.22);
+  box-shadow: -3px 0 12px rgba(0, 0, 0, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -25,19 +25,19 @@
 #smarthire-copilot-trigger:hover {
   background: #1E293B;
   width: 42px;
-  box-shadow: -4px 0 16px rgba(37, 99, 235, 0.4);
+  box-shadow: -4px 0 16px rgba(37, 99, 235, 0.45);
 }
 
 #smarthire-copilot-drawer {
   position: fixed;
-  right: -420px;
+  right: -460px;
   top: 0;
-  width: 400px;
+  width: 440px;
   height: 100vh;
   background: #FFFFFF;
   border-left: 1px solid #E2E8F0;
   z-index: 2147483645;
-  box-shadow: -8px 0 32px rgba(15, 23, 42, 0.16);
+  box-shadow: -8px 0 32px rgba(15, 23, 42, 0.18);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
@@ -48,19 +48,54 @@
   right: 0;
 }
 
+#smarthire-copilot-drawer.minimized {
+  right: -390px;
+  opacity: 0.85;
+}
+
 .smarthire-drawer-header {
   background: #0F172A;
   color: #FFFFFF;
-  padding: 14px 18px;
+  padding: 12px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  border-bottom: 1px solid #1E293B;
+}
+
+/* Tabs switcher */
+.smarthire-nav-tabs {
+  display: flex;
+  background: #0F172A;
+  padding: 0 12px 8px 12px;
+  gap: 6px;
+  border-bottom: 1px solid #334155;
+}
+
+.smarthire-tab-btn {
+  flex: 1;
+  background: transparent;
+  color: #94A3B8;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.smarthire-tab-btn.active {
+  background: #2563EB;
+  color: #FFFFFF;
+  border-color: #2563EB;
 }
 
 .smarthire-drawer-body {
   flex: 1;
   overflow-y: auto;
-  padding: 16px 18px;
+  padding: 14px 16px;
   background: #F8FAFC;
 }
 
@@ -79,19 +114,25 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: #64748B;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
   display: block;
 }
 
 .smarthire-select, .smarthire-input {
   width: 100%;
-  padding: 8px 10px;
+  padding: 7px 10px;
   font-size: 12px;
   border: 1px solid #CBD5E1;
   border-radius: 6px;
   background: #FFFFFF;
   color: #0F172A;
   box-sizing: border-box;
+}
+
+.smarthire-input:focus, .smarthire-select:focus {
+  outline: none;
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 .smarthire-btn-primary {
@@ -109,6 +150,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
+  transition: background 0.15s ease;
 }
 .smarthire-btn-primary:hover {
   background: #1D4ED8;
@@ -132,4 +174,98 @@
 }
 .smarthire-btn-secondary:hover {
   background: #F1F5F9;
+}
+
+/* Flow studio row with Pick button */
+.smarthire-field-row {
+  margin-bottom: 8px;
+}
+.smarthire-field-label-group {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3px;
+}
+.smarthire-field-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #334155;
+}
+.smarthire-input-pick-group {
+  display: flex;
+  gap: 6px;
+}
+.smarthire-btn-pick {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+  border-radius: 6px;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.smarthire-btn-pick:hover {
+  background: #DBEAFE;
+}
+
+/* Visual inspector floating elements */
+#smarthire-inspect-box {
+  position: absolute;
+  border: 2px solid #2563EB;
+  background: rgba(37, 99, 235, 0.16);
+  pointer-events: none;
+  z-index: 2147483646;
+  border-radius: 4px;
+  transition: all 0.04s ease;
+  box-sizing: border-box;
+}
+
+#smarthire-inspect-badge {
+  position: absolute;
+  background: #0F172A;
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 2147483647;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  font-family: monospace;
+}
+
+#smarthire-inspect-banner {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0F172A;
+  color: #FFFFFF;
+  padding: 8px 20px;
+  border-radius: 30px;
+  border: 1.5px solid #3B82F6;
+  z-index: 2147483647;
+  font-size: 12.5px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  user-select: none;
+}
+#smarthire-inspect-banner button {
+  background: #EF4444;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 12px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
 }

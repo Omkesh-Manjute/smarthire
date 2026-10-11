@@ -1,13 +1,18 @@
-// SmartHire Sourcing Copilot - Monster+ Content Script (Browserflow Precision Scraper & Auto-Fill)
+// SmartHire Sourcing Copilot v3.6 - Monster+ Content Script
 (function() {
   window.smartHirePortal = 'Monster+';
-  console.log('[SmartHire Copilot v3.5] Monster+ scraper active on:', window.location.href);
+  console.log('[SmartHire Copilot v3.6] Monster+ content script loaded on:', window.location.href);
 
   const utils = window.SmartHireUtils || {
     extractEmails: (text) => {
       if (!text) return [];
       const match = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
-      return Array.from(new Set(match.map(e => e.toLowerCase()).filter(e => !e.includes('monster.com'))));
+      // Keep candidate relay emails like siva.n.c1ex1@contact.monster.com! Only ignore corporate monster support/sales
+      const filtered = match.filter(e => {
+        const lower = e.toLowerCase();
+        return !lower.startsWith('support@') && !lower.startsWith('info@') && !lower.startsWith('donotreply@') && !lower.startsWith('privacy@');
+      });
+      return Array.from(new Set(filtered.map(e => e.toLowerCase())));
     },
     extractPhones: (text) => {
       if (!text) return [];
@@ -38,7 +43,8 @@
       .replace(/Open\s*In\s*New\s*Tab/gi, '')
       .replace(/Favorite/gi, '')
       .replace(/Veteran\s*Diversity/gi, '')
-      .replace(/Viewed/gi, '')
+      .replace(/Viewed\s*(?:by:)?/gi, '')
+      .replace(/SMS\s*Opt-in/gi, '')
       .replace(/Updated\s*[:\s]*[^\n\r·]+/gi, '')
       .replace(/Current:\s*[^\n\r]+/gi, '')
       .replace(/Previous:\s*[^\n\r]+/gi, '')
@@ -47,18 +53,24 @@
 
     const lines = str.split('\n').map(l => l.trim()).filter(Boolean);
     const candidateLine = lines[0] || '';
-    return candidateLine.replace(/open\s*in\s*new\s*tab/gi, '').replace(/·/g, '').replace(/\s+/g, ' ').trim();
+    return candidateLine
+      .replace(/open\s*in\s*new\s*tab/gi, '')
+      .replace(/sms\s*opt-in/gi, '')
+      .replace(/viewed\s*(?:by:)?/gi, '')
+      .replace(/·/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
   };
 
   // Find all candidate cards on Monster+ (Browserflow selector: smui-card)
-  function getMonsterCards() {
-    // 1. Browserflow selector: smui-card
+  window.getMonsterCards = function() {
+    // 1. Direct smui-card tag
     const smuiCards = document.querySelectorAll('smui-card');
     if (smuiCards && smuiCards.length > 0) {
       return Array.from(smuiCards);
     }
 
-    // 2. Class containing smui-card (excluding internal sub-containers)
+    // 2. Class containing smui-card
     const cardsByClass = document.querySelectorAll('[class*="smui-card"]');
     if (cardsByClass && cardsByClass.length > 0) {
       const filtered = Array.from(cardsByClass).filter(el => 
@@ -84,10 +96,10 @@
     }
 
     return [];
-  }
+  };
 
-  // Extract contact from #contact-legend-detail (Browserflow exact selector!)
-  function extractContactFromLegend() {
+  // Extract contact from #contact-legend-detail or detail panel
+  window.extractMonsterContact = function() {
     let phone = '';
     let email = '';
 
@@ -101,7 +113,7 @@
         email = mailLink.href.replace('mailto:', '').split('?')[0].trim().toLowerCase();
       } else {
         const emailMatch = boxText.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
-        if (emailMatch && !emailMatch[1].includes('monster.com')) {
+        if (emailMatch && !emailMatch[1].startsWith('support@') && !emailMatch[1].startsWith('info@')) {
           email = emailMatch[1].trim().toLowerCase();
         }
       }
@@ -117,7 +129,7 @@
       }
     }
 
-    // Fallback: search right detail / resume pane if contact box was empty
+    // Fallback: search right detail / resume pane
     if (!email || !phone) {
       const detailPanes = document.querySelectorAll('[class*="resume"], [class*="detail"], [class*="profile"], aside');
       for (const p of detailPanes) {
@@ -125,7 +137,9 @@
         if (txt.includes('@') || txt.includes('Phone:')) {
           if (!email) {
             const em = txt.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
-            if (em && !em[1].includes('monster.com')) email = em[1].trim().toLowerCase();
+            if (em && !em[1].startsWith('support@') && !em[1].startsWith('info@')) {
+              email = em[1].trim().toLowerCase();
+            }
           }
           if (!phone) {
             const ph = txt.match(/(?:Phone|Mobile|Cell|Direct)?\s*[:\s]?\s*(\+?1?[-.\s]?\(?[2-9]\d{2}\)?[-.\s]?\d{3}[-.\s]?\d{4})/i) ||
@@ -138,32 +152,16 @@
     }
 
     return { phone, email };
-  }
+  };
 
-  // Extract clean Candidate Name using Browserflow selector or card fallback
-  function extractCandidateName(card) {
-    // 1. Browserflow exact selector in detail pane: .candidate-name > div:nth-of-type(1) > span:nth-of-type(1)
-    const detailNameEl = document.querySelector('.candidate-name > div:nth-of-type(1) > span:nth-of-type(1), .candidate-name span, .candidate-name');
-    if (detailNameEl && detailNameEl.innerText.trim().length > 1) {
-      const clean = detailNameEl.innerText.replace(/open\s*in\s*new\s*tab/gi, '').replace(/\s+/g, ' ').trim();
-      if (clean && !clean.toLowerCase().includes('open in') && clean.length > 1) {
-        return clean;
-      }
-    }
-
-    // 2. From candidate card
-    const cardNameEl = card.querySelector('a[href*="/candidate/"], h2, h3, h4, [class*="name"]') || card;
-    return window.extractCleanMonsterName(cardNameEl.innerText || card.innerText || '');
-  }
-
-  // Deep Scraper: Click each card, reveal #contact-legend-detail, extract phone & email
+  // Deep Scraper: Click each card, reveal details, extract contact info
   window.smartHireScrapeCandidatesAsync = async function(onProgress) {
-    const cards = getMonsterCards();
-    console.log(`[SmartHire Copilot] Found ${cards.length} cards for deep extraction.`);
+    const cards = window.getMonsterCards();
+    console.log(`[SmartHire Copilot] Found ${cards.length} cards for deep scrape.`);
 
     if (cards.length === 0) {
       if (typeof onProgress === 'function') {
-        onProgress('No candidate cards found on this page. Make sure search results are visible.');
+        onProgress('No candidate cards found on this page.');
       }
       return [];
     }
@@ -175,15 +173,13 @@
       const card = cards[i];
       try {
         const cardText = card.innerText || '';
-
-        // Extract name before clicking
         let rawName = window.extractCleanMonsterName(cardText);
 
         if (typeof onProgress === 'function') {
           onProgress(`Processing candidate ${i + 1} of ${cards.length} (${rawName || 'Candidate'})...`);
         }
 
-        // BROWSERFLOW CLICK: Click .smui-card-body to open candidate details in right pane
+        // Click .smui-card-body (Browserflow exact click)
         const clickTarget = card.querySelector('.smui-card-body') || 
                             card.querySelector('div') || 
                             card;
@@ -193,10 +189,9 @@
         clickTarget.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
         clickTarget.click();
 
-        // Allow Monster 450ms to render #contact-legend-detail in the right pane
-        await sleep(450);
+        await sleep(500);
 
-        // Check if Profile tab needs to be clicked (Browserflow step 4)
+        // Click Profile tab if not active
         const profileTab = document.querySelector('li:nth-of-type(2) > .tab__title > .tab__label') ||
                            Array.from(document.querySelectorAll('.tab__label, button, [role="tab"]')).find(t => t.innerText && t.innerText.trim().toLowerCase() === 'profile');
         if (profileTab && !profileTab.closest('.tab--active')) {
@@ -204,16 +199,24 @@
           await sleep(250);
         }
 
-        // Extract Candidate Name from detail pane (.candidate-name) or card
-        const name = extractCandidateName(card) || rawName || `Candidate ${i + 1}`;
+        // Candidate Name
+        let name = '';
+        const detailNameEl = document.querySelector('.candidate-name > div:nth-of-type(1) > span:nth-of-type(1), .candidate-name span, .candidate-name');
+        if (detailNameEl && detailNameEl.innerText.trim().length > 1) {
+          name = detailNameEl.innerText.replace(/open\s*in\s*new\s*tab/gi, '').replace(/\s+/g, ' ').trim();
+        }
+        if (!name || name.toLowerCase().includes('open in') || name.length < 2) {
+          name = rawName || `Candidate ${i + 1}`;
+        }
+
         if (seenNames.has(name.toLowerCase())) {
           continue;
         }
 
-        // Extract Contact Phone & Email from #contact-legend-detail!
-        const { phone, email } = extractContactFromLegend();
+        // Contact info
+        const { phone, email } = window.extractMonsterContact();
 
-        // Extract Title from card text
+        // Title
         let title = 'Candidate Profile';
         const lines = cardText.split('\n').map(l => l.trim()).filter(Boolean);
         for (const line of lines) {
@@ -227,14 +230,15 @@
             !cleanLine.includes('Previous:') &&
             !cleanLine.includes('Top Skills:') &&
             !cleanLine.includes('Select a Card') &&
-            !cleanLine.includes('Viewed')
+            !cleanLine.includes('Viewed') &&
+            !cleanLine.includes('SMS Opt-in')
           ) {
             title = cleanLine;
             break;
           }
         }
 
-        // Extract Location from card text
+        // Location
         let location = 'United States';
         const locMatch = cardText.match(/\b([A-Z][a-zA-Z\s.-]+),\s*([A-Z]{2}|[A-Za-z\s]+)\b/);
         if (locMatch && !locMatch[0].includes('Select a Card') && !locMatch[0].includes('Open In')) {
@@ -247,7 +251,7 @@
         const recMatch = cardText.match(/Updated:\s*([^\n\r·]+)/i);
         if (recMatch) recency = `Updated ${recMatch[1].trim()}`;
 
-        // Skills from card
+        // Skills
         const skills = [];
         const skillMatch = cardText.match(/Top Skills:\s*([^\n\r]+)/i);
         if (skillMatch) {
@@ -272,13 +276,13 @@
           source: 'Monster+',
           recency,
           profileUrl: window.location.href,
-          notes: `${recency} · Extracted via SmartHire Copilot.`
+          notes: `${recency} · Sourced via SmartHire Copilot.`
         };
 
         candidates.push(candidateItem);
 
         if (typeof onProgress === 'function') {
-          const contactStatus = (email || phone) ? `(Contact: ${email || phone})` : '(No contact disclosed)';
+          const contactStatus = (email || phone) ? `(${email || phone})` : '(No contact disclosed)';
           onProgress(`Extracted ${candidates.length} of ${cards.length}: ${name} ${contactStatus}`);
         }
       } catch (err) {
@@ -293,15 +297,15 @@
     return candidates;
   };
 
-  // Synchronous quick fallback
+  // Quick fallback
   window.smartHireScrapeCandidates = function() {
-    const cards = getMonsterCards();
+    const cards = window.getMonsterCards();
     const candidates = [];
-    const contact = extractContactFromLegend();
+    const contact = window.extractMonsterContact();
 
     cards.forEach((card, i) => {
       const cardText = card.innerText || '';
-      const name = extractCandidateName(card) || `Candidate ${i + 1}`;
+      const name = window.extractCleanMonsterName(cardText) || `Candidate ${i + 1}`;
       if (name.toLowerCase().includes('monster')) return;
 
       const email = (i === 0 && contact.email) ? contact.email : '';
@@ -324,9 +328,8 @@
     return candidates;
   };
 
-  // Auto-Fill Search for Monster+ (Dashboard & Search Results Sidebar)
+  // Auto-Fill Search for Monster+
   window.smartHireAutoFillSearch = function({ title, skillsQuery, query, location }) {
-    console.log('[SmartHire Copilot] Auto-filling Monster+ search with:', { title, skillsQuery, query, location });
     const cleanTitle = (title || '').replace(/\(.*?\)/g, '').replace(/\[.*?\]/g, '').trim();
     const cleanSkills = skillsQuery || query || '';
     const cleanLoc = (location || '').toLowerCase() === 'remote' ? '' : (location || '');
@@ -355,25 +358,15 @@
       return null;
     }
 
-    // 1. Fill Job Title
     const titleInp = findInput(['cook, developer, nurse', 'job title', 'jobtitle', 'title']);
-    if (titleInp && cleanTitle) {
-      utils.setNativeValue(titleInp, cleanTitle);
-    }
+    if (titleInp && cleanTitle) utils.setNativeValue(titleInp, cleanTitle);
 
-    // 2. Fill Skills / Keywords
     const skillsInp = findInput(['javascript, management, finance', 'skills / keywords', 'skills/keywords', 'boolean', 'skills', 'keyword']);
-    if (skillsInp && cleanSkills) {
-      utils.setNativeValue(skillsInp, cleanSkills);
-    }
+    if (skillsInp && cleanSkills) utils.setNativeValue(skillsInp, cleanSkills);
 
-    // 3. Fill Location
     const locInp = findInput(['city, state, or zip', 'city, state', 'location', 'zip']);
-    if (locInp && cleanLoc) {
-      utils.setNativeValue(locInp, cleanLoc);
-    }
+    if (locInp && cleanLoc) utils.setNativeValue(locInp, cleanLoc);
 
-    // 4. Click UPDATE button (Search Results page)
     const allButtons = Array.from(document.querySelectorAll('button'));
     const updateBtn = allButtons.find(b => {
       const txt = (b.innerText || '').trim().toUpperCase();
@@ -385,7 +378,6 @@
       return `Filled Title, Skills, and Location, and clicked UPDATE!`;
     }
 
-    // 5. Click Find Candidates button (Dashboard page)
     const searchBtn = allButtons.find(b => {
       const txt = (b.innerText || '').toLowerCase();
       return txt.includes('find candidates') || txt.includes('search') || b.getAttribute('data-testid')?.includes('search');
