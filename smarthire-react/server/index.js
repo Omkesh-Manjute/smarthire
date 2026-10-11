@@ -1288,6 +1288,7 @@ app.use(cors({
     if (!origin) return callback(null, true);
     if (
       ALLOWED_ORIGINS.includes(origin) ||
+      origin.startsWith('chrome-extension://') ||
       origin.endsWith('.smarthireus.com') ||
       origin.endsWith('.onrender.com')
     ) {
@@ -12307,6 +12308,128 @@ app.post('/api/recruiter/monster/import-candidate', express.json(), (req, res) =
     });
   } catch (err) {
     console.error('[MonsterAPI] import-candidate error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Bulk candidate import endpoint for SmartHire Chrome Extension / Monster+ / Dice Copilot
+app.post('/api/recruiter/sourcing/bulk-import', express.json({ limit: '10mb' }), (req, res) => {
+  try {
+    loadCandidatesFromDisk();
+    const { candidates, targetReqId, source = 'Monster / Dice Extension', recruiterEmail, recruiterName } = req.body || {};
+    
+    if (!Array.isArray(candidates) || candidates.length === 0) {
+      return res.status(400).json({ success: false, error: 'candidates array is required and must not be empty' });
+    }
+
+    let importedCount = 0;
+    let updatedCount = 0;
+    const importedList = [];
+
+    // Find job title if targetReqId is provided
+    let matchedJobTitle = 'General Talent Pool';
+    if (targetReqId && Array.isArray(jobsStore)) {
+      const foundJob = jobsStore.find(j => String(j.id || j.reqId) === String(targetReqId));
+      if (foundJob) {
+        matchedJobTitle = foundJob.title || foundJob.positionTitle || matchedJobTitle;
+      }
+    }
+
+    const assignedRecruiterEmail = recruiterEmail || 'omkesh@coolsofttech.com';
+    const assignedRecruiterName = recruiterName || 'Omkesh Manjute';
+
+    for (const c of candidates) {
+      if (!c || !c.name) continue;
+      
+      const cleanName = String(c.name).trim();
+      const cleanEmail = c.email ? String(c.email).trim().toLowerCase() : null;
+      const cleanPhone = c.phone ? String(c.phone).trim() : null;
+
+      // Check duplicate
+      const existing = candidatesStore.find(ex => 
+        (cleanEmail && ex.email && ex.email.toLowerCase() === cleanEmail) ||
+        (cleanName && ex.name && ex.name.toLowerCase() === cleanName.toLowerCase())
+      );
+
+      if (existing) {
+        if (targetReqId && !existing.targetReqId) {
+          existing.targetReqId = String(targetReqId);
+          existing.matchedJobTitle = matchedJobTitle;
+          existing.updatedAt = new Date().toISOString();
+        }
+        if (cleanPhone && (!existing.phone || existing.phone.includes('555-0199'))) {
+          existing.phone = cleanPhone;
+        }
+        if (c.skills && Array.isArray(c.skills) && c.skills.length > (existing.skills || []).length) {
+          existing.skills = c.skills;
+        }
+        updatedCount++;
+        importedList.push(existing);
+        continue;
+      }
+
+      const candId = `cand-ext-${Date.now().toString().slice(-6)}-${Math.floor(Math.random()*900+100)}`;
+      const newCand = {
+        id: candId,
+        candidate_id: candId,
+        canId: candId,
+        name: cleanName,
+        email: cleanEmail || `${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@talent.sourced`,
+        phone: cleanPhone || '+1 (804) 555-0199',
+        role: c.title || c.role || matchedJobTitle,
+        location: c.location || 'United States',
+        skills: Array.isArray(c.skills) ? c.skills : (c.skills ? String(c.skills).split(',').map(s=>s.trim()).filter(Boolean) : []),
+        experience: c.experience ? String(c.experience) : (c.years_of_experience ? `${c.years_of_experience}+ Years` : '5+ Years'),
+        status: targetReqId ? 'Screened' : 'New',
+        source: c.source || source || 'Chrome Extension (Monster/Dice)',
+        sourceCategory: (c.source || source || '').toLowerCase().includes('dice') ? 'dice' : 'monster_plus',
+        recruiterEmail: assignedRecruiterEmail,
+        recruiterName: assignedRecruiterName,
+        assignedBy: assignedRecruiterName,
+        recruiter: assignedRecruiterName,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        notes: `Sourced via SmartHire Extension. ${c.notes || ''} Profile: ${c.profileUrl || c.profile_url || ''}`,
+        targetReqId: targetReqId ? String(targetReqId) : null,
+        matchScore: c.matchScore || c.match_score || 88,
+        matchedJobTitle: matchedJobTitle,
+        resumeText: c.summary || c.resumeText || '',
+        profileUrl: c.profileUrl || c.profile_url || '',
+        visaStatus: c.visaStatus || c.work_auth || 'Authorized to Work in US'
+      };
+
+      candidatesStore.unshift(newCand);
+      importedList.push(newCand);
+      importedCount++;
+    }
+
+    if (importedCount > 0 || updatedCount > 0) {
+      saveCandidatesToDisk();
+
+      notificationsStore.unshift({
+        id: `notif-bulk-${Date.now()}`,
+        type: 'bulk_candidates_imported',
+        targetReqId: targetReqId ? String(targetReqId) : null,
+        matchedJobTitle: matchedJobTitle,
+        count: importedCount,
+        message: `Imported ${importedCount} candidate(s) (${updatedCount} updated) from ${source} into SmartHire ATS pipeline${targetReqId ? ` for Req #${targetReqId}` : ''}.`,
+        createdAt: new Date().toISOString(),
+        read: false,
+        assignedRecruiters: [assignedRecruiterEmail]
+      });
+      saveNotifications();
+    }
+
+    return res.json({
+      success: true,
+      importedCount,
+      updatedCount,
+      totalProcessed: candidates.length,
+      message: `Successfully processed ${candidates.length} candidates (${importedCount} newly added, ${updatedCount} updated) into ATS.`,
+      candidates: importedList
+    });
+  } catch (err) {
+    console.error('[BulkImportAPI] error:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });

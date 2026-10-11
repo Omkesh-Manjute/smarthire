@@ -505,6 +505,33 @@ export default function MonsterSourcingModule({
               <IconTable /> Excel Grid
             </button>
           </div>
+
+          {/* Download Chrome Extension */}
+          <a
+            href="/smarthire-extension.zip"
+            download="smarthire-extension.zip"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '6px 12px',
+              backgroundColor: '#0F172A',
+              color: '#FFFFFF',
+              borderRadius: 6,
+              fontSize: 11.5,
+              fontWeight: 700,
+              textDecoration: 'none',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+            }}
+            title="Download Chrome Extension for 1-Click candidate scraping on Monster & Dice"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Download Extension (Monster & Dice)
+          </a>
         </div>
       </div>
 
