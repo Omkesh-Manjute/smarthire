@@ -28,13 +28,13 @@
 
   // Active Flow Configuration (Saved in localStorage or presets)
   let activeFlow = {
-    containerSelector: 'smui-card',
+    containerSelector: '.smui-card',
     clickSelector: '.smui-card-body',
-    tabSelector: 'li:nth-of-type(2) > .tab__title > .tab__label',
-    nameSelector: '.candidate-name > div:nth-of-type(1) > span:nth-of-type(1)',
+    tabSelector: '.tab__label',
+    nameSelector: '.candidate-name, a[href*="/candidate/"], h2, h3',
     emailSelector: '#contact-legend-detail',
     phoneSelector: '#contact-legend-detail',
-    delayMs: 500
+    delayMs: 800
   };
 
   // Try loading saved flow from storage
@@ -349,13 +349,13 @@
     // Workflow Studio Presets
     document.getElementById('preset-monster').addEventListener('click', () => {
       applyPreset({
-        containerSelector: 'smui-card',
+        containerSelector: '.smui-card',
         clickSelector: '.smui-card-body',
-        tabSelector: 'li:nth-of-type(2) > .tab__title > .tab__label',
-        nameSelector: '.candidate-name > div:nth-of-type(1) > span:nth-of-type(1)',
+        tabSelector: '.tab__label',
+        nameSelector: '.candidate-name, a[href*="/candidate/"], h2, h3',
         emailSelector: '#contact-legend-detail',
         phoneSelector: '#contact-legend-detail',
-        delayMs: 500
+        delayMs: 800
       });
     });
 
@@ -625,7 +625,7 @@
     document.addEventListener('keydown', onKeyDown, true);
   }
 
-  // Calculate clean, robust selector for any element
+  // Calculate clean, robust selector for any element (avoids bare generic tags like span)
   function computeOptimalSelector(el) {
     if (!el || el === document.body) return '';
 
@@ -640,8 +640,8 @@
       return tag;
     }
 
-    // Meaningful classes
-    const classes = Array.from(el.classList).filter(c => 
+    // Meaningful classes on current element
+    const classes = Array.from(el.classList || []).filter(c => 
       !c.match(/^css-/) && 
       !c.match(/^[a-z0-9]{6,}$/i) && 
       !c.includes('active') && 
@@ -655,15 +655,30 @@
     const testId = el.getAttribute('data-testid');
     if (testId) return `[data-testid="${testId}"]`;
 
-    // Parent path fallback
-    const parent = el.parentElement;
-    if (parent && parent.id) return `#${parent.id} > ${tag}`;
-    if (parent && parent.className && typeof parent.className === 'string') {
-      const pClass = parent.className.split(' ').filter(Boolean)[0];
-      if (pClass) return `.${pClass} > ${tag}`;
+    // Walk up to find meaningful parent container (e.g. .candidate-name span)
+    let curr = el;
+    let path = [tag];
+    while (curr && curr.parentElement && curr.parentElement !== document.body && path.length < 3) {
+      curr = curr.parentElement;
+      if (curr.id && !curr.id.match(/\d{5,}/)) {
+        path.unshift(`#${curr.id}`);
+        break;
+      }
+      const pClasses = Array.from(curr.classList || []).filter(c => 
+        !c.match(/^css-/) && !c.match(/^[a-z0-9]{6,}$/i) && !c.includes('active')
+      );
+      if (pClasses.length > 0) {
+        path.unshift(`.${pClasses[0]}`);
+        break;
+      }
+      const pTag = curr.tagName.toLowerCase();
+      if (pTag === 'smui-card' || pTag.includes('-')) {
+        path.unshift(pTag);
+        break;
+      }
     }
 
-    return tag;
+    return path.join(' ');
   }
 
   // 4. Run Flow Studio Workflow (Step-by-step Loop & Extract)
@@ -702,101 +717,163 @@
         const container = containers[i];
         status.innerText = `Processing candidate ${i + 1} of ${containers.length}...`;
 
-        // Action 1: Click card body
+        // Visual indicator on active card during execution
+        container.scrollIntoView({ behavior: 'auto', block: 'center' });
+        const oldOutline = container.style.outline;
+        container.style.outline = '3px solid #10B981';
+        container.style.borderRadius = '6px';
+
+        // Action 1: Multi-event Click (dispatches pointerdown, mousedown, pointerup, mouseup, click)
+        const clickCandidates = [];
         if (clickSelector) {
-          const clickTarget = container.querySelector(clickSelector) || container;
-          clickTarget.scrollIntoView({ behavior: 'auto', block: 'nearest' });
-          clickTarget.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
-          clickTarget.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
-          clickTarget.click();
-          await sleep(delayMs);
+          const userEl = container.querySelector(clickSelector);
+          if (userEl) clickCandidates.push(userEl);
+        }
+        const bodyEl = container.querySelector('.smui-card-body');
+        if (bodyEl && !clickCandidates.includes(bodyEl)) clickCandidates.push(bodyEl);
+        const nameLink = container.querySelector('a[href*="/candidates/"], a[href*="/candidate/"], h2 a, h3 a, a');
+        if (nameLink && !clickCandidates.includes(nameLink)) clickCandidates.push(nameLink);
+        if (!clickCandidates.includes(container)) clickCandidates.push(container);
+
+        const primaryTarget = clickCandidates[0] || container;
+        const rect = primaryTarget.getBoundingClientRect();
+        const clientX = rect.left + rect.width / 2;
+        const clientY = rect.top + rect.height / 2;
+        const evtInit = { bubbles: true, cancelable: true, view: window, clientX, clientY, buttons: 1 };
+
+        primaryTarget.dispatchEvent(new PointerEvent('pointerdown', evtInit));
+        primaryTarget.dispatchEvent(new MouseEvent('mousedown', evtInit));
+        primaryTarget.dispatchEvent(new PointerEvent('pointerup', evtInit));
+        primaryTarget.dispatchEvent(new MouseEvent('mouseup', evtInit));
+        primaryTarget.click();
+
+        // Wait for Monster's right pane to load
+        await sleep(delayMs || 800);
+
+        // Action 2: Switch to Profile tab if present
+        const profileTab = document.querySelector('li:nth-of-type(2) > .tab__title > .tab__label') ||
+                           Array.from(document.querySelectorAll('.tab__label, button, [role="tab"]')).find(t => 
+                             t.innerText && t.innerText.trim().toLowerCase() === 'profile'
+                           );
+        if (profileTab && !profileTab.closest('.tab--active')) {
+          profileTab.click();
+          await sleep(300);
         }
 
-        // Action 2: Click tab if specified
-        if (tabSelector) {
-          const tabEl = document.querySelector(tabSelector) || 
-                        Array.from(document.querySelectorAll('.tab__label, button, [role="tab"]')).find(t => t.innerText && t.innerText.trim().toLowerCase() === 'profile');
-          if (tabEl && !tabEl.closest('.tab--active')) {
-            tabEl.click();
-            await sleep(250);
-          }
-        }
-
-        // Action 3: Extract Name
+        // Action 3: Extract Name (STRICTLY FROM CARD CONTAINER - NEVER FROM NAVBAR!)
         let name = '';
-        if (nameSelector) {
-          const nEl = document.querySelector(nameSelector) || container.querySelector(nameSelector);
-          if (nEl && nEl.innerText.trim().length > 1) {
-            name = nEl.innerText.replace(/open\s*in\s*new\s*tab/gi, '').replace(/\s+/g, ' ').trim();
-          }
+        const cardNameEl = container.querySelector('a[href*="/candidate/"], h2, h3, h4, [class*="name"], [class*="Name"]') ||
+                           (nameSelector && !['span', 'div', 'p', 'a'].includes(nameSelector) ? container.querySelector(nameSelector) : null);
+        if (cardNameEl && cardNameEl.innerText.trim()) {
+          name = window.extractCleanMonsterName ? window.extractCleanMonsterName(cardNameEl.innerText) : cardNameEl.innerText.trim();
         }
-        if (!name || name.toLowerCase().includes('open in') || name.length < 2) {
+        if (!name || name.length < 2) {
           name = window.extractCleanMonsterName ? window.extractCleanMonsterName(container.innerText) : container.innerText.split('\n')[0];
         }
+        if (!name || name.toLowerCase().includes('need help') || name.length < 2) {
+          const detailNameEl = document.querySelector('.candidate-name > div > span, .candidate-name, [data-testid*="candidate-name"]');
+          if (detailNameEl && detailNameEl.innerText.trim()) {
+            name = window.extractCleanMonsterName(detailNameEl.innerText);
+          }
+        }
         name = name.replace(/sms\s*opt-in/gi, '').replace(/viewed/gi, '').replace(/·/g, '').trim();
+        if (!name || name.toLowerCase().includes('need help')) {
+          name = `Candidate ${i + 1}`;
+        }
 
-        if (seenNames.has(name.toLowerCase())) continue;
+        if (seenNames.has(name.toLowerCase())) {
+          container.style.outline = oldOutline;
+          continue;
+        }
 
-        // Action 4: Extract Email & Phone
+        // Action 4: Extract Email & Phone from #contact-legend-detail or detail pane
         let email = '';
         let phone = '';
 
-        if (emailSelector) {
-          const eEl = document.querySelector(emailSelector) || container.querySelector(emailSelector);
-          if (eEl) {
-            const txt = eEl.innerText || '';
-            const mailTo = eEl.querySelector ? eEl.querySelector('a[href^="mailto:"]') : null;
-            if (mailTo) email = mailTo.href.replace('mailto:', '').split('?')[0].trim().toLowerCase();
-            else {
-              const m = txt.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
-              if (m && !m[1].startsWith('support@') && !m[1].startsWith('info@')) email = m[1].trim().toLowerCase();
-            }
+        const contactBox = document.querySelector('#contact-legend-detail, [id*="contact-legend"], [class*="contact-legend"]') ||
+                           (emailSelector ? document.querySelector(emailSelector) : null);
+        if (contactBox) {
+          const bTxt = contactBox.innerText || '';
+          const mailLink = contactBox.querySelector ? contactBox.querySelector('a[href^="mailto:"]') : null;
+          if (mailLink) email = mailLink.href.replace('mailto:', '').split('?')[0].trim().toLowerCase();
+          if (!email) {
+            const m = bTxt.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+            if (m && !m[1].startsWith('support@') && !m[1].startsWith('info@')) email = m[1].trim().toLowerCase();
+          }
+
+          const telLink = contactBox.querySelector ? contactBox.querySelector('a[href^="tel:"]') : null;
+          if (telLink) phone = telLink.href.replace('tel:', '').trim();
+          if (!phone) {
+            const m = bTxt.match(/(?:Phone|Mobile|Cell|Direct)?\s*[:\s]?\s*(\+?1?[-.\s]?\(?[2-9]\d{2}\)?[-.\s]?\d{3}[-.\s]?\d{4})/i) ||
+                      bTxt.match(/(\+?1\d{10})/);
+            if (m) phone = m[1].trim();
           }
         }
 
-        if (phoneSelector) {
-          const pEl = document.querySelector(phoneSelector) || container.querySelector(phoneSelector);
-          if (pEl) {
-            const txt = pEl.innerText || '';
-            const telTo = pEl.querySelector ? pEl.querySelector('a[href^="tel:"]') : null;
-            if (telTo) phone = telTo.href.replace('tel:', '').trim();
-            else {
-              const m = txt.match(/(?:Phone|Mobile|Cell|Direct)?\s*[:\s]?\s*(\+?1?[-.\s]?\(?[2-9]\d{2}\)?[-.\s]?\d{3}[-.\s]?\d{4})/i) ||
-                        txt.match(/(\+?1\d{10})/);
-              if (m) phone = m[1].trim();
-            }
-          }
-        }
-
-        // Global fallback search for contact details if specific selector yielded empty
+        // Fallback to resume text or right detail pane
         if (!email || !phone) {
-          const contactBox = document.querySelector('#contact-legend-detail, [id*="contact-legend"]');
-          if (contactBox) {
-            const txt = contactBox.innerText || '';
-            if (!email) {
-              const m = txt.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
-              if (m && !m[1].startsWith('support@') && !m[1].startsWith('info@')) email = m[1].trim().toLowerCase();
-            }
-            if (!phone) {
-              const m = txt.match(/(?:Phone|Mobile|Cell|Direct)?\s*[:\s]?\s*(\+?1?[-.\s]?\(?[2-9]\d{2}\)?[-.\s]?\d{3}[-.\s]?\d{4})/i) ||
-                        txt.match(/(\+?1\d{10})/);
-              if (m) phone = m[1].trim();
+          const detailPanes = document.querySelectorAll('[class*="resume"], [class*="detail"], [class*="profile"], aside');
+          for (const pane of detailPanes) {
+            if (pane.closest('#smarthire-copilot-drawer')) continue;
+            const pTxt = pane.innerText || '';
+            if (pTxt.includes('@') || pTxt.includes('Phone:')) {
+              if (!email) {
+                const m = pTxt.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+                if (m && !m[1].startsWith('support@') && !m[1].startsWith('info@')) email = m[1].trim().toLowerCase();
+              }
+              if (!phone) {
+                const m = pTxt.match(/(?:Phone|Mobile|Cell|Direct)?\s*[:\s]?\s*(\+?1?[-.\s]?\(?[2-9]\d{2}\)?[-.\s]?\d{3}[-.\s]?\d{4})/i) ||
+                          pTxt.match(/(\+?1\d{10})/);
+                if (m) phone = m[1].trim();
+              }
+              if (email && phone) break;
             }
           }
+        }
+
+        // Title from card text
+        let title = 'Candidate Profile';
+        const cardLines = (container.innerText || '').split('\n').map(l => l.trim()).filter(Boolean);
+        for (const line of cardLines) {
+          const cl = window.extractCleanMonsterName ? window.extractCleanMonsterName(line) : line;
+          if (
+            cl &&
+            cl !== name &&
+            cl.length > 3 &&
+            !cl.includes('Updated') &&
+            !cl.includes('Current:') &&
+            !cl.includes('Previous:') &&
+            !cl.includes('Top Skills:') &&
+            !cl.includes('Select a Card') &&
+            !cl.includes('Viewed') &&
+            !cl.includes('SMS Opt-in')
+          ) {
+            title = cl;
+            break;
+          }
+        }
+
+        let location = 'United States';
+        const locMatch = (container.innerText || '').match(/\b([A-Z][a-zA-Z\s.-]+),\s*([A-Z]{2}|[A-Za-z\s]+)\b/);
+        if (locMatch && !locMatch[0].includes('Select a Card') && !locMatch[0].includes('Open In')) {
+          location = locMatch[0].trim();
         }
 
         seenNames.add(name.toLowerCase());
+        container.style.outline = oldOutline;
 
         results.push({
           id: `flow-${i}-${Date.now().toString().slice(-4)}`,
-          name: name || `Candidate ${i + 1}`,
+          name,
           email: email || 'Not Disclosed',
           phone: phone || 'Not Disclosed',
-          title: 'Candidate Profile',
-          location: 'United States',
+          title: title.slice(0, 80),
+          location,
           source: window.smartHirePortal || 'Monster+ Flow',
           profileUrl: window.location.href
         });
+
+        status.innerText = `Extracted ${results.length} of ${containers.length}: ${name} (${email || phone || 'Profile'})`;
       }
 
       scrapedCandidates = results;
