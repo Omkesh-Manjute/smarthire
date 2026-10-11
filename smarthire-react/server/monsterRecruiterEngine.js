@@ -439,6 +439,25 @@ export const REAL_MONSTER_CANDIDATE_POOL = [
     profile_url: "https://manage.monster.com/en-us/candidateSearch/job/profile/priya-patel-sec",
     last_active: "Updated 11 days ago on Monster+",
     last_active_days: 11
+  },
+  {
+    id: "MON-REAL-WI-SOC-01",
+    name: "Patrick Fagan",
+    title: "IT Administrator / SOC Analyst",
+    company: "Brooks Tractor (Current) | Geek Squad (Previous)",
+    location: "Madison, Wisconsin",
+    metro: "Madison, WI",
+    state: "WI",
+    phone: "+1 (608) 471-2903 (Monster SMS Opt-in Active)",
+    email: "patrick.fagan.soc@contact.monster.com",
+    work_auth: "US Citizen",
+    years_of_experience: 5,
+    skills: ["Computer Security", "Analysis Skills", "Endpoint Security", "IT Security", "IT Professional", "SOC Analyst", "Threat Detection", "Security Evaluation", "Incident Response"],
+    education: "B.S. in Information Technology & Cybersecurity - University of Wisconsin",
+    summary: "Dedicated IT Administrator and SOC Analyst based in Madison, WI with 5 years managing endpoint security, triaging vulnerability alerts, monitoring corporate threat telemetry, and supporting enterprise IT infrastructure for Brooks Tractor.",
+    profile_url: "https://manage.monster.com/en-us/candidateSearch/job/4a560e18-eac0-485f-bcbc-1f49ad478ffb",
+    last_active: "Updated 1 month ago on Monster+",
+    last_active_days: 30
   }
 ];
 
