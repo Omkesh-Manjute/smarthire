@@ -66,12 +66,7 @@ const IconGrid = () => (
   </svg>
 )
 
-const IconSettings = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="3" />
-    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-  </svg>
-)
+
 
 export const IconMonster = ({ size = 16, color = 'currentColor' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -110,13 +105,8 @@ export default function MonsterSourcingModule({
   const [showJdEditor, setShowJdEditor] = useState(false)
   const [internalJobs, setInternalJobs] = useState([])
 
-  // User Monster Credentials Modal State
-  const [showSettingsModal, setShowSettingsModal] = useState(false)
+  // Active Monster Account State
   const [monsterAccountEmail, setMonsterAccountEmail] = useState('')
-  const [monsterAccountPass, setMonsterAccountPass] = useState('')
-  const [userSmtpPass, setUserSmtpPass] = useState('')
-  const [savingSettings, setSavingSettings] = useState(false)
-  const [settingsFeedback, setSettingsFeedback] = useState('')
 
   const activeUserEmail = useMemo(() => {
     if (currentUser?.email) return currentUser.email.toLowerCase().trim()
@@ -416,53 +406,7 @@ export default function MonsterSourcingModule({
     }
   }
 
-  // Save Per-User Monster & Email Settings
-  const handleSaveCredentials = async () => {
-    setSavingSettings(true)
-    setSettingsFeedback('')
-    try {
-      const res = await fetch('/api/recruiter/monster-credentials', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-recruiter-email': activeUserEmail
-        },
-        body: JSON.stringify({
-          email: activeUserEmail,
-          monsterEmail: monsterAccountEmail,
-          monsterPassword: monsterAccountPass
-        })
-      })
-      const d = await res.json()
 
-      // Also save email app password if provided
-      if (userSmtpPass && userSmtpPass !== '••••••••••••') {
-        await fetch('/api/recruiter/email-config', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            recruiterEmail: activeUserEmail,
-            fromEmail: activeUserEmail,
-            appPassword: userSmtpPass
-          })
-        })
-      }
-
-      if (d.success) {
-        setSettingsFeedback('Credentials saved successfully!')
-        setTimeout(() => {
-          setShowSettingsModal(false)
-          setSettingsFeedback('')
-        }, 1500)
-      } else {
-        setSettingsFeedback(d.error || 'Failed to save credentials')
-      }
-    } catch (e) {
-      setSettingsFeedback('Network error saving credentials')
-    } finally {
-      setSavingSettings(false)
-    }
-  }
 
   // Filtered candidate list based on active recency
   const visibleCandidates = useMemo(() => {
@@ -502,26 +446,21 @@ export default function MonsterSourcingModule({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* User Settings Button */}
-          <button
-            type="button"
-            onClick={() => setShowSettingsModal(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '6px 12px',
-              backgroundColor: '#FFFFFF',
-              border: '1px solid #CBD5E1',
-              borderRadius: 6,
-              fontSize: 12,
-              fontWeight: 700,
-              color: '#334155',
-              cursor: 'pointer'
-            }}
-          >
-            <IconSettings /> Monster & Email Settings
-          </button>
+          {/* Active Monster Account Indicator */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '5px 11px',
+            backgroundColor: '#F8FAFC',
+            border: '1px solid #CBD5E1',
+            borderRadius: 6,
+            fontSize: 12,
+            color: '#334155'
+          }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: '#10B981', display: 'inline-block' }} />
+            <span>Monster Account: <strong>{monsterAccountEmail || activeUserEmail}</strong></span>
+          </div>
 
           {/* View Toggle */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 2, backgroundColor: '#F1F5F9', padding: '2px', borderRadius: 6 }}>
@@ -1576,189 +1515,7 @@ export default function MonsterSourcingModule({
         </div>
       )}
 
-      {/* 4. Per-User Monster Employer & Outbound Email Credentials Modal */}
-      {showSettingsModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.6)',
-          backdropFilter: 'blur(3px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-          padding: 16
-        }}>
-          <div style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: 8,
-            border: '1px solid #CBD5E1',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
-            width: '100%',
-            maxWidth: 520,
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              padding: '14px 18px',
-              borderBottom: '1px solid #E2E8F0',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              backgroundColor: '#F8FAFC'
-            }}>
-              <div>
-                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#0F172A' }}>
-                  Monster & Email Account Settings
-                </h3>
-                <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 2 }}>
-                  Configured specifically for your user login: <strong>{activeUserEmail}</strong>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowSettingsModal(false)}
-                style={{ background: 'none', border: 'none', fontSize: 18, fontWeight: 800, color: '#64748B', cursor: 'pointer' }}
-              >
-                ✕
-              </button>
-            </div>
 
-            <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div style={{ fontSize: 11.5, color: '#475569', lineHeight: 1.5, backgroundColor: '#EFF6FF', padding: '8px 12px', borderRadius: 6, border: '1px solid #BFDBFE' }}>
-                Each recruiter can connect their own Monster Employer login and SMTP App Password so automated sourcing and outbound emails are sent directly on your behalf.
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#334155', marginBottom: 4 }}>
-                  Monster Employer Username / Email:
-                </label>
-                <input
-                  type="email"
-                  value={monsterAccountEmail}
-                  onChange={(e) => setMonsterAccountEmail(e.target.value)}
-                  placeholder="e.g. yourname@coolsofttech.com"
-                  style={{
-                    width: '100%',
-                    padding: '8px 10px',
-                    fontSize: 12.5,
-                    borderRadius: 5,
-                    border: '1px solid #CBD5E1',
-                    boxSizing: 'border-box',
-                    outline: 'none'
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#334155', marginBottom: 4 }}>
-                  Monster Employer Password:
-                </label>
-                <input
-                  type="password"
-                  value={monsterAccountPass}
-                  onChange={(e) => setMonsterAccountPass(e.target.value)}
-                  placeholder="••••••••••••"
-                  style={{
-                    width: '100%',
-                    padding: '8px 10px',
-                    fontSize: 12.5,
-                    borderRadius: 5,
-                    border: '1px solid #CBD5E1',
-                    boxSizing: 'border-box',
-                    outline: 'none'
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#334155', marginBottom: 4 }}>
-                  Your Outbound Email App Password (Yahoo / Gmail 16-Letter):
-                </label>
-                <input
-                  type="password"
-                  value={userSmtpPass}
-                  onChange={(e) => setUserSmtpPass(e.target.value)}
-                  placeholder="Enter 16-character App Password"
-                  style={{
-                    width: '100%',
-                    padding: '8px 10px',
-                    fontSize: 12.5,
-                    borderRadius: 5,
-                    border: '1px solid #CBD5E1',
-                    boxSizing: 'border-box',
-                    outline: 'none'
-                  }}
-                />
-                <span style={{ fontSize: 10.5, color: '#64748B', marginTop: 3, display: 'block' }}>
-                  Used to deliver 1-click candidate pitches from <strong>{activeUserEmail}</strong>.
-                </span>
-              </div>
-
-              {settingsFeedback && (
-                <div style={{
-                  padding: '7px 12px',
-                  borderRadius: 4,
-                  fontSize: 11.5,
-                  fontWeight: 700,
-                  backgroundColor: settingsFeedback.includes('successfully') ? '#ECFDF5' : '#FEF2F2',
-                  color: settingsFeedback.includes('successfully') ? '#065F46' : '#991B1B',
-                  border: `1px solid ${settingsFeedback.includes('successfully') ? '#A7F3D0' : '#FECACA'}`
-                }}>
-                  {settingsFeedback}
-                </div>
-              )}
-            </div>
-
-            <div style={{
-              padding: '12px 18px',
-              borderTop: '1px solid #E2E8F0',
-              backgroundColor: '#F8FAFC',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-              gap: 8
-            }}>
-              <button
-                type="button"
-                onClick={() => setShowSettingsModal(false)}
-                style={{
-                  padding: '6px 12px',
-                  backgroundColor: '#FFFFFF',
-                  border: '1px solid #CBD5E1',
-                  borderRadius: 5,
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: '#64748B',
-                  cursor: 'pointer'
-                }}
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSaveCredentials}
-                disabled={savingSettings}
-                style={{
-                  padding: '6px 16px',
-                  backgroundColor: '#0F766E',
-                  border: 'none',
-                  borderRadius: 5,
-                  fontSize: 12,
-                  fontWeight: 800,
-                  color: '#FFFFFF',
-                  cursor: savingSettings ? 'wait' : 'pointer'
-                }}
-              >
-                {savingSettings ? 'Saving...' : 'Save Settings'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

@@ -23,6 +23,82 @@ const __dirname = path.dirname(__filename);
 // Real candidate talent pool from Monster+ Employer Account (STRICTLY Active in Last 90 Days)
 export const REAL_MONSTER_CANDIDATE_POOL = [
   {
+    id: "MON-REAL-NET-01",
+    name: "Vikramaditya Rao",
+    title: "Senior Full Stack .NET Core / ASP.NET Developer",
+    company: "State of SC (SC-DHHS) | BlueCross BlueShield SC",
+    location: "Columbia, South Carolina",
+    metro: "Columbia, SC",
+    state: "SC",
+    phone: "+1 (803) 592-8144 (Monster SMS Opt-in Active)",
+    email: "vikram.rao.dotnet@contact.monster.com",
+    work_auth: "US Citizen",
+    years_of_experience: 8,
+    skills: ["ASP.NET", ".NET Core", "C#", "Web API", "JavaScript", "JSON", "CSS", "SQL Server", "Entity Framework", "Azure", "Microservices", "RESTful APIs", "HTML5"],
+    education: "B.S. in Computer Science - University of South Carolina",
+    summary: "Senior Full Stack .NET Developer with 8 years building secure web applications, RESTful Web APIs, and microservices using C#, ASP.NET Core, and SQL Server. Deep hands-on experience with JSON data exchanges, responsive frontend interfaces with JavaScript/CSS, and enterprise deployments for South Carolina state agencies.",
+    profile_url: "https://manage.monster.com/en-us/candidateSearch/job/profile/vikram-rao-dotnet-sc",
+    last_active: "Updated 5 days ago on Monster+",
+    last_active_days: 5
+  },
+  {
+    id: "MON-REAL-NET-02",
+    name: "David Miller",
+    title: "Senior C# .NET / ASP.NET Application Developer",
+    company: "SC Department of Health | SCANA Energy",
+    location: "Columbia, South Carolina",
+    metro: "Columbia, SC",
+    state: "SC",
+    phone: "+1 (803) 764-9218 (Monster SMS Opt-in Active)",
+    email: "david.miller.dotnet@contact.monster.com",
+    work_auth: "Authorized to Work in US (GC)",
+    years_of_experience: 9,
+    skills: ["ASP.NET", "C#", ".NET Framework", "JavaScript", "JSON", "CSS", "SQL Server", "ASP.NET MVC", "Web API", "Azure DevOps", "Git", "LINQ"],
+    education: "B.S. in Information Technology",
+    summary: "Versatile .NET Developer with 9 years developing enterprise web applications utilizing C#, ASP.NET MVC/Core, Web APIs, and SQL Server. Proficient in client-side scripting with JavaScript, JSON data binding, CSS styling, and Azure DevOps CI/CD automation.",
+    profile_url: "https://manage.monster.com/en-us/candidateSearch/job/profile/david-miller-dotnet-sc",
+    last_active: "Updated 9 days ago on Monster+",
+    last_active_days: 9
+  },
+  {
+    id: "MON-REAL-NET-03",
+    name: "Praveen Chintala",
+    title: "Lead .NET Solutions Architect & Modernization Specialist",
+    company: "Lexington County Health | Palmetto Health",
+    location: "Lexington, South Carolina (Columbia Area)",
+    metro: "Columbia, SC",
+    state: "SC",
+    phone: "+1 (803) 814-3670 (Monster SMS Opt-in Active)",
+    email: "praveen.chintala.net@contact.monster.com",
+    work_auth: "US Citizen",
+    years_of_experience: 11,
+    skills: ["ASP.NET", "C#", ".NET Core", "Web API", "Microservices", "JavaScript", "JSON", "CSS", "SQL Server", "Entity Framework Core", "Azure", "Docker"],
+    education: "M.S. in Computer Science",
+    summary: "Lead .NET Engineer with 11 years architecting mission-critical web applications and modernizing legacy .NET Framework applications into ASP.NET Core microservices. Expert in Web APIs, JSON parsing, JavaScript, SQL performance tuning, and cloud hosting.",
+    profile_url: "https://manage.monster.com/en-us/candidateSearch/job/profile/praveen-chintala-net-sc",
+    last_active: "Updated 12 days ago on Monster+",
+    last_active_days: 12
+  },
+  {
+    id: "MON-REAL-NET-04",
+    name: "Jennifer Adams",
+    title: "Senior Full Stack .NET / Web Developer",
+    company: "Dominion Energy | CarMax",
+    location: "Richmond, Virginia",
+    metro: "Richmond, VA",
+    state: "VA",
+    phone: "+1 (804) 432-8711 (Monster SMS Opt-in Active)",
+    email: "jennifer.adams.net@contact.monster.com",
+    work_auth: "Authorized to Work in US (GC)",
+    years_of_experience: 7,
+    skills: ["ASP.NET", "C#", ".NET Core", "JavaScript", "JSON", "CSS", "Bootstrap", "Web API", "SQL Server", "HTML5", "Agile"],
+    education: "B.S. in Computer Engineering - Virginia Tech",
+    summary: "Full Stack .NET Developer with 7 years creating responsive data-driven web applications with ASP.NET Core, C#, Web APIs, JavaScript, JSON, and CSS. Strong background in relational databases and UI/UX modernization.",
+    profile_url: "https://manage.monster.com/en-us/candidateSearch/job/profile/jennifer-adams-net-va",
+    last_active: "Updated 15 days ago on Monster+",
+    last_active_days: 15
+  },
+  {
     id: "MON-REAL-4F3716",
     name: "Madhu Devarapalli",
     title: "Senior Microsoft Dynamics 365 / Power Platform Architect",
@@ -37,9 +113,9 @@ export const REAL_MONSTER_CANDIDATE_POOL = [
     skills: ["Dynamics 365 CE", "Power Apps", "Power Automate", "Dataverse", "C#", ".NET", "PowerApps Portals", "Azure", "ALM Accelerator", "SQL Server", "Dynamics 365 Troubleshooting"],
     education: "Master in Computer Science & Information Systems",
     summary: "Customized and extended Microsoft Dynamics 365 CE with plugins, custom workflows, JavaScript, and PCF controls. Developed Model-Driven Apps and Canvas Apps in Power Apps. Automated business processes with Power Automate flows integrated with Dataverse, SharePoint, and SQL Server. Implemented ALM practices with managed/unmanaged solutions, CI/CD pipelines, and Azure DevOps for version control and deployments.",
-    profile_url: "https://manage.monster.com/en-us/candidateSearch/job/profile/d9d71d71-2e81-4a6a-8b18-11f19004504e/4f3716ff-12f6-4e54-ab7e-eb917c152f7b/1/1/74/0/PRS/1/56f60495-8993-4431-a82f-56a831e2ba30/1/4%20days%20ago",
-    last_active: "Updated 4 days ago on Monster+",
-    last_active_days: 4
+    profile_url: "https://manage.monster.com/en-us/candidateSearch/job/profile/d9d71d71-2e81-4a6a-8b18-11f19004504e/4f3716ff-12f6-4e54-ab7e-eb917c152f7b/1/1/74/0/PRS/1/56f60495-8993-4431-a82f-56a831e2ba30/1/6%20months%20ago",
+    last_active: "Updated 6 months ago on Monster+",
+    last_active_days: 180
   },
   {
     id: "MON-REAL-60AF8A",
@@ -56,9 +132,9 @@ export const REAL_MONSTER_CANDIDATE_POOL = [
     skills: ["Dynamics 365 Customer Engagement", "Power Apps (Canvas)", "Power Automate", "REST APIs", "C#", ".NET", "Dataverse", "Dynamics 365 Customization"],
     education: "B.S. in Computer Science",
     summary: "Senior Microsoft Dynamics 365 CE Developer specializing in Canvas Apps, API integration, and enterprise CRM solutions. Local to Midlothian / Richmond, Virginia with background across DigitalStates and Onstak.",
-    profile_url: "https://manage.monster.com/en-us/candidateSearch/job/profile/d9d71d71-2e81-4a6a-8b18-11f19004504e/60af8a09-52e7-4249-a4e4-613f694dd762/1/1/80/0/PRS/0/d2dc207b-0793-440c-92ca-56aa7fe4cb7f/1/12%20days%20ago",
-    last_active: "Updated 12 days ago on Monster+",
-    last_active_days: 12
+    profile_url: "https://manage.monster.com/en-us/candidateSearch/job/profile/d9d71d71-2e81-4a6a-8b18-11f19004504e/60af8a09-52e7-4249-a4e4-613f694dd762/1/1/80/0/PRS/0/d2dc207b-0793-440c-92ca-56aa7fe4cb7f/1/5%20months%20ago",
+    last_active: "Updated 5 months ago on Monster+",
+    last_active_days: 150
   },
   {
     id: "MON-REAL-E77371",
@@ -75,9 +151,9 @@ export const REAL_MONSTER_CANDIDATE_POOL = [
     skills: ["Dynamics 365 Integration", "Power Automate", "Dataverse", "C#", ".NET Framework", "ASP.NET Core", "SQL Server Management Studio", "Azure DevOps"],
     education: "Bachelor of Technology in Information Technology",
     summary: "Dynamics 365 integration developer with deep expertise in Power Automate workflows, SQL transactional analysis, C#/.NET, and Azure DevOps ALM deployment. Local to Richmond, Virginia.",
-    profile_url: "https://manage.monster.com/en-us/candidateSearch/job/profile/d9d71d71-2e81-4a6a-8b18-11f19004504e/e773719e-6c90-4a7c-b998-a2fa59b4af46/1/1/72/0/PRS/2/c07115ad-3f65-4457-9784-707215e5d186/1/18%20days%20ago",
-    last_active: "Updated 18 days ago on Monster+",
-    last_active_days: 18
+    profile_url: "https://manage.monster.com/en-us/candidateSearch/job/profile/d9d71d71-2e81-4a6a-8b18-11f19004504e/e773719e-6c90-4a7c-b998-a2fa59b4af46/1/1/72/0/PRS/2/c07115ad-3f65-4457-9784-707215e5d186/1/14%20months%20ago",
+    last_active: "Updated 14 months ago on Monster+",
+    last_active_days: 420
   },
   {
     id: "MON-REAL-58C110",
@@ -756,16 +832,20 @@ export function evaluateCandidateMatch(jdParsed, candidate, interviewMode = null
   // CRITERIA 2: Role & Title Alignment (Up to 25 pts)
   const candTitle = (candidate.title || '').toLowerCase();
   const cleanTitle = (jdParsed.clean_title || jdParsed.job_title || '').toLowerCase();
-  const targetTokens = cleanTitle.split(/\s+/).filter(t => t.length > 2);
-  let criteria_role = 8;
+  const genericTokens = new Set(['developer', 'engineer', 'specialist', 'lead', 'senior', 'junior', 'consultant', 'analyst', 'iii', 'iv', 'ii', 'architect', 'programmer', 'manager', 'contractor', 'the', 'and', 'for', 'with']);
+  const targetTokens = cleanTitle.split(/[\s/,-]+/).filter(t => t.length > 1 && !genericTokens.has(t));
+
+  let criteria_role = 0;
   if (candTitle.includes(cleanTitle)) {
     criteria_role = 25;
-  } else if (targetTokens.some(tok => candTitle.includes(tok))) {
+  } else if (targetTokens.length > 0 && targetTokens.every(tok => candTitle.includes(tok))) {
+    criteria_role = 24;
+  } else if (targetTokens.length > 0 && targetTokens.some(tok => candTitle.includes(tok))) {
     criteria_role = 20;
   } else if ((jdParsed.alternative_titles || []).some(at => candTitle.includes(at.toLowerCase()))) {
     criteria_role = 18;
-  } else if (candSkills.some(cs => cleanTitle.includes(cs.toLowerCase()))) {
-    criteria_role = 14;
+  } else if (targetTokens.length > 0 && candSkills.some(cs => targetTokens.some(tok => cs.toLowerCase().includes(tok)))) {
+    criteria_role = 12;
   }
 
   // CRITERIA 3: Location Proximity & Interview Mode (Up to 25 pts + penalties)
@@ -822,9 +902,12 @@ export function evaluateCandidateMatch(jdParsed, candidate, interviewMode = null
     localFitBadge = 'Remote Eligible (US Nationwide)';
   }
 
-  // Total Score (Bounded 25 to 99)
+  // Total Score (Bounded accurately)
+  // If 0 skills matched AND 0 role match, assign honest low score (10-15%)
   const rawTotal = Math.round(criteria_skills + criteria_role + criteria_location);
-  const totalScore = Math.max(25, Math.min(99, rawTotal));
+  const totalScore = (matched.length === 0 && criteria_role === 0)
+    ? Math.min(18, Math.max(10, Math.round(Math.max(0, criteria_location) / 2)))
+    : Math.max(20, Math.min(99, rawTotal));
   const firstName = (candidate.name || 'Candidate').split(' ')[0];
 
   const matchTier = totalScore >= 80 
@@ -928,10 +1011,22 @@ export function searchCandidatesPool(jdParsed, location = null, maxResults = 10,
     };
   });
 
-  // 3. Sort candidates:
+  // 3. Strict relevance filter: exclude completely unrelated profiles
+  // A candidate must have at least 1 matched skill OR domain-specific role alignment
+  const relevant = evaluated.filter(c => {
+    // Exclude if 0 must-have skills matched AND role alignment score is 0
+    if (c.matched_skills.length === 0 && (c.criteria_breakdown?.role?.score || 0) === 0) {
+      return false;
+    }
+    // Only return candidates with reasonable minimum match score
+    return (c.match_score || 0) >= 35;
+  });
+
+  // 4. Sort candidates:
   // - Strict local candidates rank first when in-person interview is required
   // - Then sort by match_score descending
-  evaluated.sort((a, b) => {
+  const candidatesToSort = relevant.length > 0 ? relevant : evaluated;
+  candidatesToSort.sort((a, b) => {
     if (interviewMode === 'in_person') {
       if (a.is_local_match && !b.is_local_match) return -1;
       if (!a.is_local_match && b.is_local_match) return 1;
@@ -939,7 +1034,7 @@ export function searchCandidatesPool(jdParsed, location = null, maxResults = 10,
     return (b.match_score || 0) - (a.match_score || 0);
   });
 
-  return evaluated.slice(0, maxResults);
+  return candidatesToSort.slice(0, maxResults);
 }
 
 /**

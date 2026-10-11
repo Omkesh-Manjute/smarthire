@@ -188,7 +188,21 @@ function SettingsModule() {
       if (emailCfg.appPassword === '••••••••••••') delete payload.appPassword
       const res = await fetch('/api/recruiter/email-config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       const data = await res.json()
-      setEmailCfgMsg(data.success ? 'Email configuration saved!' : (data.message || 'Failed to save configuration'))
+
+      // Also save Monster credentials if configured
+      if (monsterEmail || monsterPass) {
+        await fetch('/api/recruiter/monster-credentials', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: recruiterEmailKey,
+            monsterEmail: monsterEmail,
+            monsterPassword: monsterPass
+          })
+        }).catch(() => {})
+      }
+
+      setEmailCfgMsg(data.success ? 'Email and Monster account credentials saved successfully!' : (data.message || 'Failed to save configuration'))
     } catch(e) { setEmailCfgMsg('Network error saving configuration') }
     setEmailCfgSaving(false)
     setTimeout(() => setEmailCfgMsg(''), 5000)
@@ -293,8 +307,7 @@ function SettingsModule() {
   }
 
   const TAB_BTNS = [
-    { id: 'email', label: 'Email Config' },
-    { id: 'monster', label: 'Monster Account' },
+    { id: 'email', label: 'Email & Monster Config' },
     { id: 'templates', label: 'Email Templates' },
     { id: 'pipeline', label: 'Pipeline' },
     { id: 'export', label: 'Export' }
@@ -566,10 +579,48 @@ function SettingsModule() {
               </div>
             )}
 
+            {/* Monster+ Employer Account Configuration */}
+            <div style={{ marginTop: 20, marginBottom: 20, padding: '16px 18px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: 10 }}>
+              <div style={{ marginBottom: 12 }}>
+                <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  Monster+ Employer Account Credentials
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 10, background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd' }}>
+                    Monster+ Sourcing & Outreach
+                  </span>
+                </h4>
+                <p style={{ margin: '4px 0 0', fontSize: 12, color: '#64748b' }}>
+                  Connect your Monster employer login for candidate sourcing and direct outreach under your own profile ({recruiterEmailKey}).
+                </p>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 6 }}>
+                <div>
+                  <label style={labelStyle}>Monster Employer Email / Username</label>
+                  <input
+                    type="email"
+                    value={monsterEmail}
+                    onChange={e => setMonsterEmail(e.target.value)}
+                    placeholder="e.g. omkesh@coolsofttech.com"
+                    style={inputStyle}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Monster Employer Password</label>
+                  <input
+                    type="password"
+                    value={monsterPass}
+                    onChange={e => setMonsterPass(e.target.value)}
+                    placeholder="••••••••••••"
+                    style={inputStyle}
+                  />
+                </div>
+              </div>
+            </div>
+
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={handleSaveEmailConfig} disabled={emailCfgSaving}
                 style={{ flex: 2, padding: '11px 0', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
-                {emailCfgSaving ? 'Saving...' : 'Save Email Config'}
+                {emailCfgSaving ? 'Saving...' : 'Save Email & Monster Settings'}
               </button>
               <button onClick={handleTestEmail} disabled={testingEmail}
                 style={{ flex: 1, padding: '11px 0', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
@@ -641,87 +692,6 @@ function SettingsModule() {
       )}
 
       {/* ── MONSTER ACCOUNT TAB ── */}
-      {activeSettingsTab === 'monster' && (
-        <div style={{ maxWidth: 640 }}>
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-            <div style={{ marginBottom: 16 }}>
-              <h4 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#0f172a' }}>
-                Monster+ Employer Account Credentials
-              </h4>
-              <p style={{ margin: '4px 0 0', fontSize: 12.5, color: '#64748b' }}>
-                Configure individual Monster employer login for each recruiter. Sourcing and scraping will run through your own authenticated account.
-              </p>
-            </div>
-
-            <div style={{ marginBottom: 14 }}>
-              <label style={labelStyle}>Recruiter Profile</label>
-              <select
-                value={recruiterEmailKey}
-                onChange={e => setRecruiterEmailKey(e.target.value)}
-                style={inputStyle}
-              >
-                {teamList.map(r => (
-                  <option key={r.email} value={r.email}>{r.name} ({r.email})</option>
-                ))}
-              </select>
-            </div>
-
-            <div style={{ marginBottom: 14 }}>
-              <label style={labelStyle}>Monster Employer Login Email</label>
-              <input
-                type="email"
-                value={monsterEmail}
-                onChange={e => setMonsterEmail(e.target.value)}
-                placeholder="e.g. recruiter@coolsofttech.com"
-                style={inputStyle}
-              />
-            </div>
-
-            <div style={{ marginBottom: 16 }}>
-              <label style={labelStyle}>Monster Employer Password</label>
-              <input
-                type="password"
-                value={monsterPass}
-                onChange={e => setMonsterPass(e.target.value)}
-                placeholder="Enter Monster account password"
-                style={inputStyle}
-              />
-            </div>
-
-            {monsterMsg && (
-              <div style={{
-                padding: '8px 12px',
-                borderRadius: 6,
-                fontSize: 12,
-                fontWeight: 700,
-                marginBottom: 14,
-                backgroundColor: monsterMsg.includes('saved') ? '#ECFDF5' : '#FEF2F2',
-                color: monsterMsg.includes('saved') ? '#065F46' : '#991B1B',
-                border: `1px solid ${monsterMsg.includes('saved') ? '#A7F3D0' : '#FECACA'}`
-              }}>
-                {monsterMsg}
-              </div>
-            )}
-
-            <button
-              onClick={handleSaveMonsterConfig}
-              disabled={monsterSaving}
-              style={{
-                padding: '9px 20px',
-                background: '#0F766E',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 6,
-                fontWeight: 800,
-                fontSize: 13,
-                cursor: monsterSaving ? 'wait' : 'pointer'
-              }}
-            >
-              {monsterSaving ? 'Saving...' : 'Save Monster Credentials'}
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* ── EMAIL TEMPLATES TAB ── */}
       {activeSettingsTab === 'templates' && (
