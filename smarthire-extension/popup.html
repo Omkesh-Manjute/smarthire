@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SmartHire Talent Sourcing Copilot</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="extension-container">
+    <!-- Top Bar Header -->
+    <header class="top-header">
+      <div class="brand-group">
+        <svg class="brand-logo" viewBox="0 0 24 24" width="20" height="20" fill="#2563EB">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          <path d="m9 11 2 2 4-4" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+        </svg>
+        <span class="brand-title">SmartHire Sourcing Copilot</span>
+      </div>
+      <div class="status-badge" id="portalBadge">
+        <span class="status-dot"></span>
+        <span id="portalName">Detecting...</span>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-body">
+      <!-- Requisition & JD Selection Box -->
+      <section class="section-card">
+        <div class="section-header">
+          <label class="section-label" for="jobSelect">Target ATS Requisition</label>
+          <span class="refresh-link" id="refreshJobsBtn">Refresh Jobs</span>
+        </div>
+        <select id="jobSelect" class="form-control">
+          <option value="">Fetching live requisitions from ATS...</option>
+        </select>
+        <div id="jobMeta" class="job-meta-row" style="display:none;">
+          <span class="meta-item" id="metaLocation">Location: —</span>
+          <span class="meta-item" id="metaSkills">Skills: —</span>
+        </div>
+      </section>
+
+      <!-- Boolean Query Generator & Variants -->
+      <section class="section-card">
+        <div class="section-header">
+          <label class="section-label">AI Boolean Search Query</label>
+          <div class="variant-pill-group" id="variantGroup">
+            <button type="button" class="variant-pill active" data-variant="1">Core</button>
+            <button type="button" class="variant-pill" data-variant="2">Broad / Agile</button>
+            <button type="button" class="variant-pill" data-variant="3">Regional / Public</button>
+          </div>
+        </div>
+        <div class="query-box-container">
+          <textarea id="booleanQueryInput" class="query-textarea" rows="2" spellcheck="false"></textarea>
+          <button type="button" class="copy-query-btn" id="copyQueryBtn" title="Copy Boolean Query">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span>Copy</span>
+          </button>
+        </div>
+
+        <!-- 1-Click Search Launchers -->
+        <div class="search-btn-grid">
+          <button type="button" class="btn btn-search-monster" id="searchMonsterBtn">
+            <span class="btn-text">1-Click Search Monster+</span>
+          </button>
+          <button type="button" class="btn btn-search-dice" id="searchDiceBtn">
+            <span class="btn-text">1-Click Search Dice</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Scraper Control & Statistics -->
+      <section class="section-card">
+        <div class="scraper-action-row">
+          <button type="button" class="btn btn-scrape" id="scrapePageBtn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            <span id="scrapeBtnLabel">1-Click Scrape Current Page</span>
+          </button>
+          <span class="candidate-count-tag" id="countTag">0 Candidates</span>
+        </div>
+        <div id="scrapeNotice" class="status-notice"></div>
+      </section>
+
+      <!-- Excel-Style Spreadsheet Candidate View -->
+      <section class="section-card table-section" id="tableSection" style="display: none;">
+        <div class="table-actions-header">
+          <div class="select-all-group">
+            <input type="checkbox" id="selectAllCheckbox" checked>
+            <label for="selectAllCheckbox" class="table-sublabel">Select All</label>
+          </div>
+          <div class="export-btn-group">
+            <button type="button" class="btn-tool" id="copyTsvBtn" title="Copy Tab-Separated Data to paste into Excel">
+              📋 Copy to Excel
+            </button>
+            <button type="button" class="btn-tool" id="downloadCsvBtn" title="Download .csv file">
+              📥 Download CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="table-scroll-container">
+          <table class="excel-grid" id="candidatesTable">
+            <thead>
+              <tr>
+                <th style="width: 28px;">✓</th>
+                <th style="width: 32px;">#</th>
+                <th style="width: 130px;">Candidate Name</th>
+                <th style="width: 140px;">Title / Role</th>
+                <th style="width: 150px;">Email</th>
+                <th style="width: 110px;">Phone</th>
+                <th style="width: 100px;">Location</th>
+                <th style="width: 65px;">Exp</th>
+                <th style="width: 140px;">Skills</th>
+                <th style="width: 70px;">Source</th>
+              </tr>
+            </thead>
+            <tbody id="candidatesTableBody">
+              <!-- Dynamically populated candidate rows -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 1-Click Import to SmartHire ATS -->
+        <div class="ats-import-footer">
+          <button type="button" class="btn btn-import" id="importAtsBtn">
+            🚀 1-Click Bulk Import to SmartHire ATS (<span id="selectedCountBadge">0</span>)
+          </button>
+          <div id="importFeedback" class="import-feedback"></div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <span>SmartHire ATS · Connected to <a href="https://smarthireus.com" target="_blank" class="footer-link">smarthireus.com</a></span>
+      <span id="versionText">v3.5 Live</span>
+    </footer>
+  </div>
+
+  <script src="bundled_jobs.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

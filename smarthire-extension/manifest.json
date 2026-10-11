@@ -1,0 +1,88 @@
+{
+  "manifest_version": 3,
+  "name": "SmartHire Sourcing Copilot — Monster+ & Dice",
+  "version": "3.5.0",
+  "description": "1-Click talent sourcing copilot for Monster+ and Dice. Sync job requisitions from SmartHire ATS, generate boolean queries, scrape candidate contacts in 1 click, and export to Excel or ingest into ATS.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "clipboardWrite",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://manage.monster.com/*",
+    "https://*.monster.com/*",
+    "https://www.dice.com/*",
+    "https://employer.dice.com/*",
+    "https://*.dice.com/*",
+    "https://smarthireus.com/*",
+    "http://localhost:5001/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "SmartHire Sourcing Copilot v3.5",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://manage.monster.com/*",
+        "https://*.monster.com/*"
+      ],
+      "js": [
+        "bundled_jobs.js",
+        "content_common.js",
+        "content_monster.js",
+        "injected_dock.js"
+      ],
+      "css": [
+        "injected_dock.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.dice.com/*",
+        "https://employer.dice.com/*",
+        "https://*.dice.com/*"
+      ],
+      "js": [
+        "bundled_jobs.js",
+        "content_common.js",
+        "content_dice.js",
+        "injected_dock.js"
+      ],
+      "css": [
+        "injected_dock.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "icons/icon16.png",
+        "icons/icon48.png",
+        "icons/icon128.png",
+        "bundled_jobs.js"
+      ],
+      "matches": [
+        "https://manage.monster.com/*",
+        "https://*.monster.com/*",
+        "https://*.dice.com/*"
+      ]
+    }
+  ]
+}
