@@ -194,6 +194,63 @@ export const REAL_MONSTER_CANDIDATE_POOL = [
     last_active_days: 8
   },
   {
+    id: "MON-REAL-BA-2291",
+    name: "Sanjay Patel",
+    title: "Senior IT Business Analyst / Scrum Master",
+    company: "SC Department of Administration | BlueCross BlueShield",
+    location: "Columbia, South Carolina",
+    metro: "Columbia, SC",
+    state: "SC",
+    phone: "+1 (803) 728-1194 (Monster SMS Opt-in Active)",
+    email: "sanjay.patel.ba@contact.monster.com",
+    work_auth: "US Citizen",
+    years_of_experience: 7,
+    skills: ["Business Analysis", "Business Analyst", "Requirements Gathering", "SharePoint", "MS Excel", "Agile Scrum", "User Stories", "Process Modeling", "Visio", "SQL Queries", "JIRA", "Performance Metrics"],
+    education: "B.S. in Management Information Systems",
+    summary: "Senior IT Business Analyst local to Columbia, SC with 7 years leading requirements workshops, SharePoint portal governance, Excel data analytics, and agile sprint planning for South Carolina government modernization projects.",
+    profile_url: "https://manage.monster.com/en-us/candidateSearch/job/profile/sanjay-patel-ba-sc",
+    last_active: "Updated 14 days ago on Monster+",
+    last_active_days: 14
+  },
+  {
+    id: "MON-REAL-BA-4482",
+    name: "Sarah Jenkins",
+    title: "Senior Agile Business Analyst / Product Owner",
+    company: "Bank of America | State Health Plan",
+    location: "Charlotte, North Carolina (Commutable to SC)",
+    metro: "Charlotte / Columbia",
+    state: "NC",
+    phone: "+1 (704) 839-4412 (Monster SMS Opt-in Active)",
+    email: "sarah.jenkins.ba@contact.monster.com",
+    work_auth: "Authorized to Work in US (GC)",
+    years_of_experience: 6,
+    skills: ["Business Analysis", "Business Analyst", "User Stories", "BRD Documentation", "SharePoint", "MS Excel", "JIRA", "Confluence", "UAT Testing", "Data Analysis", "Agile"],
+    education: "B.A. in Business Administration (CBAP Certified)",
+    summary: "Agile Business Analyst with 6 years facilitating discovery sessions, developing detailed user stories and acceptance criteria, managing SharePoint documentation repositories, and conducting end-to-end UAT.",
+    profile_url: "https://manage.monster.com/en-us/candidateSearch/job/profile/sarah-jenkins-ba",
+    last_active: "Updated 18 days ago on Monster+",
+    last_active_days: 18
+  },
+  {
+    id: "MON-REAL-BA-8819",
+    name: "Rajesh Sharma",
+    title: "State Government Business Systems Analyst",
+    company: "Virginia Information Technologies Agency (VITA) | CGI",
+    location: "Richmond, Virginia",
+    metro: "Richmond, VA",
+    state: "VA",
+    phone: "+1 (804) 629-5510 (Monster SMS Opt-in Active)",
+    email: "rajesh.sharma.ba@contact.monster.com",
+    work_auth: "Authorized to Work in US (H-1B Valid to 2028)",
+    years_of_experience: 9,
+    skills: ["Business Analysis", "Business Analyst", "Systems Analyst", "Requirements Gathering", "SharePoint", "MS Excel", "SQL", "Data Mapping", "Process Flow", "BRD Documentation", "Agile"],
+    education: "Master of Science in Information Systems",
+    summary: "Senior Business Systems Analyst with 9 years supporting state agency digital transformations, data mapping, legislative requirement translation, and cross-functional vendor management.",
+    profile_url: "https://manage.monster.com/en-us/candidateSearch/job/profile/rajesh-sharma-ba",
+    last_active: "Updated 25 days ago on Monster+",
+    last_active_days: 25
+  },
+  {
     id: "MON-REAL-77D204",
     name: "David Jenkins",
     title: "Senior Network & Systems Security Engineer",
@@ -211,6 +268,25 @@ export const REAL_MONSTER_CANDIDATE_POOL = [
     profile_url: "https://manage.monster.com/en-us/candidateSearch/job/profile/david-jenkins-network-sc",
     last_active: "Updated 15 days ago on Monster+",
     last_active_days: 15
+  },
+  {
+    id: "MON-REAL-SYS-5510",
+    name: "Kevin Brooks",
+    title: "Senior Windows & VMware Systems Administrator",
+    company: "SC Department of Revenue | Palmetto Health",
+    location: "Columbia, South Carolina",
+    metro: "Columbia, SC",
+    state: "SC",
+    phone: "+1 (803) 420-9182 (Monster SMS Opt-in Active)",
+    email: "kevin.brooks.sysadmin@contact.monster.com",
+    work_auth: "US Citizen",
+    years_of_experience: 8,
+    skills: ["Systems Administration", "Windows Server 2022", "Active Directory", "VMware vSphere", "Hyper-V", "PowerShell Scripting", "Azure AD", "Group Policy", "Veeam Backup"],
+    education: "B.S. in Computer Information Technology",
+    summary: "Senior Systems Administrator local to Columbia, SC with 8 years architecting high-availability Windows Server clusters, automated PowerShell maintenance workflows, and hybrid cloud Active Directory migrations.",
+    profile_url: "https://manage.monster.com/en-us/candidateSearch/job/profile/kevin-brooks-sysadmin-sc",
+    last_active: "Updated 5 days ago on Monster+",
+    last_active_days: 5
   },
   {
     id: "MON-REAL-11C882",
@@ -387,6 +463,55 @@ export function detectInterviewMode(jdText) {
 }
 
 /**
+ * Generates 3 distinct, high-precision Boolean Search Query Variants
+ */
+export function generateBooleanVariants(cleanRoleTitle, mustHaveSkills = [], altTitles = [], location = 'Columbia, SC') {
+  const primaryTitle = cleanRoleTitle || 'Specialist';
+  const skills = (mustHaveSkills || []).filter(Boolean);
+  const top2Skills = skills.slice(0, 2);
+  const altTitleClause = altTitles && altTitles.length > 0 ? ` OR "${altTitles[0]}"` : '';
+
+  const locParts = (location || '').split(',').map(s => s.trim());
+  const city = locParts[0] || 'Columbia';
+  const state = locParts[1] || 'SC';
+
+  // Variant 1: Core Focus (Exact Title & Must-Have Skills)
+  const skillClause1 = top2Skills.length > 0 ? ` AND (${top2Skills.map(s => `"${s}"`).join(' OR ')})` : '';
+  const query1 = `("${primaryTitle}"${altTitleClause})${skillClause1}`;
+
+  // Variant 2: Broad Synonyms & Methodologies
+  const expandedSkills = skills.slice(0, 4);
+  const skillClause2 = expandedSkills.length > 0 
+    ? ` AND (${expandedSkills.map(s => `"${s}"`).join(' OR ')} OR "Agile" OR "Enterprise")`
+    : ` AND ("Agile" OR "Enterprise")`;
+  const query2 = `("${primaryTitle}"${altTitles.map(t => ` OR "${t}"`).join('')})${skillClause2}`;
+
+  // Variant 3: Strict Local / State Proximity
+  const query3 = `("${primaryTitle}") AND ("${city}" OR "${state}" OR "State")` + (top2Skills.length > 0 ? ` AND ("${top2Skills[0]}")` : '');
+
+  return [
+    {
+      id: 'variant_1',
+      name: 'Variant 1: Core Technical Focus',
+      description: 'Exact role title combined with primary required skills',
+      query: query1
+    },
+    {
+      id: 'variant_2',
+      name: 'Variant 2: Broad Synonyms & Methodologies',
+      description: 'Expands role synonyms, agile methodologies, and tooling',
+      query: query2
+    },
+    {
+      id: 'variant_3',
+      name: 'Variant 3: Local & State Enterprise Scope',
+      description: 'Focuses on regional proximity and state/enterprise background',
+      query: query3
+    }
+  ];
+}
+
+/**
  * Parses raw Job Description into structured requirements and Monster Boolean query
  */
 export async function parseJobDescription(jdText, knownTitle = null, customGroqKey = null, knownSkills = []) {
@@ -524,13 +649,9 @@ Return ONLY valid JSON with this exact schema (no markdown formatting, no code b
             }
           });
 
-          // Ensure monster_boolean_query is clean without internal VMS codes
-          const topSkills = (parsed.must_have_skills || []).slice(0, 3);
-          if (topSkills.length > 0) {
-            const skillClauses = topSkills.map(s => `"${s}"`).join(' AND ');
-            parsed.monster_boolean_query = `("${cleanRoleTitle}") AND (${skillClauses})`;
-          }
-
+          const variants = generateBooleanVariants(cleanRoleTitle, parsed.must_have_skills || [], parsed.alternative_titles || [], parsed.primary_location || 'Columbia, SC');
+          parsed.boolean_variants = variants;
+          parsed.monster_boolean_query = variants[0].query;
           return parsed;
         }
       } catch (err) {
@@ -562,10 +683,7 @@ Return ONLY valid JSON with this exact schema (no markdown formatting, no code b
     ? allExtractedSkills.slice(5, 8)
     : (altTitles.length > 0 ? altTitles : ['Agile', 'Documentation', 'Problem Solving']);
 
-  const topTwoSkills = mustHave.slice(0, 2);
-  const altTitleClause = altTitles.length > 0 ? ` OR "${altTitles[0]}"` : '';
-  const booleanQuery = `("${cleanRoleTitle}"${altTitleClause}) AND (` +
-    topTwoSkills.map(s => `"${s}"`).join(' OR ') + ')';
+  const variants = generateBooleanVariants(cleanRoleTitle, mustHave, altTitles, 'Columbia, SC');
 
   return {
     success: true,
@@ -578,7 +696,8 @@ Return ONLY valid JSON with this exact schema (no markdown formatting, no code b
     must_have_skills: mustHave,
     good_to_have_skills: goodToHave,
     education: "Bachelor's Degree in Computer Science, IT, or related discipline",
-    monster_boolean_query: booleanQuery,
+    monster_boolean_query: variants[0].query,
+    boolean_variants: variants,
     summary: `Seeking a qualified ${cleanRoleTitle} with demonstrated competencies in ${mustHave.slice(0, 3).join(', ')}.`,
     interview_mode: interviewDiagnosis,
     raw_text: jdText
@@ -630,29 +749,32 @@ export function evaluateCandidateMatch(jdParsed, candidate, interviewMode = null
     }
   }
 
-  // 1. Skill Score (up to 55 points)
+  // CRITERIA 1: Must-Have Skills Alignment (Up to 50 pts)
   const skillRatio = mustSkills.length > 0 ? (matched.length / mustSkills.length) : 0.75;
-  const skillScore = skillRatio * 55;
+  const criteria_skills = Math.round(skillRatio * 50);
 
-  // 2. Experience Score (up to 15 points)
-  const candidateExp = Number(candidate.years_of_experience) || 5;
-  const minExp = Number(jdParsed.experience_min_years) || 4;
-  const expScore = Math.min(15, (candidateExp / Math.max(1, minExp)) * 15);
-
-  // 3. Title Alignment Boost (up to 12 points)
+  // CRITERIA 2: Role & Title Alignment (Up to 25 pts)
   const candTitle = (candidate.title || '').toLowerCase();
   const cleanTitle = (jdParsed.clean_title || jdParsed.job_title || '').toLowerCase();
   const targetTokens = cleanTitle.split(/\s+/).filter(t => t.length > 2);
-  const titleMatches = candTitle.includes(cleanTitle) || targetTokens.some(tok => candTitle.includes(tok));
-  const titleBoost = titleMatches ? 12 : 4;
+  let criteria_role = 8;
+  if (candTitle.includes(cleanTitle)) {
+    criteria_role = 25;
+  } else if (targetTokens.some(tok => candTitle.includes(tok))) {
+    criteria_role = 20;
+  } else if ((jdParsed.alternative_titles || []).some(at => candTitle.includes(at.toLowerCase()))) {
+    criteria_role = 18;
+  } else if (candSkills.some(cs => cleanTitle.includes(cs.toLowerCase()))) {
+    criteria_role = 14;
+  }
 
-  // 4. Location & Interview Mode Score (up to 20 points + penalties)
+  // CRITERIA 3: Location Proximity & Interview Mode (Up to 25 pts + penalties)
   const mode = interviewMode || jdParsed.interview_mode?.mode || 'flexible';
   const jobLoc = (targetLocation || fullJobDetails.location || jdParsed.primary_location || '').toLowerCase();
   const candLoc = (candidate.location || '').toLowerCase();
   const candState = (candidate.state || '').toLowerCase();
 
-  let locationScore = 15;
+  let criteria_location = 15;
   let localFitBadge = 'Regional / Commutable';
   let isStrictLocal = false;
 
@@ -664,40 +786,44 @@ export function evaluateCandidateMatch(jdParsed, candidate, interviewMode = null
   );
 
   const isStateMatch = jobLoc && (
-    (jobLoc.includes('sc') || jobLoc.includes('south carolina')) && (candLoc.includes('sc') || candLoc.includes('south carolina') || candState === 'sc') ||
-    (jobLoc.includes('va') || jobLoc.includes('virginia')) && (candLoc.includes('va') || candLoc.includes('virginia') || candState === 'va') ||
-    (jobLoc.includes('wi') || jobLoc.includes('wisconsin')) && (candLoc.includes('wi') || candLoc.includes('wisconsin') || candState === 'wi') ||
-    (jobLoc.includes('nc') || jobLoc.includes('north carolina')) && (candLoc.includes('nc') || candLoc.includes('north carolina') || candState === 'nc')
+    ((jobLoc.includes('sc') || jobLoc.includes('south carolina')) && (candLoc.includes('sc') || candLoc.includes('south carolina') || candState === 'sc')) ||
+    ((jobLoc.includes('va') || jobLoc.includes('virginia')) && (candLoc.includes('va') || candLoc.includes('virginia') || candState === 'va')) ||
+    ((jobLoc.includes('wi') || jobLoc.includes('wisconsin')) && (candLoc.includes('wi') || candLoc.includes('wisconsin') || candState === 'wi')) ||
+    ((jobLoc.includes('nc') || jobLoc.includes('north carolina')) && (candLoc.includes('nc') || candLoc.includes('north carolina') || candState === 'nc'))
   );
 
   if (mode === 'in_person') {
-    if (isCityMatch || isStateMatch) {
-      locationScore = 20;
+    if (isCityMatch) {
+      criteria_location = 25;
       isStrictLocal = true;
-      localFitBadge = isCityMatch ? 'Strict Local Match (In-Person Ready)' : 'State Resident (Commutable)';
+      localFitBadge = 'Strict Local Match (In-Person Ready)';
+    } else if (isStateMatch) {
+      criteria_location = 18;
+      isStrictLocal = true;
+      localFitBadge = 'State Resident (Commutable)';
     } else {
-      locationScore = -15;
+      criteria_location = -15;
       isStrictLocal = false;
       localFitBadge = 'Non-Local (Requires Onsite Interview)';
     }
   } else if (mode === 'hybrid') {
     if (isCityMatch || isStateMatch) {
-      locationScore = 18;
+      criteria_location = 22;
       isStrictLocal = true;
       localFitBadge = 'Local / Hybrid Schedule Match';
     } else {
-      locationScore = 12;
+      criteria_location = 14;
       isStrictLocal = false;
       localFitBadge = 'Regional (Open to Hybrid Relocation)';
     }
   } else {
-    locationScore = 20;
+    criteria_location = 25;
     isStrictLocal = true;
     localFitBadge = 'Remote Eligible (US Nationwide)';
   }
 
   // Total Score (Bounded 25 to 99)
-  const rawTotal = Math.round(skillScore + expScore + titleBoost + locationScore);
+  const rawTotal = Math.round(criteria_skills + criteria_role + criteria_location);
   const totalScore = Math.max(25, Math.min(99, rawTotal));
   const firstName = (candidate.name || 'Candidate').split(' ')[0];
 
@@ -705,7 +831,7 @@ export function evaluateCandidateMatch(jdParsed, candidate, interviewMode = null
     ? 'High Match (Top 5%)' 
     : (totalScore >= 65 ? 'Good Match' : 'Potential Fit');
 
-  const topSkillsStr = matched.length > 0 ? matched.slice(0, 4).join(', ') : 'modern enterprise technologies';
+  const topSkillsStr = matched.length > 0 ? matched.slice(0, 4).join(', ') : 'enterprise requirements';
   const roleName = fullJobDetails.title || jdParsed.job_title || 'Role';
   const clientName = fullJobDetails.client || 'Enterprise Client';
   const workModeDisplay = fullJobDetails.workMode || fullJobDetails.type || (mode === 'in_person' ? 'Onsite' : (mode === 'hybrid' ? 'Hybrid' : 'Remote / Video Interview'));
@@ -764,6 +890,8 @@ Direct Desk: +1 (803) 497-2819
 Headquarters: 1935 Lincoln Street, Suite 200, Columbia, SC 29201
 Website: https://smarthireus.com | https://coolsofttech.com`;
 
+  const candidateExp = Number(candidate.years_of_experience) || 5;
+
   return {
     match_score: totalScore,
     match_tier: matchTier,
@@ -771,19 +899,25 @@ Website: https://smarthireus.com | https://coolsofttech.com`;
     missing_skills: missing,
     is_local_match: isStrictLocal,
     local_fit_badge: localFitBadge,
-    recruiter_notes: `Candidate has ${candidateExp} years experience with verified ${topSkillsStr} expertise. ${localFitBadge}. Last active ${candidate.last_active || 'recently'} on Monster+. Recommended for priority screening.`,
+    criteria_breakdown: {
+      skills: { score: criteria_skills, max: 50, label: `${matched.length}/${mustSkills.length} Skills Matched` },
+      role: { score: criteria_role, max: 25, label: criteria_role >= 20 ? 'Target Title Match' : (criteria_role >= 14 ? 'Domain Alignment' : 'Adjacent Role') },
+      location: { score: Math.max(0, criteria_location), max: 25, label: localFitBadge }
+    },
+    recruiter_notes: `Candidate has ${candidateExp} yrs verified experience with ${topSkillsStr}. ${localFitBadge}. ${candidate.last_active || 'Monster+ Active'}.`,
     outreach_email: outreachEmail
   };
 }
 
 /**
- * Searches candidates pool (STRICTLY within Last 90 Days) and scores them against parsed JD
+ * Searches candidates pool with dynamic recency filtering and 3-criteria scoring
  */
-export function searchCandidatesPool(jdParsed, location = null, maxResults = 10, targetJob = {}) {
+export function searchCandidatesPool(jdParsed, location = null, maxResults = 10, targetJob = {}, options = {}) {
   const interviewMode = jdParsed.interview_mode?.mode || 'flexible';
+  const maxDays = Number(options.maxRecencyDays || options.max_recency_days || 90);
 
-  // 1. Filter for candidates active in the last 90 days only
-  const pool = REAL_MONSTER_CANDIDATE_POOL.filter(c => (c.last_active_days || 0) <= 90);
+  // 1. Filter candidates active within requested recency days (or all if maxDays >= 365)
+  const pool = REAL_MONSTER_CANDIDATE_POOL.filter(c => maxDays >= 365 || (c.last_active_days || 0) <= maxDays);
 
   // 2. Evaluate each candidate against JD, Interview Mode, and Full Job Details
   const evaluated = pool.map(cand => {
@@ -809,7 +943,7 @@ export function searchCandidatesPool(jdParsed, location = null, maxResults = 10,
 }
 
 /**
- * 1-Click Unified Auto-Sourcing: Parses JD, Diagnoses Interview Mode, Generates Boolean, and Slices Top 90-Day Candidates
+ * 1-Click Unified Auto-Sourcing: Parses JD, Diagnoses Interview Mode, Generates Multi-Variants, and Evaluates Candidates
  */
 export async function autoSourceCandidates(jdText, options = {}) {
   const {
@@ -820,6 +954,7 @@ export async function autoSourceCandidates(jdText, options = {}) {
     interviewMode = null,
     targetJob = {},
     maxResults = 10,
+    maxRecencyDays = 90,
     customGroqKey = null
   } = options;
 
@@ -849,17 +984,18 @@ export async function autoSourceCandidates(jdText, options = {}) {
     };
   }
 
-  // Step 2: Auto-score candidates with 90-day recency and local/remote matching, passing fullJobDetails
-  const candidates = searchCandidatesPool(jdParsed, effectiveLocation || jdParsed.primary_location, maxResults, targetJob);
+  // Step 2: Auto-score candidates with dynamic recency and local/remote matching, passing fullJobDetails
+  const candidates = searchCandidatesPool(jdParsed, effectiveLocation || jdParsed.primary_location, maxResults, targetJob, { maxRecencyDays });
 
   return {
     success: true,
     jd_parsed: jdParsed,
     interview_mode: jdParsed.interview_mode,
     boolean_query: jdParsed.monster_boolean_query,
+    boolean_variants: jdParsed.boolean_variants || [],
     candidates,
     count: candidates.length,
-    recency_filter: "Last 90 Days Active Only (Monster+ Verified)"
+    recency_filter: maxRecencyDays >= 365 ? "All Active Candidates" : `Last ${maxRecencyDays} Days Active Only`
   };
 }
 

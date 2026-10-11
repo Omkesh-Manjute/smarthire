@@ -12174,6 +12174,7 @@ app.post('/api/recruiter/auto-source', express.json(), async (req, res) => {
     }
 
     const limit = Number(max_results || maxResults || 10);
+    const maxRecency = Number(req.body.max_recency_days || req.body.maxRecencyDays || 90);
     const result = await monsterAutoSourceCandidates(effectiveText, {
       reqId: targetReqId,
       knownTitle: effectiveTitle,
@@ -12181,7 +12182,8 @@ app.post('/api/recruiter/auto-source', express.json(), async (req, res) => {
       knownSkills: effectiveSkills,
       interviewMode: effectiveMode,
       targetJob: targetJob || { title: effectiveTitle, location: effectiveLocation, skills: effectiveSkills },
-      maxResults: limit
+      maxResults: limit,
+      maxRecencyDays: maxRecency
     });
     return res.json(result);
   } catch (err) {
@@ -12312,33 +12314,132 @@ app.post('/api/recruiter/monster/import-candidate', express.json(), (req, res) =
 // 5. POST /api/recruiter/monster/send-outreach
 app.post('/api/recruiter/monster/send-outreach', express.json(), async (req, res) => {
   try {
-    const { toEmail, candidateName, subject, emailBody } = req.body || {};
+    const { toEmail, candidateName, subject, emailBody, fromEmail: reqFromEmail } = req.body || {};
     if (!toEmail || !emailBody) {
       return res.status(400).json({ success: false, error: 'Recipient email and email body are required' });
     }
 
-    if (transporter && process.env.EMAIL_USER) {
+    const recruiterEmail = (req.headers['x-recruiter-email'] || reqFromEmail || 'omkesh@coolsofttech.com').toLowerCase().trim();
+    const cfg = emailConfigsStore[recruiterEmail] || emailConfigsStore['omkesh@coolsofttech.com'] || {};
+    const fromEmail = cfg.fromEmail || recruiterEmail || process.env.EMAIL_USER || 'omkesh@coolsofttech.com';
+    const cleanedPass = (cfg.appPassword || process.env.EMAIL_PASS || process.env.SMTP_PASS || '').replace(/\s+/g, '');
+    const smtpHost = cfg.smtpHost || process.env.EMAIL_HOST || 'smtp.bizmail.yahoo.com';
+    const port = parseInt(cfg.smtpPort || process.env.EMAIL_PORT || '465');
+    const isSecure = cfg.security === 'SSL' || port === 465;
+
+    let sentViaSmtp = false;
+    let smtpError = null;
+
+    if (cleanedPass) {
       try {
-        await transporter.sendMail({
-          from: `"Omkesh Manjute" <${process.env.EMAIL_USER}>`,
-          to: toEmail,
-          subject: subject || `Exciting Opportunity with Coolsoft LLC`,
-          text: emailBody
-        });
-        return res.json({ success: true, message: `Outreach email delivered to ${toEmail}` });
+        const nodemailer = await import('nodemailer').catch(() => null);
+        if (nodemailer && nodemailer.default) {
+          const transporter = nodemailer.default.createTransport({
+            host: smtpHost,
+            port: port,
+            secure: isSecure,
+            auth: { user: fromEmail, pass: cleanedPass },
+            tls: { rejectUnauthorized: false, minVersion: 'TLSv1.2' },
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 15000
+          });
+
+          const senderDisplayName = cfg.displayName || (recruiterEmail.split('@')[0] ? recruiterEmail.split('@')[0].toUpperCase() : 'Omkesh Manjute');
+          await transporter.sendMail({
+            from: `"${senderDisplayName}" <${fromEmail}>`,
+            to: toEmail,
+            replyTo: fromEmail,
+            subject: subject || `Immediate Opportunity — Coolsoft LLC`,
+            text: emailBody
+          });
+          sentViaSmtp = true;
+        }
       } catch (mailErr) {
-        console.warn('[MonsterAPI] Transporter send failed, fallback mock delivery:', mailErr.message);
+        console.warn('[MonsterAPI] SMTP send error:', mailErr.message);
+        smtpError = mailErr.message;
       }
     }
 
-    return res.json({
-      success: true,
-      message: `Outreach email logged and queued for ${candidateName || toEmail} (Direct Delivery Active).`
+    if (sentViaSmtp) {
+      return res.json({
+        success: true,
+        message: `Outreach email delivered to ${toEmail} from ${fromEmail}!`,
+        deliveredVia: 'SMTP',
+        from: fromEmail
+      });
+    }
+
+    if (smtpError) {
+      return res.status(500).json({
+        success: false,
+        error: `SMTP Delivery Failed: ${smtpError}. Please check your 16-letter App Password in Settings.`
+      });
+    }
+
+    return res.status(400).json({
+      success: false,
+      error: `No SMTP credentials configured for ${recruiterEmail}. Please configure your App Password in Settings -> Email Configuration.`
     });
   } catch (err) {
     console.error('[MonsterAPI] send-outreach error:', err);
     res.status(500).json({ success: false, error: err.message });
   }
+});
+
+// 6. Monster Employer Account Credentials Endpoints (Per-User Storage)
+const MONSTER_CONFIGS_FILE = path.resolve(__dirname, 'monster_user_configs.json');
+let monsterConfigsStore = {};
+function loadMonsterConfigs() {
+  try {
+    if (fs.existsSync(MONSTER_CONFIGS_FILE)) {
+      monsterConfigsStore = JSON.parse(fs.readFileSync(MONSTER_CONFIGS_FILE, 'utf8'));
+    }
+  } catch (e) {
+    console.warn('[MonsterConfig] Load error:', e.message);
+    monsterConfigsStore = {};
+  }
+}
+function saveMonsterConfigs() {
+  try {
+    fs.writeFileSync(MONSTER_CONFIGS_FILE, JSON.stringify(monsterConfigsStore, null, 2), 'utf8');
+  } catch (e) {
+    console.warn('[MonsterConfig] Save error:', e.message);
+  }
+}
+loadMonsterConfigs();
+
+app.get('/api/recruiter/monster-credentials', (req, res) => {
+  const email = (req.query.email || req.headers['x-recruiter-email'] || 'omkesh@coolsofttech.com').toLowerCase().trim();
+  const cfg = monsterConfigsStore[email] || {};
+  return res.json({
+    success: true,
+    email,
+    config: {
+      monsterEmail: cfg.monsterEmail || email,
+      hasPassword: Boolean(cfg.monsterPassword),
+      monsterPasswordMasked: cfg.monsterPassword ? '••••••••••••' : ''
+    }
+  });
+});
+
+app.post('/api/recruiter/monster-credentials', express.json(), (req, res) => {
+  const { email, monsterEmail, monsterPassword } = req.body || {};
+  const userKey = (email || req.headers['x-recruiter-email'] || 'omkesh@coolsofttech.com').toLowerCase().trim();
+
+  if (!monsterConfigsStore[userKey]) {
+    monsterConfigsStore[userKey] = {};
+  }
+  if (monsterEmail) monsterConfigsStore[userKey].monsterEmail = monsterEmail.trim();
+  if (monsterPassword && monsterPassword !== '••••••••••••') {
+    monsterConfigsStore[userKey].monsterPassword = monsterPassword.trim();
+  }
+  saveMonsterConfigs();
+  return res.json({
+    success: true,
+    message: `Monster employer account credentials saved for ${userKey}!`,
+    email: userKey
+  });
 });
 
 

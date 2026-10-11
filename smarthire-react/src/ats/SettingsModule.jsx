@@ -89,6 +89,46 @@ function SettingsModule() {
   const [tplSubject, setTplSubject] = useState('')
   const [tplBody, setTplBody] = useState('')
 
+  // Monster Credentials State
+  const [monsterEmail, setMonsterEmail] = useState('')
+  const [monsterPass, setMonsterPass] = useState('')
+  const [monsterSaving, setMonsterSaving] = useState(false)
+  const [monsterMsg, setMonsterMsg] = useState('')
+
+  useEffect(() => {
+    fetch(`/api/recruiter/monster-credentials?email=${encodeURIComponent(recruiterEmailKey)}`)
+      .then(res => res.json())
+      .then(d => {
+        if (d && d.success && d.config) {
+          setMonsterEmail(d.config.monsterEmail || recruiterEmailKey)
+          setMonsterPass(d.config.hasPassword ? '••••••••••••' : '')
+        }
+      })
+      .catch(() => {})
+  }, [recruiterEmailKey])
+
+  const handleSaveMonsterConfig = async () => {
+    setMonsterSaving(true)
+    setMonsterMsg('')
+    try {
+      const res = await fetch('/api/recruiter/monster-credentials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: recruiterEmailKey,
+          monsterEmail: monsterEmail,
+          monsterPassword: monsterPass
+        })
+      })
+      const d = await res.json()
+      setMonsterMsg(d.success ? 'Monster account credentials saved!' : (d.error || 'Failed to save'))
+    } catch(e) {
+      setMonsterMsg('Network error saving Monster credentials')
+    }
+    setMonsterSaving(false)
+    setTimeout(() => setMonsterMsg(''), 5000)
+  }
+
   useEffect(() => {
     fetch('/api/admin/recruiters')
       .then(res => res.json())
@@ -254,6 +294,7 @@ function SettingsModule() {
 
   const TAB_BTNS = [
     { id: 'email', label: 'Email Config' },
+    { id: 'monster', label: 'Monster Account' },
     { id: 'templates', label: 'Email Templates' },
     { id: 'pipeline', label: 'Pipeline' },
     { id: 'export', label: 'Export' }
@@ -595,6 +636,89 @@ function SettingsModule() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MONSTER ACCOUNT TAB ── */}
+      {activeSettingsTab === 'monster' && (
+        <div style={{ maxWidth: 640 }}>
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div style={{ marginBottom: 16 }}>
+              <h4 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#0f172a' }}>
+                Monster+ Employer Account Credentials
+              </h4>
+              <p style={{ margin: '4px 0 0', fontSize: 12.5, color: '#64748b' }}>
+                Configure individual Monster employer login for each recruiter. Sourcing and scraping will run through your own authenticated account.
+              </p>
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <label style={labelStyle}>Recruiter Profile</label>
+              <select
+                value={recruiterEmailKey}
+                onChange={e => setRecruiterEmailKey(e.target.value)}
+                style={inputStyle}
+              >
+                {teamList.map(r => (
+                  <option key={r.email} value={r.email}>{r.name} ({r.email})</option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <label style={labelStyle}>Monster Employer Login Email</label>
+              <input
+                type="email"
+                value={monsterEmail}
+                onChange={e => setMonsterEmail(e.target.value)}
+                placeholder="e.g. recruiter@coolsofttech.com"
+                style={inputStyle}
+              />
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>Monster Employer Password</label>
+              <input
+                type="password"
+                value={monsterPass}
+                onChange={e => setMonsterPass(e.target.value)}
+                placeholder="Enter Monster account password"
+                style={inputStyle}
+              />
+            </div>
+
+            {monsterMsg && (
+              <div style={{
+                padding: '8px 12px',
+                borderRadius: 6,
+                fontSize: 12,
+                fontWeight: 700,
+                marginBottom: 14,
+                backgroundColor: monsterMsg.includes('saved') ? '#ECFDF5' : '#FEF2F2',
+                color: monsterMsg.includes('saved') ? '#065F46' : '#991B1B',
+                border: `1px solid ${monsterMsg.includes('saved') ? '#A7F3D0' : '#FECACA'}`
+              }}>
+                {monsterMsg}
+              </div>
+            )}
+
+            <button
+              onClick={handleSaveMonsterConfig}
+              disabled={monsterSaving}
+              style={{
+                padding: '9px 20px',
+                background: '#0F766E',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 6,
+                fontWeight: 800,
+                fontSize: 13,
+                cursor: monsterSaving ? 'wait' : 'pointer'
+              }}
+            >
+              {monsterSaving ? 'Saving...' : 'Save Monster Credentials'}
+            </button>
           </div>
         </div>
       )}
