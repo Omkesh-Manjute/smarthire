@@ -13750,6 +13750,23 @@ app.delete('/api/email-templates/:id', (req, res) => {
   res.json({ success: true });
 });
 
+// Direct Chrome Extension Download Endpoint
+app.get('/smarthire-extension.zip', (req, res) => {
+  const possiblePaths = [
+    '/var/www/html/smarthire-extension.zip',
+    path.resolve(__dirname, '../dist/smarthire-extension.zip'),
+    path.resolve(__dirname, '../../dist/smarthire-extension.zip'),
+    path.resolve(__dirname, '../public/smarthire-extension.zip'),
+    path.join(distPath, 'smarthire-extension.zip')
+  ];
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      return res.download(p, 'smarthire-extension.zip');
+    }
+  }
+  return res.status(404).send('SmartHire extension file not found');
+});
+
 // ─── Serve static frontend files in production ────────────────────────────────
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath))
