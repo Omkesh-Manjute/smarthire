@@ -34,6 +34,7 @@ export default function CandidateChat() {
   const [candidateLocation, setCandidateLocation] = useState('')
   const [expectedRate, setExpectedRate] = useState('')
   const [visaStatus, setVisaStatus] = useState('US Citizen')
+  const [hasAgreedTerms, setHasAgreedTerms] = useState(false)
 
   // Questions from session
   const [questions, setQuestions] = useState([])
@@ -1277,7 +1278,41 @@ export default function CandidateChat() {
               </div>
             </div>
 
-            <div style={{ marginTop: '28px', textAlign: 'center' }}>
+            {/* Terms, Verification & Proctoring Consent Checkbox */}
+            <div style={{
+              marginTop: '20px',
+              padding: '14px 18px',
+              background: '#f8fafc',
+              border: hasAgreedTerms ? '1px solid #cbd5e1' : '1px solid #e2e8f0',
+              borderRadius: '10px',
+              textAlign: 'left'
+            }}>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer', margin: 0 }}>
+                <input
+                  type="checkbox"
+                  checked={hasAgreedTerms}
+                  onChange={e => setHasAgreedTerms(e.target.checked)}
+                  style={{
+                    marginTop: '2px',
+                    width: '18px',
+                    height: '18px',
+                    accentColor: '#2563eb',
+                    cursor: 'pointer',
+                    flexShrink: 0
+                  }}
+                />
+                <div style={{ fontSize: '12px', color: '#475569', lineHeight: 1.55 }}>
+                  <span style={{ fontWeight: 700, color: '#0f172a' }}>
+                    I agree to the Assessment Terms & Verification Consent
+                  </span>
+                  <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#64748b' }}>
+                    I agree to participate in this asynchronous assessment, including camera, microphone, approximate location, and proctoring checks solely to verify interview integrity and work authorization. Data is processed confidentially under privacy laws (CCPA / EEOC / DPDP), strictly restricted to this hiring evaluation, and never sold to third parties.
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            <div style={{ marginTop: '24px', textAlign: 'center' }}>
               <button
                 type="button"
                 onClick={() => {
@@ -1285,9 +1320,16 @@ export default function CandidateChat() {
                     alert('Please enter your Name, Email Address, and Current Location (City, State) to proceed.')
                     return
                   }
+                  if (!hasAgreedTerms) {
+                    alert('Please check the box above to accept the Assessment Terms & Verification Consent before proceeding.')
+                    return
+                  }
                   setStep(2)
                 }}
-                style={styles.primaryButtonLarge}
+                style={{
+                  ...styles.primaryButtonLarge,
+                  opacity: hasAgreedTerms ? 1 : 0.8
+                }}
               >
                 Proceed to Security & Device Check ➔
               </button>
