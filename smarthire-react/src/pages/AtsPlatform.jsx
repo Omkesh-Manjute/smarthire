@@ -1622,7 +1622,7 @@ export default function AtsPlatform() {
           )}
 
           {activeTab === 'screening' && (
-            <div style={{ padding: '20px' }}>
+            <div style={{ padding: '14px 20px 24px 20px' }}>
               <ScreeningModule
                 jobsList={safeJobs}
                 allCandidates={safeCandidates}

@@ -6306,7 +6306,7 @@ Output ONLY raw JSON array starting with '[' and ending with ']'.`;
 
 // Create a new screening session
 app.post('/api/screening/create', authenticateToken, (req, res) => {
-  const { jobId, targetPayRate, maxPayRate, questions, allowedFormats, maxDuration, campaignTitle } = req.body;
+  const { jobId, targetPayRate, maxPayRate, questions, allowedFormats, maxDuration, campaignTitle, candidateName, candidateEmail } = req.body;
   if (!jobId) {
     return res.status(400).json({ success: false, message: 'jobId is required' });
   }
@@ -6370,8 +6370,8 @@ app.post('/api/screening/create', authenticateToken, (req, res) => {
     allowedFormats: allowedFormats || ['video', 'audio', 'text'],
     maxDuration: maxDuration || 120,
     responses: [],
-    candidateName: null,
-    candidateEmail: null,
+    candidateName: (candidateName || '').trim() || null,
+    candidateEmail: (candidateEmail || '').trim().toLowerCase() || null,
     candidatePhone: null,
     candidateLocation: null,
     candidateLinkedin: null,

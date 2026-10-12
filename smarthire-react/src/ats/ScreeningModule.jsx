@@ -170,6 +170,8 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [], cur
   // Campaign Builder Modal States
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedJobId, setSelectedJobId] = useState('')
+  const [candidateNameInput, setCandidateNameInput] = useState('')
+  const [candidateEmailInput, setCandidateEmailInput] = useState('')
   const [selectedRecruiter, setSelectedRecruiter] = useState(currentUser?.name || 'Omkesh')
   const [campaignTitle, setCampaignTitle] = useState('')
   const [allowedFormats, setAllowedFormats] = useState(['video', 'audio', 'text'])
@@ -258,10 +260,12 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [], cur
   const handleOpenEmailModal = (linkData) => {
     const jobTitle = linkData?.jobTitle || 'Open Position'
     const screeningUrl = linkData?.screeningUrl || ''
-    setEmailModalTo('')
+    const candName = linkData?.candidateName || ''
+    const candEmail = linkData?.candidateEmail || ''
+    setEmailModalTo(candEmail)
     setEmailModalSubject(`Interview Screening Invitation: ${jobTitle} — SmartHire Assessment`)
     setEmailModalBody(
-`Dear Candidate,
+`Dear ${candName || 'Candidate'},
 
 Thank you for your interest in the ${jobTitle} position with our team.
 
@@ -481,6 +485,8 @@ SmartHire Recruitment Team`
         body: JSON.stringify({
           jobId: selectedJobId,
           campaignTitle,
+          candidateName: candidateNameInput.trim(),
+          candidateEmail: candidateEmailInput.trim(),
           questions,
           allowedFormats,
           maxDuration,
@@ -498,7 +504,9 @@ SmartHire Recruitment Team`
         setCreatedLinkResult({
           sessionId: data.sessionId,
           screeningUrl: fullLink,
-          jobTitle: job?.title || 'Open Position'
+          jobTitle: job?.title || 'Open Position',
+          candidateName: candidateNameInput.trim(),
+          candidateEmail: candidateEmailInput.trim()
         })
         fetchSessions()
       } else {
@@ -1073,6 +1081,8 @@ SmartHire Recruitment Team`
             onClick={() => {
               setShowCreateModal(true)
               setCreatedLinkResult(null)
+              setCandidateNameInput('')
+              setCandidateEmailInput('')
             }}
             style={styles.createCampaignBtn}
           >
@@ -1084,14 +1094,14 @@ SmartHire Recruitment Team`
       {/* ─── 4 STATS KPI CARDS ────────────────────────────────────────────── */}
       <div style={styles.kpiGrid}>
         <div
-          style={{ ...styles.kpiCard, borderTop: '3px solid #2563eb' }}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(37, 99, 235, 0.08)' }}
-          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.04)' }}
+          style={{ ...styles.kpiCard, borderTop: '2.5px solid #2563eb' }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 18px rgba(37, 99, 235, 0.08)' }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.03)' }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={styles.kpiLabel}>Total Campaigns</span>
-            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <span style={styles.kpiLabel}>Active Links</span>
+            <div style={{ width: '26px', height: '26px', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
               </svg>
             </div>
@@ -1101,56 +1111,56 @@ SmartHire Recruitment Team`
         </div>
 
         <div
-          style={{ ...styles.kpiCard, borderTop: '3px solid #059669' }}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(5, 150, 105, 0.08)' }}
-          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.04)' }}
+          style={{ ...styles.kpiCard, borderTop: '2.5px solid #059669' }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 18px rgba(5, 150, 105, 0.08)' }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.03)' }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={styles.kpiLabel}>Submissions Received</span>
-            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <span style={styles.kpiLabel}>Submissions</span>
+            <div style={{ width: '26px', height: '26px', borderRadius: '6px', background: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
             </div>
           </div>
           <div style={styles.kpiValue}>{totalSubmissions}</div>
-          <div style={styles.kpiSub}>Completed candidate screens</div>
+          <div style={styles.kpiSub}>Completed responses</div>
         </div>
 
         <div
-          style={{ ...styles.kpiCard, borderTop: '3px solid #7c3aed' }}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(124, 58, 237, 0.08)' }}
-          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.04)' }}
+          style={{ ...styles.kpiCard, borderTop: '2.5px solid #7c3aed' }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 18px rgba(124, 58, 237, 0.08)' }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.03)' }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={styles.kpiLabel}>Video Submissions</span>
-            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#f5f3ff', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <span style={styles.kpiLabel}>Videos</span>
+            <div style={{ width: '26px', height: '26px', borderRadius: '6px', background: '#f5f3ff', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polygon points="23 7 16 12 23 17 23 7"></polygon>
                 <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
               </svg>
             </div>
           </div>
           <div style={styles.kpiValue}>{videoSubmissions}</div>
-          <div style={styles.kpiSub}>Recorded video answers</div>
+          <div style={styles.kpiSub}>Recorded answers</div>
         </div>
 
         <div
-          style={{ ...styles.kpiCard, borderTop: '3px solid #d97706' }}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(217, 119, 6, 0.08)' }}
-          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.04)' }}
+          style={{ ...styles.kpiCard, borderTop: '2.5px solid #d97706' }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 18px rgba(217, 119, 6, 0.08)' }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.03)' }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={styles.kpiLabel}>AI Shortlisted</span>
-            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#fffbeb', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <span style={styles.kpiLabel}>Shortlisted</span>
+            <div style={{ width: '26px', height: '26px', borderRadius: '6px', background: '#fffbeb', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="8" r="7"></circle>
                 <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
               </svg>
             </div>
           </div>
           <div style={styles.kpiValue}>{shortlistedCount}</div>
-          <div style={styles.kpiSub}>Qualified submissions</div>
+          <div style={styles.kpiSub}>AI qualified</div>
         </div>
       </div>
 
@@ -1283,17 +1293,17 @@ SmartHire Recruitment Team`
             </button>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto', overscrollBehavior: 'contain', overscrollBehaviorX: 'contain' }}>
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
             <table style={{ ...styles.table, tableLayout: 'fixed', width: '100%' }}>
               <colgroup>
-                <col style={{ width: '25%' }} />
-                <col style={{ width: '23%' }} />
+                <col style={{ width: '24%' }} />
+                <col style={{ width: '22%' }} />
                 <col style={{ width: '13%' }} />
                 <col style={{ width: '10%' }} />
                 <col style={{ width: '9%' }} />
                 <col style={{ width: '10%' }} />
                 <col style={{ width: '10%' }} />
-                <col style={{ width: '60px' }} />
+                <col style={{ width: '80px' }} />
               </colgroup>
               <thead>
                 <tr style={styles.tableHeadRow}>
@@ -1315,7 +1325,7 @@ SmartHire Recruitment Team`
                   const hasText = responses.some(r => r.format === 'text')
                   const aiScore = session.aiScore || (session.jdMatch?.match_score) || 78
                   const candName = session.candidateName || 'Pending Applicant'
-                  const candEmail = session.candidateEmail || 'No email yet'
+                  const candEmail = session.candidateEmail || (session.status === 'pending' ? 'Screening Link Active' : 'No email yet')
                   const recName = getRecruiterName(session)
                   const enteredLoc = session.candidateLocation || session.candidateInfo?.location || ''
                   const geo = session.candidateGeo || session.gpsLocation || null
@@ -1518,7 +1528,7 @@ SmartHire Recruitment Team`
 
                       {/* Actions */}
                       <td style={{ ...styles.td, textAlign: 'center' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', minHeight: '26px' }}>
                           {(session.status === 'submitted' || session.status === 'shortlisted' || session.status === 'reviewed' || (session.responses && session.responses.length > 0)) ? (
                             <button
                               type="button"
@@ -1531,9 +1541,7 @@ SmartHire Recruitment Team`
                             >
                               PDF
                             </button>
-                          ) : (
-                            <span style={{ color: '#cbd5e1', fontSize: '13px' }}>—</span>
-                          )}
+                          ) : null}
                           {isSuperAdmin && (
                             <button
                               type="button"
@@ -1541,17 +1549,22 @@ SmartHire Recruitment Team`
                               disabled={deletingId === session.sessionId}
                               title="Admin only: Permanently delete this screening session"
                               style={{
-                                padding: '5px 8px',
+                                width: '26px',
+                                height: '26px',
+                                padding: 0,
                                 background: 'transparent',
                                 color: deletingId === session.sessionId ? '#94a3b8' : '#ef4444',
                                 border: '1px solid',
                                 borderColor: deletingId === session.sessionId ? '#e2e8f0' : '#fecaca',
-                                borderRadius: '6px',
-                                fontSize: '12px',
+                                borderRadius: '5px',
+                                fontSize: '11px',
                                 cursor: deletingId === session.sessionId ? 'not-allowed' : 'pointer',
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                transition: 'all 0.15s ease'
+                                justifyContent: 'center',
+                                boxSizing: 'border-box',
+                                transition: 'all 0.15s ease',
+                                flexShrink: 0
                               }}
                               onMouseEnter={e => {
                                 if (deletingId !== session.sessionId) {
@@ -1567,7 +1580,7 @@ SmartHire Recruitment Team`
                               }}
                             >
                               {deletingId === session.sessionId ? (
-                                <span style={{ fontSize: '10px', padding: '0 2px' }}>...</span>
+                                <span style={{ fontSize: '10px' }}>...</span>
                               ) : (
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <polyline points="3 6 5 6 21 6" />
@@ -1576,6 +1589,9 @@ SmartHire Recruitment Team`
                                 </svg>
                               )}
                             </button>
+                          )}
+                          {!isSuperAdmin && !(session.status === 'submitted' || session.status === 'shortlisted' || session.status === 'reviewed' || (session.responses && session.responses.length > 0)) && (
+                            <span style={{ color: '#cbd5e1', fontSize: '13px' }}>—</span>
                           )}
                         </div>
                       </td>
@@ -1618,7 +1634,14 @@ SmartHire Recruitment Team`
                     <label style={styles.modalLabel}>Select Target Requisition *</label>
                     <select
                       value={selectedJobId}
-                      onChange={e => setSelectedJobId(e.target.value)}
+                      onChange={e => {
+                        const newJobId = e.target.value
+                        setSelectedJobId(newJobId)
+                        if (!campaignTitle) {
+                          const jobObj = jobsList.find(j => j.id === newJobId)
+                          if (jobObj) setCampaignTitle(`${jobObj.title} Screening`)
+                        }
+                      }}
                       style={styles.modalSelect}
                     >
                       <option value="">-- Choose Job Opening --</option>
@@ -1628,6 +1651,30 @@ SmartHire Recruitment Team`
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  {/* Candidate Name & Email Inputs */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                    <div>
+                      <label style={styles.modalLabel}>Candidate Full Name</label>
+                      <input
+                        type="text"
+                        value={candidateNameInput}
+                        onChange={e => setCandidateNameInput(e.target.value)}
+                        placeholder="e.g. Rahul Sharma"
+                        style={styles.modalInput}
+                      />
+                    </div>
+                    <div>
+                      <label style={styles.modalLabel}>Candidate Email</label>
+                      <input
+                        type="email"
+                        value={candidateEmailInput}
+                        onChange={e => setCandidateEmailInput(e.target.value)}
+                        placeholder="e.g. rahul.sharma@example.com"
+                        style={styles.modalInput}
+                      />
+                    </div>
                   </div>
 
                   {/* Campaign Title */}
@@ -2546,70 +2593,80 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: '16px',
-    marginBottom: '24px'
+    gap: '12px',
+    marginBottom: '14px',
+    marginTop: '0px'
   },
   mainTitle: {
-    fontSize: '22px',
-    fontWeight: '800',
+    fontSize: '18px',
+    fontWeight: '700',
     color: '#0f172a',
     margin: 0,
-    letterSpacing: '-0.02em'
+    letterSpacing: '-0.01em',
+    lineHeight: '1.25'
   },
   smartHireBadge: {
-    fontSize: '11px',
-    fontWeight: '800',
+    fontSize: '10.5px',
+    fontWeight: '700',
     color: '#2563eb',
     background: '#eff6ff',
     border: '1px solid #bfdbfe',
-    padding: '3px 8px',
-    borderRadius: '12px'
+    padding: '2px 8px',
+    borderRadius: '10px',
+    letterSpacing: '0.01em',
+    display: 'inline-flex',
+    alignItems: 'center',
+    lineHeight: '1.2'
   },
   mainSubtitle: {
-    fontSize: '13px',
+    fontSize: '12px',
     color: '#64748b',
-    margin: '4px 0 0'
+    margin: '3px 0 0',
+    lineHeight: '1.4'
   },
   createCampaignBtn: {
-    padding: '11px 20px',
-    borderRadius: '10px',
-    background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+    padding: '8px 16px',
+    borderRadius: '8px',
+    background: '#2563eb',
     color: '#ffffff',
     border: 'none',
-    fontSize: '13.5px',
-    fontWeight: '800',
+    fontSize: '13px',
+    fontWeight: '700',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
-    boxShadow: '0 4px 14px rgba(37, 99, 235, 0.3)'
+    gap: '6px',
+    boxShadow: '0 2px 8px rgba(37, 99, 235, 0.25)',
+    transition: 'all 0.15s ease'
   },
   kpiGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-    gap: '16px',
-    marginBottom: '24px'
+    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+    gap: '12px',
+    marginBottom: '14px'
   },
   kpiCard: {
     background: '#ffffff',
-    borderRadius: '16px',
+    borderRadius: '10px',
     border: '1px solid #e2e8f0',
-    padding: '18px 20px',
-    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.03)'
+    padding: '10px 14px',
+    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.03)',
+    transition: 'all 0.15s ease'
   },
   kpiLabel: {
-    fontSize: '12.5px',
+    fontSize: '11.5px',
     fontWeight: '700',
     color: '#64748b'
   },
   kpiValue: {
-    fontSize: '26px',
-    fontWeight: '900',
+    fontSize: '20px',
+    fontWeight: '800',
     color: '#0f172a',
-    margin: '8px 0 2px'
+    margin: '4px 0 1px',
+    lineHeight: '1.1'
   },
   kpiSub: {
-    fontSize: '11.5px',
+    fontSize: '11px',
     color: '#94a3b8'
   },
   kpiIconBlue: {
@@ -3255,17 +3312,22 @@ const styles = {
     transition: 'background 0.15s ease'
   },
   pdfReportTableBtn: {
-    padding: '5px 10px',
-    borderRadius: '6px',
+    height: '26px',
+    padding: '0 8px',
+    borderRadius: '5px',
     background: '#f8fafc',
     color: '#334155',
     border: '1px solid #cbd5e1',
-    fontSize: '11.5px',
+    fontSize: '11px',
     fontWeight: '700',
     cursor: 'pointer',
     display: 'inline-flex',
     alignItems: 'center',
-    transition: 'all 0.15s ease'
+    justifyContent: 'center',
+    boxSizing: 'border-box',
+    lineHeight: 1,
+    transition: 'all 0.15s ease',
+    flexShrink: 0
   },
   downloadTopBtn: {
     padding: '7px 14px',
