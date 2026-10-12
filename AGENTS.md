@@ -105,6 +105,42 @@ The following high-impact features and optimizations have been agreed upon and p
 
 ---
 
+### 2026-10-12 — Universal Talent Search (Monster Minimalist 3-Column Grid), Candidate Profile Hub & Application Source Tracking
+- **Context & Objectives**:
+  - The user requested:
+    1. Turn off live chat with recruiter on job application submit, and redirect candidates to `/blog` to increase engagement and comply with AdSense requirements.
+    2. Add blog links to candidate post-screening completion screen.
+    3. Candidate Profile Modal on job site (`/jobs`) with editable contact/visa/skills details and an Excel-style applications status table.
+    4. Explicit application channel tracking (`Job Site` vs. `Mobile App` vs. `Inbound Email` vs. `Monster & Dice`) with filtered tabs and colored badges in `CandidatesModule.jsx`.
+    5. Re-architect Monster Sourcing into **"Universal Search"** matching the user's uploaded screenshots (`media_1791781369154.png` & `media_1791781380950.png`) using an authentic minimalist 3-column layout.
+- **Implementations**:
+  1. **Blog Traffic Redirection & Live Chat Sunset**:
+     - Removed automatic chat initiation upon applying on `/jobs`.
+     - Added "Recommended Next Steps" guide box linking candidates directly to high-value career blog posts (`/blog/...`).
+     - Added blog recommendation cards and "Explore Career Blog & Guides" buttons to video/AI screening screens (`CandidateChat.jsx`).
+  2. **Candidate Profile & Applications Hub (`CandidateProfileModal.jsx`)**:
+     - Created candidate profile editor accessible from the `/jobs` navbar and avatar chip.
+     - Profile form: Legal Name, Email, Contact Phone, Location, Visa Status, Contract Preference (C2C/W2/1099), Current Employer/Vendor Agency, Total Exp, Rate, and Resume upload.
+     - Excel-style applications history table conforming to Rule 9 (`#F1F5F9` headers, `#334155` bold typography, `1px solid #CBD5E1` borders, alternating rows).
+     - Auto-prefill into job application forms.
+  3. **Multi-Channel Source Tracking**:
+     - Enhanced `getCandidateSourceDisplay` in `CandidatesModule.jsx` to accurately identify `Job Site`, `Mobile App`, `Inbound Email`, and `Extension / Monster`.
+     - Segmented channel filter tabs (`All Sources`, `Job Site`, `Mobile App`, `Inbound Email`, `Dice & Monster`) with live counters.
+     - Modern color-coded badges for easy visual distinction.
+  4. **Universal Search (Minimalist 3-Column Monster Architecture)**:
+     - Renamed navigation item and page header to **"Universal Search"** across `RecruiterInbox.jsx` and `AtsPlatform.jsx`.
+     - Re-architected `MonsterSourcingModule.jsx` into a 3-column split grid matching Monster Employer screenshots:
+       - **Col 1 (Search Accordion)**: Job Title, Skills/Keywords, Location & Radius, Intake Source/Channel filter, Visa Status, Clear All & Update.
+       - **Col 2 (Matches List)**: Tabs for `Matches (XX)`, `Favorites (YY)`, `Skipped (ZZ)`, compact candidate cards with star, source badges, location, experience, and top skills.
+       - **Col 3 (Split Detail Pane)**: Candidate header, Star, TSV/Share copy, Email Outreach, 1-Click "Add to Pipeline", and sub-tabs for `Profile` and `Resume` with keyword highlights and Rule 11 bullet points.
+- **Deployment & Verification**:
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings.
+  - Git committed (`cd1e79d`) and pushed to `main`.
+  - Production bundle deployed to AWS Lightsail server (`34.194.119.199`), PM2 `smarthire-ats` reloaded.
+  - Disk space verified: 9.0GB free (Rule 5 compliant).
+  - Live domain `https://smarthireus.com` verified HTTP 200 OK.
+
+
 ### 2026-10-11 — SmartHire Talent Sourcing Copilot v3.6.1 (Multi-Event Click Simulation & Card-Scoped Name Fix)
 - **Context & Objectives**:
   - The user reported: *"kam nahi kar raha hai bhai baraber se click ka add karo perperly check and updaet karo bhai"* and uploaded `media_1791730825097.png`.
