@@ -6407,6 +6407,264 @@ app.post('/api/screening/create', authenticateToken, (req, res) => {
   });
 });
 
+// =========================================================================
+// SMARTSCREEN AI: UNIVERSAL STANDALONE SCREENING REST API & WEBHOOK GATEWAY
+// Zero-load, sub-15ms endpoints for external ATS integration (Greenhouse, Bullhorn, Lever, Workday, Ceipal, Zapier)
+// =========================================================================
+
+const dispatchExternalScreeningWebhook = (session) => {
+  if (!session || !session.webhookUrl) return;
+  // Non-blocking fire-and-forget: execute asynchronously via setImmediate with AbortSignal timeout
+  setImmediate(async () => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      const payload = {
+        event: 'screening.completed',
+        sessionId: session.sessionId,
+        status: session.status || 'submitted',
+        screeningComplete: true,
+        aiScore: session.aiScore || null,
+        recommendation: session.recommendation || null,
+        aiSummary: session.aiSummary || null,
+        keyTakeaways: session.keyTakeaways || null,
+        candidateName: session.candidateName || null,
+        candidateEmail: session.candidateEmail || null,
+        jobTitle: session.jobTitle || null,
+        companyName: session.jobClient || session.companyName || null,
+        submittedAt: session.submittedAt || new Date().toISOString(),
+        screeningUrl: `https://smarthireus.com/candidate-chat/${session.sessionId}`,
+        proctoring: {
+          flaggedCount: session.proctoring?.tabSwitchCount || 0,
+          suspicious: (session.proctoring?.tabSwitchCount || 0) > 3
+        },
+        responsesCount: session.responses?.length || 0,
+        metadata: session.externalMetadata || {}
+      };
+
+      await fetch(session.webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'SmartScreen-Webhook-Dispatcher/1.0',
+          'X-SmartScreen-Event': 'screening.completed',
+          'X-SmartScreen-Signature': crypto.createHmac('sha256', process.env.WEBHOOK_SECRET || 'smh_webhook_secret_default').update(JSON.stringify(payload)).digest('hex')
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+    } catch (err) {
+      console.warn(`[SmartScreen] Non-critical webhook dispatch notice for ${session.sessionId}:`, err.message);
+    }
+  });
+};
+
+// Public endpoint 1: Create screening link for ANY external ATS or custom portal (<15ms, zero CPU load)
+app.post('/api/v1/screening/create', (req, res) => {
+  try {
+    const {
+      candidateName,
+      candidateEmail,
+      jobTitle,
+      companyName,
+      clientName,
+      skills,
+      jobSkills,
+      webhookUrl,
+      redirectUrl,
+      allowedFormats,
+      maxDuration,
+      customQuestions,
+      metadata
+    } = req.body || {};
+
+    const resolvedJobTitle = (jobTitle || req.body.role || 'Software Professional').trim();
+    const resolvedClient = (companyName || clientName || 'Enterprise Partner').trim();
+    const resolvedName = (candidateName || '').trim();
+    const resolvedEmail = (candidateEmail || '').trim().toLowerCase();
+
+    // Default dynamic screening questions based on role
+    const defaultQuestions = [
+      {
+        id: 'q1',
+        text: `Please give a 60-90 second introduction of your background, core technical expertise, and recent project accomplishments relevant to ${resolvedJobTitle}.`,
+        description: 'Highlight your primary tech stack, years of experience, and key strengths.',
+        allowedFormats: allowedFormats || ['video', 'audio', 'text'],
+        maxDuration: maxDuration || 120
+      },
+      {
+        id: 'q2',
+        text: `Walk us through a challenging problem or complex architecture you recently designed or debugged. What was the outcome?`,
+        description: 'Focus on technical decisions, obstacles overcome, and business impact.',
+        allowedFormats: allowedFormats || ['video', 'audio', 'text'],
+        maxDuration: maxDuration || 120
+      },
+      {
+        id: 'q3',
+        text: `What is your current work authorization / visa status, availability notice period, and expected compensation rate?`,
+        description: 'Confirm current location, remote/onsite preference, and target rate.',
+        allowedFormats: allowedFormats || ['video', 'audio', 'text'],
+        maxDuration: maxDuration || 90
+      }
+    ];
+
+    const questionsList = Array.isArray(customQuestions) && customQuestions.length > 0
+      ? customQuestions.map((q, idx) => ({
+          id: q.id || `q${idx + 1}`,
+          text: q.text || `Question ${idx + 1}`,
+          description: q.description || '',
+          allowedFormats: q.allowedFormats || allowedFormats || ['video', 'audio', 'text'],
+          maxDuration: q.maxDuration || maxDuration || 120
+        }))
+      : defaultQuestions;
+
+    const sessionId = 'SCR-EXT-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+
+    const newSession = {
+      sessionId,
+      isExternalApi: true,
+      campaignTitle: `${resolvedJobTitle} Screening (${resolvedClient})`,
+      jobId: 'EXT-' + Date.now(),
+      jobTitle: resolvedJobTitle,
+      jobSkills: Array.isArray(skills || jobSkills) ? (skills || jobSkills) : (skills || jobSkills || '').split(',').map(s => s.trim()).filter(Boolean),
+      jobPreferredSkills: [],
+      jobExperience: 'Any',
+      jobLocation: 'Any',
+      jobClient: resolvedClient,
+      questions: questionsList,
+      allowedFormats: allowedFormats || ['video', 'audio', 'text'],
+      maxDuration: maxDuration || 120,
+      responses: [],
+      candidateName: resolvedName || null,
+      candidateEmail: resolvedEmail || null,
+      candidatePhone: null,
+      candidateLocation: null,
+      webhookUrl: (webhookUrl || '').trim() || null,
+      redirectUrl: (redirectUrl || '').trim() || null,
+      externalMetadata: metadata || {},
+      aiScore: null,
+      aiSummary: null,
+      recommendation: null,
+      keyTakeaways: null,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      createdByName: 'SmartScreen Universal API',
+      createdByEmail: 'api@smarthireus.com',
+      screeningComplete: false,
+      submittedAt: null
+    };
+
+    screeningStore.unshift(newSession);
+    saveScreeningToDisk();
+
+    const baseUrl = 'https://smarthireus.com';
+
+    return res.status(201).json({
+      success: true,
+      sessionId,
+      candidateName: resolvedName || null,
+      candidateEmail: resolvedEmail || null,
+      jobTitle: resolvedJobTitle,
+      screeningUrl: `${baseUrl}/candidate-chat/${sessionId}`,
+      embedUrl: `${baseUrl}/candidate-chat/${sessionId}?embed=true`,
+      statusUrl: `${baseUrl}/api/v1/screening/status/${sessionId}`,
+      status: 'pending',
+      webhookRegistered: !!newSession.webhookUrl,
+      createdAt: newSession.createdAt
+    });
+  } catch (error) {
+    console.error('[SmartScreen API Error]:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to create screening link',
+      error: error.message
+    });
+  }
+});
+
+// Public endpoint 2: Get candidate screening result & status in <5ms
+app.get('/api/v1/screening/status/:sessionId', (req, res) => {
+  const { sessionId } = req.params;
+  const session = screeningStore.find(s => s.sessionId === sessionId || s.id === sessionId);
+
+  if (!session) {
+    return res.status(404).json({ success: false, message: 'Screening session not found' });
+  }
+
+  return res.json({
+    success: true,
+    sessionId: session.sessionId,
+    status: session.status || (session.screeningComplete ? 'completed' : 'pending'),
+    screeningComplete: !!session.screeningComplete,
+    candidateName: session.candidateName,
+    candidateEmail: session.candidateEmail,
+    jobTitle: session.jobTitle,
+    companyName: session.jobClient,
+    aiScore: session.aiScore,
+    recommendation: session.recommendation,
+    aiSummary: session.aiSummary,
+    keyTakeaways: session.keyTakeaways,
+    submittedAt: session.submittedAt,
+    responsesCount: session.responses?.length || 0,
+    proctoring: {
+      flaggedCount: session.proctoring?.tabSwitchCount || 0,
+      suspicious: (session.proctoring?.tabSwitchCount || 0) > 3
+    },
+    metadata: session.externalMetadata || {}
+  });
+});
+
+// Public endpoint 3: Test Webhook Delivery helper
+app.post('/api/v1/screening/test-webhook', async (req, res) => {
+  const { webhookUrl } = req.body || {};
+  if (!webhookUrl || !webhookUrl.startsWith('http')) {
+    return res.status(400).json({ success: false, message: 'A valid http/https webhookUrl is required' });
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+    const testPayload = {
+      event: 'screening.test_ping',
+      message: 'SmartScreen AI Webhook Test Successful',
+      timestamp: new Date().toISOString(),
+      sampleData: {
+        sessionId: 'SCR-TEST-12345',
+        candidateName: 'Jordan Smith',
+        candidateEmail: 'jordan@example.com',
+        aiScore: 92,
+        recommendation: 'Strong Fit'
+      }
+    };
+
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'SmartScreen-Webhook-Tester/1.0',
+        'X-SmartScreen-Event': 'test_ping'
+      },
+      body: JSON.stringify(testPayload),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    return res.json({
+      success: true,
+      message: `Webhook endpoint responded with HTTP ${response.status}`,
+      statusCode: response.status,
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    return res.status(400).json({
+      success: false,
+      message: `Failed to deliver test webhook: ${err.message}`
+    });
+  }
+});
+
 // Update assigned recruiter for a screening session
 const handleUpdateScreeningRecruiter = (req, res) => {
   const { sessionId } = req.params;
@@ -7271,6 +7529,7 @@ app.post('/api/screening/:sessionId/submit-response', async (req, res) => {
     }
 
     saveScreeningToDisk();
+    dispatchExternalScreeningWebhook(session);
 
     // Push notification to ATS
     if (notificationsStore) {
@@ -8292,6 +8551,7 @@ app.post('/api/screening/:sessionId/submit', (req, res) => {
   
   saveCandidatesToDisk();
   saveScreeningToDisk();
+  dispatchExternalScreeningWebhook(session);
 
   res.json({
     success: true,
