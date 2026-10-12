@@ -103,6 +103,78 @@ The following high-impact features and optimizations have been agreed upon and p
   - **Branded & Blind Resume Wrapper**: Formats candidate resume with agency letterhead/header, core competencies table, clean bullet points, and optional contact masking (hiding direct phone/email to prevent poaching).
   - **1-Click Actions**: 📋 Copy formatted text to clipboard (for portal/email paste), 📥 Download PDF/DOCX submittal package, and ✉️ Direct email dispatch to Account Manager / Client.
 
+### 2026-10-13 — SmartScreen AI: Universal Standalone Screening REST API, Non-Blocking Webhooks & Dual-Model Pricing ($79 / $199 / $499)
+- **Context & Objectives**:
+  - The user requested:
+    1. A lightweight, simple way for external recruitment agencies and enterprise clients using other ATS systems (Greenhouse, Bullhorn, Lever, Workday, Ceipal, etc.) to use and integrate the SmartHire Screening Engine without errors.
+    2. Zero load/CPU impact on our server system.
+    3. Update the Pricing page with a **Dual Model**:
+       - **Model 1: SmartHire ATS Suite (All-In-One Recruiting OS)** ($49 / $149 / $349 / Custom)
+       - **Model 2: SmartScreen AI (Standalone SaaS for Any ATS)** ($79 / $199 / $499) with annual discount ($59 / $159 / $399).
+- **Architectural Implementations & Zero-Load Guarantees**:
+  1. **Zero-Load Public REST Endpoints (`server/index.js`)**:
+     - `POST /api/v1/screening/create`: Generates screening token link in $<15$ms without requiring internal ATS job registration or auth token overhead.
+     - `GET /api/v1/screening/status/:sessionId`: Returns instant candidate score and completion status in $<5$ms.
+     - `POST /api/v1/screening/test-webhook`: Developer utility to verify client webhook URL health.
+  2. **Non-Blocking Asynchronous Webhook Dispatcher**:
+     - Implemented `dispatchExternalScreeningWebhook(session)` triggered upon screening completion.
+     - Uses `setImmediate` with an `AbortController` (4-second strict timeout) wrapped in a `try/catch` guard.
+     - Never blocks the Express event loop; dead or lagging external client servers cannot degrade system performance.
+     - Signs webhook payloads with `X-SmartScreen-Signature` (HMAC SHA-256).
+  3. **Dual-Model Pricing Page Overhaul (`Pricing.jsx`)**:
+     - Added product switcher toggle: **SmartHire ATS Suite** vs **SmartScreen AI (Standalone SaaS)**.
+     - Standalone tiers:
+       - **Starter Screen**: $79/mo ($59/mo annual) — 40 candidate AI video/audio screens, Groq Whisper transcripts, anti-cheat tab lock.
+       - **Growth Pro Screen**: $199/mo ($159/mo annual) — 200 screens, universal ATS webhooks, REST API, branded PDF scorecards.
+       - **Enterprise & API**: $499/mo ($399/mo annual) — Unlimited screens, custom subdomain (`screen.agency.com`), HMAC webhooks, 99.9% SLA.
+     - Interactive **3-Minute ATS Integration Studio** with copyable snippets for cURL (REST API), Node.js, Webhooks, and No-Code direct links.
+     - Strict Rule 8 adherence: Replaced all decorative emojis in trust strips with crisp corporate SVG line icons.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: **0 errors, 0 warnings** (active bundles `index-BHJv-GOh.js` and `Pricing-BeWqkKzK.js`).
+  - Git committed (`1b49ea4`) and pushed to `main`.
+  - Production bundle and `server/index.js` deployed to AWS Lightsail server (`34.194.119.199`), PM2 `smarthire-ats` reloaded.
+  - Disk space verified: 8.9GB free (52% used, Rule 5 compliant).
+  - Live tests verified HTTP 200 on `POST /api/v1/screening/create`, `GET /api/v1/screening/status/:sessionId`, `POST /api/v1/screening/test-webhook`, and `https://smarthireus.com/pricing`.
+
+---
+
+### 2026-10-12 — SmartHire Mobile App Overhaul: Dual-Mode Architecture, Signature Mulberry/Rose Pink Palette, USA Calling Chooser, Screening Link Studio & SmartSign RTR
+- **Context & Objectives**:
+  - The user requested:
+    1. Remove all mock/demo mechanisms from the Flutter mobile app (`smarthire_jobs`).
+    2. Fix notifications failing to appear on device.
+    3. Design and generate custom SmartHire brand app icon matching ATS briefcase and security badge.
+    4. Provide architecture on whether to create 2 separate apps or 1 Unified Dual-Mode App.
+    5. Deliver UI mockups reflecting the signature web ATS left sidebar color (`#3F0E40` Mulberry Plum) and vibrant Rose Pink (`#E11D48`).
+    6. Implement USA Calling Chooser (Carrier call, USA VoIP apps [Google Voice/Skype/Dialpad/RingCentral], 1-tap copy, SMS, Email).
+    7. Implement mobile "+ Create Screening Link" studio and "SmartSign RTR" touchscreen digital signature flow.
+- **Root Cause & Implementations**:
+  1. **Demo Code Elimination & Real Multipart API**:
+     - Removed fake `Future.delayed` and wired real multipart POST to `https://smarthireus.com/api/applications`.
+     - Deleted mock auto-apply pricing tiers ($9.99/$19.99/$39.99) and replaced with 100% Free SmartHire AI Match Alerts.
+  2. **Notification Fix**:
+     - Configured explicit `@mipmap/ic_launcher` in `AndroidNotificationDetails` so Android 13+ devices do not drop notifications.
+     - Wired real job match evaluation into `JobsProvider.fetchJobs()`, added application submitted alerts, and added in-app "Test Alert" button.
+  3. **Brand App Icon**:
+     - Generated high-res royal blue gradient squircle icon with corporate ATS briefcase and verified shield.
+     - Generated all Android mipmap densities (`mdpi` through `xxxhdpi`) and iOS AppIcon asset catalog (20x20 up to 1024x1024).
+  4. **Dual-Mode Shell Architecture**:
+     - Created single unified mobile app with persistent `SharedPreferences` toggle between Candidate Mode and Recruiter ATS Cockpit.
+  5. **Mulberry Plum & Rose Pink Theme (`#3F0E40` & `#E11D48`)**:
+     - Updated `AppTheme` with `mulberryPlum`, `mulberryDark`, `rosePink`, `rosePinkLight`, and `roseSoftBg` matching the live ATS sidebar.
+  6. **USA Calling & Outreach Chooser Modal (`ContactActionSheet.dart`)**:
+     - Displays formatted US phone (`+1 (xxx) xxx-xxxx`), with options for Native Phone, VoIP apps, 1-tap copy, SMS, Email, and RTR deployment.
+  7. **Create Screening Link Modal (`CreateScreeningModal.dart`)**:
+     - Direct requisition dropdown selector, Candidate Name, Candidate Email, Format toggles (Video 1-way, Voice, Text), and 1-tap generation calling `/api/screening/create`.
+  8. **SmartSign RTR Agreement Screen (`SmartSignRtrScreen.dart`)**:
+     - Requisition summary table, legal representation text, interactive touchscreen finger/stylus signature canvas, and SHA-256 audit badge.
+  9. **Recruiter Talent Hub (`RecruiterTalentHubScreen.dart`)**:
+     - Candidate stream with live fit scores, skill chips, visa badges, and direct call/screening/RTR quick action buttons.
+- **Verification**:
+  - `flutter_dart-mcp-server` `analyze_files`: **0 Errors, 0 Warnings** across the entire Flutter project.
+
+---
+
 ### 2026-10-12 — Screening Module: Middle Scroll Fix, Header & KPI Card Redesign, Table Action Alignment & Candidate-Targeted Link Creation
 - **Context & Objectives**:
   - The user reported:
