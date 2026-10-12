@@ -75,6 +75,16 @@ const IconCheck = ({ size = 12, color = 'currentColor' }) => (
   </svg>
 )
 
+const IconFileText = ({ size = 13, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+    <line x1="16" y1="13" x2="8" y2="13" />
+    <line x1="16" y1="17" x2="8" y2="17" />
+    <polyline points="10 9 9 9 8 9" />
+  </svg>
+)
+
 // Bulletproof helper to extract clean string label from any skill format (string, object with {id, name, required}, etc.)
 export const safeSkillLabel = (skill) => {
   if (!skill) return ''
@@ -83,6 +93,22 @@ export const safeSkillLabel = (skill) => {
     return (skill.name || skill.skill || skill.title || skill.label || skill.value || '').trim()
   }
   return String(skill).trim()
+}
+
+// Check if a requisition is genuinely Open and Active (Filters out closed, cancelled, filled, expired jobs)
+export function isJobActive(job) {
+  if (!job) return false
+  const s = String(job.status || job.job_status || '').toLowerCase().trim()
+  if (['closed', 'bank', 'banked', 'filled', 'cancelled', 'expired', 'hold', 'on hold'].includes(s)) return false
+  if (job.deadline) {
+    const d = new Date(job.deadline)
+    if (!isNaN(d.getTime())) {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      if (d < today) return false
+    }
+  }
+  return true
 }
 
 // Generate 3 High-Precision Boolean Search Queries dynamically
@@ -306,11 +332,12 @@ export default function MonsterSourcingModule({
   // ─── 1. Requisition & Requirement Selection State ──────────────────────────
   const [internalJobs, setInternalJobs] = useState([])
   const [selectedJobId, setSelectedJobId] = useState('')
-  const [reqSearchInput, setReqSearchInput] = useState('')
+  const [reqSearchQuery, setReqSearchQuery] = useState('')
   const [activeBooleanVariants, setActiveBooleanVariants] = useState([])
   const [selectedVariantId, setSelectedVariantId] = useState('variant_1')
   const [activeBooleanQuery, setActiveBooleanQuery] = useState('')
   const [copiedQueryFeedback, setCopiedQueryFeedback] = useState(false)
+  const [showJdModal, setShowJdModal] = useState(false)
 
   // ─── 2. Search Filter Criteria State (Left Accordion) ──────────────────────
   const [filterTitle, setFilterTitle] = useState('')
@@ -333,7 +360,15 @@ export default function MonsterSourcingModule({
   const [resumeCache, setResumeCache] = useState({})
   const [isLoadingResume, setIsLoadingResume] = useState(false)
 
-  // ─── 5. UI Feedback & Interactions ─────────────────────────────────────────
+  // ─── 5. In-App Outreach Email Modal State ──────────────────────────────────
+  const [showEmailModal, setShowEmailModal] = useState(false)
+  const [outreachCandidate, setOutreachCandidate] = useState(null)
+  const [outreachSubject, setOutreachSubject] = useState('')
+  const [outreachEmailBody, setOutreachEmailBody] = useState('')
+  const [isSendingEmail, setIsSendingEmail] = useState(false)
+  const [copiedEmailText, setCopiedEmailText] = useState(false)
+
+  // ─── 6. UI Feedback & Interactions ─────────────────────────────────────────
   const [pushedIds, setPushedIds] = useState(new Set())
   const [toastMessage, setToastMessage] = useState(null)
   const [copiedField, setCopiedField] = useState(null)
@@ -364,55 +399,69 @@ export default function MonsterSourcingModule({
       .catch(err => console.warn('[UniversalSearch] Jobs fetch error:', err))
   }, [])
 
-  // Merged All Requisitions (combining props and fetched jobs)
-  const allRequisitions = useMemo(() => {
+  // Merged All Requisitions — STRICTLY KEEP ONLY ACTIVE / OPEN REQUISITIONS
+  const activeRequisitions = useMemo(() => {
     const map = new Map()
-    ;(activeJobs || []).forEach(j => {
-      if (!j) return
-      const rawId = String(j.id || j.jobId || j.reqId || '').replace(/^J-/, '').trim()
-      if (rawId) map.set(rawId, { ...j, id: rawId })
-    })
 
-    internalJobs.forEach(j => {
+    const ingestJob = (j) => {
       if (!j) return
+      // Strict Active filter requested by user: exclude closed, banked, filled, expired
+      if (!isJobActive(j)) return
+
       const rawId = String(j.id || j.jobId || j.reqId || '').replace(/^J-/, '').trim()
-      if (rawId) {
-        const existing = map.get(rawId) || {}
-        map.set(rawId, {
-          ...existing,
-          ...j,
-          id: rawId,
-          title: j.title || existing.title || `Requisition #${rawId}`,
-          client: j.client || existing.client || 'State Client',
-          location: j.location || existing.location || 'Columbia, SC',
-          workMode: j.workMode || j.type || existing.workMode || 'Hybrid / Onsite',
-          skills: (Array.isArray(j.skills) && j.skills.length > 0) ? j.skills.map(safeSkillLabel) : (existing.skills || []),
-          description: j.description || j.rawDescription || existing.description || ''
-        })
-      }
-    })
+      if (!rawId) return
+
+      const existing = map.get(rawId) || {}
+      const fullDesc = j.fullDescription || j.rawDescription || j.description || existing.description || ''
+
+      map.set(rawId, {
+        ...existing,
+        ...j,
+        id: rawId,
+        reqId: rawId,
+        title: j.title || existing.title || `Requisition #${rawId}`,
+        client: j.client || j.customer || existing.client || 'State Client',
+        location: j.location || existing.location || 'Columbia, SC',
+        workMode: j.workMode || j.type || existing.workMode || 'Hybrid / Onsite',
+        billRate: j.billRate || j.payRate || j.rate || existing.billRate || '$75/hr',
+        deadline: j.deadline || existing.deadline || 'Immediate',
+        skills: (Array.isArray(j.skills) && j.skills.length > 0) ? j.skills.map(safeSkillLabel) : (existing.skills || []),
+        description: fullDesc,
+        fullDescription: fullDesc,
+        rawDescription: fullDesc
+      })
+    }
+
+    ;(activeJobs || []).forEach(ingestJob)
+    internalJobs.forEach(ingestJob)
 
     return Array.from(map.values())
   }, [activeJobs, internalJobs])
 
-  // Filtered Requisitions for Top Search Selector
-  const filteredRequisitionsList = useMemo(() => {
-    if (!reqSearchInput.trim()) return allRequisitions
-    const q = reqSearchInput.toLowerCase().trim()
-    return allRequisitions.filter(j => 
+  // Filtered Requisitions matching the Quick Search Box
+  const filteredActiveRequisitions = useMemo(() => {
+    if (!reqSearchQuery.trim()) return activeRequisitions
+    const q = reqSearchQuery.toLowerCase().trim()
+    return activeRequisitions.filter(j => 
       String(j.id).toLowerCase().includes(q) ||
       (j.title && j.title.toLowerCase().includes(q)) ||
       (j.client && j.client.toLowerCase().includes(q)) ||
-      (j.location && j.location.toLowerCase().includes(q))
+      (j.location && j.location.toLowerCase().includes(q)) ||
+      ((j.skills || []).some(s => safeSkillLabel(s).toLowerCase().includes(q)))
     )
-  }, [allRequisitions, reqSearchInput])
+  }, [activeRequisitions, reqSearchQuery])
 
-  // ─── 6. Handle Requisition Selection (Auto-Fills Criteria & Boolean) ─────────
+  // Currently Selected Job Object (with Complete JD)
+  const currentJob = useMemo(() => {
+    if (!selectedJobId) return null
+    return activeRequisitions.find(j => String(j.id) === String(selectedJobId)) || null
+  }, [selectedJobId, activeRequisitions])
+
+  // ─── 7. Handle Requisition Selection (Auto-Fills Criteria, Boolean, & Full JD)
   const handleSelectRequisition = useCallback((job) => {
     if (!job) return
     const jobIdStr = String(job.id || job.jobId || job.reqId || '').replace(/^J-/, '').trim()
     setSelectedJobId(jobIdStr)
-    setReqSearchInput(`${jobIdStr} — ${job.title}`)
 
     // 1. Auto-fill criteria in Left Search Sidebar
     setFilterTitle(job.title || '')
@@ -437,23 +486,23 @@ export default function MonsterSourcingModule({
     }
 
     // 3. Live Feedback
-    setToastMessage(`Requirement #${jobIdStr} selected • Boolean & Search Criteria auto-filled`)
+    setToastMessage(`✓ Active Req #${jobIdStr} selected • Full JD & Boolean query loaded`)
     setTimeout(() => setToastMessage(null), 3000)
   }, [])
 
-  // Auto-select first popular requisition on mount if none selected
+  // Auto-select first active requisition on mount once requisitions load
   useEffect(() => {
-    if (!selectedJobId && allRequisitions.length > 0) {
-      const defaultJob = allRequisitions.find(j => 
+    if (!selectedJobId && activeRequisitions.length > 0) {
+      const defaultJob = activeRequisitions.find(j => 
         String(j.id) === '159287' || 
         String(j.id) === '159023' || 
         /business analyst|\.net|java|architect/i.test(j.title || '')
-      ) || allRequisitions[0]
+      ) || activeRequisitions[0]
       if (defaultJob) {
         handleSelectRequisition(defaultJob)
       }
     }
-  }, [allRequisitions, selectedJobId, handleSelectRequisition])
+  }, [activeRequisitions, selectedJobId, handleSelectRequisition])
 
   // Switch Active Boolean Variant
   const handleSwitchVariant = (variant) => {
@@ -472,7 +521,7 @@ export default function MonsterSourcingModule({
     setTimeout(() => setCopiedQueryFeedback(false), 2000)
   }
 
-  // ─── 7. Unified Candidate Pool Aggregation (100% Object-Safe) ──────────────
+  // ─── 8. Unified Candidate Pool Aggregation (100% Object-Safe) ──────────────
   const unifiedPool = useMemo(() => {
     const list = [...AUTHENTIC_SEED_CANDIDATES]
 
@@ -548,7 +597,6 @@ export default function MonsterSourcingModule({
             skills: cleanSkills.length > 0 ? cleanSkills : ['Enterprise Architecture', 'Systems Design'],
             currentRole: `${c.role || c.jobTitle || 'Technical Specialist'}, ${c.client || 'Enterprise'}`,
             previousRole: 'Senior Contributor',
-            // Note: Heavy raw resumeText is NOT stored globally to optimize memory and speed! Loaded on-demand.
             resumeText: c.resumeText || null
           })
         }
@@ -560,17 +608,15 @@ export default function MonsterSourcingModule({
     return list
   }, [allCandidatesPool])
 
-  // ─── 8. Filtered Candidate List (Fuzzy Tokenized Search Engine) ────────────
+  // ─── 9. Filtered Candidate List (Fuzzy Tokenized Search Engine) ────────────
   const filteredCandidates = useMemo(() => {
     return unifiedPool.map(c => {
-      // Calculate dynamic match score
       let matchScore = 70
       const titleTokens = filterTitle.toLowerCase().split(/[\s,/-]+/).filter(w => w.length >= 3)
       const skillTokens = filterSkills.toLowerCase().split(/[\s,/-]+/).filter(w => w.length >= 2)
 
       const candTitleLower = (c.title || '').toLowerCase()
       const candSkillsStr = c.skills.map(safeSkillLabel).join(' ').toLowerCase()
-      const candLocLower = (c.location || '').toLowerCase()
 
       // Title relevance points
       titleTokens.forEach(token => {
@@ -589,7 +635,7 @@ export default function MonsterSourcingModule({
         matchScore: Math.min(99, Math.max(55, matchScore))
       }
     }).filter(c => {
-      // 1. Title Filter (Fuzzy tokenized or substring)
+      // 1. Title Filter
       if (filterTitle.trim()) {
         const titleLower = filterTitle.toLowerCase().trim()
         const candTitle = (c.title || '').toLowerCase()
@@ -613,7 +659,7 @@ export default function MonsterSourcingModule({
         if (!matchesTokens) return false
       }
 
-      // 3. Location Filter (City, State, Remote tolerant)
+      // 3. Location Filter
       if (filterLocation.trim() && !/any|remote/i.test(filterLocation)) {
         const locQuery = filterLocation.toLowerCase().trim()
         const candLoc = (c.location || '').toLowerCase()
@@ -670,14 +716,12 @@ export default function MonsterSourcingModule({
     }
   }, [filteredCandidates, selectedCandidateId])
 
-  // ─── 9. Lazy / On-Demand Resume Fetcher ────────────────────────────────────
+  // ─── 10. Lazy / On-Demand Resume Fetcher ───────────────────────────────────
   const loadResumeOnDemand = useCallback(async (candidate) => {
     if (!candidate) return
 
-    // 1. If already cached in memory, return instantly
     if (resumeCache[candidate.id]) return
 
-    // 2. If candidate has seeded resumeText, cache it
     if (candidate.resumeText && candidate.resumeText.length > 50) {
       setResumeCache(prev => ({ ...prev, [candidate.id]: candidate.resumeText }))
       return
@@ -706,7 +750,7 @@ export default function MonsterSourcingModule({
       console.warn('[UniversalSearch] On-demand resume fetch failed:', err)
     }
 
-    // 3. Fallback: Synthesize rich ATS Dossier adhering strictly to Rule 11 (explicit • bullet points)
+    // Fallback: Synthesize rich ATS Dossier adhering strictly to Rule 11 (explicit • bullet points)
     const skillsListStr = candidate.skills.map(safeSkillLabel).join(', ')
     const fallbackResume = `${candidate.name.toUpperCase()}
 ${candidate.title}
@@ -749,7 +793,7 @@ EDUCATION & CERTIFICATIONS
     }
   }, [selectedCandidate, loadResumeOnDemand])
 
-  // Select Candidate Handler (Guarantees active highlight and immediate detail update)
+  // Select Candidate Handler
   const handleSelectCandidate = (cand) => {
     if (!cand) return
     setSelectedCandidateId(cand.id)
@@ -819,6 +863,85 @@ EDUCATION & CERTIFICATIONS
     navigator.clipboard.writeText(text)
     setCopiedField(fieldName)
     setTimeout(() => setCopiedField(null), 2000)
+  }
+
+  // ─── 11. Open Dedicated In-App Direct Outreach Email Modal with Full JD ────
+  const handleOpenEmailModal = (cand) => {
+    if (!cand) return
+    setOutreachCandidate(cand)
+    const targetTitle = currentJob?.title || cand.title || 'Technical Specialist'
+    const targetClient = currentJob?.client || 'Enterprise Client'
+    const fullJdBody = currentJob?.fullDescription || currentJob?.rawDescription || currentJob?.description || ''
+
+    setOutreachSubject(`Immediate Opportunity: ${targetTitle} — COOLSOFT LLC`)
+
+    const draftedBody = `Hi ${cand.name},
+
+I hope this email finds you well.
+
+I reviewed your background and was very impressed with your experience in ${cand.skills.slice(0, 3).map(safeSkillLabel).join(', ')}. We have an urgent high-priority role with our direct client that matches your technical profile:
+
+POSITION HIGHLIGHTS:
+• Requisition: #${currentJob?.id || 'Active'} — ${targetTitle}
+• Client: ${targetClient}
+• Location: ${currentJob?.location || cand.location || 'Columbia, SC'} (${currentJob?.workMode || 'Hybrid / Onsite'})
+• Target Compensation: ${cand.rate || currentJob?.billRate || 'Competitive ($/hr)'} (${cand.contractType || 'C2C / W2'})
+• Submission Deadline: ${currentJob?.deadline || 'Immediate Submission'}
+
+============================================================
+COMPLETE JOB DESCRIPTION & REQUIREMENTS:
+============================================================
+${fullJdBody ? fullJdBody.trim() : `${targetTitle}\nClient: ${targetClient}\nRequired Skills: ${cand.skills.map(safeSkillLabel).join(', ')}`}
+
+============================================================
+
+If you are interested and actively available to explore this opportunity, please reply with your updated resume, best contact number, and your confirmation for submission.
+
+Looking forward to your quick response!
+
+Best regards,
+${currentUser?.name || 'Technical Recruiter'}
+COOLSOFT LLC
+Email: ${activeUserEmail}
+Website: https://www.coolsofttech.com | https://smarthireus.com`
+
+    setOutreachEmailBody(draftedBody)
+    setShowEmailModal(true)
+  }
+
+  // Send Direct Outreach Email Handler (In-App Dispatch)
+  const handleSendOutreachEmail = async () => {
+    if (!outreachCandidate || !outreachEmailBody) return
+    setIsSendingEmail(true)
+    try {
+      const res = await fetch('/api/recruiter/monster/send-outreach', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-recruiter-email': activeUserEmail
+        },
+        body: JSON.stringify({
+          toEmail: outreachCandidate.email,
+          candidateName: outreachCandidate.name,
+          subject: outreachSubject,
+          emailBody: outreachEmailBody,
+          fromEmail: activeUserEmail
+        })
+      })
+
+      const data = await res.json()
+      if (data && data.success) {
+        setToastMessage(`✓ Outreach email delivered to ${outreachCandidate.name} (${outreachCandidate.email})!`)
+        setShowEmailModal(false)
+      } else {
+        setToastMessage(`⚠️ ${data.error || 'SMTP delivery unavailable. Please use Copy Full Email to send.'}`)
+      }
+    } catch (err) {
+      setToastMessage('⚠️ Server error sending email. You can copy the message to clipboard.')
+    } finally {
+      setIsSendingEmail(false)
+      setTimeout(() => setToastMessage(null), 4000)
+    }
   }
 
   // Render Source Badge helper
@@ -908,7 +1031,7 @@ EDUCATION & CERTIFICATIONS
         </div>
       )}
 
-      {/* ─── TOP BAR: REQUIREMENT SELECTOR & BOOLEAN AUTO-FILL ENGINE ──────── */}
+      {/* ─── TOP BAR: REQUIREMENT SELECTOR (ONLY ACTIVE), SEARCH BOX & BOOLEAN ── */}
       <div style={{
         backgroundColor: '#F8FAFC',
         borderBottom: '1px solid #E2E8F0',
@@ -918,17 +1041,61 @@ EDUCATION & CERTIFICATIONS
         gap: 8,
         flexShrink: 0
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-          {/* Requirement Search & Dropdown Picker */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 320, maxWidth: 640 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+          
+          {/* Left: Requisition Search Input Box + Active Requisitions Dropdown */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 340, maxWidth: 860, flexWrap: 'nowrap' }}>
             <span style={{ fontSize: 12, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>
               Requirement:
             </span>
-            <div style={{ position: 'relative', flex: 1 }}>
+
+            {/* Quick Search Box for Requisitions */}
+            <div style={{ position: 'relative', width: 200, minWidth: 160 }}>
+              <input
+                type="text"
+                value={reqSearchQuery}
+                onChange={(e) => setReqSearchQuery(e.target.value)}
+                placeholder="🔍 Search Req # / Title..."
+                style={{
+                  width: '100%',
+                  padding: '7px 26px 7px 10px',
+                  borderRadius: 6,
+                  border: '1px solid #CBD5E1',
+                  fontSize: 12.5,
+                  backgroundColor: '#FFFFFF',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  color: '#0F172A'
+                }}
+              />
+              {reqSearchQuery && (
+                <button
+                  onClick={() => setReqSearchQuery('')}
+                  style={{
+                    position: 'absolute',
+                    right: 6,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    color: '#94A3B8',
+                    cursor: 'pointer',
+                    fontSize: 12,
+                    padding: 2
+                  }}
+                  title="Clear search"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Dropdown containing ONLY ACTIVE / OPEN Requisitions */}
+            <div style={{ position: 'relative', flex: 1, minWidth: 260 }}>
               <select
                 value={selectedJobId}
                 onChange={(e) => {
-                  const target = allRequisitions.find(j => String(j.id) === String(e.target.value))
+                  const target = activeRequisitions.find(j => String(j.id) === String(e.target.value))
                   if (target) handleSelectRequisition(target)
                 }}
                 style={{
@@ -937,24 +1104,53 @@ EDUCATION & CERTIFICATIONS
                   borderRadius: 6,
                   border: '1px solid #CBD5E1',
                   backgroundColor: '#FFFFFF',
-                  fontSize: 13,
+                  fontSize: 12.5,
                   fontWeight: 600,
                   color: '#0F172A',
                   cursor: 'pointer',
                   outline: 'none'
                 }}
               >
-                <option value="">— Select from 180+ ATS Requisitions —</option>
-                {allRequisitions.map(j => (
+                <option value="">
+                  {filteredActiveRequisitions.length === activeRequisitions.length
+                    ? `— Select from ${activeRequisitions.length} Active Requisitions —`
+                    : `— ${filteredActiveRequisitions.length} Matching Active Requisitions —`}
+                </option>
+                {filteredActiveRequisitions.map(j => (
                   <option key={j.id} value={j.id}>
                     #{j.id} — {j.title} ({j.client || 'Client'} • {j.location || 'Remote'})
                   </option>
                 ))}
               </select>
             </div>
+
+            {/* 📄 View Full Job Description Button */}
+            <button
+              onClick={() => setShowJdModal(true)}
+              disabled={!currentJob}
+              style={{
+                backgroundColor: showJdModal ? '#EFF6FF' : '#FFFFFF',
+                color: '#1E40AF',
+                border: '1px solid #BFDBFE',
+                borderRadius: 6,
+                padding: '7px 12px',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: currentJob ? 'pointer' : 'not-allowed',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                whiteSpace: 'nowrap',
+                transition: 'all 0.15s ease'
+              }}
+              title="View Complete Job Description & Scope"
+            >
+              <IconFileText size={13} color="#1E40AF" />
+              <span>View Full JD</span>
+            </button>
           </div>
 
-          {/* 1-Click Copy Boolean Query Button */}
+          {/* Right: 1-Click Copy Boolean Query Button */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
               onClick={handleCopyBoolean}
@@ -1060,7 +1256,14 @@ EDUCATION & CERTIFICATIONS
             <div style={{ marginBottom: 18, borderBottom: '1px solid #F1F5F9', paddingBottom: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                 <label style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>Job Title</label>
-                <span style={{ fontSize: 16, color: '#64748B', fontWeight: 300 }}>—</span>
+                {currentJob && (
+                  <button
+                    onClick={() => setShowJdModal(true)}
+                    style={{ background: 'none', border: 'none', color: '#2563EB', fontSize: 11, fontWeight: 600, cursor: 'pointer', padding: 0 }}
+                  >
+                    View JD ↗
+                  </button>
+                )}
               </div>
               <div style={{ position: 'relative' }}>
                 <input
@@ -1276,7 +1479,7 @@ EDUCATION & CERTIFICATIONS
           </div>
         )}
 
-        {/* ─── COLUMN 2: MIDDLE CANDIDATE MATCHES LIST (340px) ──────────────── */}
+        {/* ─── COLUMN 2: MIDDLE CANDIDATE MATCHES LIST (360px) ──────────────── */}
         <div style={{
           width: 360,
           minWidth: 340,
@@ -1452,7 +1655,7 @@ EDUCATION & CERTIFICATIONS
                       </div>
                     )}
 
-                    {/* Top skills pills (100% Object-Safe) */}
+                    {/* Top skills pills */}
                     {cand.skills && cand.skills.length > 0 && (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
                         {cand.skills.slice(0, 3).map((s, idx) => (
@@ -1517,7 +1720,7 @@ EDUCATION & CERTIFICATIONS
                   </div>
                 </div>
 
-                {/* Right Action Icons (Star, Share, Email, Push to Pipeline) */}
+                {/* Right Action Icons (Star, Share, In-App Email, Push to Pipeline) */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <button
                     onClick={() => toggleFavorite(selectedCandidate.id)}
@@ -1561,27 +1764,28 @@ EDUCATION & CERTIFICATIONS
                     <span>{copiedField === 'tsv' ? 'Copied!' : 'Share / Copy'}</span>
                   </button>
 
-                  <a
-                    href={`mailto:${selectedCandidate.email}?subject=${encodeURIComponent(`Opportunity: ${selectedCandidate.title}`)}`}
+                  {/* IN-APP DIRECT EMAIL DISPATCH (NO EXTERNAL MAILTO APP) */}
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEmailModal(selectedCandidate)}
                     style={{
-                      backgroundColor: '#F1F5F9',
-                      border: '1px solid #CBD5E1',
+                      backgroundColor: '#EFF6FF',
+                      border: '1px solid #BFDBFE',
                       borderRadius: 6,
-                      padding: '7px 10px',
+                      padding: '7px 12px',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 4,
+                      gap: 5,
                       fontSize: 12,
-                      fontWeight: 600,
-                      color: '#475569',
-                      textDecoration: 'none'
+                      fontWeight: 700,
+                      color: '#1D4ED8'
                     }}
-                    title="Send Email"
+                    title="Open In-App Direct Outreach Email with Full Job Description"
                   >
-                    <IconMail size={13} />
-                    <span>Email</span>
-                  </a>
+                    <IconMail size={13} color="#1D4ED8" />
+                    <span>Email Outreach</span>
+                  </button>
 
                   <button
                     onClick={() => handlePushToPipeline(selectedCandidate)}
@@ -1652,7 +1856,7 @@ EDUCATION & CERTIFICATIONS
               <div style={{ padding: '20px 24px' }}>
                 {detailTab === 'profile' ? (
                   <div>
-                    {/* Contact Information Box (Matching Screenshot) */}
+                    {/* Contact Information Box */}
                     <div style={{
                       backgroundColor: '#F8FAFC',
                       border: '1px solid #E2E8F0',
@@ -1667,9 +1871,9 @@ EDUCATION & CERTIFICATIONS
                         <div>
                           <div style={{ fontSize: 11, color: '#64748B', marginBottom: 2 }}>Phone Number:</div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <a href={`tel:${selectedCandidate.phone}`} style={{ fontSize: 13.5, fontWeight: 600, color: '#2563EB', textDecoration: 'none' }}>
+                            <span style={{ fontSize: 13.5, fontWeight: 600, color: '#2563EB' }}>
                               {selectedCandidate.phone}
-                            </a>
+                            </span>
                             <button
                               onClick={() => handleCopyText(selectedCandidate.phone, 'phone')}
                               style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: 2 }}
@@ -1684,9 +1888,9 @@ EDUCATION & CERTIFICATIONS
                         <div>
                           <div style={{ fontSize: 11, color: '#64748B', marginBottom: 2 }}>Email Address:</div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <a href={`mailto:${selectedCandidate.email}`} style={{ fontSize: 13.5, fontWeight: 600, color: '#2563EB', textDecoration: 'none' }}>
+                            <span style={{ fontSize: 13.5, fontWeight: 600, color: '#2563EB' }}>
                               {selectedCandidate.email}
-                            </a>
+                            </span>
                             <button
                               onClick={() => handleCopyText(selectedCandidate.email, 'email')}
                               style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: 2 }}
@@ -1739,7 +1943,7 @@ EDUCATION & CERTIFICATIONS
                       </p>
                     </div>
 
-                    {/* All Core Competencies (100% Safe string render) */}
+                    {/* All Core Competencies */}
                     {selectedCandidate.skills && selectedCandidate.skills.length > 0 && (
                       <div>
                         <h4 style={{ fontSize: 13, fontWeight: 700, color: '#334155', textTransform: 'uppercase', marginBottom: 8 }}>
@@ -1867,6 +2071,373 @@ EDUCATION & CERTIFICATIONS
           )}
         </div>
       </div>
+
+      {/* ─── MODAL 1: VIEW FULL JOB DESCRIPTION (FULL SCOPE & RESPONSIBILITIES) */}
+      {showJdModal && currentJob && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(3px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 99999,
+          padding: 20
+        }}>
+          <div style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: 10,
+            border: '1px solid #CBD5E1',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.3)',
+            width: '100%',
+            maxWidth: 860,
+            maxHeight: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}>
+            {/* Header */}
+            <div style={{
+              padding: '16px 22px',
+              borderBottom: '1px solid #E2E8F0',
+              backgroundColor: '#F8FAFC',
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: 12
+            }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 800, backgroundColor: '#EFF6FF', color: '#1D4ED8', padding: '2px 8px', borderRadius: 4 }}>
+                    REQ #{currentJob.id}
+                  </span>
+                  <span style={{ fontSize: 11, fontWeight: 700, backgroundColor: '#ECFDF5', color: '#047857', padding: '2px 8px', borderRadius: 4 }}>
+                    ACTIVE REQUISITION
+                  </span>
+                </div>
+                <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#0F172A' }}>
+                  {currentJob.title}
+                </h3>
+                <div style={{ fontSize: 12.5, color: '#64748B', marginTop: 3 }}>
+                  Client: <strong>{currentJob.client}</strong> • Location: <strong>{currentJob.location}</strong> ({currentJob.workMode})
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowJdModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: 18,
+                  fontWeight: 800,
+                  color: '#64748B',
+                  cursor: 'pointer',
+                  padding: 4
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Quick Metadata Bar */}
+            <div style={{
+              padding: '10px 22px',
+              backgroundColor: '#F1F5F9',
+              borderBottom: '1px solid #E2E8F0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontSize: 12,
+              color: '#334155',
+              flexWrap: 'wrap',
+              gap: 8
+            }}>
+              <div>
+                <strong>Rate:</strong> {currentJob.billRate || '$75/hr'} • <strong>Deadline:</strong> {currentJob.deadline || 'Immediate'}
+              </div>
+              <button
+                onClick={() => handleCopyText(currentJob.fullDescription || currentJob.description, 'full_jd')}
+                style={{
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid #CBD5E1',
+                  borderRadius: 4,
+                  padding: '4px 10px',
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  color: '#334155',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4
+                }}
+              >
+                <IconCopy size={11} />
+                <span>{copiedField === 'full_jd' ? 'Copied Full JD!' : 'Copy Full JD'}</span>
+              </button>
+            </div>
+
+            {/* Body: Full JD Text */}
+            <div style={{
+              padding: '20px 24px',
+              overflowY: 'auto',
+              flex: 1,
+              fontFamily: "'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif",
+              fontSize: 13.5,
+              lineHeight: 1.7,
+              color: '#1E293B'
+            }}>
+              {currentJob.skills && currentJob.skills.length > 0 && (
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: 8 }}>
+                    Primary Required Technical Skills:
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {currentJob.skills.map((s, idx) => (
+                      <span key={idx} style={{ fontSize: 11.5, backgroundColor: '#EFF6FF', color: '#1E40AF', padding: '3px 8px', borderRadius: 4, border: '1px solid #BFDBFE', fontWeight: 600 }}>
+                        {safeSkillLabel(s)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <hr style={{ border: 'none', borderTop: '1px solid #E2E8F0', margin: '14px 0' }} />
+
+              <div style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>
+                {currentJob.fullDescription || currentJob.rawDescription || currentJob.description || 'Full job description text is currently being indexed.'}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{
+              padding: '12px 22px',
+              borderTop: '1px solid #E2E8F0',
+              backgroundColor: '#F8FAFC',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              gap: 10
+            }}>
+              <button
+                type="button"
+                onClick={() => setShowJdModal(false)}
+                style={{
+                  backgroundColor: '#2563EB',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: 6,
+                  padding: '7px 18px',
+                  fontSize: 12.5,
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                Close Job Scope
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL 2: IN-APP DIRECT OUTREACH EMAIL DISPATCH WITH FULL JD ─────── */}
+      {showEmailModal && outreachCandidate && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(3px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 99999,
+          padding: 20
+        }}>
+          <div style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: 10,
+            border: '1px solid #CBD5E1',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.3)',
+            width: '100%',
+            maxWidth: 820,
+            maxHeight: '92vh',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}>
+            {/* Header */}
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: '1px solid #E2E8F0',
+              backgroundColor: '#F8FAFC',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#0F172A' }}>
+                  Direct Candidate Outreach Email
+                </h3>
+                <div style={{ fontSize: 12, color: '#64748B', marginTop: 3 }}>
+                  Recipient: <strong>{outreachCandidate.name}</strong> ({outreachCandidate.email}) • Phone: <strong>{outreachCandidate.phone || 'N/A'}</strong>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowEmailModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: 18,
+                  fontWeight: 800,
+                  color: '#64748B',
+                  cursor: 'pointer',
+                  padding: 4
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Email Form */}
+            <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ padding: '8px 12px', backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 6, fontSize: 12, color: '#1E40AF' }}>
+                This outreach message is drafted with COOLSOFT LLC agency branding and includes the <strong>complete Job Description</strong> of the selected active requirement. You can edit the text before sending or copy it.
+              </div>
+
+              {/* Subject */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                  Subject Line:
+                </label>
+                <input
+                  type="text"
+                  value={outreachSubject}
+                  onChange={(e) => setOutreachSubject(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    borderRadius: 6,
+                    border: '1px solid #CBD5E1',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: '#0F172A',
+                    boxSizing: 'border-box',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+
+              {/* Body */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                  Email Pitch & Full Job Description:
+                </label>
+                <textarea
+                  value={outreachEmailBody}
+                  onChange={(e) => setOutreachEmailBody(e.target.value)}
+                  rows={15}
+                  style={{
+                    width: '100%',
+                    padding: 12,
+                    fontSize: 12.5,
+                    fontFamily: 'monospace',
+                    lineHeight: 1.5,
+                    borderRadius: 6,
+                    border: '1px solid #CBD5E1',
+                    color: '#1E293B',
+                    boxSizing: 'border-box',
+                    resize: 'vertical',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div style={{
+              padding: '14px 20px',
+              borderTop: '1px solid #E2E8F0',
+              backgroundColor: '#F8FAFC',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(outreachEmailBody)
+                  setCopiedEmailText(true)
+                  setTimeout(() => setCopiedEmailText(false), 2000)
+                }}
+                style={{
+                  padding: '8px 14px',
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid #CBD5E1',
+                  borderRadius: 6,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: '#334155',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6
+                }}
+              >
+                <IconCopy size={13} />
+                <span>{copiedEmailText ? 'Copied Full Message ✓' : 'Copy Full Message'}</span>
+              </button>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setShowEmailModal(false)}
+                  style={{
+                    padding: '8px 14px',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #CBD5E1',
+                    borderRadius: 6,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: '#64748B',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSendOutreachEmail}
+                  disabled={isSendingEmail}
+                  style={{
+                    padding: '8px 18px',
+                    backgroundColor: '#0F766E',
+                    border: 'none',
+                    borderRadius: 6,
+                    fontSize: 12,
+                    fontWeight: 800,
+                    color: '#FFFFFF',
+                    cursor: isSendingEmail ? 'wait' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6
+                  }}
+                >
+                  <IconMail size={13} color="#FFFFFF" />
+                  <span>{isSendingEmail ? 'Sending Email...' : 'Send Email Now'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
