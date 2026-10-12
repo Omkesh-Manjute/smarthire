@@ -108,6 +108,16 @@ export default function CandidateChat() {
     }
   }, [])
 
+  // Prevent accidental back navigation during active assessment
+  useEffect(() => {
+    const handlePopState = () => {
+      window.history.pushState(null, null, window.location.href)
+    }
+    window.history.pushState(null, null, window.location.href)
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
   // ─── 1. MULTI-TAB DETECTION (SINGLE INSTANCE LOCK) ─────────────────────────
   useEffect(() => {
     if (!sessionId || typeof window === 'undefined') return
@@ -1151,7 +1161,7 @@ export default function CandidateChat() {
             </div>
             <div>
               <div style={styles.brandTitle}>SmartHire <span style={{ color: '#2563eb' }}>Screen</span></div>
-              <div style={styles.brandSubtitle}>Asynchronous Proctored Screening</div>
+              <div style={styles.brandSubtitle}>Candidate Video Interview</div>
             </div>
           </div>
 
@@ -1189,18 +1199,17 @@ export default function CandidateChat() {
         {/* STEP 1: WELCOME & CANDIDATE FORM */}
         {step === 1 && (
           <div style={styles.card}>
-            <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-              <div style={styles.pillLabel}>Candidate Screening Portal</div>
-              <h1 style={styles.heroTitle}>Proctored Video & Voice Assessment</h1>
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+              <div style={styles.pillLabel}>Quick Candidate Interview</div>
+              <h1 style={styles.heroTitle}>AI Video & Voice Screening</h1>
               <p style={styles.heroSubtitle}>
-                Answer {(questions && questions.length > 0) ? questions.length : (session?.questions?.length || 3)} screening questions in a single continuous recording session.
-                Full-screen mode and desktop screen sharing are monitored to ensure fairness.
+                Welcome! Please answer {(questions && questions.length > 0) ? questions.length : (session?.questions?.length || 3)} brief interview questions to introduce your background and experience. Once you begin, your camera and microphone will record your answers in one smooth, 3-5 minute session.
               </p>
 
               <div style={styles.highlightsRow}>
-                <div style={styles.highlightPill}>One Continuous Recording</div>
-                <div style={styles.highlightPill}>Screen Share Required</div>
-                <div style={styles.highlightPill}>Tab Switch Monitored</div>
+                <div style={styles.highlightPill}>{(questions && questions.length > 0) ? questions.length : (session?.questions?.length || 3)} Quick Questions</div>
+                <div style={styles.highlightPill}>Camera & Microphone</div>
+                <div style={styles.highlightPill}>~3–5 Minutes Total</div>
               </div>
             </div>
 
@@ -1381,7 +1390,7 @@ export default function CandidateChat() {
                     autoPlay
                     muted
                     playsInline
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }}
                   />
                   {!hasCameraPermission && (
                     <div style={styles.videoOverlayText}>
@@ -1454,15 +1463,7 @@ export default function CandidateChat() {
               </div>
             </div>
 
-            <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                style={styles.secondaryButton}
-              >
-                ← Back
-              </button>
-
+            <div style={{ marginTop: '28px', textAlign: 'center' }}>
               <button
                 type="button"
                 onClick={handleBeginInterviewStudio}
@@ -1472,7 +1473,7 @@ export default function CandidateChat() {
                   opacity: (!hasCameraPermission || !hasMicPermission || !hasScreenSharePermission) ? 0.6 : 1
                 }}
               >
-                Begin Proctored Assessment (Question 1) ➔
+                Begin Assessment (Question 1) ➔
               </button>
             </div>
           </div>
@@ -1567,27 +1568,7 @@ export default function CandidateChat() {
                 Note: Recording continues seamlessly across all questions. Use buttons below when ready.
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                {currentQuestionIndex > 0 && (
-                  <button
-                    type="button"
-                    onClick={handlePreviousQuestionContinuous}
-                    style={{
-                      padding: '12px 18px',
-                      borderRadius: '10px',
-                      background: '#ffffff',
-                      color: '#475569',
-                      border: '1.5px solid #cbd5e1',
-                      fontSize: '13.5px',
-                      fontWeight: '700',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    ← Back to Question {currentQuestionIndex}
-                  </button>
-                )}
-
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <button
                   type="button"
                   onClick={handleNextQuestionContinuous}
@@ -1719,29 +1700,10 @@ export default function CandidateChat() {
               </div>
             )}
 
-            <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-              <button
-                type="button"
-                onClick={handleRetakeAssessment}
-                disabled={isSubmitting}
-                style={{
-                  padding: '12px 20px',
-                  borderRadius: '10px',
-                  background: '#ffffff',
-                  color: '#64748b',
-                  border: '1.5px solid #cbd5e1',
-                  fontSize: '13.5px',
-                  fontWeight: '700',
-                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                <span>↺ Retake Assessment</span>
-              </button>
-
+            <div style={{ marginTop: '28px', textAlign: 'center' }}>
+              <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '14px' }}>
+                Your assessment recording is ready for recruiter evaluation. Click below to submit.
+              </p>
               <button
                 type="button"
                 onClick={handleSubmitFinalApplication}
@@ -1989,14 +1951,14 @@ const styles = {
   mainContent: {
     maxWidth: '960px',
     width: '100%',
-    margin: '32px auto',
+    margin: '16px auto 24px',
     padding: '0 20px',
     flex: '1'
   },
   card: {
     background: '#ffffff',
     borderRadius: '16px',
-    padding: '36px',
+    padding: '24px 28px',
     boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
     border: '1px solid #E5E7EB'
   },
@@ -2010,22 +1972,22 @@ const styles = {
     textTransform: 'uppercase',
     color: '#2563eb',
     background: '#EFF6FF',
-    marginBottom: '12px'
+    marginBottom: '10px'
   },
   heroTitle: {
-    fontSize: '28px',
+    fontSize: '24px',
     fontWeight: '800',
     letterSpacing: '-0.03em',
     color: '#0f172a',
-    margin: '0 0 10px',
-    lineHeight: '1.3'
+    margin: '0 0 8px',
+    lineHeight: '1.25'
   },
   heroSubtitle: {
-    fontSize: '15px',
+    fontSize: '14px',
     color: '#64748b',
     maxWidth: '620px',
-    margin: '0 auto 20px',
-    lineHeight: '1.6'
+    margin: '0 auto 16px',
+    lineHeight: '1.5'
   },
   highlightsRow: {
     display: 'flex',
@@ -2211,33 +2173,33 @@ const styles = {
     background: '#F8FAFC',
     border: '1px solid #E2E8F0',
     borderRadius: '12px',
-    padding: '24px',
-    marginBottom: '20px'
+    padding: '16px 20px',
+    marginBottom: '14px'
   },
   questionTitle: {
-    fontSize: '18px',
+    fontSize: '17px',
     fontWeight: '800',
     color: '#0f172a',
-    margin: '0 0 6px',
-    lineHeight: '1.4'
+    margin: '0 0 4px',
+    lineHeight: '1.35'
   },
   questionDesc: {
-    fontSize: '13.5px',
+    fontSize: '13px',
     color: '#64748b',
     margin: 0,
-    lineHeight: '1.5'
+    lineHeight: '1.4'
   },
   studioCanvas: {
-    marginTop: '16px'
+    marginTop: '12px'
   },
   recorderContainer: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '16px'
+    gap: '12px'
   },
   videoStage: {
     position: 'relative',
-    height: '360px',
+    height: '280px',
     borderRadius: '12px',
     overflow: 'hidden',
     backgroundColor: '#0f172a'
@@ -2245,7 +2207,8 @@ const styles = {
   videoFeed: {
     width: '100%',
     height: '100%',
-    objectFit: 'cover'
+    objectFit: 'cover',
+    transform: 'scaleX(-1)'
   },
   recordingCornerBadge: {
     position: 'absolute',
