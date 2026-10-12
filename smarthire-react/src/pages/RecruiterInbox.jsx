@@ -12876,6 +12876,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
         <MonsterSourcingModule
           currentUser={currentUser}
           activeJobs={openJobsList}
+          allCandidatesPool={streamCandidates}
           onCandidateImported={(newCand) => {
             if (newCand) {
               setStreamCandidates(prev => deduplicateCandidates([newCand, ...prev]))
