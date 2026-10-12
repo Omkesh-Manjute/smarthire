@@ -48,12 +48,13 @@ const getCandidateSourceDisplay = (c) => {
   if (!c) return 'Direct Applicant'
   
   // 1. Check explicit intake source tags first
-  const src = String(c.source || c.sourceCategory || c.origin || '').toLowerCase().trim()
+  const src = String(c.source || c.sourceCategory || c.origin || c.appliedFrom || '').toLowerCase().trim()
   const emailSender = String(c.email_context?.sender_email || '').toLowerCase()
   
+  if (src.includes('mobile') || src.includes('flutter') || src.includes('app_apply') || String(c.appliedFrom || '').toLowerCase().includes('mobile')) return 'Mobile App'
+  if (src.includes('career') || src.includes('auto-apply') || src.includes('job site') || src.includes('job_site') || src.includes('careers_portal') || String(c.appliedFrom || '').toLowerCase().includes('job site')) return 'Job Site'
   if (src.includes('dice') || emailSender.includes('dice')) return 'Dice'
   if (src.includes('monster') || emailSender.includes('monster')) return 'Monster'
-  if (src.includes('career') || src.includes('auto-apply')) return 'Careers Portal'
   if (src.includes('spam') || src.includes('bulk') || src.includes('inbox') || src.includes('email') || src.includes('yahoo')) return 'Inbound Email'
   if (src.includes('linkedin')) return 'LinkedIn'
   if (src.includes('bench') || src.includes('vendor')) return 'Vendor Bench'
@@ -176,6 +177,7 @@ function CandidatesModule({
     pushedToReq: false,
     untouched: false,
   })
+  const [channelFilter, setChannelFilter] = useState('All') // 'All' | 'Job Site' | 'Mobile App' | 'Inbound Email' | 'Dice & Monster' | 'Vendor Bench'
   const [activeViewPreset, setActiveViewPreset] = useState('All Candidates')
   const [sortBy, setSortBy] = useState('newest') // newest, score, name, status
   const [viewMode, setViewMode] = useState('list') // list, kanban, timeline

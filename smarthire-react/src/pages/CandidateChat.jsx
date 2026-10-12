@@ -1004,9 +1004,14 @@ export default function CandidateChat() {
         <p style={{ fontSize: '14.5px', color: '#475569', maxWidth: '480px', lineHeight: 1.6 }}>
           This single-use screening assessment link has already been completed and submitted on {new Date(submittedAtDate).toLocaleDateString()}. Each assessment link is strictly single-use to maintain evaluation fairness and security.
         </p>
-        <Link to="/jobs" style={{ ...styles.primaryButton, marginTop: '20px' }}>
-          Browse Open Requisitions
-        </Link>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '20px' }}>
+          <Link to="/jobs" style={styles.primaryButton}>
+            Browse Open Requisitions
+          </Link>
+          <Link to="/blog" target="_blank" rel="noopener noreferrer" style={{ ...styles.secondaryButton, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
+            Explore Career Blog
+          </Link>
+        </div>
       </div>
     )
   }
@@ -1035,9 +1040,14 @@ export default function CandidateChat() {
         <p style={{ fontSize: '14px', color: '#64748b', maxWidth: '440px', marginTop: '8px', lineHeight: 1.5 }}>
           {error}
         </p>
-        <Link to="/jobs" style={styles.primaryButton}>
-          Browse Open Positions
-        </Link>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '16px' }}>
+          <Link to="/jobs" style={styles.primaryButton}>
+            Browse Open Positions
+          </Link>
+          <Link to="/blog" target="_blank" rel="noopener noreferrer" style={{ ...styles.secondaryButton, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
+            Explore Career Blog
+          </Link>
+        </div>
       </div>
     )
   }
@@ -1761,8 +1771,70 @@ export default function CandidateChat() {
                 </div>
               </div>
 
-              <div style={{ marginTop: '28px' }}>
-                <Link to="/jobs" style={styles.primaryButton}>
+              {/* Career Guides Recommendation Card (Drives organic blog traffic for AdSense) */}
+              <div style={{
+                background: '#ffffff',
+                border: '1px solid #E2E8F0',
+                borderRadius: '12px',
+                padding: '16px 20px',
+                textAlign: 'left',
+                marginTop: '20px'
+              }}>
+                <div style={{ fontSize: '12px', fontWeight: 800, color: '#0F172A', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Recommended Career & Interview Guides
+                </div>
+                <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 12px', lineHeight: 1.5 }}>
+                  While our recruitment team reviews your submission, explore industry benchmarks and preparation resources:
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <Link
+                    to="/blog/highest-paying-it-certifications-2026"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: '13px', color: '#2563EB', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                  >
+                    <span>Highest-Paying IT Certifications & Skill Demand (2026)</span>
+                    <span style={{ fontSize: '12px', color: '#64748B' }}>Read &rarr;</span>
+                  </Link>
+                  <Link
+                    to="/blog/c2c-vs-w2-vs-1099-it-contracts-guide"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: '13px', color: '#2563EB', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                  >
+                    <span>C2C vs W2 vs 1099 IT Contracts & Rate Guide</span>
+                    <span style={{ fontSize: '12px', color: '#64748B' }}>Read &rarr;</span>
+                  </Link>
+                  <Link
+                    to="/blog/us-it-recruitment-market-2026"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: '13px', color: '#2563EB', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                  >
+                    <span>US IT Recruitment Market 2026: Direct Client Hiring Trends</span>
+                    <span style={{ fontSize: '12px', color: '#64748B' }}>Read &rarr;</span>
+                  </Link>
+                </div>
+              </div>
+
+              <div style={{ marginTop: '24px', display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                <Link
+                  to="/blog"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={styles.primaryButton}
+                >
+                  Explore Career Blog & Guides
+                </Link>
+                <Link
+                  to="/jobs"
+                  style={{
+                    ...styles.secondaryButton,
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center'
+                  }}
+                >
                   Browse More Open Positions
                 </Link>
               </div>

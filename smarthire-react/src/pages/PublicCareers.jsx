@@ -6,6 +6,7 @@ import { saveCareerApplication, getAtsJobs, saveRequisitionCandidates, saveCandi
 import { loginWithGoogle } from '../lib/firebase'
 import { formatJobDescription, resolveJobLocation, cleanJobTitleWithPositionNumber, resolveReqId } from '../utils/formatJobDescription'
 import WellfoundCareersView from '../components/WellfoundCareersView'
+import CandidateProfileModal from '../components/CandidateProfileModal'
 
 export default function PublicCareers() {
   const navigate = useNavigate()
@@ -276,9 +277,23 @@ export default function PublicCareers() {
     } catch(e) { return null }
   })
   const [showLoginModal, setShowLoginModal] = useState(false)
+  const [showCandidateProfileModal, setShowCandidateProfileModal] = useState(false)
   const [targetJobForLogin, setTargetJobForLogin] = useState(null)
   const [loginEmail, setLoginEmail] = useState('')
   const [loginName, setLoginName] = useState('')
+
+  const handleCandidateProfileUpdate = (updatedUser, updatedProfile, resumeFile) => {
+    setCandidateUser(updatedUser)
+    if (updatedProfile.name) setCandidateName(updatedProfile.name)
+    if (updatedProfile.email) setCandidateEmail(updatedProfile.email)
+    if (updatedProfile.phone) setCandidatePhone(updatedProfile.phone)
+    if (updatedProfile.location) setCurrentLocation(updatedProfile.location)
+    if (updatedProfile.relocatePref) setRelocatePref(updatedProfile.relocatePref)
+    if (updatedProfile.visaStatus) setVisaStatus(updatedProfile.visaStatus)
+    if (updatedProfile.contractType) setContractType(updatedProfile.contractType)
+    if (updatedProfile.expectedRate) setExpectedRate(updatedProfile.expectedRate)
+    if (resumeFile) setResumeFile(resumeFile)
+  }
 
   const handleCandidateLogin = (userObj) => {
     setCandidateUser(userObj)
@@ -589,12 +604,25 @@ export default function PublicCareers() {
     setSubmitting(false)
     setResumeFile(null)
     setResumeText('')
-    setCandidateName('')
-    setCandidateEmail('')
-    setCandidatePhone('')
-    setCurrentLocation('')
-    setAutoFillSuccess(false)
-    setDetailsVerified(false)
+
+    // Auto-populate from saved candidate profile if available
+    let profile = {}
+    try {
+      const savedProfile = localStorage.getItem('smarthire_candidate_profile')
+      if (savedProfile) profile = JSON.parse(savedProfile)
+    } catch (e) {}
+
+    setCandidateName(profile.name || candidateUser?.name || '')
+    setCandidateEmail(profile.email || candidateUser?.email || '')
+    setCandidatePhone(profile.phone || candidateUser?.phone || '')
+    setCurrentLocation(profile.location || '')
+    if (profile.relocatePref) setRelocatePref(profile.relocatePref)
+    if (profile.contractType) setContractType(profile.contractType)
+    if (profile.visaStatus) setVisaStatus(profile.visaStatus)
+    if (profile.expectedRate) setExpectedRate(profile.expectedRate)
+
+    setAutoFillSuccess(Boolean(profile.name || candidateUser?.name))
+    setDetailsVerified(Boolean(profile.name || candidateUser?.name))
     setParsedSkills([])
   }
 
@@ -1005,6 +1033,7 @@ export default function PublicCareers() {
         candidateUser={candidateUser}
         handleCandidateSignOut={handleCandidateSignOut}
         setShowLoginModal={setShowLoginModal}
+        onOpenProfileModal={() => setShowCandidateProfileModal(true)}
         handleApplyClick={handleApplyClick}
         setFullJdModalJob={setFullJdModalJob}
         setActiveChatCandidate={setActiveChatCandidate}
@@ -1834,6 +1863,15 @@ export default function PublicCareers() {
           </div>
         </div>
       )}
+
+      {/* ─── CANDIDATE PROFILE & CAREER HUB MODAL ─────────────────────────── */}
+      <CandidateProfileModal
+        isOpen={showCandidateProfileModal}
+        onClose={() => setShowCandidateProfileModal(false)}
+        candidateUser={candidateUser}
+        onUpdateProfile={handleCandidateProfileUpdate}
+        themeMode={themeMode}
+      />
 
       {/* ─── 1-ON-1 RECRUITER CHAT WIDGET ──────────────────────────────────── */}
       {activeChatCandidate && (

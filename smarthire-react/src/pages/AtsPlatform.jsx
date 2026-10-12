@@ -189,7 +189,7 @@ const ALL_MODULES = [
   { id: 'candidates',  label: 'Candidates',      category: 'talent', countKey: 'candidates', isLink: '/inbox' },
   { id: 'pipeline',    label: 'Pipeline',        category: 'talent', adminOnly: true },
   { id: 'screening',   label: 'AI Screening',    category: 'talent' },
-  { id: 'monster',     label: 'Monster+ AI',     category: 'talent', isLink: '/inbox?tab=monster' },
+  { id: 'monster',     label: 'Universal Search',category: 'talent', isLink: '/inbox?tab=monster' },
   { id: 'submissions', label: 'Submissions',     category: 'talent', adminOnly: true },
   { id: 'submittal',   label: 'Submittal Pack',  category: 'talent', isLink: '/submittal-pack' },
   { id: 'rtr',         label: 'SmartSign RTR',   category: 'talent', isLink: '/sign-rtr' },

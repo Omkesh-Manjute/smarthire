@@ -7666,7 +7666,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
             }}
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <IconMonster size={16} color="currentColor" /> {!sidebarCollapsed && <span>Monster+ Sourcing</span>}
+              <IconMonster size={16} color="currentColor" /> {!sidebarCollapsed && <span>Universal Search</span>}
             </span>
             {!sidebarCollapsed ? (
               <span style={{
@@ -7678,7 +7678,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                 fontWeight: 700,
                 letterSpacing: '0.3px'
               }}>
-                AI MATCH
+                ALL DB
               </span>
             ) : (
               <span style={{
@@ -7944,10 +7944,10 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
           {/* Breadcrumb Navigation (replacing duplicate top search bar) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: C.textSecondary }}>
-            <span>{inboxViewMode === 'chat' ? 'Workspace' : (inboxViewMode === 'hotlists' ? 'Vendor Hotlists' : (inboxViewMode === 'monster' ? 'Talent Sourcing' : 'Candidates'))}</span>
+            <span>{inboxViewMode === 'chat' ? 'Workspace' : (inboxViewMode === 'hotlists' ? 'Vendor Hotlists' : (inboxViewMode === 'monster' ? 'Universal Search' : 'Candidates'))}</span>
             <span style={{ color: '#CBD5E1' }}>/</span>
             <span style={{ color: C.textPrimary, fontWeight: 700 }}>
-              {inboxViewMode === 'chat' ? 'Messages & Team Collab' : (inboxViewMode === 'hotlists' ? 'Bench Ingestion Hub' : (inboxViewMode === 'monster' ? 'Monster+ AI Sourcing & Match Engine' : (filterSource === 'mobile' ? 'Mobile App Submissions' : filterSource === 'careers' ? 'Job Sites Portal' : 'Talent Cloud')))}
+              {inboxViewMode === 'chat' ? 'Messages & Team Collab' : (inboxViewMode === 'hotlists' ? 'Bench Ingestion Hub' : (inboxViewMode === 'monster' ? 'Universal Search • Cross-Channel Talent Database' : (filterSource === 'mobile' ? 'Mobile App Submissions' : filterSource === 'careers' ? 'Job Sites Portal' : 'Talent Cloud')))}
             </span>
           </div>
 

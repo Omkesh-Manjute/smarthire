@@ -501,6 +501,7 @@ export default function WellfoundCareersView({
   candidateUser = null,
   handleCandidateSignOut,
   setShowLoginModal,
+  onOpenProfileModal,
   handleApplyClick,
   setFullJdModalJob,
   setActiveChatCandidate,
@@ -1484,6 +1485,28 @@ export default function WellfoundCareersView({
               >
                 Blog
               </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  if (candidateUser) {
+                    if (onOpenProfileModal) onOpenProfileModal()
+                  } else {
+                    if (setShowLoginModal) setShowLoginModal(true)
+                  }
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: 13.5,
+                  fontWeight: candidateUser ? 600 : 500,
+                  color: candidateUser ? '#2563EB' : colors.textSecondary,
+                  padding: '6px 12px',
+                  borderRadius: 6,
+                  cursor: 'pointer'
+                }}
+              >
+                My Profile
+              </button>
               <Link
                 to="/"
                 style={{
@@ -1504,15 +1527,20 @@ export default function WellfoundCareersView({
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {candidateUser ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '4px 10px 4px 6px',
-                  borderRadius: 20,
-                  backgroundColor: '#F3F4F6',
-                  border: `1px solid ${colors.border}`
-                }}>
+                <div
+                  onClick={() => onOpenProfileModal && onOpenProfileModal()}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '4px 10px 4px 6px',
+                    borderRadius: 20,
+                    backgroundColor: isLight ? '#F3F4F6' : '#1E293B',
+                    border: `1px solid ${colors.border}`,
+                    cursor: 'pointer'
+                  }}
+                  title="Click to view & edit Candidate Profile & Submitted Applications"
+                >
                   <div style={{
                     width: 24,
                     height: 24,
@@ -1530,6 +1558,7 @@ export default function WellfoundCareersView({
                   <span style={{ fontSize: 12.5, fontWeight: 600, color: colors.textPrimary }}>
                     {candidateUser.name || candidateUser.email?.split('@')[0]}
                   </span>
+                  <span style={{ fontSize: 11, color: '#2563EB', fontWeight: 700, marginLeft: 2 }}>Edit Profile</span>
                 </div>
                 <button
                   onClick={handleCandidateSignOut}
