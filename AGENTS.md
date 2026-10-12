@@ -103,6 +103,35 @@ The following high-impact features and optimizations have been agreed upon and p
   - **Branded & Blind Resume Wrapper**: Formats candidate resume with agency letterhead/header, core competencies table, clean bullet points, and optional contact masking (hiding direct phone/email to prevent poaching).
   - **1-Click Actions**: 📋 Copy formatted text to clipboard (for portal/email paste), 📥 Download PDF/DOCX submittal package, and ✉️ Direct email dispatch to Account Manager / Client.
 
+### 2026-10-12 — Dead Code Elimination (7,286 Lines Removed) & Inlined Contact/Support Redirects
+- **Context & Objectives**:
+  - The user requested:
+    - *"okay dead files and only redarct hone wale page jo kam ke nahi hai unko remove karo okay and ask me if not understand"*
+- **Fixes & Refactoring**:
+  1. **Removed 8 Unused / Dead Files (7,286 lines of dead weight eliminated)**:
+     - `smarthire-react/src/pages/CandidateVerification.jsx` (2,130 lines, 77 KB) — orphaned component; `/verify` route was already redirecting to `/ats`.
+     - `smarthire-react/src/components/ClassicCareersView.jsx` (1,350 lines, 68 KB) — unused prototype career view.
+     - `smarthire-react/src/components/LinkedInCareersView.jsx` (1,335 lines, 56 KB) — unused prototype career view.
+     - `smarthire-react/src/components/ZoneCareersView.jsx` (1,220 lines, 52 KB) — unused prototype career view.
+     - `smarthire-react/src/components/ZoneCareerAssets.jsx` (480 lines, 23 KB) — only imported by `ZoneCareersView.jsx`.
+     - `smarthire-react/src/components/EmailComposerModal.jsx` (280 lines, 11 KB) — replaced by modern in-app outreach modals.
+     - `smarthire-react/src/components/ResumeViewerModal.jsx` (380 lines, 17 KB) — replaced by `CandidateDetailViewModal.jsx`.
+     - `smarthire-react/src/pages/test_write.txt` (5 bytes) — stray test file.
+  2. **Removed Thin Redirect-Only Files**:
+     - `smarthire-react/src/pages/Contact.jsx` (16 lines)
+     - `smarthire-react/src/pages/Support.jsx` (16 lines)
+     - Inlined redirects cleanly in `App.jsx`:
+       - `<Route path="/contact" element={<Navigate to="/about?section=inquiry#inquiry" replace />} />`
+       - `<Route path="/support" element={<Navigate to="/about?section=support#support" replace />} />`
+     - Cleaned up unused `lazy()` imports in `App.jsx` (`CandidateVerification`, `Contact`, `Support`).
+- **Deployment & Verification**:
+  - Production build in `smarthire-react` verified: 0 errors, 0 warnings (transformed modules reduced from 117 to 114).
+  - Git committed (`55119e5`) and pushed to `main`.
+  - Production bundle deployed to AWS Lightsail server (`34.194.119.199`), PM2 `smarthire-ats` reloaded.
+  - Disk space verified: 9.0GB free (52% used, Rule 5 compliant).
+
+---
+
 ### 2026-10-12 — WordPress Publication Editorial Redesign, Reading Progress Bar & Photojournalistic Hero Image
 - **Context & Objectives**:
   - The user requested:
