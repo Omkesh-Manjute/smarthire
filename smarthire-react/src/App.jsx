@@ -4,12 +4,9 @@ import Homepage from './pages/Homepage'
 import Login from './pages/Login'
 
 const RecruiterDashboard = lazy(() => import('./pages/RecruiterDashboard'))
-const CandidateVerification = lazy(() => import('./pages/CandidateVerification'))
 const About = lazy(() => import('./pages/About'))
-const Contact = lazy(() => import('./pages/Contact'))
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
 const Terms = lazy(() => import('./pages/Terms'))
-const Support = lazy(() => import('./pages/Support'))
 const AtsPlatform = lazy(() => import('./pages/AtsPlatform'))
 const Reports = lazy(() => import('./pages/Reports'))
 const BrandingCenter = lazy(() => import('./pages/BrandingCenter'))
@@ -94,8 +91,8 @@ function App() {
           <Route path="/candidate/screen/:sessionId" element={<CandidateChat />} />
           <Route path="/login" element={<Login />} />
           <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/support" element={<Support />} />
+          <Route path="/contact" element={<Navigate to="/about?section=inquiry#inquiry" replace />} />
+          <Route path="/support" element={<Navigate to="/about?section=support#support" replace />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="*" element={<Navigate to="/" replace />} />
