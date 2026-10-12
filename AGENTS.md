@@ -135,6 +135,7 @@ The following high-impact features and optimizations have been agreed upon and p
   - Production bundle and `server/index.js` deployed to AWS Lightsail server (`34.194.119.199`), PM2 `smarthire-ats` reloaded.
   - Disk space verified: 8.9GB free (52% used, Rule 5 compliant).
   - Live tests verified HTTP 200 on `POST /api/v1/screening/create`, `GET /api/v1/screening/status/:sessionId`, `POST /api/v1/screening/test-webhook`, and `https://smarthireus.com/pricing`.
+  - Added **Clickwrap Terms & Verification Consent Checkbox** in Step 1 of `CandidateChat.jsx` before proceeding to camera/microphone/location proctoring, ensuring 100% compliance with US CCPA/CPRA, EEOC, and India DPDP Act 2023.
 
 ---
 
