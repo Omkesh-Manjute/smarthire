@@ -1215,6 +1215,15 @@ export default function PublicCareers() {
                   </p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <Link
+                      to="/blog/data-center-staffing-boom"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontSize: 13, color: '#2563EB', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                    >
+                      <span>Data Center Staffing Boom: Hot In-Demand IT Roles (2026)</span>
+                      <span style={{ fontSize: 12, color: '#64748B' }}>Read &rarr;</span>
+                    </Link>
+                    <Link
                       to="/blog/highest-paying-it-certifications-2026"
                       target="_blank"
                       rel="noopener noreferrer"

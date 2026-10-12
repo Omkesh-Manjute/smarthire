@@ -277,8 +277,38 @@ export default function HighestPayingCertifications2026Article() {
         </div>
       ))}
 
+      {/* Related Reading Box */}
+      <div style={{ margin: '36px 0', padding: '20px 24px', background: '#F1F5F9', border: '1px solid #CBD5E1', borderRadius: 12 }}>
+        <strong style={{ fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#1E293B', display: 'block', marginBottom: 12 }}>
+          Recommended Career & Market Guides
+        </strong>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <Link
+            to="/blog/data-center-staffing-boom"
+            style={{ fontSize: 15, color: '#2563EB', fontWeight: 600, textDecoration: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+          >
+            <span>Data Center Staffing Boom: Hot In-Demand IT Roles US Companies Are Hiring For &rarr;</span>
+            <span style={{ fontSize: 13, color: '#64748B' }}>7 min read</span>
+          </Link>
+          <Link
+            to="/blog/c2c-vs-w2-vs-1099-it-contracts-guide"
+            style={{ fontSize: 15, color: '#2563EB', fontWeight: 600, textDecoration: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+          >
+            <span>C2C vs W2 vs 1099: Which IT Contract Type Is Best for You in 2026? &rarr;</span>
+            <span style={{ fontSize: 13, color: '#64748B' }}>9 min read</span>
+          </Link>
+          <Link
+            to="/blog/us-it-recruitment-market-2026"
+            style={{ fontSize: 15, color: '#2563EB', fontWeight: 600, textDecoration: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+          >
+            <span>US IT Recruitment Market 2026: Trends, Skills & Salaries &rarr;</span>
+            <span style={{ fontSize: 13, color: '#64748B' }}>8 min read</span>
+          </Link>
+        </div>
+      </div>
+
       {/* Sources note */}
-      <div style={{ marginTop: 36, padding: '16px 20px', background: '#F8FAFC', borderRadius: 8, fontSize: 13, color: '#64748B', lineHeight: 1.6 }}>
+      <div style={{ marginTop: 24, padding: '16px 20px', background: '#F8FAFC', borderRadius: 8, fontSize: 13, color: '#64748B', lineHeight: 1.6 }}>
         <strong>Sources:</strong> Skillsoft IT Skills and Salary Report 2026; Robert Half Technology Salary Guide; Global Knowledge Workforce Analysis; (ISC)² Cybersecurity Workforce Study; CompTIA IT Industry Outlook. Data reflects published metrics as of September 2026.
       </div>
     </div>

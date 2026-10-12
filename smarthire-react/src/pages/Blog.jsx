@@ -6,6 +6,7 @@ import H1b2026Article from './blog-articles/H1b2026Article'
 import IndiaVsUsaJobs2026Article from './blog-articles/IndiaVsUsaJobs2026Article'
 import HighestPayingCertifications2026Article from './blog-articles/HighestPayingCertifications2026Article'
 import AiEntryLevelJobs2026Article from './blog-articles/AiEntryLevelJobs2026Article'
+import DataCenterStaffingBoomArticle from './blog-articles/DataCenterStaffingBoomArticle'
 
 /* ─── SEO Helper Hook ─────────────────────────────────────────────── */
 function useSEO({ title, description, url, image, ldJson }) {
@@ -62,6 +63,21 @@ function useSEO({ title, description, url, image, ldJson }) {
 
 /* ─── Blog Post Catalog ───────────────────────────────────────────── */
 export const BLOG_POSTS = [
+  {
+    slug: 'data-center-staffing-boom',
+    aliases: ['data-center-jobs-2026', 'ai-data-center-staffing', 'data-center-staffing-boom-it-roles-us-companies-are-hiring-for'],
+    title: "Data Center Staffing Boom: Which IT Roles US Companies Are Hiring For",
+    metaTitle: "Data Center Staffing Boom: In-Demand IT Roles in 2026 | SmartHire",
+    metaDescription: "Data center hiring is exploding across the US. See which roles are hardest to fill in 2026, what they pay, where the jobs are, and how to get hired.",
+    excerpt: "The buildout behind AI and cloud is so massive that hiring human talent—not capital—is the bottleneck. 81% of IT staffing leaders report surging data center demand. Here is the full guide to in-demand roles, pay signals, and hiring hotspots in 2026.",
+    category: "IT Career Guide",
+    readTime: "7 min read",
+    date: "October 12, 2026",
+    author: "SmartHire Editorial Team",
+    tags: ["Data Center Jobs", "AI Infrastructure", "Critical Facility Technicians", "Liquid Cooling", "Electricians", "IT Staffing 2026"],
+    image: "/images/blog/data-center-staffing-boom-hero.webp",
+    component: DataCenterStaffingBoomArticle
+  },
   {
     slug: 'highest-paying-it-certifications-2026',
     aliases: ['highest-paying-it-certifications-2026-real-salary-data', 'it-certifications-2026'],

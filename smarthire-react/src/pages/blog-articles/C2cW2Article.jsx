@@ -213,6 +213,36 @@ export default function C2cW2Article() {
           <p style={{ padding: '14px 18px', margin: 0, color: '#334155', fontSize: 15, lineHeight: 1.75, backgroundColor: '#FFFFFF', borderTop: '1px solid #E2E8F0' }}>{faq.a}</p>
         </details>
       ))}
+
+      {/* Related Reading Box */}
+      <div style={{ margin: '36px 0', padding: '20px 24px', background: '#F1F5F9', border: '1px solid #CBD5E1', borderRadius: 12 }}>
+        <strong style={{ fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#1E293B', display: 'block', marginBottom: 12 }}>
+          Recommended Career & Market Guides
+        </strong>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <Link
+            to="/blog/data-center-staffing-boom"
+            style={{ fontSize: 15, color: '#2563EB', fontWeight: 600, textDecoration: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+          >
+            <span>Data Center Staffing Boom: Hot In-Demand IT Roles US Companies Are Hiring For &rarr;</span>
+            <span style={{ fontSize: 13, color: '#64748B' }}>7 min read</span>
+          </Link>
+          <Link
+            to="/blog/highest-paying-it-certifications-2026"
+            style={{ fontSize: 15, color: '#2563EB', fontWeight: 600, textDecoration: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+          >
+            <span>10 Highest-Paying IT Certifications in 2026 (Ranked by Real Salary Data) &rarr;</span>
+            <span style={{ fontSize: 13, color: '#64748B' }}>10 min read</span>
+          </Link>
+          <Link
+            to="/blog/h1b-2026-update-it-work-visa-options"
+            style={{ fontSize: 15, color: '#2563EB', fontWeight: 600, textDecoration: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+          >
+            <span>H-1B 2026 Update: Lottery, Fees and Work Visa Pathways &rarr;</span>
+            <span style={{ fontSize: 13, color: '#64748B' }}>9 min read</span>
+          </Link>
+        </div>
+      </div>
     </div>
   )
 }
