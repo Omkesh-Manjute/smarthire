@@ -103,6 +103,40 @@ The following high-impact features and optimizations have been agreed upon and p
   - **Branded & Blind Resume Wrapper**: Formats candidate resume with agency letterhead/header, core competencies table, clean bullet points, and optional contact masking (hiding direct phone/email to prevent poaching).
   - **1-Click Actions**: 📋 Copy formatted text to clipboard (for portal/email paste), 📥 Download PDF/DOCX submittal package, and ✉️ Direct email dispatch to Account Manager / Client.
 
+### 2026-10-13 — SmartScreen Candidate Portal UX Polish: Natural Language, Mirroring, Back/Retake Locks & Compact Viewport
+- **Context & Objectives**:
+  - The user requested:
+    1. Simplify the wording/phrasing on the candidate screening portal (replacing robotic jargon like "Proctored Video & Voice Assessment" with natural, friendly phrasing).
+    2. Fix webcam mirroring (candidate's live camera was unmirrored/inverted).
+    3. Remove back buttons (`← Back` in Step 2, `← Back to Question` in Step 3, plus browser back prevention) to ensure candidates move forward without tampering.
+    4. Fix vertical scrolling by compacting margins, paddings, and the live video stage (`280px`) so the full assessment studio fits within typical laptop viewports.
+    5. Remove `↺ Retake Assessment` button from Step 4 to ensure authentic, spontaneous answers.
+    6. Clarify recruiter visibility: Face camera vs full screen share during 1-way screening.
+- **Architectural Implementations & Fixes**:
+  1. **Natural, Friendly Language (`CandidateChat.jsx`)**:
+     - Updated Step 1 hero title to *"AI Video & Voice Screening"*, pill label to *"Quick Candidate Interview"*, and descriptive copy explaining that the interview consists of 3 brief questions in a 3-5 minute session.
+     - Updated primary CTA to *"Begin Assessment (Question 1) ➔"*.
+  2. **Camera Mirroring (`transform: scaleX(-1)`)**:
+     - Applied `transform: 'scaleX(-1)'` to live preview `deviceCheckVideoRef` (Step 2) and live studio recording `previewVideoRef` / `styles.videoFeed` (Step 3).
+     - Step 4 recorded playback preserves standard orientation (`transform: 'none'`) so clothing text and visual elements display accurately.
+  3. **One-Way Forward Navigation & Browser Lock**:
+     - Added `window.history.pushState` on popstate to prevent accidental browser back button navigation during screening.
+     - Removed `← Back` in Step 2 and centered primary launch button.
+     - Removed `← Back to Question X` during continuous recording in Step 3.
+     - Removed `↺ Retake Assessment` button in Step 4, keeping candidate responses authentic and unscripted.
+  4. **Compact Viewport Sizing (Zero-Scroll Studio)**:
+     - Reduced `videoStage` height from `360px` to `280px`.
+     - Tightened `mainContent` margins (`16px auto 24px`) and card padding (`24px 28px`).
+     - Compacted `questionBox` padding (`16px 20px`) and `questionTitle` font size (`17px`).
+- **Deployment & Verification**:
+  - Local production build in `smarthire-react`: **0 errors, 0 warnings** (active bundles `index-B5gskb0n.js` and `CandidateChat-D0O_oYyh.js`).
+  - Git committed (`db15f40`) and pushed to `main`.
+  - Production bundle deployed to AWS Lightsail server (`34.194.119.199`), PM2 `smarthire-ats` reloaded.
+  - Disk space verified: 8.8GB free (53% used, Rule 5 compliant).
+  - Live tests verified HTTP 200 on `https://smarthireus.com/assets/CandidateChat-D0O_oYyh.js` and `https://smarthireus.com/assets/index-B5gskb0n.js`.
+
+---
+
 ### 2026-10-13 — SmartScreen AI: Universal Standalone Screening REST API, Non-Blocking Webhooks & Dual-Model Pricing ($79 / $199 / $499)
 - **Context & Objectives**:
   - The user requested:
