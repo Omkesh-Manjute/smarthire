@@ -103,6 +103,40 @@ The following high-impact features and optimizations have been agreed upon and p
   - **Branded & Blind Resume Wrapper**: Formats candidate resume with agency letterhead/header, core competencies table, clean bullet points, and optional contact masking (hiding direct phone/email to prevent poaching).
   - **1-Click Actions**: 📋 Copy formatted text to clipboard (for portal/email paste), 📥 Download PDF/DOCX submittal package, and ✉️ Direct email dispatch to Account Manager / Client.
 
+### 2026-10-12 — Screening Module: Middle Scroll Fix, Header & KPI Card Redesign, Table Action Alignment & Candidate-Targeted Link Creation
+- **Context & Objectives**:
+  - The user reported:
+    1. Middle scrolling failure: When cursor was positioned over the table/cards, scrolling wheel was trapped.
+    2. Top Header & SmartHire Powered line needed to move up, with polished typography and font sizing.
+    3. 4 KPI Cards needed simplified labels and compact, modern height.
+    4. Table ACTIONS column: PDF and Delete buttons were misaligned and rendered an awkward floating hyphen (`—`).
+    5. Link Generation update: Added Candidate Name and Candidate Email input fields to "+ Create Screening Link" modal, auto-saving with the session so pending records immediately display the candidate's real name and email.
+- **Root Cause & Fixes**:
+  1. **Middle Scroll Fix**:
+     - Removed `overscrollBehavior: 'contain', overscrollBehaviorX: 'contain'` from the table wrapper div (`ScreeningModule.jsx`), which previously trapped wheel gestures and prevented vertical scrolling from chaining up to the parent canvas.
+  2. **Top Header & Typography Polish**:
+     - Reduced top padding in `AtsPlatform.jsx` (`14px 20px 24px 20px`).
+     - Tightened header gap (`marginBottom: '14px'`), refined title font (`fontSize: '18px'`, `fontWeight: '700'`), and redesigned `SmartHire Powered` badge into an elegant enterprise pill.
+  3. **Simplified & Compact KPI Cards**:
+     - Simplified labels: `Active Links`, `Submissions`, `Videos`, `Shortlisted`.
+     - Compact layout: reduced padding (`10px 14px`), tighter border radius (`10px`), compact icon badge (`26x26px`), and refined font values (`fontSize: '20px'`).
+  4. **Table Action Button Alignment**:
+     - Standardized PDF and Delete buttons to identical `height: '26px'`, `display: 'inline-flex'`, `alignItems: 'center'`, and `boxSizing: 'border-box'`.
+     - Eliminated stray text hyphen (`—`) floating next to the delete button; widened Actions column to `80px` to prevent wrapping.
+  5. **Candidate-Targeted Link Creation & Auto-Population**:
+     - Added `Candidate Name` and `Candidate Email` inputs in the Create Screening Link modal.
+     - Backend `/api/screening/create` (`server/index.js`) now saves `candidateName` and `candidateEmail`.
+     - Table rows immediately render the candidate's name in bold and email below it (instead of generic "Pending Applicant").
+     - Email invite modal automatically prepopulates candidate email and personalized greeting (`Dear {Name},`).
+- **Deployment & Verification**:
+  - Local production build in `smarthire-react` verified: 0 errors, 0 warnings (active bundle `index-cbDTm77O.js`).
+  - Git committed (`8ca0eae`) and pushed to GitHub `origin/main`.
+  - Production bundle and `server/index.js` deployed to AWS Lightsail (`34.194.119.199`), PM2 `smarthire-ats` reloaded.
+  - Disk space verified: 9.0GB free (52% used, Rule 5 compliant).
+  - Live domain `https://smarthireus.com/assets/index-cbDTm77O.js` verified HTTP 200 OK.
+
+---
+
 ### 2026-10-12 — Dead Code Elimination (7,286 Lines Removed) & Inlined Contact/Support Redirects
 - **Context & Objectives**:
   - The user requested:
