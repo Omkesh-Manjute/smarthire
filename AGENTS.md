@@ -105,6 +105,49 @@ The following high-impact features and optimizations have been agreed upon and p
 
 ---
 
+### 2026-10-12 — Universal Search: React Error #31 Elimination, Top Requirement Bar with Boolean Auto-Fill & On-Demand Resume Loading
+- **Context & Objectives**:
+  - The user reported:
+    1. Error crash on `smarthireus.com/inbox?tab=monster`: `Minified React error #31; object with keys {required, id, ...}` (`media_1791782233964.png`).
+    2. Left Search sidebar wasn't filtering or updating results on click; UPDATE button had no click handler.
+    3. Requisition selector was missing — recruiters previously selected a requirement from a dropdown and it auto-filled the Job Title, Skills, Location, and generated 3 Boolean query variants.
+    4. Resumes weren't displaying in the right pane (`media_1791782291339.png`).
+    5. Memory & payload optimization: Instead of pre-loading multi-megabyte resumes for 400+ candidates, resumes must load strictly **on-demand** for the selected candidate.
+    6. Candidate cards in Column 2 lacked distinct click/selection states.
+- **Root Cause & Fixes**:
+  1. **React Error #31 Elimination**:
+     - Some candidate records and requisition objects store skills as objects (e.g. `{ id: 1, name: 'C#', required: true }`).
+     - Directly mapping `{cand.skills.map(s => <span>{s}</span>)}` caused React to crash attempting to render an object as a child.
+     - **Fix**: Created universal `safeSkillLabel` normalizer extracting string values from any skill representation. Normalized all skills in `unifiedPool` and wrapped all JSX render points with `safeSkillLabel(s)`.
+  2. **Top Requirement Bar & Boolean Auto-Fill Engine**:
+     - Added a top requirement bar with a dropdown selector listing all 180+ ATS Requisitions.
+     - Selecting any requirement auto-populates:
+       - `Job Title` (e.g. `Senior Full-Stack .NET Modernization Architect`)
+       - `Location` (e.g. `Columbia, SC`)
+       - `Skills / Keywords` (top required skills)
+     - Automatically generates 3 high-precision Boolean Search Query Variants:
+       - **Variant 1: Core Technical Focus**
+       - **Variant 2: Broad Synonyms & Methodologies**
+       - **Variant 3: Public Sector & State Proximity**
+     - Renders 1-click selectable pills and a **"📋 Copy Boolean"** button with copied feedback.
+  3. **On-Demand / Lazy Resume Loading**:
+     - Stripped heavy resume text from the unified candidate pool to keep initial load instantaneous.
+     - Maintained `resumeCache` in memory.
+     - When a candidate is selected or the `Resume` tab is clicked, asynchronously fetches the candidate's resume from `/api/candidates/:id` or synthesizes a clean Rule-11 formatted ATS dossier with literal `•` bullet points.
+     - Displays an animated loading state while fetching and provides 1-click "Copy Resume" and "Print Resume" buttons.
+  4. **Live Fuzzy Search & Clickable Candidate Cards**:
+     - Connected the `UPDATE` button to live search execution (`handleTriggerSearch`).
+     - Implemented token-based fuzzy matching across Title, Skills, Location, Visa, and Channel sources.
+     - Prominent hover and active selected styling (`border: 2px solid #2563EB`, background `#EFF6FF`) on candidate cards.
+     - Displays real-time fit percentage pill (e.g. `95% Fit`) on each card.
+- **Deployment & Verification**:
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings.
+  - Git committed (`16b671a`) and pushed to `main`.
+  - Production bundle deployed to AWS Lightsail (`34.194.119.199`), PM2 `smarthire-ats` reloaded.
+  - Disk space verified: 9.0GB free (52% used, Rule 5 compliant).
+  - Verified `https://smarthireus.com` & `https://smarthireus.com/inbox` returning HTTP 200 OK.
+
+
 ### 2026-10-12 — Universal Talent Search (Monster Minimalist 3-Column Grid), Candidate Profile Hub & Application Source Tracking
 - **Context & Objectives**:
   - The user requested:
