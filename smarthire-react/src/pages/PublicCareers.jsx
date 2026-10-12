@@ -1169,40 +1169,72 @@ export default function PublicCareers() {
                 <p style={{ fontSize: 14, color: theme.textSecondary, maxWidth: 500, margin: '0 auto 24px', lineHeight: 1.6 }}>
                   Thank you <strong>{submitSuccess.candidateName || candidateName}</strong>! Your application for <strong>{submitSuccess.jobTitle}</strong> has been received by our recruiting team.
                 </p>
+                <div style={{
+                  maxWidth: 520,
+                  margin: '0 auto 24px',
+                  padding: '16px 20px',
+                  backgroundColor: isLight ? '#F8FAFC' : '#1E293B',
+                  borderRadius: 12,
+                  border: `1px solid ${isLight ? '#E2E8F0' : '#334155'}`,
+                  textAlign: 'left'
+                }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: isLight ? '#0F172A' : '#F8FAFC', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Recommended Next Steps While We Review Your Profile
+                  </div>
+                  <p style={{ fontSize: 13, color: isLight ? '#64748B' : '#94A3B8', margin: '0 0 12px', lineHeight: 1.5 }}>
+                    Increase your interview readiness by exploring our latest technical interview benchmarks, contract guides, and market salary reports:
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <Link
+                      to="/blog/highest-paying-it-certifications-2026"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontSize: 13, color: '#2563EB', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                    >
+                      <span>Highest-Paying IT Certifications & Skill Demand (2026)</span>
+                      <span style={{ fontSize: 12, color: '#64748B' }}>Read &rarr;</span>
+                    </Link>
+                    <Link
+                      to="/blog/c2c-vs-w2-vs-1099-it-contracts-guide"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontSize: 13, color: '#2563EB', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                    >
+                      <span>C2C vs W2 vs 1099 IT Contracts & Rate Guide</span>
+                      <span style={{ fontSize: 12, color: '#64748B' }}>Read &rarr;</span>
+                    </Link>
+                    <Link
+                      to="/blog/h1b-2026-update-it-work-visa-options"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontSize: 13, color: '#2563EB', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                    >
+                      <span>US IT Work Visa Pathways & H-1B Compliance</span>
+                      <span style={{ fontSize: 12, color: '#64748B' }}>Read &rarr;</span>
+                    </Link>
+                  </div>
+                </div>
+
                 <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-                  <button
-                    onClick={() => {
-                      const app = submitSuccess.appRecord
-                      setSelectedJob(null)
-                      setSubmitSuccess(null)
-                      if (app) {
-                        setActiveChatCandidate({
-                          id: app.candidateId || app.sessionId,
-                          sessionId: app.sessionId,
-                          name: app.candidateName,
-                          candidateName: app.candidateName,
-                          email: app.candidateEmail,
-                          jobTitle: selectedJob.title
-                        })
-                      }
-                    }}
+                  <Link
+                    to="/blog"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     style={{
-                      background: 'linear-gradient(135deg, #FA541C, #FDAB76)',
+                      background: '#2563EB',
                       color: '#FFF',
-                      border: 'none',
+                      textDecoration: 'none',
                       borderRadius: 10,
                       padding: '12px 24px',
                       fontSize: 14,
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 16px rgba(250, 84, 28, 0.35)',
+                      fontWeight: 700,
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: 6
                     }}
                   >
-                    <span>Message Recruiter Now</span>
-                  </button>
+                    <span>Explore Career Blog & Guides</span>
+                  </Link>
                   <button
                     onClick={() => { setSelectedJob(null); setSubmitSuccess(null); }}
                     style={{
@@ -1216,7 +1248,7 @@ export default function PublicCareers() {
                       cursor: 'pointer'
                     }}
                   >
-                    Close
+                    Browse More Openings
                   </button>
                 </div>
               </div>
