@@ -16,12 +16,38 @@ export default function SmartScreenProduct() {
   // FAQ state
   const [openFaqIndex, setOpenFaqIndex] = useState(0)
 
-  // Demo Modal state
+  // Studio Simulation Question state
+  const studioSampleQuestions = [
+    {
+      num: 1,
+      q: 'Give a 60–90 second overview of your technical background, core language strengths, and recent production projects.',
+      sub: 'Focus on backend microservice architectures, API throughput, and distributed databases you managed directly.',
+      transcript: 'Over the past four years, I led the core platform team handling over 250,000 concurrent API transactions using Node.js and distributed PostgreSQL...'
+    },
+    {
+      num: 2,
+      q: 'Describe an unexpected outage or severe latency spike you diagnosed in production. What was your root-cause methodology?',
+      sub: 'Detail telemetry metrics, distributed tracing steps, rollback decisions, and automated prevention guards.',
+      transcript: 'We experienced an incident where connection pooling saturated during a peak flash campaign. I isolated the un-indexed query via Datadog, executed a query kill, and rolled out a hotfix in 14 minutes...'
+    },
+    {
+      num: 3,
+      q: 'What is your current work authorization status, earliest start availability, and compensation target range?',
+      sub: 'Please confirm remote readiness, travel flexibility, and notice period requirements.',
+      transcript: 'I am immediately available to start on 2 weeks notice, holding full work authorization, and open to hybrid or remote arrangements...'
+    }
+  ]
+  const [activeStudioQ, setActiveStudioQ] = useState(0)
+
+  // Live 1-on-1 Demo Modal state
   const [showDemoModal, setShowDemoModal] = useState(false)
   const [demoName, setDemoName] = useState('')
   const [demoEmail, setDemoEmail] = useState('')
+  const [demoPhone, setDemoPhone] = useState('')
+  const [demoCompany, setDemoCompany] = useState('')
   const [demoRole, setDemoRole] = useState('Senior Full Stack Engineer')
   const [demoSent, setDemoSent] = useState(false)
+  const [demoSubmitting, setDemoSubmitting] = useState(false)
 
   const toggleVideoPlayback = () => {
     const v = demoVideoRef.current
@@ -172,16 +198,50 @@ export default function SmartScreenProduct() {
     }
   ]
 
-  const handleLaunchSampleScreening = (e) => {
-    e.preventDefault()
+  const handleRequestLiveDemo = async (e) => {
+    if (e && e.preventDefault) e.preventDefault()
     if (!demoName.trim() || !demoEmail.trim()) {
-      alert('Please enter your name and email to launch the sample session.')
+      alert('Please enter your name and corporate email address.')
       return
     }
-    setDemoSent(true)
-    setTimeout(() => {
-      navigate('/candidate-chat/SCR-DEMO-SAMPLE')
-    }, 1200)
+    setDemoSubmitting(true)
+    const inqId = `INQ-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`
+    const payload = {
+      id: inqId,
+      name: demoName.trim(),
+      email: demoEmail.trim(),
+      phone: demoPhone.trim() || '—',
+      company: demoCompany.trim() || 'Direct Client / Staffing Agency',
+      category: 'SmartScreen Live Demo Request',
+      subject: `Live 1-on-1 Demo Request from ${demoName.trim()} (${demoCompany.trim() || 'Staffing Firm'})`,
+      message: `Prospective client requested a live 1-on-1 demonstration of SmartScreen AI.\n\nProspect: ${demoName.trim()}\nCorporate Email: ${demoEmail.trim()}\nPhone / WhatsApp: ${demoPhone.trim() || 'N/A'}\nCompany: ${demoCompany.trim() || 'N/A'}\nPrimary Roles to Screen: ${demoRole.trim()}\nRequested At: ${new Date().toLocaleString()}`,
+      priority: 'Urgent',
+      status: 'New',
+      createdAt: new Date().toISOString()
+    }
+
+    try {
+      await fetch('/api/inquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).catch(err => console.warn('Inquiry endpoint warning:', err))
+
+      try {
+        const raw = localStorage.getItem('smarthire_inquiries')
+        const existing = raw ? JSON.parse(raw) : []
+        const merged = [payload, ...existing.filter(i => i.id !== payload.id)]
+        localStorage.setItem('smarthire_inquiries', JSON.stringify(merged))
+        window.dispatchEvent(new CustomEvent('smarthire_inquiry_added', { detail: payload }))
+      } catch (err) {}
+
+      setDemoSent(true)
+    } catch (err) {
+      console.error('Demo request error:', err)
+      setDemoSent(true)
+    } finally {
+      setDemoSubmitting(false)
+    }
   }
 
   return (
@@ -272,7 +332,7 @@ export default function SmartScreenProduct() {
             <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}>
               <button
                 type="button"
-                onClick={() => setShowDemoModal(true)}
+                onClick={() => { setDemoSent(false); setShowDemoModal(true); }}
                 style={{
                   background: '#2563eb',
                   color: '#ffffff',
@@ -289,7 +349,7 @@ export default function SmartScreenProduct() {
                   transition: 'all 0.15s ease'
                 }}
               >
-                <span>Try Live Candidate Demo</span>
+                <span>Schedule Live 1-on-1 Demo</span>
                 <span>➔</span>
               </button>
 
@@ -464,29 +524,34 @@ export default function SmartScreenProduct() {
               <div style={{ padding: '28px 24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: '#f8fafc' }}>
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <span style={{
-                      fontSize: '11px',
-                      fontWeight: '800',
-                      color: '#2563eb',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      background: '#eff6ff',
-                      padding: '4px 10px',
-                      borderRadius: '6px',
-                      border: '1px solid #bfdbfe'
-                    }}>
-                      Question 1 of 3
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{
+                        fontSize: '11px',
+                        fontWeight: '800',
+                        color: '#2563eb',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        background: '#eff6ff',
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        border: '1px solid #bfdbfe'
+                      }}>
+                        Question {studioSampleQuestions[activeStudioQ].num} of 3
+                      </span>
+                      <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>
+                        (Studio Simulation)
+                      </span>
+                    </div>
                     <span style={{ fontSize: '11.5px', color: '#64748b', fontWeight: '600' }}>
-                      Max ~120s recommended
+                      Max ~120s proctored
                     </span>
                   </div>
 
-                  <h3 style={{ fontSize: '19px', fontWeight: '800', color: '#0f172a', margin: '0 0 10px', lineHeight: '1.35' }}>
-                    Give a 60–90 second overview of your technical background, core language strengths, and recent production projects.
+                  <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: '0 0 10px', lineHeight: '1.38', minHeight: '50px' }}>
+                    {studioSampleQuestions[activeStudioQ].q}
                   </h3>
-                  <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: '1.5', margin: '0 0 18px' }}>
-                    Focus on backend microservice architectures, API throughput, and distributed databases you managed directly.
+                  <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: '1.5', margin: '0 0 18px', minHeight: '38px' }}>
+                    {studioSampleQuestions[activeStudioQ].sub}
                   </p>
 
                   <div style={{
@@ -497,34 +562,60 @@ export default function SmartScreenProduct() {
                     marginBottom: '16px'
                   }}>
                     <div style={{ fontSize: '11px', fontWeight: '800', color: '#4338ca', textTransform: 'uppercase', marginBottom: '4px' }}>
-                      Live Real-Time Speech Transcript:
+                      Live Candidate Speech Capture Transcript:
                     </div>
                     <div style={{ fontSize: '13px', color: '#334155', fontStyle: 'italic', lineHeight: '1.5' }}>
-                      "{isPlaying ? 'Over the past four years, I led the core platform team handling over 250,000 concurrent API transactions using Node.js and distributed PostgreSQL...' : 'Press play on video to simulate speech capture...'}"
+                      "{isPlaying ? studioSampleQuestions[activeStudioQ].transcript : 'Video is paused. Click Play on the preview to simulate live candidate speech capture...'}"
                     </div>
                   </div>
                 </div>
 
-                <div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <button
                     type="button"
-                    onClick={() => setShowDemoModal(true)}
+                    onClick={() => setActiveStudioQ((prev) => (prev + 1) % studioSampleQuestions.length)}
                     style={{
                       width: '100%',
-                      background: '#2563eb',
+                      background: '#0f172a',
                       color: '#ffffff',
                       border: 'none',
                       borderRadius: '8px',
                       padding: '12px',
                       fontSize: '13.5px',
                       fontWeight: '700',
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      transition: 'all 0.15s ease'
                     }}
                   >
-                    Save & Advance to Question 2 ➔
+                    <span>Preview Next Question ({((activeStudioQ + 1) % 3) + 1}/3)</span>
+                    <span>➔</span>
                   </button>
-                  <div style={{ fontSize: '11.5px', color: '#64748b', textAlign: 'center', marginTop: '8px' }}>
-                    Single continuous take · prevents cheating & rehearsal fatigue
+
+                  <button
+                    type="button"
+                    onClick={() => { setDemoSent(false); setShowDemoModal(true); }}
+                    style={{
+                      width: '100%',
+                      background: '#2563eb',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '11px',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 8px rgba(37,99,235,0.25)'
+                    }}
+                  >
+                    Schedule Live 1-on-1 Walkthrough with Our Team ➔
+                  </button>
+
+                  <div style={{ fontSize: '11.5px', color: '#64748b', textAlign: 'center' }}>
+                    Single continuous take · prevents cheating & browser tab switching
                   </div>
                 </div>
               </div>
@@ -950,24 +1041,55 @@ export default function SmartScreenProduct() {
               </button>
 
               <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', margin: '0 0 6px' }}>
-                Launch Live Candidate Screening Experience
+                Schedule a Live 1-on-1 Demonstration
               </h3>
-              <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 20px' }}>
-                Enter your details to step into the candidate's shoes and test the proctored video recording studio live.
+              <p style={{ fontSize: '13.5px', color: '#64748b', margin: '0 0 20px', lineHeight: '1.45' }}>
+                See how SmartScreen AI transforms candidate pre-screening for your staffing firm. Our solution architects will conduct a tailored live walkthrough.
               </p>
 
               {demoSent ? (
-                <div style={{ textAlign: 'center', padding: '24px 0' }}>
-                  <div style={{ fontSize: '15px', fontWeight: '700', color: '#16a34a' }}>
-                    Preparing your candidate studio...
+                <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                  <div style={{
+                    width: '56px',
+                    height: '56px',
+                    borderRadius: '50%',
+                    background: '#dcfce7',
+                    color: '#16a34a',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 16px',
+                    fontSize: '28px',
+                    fontWeight: '800'
+                  }}>
+                    ✓
                   </div>
-                  <div style={{ fontSize: '13px', color: '#64748b', marginTop: '6px' }}>
-                    Redirecting to live proctored interview
-                  </div>
+                  <h4 style={{ fontSize: '19px', fontWeight: '800', color: '#0f172a', margin: '0 0 8px' }}>
+                    Demo Request Received!
+                  </h4>
+                  <p style={{ fontSize: '13.5px', color: '#475569', lineHeight: '1.55', margin: '0 0 20px' }}>
+                    Thank you, <strong>{demoName}</strong>. One of our talent solution architects will connect with you promptly at <strong>{demoEmail}</strong> to schedule your live walkthrough.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowDemoModal(false)}
+                    style={{
+                      background: '#2563eb',
+                      color: '#ffffff',
+                      padding: '10px 24px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      fontWeight: '700',
+                      fontSize: '14px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Got it, Close
+                  </button>
                 </div>
               ) : (
-                <form onSubmit={handleLaunchSampleScreening}>
-                  <div style={{ marginBottom: '14px' }}>
+                <form onSubmit={handleRequestLiveDemo}>
+                  <div style={{ marginBottom: '12px' }}>
                     <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '4px' }}>
                       Your Full Name *
                     </label>
@@ -989,9 +1111,9 @@ export default function SmartScreenProduct() {
                     />
                   </div>
 
-                  <div style={{ marginBottom: '14px' }}>
+                  <div style={{ marginBottom: '12px' }}>
                     <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '4px' }}>
-                      Work Email *
+                      Corporate Email *
                     </label>
                     <input
                       type="email"
@@ -1011,9 +1133,52 @@ export default function SmartScreenProduct() {
                     />
                   </div>
 
-                  <div style={{ marginBottom: '20px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '4px' }}>
+                        Phone / WhatsApp
+                      </label>
+                      <input
+                        type="tel"
+                        placeholder="e.g. +1 (555) 019-2834"
+                        value={demoPhone}
+                        onChange={(e) => setDemoPhone(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          borderRadius: '8px',
+                          border: '1.5px solid #cbd5e1',
+                          fontSize: '13px',
+                          outline: 'none',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '4px' }}>
+                        Company / Agency
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Apex Staffing"
+                        value={demoCompany}
+                        onChange={(e) => setDemoCompany(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          borderRadius: '8px',
+                          border: '1.5px solid #cbd5e1',
+                          fontSize: '13px',
+                          outline: 'none',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: '18px' }}>
                     <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '4px' }}>
-                      Sample Role Experience
+                      Primary Roles to Screen
                     </label>
                     <select
                       value={demoRole}
@@ -1029,28 +1194,35 @@ export default function SmartScreenProduct() {
                         boxSizing: 'border-box'
                       }}
                     >
-                      <option>Senior Full Stack Engineer</option>
-                      <option>Enterprise Account Executive</option>
-                      <option>Healthcare Registered Nurse</option>
-                      <option>Customer Support Lead</option>
+                      <option>Software Engineering & Cloud</option>
+                      <option>Healthcare & Clinical Roles</option>
+                      <option>Sales & Enterprise Account Executives</option>
+                      <option>Customer Support & Operations</option>
+                      <option>General High-Volume Staffing</option>
                     </select>
                   </div>
 
                   <button
                     type="submit"
+                    disabled={demoSubmitting}
                     style={{
                       width: '100%',
                       background: '#2563eb',
                       color: '#ffffff',
                       border: 'none',
                       borderRadius: '8px',
-                      padding: '12px',
+                      padding: '13px',
                       fontSize: '14px',
                       fontWeight: '700',
-                      cursor: 'pointer'
+                      cursor: demoSubmitting ? 'not-allowed' : 'pointer',
+                      opacity: demoSubmitting ? 0.7 : 1,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
                     }}
                   >
-                    Start Candidate Screening Test ➔
+                    <span>{demoSubmitting ? 'Submitting Request...' : 'Schedule Live 1-on-1 Demo ➔'}</span>
                   </button>
                 </form>
               )}

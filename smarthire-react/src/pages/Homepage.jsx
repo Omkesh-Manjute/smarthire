@@ -1540,24 +1540,24 @@ function Homepage() {
                         justifyContent: 'center'
                       }}>1</span>
                       <h3 style={{ fontSize: '19px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
-                        See the Candidate Experience
+                        Live Screening Walkthrough
                       </h3>
                     </div>
                     <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.5, margin: '0 0 20px' }}>
-                      Open a real application page — exactly what candidates see when they apply to you.
+                      Schedule a personalized 1-on-1 live demonstration with our talent solution architects.
                     </p>
                     <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13.5px', color: '#334155' }}>
                       <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✓</span> No account or email needed
+                        <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✓</span> Tailored to your staffing agency workflow
                       </li>
                       <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✓</span> Answer by video, audio, or text
+                        <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✓</span> Live review of video, audio & text studio
                       </li>
                       <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✓</span> Single continuous proctored recording
+                        <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✓</span> Single continuous take anti-cheat inspection
                       </li>
                       <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✓</span> Walk through the whole application
+                        <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✓</span> Custom question bank & ATS webhook sync
                       </li>
                     </ul>
                   </div>
@@ -1583,10 +1583,10 @@ function Homepage() {
                       boxShadow: '0 4px 14px rgba(37, 99, 235, 0.25)'
                     }}
                   >
-                    View Candidate Demo ↗
+                    Schedule Live 1-on-1 Demo ➔
                   </button>
                   <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '11.5px', color: '#94a3b8' }}>
-                    ⏱ takes around 2 min
+                    Personalized 1-on-1 walkthrough with our team
                   </div>
                 </div>
 
