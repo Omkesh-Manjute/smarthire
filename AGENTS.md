@@ -103,6 +103,36 @@ The following high-impact features and optimizations have been agreed upon and p
   - **Branded & Blind Resume Wrapper**: Formats candidate resume with agency letterhead/header, core competencies table, clean bullet points, and optional contact masking (hiding direct phone/email to prevent poaching).
   - **1-Click Actions**: 📋 Copy formatted text to clipboard (for portal/email paste), 📥 Download PDF/DOCX submittal package, and ✉️ Direct email dispatch to Account Manager / Client.
 
+### 2026-10-14 — Submittal Pack: Auto-Fix 2-Column Skills Matrix Table & Genuine Microsoft Word (.docx / RTF) Export
+- **Context & Objectives**:
+  - The user shared two screenshots from `smarthireus.com/submittal-pack`:
+    1. A downloaded resume file (`BALA_BHASKARA_CHENNU_Formatted_Resume_159321.doc`) opened in macOS TextEdit displaying raw HTML tags (`<!DOCTYPE html>`, `<xml>`, `@page Section1`, etc.) because it was previously exported as raw HTML masquerading as `.doc`.
+    2. Under **TECHNICAL SKILLS**, skills were rendered as plain paragraph text without an authentic table, failing to detect category headers and smashed inline categories.
+  - Required:
+    - Auto-fix the Skills section across all resume templates into a clean, structured 2-column table (`Category` | `Skills / Technologies`).
+    - Upgrade the Word download engine to generate genuine, binary Microsoft Word OpenXML (`.docx`) files using `JSZip`, plus clean RTF-based `.doc` compatibility so macOS TextEdit and Microsoft Word render formatted text, bold headers, and tables with zero raw HTML tags.
+- **Architectural Implementations & Fixes**:
+  1. **Genuine Microsoft Word (.docx) & RTF Generator ([`docxExport.js`](file:///Users/omkeshmanjute/Develop/Smart%20hire%20project/smarthire-main/smarthire-react/src/utils/docxExport.js))**:
+     - Built a client-side WordprocessingML generator using `JSZip` to compile valid Office Open XML packages (`[Content_Types].xml`, `_rels/.rels`, `word/document.xml`, `w:tbl`, `w:tc`, `w:p`, `w:r`, `w:t`).
+     - Added `generateWordDocxBlob()` returning official `application/vnd.openxmlformats-officedocument.wordprocessingml.document` MIME type.
+     - Added `generateWordRtfBlob()` generating valid Rich Text Format (RTF) so even legacy `.doc` files opened in macOS TextEdit display native typography, bold headings, and tables instead of source code.
+  2. **Robust Skills Category Parser & Table Generator ([`SubmittalPackPage.jsx`](file:///Users/omkeshmanjute/Develop/Smart%20hire%20project/smarthire-main/smarthire-react/src/pages/SubmittalPackPage.jsx))**:
+     - Engineered `parseTechnicalSkillsRobust()` to detect both standard colon-separated categories (`Databases: Oracle, SQL Server`), standalone headers (`GIS Software\nArcGIS Enterprise...`), and inline smashed categories (`OS & Cloud Windows... Other Tools Jira... Web Related HTML...`).
+     - Engineered `renderSkillsMatrixTableHtml()` generating a 2-column tabular grid (`Category` [28%] | `Skills / Technologies` [72%]) with `#F1F5F9` headers, `#CBD5E1` grid borders, and alternating zebra striping.
+     - Integrated `renderSkillsMatrixTableHtml()` into `formatStructuredWordResume` across all templates (NC VectorVMS, Georgia CAI, Nebraska State, and Direct Client).
+  3. **Multi-Format Download Actions ([`SubmittalPackPage.jsx`](file:///Users/omkeshmanjute/Develop/Smart%20hire%20project/smarthire-main/smarthire-react/src/pages/SubmittalPackPage.jsx))**:
+     - Updated top action toolbar to feature **`Download .docx`** (primary Microsoft Word standard) alongside **`.doc`** (legacy Word/RTF).
+     - Updated editor toolbar with both `.docx` and `.doc` quick action buttons.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: **0 errors, 0 warnings** (bundles `index-DcLyGmtf.js`, `SubmittalPackPage-BIoNujN0.js`, `jszip-DOzj014r.js`).
+  - Git committed (`52972fe`) and pushed to `main`.
+  - Deployed to AWS Lightsail server (`34.194.119.199`), bundles extracted to `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Pruned old asset bundles (5 index bundles retained), archives cleaned up immediately.
+  - Disk space: 8.7GB available (53% used, Rule 5 compliant).
+  - Live HTTP 200 verified on `https://smarthireus.com/assets/SubmittalPackPage-BIoNujN0.js`.
+
+---
+
 ### 2026-10-14 — Continuous Infinity Snake Loading Animation Deployment across All Pages & Route Suspense
 - **Context & Objectives**:
   - The user reported slow page loading perception (e.g. `/submittal-pack`) where a plain white screen with raw text `Loading...` was showing.
