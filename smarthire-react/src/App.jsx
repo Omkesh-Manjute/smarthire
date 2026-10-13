@@ -18,6 +18,7 @@ const RecruiterInbox = lazy(() => import('./pages/RecruiterInbox'))
 const Blog = lazy(() => import('./pages/Blog'))
 const SmartSignRtrPage = lazy(() => import('./pages/SmartSignRtrPage'))
 const SubmittalPackPage = lazy(() => import('./pages/SubmittalPackPage'))
+const SmartScreenProduct = lazy(() => import('./pages/SmartScreenProduct'))
 
 const PageFallback = () => (
   <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748B', fontSize: '13px', fontWeight: 600 }}>
@@ -84,6 +85,9 @@ function App() {
           <Route path="/submittal-pack" element={<ProtectedRoute><SubmittalPackPage /></ProtectedRoute>} />
           <Route path="/sign-rtr/:token" element={<SmartSignRtrPage />} />
           <Route path="/sign-rtr" element={<SmartSignRtrPage />} />
+          <Route path="/smartscreen" element={<SmartScreenProduct />} />
+          <Route path="/video-screening" element={<Navigate to="/smartscreen" replace />} />
+          <Route path="/video-interview" element={<Navigate to="/smartscreen" replace />} />
           <Route path="/candidate-chat/:sessionId" element={<CandidateChat />} />
           <Route path="/candidate-chat/job/:jobId" element={<CandidateChat />} />
           <Route path="/screening" element={<CandidateChat />} />

@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 
-export default function PricingSection({ onAuthClick, showIntegrationGuide = true, isStandalonePage = false }) {
-  const [productTab, setProductTab] = useState('smartscreen') // 'smartscreen' | 'ats'
+export default function PricingSection({ onAuthClick, showIntegrationGuide = true, isStandalonePage = false, initialProductTab = 'smartscreen' }) {
+  const [productTab, setProductTab] = useState(initialProductTab) // 'smartscreen' | 'ats' | 'combo'
   const [isYearly, setIsYearly] = useState(true)
   const [activeIntegrationTab, setActiveIntegrationTab] = useState('curl')
   const [copiedSnippet, setCopiedSnippet] = useState(false)
@@ -615,6 +615,31 @@ export async function createScreeningLink(candidate, requisition) {
             ? 'Unify candidate pipeline, automated resume intake, vendor hotlists, and client submittal packs in one subscription.'
             : 'Equip your team with the full ATS sourcing suite and autonomous AI video screening under one single cost-effective invoice.'}
         </p>
+
+        {!isStandalonePage && (
+          <div style={{ marginBottom: '18px' }}>
+            <a
+              href="/smartscreen"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '12.5px',
+                fontWeight: '700',
+                color: '#2563eb',
+                textDecoration: 'none',
+                background: '#eff6ff',
+                border: '1px solid #bfdbfe',
+                padding: '5px 14px',
+                borderRadius: '20px',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <span>Explore SmartScreen AI Features & Candidate Video Demo</span>
+              <span>→</span>
+            </a>
+          </div>
+        )}
 
         {/* ── Monthly / Yearly Billing Toggle ── */}
         <div style={{

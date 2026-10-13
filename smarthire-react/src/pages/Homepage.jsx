@@ -2497,6 +2497,7 @@ function Homepage() {
           <PricingSection
             onAuthClick={() => isAuthenticated ? navigate('/ats') : setShowLoginModal(true)}
             showIntegrationGuide={false}
+            initialProductTab="ats"
           />
 
           <div className="tf-container">

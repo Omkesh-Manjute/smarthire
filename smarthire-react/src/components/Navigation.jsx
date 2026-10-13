@@ -218,6 +218,7 @@ function Navigation() {
 
   const appLauncherItems = [
     { title: 'AI Recruiter ATS', desc: 'Core talent pipeline & screening suite', path: '/ats', color: '#4f46e5' },
+    { title: 'SmartScreen Studio', desc: '1-way video & voice candidate screening', path: '/smartscreen', color: '#0284c7' },
     { title: 'Executive Console', desc: 'Command center & high-level stats', path: '/dashboard', color: '#2563eb', adminOnly: true },
     { title: 'Intelligence Reports', desc: 'Conversion charts & hiring velocity', path: '/reports', color: '#059669', adminOnly: true },
     { title: 'LinkedIn Automation', desc: 'Auto-post openings & talent outreach', path: '/linkedin-posts', color: '#0284c7', adminOnly: true },
@@ -426,6 +427,25 @@ function Navigation() {
                 <a href="/#features" className="nav-tab-item">
                   Core Features
                 </a>
+                <Link
+                  to="/smartscreen"
+                  className={`nav-tab-item ${location.pathname === '/smartscreen' ? 'active' : ''}`}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <span>SmartScreen AI</span>
+                  <span style={{
+                    fontSize: '9px',
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                    background: '#2563eb',
+                    color: '#ffffff',
+                    padding: '1px 5px',
+                    borderRadius: '4px'
+                  }}>
+                    VIDEO
+                  </span>
+                </Link>
                 <Link to="/jobs" className="nav-tab-item">
                   Careers Portal
                 </Link>
@@ -729,9 +749,14 @@ function Navigation() {
                   </Link>
                 )}
                 {!isEmployee && isPageAllowed('ats') && (
-                  <Link to="/ats" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
-                    <span>ATS Workspace</span>
-                  </Link>
+                  <>
+                    <Link to="/ats" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
+                      <span>ATS Workspace</span>
+                    </Link>
+                    <Link to="/smartscreen" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
+                      <span>SmartScreen AI Studio</span>
+                    </Link>
+                  </>
                 )}
                 {isPageAllowed('reports') && (
                   <Link to="/reports" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
@@ -785,6 +810,9 @@ function Navigation() {
                 <a href="/#features" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
                   Core Features
                 </a>
+                <Link to="/smartscreen" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
+                  SmartScreen AI (Video Screening)
+                </Link>
                 <Link to="/jobs" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
                   Public Careers
                 </Link>
