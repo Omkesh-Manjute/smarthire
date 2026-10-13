@@ -1330,7 +1330,12 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json({ limit: '50mb' }))
+app.use(express.json({
+  limit: '50mb',
+  verify: (req, _res, buf) => {
+    req.rawBody = buf;
+  }
+}))
 app.use(express.urlencoded({ limit: '50mb', extended: true }))
 app.use('/uploads', express.static(uploadDir))
 if (fs.existsSync(distPath)) {
@@ -14254,8 +14259,8 @@ app.use((req, res, next) => {
 
 // ─── Razorpay Standard Web Checkout Integration ─────────────────────────────
 const getRazorpayClient = () => {
-  const key_id = process.env.RAZORPAY_KEY_ID || 'rzp_test_TnR6ivn84ZGy9p';
-  const key_secret = process.env.RAZORPAY_KEY_SECRET || 'zlqOQ2VeTuj8J7Y9rha4aA97';
+  const key_id = process.env.RAZORPAY_KEY_ID || 'rzp_test_TnRdmRn7ptPWD9';
+  const key_secret = process.env.RAZORPAY_KEY_SECRET || 'Cum2KMxDMHO3F8O1GTzuQRgz';
   if (!key_id || !key_secret) {
     const err = new Error('Razorpay credentials not configured');
     err.statusCode = 401;
@@ -14311,7 +14316,7 @@ const handleCreateOrder = async (req, res) => {
       currency: order.currency,
       receipt: order.receipt,
       status: order.status,
-      key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_TnR6ivn84ZGy9p'
+      key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_TnRdmRn7ptPWD9'
     });
   } catch (error) {
     console.error('❌ Razorpay create-order error:', error);
@@ -14350,7 +14355,7 @@ const handleVerifyPayment = async (req, res) => {
       });
     }
 
-    const key_secret = process.env.RAZORPAY_KEY_SECRET || 'zlqOQ2VeTuj8J7Y9rha4aA97';
+    const key_secret = process.env.RAZORPAY_KEY_SECRET || 'Cum2KMxDMHO3F8O1GTzuQRgz';
     const generated_signature = crypto
       .createHmac('sha256', key_secret)
       .update(`${effOrderId}|${effPaymentId}`)
@@ -14411,11 +14416,80 @@ const handleVerifyPayment = async (req, res) => {
 app.post('/api/verify-payment', handleVerifyPayment);
 app.post('/api/payment/verify', handleVerifyPayment);
 
-// 3. Public Config: GET /api/payment/config
+// 3. Webhook Receiver: POST /api/payment/webhook & /api/razorpay/webhook
+const handleRazorpayWebhook = async (req, res) => {
+  try {
+    const signature = req.headers['x-razorpay-signature'];
+    if (!signature) {
+      return res.status(400).json({ success: false, message: 'Missing x-razorpay-signature header' });
+    }
+
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET || 'Cum2KMxDMHO3F8O1GTzuQRgz';
+    const bodyPayload = req.rawBody ? req.rawBody.toString('utf8') : JSON.stringify(req.body);
+
+    const expectedSignature = crypto
+      .createHmac('sha256', webhookSecret)
+      .update(bodyPayload)
+      .digest('hex');
+
+    const expectedBuf = Buffer.from(expectedSignature, 'utf8');
+    const receivedBuf = Buffer.from(signature, 'utf8');
+
+    const isMatch = expectedBuf.length === receivedBuf.length && crypto.timingSafeEqual(expectedBuf, receivedBuf);
+
+    if (!isMatch) {
+      console.warn('⚠️ Razorpay webhook signature verification failed.');
+      return res.status(400).json({ success: false, message: 'Invalid webhook signature' });
+    }
+
+    const event = req.body?.event;
+    const payload = req.body?.payload;
+    console.log(`🔔 Razorpay Webhook Event Received: ${event}`);
+
+    if (event === 'payment.captured' || event === 'order.paid') {
+      const paymentEntity = payload?.payment?.entity;
+      const orderEntity = payload?.order?.entity;
+      const paymentId = paymentEntity?.id;
+      const orderId = paymentEntity?.order_id || orderEntity?.id;
+
+      console.log(`✅ Webhook verified payment capture: ${paymentId} for order ${orderId}`);
+
+      try {
+        const paymentsFilePath = path.resolve(__dirname, 'payments.json');
+        let payments = [];
+        if (fs.existsSync(paymentsFilePath)) {
+          try { payments = JSON.parse(fs.readFileSync(paymentsFilePath, 'utf8')); } catch (e) { payments = []; }
+        }
+        payments.unshift({
+          order_id: orderId,
+          payment_id: paymentId,
+          event,
+          amount: paymentEntity?.amount,
+          currency: paymentEntity?.currency,
+          email: paymentEntity?.email,
+          contact: paymentEntity?.contact,
+          verifiedAt: new Date().toISOString(),
+          status: 'PAID'
+        });
+        fs.writeFileSync(paymentsFilePath, JSON.stringify(payments.slice(0, 500), null, 2), 'utf8');
+      } catch (e) {}
+    }
+
+    return res.status(200).json({ status: 'ok', event });
+  } catch (error) {
+    console.error('❌ Razorpay webhook error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+app.post('/api/payment/webhook', handleRazorpayWebhook);
+app.post('/api/razorpay/webhook', handleRazorpayWebhook);
+
+// 4. Public Config: GET /api/payment/config
 app.get('/api/payment/config', (_req, res) => {
   return res.json({
     success: true,
-    key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_TnR6ivn84ZGy9p',
+    key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_TnRdmRn7ptPWD9',
     currency: 'INR'
   });
 });

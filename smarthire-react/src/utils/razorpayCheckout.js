@@ -82,7 +82,7 @@ export const initiateRazorpayCheckout = async ({
       throw new Error(orderData.message || 'Unable to initialize payment order with server.')
     }
 
-    const keyId = orderData.key_id || import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TnR6ivn84ZGy9p'
+    const keyId = orderData.key_id || import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TnRdmRn7ptPWD9'
 
     // Step 2: Open Razorpay Standard Checkout Modal
     const rzpOptions = {

@@ -1004,7 +1004,7 @@ export async function createScreeningLink(candidate, requisition) {
               Test Razorpay Payment Flow Live
             </h4>
             <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
-              Key ID: <code style={{ background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', color: '#0f172a' }}>rzp_test_TnR6ivn84ZGy9p</code> · Click below to launch the Razorpay modal, complete test payment, and verify backend HMAC signature.
+              Key ID: <code style={{ background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', color: '#0f172a' }}>rzp_test_TnRdmRn7ptPWD9</code> · Click below to launch the Razorpay modal, complete test payment, and verify backend HMAC signature.
             </p>
           </div>
 
