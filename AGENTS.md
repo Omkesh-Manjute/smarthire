@@ -103,6 +103,46 @@ The following high-impact features and optimizations have been agreed upon and p
   - **Branded & Blind Resume Wrapper**: Formats candidate resume with agency letterhead/header, core competencies table, clean bullet points, and optional contact masking (hiding direct phone/email to prevent poaching).
   - **1-Click Actions**: 📋 Copy formatted text to clipboard (for portal/email paste), 📥 Download PDF/DOCX submittal package, and ✉️ Direct email dispatch to Account Manager / Client.
 
+### 2026-10-13 — Multi-Tier Pricing Architecture: Separate ATS & Video Screening Plans, 35% Combined Super-Bundle & $500+ Commercial Scale
+- **Context & Objectives**:
+  - The user requested:
+    1. Separate ATS plans and Video Interview (SmartScreen AI) plans into distinct, individual card sets.
+    2. Set market-calibrated rates for both systems, emphasizing higher-value commercial tiers.
+    3. The commercial / unlimited tier must be set to **$500+** (specifically configured at **$549/mo** / **$449/mo annual**).
+    4. The **RECOMMENDED** tier must be the high-value commercial tier (`popular: true`, `badge: 'RECOMMENDED'`, royal blue highlighted border).
+    5. Provide a combined bundle package (ATS + Video Screening together) with ~35% bundle discount for customers who want both platforms unified, displaying crossed-out individual values.
+    6. Support both individual purchasing and combined purchasing with clear, dedicated navigation and pricing cards.
+- **Architectural Implementations & Fixes**:
+  1. **Plan Architecture & Pricing Calibration (`PricingSection.jsx`)**:
+     - **SmartScreen AI (Standalone SaaS)**:
+       - *Starter Screen*: $99/mo ($79/mo annual) · 60 AI Video & Voice Interviews/mo.
+       - *Growth Screen*: $279/mo ($219/mo annual) · 300 AI Video & Voice Interviews/mo · Universal ATS Webhooks + REST API.
+       - *Commercial Unlimited Screen (RECOMMENDED)*: **$549/mo** ($449/mo annual) — **$500+ Commercial Scale** · **UNLIMITED Candidate Video & Voice Interviews** · Anti-Cheat Screen Share · HMAC Webhooks · Embedded ATS Iframe · Custom Subdomain.
+       - *Enterprise & API*: Custom / Contact Sales · Dedicated VPC.
+     - **SmartHire ATS OS (Recruiting Suite)**:
+       - *Starter ATS*: $89/mo ($69/mo annual) · 3 Jobs, 2 Seats · Full Kanban & candidate email automation.
+       - *Growth Pro ATS*: $279/mo ($219/mo annual) · 15 Jobs, 5 Seats · Automated AI Parser + Hotlists + Submittal Packs.
+       - *Commercial Unlimited ATS (RECOMMENDED)*: **$549/mo** ($449/mo annual) — **$500+ Commercial Scale** · **UNLIMITED Requisitions & UNLIMITED Recruiter Seats** · Full Anti-Cheat · DL/Visa Verification · Daily Trending Direct Clients.
+       - *Enterprise ATS*: Custom / Contact Sales · Agency White-Label & Dedicated DB.
+     - **All-In-One Combined Bundle (ATS + Video Screening — 35% Discount)**:
+       - *Starter Combo*: $129/mo ($99/mo annual) [Individual: ~~$188/mo~~, Save 32%] · 3 Jobs, 2 Seats + 60 Video Screens.
+       - *Growth Pro Combo*: $379/mo ($299/mo annual) [Individual: ~~$558/mo~~, Save 32%] · 15 Jobs, 5 Seats + 300 Video Screens + Parser + Hotlists.
+       - *Commercial All-Unlimited Combo (RECOMMENDED · BEST VALUE)*: **$699/mo** ($549/mo annual) [Individual: ~~$1,098/mo~~, Save 37%!] — **UNLIMITED Jobs, UNLIMITED Seats & UNLIMITED Video Interviews!**
+       - *Enterprise Dedicated Combo*: Custom / Contact Sales.
+  2. **Interactive 3-Way Product Switcher & Value Callouts**:
+     - Clean segmented control: `SmartScreen AI (Video Screening)` | `SmartHire ATS OS (Recruiting Suite)` | `Combined Super-Bundle (Save 35% OFF)`.
+     - Dynamic header titles, eyebrows, and subtext responding to the active tab.
+     - Contextual cross-navigation banner promoting 35% discount bundle from individual tabs, and providing 1-click toggles back to individual standalone tools from the bundle tab.
+     - Strikethrough pricing (`originalPriceMonthly` / `originalPriceYearly`) and green savings badges (`savingsBadge`) rendered dynamically on combo cards.
+- **Deployment & Verification**:
+  - Local production build in `smarthire-react`: **0 errors, 0 warnings** (bundle `index-hKr44RCu.js` and `Pricing-ZBeIkVzR.js`).
+  - Git committed (`67a3051`) and pushed to `main`.
+  - Production bundle deployed to AWS Lightsail server (`34.194.119.199`), PM2 `smarthire-ats` reloaded.
+  - Disk space verified: 8.8GB free (53% used, Rule 5 compliant).
+  - Live tests verified HTTP 200 on `https://smarthireus.com`, `https://smarthireus.com/pricing`, and new asset bundles.
+
+---
+
 ### 2026-10-13 — Candidate Interview Demo Video Integration (Scroll Autoplay & Gemini Logo Cropped) + Demo Contact Details Cleanup
 - **Context & Objectives**:
   - The user requested:
