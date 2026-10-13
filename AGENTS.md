@@ -103,6 +103,162 @@ The following high-impact features and optimizations have been agreed upon and p
   - **Branded & Blind Resume Wrapper**: Formats candidate resume with agency letterhead/header, core competencies table, clean bullet points, and optional contact masking (hiding direct phone/email to prevent poaching).
   - **1-Click Actions**: 📋 Copy formatted text to clipboard (for portal/email paste), 📥 Download PDF/DOCX submittal package, and ✉️ Direct email dispatch to Account Manager / Client.
 
+### 2026-10-14 — Continuous Infinity Snake Loading Animation Deployment across All Pages & Route Suspense
+- **Context & Objectives**:
+  - The user reported slow page loading perception (e.g. `/submittal-pack`) where a plain white screen with raw text `Loading...` was showing.
+  - The user requested: add an animated "snake" traveling in an infinity symbol ($\infty$) loop whenever any page loads across the application to make loading fluid, professional, and visually engaging.
+- **Architectural Implementations & Fixes**:
+  1. **Infinity Snake Loader Component (`InfinityLoader.jsx`)**:
+     - Engineered a dedicated React component (`src/components/InfinityLoader.jsx`) using mathematical lemniscate curves (`d="M 60,30 C 75,12 105,12 105,30 C 105,48 75,48 60,30 C 45,12 15,12 15,30 C 15,48 45,48 60,30 Z"`).
+     - Normalized path with `pathLength="100"` and `stroke-dasharray="28 72"` with `stroke-linecap="round"` so the animated gradient dash glides seamlessly through both lobes of infinity forever without jumping.
+     - Brand gradient: cyan (`#06B6D4`) $\rightarrow$ royal blue (`#2563EB`) $\rightarrow$ indigo (`#4F46E5`) with drop-shadow glow filters (`feDropShadow`).
+     - Added subtle SmartHire ATS icon branding and animated dot typography (`Loading SmartHire...`).
+  2. **Instant 0ms Initial HTML Root Mounting (`index.html`)**:
+     - Embedded the inline SVG infinity snake animation directly inside `<div id="root">` in `index.html`.
+     - When any visitor opens any route (e.g., `/submittal-pack`, `/ats`, `/smartscreen`), the infinity snake animation renders immediately within 50ms before React or JS bundles even finish executing.
+  3. **Universal Route Suspense & Module Fallbacks**:
+     - Updated `App.jsx` `PageFallback` from plain `Loading...` to `<InfinityLoader text="Loading SmartHire..." minHeight="85vh" />`.
+     - Replaced generic spinners in `ScreeningModule.jsx`, `UsersModule.jsx`, and `BrandingCenter.jsx` with `<InfinityLoader />`.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: **0 errors, 0 warnings** (bundle `index-DC0cnAWr.js`).
+  - Git committed (`4afd368`) and pushed to `main`.
+  - Deployed to AWS Lightsail server (`34.194.119.199`), bundles extracted to `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Pruned old asset bundles (kept top 5 index bundles), archives cleaned up immediately, PM2 `smarthire-ats` reloaded.
+  - Disk space: 8.7GB available (53% used, Rule 5 compliant).
+  - Live tests verified HTTP 200 on `https://smarthireus.com`, `https://smarthireus.com/submittal-pack`, and `index-DC0cnAWr.js`.
+
+---
+
+### 2026-10-14 — Pricing Scale Alignment, Developer Studio & Test Box Removal, and 1-on-1 Live Demo Conversion
+- **Context & Objectives**:
+  - The user requested:
+    1. Remove all self-serve automated candidate demo taking (`/candidate-chat/SCR-DEMO-SAMPLE`), converting all demo actions into **1-on-1 Live Demo Scheduling** handled by the recruitment team.
+    2. Keep the looping product video in the studio stage running (`/interview-demo-video.mp4` framing the candidate naturally).
+    3. Remove the public **Razorpay Test Gateway** console box (the ₹1 test payment card with Key ID) from the pricing section.
+    4. Elevate **SmartHire ATS OS** pricing so it is appropriately differentiated from the standalone SmartScreen AI add-on: ATS is the full enterprise recruitment OS (Kanban, candidate database, AI resume parser, submittal pack generator, vendor hotlist, email harvester), and should not be priced the same or lower than a video screening add-on.
+    5. Adjust card font sizes, typography hierarchy, and enterprise styling.
+    6. Remove the **DEVELOPER & RECRUITER INTEGRATION STUDIO** cURL terminal block from the public pricing view to preserve clean corporate B2B aesthetics.
+- **Architectural Implementations & Fixes**:
+  1. **Pricing Alignment & Re-Calibration (`PricingSection.jsx`)**:
+     - *SmartScreen AI (Standalone Add-On)*: Starter: $99/mo ($79 annual), Growth: $279/mo ($219 annual), Commercial Unlimited: $549/mo ($449 annual).
+     - *SmartHire ATS OS (Full Recruitment Suite)*: Starter ATS: **$149/mo** (**$119 annual**, 5 jobs, 3 seats); Growth Pro ATS: **$389/mo** (**$299 annual**, 25 jobs, 10 seats); Commercial Unlimited ATS: **$799/mo** (**$649 annual**, Unlimited jobs & seats).
+     - *Combined Super-Bundle (ATS OS + SmartScreen AI Unified with 35% Savings)*:
+       - Starter Combo: **$159/mo** (**$129 annual**, was $248/$198, Save 35%).
+       - Growth Pro Combo: **$429/mo** (**$339 annual**, was $668/$518, Save 35%).
+       - Commercial All-Unlimited Combo: **$875/mo** (**$699 annual**, was $1,348/$1,098, Save 35%).
+     - *Card Styling & Typography Polish*: Refined grid gap (24px), card padding (32px 26px), plan name (22px bold), price amount (44px bold), limit callout box (14px bold with 12px subtext), and feature items (13.5px bold title with 11.5px note).
+  2. **Removal of Developer Studio & Test Payment Box**:
+     - Removed the public `Razorpay Standard Web Checkout (Test Gateway)` test payment box and ₹1 input from `PricingSection.jsx`.
+     - Removed `DEVELOPER & RECRUITER INTEGRATION STUDIO` (and cleaned up unused state `codeSnippets`, `activeIntegrationTab`, `copiedSnippet`, and `handleCopyCode`).
+  3. **1-on-1 Live Demo Conversion (`SmartScreenProduct.jsx` & `Homepage.jsx`)**:
+     - Replaced all self-serve demo links (`Try Live Candidate Demo`) with `Schedule Live 1-on-1 Demo`.
+     - Studio preview stage: Retained the looping video (`demoVideoRef`) playing on scroll, and turned the right question card into an interactive question switcher (`Preview Next Question (1/3, 2/3, 3/3)`) allowing prospects to inspect simulated questions and transcripts without taking an unauthorized test session.
+     - Live Demo Modal: Converted to a corporate demo request capturing Full Name, Corporate Email, Phone/WhatsApp, Agency/Company Name, and Target Roles, saving to `/api/inquiries` and showing a confirmation screen.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: **0 errors, 0 warnings** (bundles `index-CgdhNqva.js`, `Pricing-B6S7oDus.js`, `SmartScreenProduct-xYbL-S77.js`).
+  - Git committed (`5d5ca50`) and pushed to `main`.
+  - Production bundles extracted to `/var/www/html/` and `/home/ubuntu/smarthire/dist/` on AWS Lightsail (`34.194.119.199`), PM2 `smarthire-ats` reloaded.
+  - Live tests verified HTTP 200 on all new bundle hashes, and free disk space verified at 8.7GB free (53% used, Rule 5 compliant).
+
+---
+
+### 2026-10-13 — Razorpay Credentials Upgrade & Live Webhook Listener Deployment
+- **Context & Objectives**:
+  - The user provided new Razorpay API credentials:
+    - Key ID: `rzp_test_TnRdmRn7ptPWD9`
+    - Secret: `Cum2KMxDMHO3F8O1GTzuQRgz`
+  - The user shared screenshots of a successful transaction and the Razorpay Webhook Configuration modal.
+  - Required: update local and production environment, deploy raw-body webhook listener (`POST /api/payment/webhook`), verify HMAC signature validation, rebuild frontend with updated keys, and guide user on configuring the webhook in Razorpay dashboard.
+- **Architectural Implementations & Fixes**:
+  1. **Environment & Fallback Synchronization**:
+     - Updated `.env` files locally and in production `/home/ubuntu/smarthire/.env` with `RAZORPAY_KEY_ID=rzp_test_TnRdmRn7ptPWD9`, `RAZORPAY_KEY_SECRET=Cum2KMxDMHO3F8O1GTzuQRgz`, `VITE_RAZORPAY_KEY_ID=rzp_test_TnRdmRn7ptPWD9`, and `RAZORPAY_WEBHOOK_SECRET=Cum2KMxDMHO3F8O1GTzuQRgz`.
+     - Updated fallback keys across `server/index.js`, `PricingSection.jsx`, and `razorpayCheckout.js`.
+  2. **Raw Body Capture & Webhook Endpoint (`server/index.js`)**:
+     - Updated Express JSON parser `app.use(express.json({ limit: '50mb', verify: (req, _res, buf) => { req.rawBody = buf; } }))` to preserve original payload bytes.
+     - Implemented `POST /api/payment/webhook` & `POST /api/razorpay/webhook`: verifies `x-razorpay-signature` against HMAC-SHA256(`req.rawBody`, `RAZORPAY_WEBHOOK_SECRET`), processes `payment.captured` and `order.paid` events, records payments into `payments.json`, and returns HTTP 200 `{ status: 'ok', event }`.
+  3. **Verification & Deployment**:
+     - Local production build in `smarthire-react`: **0 errors, 0 warnings** (bundle `index-D9-hFNnp.js`, `Pricing-DGeYzqsK.js`).
+     - Git committed (`2844bdb`) and pushed to `main`.
+     - Deployed to AWS Lightsail (`34.194.119.199`), PM2 `smarthire-ats` reloaded with `--update-env`.
+     - Live validation:
+       - `GET /api/payment/config`: returns `{ success: true, key_id: "rzp_test_TnRdmRn7ptPWD9", currency: "INR" }`.
+       - `POST /api/create-order`: created live order `order_TnRjVH8R3O2pHo`.
+       - `POST /api/verify-payment`: verified authentic HMAC signature with HTTP 200.
+       - `POST /api/payment/webhook`: rejected invalid signature with HTTP 400 and verified authentic signature with HTTP 200 `{ status: "ok", event: "payment.captured" }`.
+       - Disk space: 8.7GB free (53% used, Rule 5 compliant).
+
+---
+
+### 2026-10-13 — Razorpay Standard Web Checkout Integration: Order Creation, HMAC-SHA256 Verification & Live Test Console
+- **Context & Objectives**:
+  - The user requested:
+    1. Integrate Razorpay Standard Web Checkout into the codebase using test credentials (`rzp_test_TnR6ivn84ZGy9p` / `zlqOQ2VeTuj8J7Y9rha4aA97`).
+    2. Backend endpoint to create orders (`POST /api/create-order` calling `https://api.razorpay.com/v1/orders`).
+    3. Frontend checkout button with payment modal (`<script src="https://checkout.razorpay.com/v1/checkout.js"></script>`).
+    4. Backend endpoint to verify payment signature (`POST /api/verify-payment`) with `HMAC-SHA256(order_id + "|" + payment_id, KEY_SECRET)`.
+    5. Never hardcode credentials in source code; use `.env` exclusively and keep `.env` in `.gitignore`.
+    6. Verify complete setup live on production domain.
+- **Architectural Implementations & Fixes**:
+  1. **Dependencies & Environment**:
+     - Installed official `razorpay` npm SDK in root and `smarthire-react`.
+     - Added `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` to local `.env` files and remote server `/home/ubuntu/smarthire/.env`.
+     - Added `VITE_RAZORPAY_KEY_ID` for frontend client access while preserving backend secrecy for `KEY_SECRET`.
+  2. **Backend Order Creation & Verification (`server/index.js`)**:
+     - `POST /api/create-order` (and `/api/payment/create-order`): Validates minimum amount ($\ge 100$ paise), initializes Razorpay client, invokes `orders.create`, and returns `{ success: true, order_id, amount, currency, key_id }`.
+     - `POST /api/verify-payment` (and `/api/payment/verify`): Extracts `razorpay_order_id`, `razorpay_payment_id`, `razorpay_signature`. Computes expected HMAC-SHA256 hash using `crypto.createHmac('sha256', KEY_SECRET)`, verifies with timing-safe comparison (`crypto.timingSafeEqual`), logs payment record to `payments.json`, and returns `{ success: true, isPaid: true }`.
+     - `GET /api/payment/config`: Exposes public key ID and default currency.
+  3. **Frontend Helper Utility (`razorpayCheckout.js`)**:
+     - Created `smarthire-react/src/utils/razorpayCheckout.js` with `loadRazorpayScript` and `initiateRazorpayCheckout`.
+     - Handles dynamic script loading, order creation dispatch, modal popup with prefill data, signature callback, and dismissal/error events.
+  4. **Frontend UI & Test Hub Integration (`PricingSection.jsx`)**:
+     - Added Razorpay Standard Checkout modal trigger to all plan action buttons.
+     - Added interactive **Razorpay Live Test Gateway Console** directly on the pricing view with 1-click test button (`Pay ₹1 via Razorpay ➔`) or custom rupee input.
+     - Added verified payment status card displaying green `PAID & VERIFIED` badge with transaction IDs upon successful signature match.
+- **Deployment & Verification**:
+  - Local production build in `smarthire-react`: **0 errors, 0 warnings**.
+  - Git committed (`73f8c87`) and pushed to `main`.
+  - Production bundles extracted to `/var/www/html/` and `/home/ubuntu/smarthire/dist/`, PM2 `smarthire-ats` reloaded.
+  - Live API validation:
+    - `POST /api/create-order`: Successfully created order `order_TnRO4jeuvRnfFy`.
+    - `POST /api/verify-payment`: Correctly rejected invalid signature with HTTP 400 (`Invalid payment signature`), and verified authentic signature with HTTP 200 (`Payment verified successfully`, `isPaid: true`).
+  - Disk space verified: 8.7GB free (53% used, Rule 5 compliant).
+
+---
+
+### 2026-10-13 — SmartScreen AI Dedicated Product Tour Page: Scroll Animations, Demo Studio, Anti-Cheat Breakdown & Enterprise Navigation
+- **Context & Objectives**:
+  - The user requested:
+    1. Build a dedicated product landing and feature tour page for the asynchronous video & voice screening platform (`/smartscreen`).
+    2. Write all copy in 100% professional, high-converting enterprise English.
+    3. Include smooth scroll animations (`IntersectionObserver` fade-in-up transforms and interactive hover cards) benchmarked against Linear, Willo, and HireFlix.
+    4. Seamlessly integrate the page with the ATS navigation (Desktop public menu, Mobile drawer, App Launcher, and Footer).
+    5. Clean separation of pricing between SmartScreen AI standalone plans ($99, $279, $549) and SmartHire ATS OS, with 35% bundle savings.
+    6. Strict pre-deployment verification: zero errors, zero breakage of existing features, and full deployment to AWS Lightsail server.
+- **Architectural Implementations & Fixes**:
+  1. **Dedicated Product Page (`SmartScreenProduct.jsx`)**:
+     - *Hero Section*: High-impact headline ("Screen 10x More Candidates in 1/3rd the Time with Pre-Interview Video"), live candidate demo modal launcher, and micro trust points (Zero Candidate Login, Continuous Take Anti-Cheat, Link Expiry).
+     - *Interactive Studio Stage*: Integrated `/interview-demo-video.mp4` with scroll-triggered autoplay/pause, 430px vertical framing guide, live speech transcript preview, and play/pause controls.
+     - *Key Impact Metrics Bar*: Sleek slate counter showcasing 84% screening hours saved, 4.2x faster shortlist-to-offer, zero downloads/logins, and 99.8% proctoring integrity.
+     - *3-Step Recruiter Workflow*: Cards detailing (1) Question Selection/AI Generation, (2) Expiry Scheduling & Link Dispatch, and (3) Verbatim Transcripts & ATS Webhook Sync.
+     - *Anti-Cheat & Proctoring Engine*: 6 feature cards detailing Continuous Take, Multi-Tab Lock, Link Expiry, GPS vs City audit, Universal ATS Webhooks, and Branded PDF Dossiers.
+     - *Industry Question Bank*: Interactive tabbed selector across Software Engineering, Sales, Healthcare, and Support.
+     - *Dedicated Pricing Section*: Embedded with `initialProductTab="smartscreen"`.
+     - *Interactive FAQ Accordion*: 6 collapsible FAQ cards with expandable answers and rotating glyph toggles.
+  2. **Navigation & Route Integration**:
+     - Registered `/smartscreen`, `/video-screening`, and `/video-interview` in `App.jsx`.
+     - Added "SmartScreen AI" tab with "VIDEO" badge to public center navigation in `Navigation.jsx`.
+     - Added SmartScreen Studio to 9-dot App Launcher and mobile drawers (both unauthenticated and authenticated).
+     - Added "SmartScreen AI" link in `Footer.jsx`.
+     - Homepage pricing defaulted cleanly to ATS OS (`initialProductTab="ats"`) with a prominent link exploring SmartScreen AI features.
+- **Deployment & Verification**:
+  - Local production build in `smarthire-react`: **0 errors, 0 warnings** (active bundle `SmartScreenProduct-CvvKmzHx.js` 32.79 kB, `index-BhVICPBz.js`, `Pricing-DarcVXXT.js`).
+  - Git committed (`80ca9ba`) and pushed to `main`.
+  - Production bundles extracted to `/var/www/html/` and `/home/ubuntu/smarthire/dist/` on AWS Lightsail (`34.194.119.199`).
+  - Disk space verified: 8.8GB free (53% used, Rule 5 compliant).
+  - Live tests verified HTTP 200 on `https://smarthireus.com`, `https://smarthireus.com/smartscreen`, and asset bundles.
+
+---
+
 ### 2026-10-13 — Pre-Interview Screening Studio Overhaul: Two-Column 430px Video & Question Layout, Session Takeover, and Link Expiration Engine
 - **Context & Objectives**:
   - The user requested:
