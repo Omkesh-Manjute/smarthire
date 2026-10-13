@@ -29,7 +29,7 @@ export default function PricingSection({ onAuthClick, showIntegrationGuide = tru
       popular: false,
       features: [
         { title: '50 AI Video & Audio Interviews / month', note: 'Multi-format: 1-way video, audio, or text' },
-        { title: 'Groq Whisper Automated Transcripts', note: 'Accurate speech-to-text transcription' },
+        { title: 'Automated Speech-to-Text Transcripts', note: 'Fast, accurate candidate audio transcription using AI' },
         { title: 'AI Match Score & Question Scorecards', note: '0–100% fit score with instant summary' },
         { title: 'Anti-Cheat Tab Switch Lock', note: 'Monitors candidate browser focus' },
         { title: 'Candidate Self-Scheduling Links', note: 'Async 24/7 completion for candidates' },
@@ -43,7 +43,7 @@ export default function PricingSection({ onAuthClick, showIntegrationGuide = tru
         'Sub-15ms REST API Link Generation',
         'Custom Agency White-Label Branding',
       ],
-      ctaText: 'Start 14-Day Free Trial',
+      ctaText: 'Get Started',
       ctaType: 'outline'
     },
     {
@@ -63,7 +63,7 @@ export default function PricingSection({ onAuthClick, showIntegrationGuide = tru
         { title: 'Sub-15ms REST API Access', note: 'Programmatic link creation from your backend' },
         { title: 'Custom Agency White-Label Branding', note: 'Your logo, primary color & company name' },
         { title: 'Downloadable Branded PDF Scorecards', note: 'Client-ready candidate evaluation dossier' },
-        { title: 'AI Audio Voice Question Prompts', note: 'Speaks questions out loud to candidates' },
+        { title: 'AI Audio Voice Question Prompts', note: 'Speaks questions out loud to candidates using AI' },
         { title: 'Work Auth & Salary Expectation Intake', note: 'Auto-captures visa & compensation fit' },
         { title: '90-Day Cloud Video Storage', note: 'Extended cloud retention' },
         { title: 'Priority Recruiter Chat & Email Support', note: '<2hr response SLA' },
@@ -73,7 +73,7 @@ export default function PricingSection({ onAuthClick, showIntegrationGuide = tru
         'Custom Subdomain (screen.youragency.com)',
         'Embedded ATS Iframe Studio'
       ],
-      ctaText: 'Start 14-Day Free Trial',
+      ctaText: 'Get Started',
       ctaType: 'primary'
     },
     {
@@ -93,13 +93,13 @@ export default function PricingSection({ onAuthClick, showIntegrationGuide = tru
         { title: 'ATS Embedded Iframe Studio', note: 'Run screening directly inside your custom CRM' },
         { title: 'Full Anti-Cheat Proctoring Engine', note: 'Desktop screen share & suspicious activity audit' },
         { title: 'Custom Subdomain Routing', note: 'screen.youragency.com link branding' },
-        { title: 'Custom Job Description Question Generator', note: 'AI tailors questions to client JDs' },
+        { title: 'Custom Job Description Question Generator', note: 'Tailors questions to client JDs using AI' },
         { title: '1-Year Long-Term Cloud Storage', note: 'Compliance-ready archive' },
         { title: 'Dedicated Solutions Engineer & Slack Channel', note: 'Hands-on ATS webhook setup' },
       ],
       systemIntegration: 'HMAC Webhooks + Embedded Iframe + Custom API',
       notIncluded: [],
-      ctaText: 'Start 14-Day Free Trial',
+      ctaText: 'Get Started',
       ctaType: 'outline'
     },
     {
@@ -115,14 +115,14 @@ export default function PricingSection({ onAuthClick, showIntegrationGuide = tru
       popular: false,
       features: [
         { title: 'Unlimited AI Video & Audio Candidate Screens', note: 'Zero per-interview overage fees' },
-        { title: 'Custom ATS & VMS Direct Integrations', note: 'Fieldglass, Beeline, Workday, SAP integration' },
         { title: 'Dedicated Isolated Cloud Infrastructure', note: 'Single-tenant instance & private endpoints' },
+        { title: 'Complete Agency White-Label Branding', note: 'Custom domain, logo & branded notifications' },
+        { title: 'Universal Webhooks & REST API Integrations', note: 'Sync with internal systems & custom ATS' },
         { title: 'Single Sign-On (SSO / SAML 2.0 / Okta)', note: 'Enterprise identity security' },
-        { title: 'EEOC & Regulatory Compliance Auditing', note: 'Unbiased AI scoring certifications' },
-        { title: 'Custom AI Model Fine-Tuning', note: 'Calibrated to your agency scoring rubrics' },
-        { title: '99.9% SLA & Dedicated 24/7 Account Director', note: 'Direct executive escalation' },
+        { title: 'Custom AI Scoring Calibration', note: 'Calibrated to your agency evaluation rubrics' },
+        { title: 'Dedicated 24/7 Account Director', note: 'Direct executive escalation' },
       ],
-      systemIntegration: 'Custom Enterprise VMS/ATS Architecture',
+      systemIntegration: 'Custom Enterprise Architecture + Full API',
       notIncluded: [],
       ctaText: 'Contact Enterprise Sales',
       ctaType: 'dark'
@@ -138,27 +138,27 @@ export default function PricingSection({ onAuthClick, showIntegrationGuide = tru
       priceYearly: 49,
       interviewLimit: '3 Active Jobs · Includes 25 AI Video Interviews/mo',
       limitSubtext: 'Full recruiting pipeline for boutique staffing desks',
-      description: 'Complete ATS candidate pipeline, resume parsing, and embedded video screening.',
+      description: 'Complete ATS candidate pipeline, tracking, and embedded video screening.',
       badge: null,
       highlight: '#0284c7',
       popular: false,
       features: [
         { title: 'Full ATS Pipeline & Candidate Kanban', note: 'Track applicants from sourcing to placement' },
         { title: '25 AI Video & Audio Screenings / month', note: 'Embedded directly into applicant profile' },
-        { title: 'Automated Resume & Email Parser', note: 'Instant intake from PDF, Word & TXT' },
         { title: 'AI Match Score & Candidate Ranking', note: 'Requisition fit rating 0–100%' },
         { title: '3 Active Requisitions & 2 Recruiter Seats', note: 'Unlimited applications' },
-        { title: 'Location Tracker & Anti-Cheat Tab Lock', note: null },
-        { title: 'Candidate Email Automation', note: 'Status updates & interview links' },
+        { title: 'Location Tracker & Anti-Cheat Tab Lock', note: 'Monitors candidate focus & geolocation' },
+        { title: 'Candidate Email Automation', note: 'Status updates & interview invite links' },
         { title: 'Standard Recruiter Support', note: null },
       ],
       systemIntegration: 'Full SmartHire In-App Architecture',
       notIncluded: [
-        'SmartSign RTR Digital Signature',
+        'Automated AI Resume & Email Parser',
         'Vendor Hotlist Excel Grid Ingestion',
-        'Submittal Pack Generator'
+        '1-Click Submittal Pack Generator',
+        'White-Label Branding (Enterprise Only)'
       ],
-      ctaText: 'Start 14-Day Free Trial',
+      ctaText: 'Get Started',
       ctaType: 'outline'
     },
     {
@@ -171,23 +171,23 @@ export default function PricingSection({ onAuthClick, showIntegrationGuide = tru
       badge: 'RECOMMENDED',
       highlight: '#2563eb',
       popular: true,
-      description: 'Replaces Bullhorn ($165/seat) + DocuSign ($45/user) + HireVue ($35k/yr) under one login.',
+      description: 'Unified ATS pipeline, automated resume intake, hotlists, and client submittals.',
       features: [
         { title: 'Everything in Starter ATS included', note: null },
         { title: '15 Active Requisitions & Up to 5 Team Members', note: 'Multi-seat recruiting hierarchy' },
         { title: '100 AI Video & Voice Interviews / month', note: 'Full studio screening with screen share' },
-        { title: 'SmartSign RTR Digital Signatures', note: 'Zero-cost candidate Right-To-Represent signing' },
+        { title: 'Automated AI Resume & Email Parser', note: 'Instant intake & skill extraction from PDF, Word & TXT' },
         { title: 'Vendor Hotlist Excel Grid Ingestion', note: 'Instant bench & vendor candidate matching' },
         { title: '1-Click Client Submittal Pack Generator', note: 'Formatted client coversheet & branded resume' },
-        { title: 'Automated 6-min Job Ingestion Engine', note: 'Auto-fetches high-margin client jobs' },
-        { title: 'Anti-Cheat Full Screen Lock & Telemetry', note: null },
+        { title: 'Anti-Cheat Full Screen Lock & Telemetry', note: 'Strict proctoring & suspicious activity detection' },
         { title: 'Priority Recruiter Chat & Phone Support', note: null },
       ],
-      systemIntegration: 'Full ATS Suite + RTR + Hotlists + Screening',
+      systemIntegration: 'Full ATS Suite + Hotlists + Screening',
       notIncluded: [
-        'White-Label Custom Domain Links'
+        'White-Label Branding (Enterprise Only)',
+        'Universal Webhooks & REST API (Enterprise Only)'
       ],
-      ctaText: 'Start 14-Day Free Trial',
+      ctaText: 'Get Started',
       ctaType: 'primary'
     },
     {
@@ -206,15 +206,16 @@ export default function PricingSection({ onAuthClick, showIntegrationGuide = tru
         { title: 'Unlimited Active Requisitions & Recruiter Seats', note: 'Scale your team without per-seat fees' },
         { title: '300 AI Video & Voice Interviews / month', note: 'Extra interviews at $0.40/ea' },
         { title: 'Full Anti-Cheat Lockout Engine', note: 'Strict proctoring & tab violation enforcement' },
-        { title: 'AI Document Verification (Driver License / Visa)', note: 'Groq Vision document validation' },
-        { title: 'White-Label Branding (Custom Domain & Email)', note: 'Your agency brand front & center' },
+        { title: 'AI Document Verification (Driver License / Visa)', note: 'Identity & work authorization validation using AI' },
         { title: 'Automated Daily Trending Direct Clients', note: 'Real-time hiring manager discovery' },
-        { title: 'Webhooks, REST API & ATS Data Export', note: 'Integrate with external payroll & CRM' },
         { title: 'Dedicated Account Manager & 24/7 SLA Support', note: null },
       ],
-      systemIntegration: 'Full ATS API + Webhooks + White-label Portal',
-      notIncluded: [],
-      ctaText: 'Start 14-Day Free Trial',
+      systemIntegration: 'Dedicated Support + Direct Client Discovery',
+      notIncluded: [
+        'White-Label Branding (Enterprise Only)',
+        'Universal Webhooks & REST API (Enterprise Only)'
+      ],
+      ctaText: 'Get Started',
       ctaType: 'outline'
     },
     {
@@ -222,22 +223,22 @@ export default function PricingSection({ onAuthClick, showIntegrationGuide = tru
       tier: 'Enterprise Custom',
       priceMonthly: null,
       priceYearly: null,
-      interviewLimit: 'Unlimited Everything & Custom VMS Integrations',
-      limitSubtext: 'Enterprise security & dedicated infrastructure',
-      description: 'Tailored contracts for enterprise staffing firms with 25+ recruiters and VMS pipelines.',
+      interviewLimit: 'Unlimited Everything · Custom Dedicated Scale',
+      limitSubtext: 'Complete white-labeling & private cloud infrastructure',
+      description: 'Tailored contracts for enterprise staffing firms requiring full agency white-labeling & API integrations.',
       badge: 'ENTERPRISE',
       highlight: '#0f172a',
       popular: false,
       features: [
         { title: 'Everything in Business ATS included', note: null },
+        { title: 'Unlimited Everything (Jobs, Seats & Video Screenings)', note: 'Zero volume or seat limits' },
+        { title: 'Complete White-Label Agency Branding', note: 'Your agency logo, custom domain, branded portal & email' },
+        { title: 'Universal Webhooks & REST API Integrations', note: 'Sync candidate data & status with external systems' },
+        { title: 'Single Sign-On (SSO / SAML 2.0 / Okta)', note: 'Enterprise identity security' },
         { title: 'Dedicated Isolated Cloud Server Instance', note: 'Private database & custom storage' },
-        { title: 'Direct VMS Integration (Fieldglass, Beeline, Tapfin)', note: 'Automated submittal routing' },
-        { title: 'SSO / SAML 2.0 Identity Management', note: 'Okta, Azure AD, Ping Identity' },
-        { title: 'Custom Data Migration & Dedicated Onboarding', note: 'Migrate from Bullhorn/Ceipal seamlessly' },
-        { title: 'EEOC & US Legal Compliance Reporting', note: 'Automated audit reports' },
-        { title: 'SLA-backed 99.9% Uptime Guarantee', note: null },
+        { title: 'Dedicated 24/7 Account Director & Support', note: 'Direct executive escalation' },
       ],
-      systemIntegration: 'Dedicated Cloud Instance + VMS Sync',
+      systemIntegration: 'White-Label Portal + Full API & Webhooks',
       notIncluded: [],
       ctaText: 'Contact Enterprise Sales',
       ctaType: 'dark'
@@ -429,7 +430,7 @@ export async function createScreeningLink(candidate, requisition) {
         }}>
           {productTab === 'smartscreen'
             ? 'Plug asynchronous AI video, voice, and proctored evaluations directly into Bullhorn, Greenhouse, Lever, or Workday in minutes.'
-            : 'Unify candidate pipeline, resume parsing, SmartSign RTR digital signatures, vendor hotlists, and client submittal packs in one subscription.'}
+            : 'Unify candidate pipeline, automated resume intake, vendor hotlists, and client submittal packs in one subscription.'}
         </p>
 
         {/* ── Monthly / Yearly Billing Toggle ── */}
@@ -577,7 +578,7 @@ export async function createScreeningLink(candidate, requisition) {
         alignItems: 'stretch',
         marginBottom: '48px'
       }}>
-        {activePlans.map((plan, idx) => {
+        {activePlans.map((plan) => {
           const price = isYearly ? plan.priceYearly : plan.priceMonthly
           const isEnterprise = !price
 
@@ -759,11 +760,6 @@ export async function createScreeningLink(candidate, requisition) {
                 >
                   {plan.ctaText}
                 </button>
-                {!isEnterprise && (
-                  <div style={{ textAlign: 'center', fontSize: '11px', color: '#94a3b8', marginTop: '8px' }}>
-                    14-day free trial · No card required
-                  </div>
-                )}
               </div>
 
             </div>
